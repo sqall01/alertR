@@ -75,6 +75,7 @@ root@raspberrypi:/etc/init.d# update-rc.d alertRalarm.sh defaults
 
 #################### 3.3 configure alertR ####################
 
+```bash
 root@raspberrypi:/home/pi/alertClientRaspberryPi/config# vim config.conf
 
 [general]
@@ -104,3 +105,4 @@ alertLevels = 1, 2
 gpioPin = 26
 gpioPinStateNormal = 0
 gpioPinStateTriggered = 1
+```
