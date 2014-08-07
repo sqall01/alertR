@@ -15,15 +15,14 @@ Nevertheless, a short but more detailed example of how to set up this client is 
 Configuration example
 ======
 
+```bash
 #################### install packets ####################
 
-```bash
 root@raspberrypi:/home/pi# apt-get install python-pip python-dev python-rpi.gpio
-```
+
 
 #################### configure autostart ####################
 
-```bash
 root@raspberrypi:/etc/init.d# chmod 775 alertRalarm.sh 
 root@raspberrypi:/etc/init.d# vim alertRalarm.sh 
 #!/bin/sh
@@ -75,11 +74,10 @@ exit 0
 ---
 
 root@raspberrypi:/etc/init.d# update-rc.d alertRalarm.sh defaults
-```
 
-#################### 3.3 configure alertR ####################
 
-```bash
+#################### configure alertR ####################
+
 root@raspberrypi:/home/pi/alertClientRaspberryPi/config# vim config.conf
 
 [general]
