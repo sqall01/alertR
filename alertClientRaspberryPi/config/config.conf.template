@@ -1,0 +1,107 @@
+# this is a template configuration file
+# please rename this template to "config.conf" if you want to use it
+# for the client
+
+# ------------------------------------------------------------
+# in this section general options are configured
+[general]
+
+# absolute path to the logfile
+logfile = /absolute/path/to/logfile.log
+
+# valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+loglevel = INFO
+
+# location/address of the server
+server = server.h4des.org
+
+# port that is used by the server
+serverPort = 12345
+
+# path to the certificate file to check the 
+# correctness of the used SSL connection
+serverCertificate = ../server.crt
+
+# user credentials of this client
+# (have to be unique for each client or strange behavior will happen)
+username = user
+password = pass
+
+
+# ------------------------------------------------------------
+# in this section options for email alerts are configured
+[smtp]
+
+# are email alerts active? ("True" or "False")
+smtpActivated = True
+
+# address of the used smtp server
+# only 127.0.0.1 supported at the moment
+server = 127.0.0.1
+
+# port of the used smtp server
+serverPort = 25
+
+# email address from which this email should be sent
+fromAddr = alertR@h4des.org
+
+# email address to which the email should be sent
+toAddr = youraddress@somehost.de
+
+
+# ------------------------------------------------------------
+# section for a single alert that could be triggered
+# the sections have to be named like this [alertXYZ]
+[alert1]
+
+# local id of this alert (has to be unique on this client)
+id = 0
+
+# description of this alert
+description = first template alert
+
+# comma seperated list that indicates the alert level on which the
+# alert should be triggered
+alertLevels = 0, 1, 5, 32, 6
+
+# raspberry pi gpio pin that is used by this alert
+# NOTE: python uses the actual
+# pin number and not the gpio number
+gpioPin = 26
+
+# the state that the gpio pin is set to under normal conditions
+# when no alert is triggered (1 or 0)
+gpioPinStateNormal = 0
+
+# the state that the gpio pin is set to when an alert is triggered
+# (1 or 0)
+gpioPinStateTriggered = 1
+
+
+# ------------------------------------------------------------
+# section for a single alert that could be triggered
+# the sections have to be named like this [alertXYZ]
+[alert2]
+
+# local id of this alert (has to be unique on this client)
+id = 1
+
+# description of this alert
+description = second template alert
+
+# comma seperated list that indicates the alert level on which the
+# alert should be triggered
+alertLevels = 1
+
+# raspberry pi gpio pin that is used by this alert
+# NOTE: python uses the actual
+# pin number and not the gpio number
+gpioPin = 24
+
+# the state that the gpio pin is set to under normal conditions
+# when no alert is triggered (1 or 0)
+gpioPinStateNormal = 0
+
+# the state that the gpio pin is set to when an alert is triggered
+# (1 or 0)
+gpioPinStateTriggered = 1
