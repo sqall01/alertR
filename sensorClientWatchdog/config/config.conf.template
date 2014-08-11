@@ -1,0 +1,177 @@
+# this is a template configuration file
+# please rename this template to "config.conf" if you want to use it
+# for the client
+
+# ------------------------------------------------------------
+# in this section general options are configured
+[general]
+
+# absolute path to the logfile
+logfile = /absolute/path/to/logfile.log
+
+# valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+loglevel = INFO
+
+# location/address of the server
+server = server.h4des.org
+
+# port that is used by the server
+serverPort = 12345
+
+# path to the certificate file to check the 
+# correctness of the used SSL connection
+serverCertificate = ../server.crt
+
+# user credentials of this client
+# (have to be unique for each client or strange behavior will happen)
+username = user
+password = pass
+
+
+# ------------------------------------------------------------
+# in this section options for email alerts are configured
+[smtp]
+
+# are email alerts active? ("True" or "False")
+smtpActivated = True
+
+# address of the used smtp server
+# only 127.0.0.1 supported at the moment
+server = 127.0.0.1
+
+# port of the used smtp server
+serverPort = 25
+
+# email address from which this email should be sent
+fromAddr = alertSystem@h4des.org
+
+# email address to which the email should be sent
+toAddr = youraddress@somehost.de
+
+
+# ------------------------------------------------------------
+# section for a single sensor that is managed by this client
+# the sections have to be named like this [sensorXYZ]
+[sensor1]
+
+# local id of this sensor (has to be unique on this client)
+id = 0
+
+# description of this sensor
+description = example watchdog script part 1
+
+# delay after which (when the alert system is still active) the alert should
+# trigger (this is processed by the server and the value here is only used
+# to register with it at the server)
+alertDelay = 0
+
+# alert level which this sensor should trigger
+alertLevel = 0
+
+# this flag indicates if this sensor should trigger an alert
+# for example it could be just used to signal the state to the server
+# and not trigger any alert (regardless of if the alert system is
+# active or not)
+# ("True" or "False")
+triggerAlert = False
+
+# this flag indicates if this sensor should trigger an alert
+# regardless of if the alert system is not active
+# this could be used for example for a smoke detector that should
+# always trigger and not only if the alert system is activated
+# ("True" or "False")
+triggerAlways = False
+
+# on which internal state the alert should trigger (either 0 or 1)
+# for example some sensors trigger with an internal state of 1 and some
+# with an internal state of 0
+# in order to decide if the sensor has triggered this have to be set to the
+# correct value
+# regardless on which internal state the sensor will trigger the alert
+# system uses for its communication:
+# state = 0 => not triggered
+# state = 1 => triggered
+triggerState = 1
+
+# host on which the service is running and the watchdog script will get
+# as first argument
+host = 127.0.0.1
+
+# port the service is running on and the watchdog script will get
+# as second argument
+port = 1111
+
+# watchdog script to execute
+# (command/path to execute)
+execute = /absolute/path/to/watchdog_script.sh
+
+# the timeout interval in seconds tells the sensor client when the
+# executed script has timed out and therefore a alert has to be triggered
+timeout = 5
+
+# interval in seconds in which the service should be tested
+intervalToCheck = 10
+
+
+# ------------------------------------------------------------
+# section for a single sensor that is managed by this client
+# the sections have to be named like this [sensorXYZ]
+[sensor2]
+
+# local id of this sensor (has to be unique on this client)
+id = 1
+
+# description of this sensor
+description = example watchdog script part 2
+
+# delay after which (when the alert system is still active) the alert should
+# trigger (this is processed by the server and the value here is only used
+# to register with it at the server)
+alertDelay = 0
+
+# alert level which this sensor should trigger
+alertLevel = 0
+
+# this flag indicates if this sensor should trigger an alert
+# for example it could be just used to signal the state to the server
+# and not trigger any alert (regardless of if the alert system is
+# active or not)
+# ("True" or "False")
+triggerAlert = True
+
+# this flag indicates if this sensor should trigger an alert
+# regardless of if the alert system is not active
+# this could be used for example for a smoke detector that should
+# always trigger and not only if the alert system is activated
+# ("True" or "False")
+triggerAlways = False
+
+# on which internal state the alert should trigger (either 0 or 1)
+# for example some sensors trigger with an internal state of 1 and some
+# with an internal state of 0
+# in order to decide if the sensor has triggered this have to be set to the
+# correct value
+# regardless on which internal state the sensor will trigger the alert
+# system uses for its communication:
+# state = 0 => not triggered
+# state = 1 => triggered
+triggerState = 1
+
+# host on which the service is running and the watchdog script will get
+# as first argument
+host = 127.0.0.2
+
+# port the service is running on and the watchdog script will get
+# as second argument
+port = 2222
+
+# watchdog script to execute
+# (command/path to execute)
+execute = /absolute/path/to/watchdog_script2.sh
+
+# the timeout interval in seconds tells the sensor client when the
+# executed script has timed out and therefore a alert has to be triggered
+timeout = 3
+
+# interval in seconds in which the service should be tested
+intervalToCheck = 5
