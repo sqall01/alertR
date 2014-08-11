@@ -94,6 +94,7 @@ mysql> create database alertr;
 mysql> CREATE USER 'alertr'@'localhost' IDENTIFIED BY '<SECRET>';
 mysql> GRANT ALL ON alertr.* TO 'alertr'@'localhost';
 
+
 #################### add user credentials ####################
 
 root@raspberrypi:/home/pi/server/config# vim users.csv
@@ -102,6 +103,15 @@ sensor_door, password2
 alert_loud, password3
 manager_laptop, password4
 manager_keypad, password5
+
+
+#################### generate self signed certificate ####################
+
+root@raspberrypi:/home/pi/server# openssl genrsa -des3 -out server.key 4096
+root@raspberrypi:/home/pi/server# openssl req -new -key server.key -out server.csr
+root@raspberrypi:/home/pi/server# cp server.key server.key.org
+root@raspberrypi:/home/pi/server# openssl rsa -in server.key.org -out server.key
+root@raspberrypi:/home/pi/server# openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
 
 
 #################### configure alertR ####################
