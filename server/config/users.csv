@@ -1,0 +1,6 @@
+# characters not allowed for usage are '#' and ','
+# the values are "username, password" per line
+# note: whitespaces will be removed when parsing
+user1, password1
+user2, password2
+user3, password3
