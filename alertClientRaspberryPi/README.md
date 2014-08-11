@@ -11,6 +11,8 @@ To use this client you have to configure it first. A commented configuration tem
 
 Nevertheless, a short but more detailed example of how to set up this client is given below.
 
+If you want to test the configuration of the GPIO pins of the Raspberry Pi first, you can use the scripts in the "helperScripts" folder under the main directory.
+
 
 Configuration example
 ======
