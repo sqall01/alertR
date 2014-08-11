@@ -1,0 +1,60 @@
+# this is a template configuration file
+# please rename this template to "config.conf" if you want to use it
+# for the client
+
+# ------------------------------------------------------------
+# in this section general options are configured
+[general]
+
+# absolute path to the logfile
+logfile = /absolute/path/to/logfile.log
+
+# valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+loglevel = INFO
+
+# location/address of the server
+server = server.h4des.org
+
+# port that is used by the server
+serverPort = 12345
+
+# path to the certificate file to check the 
+# correctness of the used SSL connection
+serverCertificate = ../server.crt
+
+# user credentials of this client
+# (have to be unique for each client or strange behavior will happen)
+username = user
+password = pass
+
+# the description of this manager client
+description = test manager
+
+
+# ------------------------------------------------------------
+# in this section options for email alerts are configured
+[smtp]
+
+# are email alerts active? ("True" or "False")
+smtpActivated = True
+
+# address of the used smtp server
+# only 127.0.0.1 supported at the moment
+server = 127.0.0.1
+
+# port of the used smtp server
+serverPort = 25
+
+# email address from which this email should be sent
+fromAddr = alertSystem@h4des.org
+
+# email address to which the email should be sent
+toAddr = youraddress@somehost.de
+
+
+# ------------------------------------------------------------
+# in this section options for the keypad are configured
+[keypad]
+
+# give a comma separated list of pins that are allowed to unlock the screen 
+pins = 1234, 2354
