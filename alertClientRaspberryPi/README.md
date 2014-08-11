@@ -1,4 +1,4 @@
-alertClientRaspberryPi
+alertR Client Raspberry Pi
 ======
 
 This client handles triggered alerts and is written to set/unset GPIO pins of a Raspberry Pi. This means it gets notified by the server if an alert was triggered by a sensor and can set/unset configured GPIO pins, for example to activate a siren or something else.
