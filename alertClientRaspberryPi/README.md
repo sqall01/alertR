@@ -13,6 +13,8 @@ Nevertheless, a short but more detailed example of how to set up this client is 
 
 If you want to test the configuration of the GPIO pins of the Raspberry Pi first, you can use the scripts in the "helperScripts" folder under the main directory.
 
+A schematic about a relais circuit that can be used with a Raspberry Pi can be found in the "docs" folder under the main directory.
+
 
 Configuration example
 ======
