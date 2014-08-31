@@ -38,9 +38,8 @@ class _Alert:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-# this function represents an example alert
-# (for example a GPIO on a Raspberry Pi which should be set to high 
-# or code that executes an external command)
+# this function represents an alert that sets the Raspberry Pi GPIO to high
+# or low if triggered
 class RaspberryPiGPIOAlert(_Alert):
 
 	def __init__(self):
@@ -61,8 +60,7 @@ class RaspberryPiGPIOAlert(_Alert):
 
 
 	# this function is called once when the alert client has connected itself
-	# to the server (should be use to initialize everything that is needed
-	# for the alert)
+	# to the server
 	def initializeAlert(self):
 
 		# set the state of the alert to "not triggered"
@@ -73,6 +71,8 @@ class RaspberryPiGPIOAlert(_Alert):
 		GPIO.setup(self.gpioPin, GPIO.OUT)
 		GPIO.output(self.gpioPin, self.gpioPinStateNormal)
 
+
+	# this function is called when this alert is triggered
 	def triggerAlert(self):
 
 		# only execute if not triggered
@@ -85,6 +85,7 @@ class RaspberryPiGPIOAlert(_Alert):
 			GPIO.output(self.gpioPin, self.gpioPinStateTriggered)
 
 
+	# this function is called when the alert is stopped
 	def stopAlert(self):
 
 		# only execute if the alert was triggered
