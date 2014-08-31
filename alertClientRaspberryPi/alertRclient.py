@@ -119,7 +119,7 @@ if __name__ == '__main__':
 			if section.find("alert") != -1:
 				alert = RaspberryPiGPIOAlert()
 
-				# these options are needed for the by the server to
+				# these options are needed by the server to
 				# differentiate between the registered alerts
 				alert.id = config.getint(section, "id")
 				alert.description = config.get(section, "description")
