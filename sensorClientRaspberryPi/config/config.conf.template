@@ -54,6 +54,12 @@ toAddr = youraddress@somehost.de
 # the sections have to be named like this [sensorXYZ]
 [sensor1]
 
+# sets the type of the sensor, either an interrupt driven sensor which
+# uses edge detection or a polling sensor which just polls the state of the
+# gpio pin
+# only valid options: interrupt, polling
+type = interrupt
+
 # local id of this sensor (has to be unique on this client)
 id = 0
 
@@ -96,13 +102,37 @@ triggerAlways = False
 # system uses for its communication:
 # state = 0 => not triggered
 # state = 1 => triggered
+# (only processed if polling is used)
 triggerState = 1
+
+# sets the edge detection that is used by the sensor
+# edge = 0 => falling edge
+# edge = 1 => rising edge
+# (only processed if interrupt is used)
+edge = 0
+
+# sets the delay in seconds that is waited until a sensor can trigger again
+# this is used to solve problems with the edge detection when the signal
+# is bouncing after the taster/switch has been triggered
+# (only processed if interrupt is used)
+delayBetweenTriggers = 10
+
+# sets the time in seconds how long a sensor should be seen as triggered
+# by the alert system
+# (only processed if interrupt is used)
+timeSensorTriggered = 5
 
 
 # ------------------------------------------------------------
 # section for a single sensor that is managed by this client
 # the sections have to be named like this [sensorXYZ]
 [sensor2]
+
+# sets the type of the sensor, either an interrupt driven sensor which
+# uses edge detection or a polling sensor which just polls the state of the
+# gpio pin
+# only valid options: interrupt, polling
+type = polling
 
 # local id of this sensor (has to be unique on this client)
 id = 1
@@ -146,4 +176,22 @@ triggerAlways = False
 # system uses for its communication:
 # state = 0 => not triggered
 # state = 1 => triggered
+# (only processed if polling is used)
 triggerState = 1
+
+# sets the edge detection that is used by the sensor
+# edge = 0 => falling edge
+# edge = 1 => rising edge
+# (only processed if interrupt is used)
+edge = 0
+
+# sets the delay in seconds that is waited until a sensor can trigger again
+# this is used to solve problems with the edge detection when the signal
+# is bouncing after the taster/switch has been triggered
+# (only processed if interrupt is used)
+delayBetweenTriggers = 10
+
+# sets the time in seconds how long a sensor should be seen as triggered
+# by the alert system
+# (only processed if interrupt is used)
+timeSensorTriggered = 5

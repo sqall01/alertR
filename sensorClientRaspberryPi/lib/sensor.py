@@ -47,7 +47,7 @@ class _PollingSensor:
 
 
 # class that controls one sensor at a gpio pin of the raspberry pi
-class RaspberryPiGPIOSensor(_PollingSensor):
+class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
 	def __init__(self):
 		_PollingSensor.__init__(self)
@@ -71,6 +71,77 @@ class RaspberryPiGPIOSensor(_PollingSensor):
 	def updateState(self):
 		# read current state of the gpio
 		self.state = GPIO.input(self.gpioPin)
+
+
+# class that uses edge detection to check a gpio pin of the raspberry pi
+class RaspberryPiGPIOInterruptSensor(_PollingSensor):
+
+	def __init__(self):
+		_PollingSensor.__init__(self)
+
+		# the gpio pin number (NOTE: python uses the actual
+		# pin number and not the gpio number)
+		self.gpioPin = None
+
+		# time that has to go by between two triggers
+		self.delayBetweenTriggers = None
+
+		# time a sensor is seen as triggered
+		self.timeSensorTriggered = None
+
+		# the last time the sensor was triggered
+		self.lastTimeTriggered = 0.0
+
+		# the configured edge detection
+		self.edge = None
+
+		# used as internal state set by the interrupt callback
+		self._internalState = None
+
+
+	def _interruptCallback(self, gpioPin):
+		# check if the last time the sensor was triggered is longer ago
+		# than the configured delay between two triggers
+		# => trigger internal state
+		if (time.time() - self.lastTimeTriggered) > self.delayBetweenTriggers:
+			self.lastTimeTriggered = time.time()
+			self._internalState = self.triggerState
+
+
+	def initializeSensor(self):
+		# configure gpio pin and get initial state
+		GPIO.setmode(GPIO.BOARD)
+		GPIO.setup(self.gpioPin, GPIO.IN)
+
+		# set initial state to not triggered
+		self.state = 1 - self.triggerState
+		self._internalState = 1 - self.triggerState
+
+		# set edge detection
+		if self.edge == 0:
+			GPIO.add_event_detect(26, GPIO.FALLING,
+			callback=self._interruptCallback)
+		elif self.edge == 1:
+			GPIO.add_event_detect(26, GPIO.RISING,
+			callback=self._interruptCallback)
+		else:
+			raise ValueError("Value for edge detection not known.")
+
+
+	def getState(self):
+		return self.state
+
+
+	def updateState(self):
+		# check if the sensor is triggered and if it is longer
+		# triggered than configured => set internal state to normal
+		if (self.state == self.triggerState
+			and ((time.time() - self.lastTimeTriggered)
+			> self.timeSensorTriggered)):
+			self._internalState = 1 - self.triggerState
+
+		# update state to internal state
+		self.state = self._internalState
 
 
 # this class polls the sensor states and triggers alerts and state changes

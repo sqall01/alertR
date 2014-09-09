@@ -9,4 +9,5 @@
 
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
-from sensor import RaspberryPiGPIOSensor, SensorExecuter
+from sensor import RaspberryPiGPIOPollingSensor, \
+	RaspberryPiGPIOInterruptSensor, SensorExecuter

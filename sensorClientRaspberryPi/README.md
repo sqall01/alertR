@@ -1,7 +1,7 @@
 alertR Sensor Client Raspberry Pi
 ======
 
-This client handles Raspberry Pi GPIO pins as sensors. It polls the state of a GPIO pin and triggers an alert if the state has changed (or a state change if it goes back from a state in which it triggers an alert to a normal state). This means it notifies the server if an alert was triggered by a sensor. A sensor connected to the GPIO pin can be anything you like for example a PIR (Passive InfraRed) sensor, a magnetic switch on a window, a water leak alarm sensor, a smoke detector and so on.
+This client handles Raspberry Pi GPIO pins as sensors. It either polls the state of a GPIO pin or uses an interrupt on a falling/rising edge and triggers an alert if the state has changed/interrupt has occurred (or a state change if it goes back from a state in which it triggers an alert to a normal state). This means it notifies the server if an alert was triggered by a sensor. A sensor connected to the GPIO pin can be anything you like for example a PIR (Passive InfraRed) sensor, a magnetic switch on a window, a water leak alarm sensor, a smoke detector and so on.
 
 
 How to use it?

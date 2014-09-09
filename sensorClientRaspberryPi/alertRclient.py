@@ -11,7 +11,8 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import RaspberryPiGPIOSensor, SensorExecuter
+from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
+	SensorExecuter
 import logging
 import time
 import ConfigParser
@@ -108,29 +109,59 @@ if __name__ == '__main__':
 		# parse all sensors
 		for section in config.sections():
 			if section.find("sensor") != -1:
-				sensor = RaspberryPiGPIOSensor()
-				sensor.id = config.getint(section, "id")
-				sensor.description = config.get(section, "description")
-				sensor.gpioPin = config.getint(section, "gpioPin")
-				sensor.alertDelay = config.getint(section, "alertDelay")
-				sensor.alertLevel = config.getint(section, "alertLevel")
-				sensor.triggerAlert = config.getboolean(section,
-					"triggerAlert")
-				sensor.triggerAlways = config.getboolean(section,
-					"triggerAlways")
-				sensor.triggerState = config.getint(section, "triggerState")
+
+
+				sensorType = config.get(section, "type")
+				sensorType = sensorType.upper()
+
+				if sensorType == "POLLING":
+					sensor = RaspberryPiGPIOPollingSensor()
+					sensor.id = config.getint(section, "id")
+					sensor.description = config.get(section, "description")
+					sensor.gpioPin = config.getint(section, "gpioPin")
+					sensor.alertDelay = config.getint(section, "alertDelay")
+					sensor.alertLevel = config.getint(section, "alertLevel")
+					sensor.triggerAlert = config.getboolean(section,
+						"triggerAlert")
+					sensor.triggerAlways = config.getboolean(section,
+						"triggerAlways")
+					sensor.triggerState = config.getint(section,
+						"triggerState")
+				elif sensorType == "INTERRUPT":
+					sensor = RaspberryPiGPIOInterruptSensor()
+					sensor.id = config.getint(section, "id")
+					sensor.description = config.get(section, "description")
+					sensor.gpioPin = config.getint(section, "gpioPin")
+					sensor.alertDelay = config.getint(section, "alertDelay")
+					sensor.alertLevel = config.getint(section, "alertLevel")
+					sensor.triggerAlert = config.getboolean(section,
+						"triggerAlert")
+					sensor.triggerAlways = config.getboolean(section,
+						"triggerAlways")
+					sensor.triggerState = 1
+					sensor.delayBetweenTriggers = config.getint(section,
+						"delayBetweenTriggers")
+					sensor.timeSensorTriggered = config.getint(section,
+						"timeSensorTriggered")
+					sensor.edge = config.getint(section, "edge")
+
+					# check if the edge detection is correct
+					if (sensor.edge != 0 and sensor.edge != 1):
+						raise ValueError("Value of edge detection not valid.")
+				else:
+					raise ValueError("Type of sensor '%s' not valid."
+						% section)
 
 				# check if description is empty
 				if len(sensor.description) == 0:
-					print "Description of sensor '%s' is empty." % section
-					sys.exit(1)
+					raise ValueError("Description of sensor '%s' is empty."
+						% section)
 
 				# check if the id of the sensor is unique
 				for registeredSensor in globalData.sensors:
 					if registeredSensor.id == sensor.id:
-						print "Id of sensor '%s'" % section \
-						+ "is already taken."
-						sys.exit(1)						
+						raise ValueError("Id of sensor '%s'" % section
+						+ "is already taken.")				
 
 				globalData.sensors.append(sensor)
 
