@@ -295,10 +295,13 @@ class _Storage():
 # class for using sqlite as storage backend
 class Sqlite(_Storage):
 
-	def __init__(self, storagePath):
+	def __init__(self, storagePath, version):
 
 		# import the needed package
 		import sqlite3
+
+		# version of server
+		self.version = version
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -380,8 +383,7 @@ class Sqlite(_Storage):
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "type TEXT NOT NULL UNIQUE, "
-			+ "value INTEGER NOT NULL) "
-			+ "ENGINE=InnoDB")
+			+ "value REAL NOT NULL)")
 
 		# insert option to activate/deactivate alert system
 		# (0 = deactivated, 1 = activated)
@@ -389,14 +391,18 @@ class Sqlite(_Storage):
 			+ "type, "
 			+ "value) VALUES (?, ?)", ("alertSystemActive", 0))
 
+		# insert version of server
+		self.cursor.execute("INSERT INTO options ("
+			+ "type, "
+			+ "value) VALUES (?, ?)", ("version", self.version))
+
 		# create nodes table
 		self.cursor.execute("CREATE TABLE nodes ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "hostname TEXT NOT NULL, "
 			+ "username TEXT NOT NULL UNIQUE, "
 			+ "nodeType TEXT NOT NULL, "
-			+ "connected INTEGER NOT NULL) "
-			+ "ENGINE=InnoDB")
+			+ "connected INTEGER NOT NULL)")
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -409,8 +415,7 @@ class Sqlite(_Storage):
 			+ "alertDelay INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
 			+ "triggerAlways INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id)) "
-			+ "ENGINE=InnoDB")
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create sensorAlerts table
 		self.cursor.execute("CREATE TABLE sensorAlerts ("
@@ -419,8 +424,7 @@ class Sqlite(_Storage):
 			+ "sensorId INTEGER NOT NULL, "
 			+ "timeReceived INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
-			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id)) "
-			+ "ENGINE=InnoDB")
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create alerts table
 		self.cursor.execute("CREATE TABLE alerts ("
@@ -428,24 +432,21 @@ class Sqlite(_Storage):
 			+ "nodeId INTEGER NOT NULL, "
 			+ "remoteAlertId INTEGER NOT NULL, "
 			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id)) "
-			+ "ENGINE=InnoDB")
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create alertLevels table
 		self.cursor.execute("CREATE TABLE alertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id)) "
-			+ "ENGINE=InnoDB")
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create managers table
 		self.cursor.execute("CREATE TABLE managers ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id)) "
-			+ "ENGINE=InnoDB")		
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")		
 
 		# commit all changes
 		self.conn.commit()
@@ -1856,10 +1857,13 @@ class Sqlite(_Storage):
 # class for using mysql as storage backend
 class Mysql(_Storage):
 
-	def __init__(self, host, port, database, username, password):
+	def __init__(self, host, port, database, username, password, version):
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
+
+		# version of server
+		self.version = version
 
 		# needed mysql parameters
 		self.host = host
@@ -1985,13 +1989,18 @@ class Mysql(_Storage):
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value INTEGER NOT NULL)")
+			+ "value FLOAT NOT NULL)")
 
 		# insert option to activate/deactivate alert system
 		# (0 = deactivated, 1 = activated)
 		self.cursor.execute("INSERT INTO options ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("alertSystemActive", 0))
+
+		# insert version of server
+		self.cursor.execute("INSERT INTO options ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)", ("version", self.version))
 
 		# create nodes table
 		self.cursor.execute("CREATE TABLE nodes ("
@@ -3972,10 +3981,13 @@ class Mysql(_Storage):
 # via camel case because of case sensitivity)
 class Postgresql(_Storage):
 
-	def __init__(self, host, port, database, username, password):
+	def __init__(self, host, port, database, username, password, version):
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
+
+		# version of server
+		self.version = version
 
 		# needed postgresql parameters
 		self.host = host
@@ -4124,7 +4136,7 @@ class Postgresql(_Storage):
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id SERIAL PRIMARY KEY, "
 			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value INTEGER NOT NULL)")
+			+ "value REAL NOT NULL)")
 
 		# insert option to activate/deactivate alert system
 		# (0 = deactivated, 1 = activated)
@@ -4133,6 +4145,13 @@ class Postgresql(_Storage):
 		self.cursor.execute("INSERT INTO options ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("alertSystemActive", 0))
+
+		# insert version of server
+		# (because of problems with postgresql table names are written
+		# in lowercase and not in camel case)
+		self.cursor.execute("INSERT INTO options ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)", ("version", self.version))
 
 		# create nodes table
 		# (because of problems with postgresql table names are written

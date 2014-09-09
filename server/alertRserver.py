@@ -140,7 +140,8 @@ if __name__ == '__main__':
 		# configure storage backend (check which backend is configured)
 		userBackendMethod = config.get("storage", "method")
 		if userBackendMethod.upper() == "SQLITE":
-			globalData.storage = Sqlite(globalData.storageBackendSqliteFile)
+			globalData.storage = Sqlite(globalData.storageBackendSqliteFile,
+				globalData.version)
 		elif userBackendMethod.upper() == "MYSQL":
 
 			backendUsername = config.get("storage", "username")
@@ -150,7 +151,8 @@ if __name__ == '__main__':
 			backendDatabase = config.get("storage", "database")
 
 			globalData.storage = Mysql(backendServer, backendPort,
-				backendDatabase, backendUsername, backendPassword)
+				backendDatabase, backendUsername, backendPassword,
+				globalData.version)
 		elif userBackendMethod.upper() == "POSTGRESQL":
 
 			backendUsername = config.get("storage", "username")
@@ -160,7 +162,8 @@ if __name__ == '__main__':
 			backendDatabase = config.get("storage", "database")
 
 			globalData.storage = Postgresql(backendServer, backendPort,
-				backendDatabase, backendUsername, backendPassword)
+				backendDatabase, backendUsername, backendPassword,
+				globalData.version)
 
 		else:
 			raise ValueError("No valid storage backend method in config file.")
