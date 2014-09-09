@@ -9,7 +9,7 @@
 
 from server import ServerSession, ConnectionWatchdog, ThreadedTCPServer, \
 	AsynchronousSender
-from storage import Sqlite, Mysql
+from storage import Sqlite, Mysql, Postgresql
 from alert import SensorAlertExecuter, AlertLevel
 from userBackend import CSVBackend
 from smtp import SMTPAlert

@@ -9,7 +9,7 @@ How to use it?
 
 To use the server you have to configure it first. A commented configuration template file is located inside the "config" folder. Also you have to add username and password for each client that connects to the server in the "users.csv" (also located inside the "config" folder). A username has to be unique for each client that will connect to the server.
 
-As backend you can (at the moment) either choose MySQL (MySQLdb for python) or SQLite (sqlite3 for python).
+As backend you can (at the moment) either choose MySQL (MySQLdb for python), PostgreSQL (psycopg2 for python) or SQLite (sqlite3 for python).
 
 The server uses SSL for the communication with the clients. This means you have to generate a certificate and a keyfile for your server. Each client needs the certificate file of the server to validate correctness of the server. In turn the clients are validated by the given user credentials.
 

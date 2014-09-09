@@ -10,7 +10,7 @@
 import sys
 import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
-from lib import Sqlite, Mysql
+from lib import Sqlite, Mysql, Postgresql
 from lib import SensorAlertExecuter, AlertLevel
 from lib import CSVBackend
 from lib import SMTPAlert
@@ -151,6 +151,17 @@ if __name__ == '__main__':
 
 			globalData.storage = Mysql(backendServer, backendPort,
 				backendDatabase, backendUsername, backendPassword)
+		elif userBackendMethod.upper() == "POSTGRESQL":
+
+			backendUsername = config.get("storage", "username")
+			backendPassword = config.get("storage", "password")
+			backendServer = config.get("storage", "server")
+			backendPort = config.getint("storage", "port")
+			backendDatabase = config.get("storage", "database")
+
+			globalData.storage = Postgresql(backendServer, backendPort,
+				backendDatabase, backendUsername, backendPassword)
+
 		else:
 			raise ValueError("No valid storage backend method in config file.")
 

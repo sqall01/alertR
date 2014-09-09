@@ -54,7 +54,7 @@ toAddr = youraddress@somehost.de
 # in this section options for the user backed are configured
 [userBackend]
 
-# chose how the user credentials are stored/checked
+# choose how the user credentials are stored/checked
 # only valid options: csv
 method = csv
 
@@ -64,20 +64,23 @@ method = csv
 [storage]
 
 # chose how the data of the alert system is stored
-# only valid options: sqlite, mysql
+# only valid options: sqlite, mysql, postgresql
 method = sqlite
 
-# the address of the database server (only processed if mysql is used)
+# the address of the database server (only processed if mysql/postgresql
+# is used)
 server = 127.0.0.1
 
-# the port of the database server (only processed if mysql is used)
+# the port of the database server (only processed if mysql/postgresql
+# is used; default value mysql uses is 3306 and postgresql 5432)
 port = 3306
 
-# the name of the database (only processed if mysql is used)
+# the name of the database (only processed if mysql/postgresql
+# is used)
 database = alertr
 
 # the user credentials for the database server
-# (only processed if mysql is used)
+# (only processed if mysql/postgresql is used)
 username = username
 password = password
 
