@@ -78,6 +78,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
 	def __init__(self):
 		_PollingSensor.__init__(self)
+		self.fileName = os.path.basename(__file__)
 
 		# the gpio pin number (NOTE: python uses the actual
 		# pin number and not the gpio number)
@@ -100,6 +101,10 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
 
 	def _interruptCallback(self, gpioPin):
+
+		logging.debug("[%s]: Interrupt " % self.fileName
+							+ "for sensor '%s' triggered." % self.description)
+
 		# check if the last time the sensor was triggered is longer ago
 		# than the configured delay between two triggers
 		# => trigger internal state
@@ -119,10 +124,10 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
 		# set edge detection
 		if self.edge == 0:
-			GPIO.add_event_detect(26, GPIO.FALLING,
+			GPIO.add_event_detect(self.gpioPin, GPIO.FALLING,
 			callback=self._interruptCallback)
 		elif self.edge == 1:
-			GPIO.add_event_detect(26, GPIO.RISING,
+			GPIO.add_event_detect(self.gpioPin, GPIO.RISING,
 			callback=self._interruptCallback)
 		else:
 			raise ValueError("Value for edge detection not known.")
