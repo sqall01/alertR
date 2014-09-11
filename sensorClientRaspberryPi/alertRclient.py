@@ -144,6 +144,10 @@ if __name__ == '__main__':
 					sensor.timeSensorTriggered = config.getint(section,
 						"timeSensorTriggered")
 					sensor.edge = config.getint(section, "edge")
+					sensor.pulledUpOrDown = config.getint(section,
+						"pulledUpOrDown")
+					sensor.edgeCountBeforeTrigger = config.getint(section,
+						"edgeCountBeforeTrigger")
 
 					# check if the edge detection is correct
 					if (sensor.edge != 0 and sensor.edge != 1):

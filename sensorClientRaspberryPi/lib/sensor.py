@@ -96,27 +96,70 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 		# the configured edge detection
 		self.edge = None
 
+		# the count of interrupts that has to occur before
+		# an alert is triggered
+		# this is used to relax the edge detection a little bit
+		# for example an interrupt is triggered when an falling/rising 
+		# edge is detected, if your wiring is not good enough isolated
+		# it can happen that electro magnetic radiation (because of
+		# a starting vacuum cleaner for example) causes a falling/rising edge
+		# this option abuses the bouncing of the wiring, this means
+		# that the radiation for example only triggers one rising/falling
+		# edge and your normal wiring could cause like four detected edges
+		# when it is triggered because of the signal bouncing
+		# so you could use this circumstance to determine correct triggers
+		# from false triggers by setting a threshold of edges that have
+		# to be reached before an alert is executed
+		self.edgeCountBeforeTrigger = 0
+		self.edgeCounter = 0
+
+		# configures if the gpio input is pulled up or down
+		self.pulledUpOrDown = None
+
 		# used as internal state set by the interrupt callback
 		self._internalState = None
 
 
 	def _interruptCallback(self, gpioPin):
 
-		logging.debug("[%s]: Interrupt " % self.fileName
-							+ "for sensor '%s' triggered." % self.description)
-
 		# check if the last time the sensor was triggered is longer ago
 		# than the configured delay between two triggers
-		# => trigger internal state
+		# => set time and reset edge counter
 		if (time.time() - self.lastTimeTriggered) > self.delayBetweenTriggers:
+
+			self.edgeCounter = 1
 			self.lastTimeTriggered = time.time()
-			self._internalState = self.triggerState
+
+		else:
+
+			# increment edge counter
+			self.edgeCounter += 1
+
+			# if edge counter reaches threshold
+			# => trigger state
+			if self.edgeCounter >= self.edgeCountBeforeTrigger:
+				self._internalState = self.triggerState
+
+				logging.debug("[%s]: " % self.fileName
+							+ "Sensor '%s' triggered." % self.description)
+
+		logging.debug("[%s]: %d Interrupt " % (self.fileName, self.edgeCounter)
+							+ "for sensor '%s' triggered." % self.description)
 
 
 	def initializeSensor(self):
+
+		# get the value for the setting if the gpio is pulled up or down
+		if self.pulledUpOrDown == 0:
+			pulledUpOrDown = GPIO.PUD_DOWN
+		elif self.pulledUpOrDown == 1:
+			pulledUpOrDown = GPIO.PUD_UP
+		else:
+			raise ValueError("Value for pulled up or down setting not known.")
+
 		# configure gpio pin and get initial state
 		GPIO.setmode(GPIO.BOARD)
-		GPIO.setup(self.gpioPin, GPIO.IN)
+		GPIO.setup(self.gpioPin, GPIO.IN, pull_up_down=pulledUpOrDown)
 
 		# set initial state to not triggered
 		self.state = 1 - self.triggerState

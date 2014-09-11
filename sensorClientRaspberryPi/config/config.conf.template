@@ -111,6 +111,13 @@ triggerState = 1
 # (only processed if interrupt is used)
 edge = 0
 
+# sets the setting of the gpio if it is pulled up or down
+# it is needed to lower a false positive detection rate
+# pulledUpOrDown = 0 => pulled down
+# pulledUpOrDown = 1 => pulled up
+# (only processed if interrupt is used)
+pulledUpOrDown = 1
+
 # sets the delay in seconds that is waited until a sensor can trigger again
 # this is used to solve problems with the edge detection when the signal
 # is bouncing after the taster/switch has been triggered
@@ -121,6 +128,23 @@ delayBetweenTriggers = 10
 # by the alert system
 # (only processed if interrupt is used)
 timeSensorTriggered = 5
+
+# the count of interrupts that has to occur before an alert is triggered
+# this is used to relax the edge detection a little bit
+# for example an interrupt is triggered when an falling/rising 
+# edge is detected, if your wiring is not good enough isolated
+# it can happen that electro magnetic radiation (because of
+# a starting vacuum cleaner for example) causes a falling/rising edge
+# this option abuses the bouncing of the wiring, this means
+# that the radiation for example only triggers one rising/falling
+# edge and your normal wiring could cause like four detected edges
+# when it is triggered because of the signal bouncing
+# so you could use this circumstance to determine correct triggers
+# from false triggers by setting a threshold of edges that have
+# to be reached before an alert is executed
+# (this can be tested with the interrupt helper script from the repository)
+# (only processed if interrupt is used)
+edgeCountBeforeTrigger = 0
 
 
 # ------------------------------------------------------------
@@ -185,6 +209,13 @@ triggerState = 1
 # (only processed if interrupt is used)
 edge = 0
 
+# sets the setting of the gpio if it is pulled up or down
+# it is needed to lower a false positive detection rate
+# pulledUpOrDown = 0 => pulled down
+# pulledUpOrDown = 1 => pulled up
+# (only processed if interrupt is used)
+pulledUpOrDown = 1
+
 # sets the delay in seconds that is waited until a sensor can trigger again
 # this is used to solve problems with the edge detection when the signal
 # is bouncing after the taster/switch has been triggered
@@ -195,3 +226,20 @@ delayBetweenTriggers = 10
 # by the alert system
 # (only processed if interrupt is used)
 timeSensorTriggered = 5
+
+# the count of interrupts that has to occur before an alert is triggered
+# this is used to relax the edge detection a little bit
+# for example an interrupt is triggered when an falling/rising 
+# edge is detected, if your wiring is not good enough isolated
+# it can happen that electro magnetic radiation (because of
+# a starting vacuum cleaner for example) causes a falling/rising edge
+# this option abuses the bouncing of the wiring, this means
+# that the radiation for example only triggers one rising/falling
+# edge and your normal wiring could cause like four detected edges
+# when it is triggered because of the signal bouncing
+# so you could use this circumstance to determine correct triggers
+# from false triggers by setting a threshold of edges that have
+# to be reached before an alert is executed
+# (this can be tested with the interrupt helper script from the repository)
+# (only processed if interrupt is used)
+edgeCountBeforeTrigger = 0
