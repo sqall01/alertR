@@ -17,7 +17,7 @@ import os
 import base64
 import random
 import json
-BUFSIZE = 4096
+BUFSIZE = 8192
 
 
 # this class handles the communication with the incoming client connection
@@ -189,7 +189,7 @@ class ClientCommunication:
 
 			try:
 
-				data = self.sslSocket.recv().strip()
+				data = self.sslSocket.recv(BUFSIZE).strip()
 				message = json.loads(data)
 
 				# check if an error was received
@@ -266,7 +266,7 @@ class ClientCommunication:
 		# get version and credentials from client
 		try:
 
-			data = self.sslSocket.recv().strip()
+			data = self.sslSocket.recv(BUFSIZE).strip()
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -435,7 +435,7 @@ class ClientCommunication:
 		# get registration from client
 		try:
 
-			data = self.sslSocket.recv().strip()
+			data = self.sslSocket.recv(BUFSIZE).strip()
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1524,7 +1524,7 @@ class ClientCommunication:
 		logging.debug("[%s]: Receiving status message response (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
 		try:
-			data = self.sslSocket.recv().strip()
+			data = self.sslSocket.recv(BUFSIZE).strip()
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1618,7 +1618,7 @@ class ClientCommunication:
 
 		# receive state change response message
 		try:
-			data = self.sslSocket.recv().strip()
+			data = self.sslSocket.recv(BUFSIZE).strip()
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1699,7 +1699,7 @@ class ClientCommunication:
 			% (self.clientAddress, self.clientPort))
 
 		try:
-			data = self.sslSocket.recv().strip()
+			data = self.sslSocket.recv(BUFSIZE).strip()
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1825,7 +1825,7 @@ class ClientCommunication:
 
 		# get sensor alert message response
 		try:
-			data = self.sslSocket.recv().strip()
+			data = self.sslSocket.recv(BUFSIZE).strip()
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1981,7 +1981,7 @@ class ClientCommunication:
 				# set timeout of the socket to 0.5 seconds
 				self.sslSocket.settimeout(0.5)
 
-				data = self.sslSocket.recv()
+				data = self.sslSocket.recv(BUFSIZE)
 				if not data:
 
 					# clean up session before exiting
@@ -2027,7 +2027,7 @@ class ClientCommunication:
 
 					# after initiating transaction receive
 					# actual command 
-					data = self.sslSocket.recv()
+					data = self.sslSocket.recv(BUFSIZE)
 					data = data.strip()
 
 				# if no RTS was received
