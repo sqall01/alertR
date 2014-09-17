@@ -561,6 +561,7 @@ class ServerCommunication:
 
 				# trigger alert in an own thread to not block this one
 				alertTriggerProcess = AsynchronousAlertExecuter(alert)
+				alertTriggerProcess.sensorDescription = description
 				# set thread to daemon
 				# => threads terminates when main thread terminates	
 				alertTriggerProcess.daemon = True

@@ -25,11 +25,11 @@ class _Alert:
 		self.alertLevels = list()
 
 
-	def triggerAlert(self):
+	def triggerAlert(self, asyncAlertExecInstance):
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	def stopAlert(self):
+	def stopAlert(self, asyncAlertExecInstance):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -62,7 +62,7 @@ class TemplateAlert(_Alert):
 		# PLACE YOUR CODE HERE
 
 
-	def triggerAlert(self):
+	def triggerAlert(self, asyncAlertExecInstance):
 
 		# only execute if not triggered
 		if not self.triggered:
@@ -81,7 +81,7 @@ class TemplateAlert(_Alert):
 			# PLACE YOUR CODE HERE
 
 
-	def stopAlert(self):
+	def stopAlert(self, asyncAlertExecInstance):
 
 		# only execute if the alert was triggered
 		if self.triggered:
@@ -118,13 +118,17 @@ class AsynchronousAlertExecuter(threading.Thread):
 		# stop an alert
 		self.stopAlert = False
 
+		# this options are used to transfer data from the received
+		# sensor alert to the alert that is triggered
+		self.sensorDescription = None
+
 
 	def run(self):
 
 		# check if an alert should be triggered
 		if self.triggerAlert:
-			self.alert.triggerAlert()
+			self.alert.triggerAlert(self)
 
 		# check if an alert should be stopped
 		elif self.stopAlert:
-			self.alert.stopAlert()
+			self.alert.stopAlert(self)

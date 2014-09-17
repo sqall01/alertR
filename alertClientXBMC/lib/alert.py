@@ -26,11 +26,11 @@ class _Alert:
 		self.alertLevels = list()
 
 
-	def triggerAlert(self):
+	def triggerAlert(self, asyncAlertExecInstance):
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	def stopAlert(self):
+	def stopAlert(self, asyncAlertExecInstance):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -75,7 +75,7 @@ class XbmcAlert(_Alert):
 
 
 	# this function is called when this alert is triggered
-	def triggerAlert(self):
+	def triggerAlert(self, asyncAlertExecInstance):
 
 		# only execute if the last triggered alert was more than
 		# the configured trigger delay ago
@@ -132,7 +132,7 @@ class XbmcAlert(_Alert):
 
 
 	# this function is called when the alert is stopped
-	def stopAlert(self):
+	def stopAlert(self, asyncAlertExecInstance):
 		pass
 
 
@@ -154,13 +154,17 @@ class AsynchronousAlertExecuter(threading.Thread):
 		# stop an alert
 		self.stopAlert = False
 
+		# this options are used to transfer data from the received
+		# sensor alert to the alert that is triggered
+		self.sensorDescription = None
+
 
 	def run(self):
 
 		# check if an alert should be triggered
 		if self.triggerAlert:
-			self.alert.triggerAlert()
+			self.alert.triggerAlert(self)
 
 		# check if an alert should be stopped
 		elif self.stopAlert:
-			self.alert.stopAlert()
+			self.alert.stopAlert(self)
