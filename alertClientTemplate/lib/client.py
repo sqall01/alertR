@@ -18,7 +18,7 @@ import ConfigParser
 import random
 import json
 from alert import AsynchronousAlertExecuter
-BUFSIZE = 2048
+BUFSIZE = 4096
 
 
 # simple class of an ssl tcp client 

@@ -17,7 +17,7 @@ import os
 import base64
 import random
 import json
-BUFSIZE = 2048
+BUFSIZE = 4096
 
 
 # this class handles the communication with the incoming client connection

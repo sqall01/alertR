@@ -17,7 +17,7 @@ import base64
 import ConfigParser
 import random
 import json
-BUFSIZE = 2048
+BUFSIZE = 4096
 
 
 # simple class of an ssl tcp client 
