@@ -80,11 +80,5 @@ pausePlayer = True
 # should a notification be shown on the display
 showMessage = True
 
-# the title of the notification 
-title = title
-
-# the message of the notification
-message = message
-
 # how long should the message be shown (in milliseconds and at least 2000)
 displayTime = 10000

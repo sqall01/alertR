@@ -129,8 +129,6 @@ if __name__ == '__main__':
 				# get xbmc settings
 				alert.host = config.get(section, "host")
 				alert.port = config.getint(section, "port")
-				alert.title = config.get(section, "title")
-				alert.message = config.get(section, "message")
 				alert.displayTime = config.getint(section, "displayTime")
 				alert.showMessage = config.getboolean(section, "showMessage")
 				alert.pausePlayer = config.getboolean(section, "pausePlayer")

@@ -58,8 +58,6 @@ class XbmcAlert(_Alert):
 		
 		# message notification
 		self.showMessage = None
-		self.title = None
-		self.message = None
 		self.displayTime = None
 
 		# should the player be paused
@@ -123,8 +121,11 @@ class XbmcAlert(_Alert):
 
 				# show a message on the display if configured
 				if self.showMessage is True:
-					xbmcInstance.GUI.ShowNotification(title=self.title,
-						message=self.message, displaytime=self.displayTime)
+					tempMessage = "\"" \
+						+ asyncAlertExecInstance.sensorDescription \
+						+ "\" just triggered."
+					xbmcInstance.GUI.ShowNotification(title="alertR",
+						message=tempMessage, displaytime=self.displayTime)
 
 			else:
 				logging.error("[%s]: XBMC does not respond."
