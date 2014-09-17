@@ -1798,7 +1798,7 @@ class ClientCommunication:
 
 
 	# function that sends a sensor alert to an alert/manager client
-	def sendSensorAlert(self, sensorId, state, alertLevel):
+	def sendSensorAlert(self, sensorId, state, alertLevel, description):
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("sensoralert", acquireLock=True):
@@ -1811,7 +1811,8 @@ class ClientCommunication:
 			payload = {"type": "request",
 				"sensorId": sensorId,
 				"state": state,
-				"alertLevel": alertLevel}
+				"alertLevel": alertLevel,
+				"description": description}
 			message = {"message": "sensoralert", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
@@ -2568,6 +2569,7 @@ class AsynchronousSender(threading.Thread):
 		self.sensorAlertSensorId = None
 		self.sensorAlertState = None
 		self.sensorAlertAlertLevel = None
+		self.sensorAlertSensorDescription = None
 
 		# this options are used when the thread should
 		# send a state change to a manager client
@@ -2611,7 +2613,8 @@ class AsynchronousSender(threading.Thread):
 				return
 
 			if not self.clientComm.sendSensorAlert(self.sensorAlertSensorId,
-				self.sensorAlertState, self.sensorAlertAlertLevel):
+				self.sensorAlertState, self.sensorAlertAlertLevel,
+				self.sensorAlertSensorDescription):
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "alert to manager/alert failed (%s:%d)."
 					% (self.clientComm.clientAddress,

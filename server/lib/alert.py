@@ -74,7 +74,8 @@ class SensorAlertExecuter(threading.Thread):
 
 			# get a list of all sensor alerts from database
 			# list is a list of tuples of tuples (sensorAlertId, sensorId,
-			# timeReceived, alertDelay, alertLevel, state, triggerAlways)
+			# timeReceived, alertDelay, alertLevel, state, triggerAlways,
+			# description)
 			sensorAlertList = self.storage.getSensorAlerts()
 
 			# check if no sensor alerts exist in database
@@ -97,6 +98,7 @@ class SensorAlertExecuter(threading.Thread):
 				alertLevel = sensorAlert[4]
 				state = sensorAlert[5]
 				triggerAlways = sensorAlert[6]
+				description = sensorAlert[7]
 
 				# check if the alert system is not active and the
 				# triggerAlways flag of the sensor is not set
@@ -178,6 +180,9 @@ class SensorAlertExecuter(threading.Thread):
 						sensorAlertProcess.sensorAlertSensorId = sensorId
 						sensorAlertProcess.sensorAlertState = state
 						sensorAlertProcess.sensorAlertAlertLevel = alertLevel
+						sensorAlertProcess.sensorAlertSensorDescription = \
+							description
+
 						logging.debug("[%s]: Sending sensor " % self.fileName
 							+ "alert to manager/alert (%s:%d)."
 							% (serverSession.clientComm.clientAddress,

@@ -1290,7 +1290,7 @@ class Sqlite(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways)
+	# alertDelay, alertLevel, state, triggerAlways, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -1304,7 +1304,8 @@ class Sqlite(_Storage):
 				+ "sensors.alertDelay, "
 				+ "sensors.alertLevel, "
 				+ "sensors.state, "
-				+ "sensors.triggerAlways "
+				+ "sensors.triggerAlways, "
+				+ "sensors.description "
 				+ "FROM sensorAlerts "
 				+ "INNER JOIN sensors "
 				+ "ON sensorAlerts.nodeId == sensors.nodeId "
@@ -1322,7 +1323,7 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, alertLevel, state, triggerAlways)
+		# alertDelay, alertLevel, state, triggerAlways, description)
 		return result
 
 
@@ -3208,7 +3209,7 @@ class Mysql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways)
+	# alertDelay, alertLevel, state, triggerAlways, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -3233,7 +3234,8 @@ class Mysql(_Storage):
 				+ "sensors.alertDelay, "
 				+ "sensors.alertLevel, "
 				+ "sensors.state, "
-				+ "sensors.triggerAlways "
+				+ "sensors.triggerAlways, "
+				+ "sensors.description "
 				+ "FROM sensorAlerts "
 				+ "INNER JOIN sensors "
 				+ "ON sensorAlerts.nodeId = sensors.nodeId "
@@ -3254,7 +3256,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, alertLevel, state, triggerAlways)
+		# alertDelay, alertLevel, state, triggerAlways, description)
 		return result
 
 
@@ -5419,7 +5421,7 @@ class Postgresql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways)
+	# alertDelay, alertLevel, state, triggerAlways, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -5445,7 +5447,8 @@ class Postgresql(_Storage):
 				+ "sensors.alertDelay, "
 				+ "sensors.alertLevel, "
 				+ "sensors.state, "
-				+ "sensors.triggerAlways "
+				+ "sensors.triggerAlways, "
+				+ "sensors.description "
 				+ "FROM sensoralerts "
 				+ "INNER JOIN sensors "
 				+ "ON sensoralerts.nodeId = sensors.nodeId "
@@ -5466,7 +5469,7 @@ class Postgresql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, alertLevel, state, triggerAlways)
+		# alertDelay, alertLevel, state, triggerAlways, description)
 		return result
 
 

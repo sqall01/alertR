@@ -525,6 +525,7 @@ class ServerCommunication:
 			sensorId = int(incomingMessage["payload"]["sensorId"])
 			state = int(incomingMessage["payload"]["state"])
 			alertLevel = int(incomingMessage["payload"]["alertLevel"])
+			description = str(incomingMessage["payload"]["description"])
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
 				+ "invalid.")
