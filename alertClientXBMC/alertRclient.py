@@ -16,6 +16,7 @@ import logging
 import time
 import ConfigParser
 import socket
+import random
 
 
 # this class is a global configuration class that holds 
@@ -229,6 +230,8 @@ if __name__ == '__main__':
 		print "Config could not be parsed."
 		print e
 		sys.exit(1)
+
+	random.seed()
 
 	# check if smtp is activated => generate object to send eMail alerts
 	if smtpActivated is True:

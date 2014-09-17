@@ -18,6 +18,7 @@ from lib import ManagerUpdateExecuter
 import logging
 import time
 import threading
+import random
 import ConfigParser
 
 
@@ -215,6 +216,8 @@ if __name__ == '__main__':
 		print "Config could not be parsed."
 		print e
 		sys.exit(1)
+
+	random.seed()
 
 	# start the thread that handles all sensor alerts
 	globalData.sensorAlertExecuter = SensorAlertExecuter(globalData)
