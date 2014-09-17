@@ -16,6 +16,7 @@ import os
 import base64
 import ConfigParser
 import random
+import json
 from alert import AsynchronousAlertExecuter
 BUFSIZE = 2048
 
@@ -122,9 +123,9 @@ class ServerCommunication:
 		self.client.close()
 
 
-	# this internal function that tries to initiate a transaction with
+	# this internal function that tries to initiate a transaction with 
 	# the server (and acquires a lock if it is told to do so)
-	def _initiateTransaction(self, acquireLock=False):
+	def _initiateTransaction(self, messageType, acquireLock=False):
 
 		# try to get the exclusive state to be allowed to iniate a transaction
 		# with the server
@@ -170,14 +171,15 @@ class ServerCommunication:
 
 			# generate a random "unique" transaction id
 			# for this transaction
-			transactionId = os.urandom(12)
+			transactionId = random.randint(0, 0xffffffff)
 
 			# send RTS (request to send) message
-			logging.debug("[%s]: Sending RTS %s message."
-				% (self.fileName, base64.b64encode(transactionId)))
+			logging.debug("[%s]: Sending RTS %d message."
+				% (self.fileName, transactionId))
 			try:
-				message = "RTS %s\r\n" % base64.b64encode(transactionId)
-				self.client.send(message)
+				payload = {"type": "rts", "id": transactionId}
+				message = {"message": messageType, "payload": payload}
+				self.client.send(json.dumps(message))
 			except Exception as e:
 				logging.exception("[%s]: Sending RTS " % self.fileName
 					+ "failed.")
@@ -196,9 +198,22 @@ class ServerCommunication:
 			logging.debug("[%s]: Receiving CTS." % self.fileName)
 
 			try:
+
 				data = self.client.recv(BUFSIZE).strip()
-				splittedData = data.split()
-				receivedTransactionId = base64.b64decode(splittedData[1])
+				message = json.loads(data)
+
+				# check if an error was received
+				# (only log error)
+				if "error" in message.keys():
+					logging.error("[%s]: Error received: '%s'"
+						% (self.fileName, message["error"]))
+				# if no error => extract values from message
+				else:
+					receivedTransactionId = message["payload"]["id"]
+					receivedMessageType = str(message["message"])
+					receivedPayloadType = \
+						str(message["payload"]["type"]).upper()
+
 			except Exception as e:
 				logging.exception("[%s]: Receiving CTS " % self.fileName
 					+ "failed.")
@@ -215,12 +230,13 @@ class ServerCommunication:
 
 			# check if RTS is acknowledged by a CTS
 			# => exit transaction initiation loop
-			if (splittedData[0] == "CTS"
-				and receivedTransactionId == transactionId):
+			if (receivedTransactionId == transactionId
+				and receivedMessageType == messageType
+				and receivedPayloadType == "CTS"):
 
 				logging.debug("[%s]: Initiate transaction " % self.fileName
 					+ "succeeded.")
-
+				
 				# set transaction initiation flag as false so other
 				# threads can try to initiate a transaction with the server
 				self.transactionInitiation = False
@@ -249,101 +265,114 @@ class ServerCommunication:
 		return True
 
 
-	# internal function to authenticate the client
-	def _authenticate(self):
+	# internal function to verify the server/client version and authenticate
+	def _verifyVersionAndAuthenticate(self):
 
-		# send username and verify response
+		logging.debug("[%s]: Sending user credentials and version." 
+			% self.fileName)
+
+		# send user credentials and version
 		try:
-			logging.debug("[%s]: Sending username '%s'." 
-				% (self.fileName, self.username))
-			self.client.send("USER %s\r\n" % self.username)
-			data = self.client.recv(BUFSIZE).strip()
+
+			payload = {"type": "request",
+				"version": self.version,
+				"username": self.username,
+				"password": self.password}
+			message = {"message": "authentication", "payload": payload}
+			self.client.send(json.dumps(message))
+
 		except Exception as e:
-			logging.exception("[%s]: Sending username failed." % self.fileName)
+			logging.exception("[%s]: Sending user credentials " % self.fileName
+				+ "and version failed.")
 			return False
 
-		if data != "OK":
-			logging.error("[%s]: Authentication failed. " % self.fileName
-				+ "Server responded with: '%s'" % data)
-			return False
-
-		# send password and verify response
+		# get authentication response from server
 		try:
-			logging.debug("[%s]: Sending password." % self.fileName)
-			self.client.send("PASS %s\r\n" % self.password)
+
 			data = self.client.recv(BUFSIZE).strip()
-		except Exception as e:
-			logging.exception("[%s]: Sending password failed." % self.fileName)
-			return False
-
-		if data != "AUTHENTICATED":
-			logging.error("[%s]: Authentication failed. " % self.fileName
-				+ "Server responded with: '%s'" % data)
-			return False		
-
-		return True
-
-
-	# internal function to verify the server/client version
-	def _verifyVersion(self):
-
-		# verify server version
-		try:
-			data = self.client.recv(BUFSIZE).strip()
-			splittedData = data.split()
-			if len(splittedData) != 2:
-				logging.error("[%s]: Received malformed version message." 
-					% self.fileName)
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				return False
-			command = splittedData[0].upper()
-			version = float(splittedData[1])
+
+			if str(message["message"]).upper() != "AUTHENTICATION":
+				logging.error("[%s]: Wrong authentication message: "
+					% self.fileName
+					+ "'%s'." % message["message"])
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "authentication message expected"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected." 
+					% self.fileName)
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s'."
+					% (self.fileName, message["payload"]["result"]))
+				return False
+
 		except Exception as e:
-			logging.exception("[%s]: Receiving version failed." 
+			logging.exception("[%s]: Receiving authentication response failed."
 				% self.fileName)
-			return False			
-
-		if command != "VERSION":
-			logging.error("[%s]: Receiving VERSION failed. Server sent: '%s'" 
-				% (self.fileName, command))
 			return False
 
-		if version != self.version:
-			logging.error("[%s]: Version not compatible. " % self.fileName
-				+ "Client has version: '%.1f' and server has '%.1f" 
-				% (self.version, version))
-			return False
+		# verify version
+		try:
+			version = float(message["payload"]["version"])
 
-		logging.debug("[%s]: Received server version: '%.1f'." 
+			logging.debug("[%s]: Received server version: '%.1f'." 
 				% (self.fileName, version))
-		
-		# acknowledge server version
-		try:
-			self.client.send("OK\r\n")	
-		except Exception as e:
-			logging.exception("[%s]: Sending version acknowledgement failed." 
-				% self.fileName)
-			return False
 
-		# sending client version
-		try:
-			logging.debug("[%s]: Sending client version: '%.1f'." 
-				% (self.fileName, self.version))
-			self.client.send("VERSION %.1f\r\n" % self.version)	
-		except Exception as e:
-			logging.exception("[%s]: Sending version failed." % self.fileName)
-			return False
+			if self.version != version:
 
-		# receive version acknowledgement and verify it
-		try:
-			data = self.client.recv(BUFSIZE).strip()		
-		except Exception as e:
-			logging.exception("[%s]: Receiving version " % self.fileName
-				+ "acknowledgement failed.")
-			return False
+				logging.error("[%s]: Version not compatible. " % self.fileName
+					+ "Client has version: '%.1f' " % self.version
+					+ "and server has '%.1f" % version)
 
-		if data.upper() != "OK":
-			logging.error("[%s]: Expected version acknowledgement. " 
-				% self.fileName + "Received: '%s'" % data)
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "version not compatible"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+		except Exception as e:
+
+			logging.exception("[%s]: Version not valid." % self.fileName)
+
+			# send error message back
+			try:
+				message = {"message": message["message"],
+					"error": "version not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		return True
@@ -352,108 +381,97 @@ class ServerCommunication:
 	# internal function to register the node
 	def _registerNode(self):
 
-		# send registration start message
-		try:
-			logging.debug("[%s]: Sending registration start." % self.fileName)
-			self.client.send("REGISTER START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending registration start failed." 
-				% self.fileName)
-			return False
-
 		# check if node is already registered at server with this
 		# configuration
 		if self.registered is True:
-			message = "CONFIGURATION old\r\n"
+			configuration = "old"
 		else:
-			message = "CONFIGURATION new\r\n"
+			configuration = "new"
 
-		# send configuration new/old message
-		try:
-			logging.debug("[%s]: Sending node configuration message." 
-				% self.fileName)
-			self.client.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending node " % self.fileName
-				+ "configuration message failed.")
-			return False		
-
-		# send node registration message
-		message = "NODE %s %s\r\n" \
-			% (base64.b64encode(socket.gethostname()), self.nodeType)
-		try:
-			logging.debug("[%s]: Sending node registration message." 
-				% self.fileName)
-			self.client.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending node registration message failed."
-				% self.fileName)
-			return False
-
-		# send alert count message
-		message = "ALERTCOUNT %d\r\n" % len(self.alerts)
-		try:
-			logging.debug("[%s]: Sending alert count message." 
-				% self.fileName)
-			self.client.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending alert count message failed."
-				% self.fileName)
-			return False
-
-		# register all alerts
+		# build alerts list for the message
+		alerts = list()
 		for alert in self.alerts:
+			tempAlert = dict()
 
-			# send alert information message
-			message = "ALERT %d %s\r\n" \
-				% (alert.id, base64.b64encode(alert.description))
-			try:
-				logging.debug("[%s]: Sending alert information message." 
-					% self.fileName)
-				self.client.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending alert " % self.fileName
-					+ "information message failed.")
-				return False
+			tempAlert["clientAlertId"] = alert.id
+			tempAlert["description"] = alert.description
+			alerts.append(tempAlert)
 
-		# send alert level count message
-		message = "ALERTLEVELCOUNT %d\r\n" % len(self.alertLevels)
-		try:
-			logging.debug("[%s]: Sending alert level count message." 
-				% self.fileName)
-			self.client.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending alert level count message failed."
-				% self.fileName)
-			return False
-
-		# register all alert levels
+		# build alert levels list for the message
+		alertLevels = list()
 		for alertLevel in self.alertLevels:
+			tempAlertLevel = dict()
 
-			# send alert information message
-			message = "ALERTLEVEL %d\r\n" % alertLevel
-			try:
-				logging.debug("[%s]: Sending alert level information message." 
-					% self.fileName)
-				self.client.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending alert level " % self.fileName
-					+ "information message failed.")
-				return False
+			tempAlertLevel["alertLevel"] = alertLevel
+			alertLevels.append(tempAlertLevel)
 
-		# send registration end message
+		# send registration message
 		try:
-			logging.debug("[%s]: Sending registration end." % self.fileName)
-			self.client.send("REGISTER END\r\n")
-			data = self.client.recv(BUFSIZE).strip()
+
+			payload = {"type": "request",
+				"configuration": configuration,
+				"hostname": socket.gethostname(),
+				"nodeType": self.nodeType,
+				"alerts": alerts,
+				"alertLevels": alertLevels}
+			message = {"message": "registration", "payload": payload}
+			self.client.send(json.dumps(message))
+
 		except Exception as e:
-			logging.exception("[%s]: Sending registration end failed." 
-				% self.fileName)
+			logging.exception("[%s]: Sending registration " % self.fileName
+				+ "message.")
 			return False
 
-		if data != "REGISTERED":
-			logging.error("[%s]: Registration failed. " % self.fileName
-				+ "Server responded with: '%s'" % data)
+		# get registration response from server
+		try:
+
+			data = self.client.recv(BUFSIZE).strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
+				return False
+
+			if str(message["message"]).upper() != "REGISTRATION":
+				logging.error("[%s]: Wrong registration message: "
+					% self.fileName
+					+ "'%s'." % message["message"])
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "registration message expected"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected." 
+					% self.fileName)
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s'."
+					% (self.fileName, message["payload"]["result"]))
+				return False
+
+		except Exception as e:
+			logging.exception("[%s]: Receiving registration response failed."
+				% self.fileName)
 			return False
 
 		# check if client was registered before
@@ -498,29 +516,41 @@ class ServerCommunication:
 
 
 	# internal function that handles received sensor alerts
-	def _sensorAlertHandler(self, data):
+	def _sensorAlertHandler(self, incomingMessage):
 
 		logging.debug("[%s]: Received sensor alert." % self.fileName)
 		
-		# extract data from sensor alert message
+		# extract sensor alert values
 		try:
-			splittedData = data.split()
-			sensorId = int(splittedData[1])
-			state = int(splittedData[2])
-			alertLevel = int(splittedData[3])
+			sensorId = int(incomingMessage["payload"]["sensorId"])
+			state = int(incomingMessage["payload"]["state"])
+			alertLevel = int(incomingMessage["payload"]["alertLevel"])
 		except Exception as e:
-			logging.exception("[%s]: Receiving sensor alert " % self.fileName
-				+ "failed.")
+			logging.exception("[%s]: Received sensor alert " % self.fileName
+				+ "invalid.")
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "received sensor alert invalid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
 
 			return False
 
-		# acknowledge sensor alert
-		logging.debug("[%s]: Sending SENSORALERT OK message." % self.fileName)
+		# sending sensor alert response
+		logging.debug("[%s]: Sending sensor alert " % self.fileName
+			+ "response message.")
 		try:
-			self.client.send("SENSORALERT OK\r\n")
+
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "sensoralert", "payload": payload}
+			self.client.send(json.dumps(message))
+
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alert " % self.fileName
-				+ "acknowledgement failed.")
+				+ "response failed.")
 
 			return False
 
@@ -540,18 +570,22 @@ class ServerCommunication:
 
 
 	# internal function that handles received alerts off messages
-	def _sensorAlertsOffHandler(self):
+	def _sensorAlertsOffHandler(self, incomingMessage):
 
 		logging.debug("[%s]: Received sensor alerts off." % self.fileName)
 		
-		# acknowledge sensor alerts off
-		logging.debug("[%s]: Sending SENSORALERTSOFF OK message."
-			% self.fileName)
+		# sending sensor alerts off response
+		logging.debug("[%s]: Sending sensor alerts off " % self.fileName
+			+ "response message.")
 		try:
-			self.client.send("SENSORALERTSOFF OK\r\n")
+
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "sensoralertsoff", "payload": payload}
+			self.client.send(json.dumps(message))
+
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alerts " % self.fileName
-				+ "off acknowledgement failed.")
+				+ "off response failed.")
 
 			return False
 
@@ -587,27 +621,17 @@ class ServerCommunication:
 
 			return False
 		
-		# first check and send version 
-		if not self._verifyVersion():
+		# first check version and authenticate
+		if not self._verifyVersionAndAuthenticate():
 			self.client.close()
-			logging.error("[%s]: Version verification failed." 
-				% self.fileName)
+			logging.error("[%s]: Version verification and " % self.fileName
+				+ "authentication failed.")
 
 			self._releaseLock()
 
 			return False
 
-		# second authenticate client
-		if not self._authenticate():
-			self.client.close()
-			logging.error("[%s]: Authentication failed." 
-				% self.fileName)			
-
-			self._releaseLock()
-
-			return False
-
-		# third register node
+		# second register node
 		if not self._registerNode():
 			self.client.close()
 			logging.error("[%s]: Registration failed." 
@@ -646,28 +670,38 @@ class ServerCommunication:
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
 				data = data.strip()
+				message = json.loads(data)
+				# check if an error was received
+				if "error" in message.keys():
+					logging.error("[%s]: Error received: '%s'."
+						% (self.fileName, message["error"],))
+
+					# clean up session before exiting
+					self._cleanUpSessionForClosing()
+					self._releaseLock()
+					return
 
 				# check if RTS was received
 				# => acknowledge it
-				splittedData = data.split()
-				receivedTransactionId = splittedData[1]
-				if splittedData[0] == "RTS":
+				if str(message["payload"]["type"]).upper() == "RTS":
+					receivedTransactionId = int(message["payload"]["id"])
 
 					# received RTS (request to send) message
 					logging.debug("[%s]: Received RTS %s message."
 						% (self.fileName, receivedTransactionId))
 
-					# send CTS (clear to send) message
 					logging.debug("[%s]: Sending CTS %s message."
 						% (self.fileName, receivedTransactionId))
 
-					message = "CTS %s\r\n" % receivedTransactionId
-					self.client.send(message)
+					# send CTS (clear to send) message
+					payload = {"type": "cts", "id": receivedTransactionId}
+					message = {"message": str(message["message"]),
+						"payload": payload}
+					self.client.send(json.dumps(message))
 
 					# after initiating transaction receive
 					# actual command 
@@ -685,7 +719,6 @@ class ServerCommunication:
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
@@ -713,7 +746,6 @@ class ServerCommunication:
 
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
@@ -722,51 +754,80 @@ class ServerCommunication:
 
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
-			splittedData = data.split()
-			if len(splittedData) < 1:
-				continue
+			# extract message type
+			try:
+				message = json.loads(data)
+				# check if an error was received
+				if "error" in message.keys():
+					logging.error("[%s]: Error received: '%s'."
+						% (self.fileName, message["error"]))
 
-			# extract command
-			command = splittedData[0].upper()
+					# clean up session before exiting
+					self._cleanUpSessionForClosing()
+					self._releaseLock()
+					return
+
+				# check if the received type is the correct one
+				if str(message["payload"]["type"]).upper() != "REQUEST":
+					logging.error("[%s]: request expected." % self.fileName)
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "request expected"}
+						self.client.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					# clean up session before exiting
+					self._cleanUpSessionForClosing()
+					self._releaseLock()
+					return
+
+				# extract the command/message type of the message
+				command = str(message["message"]).upper()
+
+			except Exception as e:
+
+				logging.exception("[%s]: Received data " % self.fileName
+					+ "not valid: '%s'." % data)
+
+				# clean up session before exiting
+				self._cleanUpSessionForClosing()
+				self._releaseLock()
+				return
 
 			# check if SENSORALERT was received
 			# => trigger alerts
-			if (command == "SENSORALERT"
-				and len(splittedData) == 4):
+			if (command == "SENSORALERT"):
 
 					# handle sensor alert
-					if not self._sensorAlertHandler(data):
+					if not self._sensorAlertHandler(message):
 
 						logging.error("[%s]: Receiving sensor alert failed." 
 							% self.fileName)
 
 						# clean up session before exiting
 						self._cleanUpSessionForClosing()
-
 						self._releaseLock()	
-
 						return
 
 			# check if SENSORALERTSOFF was received
 			# => stop alerts
-			elif (command == "SENSORALERTSOFF"
-				and len(splittedData) == 1):
+			elif (command == "SENSORALERTSOFF"):
 
 					# handle sensor alerts off message
-					if not self._sensorAlertsOffHandler():
+					if not self._sensorAlertsOffHandler(message):
 
 						logging.error("[%s]: Receiving sensor " % self.fileName
 							+ "alerts off failed.")
 
 						# clean up session before exiting
 						self._cleanUpSessionForClosing()
-
 						self._releaseLock()	
-
 						return
 
 			# unknown command was received
@@ -775,9 +836,15 @@ class ServerCommunication:
 				logging.error("[%s]: Received unknown " % self.fileName
 					+ "command. Server sent: '%s'." % data)
 
+				try:
+					message = {"message": message["message"],
+						"error": "unknown command/message type"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
@@ -791,9 +858,7 @@ class ServerCommunication:
 
 		# clean up session before exiting
 		self._cleanUpSessionForClosing()
-
 		self._releaseLock()
-
 		return self.initializeCommunication()
 
 
@@ -804,8 +869,8 @@ class ServerCommunication:
 
 		# clean up session before exiting
 		self._cleanUpSessionForClosing()
-
 		self._releaseLock()
+		return
 
 
 	# this function sends a keep alive (PING request) to the server
@@ -814,37 +879,98 @@ class ServerCommunication:
 	def sendKeepalive(self):
 
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction(acquireLock=True):
+		if not self._initiateTransaction("ping", acquireLock=True):
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
 
 			return False
 
+		# send ping request
 		try:
-			logging.debug("[%s]: Sending PING." % self.fileName)
-			self.client.send("PING\r\n")
-			data = self.client.recv(BUFSIZE).strip()
-			if data.upper() != "PONG":
+			logging.debug("[%s]: Sending ping message." % self.fileName)
 
-				# clean up session before exiting
-				self._cleanUpSessionForClosing()
+			payload = {"type": "request"}
+			message = {"message": "ping", "payload": payload}
+			self.client.send(json.dumps(message))
 
-				self._releaseLock()
-
-				return False
 		except Exception as e:
-			logging.exception("[%s]: Sending PING to server failed." 
+			logging.exception("[%s]: Sending ping to server failed." 
 				% self.fileName)			
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
-
 			self._releaseLock()
-
 			return False
 
-		logging.debug("[%s]: Received PONG." % self.fileName)
+		# get ping response from server
+		try:
+
+			data = self.client.recv(BUFSIZE).strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
+				# clean up session before exiting
+				self._cleanUpSessionForClosing()
+				self._releaseLock()
+				return False
+
+			if str(message["message"]).upper() != "PING":
+				logging.error("[%s]: Wrong ping message: "
+					% self.fileName
+					+ "'%s'." % message["message"])
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "ping message expected"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				# clean up session before exiting
+				self._cleanUpSessionForClosing()
+				self._releaseLock()
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected." 
+					% self.fileName)
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				# clean up session before exiting
+				self._cleanUpSessionForClosing()
+				self._releaseLock()
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s'."
+					% (self.fileName, message["payload"]["result"]))
+				# clean up session before exiting
+				self._cleanUpSessionForClosing()
+				self._releaseLock()
+				return False
+
+		except Exception as e:
+			logging.exception("[%s]: Receiving ping response failed."
+				% self.fileName)
+			# clean up session before exiting
+			self._cleanUpSessionForClosing()
+			self._releaseLock()
+			return False
+
+		logging.debug("[%s]: Received valid ping response." % self.fileName)
 		self._releaseLock()
 
 		# update time of the last received data

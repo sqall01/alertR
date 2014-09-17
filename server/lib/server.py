@@ -16,6 +16,7 @@ import logging
 import os
 import base64
 import random
+import json
 BUFSIZE = 2048
 
 
@@ -107,7 +108,7 @@ class ClientCommunication:
 
 	# this internal function that tries to initiate a transaction with
 	# the client (and acquires a lock if it is told to do so)
-	def _initiateTransaction(self, acquireLock=False):
+	def _initiateTransaction(self, messageType, acquireLock=False):
 
 		# try to get the exclusive state to be allowed to iniate a transaction
 		# with the client
@@ -155,15 +156,18 @@ class ClientCommunication:
 
 			# generate a random "unique" transaction id
 			# for this transaction
-			transactionId = os.urandom(12)
+			transactionId = random.randint(0, 0xffffffff)
 
 			# send RTS (request to send) message
-			logging.debug("[%s]: Sending RTS %s message (%s:%d)."
-				% (self.fileName, base64.b64encode(transactionId),
+			logging.debug("[%s]: Sending RTS %d message (%s:%d)."
+				% (self.fileName, transactionId,
 				self.clientAddress, self.clientPort))
 			try:
-				message = "RTS %s\r\n" % base64.b64encode(transactionId)
-				self.sslSocket.send(message)
+
+				payload = {"type": "rts", "id": transactionId}
+				message = {"message": messageType, "payload": payload}
+				self.sslSocket.send(json.dumps(message))
+
 			except Exception as e:
 				logging.exception("[%s]: Sending RTS " % self.fileName
 					+ "failed (%s:%d)." 
@@ -184,9 +188,23 @@ class ClientCommunication:
 				% (self.fileName, self.clientAddress, self.clientPort))
 
 			try:
+
 				data = self.sslSocket.recv().strip()
-				splittedData = data.split()
-				receivedTransactionId = base64.b64decode(splittedData[1])
+				message = json.loads(data)
+
+				# check if an error was received
+				# (only log error)
+				if "error" in message.keys():
+					logging.error("[%s]: Error received: '%s' (%s:%d)."
+						% (self.fileName, message["error"],
+						self.clientAddress, self.clientPort))
+				# if no error => extract values from message
+				else:
+					receivedTransactionId = message["payload"]["id"]
+					receivedMessageType = str(message["message"])
+					receivedPayloadType = \
+						str(message["payload"]["type"]).upper()
+
 			except Exception as e:
 				logging.exception("[%s]: Receiving CTS " % self.fileName
 					+ "failed (%s:%d)."
@@ -204,8 +222,9 @@ class ClientCommunication:
 
 			# check if RTS is acknowledged by a CTS
 			# => exit transaction initiation loop
-			if (splittedData[0] == "CTS"
-				and receivedTransactionId == transactionId):
+			if (receivedTransactionId == transactionId
+				and receivedMessageType == messageType
+				and receivedPayloadType == "CTS"):
 
 				logging.debug("[%s]: Initiate transaction " % self.fileName
 					+ "succeeded (%s:%d)."
@@ -240,164 +259,109 @@ class ClientCommunication:
 		return True
 
 
-	# internal function that authenticates the client
-	def _clientAuthentication(self):
-
-		# get username from client
-		try:
-			data = self.sslSocket.recv().strip()
-		except Exception as e:
-			logging.exception("[%s]: Receiving username failed (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-			return False
-
-		splittedData = data.split()
-		if (len(splittedData) != 2 
-			or splittedData[0].upper() != "USER"):
-			logging.error("[%s]: Authentication failed. " % self.fileName
-				+ "Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-
-			try:
-				self.sslSocket.send("AUTHENTICATION REQUIRED\r\n")
-			except Exception as e:
-				logging.exception("[%s]: Sending " % self.fileName
-					+ "authentication abort failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-			return False
-		self.username = splittedData[1]
-
-		logging.debug("[%s]: Received username: '%s' (%s:%d)." 
-				% (self.fileName, self.username, self.clientAddress, 
-				self.clientPort))
-
-		try:
-			self.sslSocket.send("OK\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending username " % self.fileName
-				+ "acknowledgement failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-		# get password from client
-		try:
-			data = self.sslSocket.recv().strip()
-		except Exception as e:
-			logging.exception("[%s]: Receiving password failed (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-			return False
-
-		splittedData = data.split()
-		if (len(splittedData) != 2 
-			or splittedData[0].upper() != "PASS"):
-			logging.error("[%s]: Authentication failed. " % self.fileNames
-				+ "Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-
-			try:
-				self.sslSocket.send("AUTHENTICATION REQUIRED\r\n")
-			except Exception as e:
-				logging.exception("[%s]: Sending " % self.fileName
-					+ "authentication abort failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-			return False
-		password = splittedData[1]
-		
-		logging.debug("[%s]: Received password (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-
-		# check if the given user credentials are valid
-		if not self.userBackend.areUserCredentialsValid(self.username,
-			password):
-
-			try:
-				self.sslSocket.send("INCORRECT CREDENTIALS\r\n")
-			except Exception as e:
-				logging.exception("[%s]: Sending incorrect " % self.fileName
-					+ "credentials failed (%s:%d)."
-					% (self.clientAddress, self.clientPort))				
-
-			return False
-
-		try:
-			self.sslSocket.send("AUTHENTICATED\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending authentication " % self.fileName
-				+ "acknowledgement failed (%s:%d)."
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		return True
-
-
 	# internal function to verify the server/client version
-	def _verifyVersion(self):
+	# and authenticate the client
+	def _verifyVersionAndAuthenticate(self):
 
-		# sending server version to client
+		# get version and credentials from client
 		try:
-			logging.debug("[%s]: Sending server version: '%.1f' (%s:%d)." 
-				% (self.fileName, self.version, self.clientAddress, 
-				self.clientPort))
-			self.sslSocket.send("VERSION %.1f\r\n" % self.version)
+
+			data = self.sslSocket.recv().strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s' (%s:%d)."
+					% (self.fileName, message["error"],
+					self.clientAddress, self.clientPort))
+				return False
+
 		except Exception as e:
-			logging.exception("[%s]: Sending version failed (%s:%d)." 
+			logging.exception("[%s]: Receiving authentication failed (%s:%d)." 
 				% (self.fileName, self.clientAddress, self.clientPort))
 			return False
 
-		# receiving version acknowledgement
+		# check if an authentication message was received
 		try:
-			data = self.sslSocket.recv().strip()
-		except Exception as e:
-			logging.exception("[%s]: Receiving version " % self.fileName
-				+ "acknowledgement failed (%s:%d)."
-				% (self.clientAddress, self.clientPort))
-			return False
+			if str(message["message"]).upper() != "AUTHENTICATION":
+				logging.error("[%s]: Wrong authentication message: "
+					% self.fileName
+					+ "'%s' (%s:%d)." % (message["message"],
+					self.clientAddress, self.clientPort))
 
-		if data.upper() != "OK":
-			logging.error("[%s]: Expected version acknowledgement. " 
-				% self.fileName + "Received: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-			return False
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "authentication message expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
 
-		# receiving client version and verify it
-		try:
-			data = self.sslSocket.recv().strip()
-			splittedData = data.split()
-			version = float(splittedData[1])
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "REQUEST":
+				logging.error("[%s]: request expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "request expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 		except Exception as e:
-			logging.exception("[%s]: Receiving version failed (%s:%d)." 
+
+			logging.exception("[%s]: Message not valid (%s:%d)." 
 				% (self.fileName, self.clientAddress, self.clientPort))
-			return False
 
-		if (len(splittedData) != 2 
-			or splittedData[0].upper() != "VERSION"):
-			logging.error("[%s]: Receiving VERSION " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-			
+			# send error message back
 			try:
-				self.sslSocket.send("VERSION VERIFICATION REQUIRED\r\n")
+				message = {"message": message["message"],
+					"error": "message not valid"}
+				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
-				logging.exception("[%s]: Sending version " % self.fileName
-					+ "verification abort failed (%s:%d)."
-					% (self.clientAddress, self.clientPort))
+				pass
 
 			return False
 
-		if self.version != version:
+		# verify version
+		try:
+			version = float(message["payload"]["version"])
 
-			logging.error("[%s]: Version not compatible. " % self.fileName
-				+ "Client has version: '%.1f' and server has '%.1f (%s:%d)" 
-				% (version, self.version, self.clientAddress, self.clientPort))
+			if self.version != version:
 
+				logging.error("[%s]: Version not compatible. " % self.fileName
+					+ "Client has version: '%.1f' " % version
+					+ "and server has '%.1f (%s:%d)" 
+					% (self.version, self.clientAddress,
+					self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "version not compatible"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+		except Exception as e:
+
+			logging.exception("[%s]: Version not valid (%s:%d)." 
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
 			try:
-				self.sslSocket.send("VERSION VERIFICATION FAILED\r\n")
+				message = {"message": message["message"],
+					"error": "version not valid"}
+				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
-				logging.exception("[%s]: Sending version " % self.fileName
-					+ "verification abort failed (%s:%d)."
-					% (self.clientAddress, self.clientPort))
+				pass
 
 			return False
 
@@ -405,14 +369,60 @@ class ClientCommunication:
 				% (self.fileName, version, self.clientAddress, 
 				self.clientPort))
 
-		# acknowledge client version
+		# get user credentials
 		try:
-			self.sslSocket.send("OK\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending version " % self.fileName
-				+ "acknowledgement failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
 
+			self.username = str(message["payload"]["username"])
+			password = str(message["payload"]["password"])
+
+		except Exception as e:
+
+			logging.exception("[%s]: No user credentials (%s:%d)." 
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": message["message"],
+					"error": "no user credentials"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		logging.debug("[%s]: Received username and password for '%s' (%s:%d)." 
+			% (self.fileName, self.username, self.clientAddress, 
+			self.clientPort))
+
+		# check if the given user credentials are valid
+		if not self.userBackend.areUserCredentialsValid(self.username,
+			password):
+
+			logging.error("[%s]: Invalid user credentials " % self.fileName
+				+ "(%s:%d)." % (self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": message["message"],
+					"error": "invalid user credentials"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		# send authentication response
+		try:
+
+			payload = {"type": "response", "result": "ok",
+				"version": self.version}
+			message = {"message": "authentication", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
+
+		except Exception as e:
+			logging.exception("[%s]: Sending authentication response "
+				% self.fileName
+				+ "failed (%s:%d)." % (self.clientAddress, self.clientPort))
 			return False
 
 		return True
@@ -422,65 +432,107 @@ class ClientCommunication:
 	# or check if it is known)
 	def _registerClient(self):
 
-		# get registration start message from client
+		# get registration from client
 		try:
+
 			data = self.sslSocket.recv().strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s' (%s:%d)."
+					% (self.fileName, message["error"],
+					self.clientAddress, self.clientPort))
+				return False
+			
 		except Exception as e:
-			logging.exception("[%s]: Receiving REGISTER " % self.fileName
-				+ " START failed (%s:%d)."
-				% (self.clientAddress, self.clientPort))
-			return False
-
-		if data != "REGISTER START":
-			logging.error("[%s]: Receiving REGISTER START " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-			return False
-
-		logging.debug("[%s]: Received register start message (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-
-		# receiving client configuration new/old message
-		try:
-			data = self.sslSocket.recv().strip()
-			splittedData = data.split()
-			configuration = splittedData[1]
-		except Exception as e:
-			logging.exception("[%s]: Receiving CONFIGURATION failed (%s:%d)." 
+			logging.exception("[%s]: Receiving registration failed (%s:%d)." 
 				% (self.fileName, self.clientAddress, self.clientPort))
 			return False
 
-		if (len(splittedData) != 2
-			or splittedData[0].upper() != "CONFIGURATION"):
-			logging.error("[%s]: Receiving CONFIGURATION " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-			return False
-
-		# check if the received parameter was "new" or "old"
-		if not (configuration == "new"
-			or configuration == "old"):
-			logging.error("[%s]: Receiving CONFIGURATION " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))			
-			return False
-
-		# receiving node registration
 		try:
-			data = self.sslSocket.recv().strip()
-			splittedData = data.split()
-			self.hostname = base64.b64decode(splittedData[1])
-			self.nodeType = splittedData[2]
+			# check if a registration message was received
+			if str(message["message"]).upper() != "REGISTRATION":
+				logging.error("[%s]: Wrong registration message: "
+					% self.fileName
+					+ "'%s' (%s:%d)." % (message["message"],
+					self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "registration message expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "REQUEST":
+				logging.error("[%s]: request expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "request expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 		except Exception as e:
-			logging.exception("[%s]: Receiving NODE failed (%s:%d)." 
+
+			logging.exception("[%s]: Message not valid (%s:%d)." 
 				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": message["message"],
+					"error": "message not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
-		if (len(splittedData) != 3
-			or splittedData[0].upper() != "NODE"):
-			logging.error("[%s]: Receiving NODE " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
+		# extract general client configuration from message
+		try:
+			configuration = str(message["payload"]["configuration"])
+			self.hostname = str(message["payload"]["hostname"])
+			self.nodeType = str(message["payload"]["nodeType"])
+
+			# check if the configuration value is valid (either "new" or "old")
+			if not (configuration == "new"
+				or configuration == "old"):
+				logging.error("[%s]: Configuration value " % self.fileName
+					+ "invalid. Client sent: '%s' (%s:%d)." 
+					% (data, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "configuration value invalid"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+		except Exception as e:
+
+			logging.exception("[%s]: Registration message not valid (%s:%d)." 
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": message["message"],
+					"error": "registration message not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		logging.debug("[%s]: Received node registration '%s': %s:%s (%s:%d)." 
@@ -495,6 +547,15 @@ class ClientCommunication:
 				self.nodeType):
 				logging.error("[%s]: Unable to add node to database." 
 					% self.fileName)
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "unable to add node to database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
 		# check if the client configuration is old and is the same as
@@ -505,6 +566,15 @@ class ClientCommunication:
 				self.nodeType):
 				logging.error("[%s]: Node check in database failed." 
 					% self.fileName)
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "node check in database failed"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
 		# only new/old are allowed => abort if other value
@@ -512,28 +582,42 @@ class ClientCommunication:
 			return False
 
 		# check if the type of the node got sensors
-		# => await sensor registration message
+		# => add sensor data to the database
 		if self.nodeType == "sensor":
 
-			# receiving sensor count message
+			# extract sensors from message
 			try:
-				data = self.sslSocket.recv().strip()
-				splittedData = data.split()
-				sensorCount = int(splittedData[1])
+				sensors = message["payload"]["sensors"]
+
+				# check if sensors is of type list
+				if not isinstance(sensors, list):
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "sensors not of type list"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
 			except Exception as e:
-				logging.exception("[%s]: Receiving " % self.fileName
-					+ "SENSORCOUNT failed (%s:%d)."
-					% (self.clientAddress, self.clientPort))
+				logging.exception("[%s]: No sensors in message (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "no sensors in message"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
-			if (len(splittedData) != 2
-				or splittedData[0].upper() != "SENSORCOUNT"):
-				logging.error("[%s]: Receiving " % self.fileName
-					+ "SENSORCOUNT failed. Client sent: '%s' (%s:%d)." 
-					% (data, self.clientAddress, self.clientPort))
-				return False
+			sensorCount = len(sensors)
 
-			logging.debug("[%s]: Received sensor count: %d (%s:%d)." 
+			logging.debug("[%s]: Sensor count: %d (%s:%d)." 
 					% (self.fileName, sensorCount, self.clientAddress,
 					self.clientPort))
 
@@ -545,34 +629,43 @@ class ClientCommunication:
 					sensorCount):
 					logging.error("[%s]: Sensor count check " % self.fileName
 						+ "in database failed.")
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "wrong sensors count"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False			
 
 			for i in range(sensorCount):
 
-				# receiving sensor registration message
+				# extract sensor data
 				try:
-					data = self.sslSocket.recv().strip()
-					splittedData = data.split()
-					sensorId = int(splittedData[1])
-					alertDelay = int(splittedData[2])
-					alertLevel = int(splittedData[3])
-					description = base64.b64decode(splittedData[4])
-					triggerAlways = int(splittedData[5])
+					sensorId = int(sensors[i]["clientSensorId"])
+					alertDelay = int(sensors[i]["alertDelay"])
+					alertLevel = int(sensors[i]["alertLevel"])
+					description = str(sensors[i]["description"])
+					triggerAlways = int(sensors[i]["triggerAlways"])
 				except Exception as e:
-					logging.exception("[%s]: Receiving " % self.fileName
-						+ "SENSOR failed (%s:%d)."
-						% (self.clientAddress, self.clientPort))
+					logging.exception("[%s]: Sensor data " % self.fileName
+						+ "invalid (%s:%d)." % (self.clientAddress,
+						self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "sensor data invalid"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
-				if (len(splittedData) != 6
-					or splittedData[0].upper() != "SENSOR"):
-					logging.error("[%s]: Receiving SENSOR " % self.fileName
-						+ "failed. Client sent: '%s' (%s:%d)." 
-						% (data, self.clientAddress, self.clientPort))
-					return False
-
-				logging.debug("[%s]: Received sensor " % self.fileName
-					+ "registration: %d:%d:%d:'%s':%d (%s:%d)." 
+				logging.debug("[%s]: Received sensor: " % self.fileName
+					+ "%d:%d:%d:'%s':%d (%s:%d)." 
 					% (sensorId, alertDelay, alertLevel, description,
 					triggerAlways, self.clientAddress, self.clientPort))
 
@@ -585,6 +678,15 @@ class ClientCommunication:
 					logging.error("[%s]: Alert level does " % self.fileName
 						+ "not exist in configuration (%s:%d)."
 						% (self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alert level does not exist"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False					
 
 				# check if the client configuration is new and has to 
@@ -596,6 +698,15 @@ class ClientCommunication:
 						logging.error("[%s]: Unable to add " % self.fileName
 							+ "sensor to database (%s:%d)."
 							% (self.clientAddress, self.clientPort))
+
+						# send error message back
+						try:
+							message = {"message": message["message"],
+								"error": "unable to add sensor to database"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
 						return False
 
 				# check if the client configuration is old and is the same as
@@ -607,35 +718,69 @@ class ClientCommunication:
 						logging.error("[%s]: Sensor check in " % self.fileName
 							+ "database failed (%s:%d)."
 							% (self.clientAddress, self.clientPort))
-						return False
 
-				# only new/old are allowed => abort if other value
-				else:
-					return False
+						# send error message back
+						try:
+							message = {"message": message["message"],
+								"error": "sensor check in database failed"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
 
 		# check if the type of the node is alert
 		# => register alerts
 		elif self.nodeType == "alert":
 
-			# receiving alert count message
+			# extract alerts and alertLevels from message
 			try:
-				data = self.sslSocket.recv().strip()
-				splittedData = data.split()
-				alertCount = int(splittedData[1])
+				alerts = message["payload"]["alerts"]
+				alertLevels = message["payload"]["alertLevels"]
+
+				# check if alerts is of type list
+				if not isinstance(alerts, list):
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alerts not of type list"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
+				# check if alertLevels is of type list
+				if not isinstance(alertLevels, list):
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alert levels not of type list"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
 			except Exception as e:
-				logging.exception("[%s]: Receiving " % self.fileName
-					+ "ALERTCOUNT failed (%s:%d)."
+				logging.exception("[%s]: No alerts or alertLevels "
+					% self.fileName
+					+ "in message (%s:%d)." 
 					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "no alerts or alertLevels in message"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
-			if (len(splittedData) != 2
-				or splittedData[0].upper() != "ALERTCOUNT"):
-				logging.error("[%s]: Receiving " % self.fileName
-					+ "ALERTCOUNT failed. Client sent: '%s' (%s:%d)." 
-					% (data, self.clientAddress, self.clientPort))
-				return False
+			alertCount = len(alerts)
 
-			logging.debug("[%s]: Received alert count: %d (%s:%d)." 
+			logging.debug("[%s]: Received alerts count: %d (%s:%d)." 
 					% (self.fileName, alertCount, self.clientAddress,
 					self.clientPort))
 
@@ -647,32 +792,40 @@ class ClientCommunication:
 					alertCount):
 					logging.error("[%s]: Alert count check " % self.fileName
 						+ "in database failed.")
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "wrong alerts count"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False			
 
 			for i in range(alertCount):
 
-				# receiving alert registration message
+				# extract sensor data
 				try:
-					data = self.sslSocket.recv().strip()
-					splittedData = data.split()
-					alertId = int(splittedData[1])
-					description = base64.b64decode(splittedData[2])
-
+					alertId = int(alerts[i]["clientAlertId"])
+					description = str(alerts[i]["description"])
 				except Exception as e:
-					logging.exception("[%s]: Receiving " % self.fileName
-						+ "ALERT failed (%s:%d)."
-						% (self.clientAddress, self.clientPort))
+					logging.exception("[%s]: Alert data " % self.fileName
+						+ "invalid (%s:%d)." % (self.clientAddress,
+						self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alert data invalid"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
-				if (len(splittedData) != 3
-					or splittedData[0].upper() != "ALERT"):
-					logging.error("[%s]: Receiving ALERT " % self.fileName
-						+ "failed. Client sent: '%s' (%s:%d)." 
-						% (data, self.clientAddress, self.clientPort))
-					return False
-
-				logging.debug("[%s]: Received alert " % self.fileName
-					+ "registration: %d:'%s' (%s:%d)." 
+				logging.debug("[%s]: Received alert: " % self.fileName
+					+ "%d:'%s' (%s:%d)." 
 					% (alertId, description,
 					self.clientAddress, self.clientPort))
 
@@ -685,6 +838,15 @@ class ClientCommunication:
 						logging.error("[%s]: Unable to add " % self.fileName
 							+ "alert to database (%s:%d)."
 							% (self.clientAddress, self.clientPort))
+
+						# send error message back
+						try:
+							message = {"message": message["message"],
+								"error": "unable to add alert to database"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
 						return False
 
 				# check if the client configuration is old and is the same as
@@ -696,27 +858,20 @@ class ClientCommunication:
 						logging.error("[%s]: Alert check in " % self.fileName
 							+ "database failed (%s:%d)."
 							% (self.clientAddress, self.clientPort))
+
+						# send error message back
+						try:
+							message = {"message": message["message"],
+								"error": "alert check in database failed"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
 						return False
 
-			# receiving alert level count message
-			try:
-				data = self.sslSocket.recv().strip()
-				splittedData = data.split()
-				alertLevelCount = int(splittedData[1])
-			except Exception as e:
-				logging.exception("[%s]: Receiving " % self.fileName
-					+ "ALERTLEVELCOUNT failed (%s:%d)."
-					% (self.clientAddress, self.clientPort))
-				return False
+			alertLevelCount = len(alertLevels)
 
-			if (len(splittedData) != 2
-				or splittedData[0].upper() != "ALERTLEVELCOUNT"):
-				logging.error("[%s]: Receiving " % self.fileName
-					+ "ALERTLEVELCOUNT failed. Client sent: '%s' (%s:%d)." 
-					% (data, self.clientAddress, self.clientPort))
-				return False
-
-			logging.debug("[%s]: Received alert level count: %d (%s:%d)." 
+			logging.debug("[%s]: Received alertLevels count: %d (%s:%d)." 
 					% (self.fileName, alertLevelCount, self.clientAddress,
 					self.clientPort))
 
@@ -728,29 +883,37 @@ class ClientCommunication:
 					alertLevelCount):
 					logging.error("[%s]: Alert level count " % self.fileName
 						+ "check in database failed.")
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "wrong alertLevels count"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
 			receivedAlertLevels = list()
 
 			for i in range(alertLevelCount):
 
-				# receiving alert level registration message
+				# extract alert level data
 				try:
-					data = self.sslSocket.recv().strip()
-					splittedData = data.split()
-					alertLevel = int(splittedData[1])
-
+					alertLevel = int(alertLevels[i]["alertLevel"])
 				except Exception as e:
-					logging.exception("[%s]: Receiving " % self.fileName
-						+ "ALERTLEVEL failed (%s:%d)."
-						% (self.clientAddress, self.clientPort))
-					return False
+					logging.exception("[%s]: Alert level data " % self.fileName
+						+ "invalid (%s:%d)." % (self.clientAddress,
+						self.clientPort))
 
-				if (len(splittedData) != 2
-					or splittedData[0].upper() != "ALERTLEVEL"):
-					logging.error("[%s]: Receiving ALERTLEVEL " % self.fileName
-						+ "failed. Client sent: '%s' (%s:%d)." 
-						% (data, self.clientAddress, self.clientPort))
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alertLevel data invalid"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
 				# check if alert level is configured on server
@@ -763,6 +926,15 @@ class ClientCommunication:
 					logging.error("[%s]: Alert level does " % self.fileName
 						+ "not exist in configuration (%s:%d)."
 						% (self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alert level does not exist"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
 				# check if alert level is unique on this client
@@ -775,6 +947,15 @@ class ClientCommunication:
 					logging.error("[%s]: Received duplicated " % self.fileName
 						+ "alert level: %d (%s:%d)." 
 						% (alertLevel, self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alertLevels not unique"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
 			# check if the client configuration is new and has to 
@@ -786,6 +967,15 @@ class ClientCommunication:
 					logging.error("[%s]: Unable to add " % self.fileName
 						+ "alert levels to database (%s:%d)."
 						% (self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "unable to add alertLevels to database"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
 			# check if the client configuration is old and is the same as
@@ -797,31 +987,66 @@ class ClientCommunication:
 					logging.error("[%s]: Alert levels check " % self.fileName
 						+ "in database failed (%s:%d)."
 						% (self.clientAddress, self.clientPort))
-					return False
 
-			# only new/old are allowed => abort if other value
-			else:
-				return False
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "alertLevels check in database failed"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
 
 		# check if the type of the node is manager
 		elif self.nodeType == "manager":
 			
-			# receiving manager information message
+			# extract manager from message
 			try:
-				data = self.sslSocket.recv().strip()
-				splittedData = data.split()
-				description = base64.b64decode(splittedData[1])
+				manager = message["payload"]["manager"]
+
+				# check if manager is of type list
+				if not isinstance(manager, dict):
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "manager not of type dict"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
 			except Exception as e:
-				logging.exception("[%s]: Receiving " % self.fileName
-					+ "MANAGER failed (%s:%d)."
-					% (self.clientAddress, self.clientPort))
+				logging.exception("[%s]: No manager in message (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "no manager in message"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
-			if (len(splittedData) != 2
-				or splittedData[0].upper() != "MANAGER"):
-				logging.error("[%s]: Receiving " % self.fileName
-					+ "MANAGER failed. Client sent: '%s' (%s:%d)." 
-					% (data, self.clientAddress, self.clientPort))
+			# extraction manager data
+			try:
+				description = str(manager["description"])
+			except Exception as e:
+				logging.exception("[%s]: Manager data " % self.fileName
+					+ "invalid (%s:%d)." % (self.clientAddress,
+					self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "manager data invalid"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
 			logging.debug("[%s]: Received manager information (%s:%d)." 
@@ -835,6 +1060,15 @@ class ClientCommunication:
 					logging.error("[%s]: Unable to add " % self.fileName
 						+ "manager to database (%s:%d)."
 						% (self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "unable to add manager to database"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
 					return False
 
 			# check if the client configuration is old and is the same as
@@ -845,44 +1079,43 @@ class ClientCommunication:
 					logging.error("[%s]: Manager check " % self.fileName
 						+ "in database failed (%s:%d)."
 						% (self.clientAddress, self.clientPort))
-					return False
 
-			# only new/old are allowed => abort if other value
-			else:
-				return False
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "manager check in database failed"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
 
 		# if nodetype is not sensor, alert or manager => not known
 		else:
 			logging.error("[%s]: Node type not known '%s'."
-				% (self.fileName, self.nodeType))		
+				% (self.fileName, self.nodeType))
+
+			# send error message back
+			try:
+				message = {"message": message["message"],
+					"error": "node type not known"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
-		# get registration end message from client
+		# send registration response
 		try:
-			data = self.sslSocket.recv().strip()
+
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "registration", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
+
 		except Exception as e:
-			logging.exception("[%s]: Receiving REGISTER " % self.fileName
-				+ " END failed (%s:%d)."
-				% (self.clientAddress, self.clientPort))
-			return False
-
-		if data != "REGISTER END":
-			logging.error("[%s]: Receiving REGISTER END " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-			return False
-
-		logging.debug("[%s]: Received register end message (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-
-		# acknowledge registration
-		try:
-			self.sslSocket.send("REGISTERED\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending REGISTERED " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
+			logging.exception("[%s]: Sending registration response "
+				% self.fileName
+				+ "failed (%s:%d)." % (self.clientAddress, self.clientPort))
 			return False
 
 		return True
@@ -890,17 +1123,26 @@ class ClientCommunication:
 
 	# this internal function handles the sent option change from a manager
 	# and updates it in the database
-	def _optionHandler(self, data):
-		# extract option type and value from received data
+	def _optionHandler(self, incomingMessage):
+
+		# extract option type and value from message
 		try:
-			splittedData = data.split()
-			optionType = base64.b64decode(splittedData[1])
-			optionValue = int(splittedData[2])
-			optionDelay = int(splittedData[3])
+			optionType = str(incomingMessage["payload"]["optionType"])
+			optionValue = float(incomingMessage["payload"]["value"])
+			optionDelay = int(incomingMessage["payload"]["timeDelay"])
 		except Exception as e:
-			logging.exception("[%s]: Receiving option " % self.fileName
-				+ "failed. Received: '%s' (%s:%d)."
-				% (data, self.clientAddress, self.clientPort))
+			logging.exception("[%s]: Received option " % self.fileName
+				+ "invalid (%s:%d)."
+				% (self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "received option invalid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		# check if this option should already be changed by another
@@ -921,12 +1163,14 @@ class ClientCommunication:
 		self.asyncOptionExecuters.append(asyncOptionExecuter)
 		asyncOptionExecuter.start()
 
-		# acknowledge option
+		# send option response
 		try:
-			self.sslSocket.send("OPTION OK\r\n")
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "option", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending option " % self.fileName
-				+ "acknowledgement failed (%s:%d)." 
+				+ "response failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
 			return False
 
@@ -935,64 +1179,104 @@ class ClientCommunication:
 
 	# this internal function handles the sent state of the sensors 
 	# from a node and updates it in the database
-	def _statusHandler(self):
+	def _statusHandler(self, incomingMessage):
 
-		# get all sensor states from the client and
-		# generate a list of tuples with (remoteSensorId, state)
-		stateList = list()
-		for i in range(self.sensorCount):
+		# extract sensors from message
+		try:
+			sensors = incomingMessage["payload"]["sensors"]
 
-			# get sensor message from client
-			try:
-				data = self.sslSocket.recv().strip()
-				splittedData = data.split()
-				command = splittedData[0].upper()
-				remoteSensorId = int(splittedData[1])
-				state = int(splittedData[2])
-			except Exception as e:
-				logging.exception("[%s]: Receiving sensor " % self.fileName
-					+ "state failed. Received: '%s' (%s:%d)."
-					% (data, self.clientAddress, self.clientPort))
+			# check if sensors are of type list
+			if not isinstance(sensors, list):
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "sensors not of type list"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return False
 
-			logging.debug("[%s]: Received new sensor state %d:%d (%s:%d)." 
-				% (self.fileName, remoteSensorId, state,
-				self.clientAddress, self.clientPort))
+		except Exception as e:
+			logging.exception("[%s]: Received status " % self.fileName
+				+ "invalid (%s:%d)."
+				% (self.clientAddress, self.clientPort))
 
-			stateList.append((remoteSensorId, state))
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "received status invalid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		if len(sensors) != self.sensorCount:
+			logging.error("[%s]: Received sensors count " % self.fileName
+				+ "invalid. Received: %d; Needed: %d (%s:%d)."
+				% (len(sensors), self.sensorCount, self.clientAddress,
+				self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "count of sensors not correct"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		# extract sensor data
+		# generate a list of tuples with (remoteSensorId, state)
+		stateList = list()
+		try:
+			for i in range(self.sensorCount):			
+				stateList.append((int(sensors[i]["clientSensorId"]),
+					int(sensors[i]["state"])))
+		except Exception as e:
+			logging.exception("[%s]: Received sensor " % self.fileName
+				+ "invalid (%s:%d)."
+				% (self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "received sensor invalid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		logging.debug("[%s]: Received new sensor states (%s:%d)." 
+			% (self.fileName, self.clientAddress, self.clientPort))
 
 		# update the sensor state in the database
 		if not self.storage.updateSensorState(self.nodeId, stateList):
 			logging.error("[%s]: Not able to update sensor state (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "not able to update sensor state in database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False			
 
-		# get status end message from client
+		# send status response
 		try:
-			data = self.sslSocket.recv().strip()
-		except Exception as e:
-			logging.exception("[%s]: Receiving STATUS " % self.fileName
-				+ " END failed (%s:%d)."
-				% (self.clientAddress, self.clientPort))
-			return False
-
-		if data != "STATUS END":
-			logging.error("[%s]: Receiving STATUS END " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
-			return False
-
-		logging.debug("[%s]: Received status end message (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-
-		# acknowledge status
-		try:
-			self.sslSocket.send("OK\r\n")
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "status", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending status " % self.fileName
-				+ "acknowledgement failed (%s:%d)." 
+				+ "response failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
-
 			return False
 
 		return True
@@ -1000,36 +1284,54 @@ class ClientCommunication:
 
 	# this internal function handles received sensor alerts
 	# (adds them to the database and wakes up the sensor alert executer)
-	def _sensorAlertHandler(self, data):
+	def _sensorAlertHandler(self, incomingMessage):
 
-		# extract remoteSensorId and state from received message
+		# extract sensor alert values
 		try:
-			splittedData = data.split()
-			remoteSensorId = int(splittedData[1])
-			state = int(splittedData[2])
+			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
+			state = int(incomingMessage["payload"]["state"])
 		except Exception as e:
-			logging.exception("[%s]: Receiving sensor alert " % self.fileName
-				+ "failed. Received: '%s' (%s:%d)."
-				% (data, self.clientAddress, self.clientPort))
+			logging.exception("[%s]: Received sensor alert " % self.fileName
+				+ "invalid (%s:%d)."
+				% (self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "received sensor alert invalid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		# add sensor alert to database
 		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId, state):
 			logging.error("[%s]: Not able to add sensor alert (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "not able to add sensor alert to database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		# wake up sensor alert executer
 		self.sensorAlertExecuter.sensorAlertEvent.set()
 
-		# acknowledge sensor alert
+		# send sensor alert response
 		try:
-			self.sslSocket.send("OK\r\n")
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "sensoralert", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alert " % self.fileName
-				+ "acknowledgement failed (%s:%d)." 
+				+ "response failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
-
 			return False
 
 		return True
@@ -1037,17 +1339,25 @@ class ClientCommunication:
 
 	# this internal function handles received state changes
 	# (updates them in the database and wakes up the manager update executer)
-	def _stateChangeHandler(self, data):
+	def _stateChangeHandler(self, incomingMessage):
 
-		# extract remoteSensorId and state from received message
+		# extract state change values
 		try:
-			splittedData = data.split()
-			remoteSensorId = int(splittedData[1])
-			state = int(splittedData[2])
+			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
+			state = int(incomingMessage["payload"]["state"])
 		except Exception as e:
-			logging.exception("[%s]: Receiving sensor state " % self.fileName
-				+ "change failed. Received: '%s' (%s:%d)."
-				% (data, self.clientAddress, self.clientPort))
+			logging.exception("[%s]: Received state change " % self.fileName
+				+ "invalid (%s:%d)."
+				% (self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "received state change invalid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		# update sensor state
@@ -1058,15 +1368,13 @@ class ClientCommunication:
 			logging.error("[%s]: Not able to change sensor state (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
-			return False
-
-		# acknowledge sensor state change
-		try:
-			self.sslSocket.send("OK\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending sensor state " % self.fileName
-				+ "change acknowledgement failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "not able to change sensor state in database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
 
 			return False
 
@@ -1077,6 +1385,25 @@ class ClientCommunication:
 			logging.error("[%s]: Not able to get sensorId (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "not able to get sensor id from database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		# send state change response
+		try:
+			payload = {"type": "response", "result": "ok"}
+			message = {"message": "statechange", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
+		except Exception as e:
+			logging.exception("[%s]: Sending state change " % self.fileName
+				+ "response failed (%s:%d)." 
+				% (self.clientAddress, self.clientPort))
 			return False
 
 		# add state change to queue and wake up manager update executer
@@ -1089,18 +1416,6 @@ class ClientCommunication:
 	# internal function to send the current state of the alert system
 	# to a manager
 	def _sendManagerAllInformation(self):
-
-		# send status start message
-		logging.debug("[%s]: Sending STATUS START message (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("STATUS START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending STATUS START " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
 
 		# get a list from database of 
 		# list[0] = optionCount
@@ -1120,6 +1435,14 @@ class ClientCommunication:
 				+ "information from database failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
 
+			# send error message back
+			try:
+				message = {"message": "status",
+					"error": "not able to get alert system data from database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 		optionCount = alertSystemInformation[0]
 		optionsInformation = alertSystemInformation[1]
@@ -1132,310 +1455,125 @@ class ClientCommunication:
 		alertCount = alertSystemInformation[8]
 		alertsInformation = alertSystemInformation[9]
 
-		# send option start message
-		logging.debug("[%s]: Sending OPTION START message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("OPTION START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending OPTION START " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send option count message
-		logging.debug("[%s]: Sending OPTIONCOUNT message (%s:%d)." 
-			% (self.fileName, self.clientAddress, self.clientPort))	
-		message = "OPTIONCOUNT %d\r\n" % optionCount
-		try:
-			self.sslSocket.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending OPTIONCOUNT " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# sending all options information
+		# generating options list
+		options = list()
 		for i in range(optionCount):
+			tempDict = {"type": optionsInformation[i][0],
+				"value": optionsInformation[i][1]}
+			options.append(tempDict)
 
-			# send option message
-			logging.debug("[%s]: Sending OPTION message (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
-			message = "OPTION %s %d\r\n" \
-				% (base64.b64encode(optionsInformation[i][0]),
-				optionsInformation[i][1])
-			try:
-				self.sslSocket.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending OPTION " % self.fileName
-					+ "failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-				return False
-
-		# send option end message
-		logging.debug("[%s]: Sending OPTION END message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("OPTION END\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending OPTION END " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send node start message
-		logging.debug("[%s]: Sending NODE START message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("NODE START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending NODE START " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send node count message
-		logging.debug("[%s]: Sending NODECOUNT message (%s:%d)." 
-			% (self.fileName, self.clientAddress, self.clientPort))	
-		message = "NODECOUNT %d\r\n" % nodeCount
-		try:
-			self.sslSocket.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending NODECOUNT " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# sending all nodes information
+		# generating nodes list
+		nodes = list()
 		for i in range(nodeCount):
+			tempDict = {"nodeId": nodesInformation[i][0],
+				"hostname": nodesInformation[i][1],
+				"nodeType": nodesInformation[i][2],
+				"connected": nodesInformation[i][3]}
+			nodes.append(tempDict)
 
-			# send node message
-			logging.debug("[%s]: Sending NODE message (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
-			message = "NODE %d %s %s %d\r\n" % (nodesInformation[i][0],
-				base64.b64encode(nodesInformation[i][1]),
-				nodesInformation[i][2], nodesInformation[i][3])
-			try:
-				self.sslSocket.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending NODE " % self.fileName
-					+ "failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-				return False
-
-		# send node end message
-		logging.debug("[%s]: Sending NODE END message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("NODE END\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending NODE END " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send sensor start message
-		logging.debug("[%s]: Sending SENSOR START message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("SENSOR START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending SENSOR START " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send sensor count message
-		logging.debug("[%s]: Sending SENSORCOUNT message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		message = "SENSORCOUNT %d\r\n" % sensorCount
-		try:
-			self.sslSocket.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending SENSORCOUNT " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# sending all sensors information
+		# generating sensors list
+		sensors = list()
 		for i in range(sensorCount):
+			tempDict = {"nodeId": sensorsInformation[i][0],
+				"sensorId": sensorsInformation[i][1],
+				"alertDelay": sensorsInformation[i][2],
+				"alertLevel": sensorsInformation[i][3],
+				"description": sensorsInformation[i][4],
+				"lastStateUpdated": sensorsInformation[i][5],
+				"state": sensorsInformation[i][6]}
+			sensors.append(tempDict)
 
-			# send sensor message
-			logging.debug("[%s]: Sending SENSOR message (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
-			message = "SENSOR %d %d %d %d %s %d %d\r\n" \
-				% (sensorsInformation[i][0], sensorsInformation[i][1],
-				sensorsInformation[i][2], sensorsInformation[i][3],
-				base64.b64encode(sensorsInformation[i][4]),
-				sensorsInformation[i][5], sensorsInformation[i][6])
-			try:
-				self.sslSocket.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending SENSOR " % self.fileName
-					+ "failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-				return False
-
-		# send sensor end message
-		logging.debug("[%s]: Sending SENSOR END message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("SENSOR END\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending SENSOR END " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send manager start message
-		logging.debug("[%s]: Sending MANAGER START message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("MANAGER START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending MANAGER START " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send manager count message
-		logging.debug("[%s]: Sending MANAGERCOUNT message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		message = "MANAGERCOUNT %d\r\n" % managerCount
-		try:
-			self.sslSocket.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending MANAGERCOUNT " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# sending all managers information
+		# generating managers list
+		managers = list()
 		for i in range(managerCount):
+			tempDict = {"nodeId": managersInformation[i][0],
+				"managerId": managersInformation[i][1],
+				"description": managersInformation[i][2]}
+			managers.append(tempDict)
 
-			# send manager message
-			logging.debug("[%s]: Sending MANAGER message (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
-			message = "MANAGER %d %d %s\r\n" % (managersInformation[i][0],
-				managersInformation[i][1],
-				base64.b64encode(managersInformation[i][2]))
-			try:
-				self.sslSocket.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending MANAGER " % self.fileName
-					+ "failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-				return False
-
-		# send manager end message
-		logging.debug("[%s]: Sending MANAGER END message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("MANAGER END\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending MANAGER END " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send alert start message
-		logging.debug("[%s]: Sending ALERT START message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		try:
-			self.sslSocket.send("ALERT START\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending ALERT START " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send alert count message
-		logging.debug("[%s]: Sending ALERTCOUNT message (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-		message = "ALERTCOUNT %d\r\n" % alertCount
-		try:
-			self.sslSocket.send(message)
-		except Exception as e:
-			logging.exception("[%s]: Sending ALERTCOUNT " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# sending all alerts information
+		# generating alerts list
+		alerts = list()
 		for i in range(alertCount):
+			tempDict = {"nodeId": alertsInformation[i][0],
+				"alertId": alertsInformation[i][1],
+				"description": alertsInformation[i][2]}
+			alerts.append(tempDict)
 
-			# send alert message
-			logging.debug("[%s]: Sending ALERT message (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
-			message = "ALERT %d %d %s\r\n" % (alertsInformation[i][0],
-				alertsInformation[i][1],
-				base64.b64encode(alertsInformation[i][2]))
-			try:
-				self.sslSocket.send(message)
-			except Exception as e:
-				logging.exception("[%s]: Sending ALERT " % self.fileName
-					+ "failed (%s:%d)." 
-					% (self.clientAddress, self.clientPort))
-
-				return False
-
-		# send alert end message
-		logging.debug("[%s]: Sending ALERT END message (%s:%d)."
+		logging.debug("[%s]: Sending status message (%s:%d)." 
 			% (self.fileName, self.clientAddress, self.clientPort))
+
+		# sending status message to client
 		try:
-			self.sslSocket.send("ALERT END\r\n")
+
+			payload = {"type": "request",
+				"options": options,
+				"nodes": nodes,
+				"sensors": sensors,
+				"managers": managers,
+				"alerts": alerts}
+			message = {"message": "status", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
+
 		except Exception as e:
-			logging.exception("[%s]: Sending ALERT END " % self.fileName
-				+ "failed (%s:%d)." 
+			logging.exception("[%s]: Sending status " % self.fileName
+				+ "message failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		# send status end message
-		logging.debug("[%s]: Sending STATUS END message (%s:%d)." 
-				% (self.fileName, self.clientAddress, self.clientPort))		
-		try:
-			self.sslSocket.send("STATUS END\r\n")
-		except Exception as e:
-			logging.exception("[%s]: Sending STATUS END " % self.fileName
-				+ "failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
 			return False
 
 		# get status acknowledgement
-		logging.debug("[%s]: Receiving STATUS acknowledgement (%s:%d)."
+		logging.debug("[%s]: Receiving status message response (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
 		try:
 			data = self.sslSocket.recv().strip()
-		except Exception as e:
-			logging.exception("[%s]: Receiving STATUS " % self.fileName
-				+ "OK failed (%s:%d)."
-				% (self.clientAddress, self.clientPort))
-			return False
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s' (%s:%d)."
+					% (self.fileName, message["error"],
+					self.clientAddress, self.clientPort))
+				return False
 
-		if data != "STATUS OK":
-			logging.error("[%s]: Receiving STATUS OK " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
+			# check if the received message type is the correct one
+			if str(message["message"]).upper() != "STATUS":
+				logging.error("[%s]: status message expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "status message expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s' (%s:%d)."
+					% (self.fileName, message["payload"]["result"],
+					self.clientAddress, self.clientPort))
+				return False
+
+		except Exception as e:
+			logging.exception("[%s]: Receiving status " % self.fileName
+				+ "message response failed (%s:%d)."
+				% (self.clientAddress, self.clientPort))
 			return False
 
 		self.lastRecv = time.time()
@@ -1452,38 +1590,84 @@ class ClientCommunication:
 				+ "from database failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
 
+			# send error message back
+			try:
+				message = {"message": incomingMessage["message"],
+					"error": "not able to get sensor state from database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
 			return False
 
 		# send state change message
-		logging.debug("[%s]: Sending STATECHANGE message (%s:%d)."
+		logging.debug("[%s]: Sending state change message (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
-		message = "STATECHANGE %d %d\r\n" % (sensorId, state)
 		try:
-			self.sslSocket.send(message)
+			payload = {"type": "request",
+				"sensorId": sensorId,
+				"state": state}
+			message = {"message": "statechange", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
-			logging.exception("[%s]: Sending OPTION " % self.fileName
+			logging.exception("[%s]: Sending state change " % self.fileName
 				+ "failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
 
 			return False
 
-		# get state change acknowledgement
-		logging.debug("[%s]: Receiving STATECHANGE acknowledgement (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-
+		# receive state change response message
 		try:
 			data = self.sslSocket.recv().strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s' (%s:%d)."
+					% (self.fileName, message["error"],
+					self.clientAddress, self.clientPort))
+				return False
+
+			# check if the received message type is the correct one
+			if str(message["message"]).upper() != "STATECHANGE":
+				logging.error("[%s]: state change message expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "state change message expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s' (%s:%d)."
+					% (self.fileName, message["payload"]["result"],
+					self.clientAddress, self.clientPort))
+				return False
+
 		except Exception as e:
-			logging.exception("[%s]: Receiving STATECHANGE " % self.fileName
-				+ "OK failed (%s:%d)."
+			logging.exception("[%s]: Receiving state change " % self.fileName
+				+ "response failed (%s:%d)."
 				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		if data != "STATECHANGE OK":
-			logging.error("[%s]: Receiving STATECHANGE OK " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
 
 			return False
 
@@ -1496,36 +1680,76 @@ class ClientCommunication:
 	def _sendAlertSensorAlertsOff(self):
 
 		# send sensor alert off message
-		logging.debug("[%s]: Sending SENSORALERTSOFF message (%s:%d)."
+		logging.debug("[%s]: Sending sensor alerts off message (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
-		message = "SENSORALERTSOFF\r\n"
 		try:
-			self.sslSocket.send(message)
+			payload = {"type": "request"}
+			message = {"message": "sensoralertsoff", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
-			logging.exception("[%s]: Sending SENSORALERTSOFF " % self.fileName
-				+ "failed (%s:%d)." 
+			logging.exception("[%s]: Sending sensor alerts " % self.fileName
+				+ "off message failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
 
 			return False
 
 		# get sensor alert off acknowledgement
-		logging.debug("[%s]: Receiving SENSORALERTSOFF " % self.fileName
-			+ "acknowledgement (%s:%d)."
+		logging.debug("[%s]: Receiving sensor alerts off " % self.fileName
+			+ "response (%s:%d)."
 			% (self.clientAddress, self.clientPort))
 
 		try:
 			data = self.sslSocket.recv().strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s' (%s:%d)."
+					% (self.fileName, message["error"],
+					self.clientAddress, self.clientPort))
+				return False
+
+			# check if the received message type is the correct one
+			if str(message["message"]).upper() != "SENSORALERTSOFF":
+				logging.error("[%s]: sensor alerts off " % self.fileName
+					+ "message expected (%s:%d)." 
+					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "sensor alerts off message expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s' (%s:%d)."
+					% (self.fileName, message["payload"]["result"],
+					self.clientAddress, self.clientPort))
+				return False
+
 		except Exception as e:
 			logging.exception("[%s]: Receiving " % self.fileName
-				+ "SENSORALERTSOFF OK failed (%s:%d)."
+				+ "sensor alerts off response failed (%s:%d)."
 				% (self.clientAddress, self.clientPort))
-
-			return False
-
-		if data != "SENSORALERTSOFF OK":
-			logging.error("[%s]: Receiving SENSORALERTSOFF OK " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
 
 			return False
 
@@ -1538,7 +1762,7 @@ class ClientCommunication:
 	def sendManagerStateChange(self, sensorId):
 
 		# initiate transaction with client and acquire lock
-		if not self._initiateTransaction(acquireLock=True):
+		if not self._initiateTransaction("statechange", acquireLock=True):
 			return False
 
 		returnValue = self._sendManagerStateChange(sensorId)
@@ -1551,7 +1775,7 @@ class ClientCommunication:
 	def sendAlertSensorAlertsOff(self):
 
 		# initiate transaction with client and acquire lock
-		if not self._initiateTransaction(acquireLock=True):
+		if not self._initiateTransaction("sensoralertsoff", acquireLock=True):
 			return False
 
 		returnValue = self._sendAlertSensorAlertsOff()
@@ -1564,7 +1788,7 @@ class ClientCommunication:
 	def sendManagerUpdate(self):
 
 		# initiate transaction with client and acquire lock
-		if not self._initiateTransaction(acquireLock=True):
+		if not self._initiateTransaction("status", acquireLock=True):
 			return False
 
 		returnValue = self._sendManagerAllInformation()
@@ -1577,43 +1801,85 @@ class ClientCommunication:
 	def sendSensorAlert(self, sensorId, state, alertLevel):
 
 		# initiate transaction with client and acquire lock
-		if not self._initiateTransaction(acquireLock=True):
+		if not self._initiateTransaction("sensoralert", acquireLock=True):
 			return False
 
 		# send sensor alert message
-		logging.debug("[%s]: Sending SENSORALERT message (%s:%d)."
+		logging.debug("[%s]: Sending sensor alert message (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
 		try:
-			message = "SENSORALERT %d %d %d\r\n" \
-				% (sensorId, state, alertLevel)
-			self.sslSocket.send(message)
+			payload = {"type": "request",
+				"sensorId": sensorId,
+				"state": state,
+				"alertLevel": alertLevel}
+			message = {"message": "sensoralert", "payload": payload}
+			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
-			logging.exception("[%s]: Sending SENSORALERT " % self.fileName
-				+ "failed (%s:%d)." 
+			logging.exception("[%s]: Sending sensor alert " % self.fileName
+				+ "message failed (%s:%d)." 
 				% (self.clientAddress, self.clientPort))
 
 			self._releaseLock()
 			return False
 
-		# get sensor alert acknowledgement
-		logging.debug("[%s]: Receiving SENSORALERT acknowledgement (%s:%d)."
-			% (self.fileName, self.clientAddress, self.clientPort))
-
+		# get sensor alert message response
 		try:
 			data = self.sslSocket.recv().strip()
+			message = json.loads(data)
+			# check if an error was received
+			if "error" in message.keys():
+				logging.error("[%s]: Error received: '%s' (%s:%d)."
+					% (self.fileName, message["error"],
+					self.clientAddress, self.clientPort))
+
+				self._releaseLock()
+				return False
+
+			# check if the received message type is the correct one
+			if str(message["message"]).upper() != "SENSORALERT":
+				logging.error("[%s]: sensor alert message expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "sensor alert message expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				self._releaseLock()
+				return False
+
+			# check if the received type is the correct one
+			if str(message["payload"]["type"]).upper() != "RESPONSE":
+				logging.error("[%s]: response expected (%s:%d)." 
+					% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"message": message["message"],
+						"error": "response expected"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				self._releaseLock()
+				return False
+
+			# check if status message was correctly received
+			if str(message["payload"]["result"]).upper() != "OK":
+				logging.error("[%s]: Result not ok: '%s' (%s:%d)."
+					% (self.fileName, message["payload"]["result"],
+					self.clientAddress, self.clientPort))
+
+				self._releaseLock()
+				return False
+
 		except Exception as e:
-			logging.exception("[%s]: Receiving SENSORALERT " % self.fileName
-				+ "OK failed (%s:%d)."
+			logging.exception("[%s]: Receiving sensor alert " % self.fileName
+				+ "response failed (%s:%d)."
 				% (self.clientAddress, self.clientPort))
-
-			self._releaseLock()
-			return False
-
-		if data != "SENSORALERT OK":
-
-			logging.error("[%s]: Receiving SENSORALERT OK " % self.fileName
-				+ "failed. Client sent: '%s' (%s:%d)." 
-				% (data, self.clientAddress, self.clientPort))
 
 			self._releaseLock()
 			return False
@@ -1634,22 +1900,15 @@ class ClientCommunication:
 		self.sslSocket.settimeout(self.serverReceiveTimeout)
 
 		# first verify client/server version
-		if not self._verifyVersion():
-			logging.error("[%s]: Version verification failed (%s:%d)."
-					% (self.fileName, self.clientAddress, self.clientPort))
+		if not self._verifyVersionAndAuthenticate():
+			logging.error("[%s]: Version verification and authentication "
+				+ "failed (%s:%d)."
+				% (self.fileName, self.clientAddress, self.clientPort))
 
 			self._releaseLock()
 			return
 
-		# second authenticate client
-		if not self._clientAuthentication():
-			logging.error("[%s]: Authentication failed (%s:%d)."
-					% (self.fileName, self.clientAddress, self.clientPort))
-
-			self._releaseLock()
-			return
-
-		# third register client
+		# second register client
 		if not self._registerClient():
 			logging.error("[%s]: Registration failed (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
@@ -1693,7 +1952,7 @@ class ClientCommunication:
 		# => send all current node information to the manager
 		if self.nodeType == "manager":
 
-			if (not self._initiateTransaction(acquireLock=False)
+			if (not self._initiateTransaction("status", acquireLock=False)
 				or not self._sendManagerAllInformation()):
 				logging.error("[%s]: Not able send status " % self.fileName
 					+ "update to client (%s:%d)."
@@ -1701,7 +1960,6 @@ class ClientCommunication:
 
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
@@ -1727,32 +1985,44 @@ class ClientCommunication:
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
-				data = data.strip()
 
 				# change timeout of the socket back to configured seconds
 				self.sslSocket.settimeout(self.serverReceiveTimeout)
 
+				data = data.strip()
+				message = json.loads(data)
+				# check if an error was received
+				if "error" in message.keys():
+					logging.error("[%s]: Error received: '%s' (%s:%d)."
+						% (self.fileName, message["error"],
+						self.clientAddress, self.clientPort))
+
+					# clean up session before exiting
+					self._cleanUpSessionForClosing()
+					self._releaseLock()
+					return
+
 				# check if RTS was received
 				# => acknowledge it
-				splittedData = data.split()
-				receivedTransactionId = splittedData[1]
-				if splittedData[0] == "RTS":
+				if str(message["payload"]["type"]).upper() == "RTS":
+					receivedTransactionId = int(message["payload"]["id"])
 
 					# received RTS (request to send) message
-					logging.debug("[%s]: Received RTS %s message (%s:%d)."
+					logging.debug("[%s]: Received RTS %d message (%s:%d)."
+						% (self.fileName, receivedTransactionId,
+						self.clientAddress, self.clientPort))
+
+					logging.debug("[%s]: Sending CTS %d message (%s:%d)."
 						% (self.fileName, receivedTransactionId,
 						self.clientAddress, self.clientPort))
 
 					# send CTS (clear to send) message
-					logging.debug("[%s]: Sending CTS %s message (%s:%d)."
-						% (self.fileName, receivedTransactionId,
-						self.clientAddress, self.clientPort))
-
-					message = "CTS %s\r\n" % receivedTransactionId
-					self.sslSocket.send(message)
+					payload = {"type": "cts", "id": receivedTransactionId}
+					message = {"message": str(message["message"]),
+						"payload": payload}
+					self.sslSocket.send(json.dumps(message))
 
 					# after initiating transaction receive
 					# actual command 
@@ -1770,7 +2040,6 @@ class ClientCommunication:
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
@@ -1803,7 +2072,6 @@ class ClientCommunication:
 
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
@@ -1813,35 +2081,74 @@ class ClientCommunication:
 
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
-			splittedData = data.split()
-			if len(splittedData) < 1:
-				continue
+			# extract message type
+			try:
+				message = json.loads(data)
+				# check if an error was received
+				if "error" in message.keys():
+					logging.error("[%s]: Error received: '%s' (%s:%d)."
+						% (self.fileName, message["error"],
+						self.clientAddress, self.clientPort))
 
-			# extract command
-			command = splittedData[0].upper()
+					# clean up session before exiting
+					self._cleanUpSessionForClosing()
+					self._releaseLock()
+					return
+
+				# check if the received type is the correct one
+				if str(message["payload"]["type"]).upper() != "REQUEST":
+					logging.error("[%s]: request expected (%s:%d)." 
+						% (self.fileName, self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"message": message["message"],
+							"error": "request expected"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					# clean up session before exiting
+					self._cleanUpSessionForClosing()
+					self._releaseLock()
+					return
+
+				# extract the command/message type of the message
+				command = str(message["message"]).upper()
+
+			except Exception as e:
+
+				logging.exception("[%s]: Received data " % self.fileName
+					+ "not valid: '%s' (%s:%d)." % (data, self.clientAddress,
+					self.clientPort))
+
+				# clean up session before exiting
+				self._cleanUpSessionForClosing()
+				self._releaseLock()
+				return
 
 			# check if PING was received => send PONG back
 			if command == "PING":
 
-				logging.debug("[%s]: Received PING (%s:%d)." 
+				logging.debug("[%s]: Received ping request (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
-				logging.debug("[%s]: Sending PONG (%s:%d)." 
+				logging.debug("[%s]: Sending ping response (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
 
 				try:
-					self.sslSocket.send("PONG\r\n")
+					payload = {"type": "response", "result": "ok"}
+					message = {"message": "ping", "payload": payload}
+					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
-					logging.exception("[%s]: Sending PONG " % self.fileName
-						+ "to client failed (%s:%d)." 
+					logging.exception("[%s]: Sending ping " % self.fileName
+						+ "response to client failed (%s:%d)." 
 						% (self.clientAddress, self.clientPort))
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
@@ -1850,17 +2157,16 @@ class ClientCommunication:
 			elif (command == "SENSORALERT"
 				and self.nodeType == "sensor"):
 
-				logging.debug("[%s]: Received SENSORALERT (%s:%d)." 
+				logging.debug("[%s]: Received sensor alert message (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
 
-				if not self._sensorAlertHandler(data):
+				if not self._sensorAlertHandler(message):
 
 					logging.error("[%s]: Handling sensor alert failed (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
@@ -1869,10 +2175,10 @@ class ClientCommunication:
 			elif (command == "STATECHANGE"
 				and self.nodeType == "sensor"):
 
-				logging.debug("[%s]: Received STATECHANGE (%s:%d)." 
+				logging.debug("[%s]: Received state change message (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
 
-				if not self._stateChangeHandler(data):
+				if not self._stateChangeHandler(message):
 
 					logging.error("[%s]: Handling sensor " % self.fileName
 						+ "state change failed (%s:%d)."
@@ -1880,27 +2186,24 @@ class ClientCommunication:
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
-			# check if STATUS START was received
+			# check if STATUS was received
 			# => add new state to the database
 			elif (command == "STATUS"
-				and splittedData[1].upper() == "START"
 				and self.nodeType == "sensor"):
 
-				logging.debug("[%s]: Received status start message (%s:%d)." 
+				logging.debug("[%s]: Received status message (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
 
-				if not self._statusHandler():
+				if not self._statusHandler(message):
 
 					logging.error("[%s]: Handling status failed (%s:%d)." 
 						% (self.fileName, self.clientAddress, self.clientPort))
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
@@ -1912,14 +2215,13 @@ class ClientCommunication:
 				logging.debug("[%s]: Received option message (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
 
-				if not self._optionHandler(data):
+				if not self._optionHandler(message):
 
 					logging.error("[%s]: Handling option failed (%s:%d)." 
 						% (self.fileName, self.clientAddress, self.clientPort))
 
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
-
 					self._releaseLock()
 					return
 
@@ -1933,9 +2235,15 @@ class ClientCommunication:
 					+ "command. Client sent: '%s' (%s:%d)."
 					% (data, self.clientAddress, self.clientPort))
 
+				try:
+					message = {"message": message["message"],
+						"error": "unknown command/message type"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
-
 				self._releaseLock()
 				return
 
