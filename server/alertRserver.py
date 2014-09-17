@@ -71,6 +71,12 @@ class GlobalData:
 		# location of the key file
 		self.serverKeyFile = None
 
+		# do clients authenticate themselves via certificates
+		self.useClientCertificates = None
+
+		# path to CA that is used to authenticate clients
+		self.clientCAFile = None
+
 		# instance of the email alerting object
 		self.smtpAlert = None
 
@@ -172,7 +178,16 @@ if __name__ == '__main__':
 		# get server configurations
 		globalData.serverCertFile = config.get("server", "certificateFile")
 		globalData.serverKeyFile = config.get("server", "keyFile")
+		if (os.path.exists(globalData.serverCertFile) is False
+			or os.path.exists(globalData.serverKeyFile) is False):
+			raise ValueError("Server certificate or key does not exist.")
 		port = config.getint("server", "port")
+		globalData.useClientCertificates = config.getboolean("server",
+			"useClientCertificates")
+		if globalData.useClientCertificates is True:
+			globalData.clientCAFile = config.get("server", "clientCAFile")
+			if os.path.exists(globalData.clientCAFile) is False:
+				raise ValueError("Client CA does not exist.")
 
 		# parse all alert levels
 		for section in config.sections():

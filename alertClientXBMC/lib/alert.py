@@ -38,7 +38,7 @@ class _Alert:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-# this function represents an alert that controls a xbmc instance
+# this function class an alert that controls a xbmc instance
 # (for example shows a notification and pauses the player)
 class XbmcAlert(_Alert):
 

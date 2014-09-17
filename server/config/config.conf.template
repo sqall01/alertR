@@ -28,6 +28,16 @@ keyFile = /absolute/path/to/server.key
 # port that is used by the server
 port = 12345
 
+# sets if it is required for all clients to authenticate themselves
+# via a certificate or not (if you have the alert system reachable
+# from the internet you should use client certificates)
+# ("True" or "False")
+useClientCertificates = True
+
+# path to the CA file that is used to check the client certificates
+# (only processed if "useClientCertificates" is set to "True")
+clientCAFile = /absolute/path/to/some_CA.pem
+
 
 # ------------------------------------------------------------
 # in this section options for email alerts are configured

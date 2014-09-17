@@ -23,10 +23,13 @@ BUFSIZE = 8192
 # simple class of an ssl tcp client 
 class Client:
 
-	def __init__(self, host, port, caFile):
+	def __init__(self, host, port, serverCAFile, clientCertFile,
+		clientKeyFile):
 		self.host = host
 		self.port = port
-		self.caFile = caFile
+		self.serverCAFile = serverCAFile
+		self.clientCertFile = clientCertFile
+		self.clientKeyFile = clientKeyFile
 		self.socket = None
 		self.sslSocket = None
 
@@ -34,9 +37,17 @@ class Client:
 	def connect(self):
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-		self.sslSocket = ssl.wrap_socket(self.socket, 
-			ca_certs=self.caFile, cert_reqs=ssl.CERT_REQUIRED, 
-			ssl_version=ssl.PROTOCOL_TLSv1)
+		# check if a client certificate is required
+		if (self.clientCertFile is None
+			or self.clientKeyFile is None):
+			self.sslSocket = ssl.wrap_socket(self.socket, 
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED, 
+				ssl_version=ssl.PROTOCOL_TLSv1)
+		else:
+			self.sslSocket = ssl.wrap_socket(self.socket, 
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED, 
+				ssl_version=ssl.PROTOCOL_TLSv1,
+				certfile=self.clientCertFile, keyfile=self.clientKeyFile)
 
 		self.sslSocket.connect((self.host, self.port))
 
@@ -61,12 +72,15 @@ class Client:
 # this class handles the communication with the server
 class ServerCommunication:
 
-	def __init__(self, host, port, caFile, username, password, globalData):
+	def __init__(self, host, port, serverCAFile, username, password,
+		clientCertFile, clientKeyFile, globalData):
 		self.host = host
 		self.port = port
 		self.username = username
 		self.password = password
-		self.caFile = caFile
+		self.serverCAFile = serverCAFile
+		self.clientCertFile = clientCertFile
+		self.clientKeyFile = clientKeyFile
 
 		# instance of the used client class
 		self.client = None
@@ -510,7 +524,8 @@ class ServerCommunication:
 		self._acquireLock()
 
 		# create client instance and connect to the server
-		self.client = Client(self.host, self.port, self.caFile)
+		self.client = Client(self.host, self.port, self.serverCAFile,
+			self.clientCertFile, self.clientKeyFile)
 		try:
 			self.client.connect()
 		except Exception as e:

@@ -18,14 +18,30 @@ server = server.h4des.org
 # port that is used by the server
 serverPort = 12345
 
-# path to the certificate file to check the 
+# path to the CA file to check the 
 # correctness of the used SSL connection
-serverCertificate = ../server.crt
+serverCAFile = /absolute/path/to/server_CA.pem
 
 # user credentials of this client
 # (have to be unique for each client or strange behavior will happen)
 username = user
 password = pass
+
+# sets if it is required for the client to authenticate itself
+# via a certificate or not (if you have the alert system reachable
+# from the internet you should use client certificates)
+# ("True" or "False")
+certificateRequired = True
+
+# path to the certificate file of the client
+# this is used for the SSL connection
+# (only processed if "certificateRequired" is set to "True")
+certificateFile = /absolute/path/to/client.crt
+
+# path to the key file of the client
+# that is used for the SSL connection
+# (only processed if "certificateRequired" is set to "True")
+keyFile = /absolute/path/to/client.key
 
 
 # ------------------------------------------------------------

@@ -112,10 +112,25 @@ if __name__ == '__main__':
 		globalData.description = config.get("general", "description")
 
 		# get server certificate file and check if it does exist
-		serverCertificate = os.path.abspath(
-			config.get("general", "serverCertificate"))
-		if os.path.exists(serverCertificate) is False:
-			raise ValueError("Server certificate does not exist.")
+		serverCAFile = os.path.abspath(
+			config.get("general", "serverCAFile"))
+		if os.path.exists(serverCAFile) is False:
+			raise ValueError("Server CA does not exist.")
+
+		# get client certificate and keyfile (if required)
+		certificateRequired = config.getboolean("general",
+			"certificateRequired")
+		if certificateRequired is True:
+			clientCertFile = os.path.abspath(config.get("general",
+				"certificateFile"))
+			clientKeyFile = os.path.abspath(config.get("general",
+				"keyFile"))
+			if (os.path.exists(clientCertFile) is False
+				or os.path.exists(clientKeyFile) is False):
+				raise ValueError("Client certificate or key does not exist.")
+		else:
+			clientCertFile = None
+			clientKeyFile = None
 
 		# get user credentials
 		username = config.get("general", "username")
@@ -209,7 +224,8 @@ if __name__ == '__main__':
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
-		serverCertificate, username, password, globalData)
+		serverCAFile, username, password, clientCertFile, clientKeyFile,
+		globalData)
 	connectionRetries = 1
 	while 1:
 		# check if 5 unsuccessful attempts are made to connect

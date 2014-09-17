@@ -51,6 +51,9 @@ class GlobalData:
 		# instance of the email alerting object
 		self.smtpAlert = None
 
+		# this variable holds the object of the server communication
+		self.serverComm = None
+
 		# list of all sensors that are managed by this client
 		self.sensors = list()
 
@@ -74,10 +77,25 @@ if __name__ == '__main__':
 		serverPort = config.getint("general", "serverPort")
 
 		# get server certificate file and check if it does exist
-		serverCertificate = os.path.abspath(
-			config.get("general", "serverCertificate"))
-		if os.path.exists(serverCertificate) is False:
-			raise ValueError("Server certificate does not exist.")
+		serverCAFile = os.path.abspath(
+			config.get("general", "serverCAFile"))
+		if os.path.exists(serverCAFile) is False:
+			raise ValueError("Server CA does not exist.")
+
+		# get client certificate and keyfile (if required)
+		certificateRequired = config.getboolean("general",
+			"certificateRequired")
+		if certificateRequired is True:
+			clientCertFile = os.path.abspath(config.get("general",
+				"certificateFile"))
+			clientKeyFile = os.path.abspath(config.get("general",
+				"keyFile"))
+			if (os.path.exists(clientCertFile) is False
+				or os.path.exists(clientKeyFile) is False):
+				raise ValueError("Client certificate or key does not exist.")
+		else:
+			clientCertFile = None
+			clientKeyFile = None
 
 		# get user credentials
 		username = config.get("general", "username")
@@ -259,8 +277,9 @@ if __name__ == '__main__':
 		sys.exit(1)
 
 	# generate object for the communication to the server and connect to it
-	serverComm = ServerCommunication(server, serverPort,
-		serverCertificate, username, password, globalData)
+	globalData.serverComm = ServerCommunication(server, serverPort,
+		serverCAFile, username, password, clientCertFile, clientKeyFile,
+		globalData)
 	connectionRetries = 1
 	while 1:
 		# check if 5 unsuccessful attempts are made to connect
@@ -270,7 +289,7 @@ if __name__ == '__main__':
 			and (connectionRetries % 5) == 0):
 			globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-		if serverComm.initializeCommunication() is True:
+		if globalData.serverComm.initializeCommunication() is True:
 			# if smtp alert is activated
 			# => send email that communication problems are solved
 			if not globalData.smtpAlert is None:
@@ -286,8 +305,8 @@ if __name__ == '__main__':
 
 	# when connected => generate watchdog object to monitor the 
 	# server connection
-	watchdog = ConnectionWatchdog(serverComm, globalData.pingInterval,
-		globalData.smtpAlert)
+	watchdog = ConnectionWatchdog(globalData.serverComm,
+		globalData.pingInterval, globalData.smtpAlert)
 	# set thread to daemon
 	# => threads terminates when main thread terminates	
 	watchdog.daemon = True
@@ -296,5 +315,5 @@ if __name__ == '__main__':
 	# set up sensor executer and execute it
 	# (note: we will not return from the executer unless the client
 	# is terminated)
-	sensorExecuter = SensorExecuter(serverComm, globalData)
+	sensorExecuter = SensorExecuter(globalData.serverComm, globalData)
 	sensorExecuter.execute()

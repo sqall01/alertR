@@ -2289,6 +2289,10 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		self.serverCertFile = self.globalData.serverCertFile
 		self.serverKeyFile = self.globalData.serverKeyFile
 
+		# get client certificate settings
+		self.useClientCertificates = self.globalData.useClientCertificates
+		self.clientCAFile = self.globalData.clientCAFile
+
 		# add own server session to the global list of server sessions
 		self.globalData.serverSessions.append(self)
 
@@ -2303,9 +2307,18 @@ class ServerSession(SocketServer.BaseRequestHandler):
 
 		# try to initiate ssl with client
 		try:
-			self.sslSocket = ssl.wrap_socket(self.request,
-				server_side=True, certfile=self.serverCertFile, 
-				keyfile=self.serverKeyFile, ssl_version=ssl.PROTOCOL_TLSv1)
+
+			# check if the clients should also be forced to authenticate
+			# themselves via a certificate
+			if self.useClientCertificates is True:
+				self.sslSocket = ssl.wrap_socket(self.request,
+					server_side=True, certfile=self.serverCertFile, 
+					keyfile=self.serverKeyFile, ssl_version=ssl.PROTOCOL_TLSv1,
+					cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.clientCAFile)
+			else:
+				self.sslSocket = ssl.wrap_socket(self.request,
+					server_side=True, certfile=self.serverCertFile, 
+					keyfile=self.serverKeyFile, ssl_version=ssl.PROTOCOL_TLSv1)
 
 		except Exception as e:
 			logging.exception("[%s]: Unable to initialize SSL " % self.fileName
