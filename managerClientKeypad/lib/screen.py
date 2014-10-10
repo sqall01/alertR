@@ -350,7 +350,7 @@ class MenuUrwid(urwid.Edit):
 		elif key == '3':
 
 			logging.info("[%s]: Activating alert system " % self.fileName
-				+ "in 60 seconds.")
+				+ "in 30 seconds.")
 
 			# send option message to server via a thread to not block
 			# the urwid console thread
