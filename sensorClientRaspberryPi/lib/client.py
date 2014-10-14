@@ -351,14 +351,14 @@ class ServerCommunication:
 		try:
 			version = float(message["payload"]["version"])
 
-			logging.debug("[%s]: Received server version: '%.1f'." 
+			logging.debug("[%s]: Received server version: '%.3f'." 
 				% (self.fileName, version))
 
 			if self.version != version:
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
-					+ "Client has version: '%.1f' " % self.version
-					+ "and server has '%.1f" % version)
+					+ "Client has version: '%.3f' " % self.version
+					+ "and server has '%.3f" % version)
 
 				# send error message back
 				try:

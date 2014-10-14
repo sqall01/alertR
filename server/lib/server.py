@@ -335,8 +335,8 @@ class ClientCommunication:
 			if self.version != version:
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
-					+ "Client has version: '%.1f' " % version
-					+ "and server has '%.1f (%s:%d)" 
+					+ "Client has version: '%.3f' " % version
+					+ "and server has '%.3f (%s:%d)" 
 					% (self.version, self.clientAddress,
 					self.clientPort))
 
@@ -365,7 +365,7 @@ class ClientCommunication:
 
 			return False
 
-		logging.debug("[%s]: Received client version: '%.1f' (%s:%d)." 
+		logging.debug("[%s]: Received client version: '%.3f' (%s:%d)." 
 				% (self.fileName, version, self.clientAddress, 
 				self.clientPort))
 
