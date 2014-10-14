@@ -1,7 +1,7 @@
-alertR Sensor Client Watchdog
+alertR Sensor Client CTF Watchdog
 ======
 
-This client handles watchdog scripts as sensors and informs the server if a sensor has triggered and/or the state of a sensor has changed. This means it executes configured watchdog scripts in an interval that check a service. The sensor is triggered if the watchdog scripts exit with a return code not equal to 0 or time out. Originally it was written to be used at the hack.lu 2014 CTF (Capture-The-Flag) competition to automatically check/watch the offered challenges. 
+This client handles watchdog scripts as sensors and informs the server if a sensor has triggered and/or the state of a sensor has changed. This means it executes configured watchdog scripts in an interval that check a service. The sensor is triggered if the watchdog scripts exit with a return code not equal to 0 or time out. The watchdog scripts get as first argument the address of the service and as second argument the port. Originally it was written to be used at the hack.lu 2014 CTF (Capture-The-Flag) competition to automatically check/watch the offered challenges. 
 
 
 How to use it?
