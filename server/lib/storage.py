@@ -379,6 +379,17 @@ class Sqlite(_Storage):
 
 		self._acquireLock()
 
+		# create internals table
+		self.cursor.execute("CREATE TABLE internals ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "type TEXT NOT NULL UNIQUE, "
+			+ "value REAL NOT NULL)")
+
+		# insert version of server
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (?, ?)", ("version", self.version))
+
 		# create options table
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -390,11 +401,6 @@ class Sqlite(_Storage):
 		self.cursor.execute("INSERT INTO options ("
 			+ "type, "
 			+ "value) VALUES (?, ?)", ("alertSystemActive", 0))
-
-		# insert version of server
-		self.cursor.execute("INSERT INTO options ("
-			+ "type, "
-			+ "value) VALUES (?, ?)", ("version", self.version))
 
 		# create nodes table
 		self.cursor.execute("CREATE TABLE nodes ("
@@ -1883,7 +1889,9 @@ class Mysql(_Storage):
 		self._openConnection()
 
 		# check if alert system tables exist already
-		# if not => create them		
+		# if not => create them
+		self.cursor.execute("SHOW TABLES LIKE 'internals'")
+		internalsResult = self.cursor.fetchall()		
 		self.cursor.execute("SHOW TABLES LIKE 'options'")
 		optionsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'nodes'")
@@ -1902,7 +1910,8 @@ class Mysql(_Storage):
 		# close connection to the database
 		self._closeConnection()
 
-		if (len(optionsResult) == 0
+		if (len(internalsResult) == 0
+			or len(optionsResult) == 0
 			or len(nodesResult) == 0
 			or len(sensorsResult) == 0
 			or len(sensorAlertsResult) == 0
@@ -1986,6 +1995,17 @@ class Mysql(_Storage):
 		# connect to the database
 		self._openConnection()
 
+		# create internals table
+		self.cursor.execute("CREATE TABLE internals ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "type VARCHAR(255) NOT NULL UNIQUE, "
+			+ "value FLOAT NOT NULL)")
+
+		# insert version of server
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)", ("version", self.version))
+
 		# create options table
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
@@ -1997,11 +2017,6 @@ class Mysql(_Storage):
 		self.cursor.execute("INSERT INTO options ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("alertSystemActive", 0))
-
-		# insert version of server
-		self.cursor.execute("INSERT INTO options ("
-			+ "type, "
-			+ "value) VALUES (%s, %s)", ("version", self.version))
 
 		# create nodes table
 		self.cursor.execute("CREATE TABLE nodes ("
@@ -4013,6 +4028,10 @@ class Postgresql(_Storage):
 		# in lowercase and not in camel case)
 		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
 			+ "WHERE table_name = %s "
+			+ "and table_catalog = %s", ["internals", self.database])
+		internalsResult = self.cursor.fetchall()[0][0]
+		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
+			+ "WHERE table_name = %s "
 			+ "and table_catalog = %s", ["options", self.database])
 		optionsResult = self.cursor.fetchall()[0][0]
 		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
@@ -4043,7 +4062,8 @@ class Postgresql(_Storage):
 		# close connection to the database
 		self._closeConnection()
 
-		if (optionsResult == 0
+		if (internalsResult == 0
+			or optionsResult == 0
 			or nodesResult == 0
 			or sensorsResult == 0
 			or sensorAlertsResult == 0
@@ -4132,6 +4152,21 @@ class Postgresql(_Storage):
 		# connect to the database
 		self._openConnection()
 
+		# create internals table
+		# (because of problems with postgresql table names are written
+		# in lowercase and not in camel case)
+		self.cursor.execute("CREATE TABLE internals ("
+			+ "id SERIAL PRIMARY KEY, "
+			+ "type VARCHAR(255) NOT NULL UNIQUE, "
+			+ "value REAL NOT NULL)")
+
+		# insert version of server
+		# (because of problems with postgresql table names are written
+		# in lowercase and not in camel case)
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)", ("version", self.version))
+
 		# create options table
 		# (because of problems with postgresql table names are written
 		# in lowercase and not in camel case)
@@ -4147,13 +4182,6 @@ class Postgresql(_Storage):
 		self.cursor.execute("INSERT INTO options ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("alertSystemActive", 0))
-
-		# insert version of server
-		# (because of problems with postgresql table names are written
-		# in lowercase and not in camel case)
-		self.cursor.execute("INSERT INTO options ("
-			+ "type, "
-			+ "value) VALUES (%s, %s)", ("version", self.version))
 
 		# create nodes table
 		# (because of problems with postgresql table names are written
