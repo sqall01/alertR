@@ -1,217 +1,678 @@
-protocol schematics version 0.1
+protocol schematics version 0.2
 
 ---
 
 The RTS/CTS messages are inspired from the WiFi standards. The used connection between client and server are a shared channel. Every side can start the communication any time. This means server and client can collide when they start to communicate with each other. In order to prevent this, the communication initiator has to request the channel (RTS - request-to-send) and the other side has to grant the channel (CTS - clear-to-send). When both parties collide during the RTS/CTS messages, each one backoffs a random time between 0 and 1 second. This assures that only one party will get the channel at a given time.
 
 
-============= all clients =============
+============= all clients (general) =============
+
+error response of client or server:
+c->s/s->c:	json(
+				dict(
+					message = <type of message this one respond to>
+					error = "error description message"
+				)
+			)
+
+---
 
 initialize communication (all clients):
 
-# first version verification
-s->c:	VERSION x.y
-c->s:	OK
-c->s:	VERSION x.y
-s->c:	OK
+# first version verification and authentication
+c->s:	json(
+			dict(
+				message = "authentication"
+				payload = dict(
+					type = "request"
+					version = x.y
+					username = username
+					password = password
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "authentication"
+				payload = dict(
+					type = "response"
+					result = "ok"
+					version = x.y
+				)
+			)
+		)
 
-# second authentication
-c->s:	USER username
-s->c:	OK
-c->s:	PASS password
-s->c:	AUTHENTICATED
-
-# third registration
+# second registration
 SEE IN EACH CLIENT SECTION FOR DETAILS
 
 ---
 
 client PING request:
 
-c->s:	RTS <uniqueId>
-s->c:	CTS <uniqueId>
-c->s:	PING
-s->c:	PONG
+c->s:	json(
+			dict(
+				message = "ping"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+s->c: 	json(
+			dict(
+				message = "ping"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "ping"
+				payload = dict(
+					type = "request"
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "ping"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 
 ============= client "sensor" =============
 
 initialize communication (sensor client):
 
-# first version verification
+# first version verification and authentication
 SEE GENERAL FOR DETAILS
 
-# second authentication
-SEE GENERAL FOR DETAILS
-
-# third registration
-c->s:	REGISTER START
-c->s:	CONFIGURATION new/CONFIGURATION old
-c->s:	NODE base64(hostname) nodeType
-c->s:	SENSORCOUNT sensorCount
-c->s:	SENSOR clientSensorId alertDelay alertLevel base64(description) triggerAlways
-c->s:	SENSOR clientSensorId alertDelay alertLevel base64(description) triggerAlways
-[...]
-c->s:	REGISTER END
-s->c:	REGISTERED
+# second registration
+c->s:	json(
+			dict(
+				message = "registration"
+				payload = dict(
+					type = "request"
+					configuration = "new"/"old"
+					hostname = hostname
+					nodeType = "sensor"
+					sensors = list(
+						dict(
+							clientSensorId = clientSensorId
+							alertDelay = alertDelay
+							alertLevel = alertLevel
+							description = description
+							triggerAlways = triggerAlways
+						),
+						dict(
+							clientSensorId = clientSensorId
+							alertDelay = alertDelay
+							alertLevel = alertLevel
+							description = description
+							triggerAlways = triggerAlways
+						),
+						[...]
+					)
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "registration"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 complete sensor status update:
 
-c->s:	RTS <uniqueId>
-s->c:	CTS <uniqueId>
-c->s:	STATUS START
-c->s:	SENSOR clientSensorId state
-c->s:	SENSOR clientSensorId state
-[...]
-c->s:	STATUS END
-s->c:	OK
+c->s:	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+s->c: 	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "request"
+					sensors = list(
+						dict(
+							clientSensorId = clientSensorId
+							state = state
+						),
+						dict(
+							clientSensorId = clientSensorId
+							state = state
+						),
+						[...]
+					)
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 triggered sensor alert message:
 
-c->s:	RTS <uniqueId>
-s->c:	CTS <uniqueId>
-c->s:	SENSORALERT clientSensorId state
-s->c:	OK
+c->s:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+s->c: 	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "request"
+					clientSensorId = clientSensorId
+					state = state
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
-state change of a sensor message (only send if no sensor alert triggered):
+state change of a sensor message (only sent if no sensor alert triggered):
 
-c->s:	RTS <uniqueId>
-s->c:	CTS <uniqueId>
-c->s:	STATECHANGE clientSensorId state
-s->c:	OK
+c->s:	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+s->c: 	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "request"
+					clientSensorId = clientSensorId
+					state = state
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 
 ============= client "manager" =============
 
 initialize communication (manager client):
 
-# first version verification
+# first version verification and authentication
 SEE GENERAL FOR DETAILS
 
-# second authentication
-SEE GENERAL FOR DETAILS
+# second registration
+c->s:	json(
+			dict(
+				message = "registration"
+				payload = dict(
+					type = "request"
+					configuration = "new"/"old"
+					hostname = hostname
+					nodeType = "manager"
+					manager = dict(
+						description = description
+					)
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "registration"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
-# third registration
-c->s:	REGISTER START
-c->s:	CONFIGURATION new/CONFIGURATION old
-c->s:	NODE base64(hostname) nodeType
-c->s:	MANAGER base64(description)
-c->s:	REGISTER END
-s->c:	REGISTERED
+# when successfully registered, a complete alert system state is sent to the client
 
 ---
 
 complete alert system state update:
 
-s->c:	RTS <uniqueId>
-c->s:	CTS <uniqueId>
-s->c:	STATUS START
-s->c:	OPTION START
-s->c:	OPTIONCOUNT optionCount
-s->c:	OPTION base64(type) value
-s->c:	OPTION base64(type) value
-[...]
-s->c:	OPTION END
-s->c:	NODE START
-s->c:	NODECOUNT nodeCount
-c->s:	NODE nodeId base64(hostname) nodeType connected
-c->s:	NODE nodeId base64(hostname) nodeType connected
-[...]
-s->c:	NODE END
-s->c:	SENSOR START
-c->s:	SENSORCOUNT sensorCount
-c->s:	SENSOR nodeId sensorId alertDelay alertLevel base64(description) lastStateUpdated state
-c->s:	SENSOR nodeId sensorId alertDelay alertLevel base64(description) lastStateUpdated state
-[...]
-s->c:	SENSOR END
-s->c:	MANAGER START
-c->s:	MANAGERCOUNT managerCount
-s->c:	MANAGER nodeId managerId base64(description)
-s->c:	MANAGER nodeId managerId base64(description)
-[...]
-s->c:	MANAGER END
-s->c:	ALERT START
-c->s:	ALERTCOUNT alertCount
-c->s:	ALERT nodeId alertId base64(description)
-c->s:	ALERT nodeId alertId base64(description)
-[...]
-s->c:	ALERT END
-s->c:	STATUS END
-c->s:	STATUS OK
+s->c:	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+c->s: 	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "request"
+					options = list(
+						dict(
+							type = type
+							value = value
+						),
+						dict(
+							type = type
+							value = value
+						),
+						[...]
+					)
+					nodes = list(
+						dict(
+							nodeId = nodeId
+							hostname = hostname
+							nodeType = nodeType
+							connected = connected
+						),
+						dict(
+							nodeId = nodeId
+							hostname = hostname
+							nodeType = nodeType
+							connected = connected
+						),
+						[...]
+					)			
+					sensors = list(
+						dict(
+							nodeId = nodeId
+							sensorId = sensorId
+							alertDelay = alertDelay
+							alertLevel = alertLevel
+							description = description
+							lastStateUpdated = lastStateUpdated
+							state = state
+						),
+						dict(
+							nodeId = nodeId
+							sensorId = sensorId
+							alertDelay = alertDelay
+							alertLevel = alertLevel
+							description = description
+							lastStateUpdated = lastStateUpdated
+							state = state
+						),
+						[...]
+					)
+					managers = list(
+						dict(
+							nodeId = nodeId
+							managerId = managerId
+							description = description
+						),
+						dict(
+							nodeId = nodeId
+							managerId = managerId
+							description = description
+						),
+						[...]
+					)
+					alerts = list(
+						dict(
+							nodeId = nodeId
+							alertId = alertId
+							description = description
+						),
+						dict(
+							nodeId = nodeId
+							alertId = alertId
+							description = description
+						),
+						[...]
+					)
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "status"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 option change:
 
-c->s:	RTS <uniqueId>
-s->c:	CTS <uniqueId>
-c->s:	OPTION base64(type) value timeDelay
-s->c:	OPTION OK
+c->s:	json(
+			dict(
+				message = "option"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+s->c: 	json(
+			dict(
+				message = "option"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "option"
+				payload = dict(
+					type = "request"
+					optionType = type
+					value = value
+					timeDelay = timeDelay
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "option"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 sensor alert was triggered message:
 
-s->c:	RTS <uniqueId>
-c->s:	CTS <uniqueId>
-s->c:	SENSORALERT sensorId state alertLevel
-c->s:	SENSORALERT OK
+s->c:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+c->s: 	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "request"
+					sensorId = sensorId
+					state = state
+					alertLevel = alertLevel
+					description = description
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 sensor state has changed message:
 
-s->c:	RTS <uniqueId>
-c->s:	CTS <uniqueId>
-s->c:	STATECHANGE sensorId state
-c->s:	STATECHANGE OK
+s->c:	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+c->s: 	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "request"
+					sensorId = sensorId
+					state = state
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "statechange"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 
 ============= client "alert" =============
 
 initialize communication (manager alert):
 
-# first version verification
+# first version verification and authentication
 SEE GENERAL FOR DETAILS
 
-# second authentication
-SEE GENERAL FOR DETAILS
-
-# third registration
-c->s:	REGISTER START
-c->s:	CONFIGURATION new/old
-c->s:	NODE base64(hostname) nodeType
-c->s:	ALERTCOUNT alertCount
-c->s:	ALERT clientAlertId base64(description)
-c->s:	ALERT clientAlertId base64(description)
-[...]
-c->s:	ALERTLEVELCOUNT alertLevelCount
-c->s:	ALERTLEVEL alertLevel
-c->s:	ALERTLEVEL alertLevel
-[...]
-c->s:	REGISTER END
-s->c:	REGISTERED
+# second registration
+c->s:	json(
+			dict(
+				message = "registration"
+				payload = dict(
+					type = "request"
+					configuration = "new"/"old"
+					hostname = hostname
+					nodeType = "alert"
+					alerts = list(
+						dict(
+							clientAlertId = clientAlertId
+							description = description
+						),
+						dict(
+							clientAlertId = clientAlertId
+							description = description
+						),
+						[...]
+					)
+					alertLevels = list(
+						dict(
+							alertLevel = alertLevel
+						),
+						dict(
+							alertLevel = alertLevel
+						),
+						[...]
+					)
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "registration"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 sensor alert was triggered message:
 
-s->c:	RTS <uniqueId>
-c->s:	CTS <uniqueId>
-s->c:	SENSORALERT sensorId state alertLevel
-c->s:	SENSORALERT OK
+s->c:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+c->s: 	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "request"
+					sensorId = sensorId
+					state = state
+					alertLevel = alertLevel
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "sensoralert"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
 
 ---
 
 all sensor alerts were deactivated message:
 
-s->c:	RTS <uniqueId>
-c->s:	CTS <uniqueId>
-s->c:	SENSORALERTSOFF
-c->s:	SENSORALERTSOFF OK
+s->c:	json(
+			dict(
+				message = "sensoralertsoff"
+				payload = dict(
+					type = "rts"
+					id = <uniqueId>
+				)
+			)
+		)
+c->s: 	json(
+			dict(
+				message = "sensoralertsoff"
+				payload = dict(
+					type = "cts"
+					id = <uniqueId from the rts message>
+				)
+			)
+		)
+s->c:	json(
+			dict(
+				message = "sensoralertsoff"
+				payload = dict(
+					type = "request"
+				)
+			)
+		)
+c->s:	json(
+			dict(
+				message = "sensoralertsoff"
+				payload = dict(
+					type = "response"
+					result = "ok"
+				)
+			)
+		)
