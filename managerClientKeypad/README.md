@@ -50,10 +50,14 @@ logfile = /home/keypad/alertR/managerClientKeypad/logfile.log
 loglevel = INFO
 server = 10.0.0.2
 serverPort = 6666
-serverCertificate = /home/keypad/alertR/managerClientKeypad/server.crt
+serverCAFile = /home/keypad/alertR/managerClientKeypad/server.crt
 username = keypad
 password = <SECRET>
 description = keypad entrance door
+
+certificateRequired = False
+certificateFile = /someFolder/client.crt
+keyFile = /someFolder/client.key
 
 
 [smtp]

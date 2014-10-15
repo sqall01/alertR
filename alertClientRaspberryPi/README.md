@@ -89,9 +89,13 @@ logfile = /home/pi/alertClientRaspberryPi/logfile.log
 loglevel = INFO
 server = 10.0.0.2
 serverPort = 6666
-serverCertificate = /home/pi/alertClientRaspberryPi/server.crt
+serverCAFile = /home/pi/alertClientRaspberryPi/server.crt
 username = pi_alert
 password = <SECRET>
+
+certificateRequired = False
+certificateFile = /someFolder/client.crt
+keyFile = /someFolder/client.key
 
 
 [smtp]

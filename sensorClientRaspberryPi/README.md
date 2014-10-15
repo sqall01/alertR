@@ -84,9 +84,13 @@ logfile = /home/someUser/sensorClientRaspberryPi/logfile.log
 loglevel = INFO
 server = 10.0.0.2
 serverPort = 6666
-serverCertificate = /home/someUser/sensorClientRaspberryPi/server.crt
+serverCAFile = /home/someUser/sensorClientRaspberryPi/server.crt
 username = pi_sensor
 password = <SECRET>
+
+certificateRequired = False
+certificateFile = /someFolder/client.crt
+keyFile = /someFolder/client.key
 
 
 [smtp]

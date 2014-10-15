@@ -80,9 +80,13 @@ logfile = /home/someUser/sensorClientWatchdog/logfile.log
 loglevel = INFO
 server = 10.0.0.2
 serverPort = 6666
-serverCertificate = /home/someUser/sensorClientWatchdog/server.crt
+serverCAFile = /home/someUser/sensorClientWatchdog/server.crt
 username = pi_alert
 password = <SECRET>
+
+certificateRequired = False
+certificateFile = /someFolder/client.crt
+keyFile = /someFolder/client.key
 
 
 [smtp]

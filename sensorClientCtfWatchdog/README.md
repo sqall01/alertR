@@ -37,7 +37,7 @@ set -e
 # change USER to the user which runs the alertRclient
 USER=someUser
 # change DAEMON to the path to run the alertRclient
-DAEMON=/home/someUser/sensorClientWatchdog/alertRclient.py
+DAEMON=/home/someUser/sensorClientCtfWatchdog/alertRclient.py
 
 NAME=alertRclient.py
 PIDFILE=/var/run/$NAME.pid
@@ -73,16 +73,20 @@ root@raspberrypi:/etc/init.d# update-rc.d alertRclient.sh defaults
 
 #################### configure alertR ####################
 
-root@raspberrypi:/home/someUser/sensorClientWatchdog/config# vim config.conf
+root@raspberrypi:/home/someUser/sensorClientCtfWatchdog/config# vim config.conf
 
 [general]
-logfile = /home/someUser/sensorClientWatchdog/logfile.log
+logfile = /home/someUser/sensorClientCtfWatchdog/logfile.log
 loglevel = INFO
 server = 10.0.0.2
 serverPort = 6666
-serverCertificate = /home/someUser/sensorClientWatchdog/server.crt
+serverCAFile = /home/someUser/sensorClientCtfWatchdog/server.crt
 username = pi_alert
 password = <SECRET>
+
+certificateRequired = False
+certificateFile = /someFolder/client.crt
+keyFile = /someFolder/client.key
 
 
 [smtp]

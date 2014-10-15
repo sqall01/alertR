@@ -79,10 +79,14 @@ someUser@xbmc:~/alertClientXBMC/config# vim config.conf
 logfile = /home/someUser/alertClientXBMC/logfile.log
 loglevel = INFO
 server = 10.0.0.2
-serverPort = 10023
-serverCertificate = /home/someUser/alertClientXBMC/server.crt
+serverPort = 6666
+serverCAFile = /home/someUser/alertClientXBMC/server.crt
 username = xbmc_alert
 password = <SECRET>
+
+certificateRequired = False
+certificateFile = /someFolder/client.crt
+keyFile = /someFolder/client.key
 
 
 [smtp]
@@ -90,7 +94,7 @@ smtpActivated = True
 server = 127.0.0.1
 serverPort = 25
 fromAddr = alertR@h4des.org
-toAddr = andre@h4des.org
+toAddr = some@address.org
 
 
 [alert1]
