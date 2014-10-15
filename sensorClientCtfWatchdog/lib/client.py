@@ -301,9 +301,8 @@ class ServerCommunication:
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
-				logging.error("[%s]: Error received: '%s' (%s:%d)."
-					% (self.fileName, message["error"],
-					self.clientAddress, self.clientPort))
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				return False
 
 			if str(message["message"]).upper() != "AUTHENTICATION":
