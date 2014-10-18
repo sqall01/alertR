@@ -965,8 +965,8 @@ class Console:
 
 					# remove sensor urwid object from the list of the
 					# current shown objects if it is shown
-					if sensorUrwidObject in self.shownSensorUrwidObject:
-						self.shownSensorUrwidObject.remove(sensorUrwidObject)
+					if sensorUrwidObject in self.shownSensorUrwidObjects:
+						self.shownSensorUrwidObjects.remove(sensorUrwidObject)
 
 						# update shown sensors
 						self._showSensorsAtPageIndex(self.currentSensorPage)
