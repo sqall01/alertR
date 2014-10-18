@@ -521,6 +521,8 @@ class Console:
 		self.serverComm = self.globalData.serverComm
 		self.timeShowSensorAlert = self.globalData.timeShowSensorAlert
 		self.maxCountShowSensorAlert = self.globalData.maxCountShowSensorAlert
+		self.maxCountShowSensorsPerPage = \
+			self.globalData.maxCountShowSensorsPerPage
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
@@ -554,6 +556,9 @@ class Console:
 		# a list of all urwid sensor objects
 		self.sensorUrwidObjects = list()
 
+		# a list of all urwid sensor objects that are shown on the page
+		self.shownSensorUrwidObjects = list()
+
 		# a list of all urwid sensor alert objects
 		self.sensorAlertUrwidObjects = list()
 
@@ -562,6 +567,12 @@ class Console:
 
 		# the file descriptor for the urwid callback to update the screen
 		self.screenFd = None
+
+		# the current page of the sensor objects that is shown
+		self.currentSensorPage = 0
+
+		# the footer of the sensor box (which shows the current page number)
+		self.sensorsFooter = None
 
 
 	# internal function that acquires the lock
@@ -574,6 +585,88 @@ class Console:
 	def _releaseLock(self):
 		logging.debug("[%s]: Release lock." % self.fileName)
 		self.consoleLock.release()
+
+
+	# internal function that shows the sensor urwid objects given
+	# by a page index
+	def _showSensorsAtPageIndex(self, pageIndex):
+
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects) 
+			/ self.maxCountShowSensorsPerPage)
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage) 
+			!= 0):
+			sensorPageCount += 1
+
+		# check if the index to show is within the page range
+		if pageIndex >= sensorPageCount:
+			pageIndex = 0
+		elif pageIndex < 0:
+			pageIndex = sensorPageCount - 1
+
+		logging.debug("[%s]: Update shown sensors with page index: %d."
+			% (self.fileName, pageIndex))
+
+		# get all sensor urwid objects that should be shown on the new page
+		del self.shownSensorUrwidObjects[:]
+		for i in range(self.maxCountShowSensorsPerPage):
+			tempItemIndex = i + (pageIndex * self.maxCountShowSensorsPerPage)
+			if tempItemIndex >= len(self.sensorUrwidObjects):
+				break
+			self.shownSensorUrwidObjects.append(
+				self.sensorUrwidObjects[tempItemIndex])
+
+		# delete all old shown sensor objects and replace them by the new ones
+		del self.sensorsGrid.contents[:]
+		for newShownSensor in self.shownSensorUrwidObjects:
+			self.sensorsGrid.contents.append((newShownSensor.get(),
+				self.sensorsGrid.options()))
+
+		# update sensors page footer
+		tempText = "Page %d / %d " % (pageIndex + 1, sensorPageCount)
+		self.sensorsFooter.set_text(tempText)
+
+
+	# internal function that shows the next page of sensor objects
+	def _showSensorsNextPage(self):
+
+		logging.debug("[%s]: Show next sensors page." % self.fileName)
+
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects) 
+			/ self.maxCountShowSensorsPerPage)
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+			!= 0):
+			sensorPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentSensorPage += 1
+		if self.currentSensorPage >= sensorPageCount:
+			self.currentSensorPage = 0
+
+		# update shown sensors
+		self._showSensorsAtPageIndex(self.currentSensorPage)
+
+
+	# internal function that shows the previous page of sensor objects
+	def _showSensorsPreviousPage(self):
+
+		logging.debug("[%s]: Show previous sensors page." % self.fileName)
+
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects)
+			/ self.maxCountShowSensorsPerPage)
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+			!= 0):
+			sensorPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentSensorPage -= 1
+		if self.currentSensorPage < 0:
+			self.currentSensorPage = sensorPageCount - 1
+
+		# update shown sensors
+		self._showSensorsAtPageIndex(self.currentSensorPage)
 
 
 	# this function is called to update the screen
@@ -626,6 +719,14 @@ class Console:
 		elif key in ['q', 'Q']:
 			raise urwid.ExitMainLoop()
 
+		# check if key n/N is pressed => show next page of sensors
+		elif key in ['n', 'N']:
+			self._showSensorsNextPage()
+
+		# check if key b/B is pressed => show previous page of sensors
+		elif key in ['b', 'B']:
+			self._showSensorsPreviousPage()
+
 		return True
 
 
@@ -660,16 +761,42 @@ class Console:
 
 		# check if sensor urwid objects list is not empty
 		if self.sensorUrwidObjects != list():
+
+			# get the sensor objects for the first page
+			for i in range(self.maxCountShowSensorsPerPage):
+				# break if there are less sensor urwid objects than should
+				# be shown
+				if i >= len(self.sensorUrwidObjects):
+					break
+				self.shownSensorUrwidObjects.append(
+					self.sensorUrwidObjects[i])
+
 			# create grid object for the sensors
 			self.sensorsGrid = urwid.GridFlow(
-				map(lambda x: x.get(), self.sensorUrwidObjects),
+				map(lambda x: x.get(), self.shownSensorUrwidObjects),
 				40, 1, 1, 'left')
+
 		else:
 			# create empty grid object for the sensors
 			self.sensorsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects)
+			/ self.maxCountShowSensorsPerPage)
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+			!= 0):
+			sensorPageCount += 1
+
+		# generate footer text for sensors box
+		tempText = "Page 1 / %d " % sensorPageCount 
+		self.sensorsFooter = urwid.Text(tempText, align='center')
+		keyBindings = urwid.Text(
+			"Key bindings: n - next page, b - previous page", align='center')
+
 		# build box around the sensor grid with title
-		sensorsBox = urwid.LineBox(self.sensorsGrid, title="sensors")
+		sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
+			urwid.Divider(), self.sensorsFooter, keyBindings]),
+			title="sensors")
 
 		leftDisplayPart = urwid.Pile([sensorsBox])
 
@@ -835,16 +962,19 @@ class Console:
 				# => sensor object no longer exists
 				# => remove it 
 				if not sensorUrwidObject.updateCompleteWidget():
-					# search in the grid widget for the sensor widget object
-					# to remove it
-					for gridTuple in self.sensorsGrid.contents:
-						if sensorUrwidObject.get() == gridTuple[0]:
-							self.sensorsGrid.contents.remove(gridTuple)
 
-							# remove sensor urwid object from list of objects
-							# to delete all references to object
-							# => object will be deleted by garbage collector
-							self.sensorUrwidObjects.remove(sensorUrwidObject)
+					# remove sensor urwid object from the list of the
+					# current shown objects if it is shown
+					if sensorUrwidObject in self.shownSensorUrwidObject:
+						self.shownSensorUrwidObject.remove(sensorUrwidObject)
+
+						# update shown sensors
+						self._showSensorsAtPageIndex(self.currentSensorPage)
+
+					# remove sensor urwid object from list of objects
+					# to delete all references to object
+					# => object will be deleted by garbage collector
+					self.sensorUrwidObjects.remove(sensorUrwidObject)
 
 			# add all sensors that were newly added
 			for sensor in self.sensors:
@@ -871,9 +1001,8 @@ class Console:
 					# of sensor objects
 					self.sensorUrwidObjects.append(sensorUrwid)
 
-					# add new sensor urwid object to the sensors grid
-					self.sensorsGrid.contents.append((sensorUrwid.get(),
-						self.sensorsGrid.options()))
+					# update shown sensors
+					self._showSensorsAtPageIndex(self.currentSensorPage)
 
 			# update the information of all alert urwid widgets
 			for alertUrwidObject in self.alertUrwidObjects:

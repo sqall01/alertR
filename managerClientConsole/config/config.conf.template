@@ -69,6 +69,8 @@ timeShowSensorAlert = 3600
 # the maximum count of sensor alerts that should be displayed 
 maxCountShowSensorAlert = 15
 
+# the maximum count of sensors that should be displayed per page
+maxCountShowSensorsPerPage = 7
 
 # ------------------------------------------------------------
 # in this section options for email alerts are configured
