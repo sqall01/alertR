@@ -72,7 +72,7 @@ maxCountShowSensorAlert = 15
 # the maximum count of sensors that should be displayed per page
 maxCountShowSensorsPerPage = 7
 
-# the maximum count of alerts that should be displayed per page
+# the maximum count of alert clients that should be displayed per page
 maxCountShowAlertsPerPage = 4
 
 
