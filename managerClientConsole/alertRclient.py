@@ -115,6 +115,9 @@ class GlobalData:
 		# the maximum number of sensors that is shown per sensor page
 		self.maxCountShowSensorsPerPage = None
 
+		# the maximum number of alerts that is shown per alert page
+		self.maxCountShowAlertsPerPage = None
+
 		# this is an instance of the console object that handles
 		# the screen
 		self.console = None
@@ -195,6 +198,8 @@ if __name__ == '__main__':
 			"maxCountShowSensorAlert")
 		globalData.maxCountShowSensorsPerPage = config.getint("general",
 			"maxCountShowSensorsPerPage")
+		globalData.maxCountShowAlertsPerPage = config.getint("general",
+			"maxCountShowAlertsPerPage")
 
 		# parse smtp options if activated
 		smtpActivated = config.getboolean("smtp", "smtpActivated")

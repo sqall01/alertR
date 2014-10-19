@@ -72,6 +72,10 @@ maxCountShowSensorAlert = 15
 # the maximum count of sensors that should be displayed per page
 maxCountShowSensorsPerPage = 7
 
+# the maximum count of alerts that should be displayed per page
+maxCountShowAlertsPerPage = 4
+
+
 # ------------------------------------------------------------
 # in this section options for email alerts are configured
 [smtp]

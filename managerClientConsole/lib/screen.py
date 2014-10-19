@@ -523,6 +523,8 @@ class Console:
 		self.maxCountShowSensorAlert = self.globalData.maxCountShowSensorAlert
 		self.maxCountShowSensorsPerPage = \
 			self.globalData.maxCountShowSensorsPerPage
+		self.maxCountShowAlertsPerPage = \
+			self.globalData.maxCountShowAlertsPerPage
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
@@ -565,6 +567,9 @@ class Console:
 		# a list of all urwid alert objects
 		self.alertUrwidObjects = list()
 
+		# a list of all urwid alert objects that are shown on the page
+		self.shownAlertUrwidObjects = list()
+
 		# the file descriptor for the urwid callback to update the screen
 		self.screenFd = None
 
@@ -574,7 +579,13 @@ class Console:
 		# the footer of the sensor box (which shows the current page number)
 		self.sensorsFooter = None
 
+		# the current page of the alert objects that is shown
+		self.currentAlertPage = 0
 
+		# the footer of the alert box (which shows the current page number)
+		self.alertsFooter = None
+
+		
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -669,6 +680,88 @@ class Console:
 		self._showSensorsAtPageIndex(self.currentSensorPage)
 
 
+	# internal function that shows the alert urwid objects given
+	# by a page index
+	def _showAlertsAtPageIndex(self, pageIndex):
+
+		# calculate how many pages the alert urwid objects have
+		alertPageCount = (len(self.alertUrwidObjects)
+			/ self.maxCountShowAlertsPerPage)
+		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+			!= 0):
+			alertPageCount += 1
+
+		# check if the index to show is within the page range
+		if pageIndex >= alertPageCount:
+			pageIndex = 0
+		elif pageIndex < 0:
+			pageIndex = alertPageCount - 1
+
+		logging.debug("[%s]: Update shown alerts with page index: %d."
+			% (self.fileName, pageIndex))
+
+		# get all alert urwid objects that should be shown on the new page
+		del self.shownAlertUrwidObjects[:]
+		for i in range(self.maxCountShowAlertsPerPage):
+			tempItemIndex = i + (pageIndex * self.maxCountShowAlertsPerPage)
+			if tempItemIndex >= len(self.alertUrwidObjects):
+				break
+			self.shownAlertUrwidObjects.append(
+				self.alertUrwidObjects[tempItemIndex])
+
+		# delete all old shown alert objects and replace them by the new ones
+		del self.alertsGrid.contents[:]
+		for newShownAlert in self.shownAlertUrwidObjects:
+			self.alertsGrid.contents.append((newShownAlert.get(),
+				self.alertsGrid.options()))
+
+		# update alerts page footer
+		tempText = "Page %d / %d " % (pageIndex + 1, alertPageCount)
+		self.alertsFooter.set_text(tempText)
+
+
+	# internal function that shows the next page of alert objects
+	def _showAlertsNextPage(self):
+
+		logging.debug("[%s]: Show next alerts page." % self.fileName)
+
+		# calculate how many pages the alert urwid objects have
+		alertPageCount = (len(self.alertUrwidObjects)
+			/ self.maxCountShowAlertsPerPage)
+		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+			!= 0):
+			alertPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentAlertPage += 1
+		if self.currentAlertPage >= alertPageCount:
+			self.currentAlertPage = 0
+
+		# update shown alerts
+		self._showAlertsAtPageIndex(self.currentAlertPage)
+
+
+	# internal function that shows the previous page of alert objects
+	def _showAlertsPreviousPage(self):
+
+		logging.debug("[%s]: Show previous alerts page." % self.fileName)
+
+		# calculate how many pages the alert urwid objects have
+		alertPageCount = (len(self.alertUrwidObjects)
+			/ self.maxCountShowAlertsPerPage)
+		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+			!= 0):
+			alertPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentAlertPage -= 1
+		if self.currentAlertPage < 0:
+			self.currentAlertPage = alertPageCount - 1
+
+		# update shown alerts
+		self._showAlertsAtPageIndex(self.currentAlertPage)
+
+
 	# this function is called to update the screen
 	def updateScreen(self, status):
 
@@ -719,13 +812,21 @@ class Console:
 		elif key in ['q', 'Q']:
 			raise urwid.ExitMainLoop()
 
-		# check if key n/N is pressed => show next page of sensors
-		elif key in ['n', 'N']:
+		# check if key b/B is pressed => show next page of sensors
+		elif key in ['b', 'B']:
 			self._showSensorsNextPage()
 
-		# check if key b/B is pressed => show previous page of sensors
-		elif key in ['b', 'B']:
+		# check if key v/V is pressed => show previous page of sensors
+		elif key in ['v', 'V']:
 			self._showSensorsPreviousPage()
+
+		# check if key m/M is pressed => show next page of alerts
+		elif key in ['m', 'M']:
+			self._showAlertsNextPage()
+
+		# check if key n/N is pressed => show previous page of alerts
+		elif key in ['n', 'N']:
+			self._showAlertsPreviousPage()
 
 		return True
 
@@ -791,7 +892,7 @@ class Console:
 		tempText = "Page 1 / %d " % sensorPageCount 
 		self.sensorsFooter = urwid.Text(tempText, align='center')
 		keyBindings = urwid.Text(
-			"Key bindings: n - next page, b - previous page", align='center')
+			"Key bindings: v - previous page, b - next page", align='center')
 
 		# build box around the sensor grid with title
 		sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
@@ -822,16 +923,41 @@ class Console:
 
 		# check if alert urwid objects list is not empty
 		if self.alertUrwidObjects != list():
+
+			# get the alert objects for the first page
+			for i in range(self.maxCountShowAlertsPerPage):
+				# break if there are less alert urwid objects than should
+				# be shown
+				if i >= len(self.alertUrwidObjects):
+					break
+				self.shownAlertUrwidObjects.append(
+					self.alertUrwidObjects[i])
+
 			# create grid object for the alerts
 			self.alertsGrid = urwid.GridFlow(
-				map(lambda x: x.get(), self.alertUrwidObjects),
+				map(lambda x: x.get(), self.shownAlertUrwidObjects),
 				40, 1, 1, 'left')
 		else:
 			# create empty grid object for the alerts
 			self.alertsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
+		# calculate how many pages the alert urwid objects have
+		alertPageCount = (len(self.alertUrwidObjects)
+			/ self.maxCountShowAlertsPerPage)
+		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+			!= 0):
+			alertPageCount += 1
+
+		# generate footer text for sensors box
+		tempText = "Page 1 / %d " % alertPageCount 
+		self.alertsFooter = urwid.Text(tempText, align='center')
+		keyBindings = urwid.Text(
+			"Key bindings: n - previous page, m - next page", align='center')
+
 		# build box around the alert grid with title
-		alertsBox = urwid.LineBox(self.alertsGrid, title="alert clients")
+		alertsBox = urwid.LineBox(urwid.Pile([self.alertsGrid,
+			urwid.Divider(), self.alertsFooter, keyBindings]),
+			title="alert clients")
 
 		# create empty sensor alerts pile
 		self.sensorAlertsPile = urwid.Pile([])
@@ -1010,16 +1136,19 @@ class Console:
 				# => alert object no longer exists
 				# => remove it 
 				if not alertUrwidObject.updateCompleteWidget():
-					# search in the grid widget for the alert widget object
-					# to remove it
-					for gridTuple in self.alertsGrid.contents:
-						if alertUrwidObject.get() == gridTuple[0]:
-							self.alertsGrid.contents.remove(gridTuple)
 
-							# remove alert urwid object from list of objects
-							# to delete all references to object
-							# => object will be deleted by garbage collector
-							self.alertUrwidObjects.remove(alertUrwidObject)
+					# remove alert urwid object from the list of the
+					# current shown objects if it is shown
+					if alertUrwidObject in self.shownAlertUrwidObjects:
+						self.shownAlertUrwidObjects.remove(alertUrwidObject)
+
+						# update shown alerts
+						self._showAlertsAtPageIndex(self.currentAlertPage)
+
+					# remove alert urwid object from list of objects
+					# to delete all references to object
+					# => object will be deleted by garbage collector
+					self.alertUrwidObjects.remove(alertUrwidObject)
 
 			# add all alerts that were newly added
 			for alert in self.alerts:
@@ -1042,9 +1171,8 @@ class Console:
 					# of alert objects
 					self.alertUrwidObjects.append(alertUrwid)
 
-					# add new alert urwid object to the alerts grid
-					self.alertsGrid.contents.append((alertUrwid.get(),
-						self.alertsGrid.options()))
+					# update shown alerts
+					self._showAlertsAtPageIndex(self.currentAlertPage)
 
 		# check if the connection to the server failed
 		if receivedData == "connectionfail":
@@ -1093,7 +1221,8 @@ class Console:
 				# than the configured count of sensor alert widgets
 				# (the first one is the oldest because of the appending)
 				if (len(self.sensorAlertUrwidObjects)
-					> (self.maxCountShowSensorAlert - 1)):
+					>= self.maxCountShowSensorAlert):
+
 					sensorAlertWidgetToRemove = self.sensorAlertUrwidObjects[0]
 					# search in the pile widget for the sensor alert
 					# widget object to remove it
