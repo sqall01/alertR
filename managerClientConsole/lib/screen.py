@@ -1020,7 +1020,7 @@ class Console:
             ('disconnected', 'black', 'dark red'),
             ('sensoralert', 'black', 'yellow'),
             ('connectionfail', 'black', 'light gray'),
-            ('timedout', 'black', 'dark red'),
+            ('timedout', 'black', 'light red'),
             ('neutral', '', ''),
         ]
 
