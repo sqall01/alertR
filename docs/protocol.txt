@@ -1,4 +1,4 @@
-protocol schematics version 0.2
+protocol schematics version 0.21
 
 ---
 
@@ -10,6 +10,7 @@ The RTS/CTS messages are inspired from the WiFi standards. The used connection b
 error response of client or server:
 c->s/s->c:	json(
 				dict(
+					clientTime/serverTime = <unixtimestamp of client/server localtime>
 					message = <type of message this one respond to>
 					error = "error description message"
 				)
@@ -22,6 +23,7 @@ initialize communication (all clients):
 # first version verification and authentication
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "authentication"
 				payload = dict(
 					type = "request"
@@ -33,6 +35,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "authentication"
 				payload = dict(
 					type = "response"
@@ -51,6 +54,7 @@ client PING request:
 
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "ping"
 				payload = dict(
 					type = "rts"
@@ -60,6 +64,7 @@ c->s:	json(
 		)
 s->c: 	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "ping"
 				payload = dict(
 					type = "cts"
@@ -69,6 +74,7 @@ s->c: 	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "ping"
 				payload = dict(
 					type = "request"
@@ -77,6 +83,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "ping"
 				payload = dict(
 					type = "response"
@@ -96,6 +103,7 @@ SEE GENERAL FOR DETAILS
 # second registration
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "registration"
 				payload = dict(
 					type = "request"
@@ -124,6 +132,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "registration"
 				payload = dict(
 					type = "response"
@@ -138,6 +147,7 @@ complete sensor status update:
 
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "status"
 				payload = dict(
 					type = "rts"
@@ -147,6 +157,7 @@ c->s:	json(
 		)
 s->c: 	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "status"
 				payload = dict(
 					type = "cts"
@@ -156,6 +167,7 @@ s->c: 	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "status"
 				payload = dict(
 					type = "request"
@@ -175,6 +187,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "status"
 				payload = dict(
 					type = "response"
@@ -189,6 +202,7 @@ triggered sensor alert message:
 
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "rts"
@@ -198,6 +212,7 @@ c->s:	json(
 		)
 s->c: 	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "cts"
@@ -207,6 +222,7 @@ s->c: 	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "request"
@@ -217,6 +233,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "response"
@@ -231,6 +248,7 @@ state change of a sensor message (only sent if no sensor alert triggered):
 
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "statechange"
 				payload = dict(
 					type = "rts"
@@ -240,6 +258,7 @@ c->s:	json(
 		)
 s->c: 	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "statechange"
 				payload = dict(
 					type = "cts"
@@ -249,6 +268,7 @@ s->c: 	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "statechange"
 				payload = dict(
 					type = "request"
@@ -259,6 +279,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "statechange"
 				payload = dict(
 					type = "response"
@@ -278,6 +299,7 @@ SEE GENERAL FOR DETAILS
 # second registration
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "registration"
 				payload = dict(
 					type = "request"
@@ -292,6 +314,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "registration"
 				payload = dict(
 					type = "response"
@@ -308,6 +331,7 @@ complete alert system state update:
 
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "status"
 				payload = dict(
 					type = "rts"
@@ -317,6 +341,7 @@ s->c:	json(
 		)
 c->s: 	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "status"
 				payload = dict(
 					type = "cts"
@@ -326,6 +351,7 @@ c->s: 	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "status"
 				payload = dict(
 					type = "request"
@@ -407,6 +433,7 @@ s->c:	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "status"
 				payload = dict(
 					type = "response"
@@ -421,6 +448,7 @@ option change:
 
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "option"
 				payload = dict(
 					type = "rts"
@@ -430,6 +458,7 @@ c->s:	json(
 		)
 s->c: 	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "option"
 				payload = dict(
 					type = "cts"
@@ -439,6 +468,7 @@ s->c: 	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "option"
 				payload = dict(
 					type = "request"
@@ -450,6 +480,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "option"
 				payload = dict(
 					type = "response"
@@ -464,6 +495,7 @@ sensor alert was triggered message:
 
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "rts"
@@ -473,6 +505,7 @@ s->c:	json(
 		)
 c->s: 	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "cts"
@@ -482,6 +515,7 @@ c->s: 	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "request"
@@ -494,6 +528,7 @@ s->c:	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "response"
@@ -508,6 +543,7 @@ sensor state has changed message:
 
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "statechange"
 				payload = dict(
 					type = "rts"
@@ -517,6 +553,7 @@ s->c:	json(
 		)
 c->s: 	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "statechange"
 				payload = dict(
 					type = "cts"
@@ -526,6 +563,7 @@ c->s: 	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "statechange"
 				payload = dict(
 					type = "request"
@@ -536,6 +574,7 @@ s->c:	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "statechange"
 				payload = dict(
 					type = "response"
@@ -555,6 +594,7 @@ SEE GENERAL FOR DETAILS
 # second registration
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "registration"
 				payload = dict(
 					type = "request"
@@ -586,6 +626,7 @@ c->s:	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "registration"
 				payload = dict(
 					type = "response"
@@ -600,6 +641,7 @@ sensor alert was triggered message:
 
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "rts"
@@ -609,6 +651,7 @@ s->c:	json(
 		)
 c->s: 	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "cts"
@@ -618,6 +661,7 @@ c->s: 	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "request"
@@ -629,6 +673,7 @@ s->c:	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralert"
 				payload = dict(
 					type = "response"
@@ -643,6 +688,7 @@ all sensor alerts were deactivated message:
 
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralertsoff"
 				payload = dict(
 					type = "rts"
@@ -652,6 +698,7 @@ s->c:	json(
 		)
 c->s: 	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralertsoff"
 				payload = dict(
 					type = "cts"
@@ -661,6 +708,7 @@ c->s: 	json(
 		)
 s->c:	json(
 			dict(
+				serverTime = <unixtimestamp of server localtime>
 				message = "sensoralertsoff"
 				payload = dict(
 					type = "request"
@@ -669,6 +717,7 @@ s->c:	json(
 		)
 c->s:	json(
 			dict(
+				clientTime = <unixtimestamp of client localtime>
 				message = "sensoralertsoff"
 				payload = dict(
 					type = "response"

@@ -165,7 +165,8 @@ class ClientCommunication:
 			try:
 
 				payload = {"type": "rts", "id": transactionId}
-				message = {"message": messageType, "payload": payload}
+				message = {"serverTime": int(time.time()),
+					"message": messageType, "payload": payload}
 				self.sslSocket.send(json.dumps(message))
 
 			except Exception as e:
@@ -290,7 +291,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()), 
+						"message": message["message"],
 						"error": "authentication message expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -305,7 +307,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "request expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -320,7 +323,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "message not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -342,7 +346,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "version not compatible"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -357,7 +362,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "version not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -382,7 +388,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "no user credentials"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -403,7 +410,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "invalid user credentials"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -416,7 +424,8 @@ class ClientCommunication:
 
 			payload = {"type": "response", "result": "ok",
 				"version": self.version}
-			message = {"message": "authentication", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "authentication", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 
 		except Exception as e:
@@ -459,7 +468,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "registration message expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -474,7 +484,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "request expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -489,7 +500,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "message not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -512,7 +524,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "configuration value invalid"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -527,7 +540,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "registration message not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -550,7 +564,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "unable to add node to database"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -569,7 +584,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "node check in database failed"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -593,7 +609,8 @@ class ClientCommunication:
 				if not isinstance(sensors, list):
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "sensors not of type list"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -607,7 +624,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "no sensors in message"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -632,7 +650,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "wrong sensors count"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -656,7 +675,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "sensor data invalid"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -681,7 +701,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alert level does not exist"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -701,7 +722,8 @@ class ClientCommunication:
 
 						# send error message back
 						try:
-							message = {"message": message["message"],
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
 								"error": "unable to add sensor to database"}
 							self.sslSocket.send(json.dumps(message))
 						except Exception as e:
@@ -721,7 +743,8 @@ class ClientCommunication:
 
 						# send error message back
 						try:
-							message = {"message": message["message"],
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
 								"error": "sensor check in database failed"}
 							self.sslSocket.send(json.dumps(message))
 						except Exception as e:
@@ -742,7 +765,8 @@ class ClientCommunication:
 				if not isinstance(alerts, list):
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alerts not of type list"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -754,7 +778,8 @@ class ClientCommunication:
 				if not isinstance(alertLevels, list):
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alert levels not of type list"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -770,7 +795,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "no alerts or alertLevels in message"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -795,7 +821,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "wrong alerts count"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -816,7 +843,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alert data invalid"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -841,7 +869,8 @@ class ClientCommunication:
 
 						# send error message back
 						try:
-							message = {"message": message["message"],
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
 								"error": "unable to add alert to database"}
 							self.sslSocket.send(json.dumps(message))
 						except Exception as e:
@@ -861,7 +890,8 @@ class ClientCommunication:
 
 						# send error message back
 						try:
-							message = {"message": message["message"],
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
 								"error": "alert check in database failed"}
 							self.sslSocket.send(json.dumps(message))
 						except Exception as e:
@@ -886,7 +916,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "wrong alertLevels count"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -908,7 +939,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alertLevel data invalid"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -929,7 +961,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alert level does not exist"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -950,7 +983,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alertLevels not unique"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -970,7 +1004,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "unable to add alertLevels to database"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -990,7 +1025,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "alertLevels check in database failed"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -1009,7 +1045,8 @@ class ClientCommunication:
 				if not isinstance(manager, dict):
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "manager not of type dict"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -1023,7 +1060,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "no manager in message"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1041,7 +1079,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "manager data invalid"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1063,7 +1102,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "unable to add manager to database"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -1082,7 +1122,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "manager check in database failed"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -1097,7 +1138,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
 					"error": "node type not known"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1109,7 +1151,8 @@ class ClientCommunication:
 		try:
 
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "registration", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "registration", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 
 		except Exception as e:
@@ -1137,7 +1180,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "received option invalid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1166,7 +1210,8 @@ class ClientCommunication:
 		# send option response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "option", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "option", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending option " % self.fileName
@@ -1189,7 +1234,8 @@ class ClientCommunication:
 			if not isinstance(sensors, list):
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "sensors not of type list"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1204,7 +1250,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "received status invalid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1220,7 +1267,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "count of sensors not correct"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1242,7 +1290,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "received sensor invalid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1260,7 +1309,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "not able to update sensor state in database"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1271,7 +1321,8 @@ class ClientCommunication:
 		# send status response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "status", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "status", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending status " % self.fileName
@@ -1297,7 +1348,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "received sensor alert invalid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1312,7 +1364,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "not able to add sensor alert to database"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1326,7 +1379,8 @@ class ClientCommunication:
 		# send sensor alert response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "sensoralert", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "sensoralert", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alert " % self.fileName
@@ -1352,7 +1406,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "received state change invalid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1370,7 +1425,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "not able to change sensor state in database"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1387,7 +1443,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "not able to get sensor id from database"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1398,7 +1455,8 @@ class ClientCommunication:
 		# send state change response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "statechange", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "statechange", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending state change " % self.fileName
@@ -1437,7 +1495,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": "status",
+				message = {"serverTime": int(time.time()),
+					"message": "status",
 					"error": "not able to get alert system data from database"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1511,7 +1570,8 @@ class ClientCommunication:
 				"sensors": sensors,
 				"managers": managers,
 				"alerts": alerts}
-			message = {"message": "status", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "status", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 
 		except Exception as e:
@@ -1540,7 +1600,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "status message expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1555,7 +1616,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1592,7 +1654,8 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "not able to get sensor state from database"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -1607,7 +1670,8 @@ class ClientCommunication:
 			payload = {"type": "request",
 				"sensorId": sensorId,
 				"state": state}
-			message = {"message": "statechange", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "statechange", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending state change " % self.fileName
@@ -1634,7 +1698,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "state change message expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1649,7 +1714,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1684,7 +1750,8 @@ class ClientCommunication:
 			% (self.fileName, self.clientAddress, self.clientPort))
 		try:
 			payload = {"type": "request"}
-			message = {"message": "sensoralertsoff", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "sensoralertsoff", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alerts " % self.fileName
@@ -1716,7 +1783,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "sensor alerts off message expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1731,7 +1799,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1813,7 +1882,8 @@ class ClientCommunication:
 				"state": state,
 				"alertLevel": alertLevel,
 				"description": description}
-			message = {"message": "sensoralert", "payload": payload}
+			message = {"serverTime": int(time.time()),
+				"message": "sensoralert", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alert " % self.fileName
@@ -1843,7 +1913,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "sensor alert message expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -1859,7 +1930,8 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -2021,7 +2093,8 @@ class ClientCommunication:
 
 					# send CTS (clear to send) message
 					payload = {"type": "cts", "id": receivedTransactionId}
-					message = {"message": str(message["message"]),
+					message = {"serverTime": int(time.time()),
+						"message": str(message["message"]),
 						"payload": payload}
 					self.sslSocket.send(json.dumps(message))
 
@@ -2106,7 +2179,8 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
 							"error": "request expected"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
@@ -2141,7 +2215,8 @@ class ClientCommunication:
 
 				try:
 					payload = {"type": "response", "result": "ok"}
-					message = {"message": "ping", "payload": payload}
+					message = {"serverTime": int(time.time()),
+						"message": "ping", "payload": payload}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
 					logging.exception("[%s]: Sending ping " % self.fileName
@@ -2237,7 +2312,8 @@ class ClientCommunication:
 					% (data, self.clientAddress, self.clientPort))
 
 				try:
-					message = {"message": message["message"],
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
 						"error": "unknown command/message type"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:

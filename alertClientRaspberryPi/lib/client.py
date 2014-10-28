@@ -192,7 +192,8 @@ class ServerCommunication:
 				% (self.fileName, transactionId))
 			try:
 				payload = {"type": "rts", "id": transactionId}
-				message = {"message": messageType, "payload": payload}
+				message = {"clientTime": int(time.time()),
+					"message": messageType, "payload": payload}
 				self.client.send(json.dumps(message))
 			except Exception as e:
 				logging.exception("[%s]: Sending RTS " % self.fileName
@@ -292,7 +293,8 @@ class ServerCommunication:
 				"version": self.version,
 				"username": self.username,
 				"password": self.password}
-			message = {"message": "authentication", "payload": payload}
+			message = {"clientTime": int(time.time()),
+				"message": "authentication", "payload": payload}
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
@@ -318,7 +320,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "authentication message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -333,7 +336,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -367,7 +371,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "version not compatible"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -381,7 +386,8 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"message": message["message"],
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
 					"error": "version not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -428,7 +434,8 @@ class ServerCommunication:
 				"nodeType": self.nodeType,
 				"alerts": alerts,
 				"alertLevels": alertLevels}
-			message = {"message": "registration", "payload": payload}
+			message = {"clientTime": int(time.time()),
+				"message": "registration", "payload": payload}
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
@@ -454,7 +461,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "registration message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -469,7 +477,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -546,7 +555,8 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"message": incomingMessage["message"],
+				message = {"clientTime": int(time.time()),
+					"message": incomingMessage["message"],
 					"error": "received sensor alert invalid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -560,7 +570,8 @@ class ServerCommunication:
 		try:
 
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "sensoralert", "payload": payload}
+			message = {"clientTime": int(time.time()),
+				"message": "sensoralert", "payload": payload}
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
@@ -596,7 +607,8 @@ class ServerCommunication:
 		try:
 
 			payload = {"type": "response", "result": "ok"}
-			message = {"message": "sensoralertsoff", "payload": payload}
+			message = {"clientTime": int(time.time()),
+				"message": "sensoralertsoff", "payload": payload}
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
@@ -716,7 +728,8 @@ class ServerCommunication:
 
 					# send CTS (clear to send) message
 					payload = {"type": "cts", "id": receivedTransactionId}
-					message = {"message": str(message["message"]),
+					message = {"clientTime": int(time.time()),
+						"message": str(message["message"]),
 						"payload": payload}
 					self.client.send(json.dumps(message))
 
@@ -793,7 +806,8 @@ class ServerCommunication:
 
 					# send error message back
 					try:
-						message = {"message": message["message"],
+						message = {"clientTime": int(time.time()),
+							"message": message["message"],
 							"error": "request expected"}
 						self.client.send(json.dumps(message))
 					except Exception as e:
@@ -854,7 +868,8 @@ class ServerCommunication:
 					+ "command. Server sent: '%s'." % data)
 
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "unknown command/message type"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -908,7 +923,8 @@ class ServerCommunication:
 			logging.debug("[%s]: Sending ping message." % self.fileName)
 
 			payload = {"type": "request"}
-			message = {"message": "ping", "payload": payload}
+			message = {"clientTime": int(time.time()),
+				"message": "ping", "payload": payload}
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
@@ -941,7 +957,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "ping message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
@@ -959,7 +976,8 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"message": message["message"],
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
