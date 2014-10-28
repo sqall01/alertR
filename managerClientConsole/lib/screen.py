@@ -646,6 +646,8 @@ class Console:
 		# calculate how many pages the sensor urwid objects have
 		sensorPageCount = (len(self.sensorUrwidObjects) 
 			/ self.maxCountShowSensorsPerPage)
+		if sensorPageCount == 0:
+			return
 		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
 			!= 0):
 			sensorPageCount += 1
@@ -667,6 +669,8 @@ class Console:
 		# calculate how many pages the sensor urwid objects have
 		sensorPageCount = (len(self.sensorUrwidObjects)
 			/ self.maxCountShowSensorsPerPage)
+		if sensorPageCount == 0:
+			return
 		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
 			!= 0):
 			sensorPageCount += 1
@@ -728,6 +732,8 @@ class Console:
 		# calculate how many pages the alert urwid objects have
 		alertPageCount = (len(self.alertUrwidObjects)
 			/ self.maxCountShowAlertsPerPage)
+		if alertPageCount == 0:
+			return
 		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
 			!= 0):
 			alertPageCount += 1
@@ -749,6 +755,8 @@ class Console:
 		# calculate how many pages the alert urwid objects have
 		alertPageCount = (len(self.alertUrwidObjects)
 			/ self.maxCountShowAlertsPerPage)
+		if alertPageCount == 0:
+			return
 		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
 			!= 0):
 			alertPageCount += 1
