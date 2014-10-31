@@ -266,7 +266,7 @@ class SensorUrwid:
 
 		# check if sensor has timed out and change color accordingly
 		# and consider the state of the sensor (1 = triggered)
-		if (sensor.lastStateUpdated < (int(time.time())
+		if (sensor.lastStateUpdated < (sensor.serverTime
 			- (2 * self.connectionTimeout))
 			and sensor.state != 1):
 			self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox,
@@ -311,7 +311,7 @@ class SensorUrwid:
 
 		# check if sensor has timed out and change color accordingly
 		# and consider the state of the sensor (1 = triggered)
-		if (self.sensor.lastStateUpdated < (int(time.time())
+		if (self.sensor.lastStateUpdated < (self.sensor.serverTime
 			- (2 * self.connectionTimeout))
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "timedout"})
@@ -339,7 +339,7 @@ class SensorUrwid:
 				time.localtime(lastStateUpdated)))
 
 		# check if sensor has timed out and change color accordingly
-		if (lastStateUpdated < (int(time.time())
+		if (lastStateUpdated < (self.sensor.serverTime
 			- (2 * self.connectionTimeout))
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "timedout"})
@@ -364,7 +364,7 @@ class SensorUrwid:
 				self.sensorUrwidMap.set_attr_map({None: "connected"})
 				# check if the sensor timed out and change 
 				# the color accordingly
-				if (self.sensor.lastStateUpdated < (int(time.time())
+				if (self.sensor.lastStateUpdated < (self.sensor.serverTime
 					- (2 * self.connectionTimeout))):
 					self.sensorUrwidMap.set_attr_map({None: "timedout"})
 			elif state == 1:

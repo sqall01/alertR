@@ -614,7 +614,9 @@ class ServerCommunication:
 
 		# extract status values
 		try:
-			
+
+			serverTime = int(incomingMessage["serverTime"])
+
 			options = incomingMessage["payload"]["options"]
 			# check if options is of type list
 			if not isinstance(options, list):
@@ -926,6 +928,7 @@ class ServerCommunication:
 					sensor.alertDelay = alertDelay
 					sensor.alertLevel = alertLevel
 					sensor.description = description
+					sensor.serverTime = serverTime
 
 					# only update state if it is older than received one
 					if lastStateUpdated > sensor.lastStateUpdated:
@@ -945,6 +948,7 @@ class ServerCommunication:
 				sensor.description = description
 				sensor.lastStateUpdated = lastStateUpdated
 				sensor.state = state
+				sensor.serverTime = serverTime
 				self.sensors.append(sensor)
 
 		logging.debug("[%s]: Received manager count: %d." 
@@ -1121,6 +1125,7 @@ class ServerCommunication:
 
 		# extract sensor alert values
 		try:
+			serverTime = int(incomingMessage["serverTime"])
 			sensorId = int(incomingMessage["payload"]["sensorId"])
 			state = int(incomingMessage["payload"]["state"])
 			alertLevel = int(incomingMessage["payload"]["alertLevel"])
@@ -1167,7 +1172,8 @@ class ServerCommunication:
 		for sensor in self.sensors:
 			if sensor.sensorId == sensorId:
 				sensor.state = state
-				sensor.lastStateUpdated = int(time.time())
+				sensor.lastStateUpdated = serverTime
+				sensor.serverTime = serverTime
 
 		return True
 
@@ -1179,6 +1185,7 @@ class ServerCommunication:
 		
 		# extract state change values
 		try:
+			serverTime = int(incomingMessage["serverTime"])
 			sensorId = int(incomingMessage["payload"]["sensorId"])
 			state = int(incomingMessage["payload"]["state"])
 		except Exception as e:
@@ -1220,6 +1227,8 @@ class ServerCommunication:
 			# when found => mark sensor as checked and update information
 			if sensor.sensorId == sensorId:
 				sensor.state = state
+				sensor.lastStateUpdated = serverTime
+				sensor.serverTime = serverTime
 
 				found = True
 				break

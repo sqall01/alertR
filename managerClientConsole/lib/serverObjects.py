@@ -49,6 +49,7 @@ class Sensor:
 		self.description = None
 		self.lastStateUpdated = None
 		self.state = None
+		self.serverTime = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
