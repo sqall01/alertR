@@ -112,6 +112,9 @@ emailAlert = True
 # smtp is activated))
 toAddr = youraddress@somehost.de
 
+# name of the alert level (for example for what it is used)
+name = display notification
+
 
 # ------------------------------------------------------------
 # section for a single alert level that could be triggered
@@ -130,6 +133,9 @@ emailAlert = True
 # smtp is activated))
 toAddr = someotheraddress@somehost.de
 
+# name of the alert level (for example for what it is used)
+name = alarm sirens
+
 
 # ------------------------------------------------------------
 # section for a single alert level that could be triggered
@@ -147,3 +153,6 @@ emailAlert = True
 # email address to which the email should be sent (works only if
 # smtp is activated))
 toAddr = youraddress@somehost.de
+
+# name of the alert level (for example for what it is used)
+name = pausing xbmc

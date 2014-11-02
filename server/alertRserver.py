@@ -195,6 +195,7 @@ if __name__ == '__main__':
 
 				alertLevel = AlertLevel()
 				alertLevel.level = config.getint(section, "level")
+				alertLevel.name = config.get(section, "name")
 				alertLevel.smtpActivated = config.getboolean(section,
 					"emailAlert")
 				if ((not smtpActivated)

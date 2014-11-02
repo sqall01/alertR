@@ -30,6 +30,9 @@ class AlertLevel:
 		# this value indicates the alert level
 		self.level = None
 
+		# gives the name of this alert level
+		self.name = None
+
 
 # this class is woken up if a sensor alert is received
 # and executes all necessary steps
