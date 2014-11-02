@@ -1974,9 +1974,9 @@ class ClientCommunication:
 
 		# first verify client/server version
 		if not self._verifyVersionAndAuthenticate():
-			logging.error("[%s]: Version verification and authentication "
-				+ "failed (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
+			logging.error("[%s]: Version verification and " % self.fileName
+				+ "authentication failed (%s:%d)."
+				% (self.clientAddress, self.clientPort))
 
 			self._releaseLock()
 			return
