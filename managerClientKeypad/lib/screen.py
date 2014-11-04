@@ -277,8 +277,9 @@ class MenuUrwid(urwid.Edit):
 
 	# get the instance of the console object
 	def registerConsoleInstance(self, console):
-		self.fileName = os.path.basename(__file__)
+		self.fileName = os.path.basename(__file__)		
 		self.console = console
+		self.timeDelayedActivation = self.console.timeDelayedActivation
 
 
 	# this functions handles the key presses
@@ -350,7 +351,7 @@ class MenuUrwid(urwid.Edit):
 		elif key == '3':
 
 			logging.info("[%s]: Activating alert system " % self.fileName
-				+ "in 30 seconds.")
+				+ "in %d seconds." % self.timeDelayedActivation)
 
 			# send option message to server via a thread to not block
 			# the urwid console thread
@@ -361,7 +362,7 @@ class MenuUrwid(urwid.Edit):
 			updateProcess.sendOptionDelayed = True
 			updateProcess.optionTypeDelayed = "alertSystemActive"
 			updateProcess.optionValueDelayed = 1
-			updateProcess.optionDelayDelayed = 30
+			updateProcess.optionDelayDelayed = self.timeDelayedActivation
 			updateProcess.start()
 
 			# set screen as locked and reset the time
@@ -399,6 +400,7 @@ class Console:
 		self.sensorAlerts = self.globalData.sensorAlerts
 		self.serverComm = self.globalData.serverComm
 		self.pins = self.globalData.pins
+		self.timeDelayedActivation = self.globalData.timeDelayedActivation
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
@@ -502,7 +504,8 @@ class Console:
 		# generate menu
 		option1 = urwid.Text("1. Activate alert system")
 		option2 = urwid.Text("2. Deactivate alert system")
-		option3 = urwid.Text("3. Activate alert system in 30 seconds")
+		option3 = urwid.Text("3. Activate alert system in %d seconds"
+			% self.timeDelayedActivation)
 		separator = urwid.Text("")
 		menuEdit = MenuUrwid("Choose option:\n", multiline=False)
 		menuEdit.registerConsoleInstance(self)

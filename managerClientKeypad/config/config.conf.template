@@ -46,6 +46,11 @@ keyFile = /absolute/path/to/client.key
 # the description of this manager client
 description = test manager
 
+# this value gives the seconds of the 3rd option (delayed activation
+# of the alert system) which are used to activate the alert system
+# after the given time
+timeDelayedActivation = 30
+
 
 # ------------------------------------------------------------
 # in this section options for email alerts are configured

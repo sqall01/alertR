@@ -91,6 +91,11 @@ class GlobalData:
 		# of the manager
 		self.pins = list()
 
+		# the time given in seconds which are used by the time delayed
+		# activation of the alert system (this option is given to the user
+		# in the menu)
+		self.timeDelayedActivation = None
+
 
 if __name__ == '__main__':
 
@@ -151,6 +156,10 @@ if __name__ == '__main__':
 			loglevel = logging.CRITICAL
 		else:
 			raise ValueError("No valid log level in config file.")
+
+		# get options that modify the manager behavior
+		globalData.timeDelayedActivation = config.getint("general",
+			"timeDelayedActivation")
 
 		# parse smtp options if activated
 		smtpActivated = config.getboolean("smtp", "smtpActivated")
