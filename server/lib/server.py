@@ -2437,10 +2437,16 @@ class ServerSession(SocketServer.BaseRequestHandler):
 
 	def closeConnection(self):
 		logging.info("[%s]: Closing connection to client (%s:%d)." 
-			% (self.fileName, self.clientAddress, self.clientPort))	
+			% (self.fileName, self.clientAddress, self.clientPort))
 		try:	
 			self.sslSocket.shutdown(socket.SHUT_RDWR)
+		except:
+			pass
+		try:	
 			self.sslSocket.close()
+		except:
+			pass
+		try:	
 			self.globalData.serverSessions.remove(self)
 		except:
 			pass
