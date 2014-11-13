@@ -17,7 +17,7 @@ import os
 import base64
 import random
 import json
-BUFSIZE = 8192
+BUFSIZE = 16384
 
 
 # this class handles the communication with the incoming client connection
@@ -665,7 +665,34 @@ class ClientCommunication:
 				try:
 					sensorId = int(sensors[i]["clientSensorId"])
 					alertDelay = int(sensors[i]["alertDelay"])
-					alertLevel = int(sensors[i]["alertLevel"])
+
+					alertLevels = sensors[i]["alertLevels"]
+					# check if alertLevels is a list
+					if not isinstance(alertLevels, list):
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "alertLevels not of type list"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
+					# check if all elements of the alertLevels list 
+					# are of type int
+					if not all(isinstance(item, int) for item in alertLevels):
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "alertLevels items not of type int"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False						
+
 					description = str(sensors[i]["description"])
 					triggerAlways = int(sensors[i]["triggerAlways"])
 				except Exception as e:
@@ -685,37 +712,42 @@ class ClientCommunication:
 					return False
 
 				logging.debug("[%s]: Received sensor: " % self.fileName
-					+ "%d:%d:%d:'%s':%d (%s:%d)." 
-					% (sensorId, alertDelay, alertLevel, description,
+					+ "%d:%d:'%s':%d (%s:%d)." 
+					% (sensorId, alertDelay, description,
 					triggerAlways, self.clientAddress, self.clientPort))
 
-				found = False
-				for tempAlertLevel in self.alertLevels:
-					if tempAlertLevel.level == alertLevel:
-						found = True
-						break
-				if not found:
-					logging.error("[%s]: Alert level does " % self.fileName
-						+ "not exist in configuration (%s:%d)."
-						% (self.clientAddress, self.clientPort))
+				for tempAlertLevel in alertLevels:
+					logging.debug("[%s]: Sensor has alertLevel: %d (%s:%d)."
+						% (self.fileName, tempAlertLevel, 
+						self.clientAddress, self.clientPort))
 
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alert level does not exist"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
+					# check if alert level is configured on server
+					found = False
+					for configuredAlertLevel in self.alertLevels:
+						if tempAlertLevel == configuredAlertLevel.level:
+							found = True
+					if not found:
+						logging.error("[%s]: Alert level does " % self.fileName
+							+ "not exist in configuration (%s:%d)."
+							% (self.clientAddress, self.clientPort))
 
-					return False					
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "alert level does not exist"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False					
 
 				# check if the client configuration is new and has to 
 				# be changed in the data59base
 				if configuration == "new":
 					# add sensor to database
 					if not self.storage.addSensor(self.username, sensorId,
-						alertDelay, alertLevel, description, triggerAlways):
+						alertDelay, alertLevels, description, triggerAlways):
 						logging.error("[%s]: Unable to add " % self.fileName
 							+ "sensor to database (%s:%d)."
 							% (self.clientAddress, self.clientPort))
@@ -736,7 +768,7 @@ class ClientCommunication:
 				elif configuration == "old":
 					# check received sensor configuration with database
 					if not self.storage.checkSensor(self.username, sensorId,
-						alertDelay, alertLevel, description, triggerAlways):
+						alertDelay, alertLevels, description, triggerAlways):
 						logging.error("[%s]: Sensor check in " % self.fileName
 							+ "database failed (%s:%d)."
 							% (self.clientAddress, self.clientPort))
@@ -909,7 +941,7 @@ class ClientCommunication:
 			# in the database
 			if configuration == "old":
 				# check received alert level count matches with the database
-				if not self.storage.checkAlertLevelCount(self.username,
+				if not self.storage.checkAlertAlertLevelCount(self.username,
 					alertLevelCount):
 					logging.error("[%s]: Alert level count " % self.fileName
 						+ "check in database failed.")
@@ -996,7 +1028,7 @@ class ClientCommunication:
 			# be changed in the database
 			if configuration == "new":
 				# add alert levels to database
-				if not self.storage.addAlertLevels(self.username,
+				if not self.storage.addAlertsAlertLevels(self.username,
 					receivedAlertLevels):
 					logging.error("[%s]: Unable to add " % self.fileName
 						+ "alert levels to database (%s:%d)."
@@ -1017,7 +1049,7 @@ class ClientCommunication:
 			# in the database
 			elif configuration == "old":
 				# check received alert configuration with database
-				if not self.storage.checkAlertLevels(self.username,
+				if not self.storage.checkAlertsAlertLevels(self.username,
 					receivedAlertLevels):
 					logging.error("[%s]: Alert levels check " % self.fileName
 						+ "in database failed (%s:%d)."
@@ -1482,7 +1514,7 @@ class ClientCommunication:
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# alertLevel, description, lastStateUpdated, state))
+		# description, lastStateUpdated, state))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
@@ -1533,13 +1565,22 @@ class ClientCommunication:
 		# generating sensors list
 		sensors = list()
 		for i in range(sensorCount):
+
+			sensorId = sensorsInformation[i][1]
+
+			# create list of alert levels of this sensor
+			dbAlertLevels = self.storage.getSensorAlertLevels(sensorId)
+			alertLevels = list()
+			for tempAlertLevel in dbAlertLevels:
+				alertLevels.append(tempAlertLevel[0])
+
 			tempDict = {"nodeId": sensorsInformation[i][0],
-				"sensorId": sensorsInformation[i][1],
+				"sensorId": sensorId,
 				"alertDelay": sensorsInformation[i][2],
-				"alertLevel": sensorsInformation[i][3],
-				"description": sensorsInformation[i][4],
-				"lastStateUpdated": sensorsInformation[i][5],
-				"state": sensorsInformation[i][6]}
+				"alertLevels": alertLevels,
+				"description": sensorsInformation[i][3],
+				"lastStateUpdated": sensorsInformation[i][4],
+				"state": sensorsInformation[i][5]}
 			sensors.append(tempDict)
 
 		# generating managers list
@@ -1867,7 +1908,7 @@ class ClientCommunication:
 
 
 	# function that sends a sensor alert to an alert/manager client
-	def sendSensorAlert(self, sensorId, state, alertLevel, description):
+	def sendSensorAlert(self, sensorId, state, alertLevels, description):
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("sensoralert", acquireLock=True):
@@ -1880,7 +1921,7 @@ class ClientCommunication:
 			payload = {"type": "request",
 				"sensorId": sensorId,
 				"state": state,
-				"alertLevel": alertLevel,
+				"alertLevels": alertLevels,
 				"description": description}
 			message = {"serverTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}
@@ -2599,7 +2640,7 @@ class ConnectionWatchdog(threading.Thread):
 					# get a tuple of (sensorId, nodeId,
 					# remoteSensorId, description, state,
 					# lastStateUpdated, alertDelay,
-					# alertLevel, triggerAlways)
+					# triggerAlways)
 					timedOutSensor = self.storage.getSensorInformation(
 						oldTimedOutSensorId)
 
@@ -2663,7 +2704,7 @@ class AsynchronousSender(threading.Thread):
 		self.sendSensorAlert = False
 		self.sensorAlertSensorId = None
 		self.sensorAlertState = None
-		self.sensorAlertAlertLevel = None
+		self.sensorAlertAlertLevels = None
 		self.sensorAlertSensorDescription = None
 
 		# this options are used when the thread should
@@ -2708,7 +2749,7 @@ class AsynchronousSender(threading.Thread):
 				return
 
 			if not self.clientComm.sendSensorAlert(self.sensorAlertSensorId,
-				self.sensorAlertState, self.sensorAlertAlertLevel,
+				self.sensorAlertState, self.sensorAlertAlertLevels,
 				self.sensorAlertSensorDescription):
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "alert to manager/alert failed (%s:%d)."

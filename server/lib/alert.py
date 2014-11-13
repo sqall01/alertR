@@ -33,6 +33,10 @@ class AlertLevel:
 		# gives the name of this alert level
 		self.name = None
 
+		# this flag indicates if a sensor alert with this alert level
+		# should trigger regardless of if the alert system is active or not
+		self.triggerAlways = None
+
 
 # this class is woken up if a sensor alert is received
 # and executes all necessary steps
@@ -77,7 +81,7 @@ class SensorAlertExecuter(threading.Thread):
 
 			# get a list of all sensor alerts from database
 			# list is a list of tuples of tuples (sensorAlertId, sensorId,
-			# timeReceived, alertDelay, alertLevel, state, triggerAlways,
+			# timeReceived, alertDelay, state, triggerAlways,
 			# description)
 			sensorAlertList = self.storage.getSensorAlerts()
 
@@ -98,67 +102,77 @@ class SensorAlertExecuter(threading.Thread):
 				sensorId = sensorAlert[1]
 				timeReceived = sensorAlert[2]
 				alertDelay = sensorAlert[3]
-				alertLevel = sensorAlert[4]
-				state = sensorAlert[5]
-				triggerAlways = sensorAlert[6]
-				description = sensorAlert[7]
+				state = sensorAlert[4]
+				triggerAlways = sensorAlert[5]
+				description = sensorAlert[6]
 
-				# check if the alert system is not active and the
-				# triggerAlways flag of the sensor is not set
-				# => ignore sensor alert and just send a state change
-				# to the manager clients
-				if (not isAlertSystemActive
-					and not triggerAlways):
-
-					# remove sensor alert
-					self.storage.deleteSensorAlert(sensorAlertId)
-
-					# add sensorId of the triggered sensor alert
-					# to the queue for state changes of the
-					# manager update executer
-					if self.managerUpdateExecuter != None:
-						self.managerUpdateExecuter.queueStateChange.append(
-							sensorId)
-
-					continue
+				# get all alert levels for this sensor
+				sensorAlertLevels = self.storage.getSensorAlertLevels(sensorId)
+				if sensorAlertLevels is None:
+					logging.error("[%s]: No alert levels " % self.fileName
+						+ "for sensor in database. Can not trigger alert.")
 
 				# check if sensor alert has triggered
 				if (time.time() - timeReceived) > alertDelay:
 
-					triggeredAlertLevel = None
+					# get all alert levels that are triggered
+					# because of this sensor alert
+					triggeredAlertLevels = list()
 					for configuredAlertLevel in self.alertLevels:
-						if configuredAlertLevel.level == alertLevel:
-							triggeredAlertLevel = configuredAlertLevel
-							break
-					if triggeredAlertLevel is None:
-						logging.error("[%s]: Alert level not " % self.fileName
-							+ "known. Can not alert.")
+						for sensorAlertLevel in sensorAlertLevels:
+							if (configuredAlertLevel.level == 
+								sensorAlertLevel[0]):
+								# check if alert system is active
+								# or alert level triggers always
+								if (isAlertSystemActive 
+									or configuredAlertLevel.triggerAlways):
+									triggeredAlertLevels.append(
+										configuredAlertLevel)
+
+					# check if a alert level to trigger was found
+					# if not => just trigger state change for manager clients
+					if not triggeredAlertLevels:
+						logging.debug("[%s]: No alert level " % self.fileName
+							+ "to trigger was found.")
 
 						# alert can not be handled => delete it
 						self.storage.deleteSensorAlert(sensorAlertId)
 
+						# add sensorId of the triggered sensor alert
+						# to the queue for state changes of the
+						# manager update executer
+						if self.managerUpdateExecuter != None:
+							self.managerUpdateExecuter.queueStateChange.append(
+								sensorId)
+
 						continue
 
-					# check if smtpAlert is activated
+					# check if one of the triggered alert levels
+					# has email notification (smtpAlert) activated
 					# => send email alert
-					if triggeredAlertLevel.smtpActivated:
+					for triggeredAlertLevel in triggeredAlertLevels:
+						if triggeredAlertLevel.smtpActivated:
 
-						# get tuple of (hostname, description, timeReceived)
-						# from database for email alert
-						resultTuple = self.storage.getSensorAlertDetails(
-							sensorAlertId)
+							# get tuple of (hostname, description,
+							# timeReceived)
+							# from database for email alert
+							resultTuple = self.storage.getSensorAlertDetails(
+								sensorAlertId)
 
-						# check if storage backend returned sensor alert
-						# details
-						if not resultTuple is None:
-							hostname = resultTuple[0]
-							description = resultTuple[1]
-							timeReceived = resultTuple[2]
+							# check if storage backend returned sensor alert
+							# details
+							if not resultTuple is None:
+								hostname = resultTuple[0]
+								description = resultTuple[1]
+								timeReceived = resultTuple[2]
 
-							# send email alert to configured email address
-							self.smtpAlert.sendSensorAlert(hostname,
-								description, timeReceived,
-								triggeredAlertLevel.toAddr)
+								# send email alert to configured email address
+								self.smtpAlert.sendSensorAlert(hostname,
+									description, timeReceived,
+									triggeredAlertLevel.toAddr)
+
+							# send only one email for a triggered sensor alert
+							break
 
 					# send sensor alert to all manager and alert clients
 					for serverSession in self.serverSessions:
@@ -182,7 +196,14 @@ class SensorAlertExecuter(threading.Thread):
 						sensorAlertProcess.sendSensorAlert = True
 						sensorAlertProcess.sensorAlertSensorId = sensorId
 						sensorAlertProcess.sensorAlertState = state
-						sensorAlertProcess.sensorAlertAlertLevel = alertLevel
+
+						# generate integer list of alert levels
+						intListAlertLevel = list()
+						for triggeredAlertLevel in triggeredAlertLevels:
+							intListAlertLevel.append(triggeredAlertLevel.level)
+
+						sensorAlertProcess.sensorAlertAlertLevels = \
+							intListAlertLevel
 						sensorAlertProcess.sensorAlertSensorDescription = \
 							description
 

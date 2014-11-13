@@ -196,6 +196,8 @@ if __name__ == '__main__':
 				alertLevel = AlertLevel()
 				alertLevel.level = config.getint(section, "level")
 				alertLevel.name = config.get(section, "name")
+				alertLevel.triggerAlways = config.getboolean(section,
+					"triggerAlways")
 				alertLevel.smtpActivated = config.getboolean(section,
 					"emailAlert")
 				if ((not smtpActivated)
@@ -211,11 +213,12 @@ if __name__ == '__main__':
 
 				globalData.alertLevels.append(alertLevel)
 
-		# check if all alert levels that exist in the database are configured
-		# in the configuration file
-		alertLevelsInDb = globalData.storage.getAllAlertLevels()
+		# check if all alert levels for alert clients that exist in the
+		# database are configured in the configuration file
+		alertLevelsInDb = globalData.storage.getAllAlertsAlertLevels()
 		if alertLevelsInDb == None:
-			raise ValueError("Could not get alert levels from database.")
+			raise ValueError("Could not get alert client "
+				+ "alert levels from database.")
 		for alertLevelInDb in alertLevelsInDb:
 			found = False
 			for alertLevel in globalData.alertLevels:
@@ -225,8 +228,26 @@ if __name__ == '__main__':
 			if found:
 				continue
 			else:
-				raise ValueError("Alert level is in database that is not "
-					+ "configured.")
+				raise ValueError("An alert level for an alert client exists "
+					+ "in the database that is not configured.")
+
+		# check if all alert levels for sensors that exist in the
+		# database are configured in the configuration file
+		alertLevelsInDb = globalData.storage.getAllSensorsAlertLevels()
+		if alertLevelsInDb == None:
+			raise ValueError("Could not get sensor alert " 
+				+ "levels from database.")
+		for alertLevelInDb in alertLevelsInDb:
+			found = False
+			for alertLevel in globalData.alertLevels:
+				if alertLevelInDb[0] == alertLevel.level:
+					found = True
+					break
+			if found:
+				continue
+			else:
+				raise ValueError("An alert level for a sensor exists "
+					+ "in the database that is not configured.")
 
 	except Exception as e:
 		print "Config could not be parsed."

@@ -35,7 +35,8 @@ class _Storage():
 	# adds the data that is given by the node for the sensor to the database
 	#
 	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, description):
+	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
+		description, triggerAlways):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -50,7 +51,7 @@ class _Storage():
 	# client to the database
 	#
 	# return True or False
-	def addAlertLevels(self, username, alertLevels):
+	def addAlertsAlertLevels(self, username, alertLevels):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -81,7 +82,8 @@ class _Storage():
 	# are the same
 	#
 	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, description):
+	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
+		description, triggerAlways):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -97,7 +99,7 @@ class _Storage():
 	# levels in the database are the same
 	#
 	# return True or False
-	def checkAlertLevels(self, username, alertLevels):
+	def checkAlertsAlertLevels(self, username, alertLevels):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -129,7 +131,7 @@ class _Storage():
 	# the count in the database
 	#
 	# return True or False
-	def checkAlertLevelCount(self, username, alertLevelCount):
+	def checkAlertAlertLevelCount(self, username, alertLevelCount):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -155,10 +157,18 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# gets all alert levels for a specific sensor given by sensorId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getSensorAlertLevels(self, sensorId):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways)
+	# alertDelay, state, triggerAlways)
 	# or None
 	def getSensorAlerts(self):
 		raise NotImplemented("Function not implemented yet.")
@@ -173,12 +183,20 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# gets all alert levels from the database
+	# gets all alert levels for the alert clients from the database
 	#
 	# return list of tuples of (alertLevel)
 	# or None
-	def getAllAlertLevels(self):
+	def getAllAlertsAlertLevels(self):
 		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets all alert levels for the sensors from the database
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAllSensorsAlertLevels(self):
+		raise NotImplemented("Function not implemented yet.")	
 
 
 	# gets all nodes from the database that are connected to the server
@@ -203,7 +221,7 @@ class _Storage():
 	#
 	# return a tuple of (sensorId, nodeId,
 	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# alertLevel, triggerAlways)
+	# triggerAlways)
 	# or None
 	def getSensorInformation(self, sensorId):
 		raise NotImplemented("Function not implemented yet.")
@@ -225,7 +243,7 @@ class _Storage():
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# alertLevel, description, lastStateUpdated, state))
+	# description, lastStateUpdated, state))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
@@ -359,6 +377,27 @@ class Sqlite(_Storage):
 			raise ValueError("Node id was not found.")
 
 
+	# internal function that gets the sensor id of a sensor when the id 
+	# of a node is given and the remote sensor id that is used 
+	# by the node internally
+	#
+	# return sensorId or raised Exception
+	def _getSensorId(self, nodeId, remoteSensorId):
+
+		# get sensorId from database
+		self.cursor.execute("SELECT id FROM sensors "
+			+ "WHERE nodeId = ? "
+			+ "AND remoteSensorId = ?", (nodeId, remoteSensorId))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Sensor does not exist in database.")
+
+		sensorId = result[0][0]
+
+		return sensorId
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -419,9 +458,15 @@ class Sqlite(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
-			+ "alertLevel INTEGER NOT NULL, "
 			+ "triggerAlways INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create sensorsAlertLevels table
+		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorId INTEGER NOT NULL, "
+			+ "alertLevel INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create sensorAlerts table
 		self.cursor.execute("CREATE TABLE sensorAlerts ("
@@ -440,8 +485,8 @@ class Sqlite(_Storage):
 			+ "description TEXT NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
-		# create alertLevels table
-		self.cursor.execute("CREATE TABLE alertLevels ("
+		# create alertsAlertLevels table
+		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
@@ -501,6 +546,16 @@ class Sqlite(_Storage):
 			# if type is sensor
 			if nodeType == "sensor":
 				try:
+					# get the id of all sensors that are managed by this node
+					# and delete the alert levels of these sensors
+					self.cursor.execute("SELECT id FROM sensors "
+						+ "WHERE nodeId = ?", (nodeId, ))
+					result = self.cursor.fetchall()
+					for tempSensorid in result:
+						self.cursor.execute("DELETE FROM sensorsAlertLevels "
+						+ "WHERE sensorId = ?", (tempSensorid[0], ))
+
+					# delete the sensors
 					self.cursor.execute("DELETE FROM sensors "
 						+ "WHERE nodeId = ?", (nodeId, ))
 				except Exception as e:
@@ -533,7 +588,7 @@ class Sqlite(_Storage):
 				try:
 					self.cursor.execute("DELETE FROM alerts "
 						+ "WHERE nodeId = ?", (nodeId, ))
-					self.cursor.execute("DELETE FROM alertLevels "
+					self.cursor.execute("DELETE FROM alertsAlertLevels "
 						+ "WHERE nodeId = ?", (nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node." 
@@ -571,7 +626,7 @@ class Sqlite(_Storage):
 	# adds the data that is given by the node for the sensor to the database
 	#
 	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, alertLevel,
+	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
 		description, triggerAlways):
 
 		self._acquireLock()	
@@ -604,12 +659,37 @@ class Sqlite(_Storage):
 				+ "state, "
 				+ "lastStateUpdated, "
 				+ "alertDelay, "
-				+ "alertLevel, "
-				+ "triggerAlways) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+				+ "triggerAlways) VALUES (?, ?, ?, ?, ?, ?, ?)",
 				(nodeId, remoteSensorId, description, 0, 0, alertDelay,
-				alertLevel, triggerAlways))
+				triggerAlways))
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor." % self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# get sensorId of current added sensor
+		try:
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensorId." 
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# add sensor alert levels to database
+		try:
+			for alertLevel in alertLevels:			
+				self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+					+ "sensorId, "
+					+ "alertLevel) VALUES (?, ?)",
+					(sensorId, alertLevel))
+		except Exception as e:
+			logging.exception("[%s]: Not able to add sensor alert levels."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -666,7 +746,7 @@ class Sqlite(_Storage):
 	# client to the database
 	#
 	# return True or False
-	def addAlertLevels(self, username, alertLevels):
+	def addAlertsAlertLevels(self, username, alertLevels):
 
 		self._acquireLock()	
 		
@@ -684,7 +764,7 @@ class Sqlite(_Storage):
 		# add alert levels to database
 		try:
 			for alertLevel in alertLevels:
-				self.cursor.execute("INSERT INTO alertLevels ("
+				self.cursor.execute("INSERT INTO alertsAlertLevels ("
 					+ "nodeId, "
 					+ "alertLevel) VALUES (?, ?)", (nodeId, alertLevel))
 		except Exception as e:
@@ -771,7 +851,7 @@ class Sqlite(_Storage):
 	# are the same
 	#
 	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevel,
+	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
 		description, triggerAlways):
 
 		self._acquireLock()
@@ -788,7 +868,6 @@ class Sqlite(_Storage):
 			return False
 
 		self.cursor.execute("SELECT alertDelay, "
-			+ "alertLevel, "
 			+ "description, "
 			+ "triggerAlways "
 			+ "FROM sensors "
@@ -814,21 +893,66 @@ class Sqlite(_Storage):
 
 			return False
 
+		# check if values of sensors table are correct
+		sensorsTableCorrect = False
 		if (result[0][0] == alertDelay
-			and result[0][1] == alertLevel
-			and result[0][2] == description
-			and result[0][3] == triggerAlways):
+			and result[0][1] == description
+			and result[0][2] == triggerAlways):
+			sensorsTableCorrect = True
+		if not sensorsTableCorrect:
+			logging.error("[%s]: Sensor configuration does not match."
+				% self.fileName)
 
 			self._releaseLock()
 
-			return True
+			return False
 
-		logging.error("[%s]: Sensor configuration does not match."
+		# get sensorId of the sensor to check
+		try:
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensorId." 
 				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# check all sensor alert levels
+		self.cursor.execute("SELECT alertLevel "
+			+ "FROM sensorsAlertLevels "
+			+ "WHERE sensorId = ? ", (sensorId, ))
+		result = self.cursor.fetchall()		
+
+		# check if all sensor alert levels from the db are
+		# in the list of alert levels
+		for dbAlertLevel in result:
+			if not dbAlertLevel[0] in alertLevels:
+				logging.error("[%s]: Sensor alert level " % self.fileName
+					+ "from db not in list of alert levels.")
+
+				self._releaseLock()
+
+				return False
+
+		# check if all sensor alert levels from the list are
+		# in the db
+		for tempAlertLevel in alertLevels:
+			found = False
+			for dbAlertLevel in result:
+				if tempAlertLevel == dbAlertLevel[0]:
+					found = True
+			if not found:
+				logging.error("[%s]: Sensor alert level " % self.fileName
+					+ "from list not in db.")
+
+				self._releaseLock()
+
+				return False
 
 		self._releaseLock()
 
-		return False
+		return True
 
 
 	# checks if the given data of the alert and the data in the database
@@ -892,7 +1016,7 @@ class Sqlite(_Storage):
 	# levels in the database are the same
 	#
 	# return True or False
-	def checkAlertLevels(self, username, alertLevels):
+	def checkAlertsAlertLevels(self, username, alertLevels):
 
 		self._acquireLock()
 
@@ -908,7 +1032,7 @@ class Sqlite(_Storage):
 			return False
 
 		self.cursor.execute("SELECT alertLevel "
-			+ "FROM alertLevels "
+			+ "FROM alertsAlertLevels "
 			+ "WHERE nodeId = ? ", (nodeId, ))
 
 		result = self.cursor.fetchall()
@@ -1073,11 +1197,11 @@ class Sqlite(_Storage):
 		return True
 
 
-	# checks if the given alert level count of the node does match
+	# checks if the given alert level count of the alert node does match
 	# the count in the database
 	#
 	# return True or False
-	def checkAlertLevelCount(self, username, alertLevelCount):
+	def checkAlertAlertLevelCount(self, username, alertLevelCount):
 
 		self._acquireLock()
 
@@ -1093,7 +1217,7 @@ class Sqlite(_Storage):
 			return False		
 
 		# get all alert levels on this nodes
-		self.cursor.execute("SELECT id FROM alertLevels "
+		self.cursor.execute("SELECT id FROM alertsAlertLevels "
 			+ "WHERE nodeId = ?", (nodeId, ))
 
 		result = self.cursor.fetchall()
@@ -1207,23 +1331,7 @@ class Sqlite(_Storage):
 		self._acquireLock()
 
 		try:
-
-			# get sensorId from database
-			self.cursor.execute("SELECT id FROM sensors "
-				+ "WHERE nodeId = ? "
-				+ "AND remoteSensorId = ?", (nodeId, remoteSensorId))
-			result = self.cursor.fetchall()
-
-			if len(result) != 1:
-				logging.error("[%s]: Sensor does not exist in database."
-					% self.fileName)
-
-				self._releaseLock()
-
-				return None
-
-			sensorId = result[0][0]
-
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
 		except Exception as e:
 			logging.exception("[%s]: Not able to get sensorId from database."
 				% self.fileName)
@@ -1235,6 +1343,36 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		return sensorId
+
+
+	# gets all alert levels for a specific sensor given by sensorId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getSensorAlertLevels(self, sensorId):
+
+		self._acquireLock()
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsAlertLevels "
+				+ "WHERE sensorId = ?", (sensorId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for sensor with id %d." % sensorId)
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
 
 
 	# adds a sensor alert to the database when the id of a node is given,
@@ -1296,7 +1434,7 @@ class Sqlite(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways, description)
+	# alertDelay, state, triggerAlways, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -1308,7 +1446,6 @@ class Sqlite(_Storage):
 				+ "sensors.id, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
-				+ "sensors.alertLevel, "
 				+ "sensors.state, "
 				+ "sensors.triggerAlways, "
 				+ "sensors.description "
@@ -1329,7 +1466,7 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, alertLevel, state, triggerAlways, description)
+		# alertDelay, state, triggerAlways, description)
 		return result
 
 
@@ -1435,23 +1572,52 @@ class Sqlite(_Storage):
 		return returnTuple
 
 
-	# gets all alert levels from the database
+	# gets all alert levels for the alert clients from the database
 	#
 	# return list of tuples of (alertLevel)
 	# or None
-	def getAllAlertLevels(self):
+	def getAllAlertsAlertLevels(self):
 
 		self._acquireLock()
 
 		try:
 			self.cursor.execute("SELECT alertLevel "
-				+ "FROM alertLevels")
+				+ "FROM alertsAlertLevels")
 			result = self.cursor.fetchall()
 
 		except Exception as e:
 
 			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "all alert levels.")
+				+ "all alert levels for alert clients.")
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
+
+
+	# gets all alert levels for the sensors from the database
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAllSensorsAlertLevels(self):
+
+		self._acquireLock()
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsAlertLevels")
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "all alert levels for sensors.")
 
 			self._releaseLock()
 
@@ -1588,7 +1754,7 @@ class Sqlite(_Storage):
 	#
 	# return a tuple of (sensorId, nodeId,
 	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# alertLevel, triggerAlways)
+	# triggerAlways)
 	# or None
 	def getSensorInformation(self, sensorId):
 
@@ -1602,7 +1768,6 @@ class Sqlite(_Storage):
 				+ "state, "
 				+ "lastStateUpdated, "
 				+ "alertDelay, "
-				+ "alertLevel, "
 				+ "triggerAlways "
 				+ "FROM sensors "
 				+ "WHERE id = ?", (sensorId, ))
@@ -1631,7 +1796,7 @@ class Sqlite(_Storage):
 
 		# return a tuple of (sensorId, nodeId,
 		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# alertLevel, triggerAlways)
+		# triggerAlways)
 		return result[0]
 
 
@@ -1671,7 +1836,7 @@ class Sqlite(_Storage):
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# alertLevel, description, lastStateUpdated, state))
+	# description, lastStateUpdated, state))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
@@ -1705,7 +1870,6 @@ class Sqlite(_Storage):
 			self.cursor.execute("SELECT nodeId, "
 				+ "id, "
 				+ "alertDelay, "
-				+ "alertLevel, "
 				+ "description, "
 				+ "lastStateUpdated, "
 				+ "state "
@@ -1763,7 +1927,7 @@ class Sqlite(_Storage):
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# alertLevel, description, lastStateUpdated, state))
+		# description, lastStateUpdated, state))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
@@ -1898,12 +2062,14 @@ class Mysql(_Storage):
 		nodesResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
 		sensorsResult = self.cursor.fetchall()
+		self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
+		sensorsAlertLevelsResult = self.cursor.fetchall()		
 		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
 		sensorAlertsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'alerts'")
 		alertsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'alertLevels'")
-		alertLevelsResult = self.cursor.fetchall()
+		self.cursor.execute("SHOW TABLES LIKE 'alertsAlertLevels'")
+		alertsAlertLevelsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'managers'")
 		managersResult = self.cursor.fetchall()
 
@@ -1914,9 +2080,10 @@ class Mysql(_Storage):
 			or len(optionsResult) == 0
 			or len(nodesResult) == 0
 			or len(sensorsResult) == 0
+			or len(sensorsAlertLevelsResult) == 0
 			or len(sensorAlertsResult) == 0
 			or len(alertsResult) == 0
-			or len(alertLevelsResult) == 0
+			or len(alertsAlertLevelsResult) == 0
 			or len(managersResult) == 0):
 			self.createStorage()
 
@@ -1970,6 +2137,27 @@ class Mysql(_Storage):
 			return result[0][0]
 		else:
 			raise ValueError("Node id was not found.")
+
+
+	# internal function that gets the sensor id of a sensor when the id 
+	# of a node is given and the remote sensor id that is used 
+	# by the node internally
+	#
+	# return sensorId or raised Exception
+	def _getSensorId(self, nodeId, remoteSensorId):
+
+		# get sensorId from database
+		self.cursor.execute("SELECT id FROM sensors "
+			+ "WHERE nodeId = %s "
+			+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Sensor does not exist in database.")
+
+		sensorId = result[0][0]
+
+		return sensorId
 
 
 	# internal function that acquires the lock
@@ -2035,9 +2223,15 @@ class Mysql(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
-			+ "alertLevel INTEGER NOT NULL, "
 			+ "triggerAlways INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create sensorsAlertLevels table
+		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "sensorId INTEGER NOT NULL, "
+			+ "alertLevel INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create sensorAlerts table
 		self.cursor.execute("CREATE TABLE sensorAlerts ("
@@ -2056,8 +2250,8 @@ class Mysql(_Storage):
 			+ "description VARCHAR(255) NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
-		# create alertLevels table
-		self.cursor.execute("CREATE TABLE alertLevels ("
+		# create alertsAlertLevels table
+		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
@@ -2131,6 +2325,16 @@ class Mysql(_Storage):
 			# if type is sensor
 			if nodeType == "sensor":
 				try:
+					# get the id of all sensors that are managed by this node
+					# and delete the alert levels of these sensors
+					self.cursor.execute("SELECT id FROM sensors "
+						+ "WHERE nodeId = %s", (nodeId, ))
+					result = self.cursor.fetchall()
+					for tempSensorid in result:
+						self.cursor.execute("DELETE FROM sensorsAlertLevels "
+						+ "WHERE sensorId = %s", (tempSensorid[0], ))
+
+					# delete the sensors
 					self.cursor.execute("DELETE FROM sensors "
 						+ "WHERE nodeId = %s", (nodeId, ))
 				except Exception as e:
@@ -2163,7 +2367,7 @@ class Mysql(_Storage):
 				try:
 					self.cursor.execute("DELETE FROM alerts "
 						+ "WHERE nodeId = %s", (nodeId, ))
-					self.cursor.execute("DELETE FROM alertLevels "
+					self.cursor.execute("DELETE FROM alertsAlertLevels "
 						+ "WHERE nodeId = %s", (nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node." 
@@ -2204,7 +2408,7 @@ class Mysql(_Storage):
 	# adds the data that is given by the node for the sensor to the database
 	#
 	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, alertLevel,
+	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
 		description, triggerAlways):
 
 		self._acquireLock()	
@@ -2251,12 +2455,37 @@ class Mysql(_Storage):
 				+ "state, "
 				+ "lastStateUpdated, "
 				+ "alertDelay, "
-				+ "alertLevel, "
-				+ "triggerAlways) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+				+ "triggerAlways) VALUES (%s, %s, %s, %s, %s, %s, %s)",
 				(nodeId, remoteSensorId, description, 0, 0, alertDelay,
-				alertLevel, triggerAlways))
+				triggerAlways))
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor." % self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# get sensorId of current added sensor
+		try:
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensorId." 
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# add sensor alert levels to database
+		try:
+			for alertLevel in alertLevels:			
+				self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+					+ "sensorId, "
+					+ "alertLevel) VALUES (%s, %s)",
+					(sensorId, alertLevel))
+		except Exception as e:
+			logging.exception("[%s]: Not able to add sensor alert levels."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -2330,7 +2559,7 @@ class Mysql(_Storage):
 	# client to the database
 	#
 	# return True or False
-	def addAlertLevels(self, username, alertLevels):
+	def addAlertsAlertLevels(self, username, alertLevels):
 
 		self._acquireLock()	
 		
@@ -2359,7 +2588,7 @@ class Mysql(_Storage):
 		# add alert levels to database
 		try:
 			for alertLevel in alertLevels:
-				self.cursor.execute("INSERT INTO alertLevels ("
+				self.cursor.execute("INSERT INTO alertsAlertLevels ("
 					+ "nodeId, "
 					+ "alertLevel) VALUES (%s, %s)", (nodeId, alertLevel))
 		except Exception as e:
@@ -2480,7 +2709,7 @@ class Mysql(_Storage):
 	# are the same
 	#
 	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevel,
+	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
 		description, triggerAlways):
 
 		self._acquireLock()
@@ -2503,12 +2732,14 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to " % self.fileName
 				+ "check sensor.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return False
 
 		self.cursor.execute("SELECT alertDelay, "
-			+ "alertLevel, "
 			+ "description, "
 			+ "triggerAlways "
 			+ "FROM sensors "
@@ -2540,27 +2771,81 @@ class Mysql(_Storage):
 
 			return False
 
+		# check if values of sensors table are correct
+		sensorsTableCorrect = False
 		if (result[0][0] == alertDelay
-			and result[0][1] == alertLevel
-			and result[0][2] == description
-			and result[0][3] == triggerAlways):
+			and result[0][1] == description
+			and result[0][2] == triggerAlways):
+			sensorsTableCorrect = True
+		if not sensorsTableCorrect:
+			logging.error("[%s]: Sensor configuration does not match."
+				% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
 
 			self._releaseLock()
 
-			return True
+			return False
 
-		logging.error("[%s]: Sensor configuration does not match."
+		# get sensorId of the sensor to check
+		try:
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensorId." 
 				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return False
+
+		# check all sensor alert levels
+		self.cursor.execute("SELECT alertLevel "
+			+ "FROM sensorsAlertLevels "
+			+ "WHERE sensorId = %s ", (sensorId, ))
+		result = self.cursor.fetchall()		
+
+		# check if all sensor alert levels from the db are
+		# in the list of alert levels
+		for dbAlertLevel in result:
+			if not dbAlertLevel[0] in alertLevels:
+				logging.error("[%s]: Sensor alert level " % self.fileName
+					+ "from db not in list of alert levels.")
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock()
+
+				return False
+
+		# check if all sensor alert levels from the list are
+		# in the db
+		for tempAlertLevel in alertLevels:
+			found = False
+			for dbAlertLevel in result:
+				if tempAlertLevel == dbAlertLevel[0]:
+					found = True
+			if not found:
+				logging.error("[%s]: Sensor alert level " % self.fileName
+					+ "from list not in db.")
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock()
+
+				return False
 
 		# close connection to the database
 		self._closeConnection()
 
 		self._releaseLock()
 
-		return False
+		return True
 
 
 	# checks if the given data of the alert and the data in the database
@@ -2647,7 +2932,7 @@ class Mysql(_Storage):
 	# levels in the database are the same
 	#
 	# return True or False
-	def checkAlertLevels(self, username, alertLevels):
+	def checkAlertsAlertLevels(self, username, alertLevels):
 
 		self._acquireLock()
 
@@ -2674,7 +2959,7 @@ class Mysql(_Storage):
 			return False
 
 		self.cursor.execute("SELECT alertLevel "
-			+ "FROM alertLevels "
+			+ "FROM alertsAlertLevels "
 			+ "WHERE nodeId = %s ", (nodeId, ))
 
 		result = self.cursor.fetchall()
@@ -2909,7 +3194,7 @@ class Mysql(_Storage):
 	# the count in the database
 	#
 	# return True or False
-	def checkAlertLevelCount(self, username, alertLevelCount):
+	def checkAlertAlertLevelCount(self, username, alertLevelCount):
 
 		self._acquireLock()
 
@@ -2936,7 +3221,7 @@ class Mysql(_Storage):
 			return False		
 
 		# get all alert levels on this nodes
-		self.cursor.execute("SELECT id FROM alertLevels "
+		self.cursor.execute("SELECT id FROM alertsAlertLevels "
 			+ "WHERE nodeId = %s ", (nodeId, ))
 
 		result = self.cursor.fetchall()
@@ -3112,29 +3397,13 @@ class Mysql(_Storage):
 			return None
 
 		try:
-
-			# get sensorId from database
-			self.cursor.execute("SELECT id FROM sensors "
-				+ "WHERE nodeId = %s "
-				+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
-			result = self.cursor.fetchall()
-
-			if len(result) != 1:
-				logging.error("[%s]: Sensor does not exist in database."
-					% self.fileName)
-
-				# close connection to the database
-				self._closeConnection()
-
-				self._releaseLock()
-
-				return None
-
-			sensorId = result[0][0]
-
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
 		except Exception as e:
 			logging.exception("[%s]: Not able to get sensorId from database."
 				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3146,6 +3415,53 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		return sensorId
+
+
+	# gets all alert levels for a specific sensor given by sensorId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getSensorAlertLevels(self, sensorId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsAlertLevels "
+				+ "WHERE sensorId = %s", (sensorId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for sensor with id %d." % sensorId)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
 
 
 	# adds a sensor alert to the database when the id of a node is given,
@@ -3224,7 +3540,7 @@ class Mysql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways, description)
+	# alertDelay, state, triggerAlways, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -3247,7 +3563,6 @@ class Mysql(_Storage):
 				+ "sensors.id, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
-				+ "sensors.alertLevel, "
 				+ "sensors.state, "
 				+ "sensors.triggerAlways, "
 				+ "sensors.description "
@@ -3271,7 +3586,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, alertLevel, state, triggerAlways, description)
+		# alertDelay, state, triggerAlways, description)
 		return result
 
 
@@ -3419,11 +3734,11 @@ class Mysql(_Storage):
 		return returnTuple
 
 
-	# gets all alert levels from the database
+	# gets all alert levels for the alert clients from the database
 	#
 	# return list of tuples of (alertLevel)
 	# or None
-	def getAllAlertLevels(self):
+	def getAllAlertsAlertLevels(self):
 
 		self._acquireLock()
 
@@ -3440,13 +3755,56 @@ class Mysql(_Storage):
 
 		try:
 			self.cursor.execute("SELECT alertLevel "
-				+ "FROM alertLevels")
+				+ "FROM alertsAlertLevels")
 			result = self.cursor.fetchall()
 
 		except Exception as e:
 
 			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "all alert levels.")
+				+ "all alert levels for alert clients.")
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
+
+
+	# gets all alert levels for the sensors from the database
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAllSensorsAlertLevels(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsAlertLevels")
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "all alert levels for sensors.")
 
 			self._releaseLock()
 
@@ -3642,7 +4000,7 @@ class Mysql(_Storage):
 	#
 	# return a tuple of (sensorId, nodeId,
 	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# alertLevel, triggerAlways)
+	# triggerAlways)
 	# or None
 	def getSensorInformation(self, sensorId):
 
@@ -3667,7 +4025,6 @@ class Mysql(_Storage):
 				+ "state, "
 				+ "lastStateUpdated, "
 				+ "alertDelay, "
-				+ "alertLevel, "
 				+ "triggerAlways "
 				+ "FROM sensors "
 				+ "WHERE id = %s", (sensorId, ))
@@ -3702,7 +4059,7 @@ class Mysql(_Storage):
 
 		# return a tuple of (sensorId, nodeId,
 		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# alertLevel, triggerAlways)
+		# triggerAlways)
 		return result[0]
 
 
@@ -3756,7 +4113,7 @@ class Mysql(_Storage):
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# alertLevel, description, lastStateUpdated, state))
+	# description, lastStateUpdated, state))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
@@ -3801,7 +4158,6 @@ class Mysql(_Storage):
 			self.cursor.execute("SELECT nodeId, "
 				+ "id, "
 				+ "alertDelay, "
-				+ "alertLevel, "
 				+ "description, "
 				+ "lastStateUpdated, "
 				+ "state "
@@ -3862,7 +4218,7 @@ class Mysql(_Storage):
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# alertLevel, description, lastStateUpdated, state))
+		# description, lastStateUpdated, state))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
@@ -4044,6 +4400,10 @@ class Postgresql(_Storage):
 		sensorsResult = self.cursor.fetchall()[0][0]
 		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
 			+ "WHERE table_name = %s "
+			+ "and table_catalog = %s", ["sensorsalertlevels", self.database])
+		sensorsAlertLevelsResult = self.cursor.fetchall()[0][0]
+		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
+			+ "WHERE table_name = %s "
 			+ "and table_catalog = %s", ["sensoralerts", self.database])
 		sensorAlertsResult = self.cursor.fetchall()[0][0]
 		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
@@ -4052,8 +4412,8 @@ class Postgresql(_Storage):
 		alertsResult = self.cursor.fetchall()[0][0]
 		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
 			+ "WHERE table_name = %s "
-			+ "and table_catalog = %s", ["alertlevels", self.database])
-		alertLevelsResult = self.cursor.fetchall()[0][0]
+			+ "and table_catalog = %s", ["alertsalertlevels", self.database])
+		alertsAlertLevelsResult = self.cursor.fetchall()[0][0]
 		self.cursor.execute("SELECT count(*) FROM information_schema.tables "
 			+ "WHERE table_name = %s "
 			+ "and table_catalog = %s", ["managers", self.database])
@@ -4066,9 +4426,10 @@ class Postgresql(_Storage):
 			or optionsResult == 0
 			or nodesResult == 0
 			or sensorsResult == 0
+			or sensorsAlertLevelsResult == 0
 			or sensorAlertsResult == 0
 			or alertsResult == 0
-			or alertLevelsResult == 0
+			or alertsAlertLevelsResult == 0
 			or managersResult == 0):
 			self.createStorage()
 
@@ -4127,6 +4488,29 @@ class Postgresql(_Storage):
 			return result[0][0]
 		else:
 			raise ValueError("Node id was not found.")
+
+
+	# internal function that gets the sensor id of a sensor when the id 
+	# of a node is given and the remote sensor id that is used 
+	# by the node internally
+	#
+	# return sensorId or raised Exception
+	def _getSensorId(self, nodeId, remoteSensorId):
+
+		# get sensorId from database
+		# (because of problems with postgresql table names are
+		# written in lowercase and not in camel case)
+		self.cursor.execute("SELECT id FROM sensors "
+			+ "WHERE nodeId = %s "
+			+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Sensor does not exist in database.")
+
+		sensorId = result[0][0]
+
+		return sensorId
 
 
 	# internal function that acquires the lock
@@ -4204,9 +4588,17 @@ class Postgresql(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
-			+ "alertLevel INTEGER NOT NULL, "
 			+ "triggerAlways INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create sensorsAlertLevels table
+		# (because of problems with postgresql table names are written
+		# in lowercase and not in camel case)
+		self.cursor.execute("CREATE TABLE sensorsalertlevels ("
+			+ "id SERIAL PRIMARY KEY, "
+			+ "sensorId INTEGER NOT NULL, "
+			+ "alertLevel INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create sensorAlerts table
 		# (because of problems with postgresql table names are written
@@ -4229,10 +4621,10 @@ class Postgresql(_Storage):
 			+ "description VARCHAR(255) NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
-		# create alertLevels table
+		# create alertsAlertLevels table
 		# (because of problems with postgresql table names are written
 		# in lowercase and not in camel case)
-		self.cursor.execute("CREATE TABLE alertlevels ("
+		self.cursor.execute("CREATE TABLE alertsalertlevels ("
 			+ "id SERIAL PRIMARY KEY, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
@@ -4310,6 +4702,18 @@ class Postgresql(_Storage):
 			# if type is sensor
 			if nodeType == "sensor":
 				try:
+					# get the id of all sensors that are managed by this node
+					# and delete the alert levels of these sensors
+					# (because of problems with postgresql table names are
+					# written in lowercase and not in camel case)
+					self.cursor.execute("SELECT id FROM sensors "
+						+ "WHERE nodeId = %s", (nodeId, ))
+					result = self.cursor.fetchall()
+					for tempSensorid in result:
+						self.cursor.execute("DELETE FROM sensorsalertlevels "
+						+ "WHERE sensorId = %s", (tempSensorid[0], ))
+
+					# delete the sensors
 					# (because of problems with postgresql table names are
 					# written in lowercase and not in camel case)
 					self.cursor.execute("DELETE FROM sensors "
@@ -4348,7 +4752,7 @@ class Postgresql(_Storage):
 					# written in lowercase and not in camel case)
 					self.cursor.execute("DELETE FROM alerts "
 						+ "WHERE nodeId = %s", (nodeId, ))
-					self.cursor.execute("DELETE FROM alertlevels "
+					self.cursor.execute("DELETE FROM alertsalertlevels "
 						+ "WHERE nodeId = %s", (nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node." 
@@ -4391,7 +4795,7 @@ class Postgresql(_Storage):
 	# adds the data that is given by the node for the sensor to the database
 	#
 	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, alertLevel,
+	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
 		description, triggerAlways):
 
 		self._acquireLock()	
@@ -4446,6 +4850,32 @@ class Postgresql(_Storage):
 				alertLevel, triggerAlways))
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor." % self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# get sensorId of current added sensor
+		try:
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensorId." 
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# add sensor alert levels to database
+		try:
+			for alertLevel in alertLevels:			
+				self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+					+ "sensorId, "
+					+ "alertLevel) VALUES (%s, %s)",
+					(sensorId, alertLevel))
+		except Exception as e:
+			logging.exception("[%s]: Not able to add sensor alert levels."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -4521,7 +4951,7 @@ class Postgresql(_Storage):
 	# client to the database
 	#
 	# return True or False
-	def addAlertLevels(self, username, alertLevels):
+	def addAlertsAlertLevels(self, username, alertLevels):
 
 		self._acquireLock()	
 		
@@ -4552,7 +4982,7 @@ class Postgresql(_Storage):
 			for alertLevel in alertLevels:
 				# (because of problems with postgresql table names are
 				# written in lowercase and not in camel case)
-				self.cursor.execute("INSERT INTO alertlevels ("
+				self.cursor.execute("INSERT INTO alertsalertlevels ("
 					+ "nodeId, "
 					+ "alertLevel) VALUES (%s, %s)", (nodeId, alertLevel))
 		except Exception as e:
@@ -4677,7 +5107,7 @@ class Postgresql(_Storage):
 	# are the same
 	#
 	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevel,
+	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
 		description, triggerAlways):
 
 		self._acquireLock()
@@ -4700,6 +5130,9 @@ class Postgresql(_Storage):
 			logging.exception("[%s]: Not able to " % self.fileName
 				+ "check sensor.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return False
@@ -4707,7 +5140,6 @@ class Postgresql(_Storage):
 		# (because of problems with postgresql table names are
 		# written in lowercase and not in camel case)
 		self.cursor.execute("SELECT alertDelay, "
-			+ "alertLevel, "
 			+ "description, "
 			+ "triggerAlways "
 			+ "FROM sensors "
@@ -4739,27 +5171,82 @@ class Postgresql(_Storage):
 
 			return False
 
+		# check if values of sensors table are correct
+		sensorsTableCorrect = False
 		if (result[0][0] == alertDelay
-			and result[0][1] == alertLevel
-			and result[0][2] == description
-			and result[0][3] == triggerAlways):
+			and result[0][1] == description
+			and result[0][2] == triggerAlways):
+			sensorsTableCorrect = True
+		if not sensorsTableCorrect:
+			logging.error("[%s]: Sensor configuration does not match."
+				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()			
+
+			self._releaseLock()
+
+			return False
+
+		# get sensorId of the sensor to check
+		try:
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensorId." 
+				% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
 
 			self._releaseLock()
 
-			return True
+			return False
 
-		logging.error("[%s]: Sensor configuration does not match."
-				% self.fileName)
+		# check all sensor alert levels
+		self.cursor.execute("SELECT alertLevel "
+			+ "FROM sensorsAlertLevels "
+			+ "WHERE sensorId = %s ", (sensorId, ))
+		result = self.cursor.fetchall()		
+
+		# check if all sensor alert levels from the db are
+		# in the list of alert levels
+		for dbAlertLevel in result:
+			if not dbAlertLevel[0] in alertLevels:
+				logging.error("[%s]: Sensor alert level " % self.fileName
+					+ "from db not in list of alert levels.")
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock()
+
+				return False
+
+		# check if all sensor alert levels from the list are
+		# in the db
+		for tempAlertLevel in alertLevels:
+			found = False
+			for dbAlertLevel in result:
+				if tempAlertLevel == dbAlertLevel[0]:
+					found = True
+			if not found:
+				logging.error("[%s]: Sensor alert level " % self.fileName
+					+ "from list not in db.")
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock()
+
+				return False
+
 
 		# close connection to the database
 		self._closeConnection()
 
 		self._releaseLock()
 
-		return False
+		return True
 
 
 	# checks if the given data of the alert and the data in the database
@@ -4848,7 +5335,7 @@ class Postgresql(_Storage):
 	# levels in the database are the same
 	#
 	# return True or False
-	def checkAlertLevels(self, username, alertLevels):
+	def checkAlertsAlertLevels(self, username, alertLevels):
 
 		self._acquireLock()
 
@@ -4877,7 +5364,7 @@ class Postgresql(_Storage):
 		# (because of problems with postgresql table names are
 		# written in lowercase and not in camel case)
 		self.cursor.execute("SELECT alertLevel "
-			+ "FROM alertlevels "
+			+ "FROM alertsalertlevels "
 			+ "WHERE nodeId = %s ", (nodeId, ))
 
 		result = self.cursor.fetchall()
@@ -5118,7 +5605,7 @@ class Postgresql(_Storage):
 	# the count in the database
 	#
 	# return True or False
-	def checkAlertLevelCount(self, username, alertLevelCount):
+	def checkAlertAlertLevelCount(self, username, alertLevelCount):
 
 		self._acquireLock()
 
@@ -5147,7 +5634,7 @@ class Postgresql(_Storage):
 		# get all alert levels on this nodes
 		# (because of problems with postgresql table names are
 		# written in lowercase and not in camel case)
-		self.cursor.execute("SELECT id FROM alertlevels "
+		self.cursor.execute("SELECT id FROM alertsalertlevels "
 			+ "WHERE nodeId = %s ", (nodeId, ))
 
 		result = self.cursor.fetchall()
@@ -5329,31 +5816,13 @@ class Postgresql(_Storage):
 			return None
 
 		try:
-
-			# get sensorId from database
-			# (because of problems with postgresql table names are
-			# written in lowercase and not in camel case)
-			self.cursor.execute("SELECT id FROM sensors "
-				+ "WHERE nodeId = %s "
-				+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
-			result = self.cursor.fetchall()
-
-			if len(result) != 1:
-				logging.error("[%s]: Sensor does not exist in database."
-					% self.fileName)
-
-				# close connection to the database
-				self._closeConnection()
-
-				self._releaseLock()
-
-				return None
-
-			sensorId = result[0][0]
-
+			sensorId = self._getSensorId(nodeId, remoteSensorId)
 		except Exception as e:
 			logging.exception("[%s]: Not able to get sensorId from database."
 				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -5365,6 +5834,55 @@ class Postgresql(_Storage):
 		self._releaseLock()
 
 		return sensorId
+
+
+	# gets all alert levels for a specific sensor given by sensorId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getSensorAlertLevels(self, sensorId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		try:
+			# (because of problems with postgresql table names are
+			# written in lowercase and not in camel case)
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsalertlevels "
+				+ "WHERE sensorId = %s", (sensorId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for sensor with id %d." % sensorId)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
 
 
 	# adds a sensor alert to the database when the id of a node is given,
@@ -5449,7 +5967,7 @@ class Postgresql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, alertLevel, state, triggerAlways, description)
+	# alertDelay, state, triggerAlways, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -5473,7 +5991,6 @@ class Postgresql(_Storage):
 				+ "sensors.id, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
-				+ "sensors.alertLevel, "
 				+ "sensors.state, "
 				+ "sensors.triggerAlways, "
 				+ "sensors.description "
@@ -5497,7 +6014,7 @@ class Postgresql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, alertLevel, state, triggerAlways, description)
+		# alertDelay, state, triggerAlways, description)
 		return result
 
 
@@ -5655,11 +6172,11 @@ class Postgresql(_Storage):
 		return returnTuple
 
 
-	# gets all alert levels from the database
+	# gets all alert levels for the alert clients from the database
 	#
 	# return list of tuples of (alertLevel)
 	# or None
-	def getAllAlertLevels(self):
+	def getAllAlertsAlertLevels(self):
 
 		self._acquireLock()
 
@@ -5678,13 +6195,58 @@ class Postgresql(_Storage):
 			# (because of problems with postgresql table names are
 			# written in lowercase and not in camel case)
 			self.cursor.execute("SELECT alertLevel "
-				+ "FROM alertlevels")
+				+ "FROM alertsalertlevels")
 			result = self.cursor.fetchall()
 
 		except Exception as e:
 
 			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "all alert levels.")
+				+ "all alert levels for alert clients.")
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
+
+
+	# gets all alert levels for the sensors from the database
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAllSensorsAlertLevels(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		try:
+			# (because of problems with postgresql table names are
+			# written in lowercase and not in camel case)
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsalertlevels")
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "all alert levels for sensors.")
 
 			self._releaseLock()
 
@@ -5888,7 +6450,7 @@ class Postgresql(_Storage):
 	#
 	# return a tuple of (sensorId, nodeId,
 	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# alertLevel, triggerAlways)
+	# triggerAlways)
 	# or None
 	def getSensorInformation(self, sensorId):
 
@@ -5915,7 +6477,6 @@ class Postgresql(_Storage):
 				+ "state, "
 				+ "lastStateUpdated, "
 				+ "alertDelay, "
-				+ "alertLevel, "
 				+ "triggerAlways "
 				+ "FROM sensors "
 				+ "WHERE id = %s", (sensorId, ))
@@ -5950,7 +6511,7 @@ class Postgresql(_Storage):
 
 		# return a tuple of (sensorId, nodeId,
 		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# alertLevel, triggerAlways)
+		# triggerAlways)
 		return result[0]
 
 
@@ -6006,7 +6567,7 @@ class Postgresql(_Storage):
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# alertLevel, description, lastStateUpdated, state))
+	# description, lastStateUpdated, state))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
@@ -6057,7 +6618,6 @@ class Postgresql(_Storage):
 			self.cursor.execute("SELECT nodeId, "
 				+ "id, "
 				+ "alertDelay, "
-				+ "alertLevel, "
 				+ "description, "
 				+ "lastStateUpdated, "
 				+ "state "
@@ -6122,7 +6682,7 @@ class Postgresql(_Storage):
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# alertLevel, description, lastStateUpdated, state))
+		# description, lastStateUpdated, state))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
