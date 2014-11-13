@@ -406,11 +406,6 @@ class ServerCommunication:
 		sensors = list()
 		for sensor in self.sensors:
 			tempSensor = dict()
-
-			if sensor.triggerAlways:
-				tempSensor["triggerAlways"] = 1
-			else:
-				tempSensor["triggerAlways"] = 0
 			tempSensor["clientSensorId"] = sensor.id
 			tempSensor["alertDelay"] = sensor.alertDelay
 			tempSensor["alertLevels"] = sensor.alertLevels
@@ -518,9 +513,6 @@ class ServerCommunication:
 					alertLevelString += "%d" % alertLevel
 				registeredConfig.set('sensor%d' % i, 'alertLevels',
 					alertLevelString)
-
-				registeredConfig.set('sensor%d' % i, 'triggerAlways',
-					self.sensors[i].triggerAlways)
 
 			# write config
 			try:

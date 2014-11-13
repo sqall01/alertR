@@ -91,13 +91,6 @@ alertLevel = 3
 # ("True" or "False")
 triggerAlert = True
 
-# this flag indicates if this sensor should trigger an alert
-# regardless of if the alert system is not active
-# this could be used for example for a smoke detector that should
-# always trigger and not only if the alert system is activated
-# ("True" or "False")
-triggerAlways = True
-
 # on which internal state the alert should trigger (either 0 or 1)
 # for example some sensors trigger with an internal state of 1 and some
 # with an internal state of 0
@@ -150,13 +143,6 @@ alertLevel = 3
 # active or not)
 # ("True" or "False")
 triggerAlert = True
-
-# this flag indicates if this sensor should trigger an alert
-# regardless of if the alert system is not active
-# this could be used for example for a smoke detector that should
-# always trigger and not only if the alert system is activated
-# ("True" or "False")
-triggerAlways = True
 
 # on which internal state the alert should trigger (either 0 or 1)
 # for example some sensors trigger with an internal state of 1 and some

@@ -135,8 +135,6 @@ if __name__ == '__main__':
 					config.get(section, "alertLevels").split(","))
 				sensor.triggerAlert = config.getboolean(section,
 					"triggerAlert")
-				sensor.triggerAlways = config.getboolean(section,
-					"triggerAlways")
 				sensor.triggerState = config.getint(section, "triggerState")
 
 				# ctf watchdog specific options
@@ -191,8 +189,6 @@ if __name__ == '__main__':
 						tempAlertLevels = map(int,
 							registeredConfig.get(section,
 							"alertLevels").split(","))
-						tempTriggerAlways = registeredConfig.getboolean(
-							section, "triggerAlways")
 
 						# find sensor with the same id parsed from the
 						# regular config file
@@ -221,8 +217,7 @@ if __name__ == '__main__':
 						# check if the sensor data has changed since
 						# the last registration
 						if (tempAlertDelay != tempSensor.alertDelay
-							or tempDescription != tempSensor.description
-							or tempTriggerAlways != tempSensor.triggerAlways):
+							or tempDescription != tempSensor.description):
 							globalData.registered = False
 							break
 
