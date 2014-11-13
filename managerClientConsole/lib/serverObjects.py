@@ -45,7 +45,7 @@ class Sensor:
 		self.nodeId = None
 		self.sensorId = None
 		self.alertDelay = None
-		self.alertLevel = None
+		self.alertLevels = list()
 		self.description = None
 		self.lastStateUpdated = None
 		self.state = None
@@ -97,3 +97,4 @@ class SensorAlert:
 		self.sensorId = None
 		self.state = None
 		self.timeReceived = None
+		self.alertLevels = list()

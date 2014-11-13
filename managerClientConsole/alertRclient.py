@@ -99,6 +99,11 @@ class GlobalData:
 		# for a sensor		
 		self.urwidSensorShowState = None
 
+		# this option tells the screen thread if
+		# the "alert levels" information should be shown
+		# for a sensor
+		self.urwidSensorShowAlertLevels = None
+
 		# this is the time in seconds when the sensor should be
 		# displayed as timed out
 		self.connectionTimeout = 60
@@ -192,6 +197,8 @@ if __name__ == '__main__':
 			"urwidSensorShowLastUpdated")
 		globalData.urwidSensorShowState = config.getboolean("general",
 			"urwidSensorShowState")
+		globalData.urwidSensorShowAlertLevels = config.getboolean("general",
+			"urwidSensorShowAlertLevels")
 		globalData.timeShowSensorAlert = config.getint("general",
 			"timeShowSensorAlert")
 		globalData.maxCountShowSensorAlert = config.getint("general",

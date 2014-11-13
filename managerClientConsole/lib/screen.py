@@ -202,13 +202,14 @@ class SensorUrwid:
 
 	def __init__(self, sensor, node, connectionTimeout,
 		showConnected, showAlertDelay,
-		showLastUpdated, showState):
+		showLastUpdated, showState, showAlertLevels):
 
 		# options which information should be displayed
 		self.showConnected = showConnected
 		self.showAlertDelay = showAlertDelay
 		self.showLastUpdated = showLastUpdated
 		self.showState = showState
+		self.showAlertLevels = showAlertLevels
 
 		# is needed to decide when a sensor has timed out
 		self.connectionTimeout = connectionTimeout
@@ -244,6 +245,24 @@ class SensorUrwid:
 		if self.showState:
 			self.stateWidget = urwid.Text("State: " + str(sensor.state))
 			sensorPileList.append(self.stateWidget)
+
+		# create text widget for the "alert levels" information if
+		# it should be displayed
+		if self.showAlertLevels:
+
+			# generate formatted string from alert levels
+			alertLevelsString = ""
+			first = True
+			for alertLevel in sensor.alertLevels:
+				if first:
+					first = False
+				else:
+					alertLevelsString += ", "
+				alertLevelsString += str(alertLevel)
+
+			self.alertLevelWidget = urwid.Text("Alert levels: "
+				+ alertLevelsString)
+			sensorPileList.append(self.alertLevelWidget)
 
 		sensorPile = urwid.Pile(sensorPileList)
 		sensorBox = urwid.LineBox(sensorPile, title="host: " + node.hostname)
@@ -371,6 +390,27 @@ class SensorUrwid:
 				self.sensorUrwidMap.set_attr_map({None: "sensoralert"})
 
 
+	# this function updates the alert levels of the object
+	def updateAlertLevels(self, alertLevels):
+
+		# only change text widget text if the information should be
+		# displayed
+		if self.showAlertLevels:
+
+			# generate formatted string from alert levels
+			alertLevelsString = ""
+			first = True
+			for alertLevel in self.sensor.alertLevels:
+				if first:
+					first = False
+				else:
+					alertLevelsString += ", "
+				alertLevelsString += str(alertLevel)
+
+			self.alertLevelWidget.set_text("Alert levels: "
+				+ alertLevelsString)
+
+
 	# this function updates all internal widgets and checks if
 	# the sensor/node still exists
 	def updateCompleteWidget(self):
@@ -387,6 +427,7 @@ class SensorUrwid:
 		self.updateAlertDelay(self.sensor.alertDelay)
 		self.updateLastUpdated(self.sensor.lastStateUpdated)
 		self.updateState(self.sensor.state)
+		self.updateAlertLevels(self.sensor.alertLevels)
 
 		# return true if object was updated
 		return True
@@ -475,17 +516,28 @@ class AlertUrwid:
 # this class is an urwid object for a sensor alert
 class SensorAlertUrwid:
 
-	def __init__(self, description, timeReceived, timeShowSensorAlert):
+	def __init__(self, sensorAlert, description, timeShowSensorAlert):
 
+		self.sensorAlert = sensorAlert
 		self.description = description
-		self.timeReceived = timeReceived
+		self.timeReceived = self.sensorAlert.timeReceived
 		self.timeShowSensorAlert = timeShowSensorAlert
+
+		# generate formatted string from alert levels
+		alertLevelsString = ""
+		first = True
+		for alertLevel in self.sensorAlert.alertLevels:
+			if first:
+				first = False
+			else:
+				alertLevelsString += ", "
+			alertLevelsString += str(alertLevel)
 
 		# generate the internal urwid widgets
 		stringReceivedTime = time.strftime("%D %H:%M:%S",
-			time.localtime(self.timeReceived))
+			time.localtime(self.timeReceived))	
 		self.textWidget = urwid.Text(stringReceivedTime + " - " +
-			self.description)
+			self.description + " (" + alertLevelsString + ")")
 		
 
 	# this function returns the final urwid widget that is used
@@ -539,6 +591,8 @@ class Console:
 			= self.globalData.urwidSensorShowLastUpdated
 		self.urwidSensorShowState \
 			= self.globalData.urwidSensorShowState
+		self.urwidSensorShowAlertLevels \
+			= self.globalData.urwidSensorShowAlertLevels
 
 		# urwid grid object for sensors
 		self.sensorsGrid = None
@@ -862,7 +916,8 @@ class Console:
 				self.connectionTimeout, self.urwidSensorShowConnected,
 				self.urwidSensorShowAlertDelay,
 				self.urwidSensorShowLastUpdated,
-				self.urwidSensorShowState)
+				self.urwidSensorShowState,
+				self.urwidSensorShowAlertLevels)
 
 			# append the final sensor urwid object to the list
 			# of sensor objects
@@ -1129,7 +1184,8 @@ class Console:
 						self.connectionTimeout, self.urwidSensorShowConnected,
 						self.urwidSensorShowAlertDelay,
 						self.urwidSensorShowLastUpdated,
-						self.urwidSensorShowState)
+						self.urwidSensorShowState,
+						self.urwidSensorShowAlertLevels)
 
 					# append the final sensor urwid object to the list
 					# of sensor objects
@@ -1246,8 +1302,8 @@ class Console:
 								sensorAlertWidgetToRemove)
 
 				# create new sensor alert urwid object
-				sensorAlertUrwid = SensorAlertUrwid(description,
-					sensorAlert.timeReceived, self.timeShowSensorAlert)
+				sensorAlertUrwid = SensorAlertUrwid(sensorAlert,
+					description, self.timeShowSensorAlert,)
 
 				# add sensor alert urwid object to the list of
 				# sensor alerts urwid objects
