@@ -36,7 +36,7 @@ class _Storage():
 	#
 	# return True or False
 	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -83,7 +83,7 @@ class _Storage():
 	#
 	# return True or False
 	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -168,7 +168,7 @@ class _Storage():
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, state, triggerAlways)
+	# alertDelay, state)
 	# or None
 	def getSensorAlerts(self):
 		raise NotImplemented("Function not implemented yet.")
@@ -220,8 +220,7 @@ class _Storage():
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# triggerAlways)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 	# or None
 	def getSensorInformation(self, sensorId):
 		raise NotImplemented("Function not implemented yet.")
@@ -458,7 +457,6 @@ class Sqlite(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
-			+ "triggerAlways INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create sensorsAlertLevels table
@@ -627,7 +625,7 @@ class Sqlite(_Storage):
 	#
 	# return True or False
 	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 
 		self._acquireLock()	
 		
@@ -641,15 +639,6 @@ class Sqlite(_Storage):
 
 			return False
 
-		# check if trigger always has a valid value
-		if (triggerAlways != 0 
-			and triggerAlways != 1):
-			logging.error("[%s]: triggerAlways not valid." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
 		# add sensor to database
 		try:
 			self.cursor.execute("INSERT INTO sensors ("
@@ -658,10 +647,8 @@ class Sqlite(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "triggerAlways) VALUES (?, ?, ?, ?, ?, ?, ?)",
-				(nodeId, remoteSensorId, description, 0, 0, alertDelay,
-				triggerAlways))
+				+ "alertDelay) VALUES (?, ?, ?, ?, ?, ?)",
+				(nodeId, remoteSensorId, description, 0, 0, alertDelay))
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor." % self.fileName)
 
@@ -852,7 +839,7 @@ class Sqlite(_Storage):
 	#
 	# return True or False
 	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 
 		self._acquireLock()
 
@@ -868,8 +855,7 @@ class Sqlite(_Storage):
 			return False
 
 		self.cursor.execute("SELECT alertDelay, "
-			+ "description, "
-			+ "triggerAlways "
+			+ "description "
 			+ "FROM sensors "
 			+ "WHERE nodeId = ? "
 			+ "AND remoteSensorId = ?", (nodeId, remoteSensorId))
@@ -896,8 +882,7 @@ class Sqlite(_Storage):
 		# check if values of sensors table are correct
 		sensorsTableCorrect = False
 		if (result[0][0] == alertDelay
-			and result[0][1] == description
-			and result[0][2] == triggerAlways):
+			and result[0][1] == description):
 			sensorsTableCorrect = True
 		if not sensorsTableCorrect:
 			logging.error("[%s]: Sensor configuration does not match."
@@ -1434,7 +1419,7 @@ class Sqlite(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, state, triggerAlways, description)
+	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -1447,7 +1432,6 @@ class Sqlite(_Storage):
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
-				+ "sensors.triggerAlways, "
 				+ "sensors.description "
 				+ "FROM sensorAlerts "
 				+ "INNER JOIN sensors "
@@ -1466,7 +1450,7 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, state, triggerAlways, description)
+		# alertDelay, state, description)
 		return result
 
 
@@ -1753,8 +1737,7 @@ class Sqlite(_Storage):
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# triggerAlways)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 	# or None
 	def getSensorInformation(self, sensorId):
 
@@ -1767,8 +1750,7 @@ class Sqlite(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "triggerAlways "
+				+ "alertDelay "
 				+ "FROM sensors "
 				+ "WHERE id = ?", (sensorId, ))
 
@@ -1795,8 +1777,7 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# triggerAlways)
+		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 		return result[0]
 
 
@@ -2223,7 +2204,6 @@ class Mysql(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
-			+ "triggerAlways INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create sensorsAlertLevels table
@@ -2409,7 +2389,7 @@ class Mysql(_Storage):
 	#
 	# return True or False
 	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 
 		self._acquireLock()	
 		
@@ -2434,18 +2414,6 @@ class Mysql(_Storage):
 
 			return False
 
-		# check if trigger always has a valid value
-		if (triggerAlways != 0 
-			and triggerAlways != 1):
-			logging.error("[%s]: triggerAlways not valid." % self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
 		# add sensor to database
 		try:
 			self.cursor.execute("INSERT INTO sensors ("
@@ -2454,10 +2422,8 @@ class Mysql(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "triggerAlways) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-				(nodeId, remoteSensorId, description, 0, 0, alertDelay,
-				triggerAlways))
+				+ "alertDelay) VALUES (%s, %s, %s, %s, %s, %s)",
+				(nodeId, remoteSensorId, description, 0, 0, alertDelay))
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor." % self.fileName)
 
@@ -2710,7 +2676,7 @@ class Mysql(_Storage):
 	#
 	# return True or False
 	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 
 		self._acquireLock()
 
@@ -2740,8 +2706,7 @@ class Mysql(_Storage):
 			return False
 
 		self.cursor.execute("SELECT alertDelay, "
-			+ "description, "
-			+ "triggerAlways "
+			+ "description "
 			+ "FROM sensors "
 			+ "WHERE nodeId = %s "
 			+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
@@ -2774,8 +2739,7 @@ class Mysql(_Storage):
 		# check if values of sensors table are correct
 		sensorsTableCorrect = False
 		if (result[0][0] == alertDelay
-			and result[0][1] == description
-			and result[0][2] == triggerAlways):
+			and result[0][1] == description):
 			sensorsTableCorrect = True
 		if not sensorsTableCorrect:
 			logging.error("[%s]: Sensor configuration does not match."
@@ -3540,7 +3504,7 @@ class Mysql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, state, triggerAlways, description)
+	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -3564,7 +3528,6 @@ class Mysql(_Storage):
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
-				+ "sensors.triggerAlways, "
 				+ "sensors.description "
 				+ "FROM sensorAlerts "
 				+ "INNER JOIN sensors "
@@ -3586,7 +3549,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, state, triggerAlways, description)
+		# alertDelay, state, description)
 		return result
 
 
@@ -3999,8 +3962,7 @@ class Mysql(_Storage):
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# triggerAlways)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 	# or None
 	def getSensorInformation(self, sensorId):
 
@@ -4024,8 +3986,7 @@ class Mysql(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "triggerAlways "
+				+ "alertDelay "
 				+ "FROM sensors "
 				+ "WHERE id = %s", (sensorId, ))
 
@@ -4058,8 +4019,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# triggerAlways)
+		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 		return result[0]
 
 
@@ -4588,7 +4548,6 @@ class Postgresql(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
-			+ "triggerAlways INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create sensorsAlertLevels table
@@ -4796,7 +4755,7 @@ class Postgresql(_Storage):
 	#
 	# return True or False
 	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 
 		self._acquireLock()	
 		
@@ -4821,18 +4780,6 @@ class Postgresql(_Storage):
 
 			return False
 
-		# check if trigger always has a valid value
-		if (triggerAlways != 0 
-			and triggerAlways != 1):
-			logging.error("[%s]: triggerAlways not valid." % self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
 		# add sensor to database
 		try:
 			# (because of problems with postgresql table names are
@@ -4844,10 +4791,9 @@ class Postgresql(_Storage):
 				+ "state, "
 				+ "lastStateUpdated, "
 				+ "alertDelay, "
-				+ "alertLevel, "
-				+ "triggerAlways) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+				+ "alertLevel) VALUES (%s, %s, %s, %s, %s, %s, %s)",
 				(nodeId, remoteSensorId, description, 0, 0, alertDelay,
-				alertLevel, triggerAlways))
+				alertLevel))
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor." % self.fileName)
 
@@ -5108,7 +5054,7 @@ class Postgresql(_Storage):
 	#
 	# return True or False
 	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description, triggerAlways):
+		description):
 
 		self._acquireLock()
 
@@ -5140,8 +5086,7 @@ class Postgresql(_Storage):
 		# (because of problems with postgresql table names are
 		# written in lowercase and not in camel case)
 		self.cursor.execute("SELECT alertDelay, "
-			+ "description, "
-			+ "triggerAlways "
+			+ "description "
 			+ "FROM sensors "
 			+ "WHERE nodeId = %s "
 			+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
@@ -5174,8 +5119,7 @@ class Postgresql(_Storage):
 		# check if values of sensors table are correct
 		sensorsTableCorrect = False
 		if (result[0][0] == alertDelay
-			and result[0][1] == description
-			and result[0][2] == triggerAlways):
+			and result[0][1] == description):
 			sensorsTableCorrect = True
 		if not sensorsTableCorrect:
 			logging.error("[%s]: Sensor configuration does not match."
@@ -5967,7 +5911,7 @@ class Postgresql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, state, triggerAlways, description)
+	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
 
@@ -5992,7 +5936,6 @@ class Postgresql(_Storage):
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
-				+ "sensors.triggerAlways, "
 				+ "sensors.description "
 				+ "FROM sensoralerts "
 				+ "INNER JOIN sensors "
@@ -6014,7 +5957,7 @@ class Postgresql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, state, triggerAlways, description)
+		# alertDelay, state, description)
 		return result
 
 
@@ -6449,8 +6392,7 @@ class Postgresql(_Storage):
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# triggerAlways)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 	# or None
 	def getSensorInformation(self, sensorId):
 
@@ -6476,8 +6418,7 @@ class Postgresql(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "triggerAlways "
+				+ "alertDelay "
 				+ "FROM sensors "
 				+ "WHERE id = %s", (sensorId, ))
 
@@ -6510,8 +6451,7 @@ class Postgresql(_Storage):
 		self._releaseLock()
 
 		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# triggerAlways)
+		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 		return result[0]
 
 

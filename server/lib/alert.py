@@ -81,8 +81,7 @@ class SensorAlertExecuter(threading.Thread):
 
 			# get a list of all sensor alerts from database
 			# list is a list of tuples of tuples (sensorAlertId, sensorId,
-			# timeReceived, alertDelay, state, triggerAlways,
-			# description)
+			# timeReceived, alertDelay, state, description)
 			sensorAlertList = self.storage.getSensorAlerts()
 
 			# check if no sensor alerts exist in database
@@ -103,8 +102,7 @@ class SensorAlertExecuter(threading.Thread):
 				timeReceived = sensorAlert[2]
 				alertDelay = sensorAlert[3]
 				state = sensorAlert[4]
-				triggerAlways = sensorAlert[5]
-				description = sensorAlert[6]
+				description = sensorAlert[5]
 
 				# get all alert levels for this sensor
 				sensorAlertLevels = self.storage.getSensorAlertLevels(sensorId)

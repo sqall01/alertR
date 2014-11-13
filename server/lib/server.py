@@ -694,7 +694,6 @@ class ClientCommunication:
 						return False						
 
 					description = str(sensors[i]["description"])
-					triggerAlways = int(sensors[i]["triggerAlways"])
 				except Exception as e:
 					logging.exception("[%s]: Sensor data " % self.fileName
 						+ "invalid (%s:%d)." % (self.clientAddress,
@@ -712,9 +711,9 @@ class ClientCommunication:
 					return False
 
 				logging.debug("[%s]: Received sensor: " % self.fileName
-					+ "%d:%d:'%s':%d (%s:%d)." 
+					+ "%d:%d:'%s' (%s:%d)." 
 					% (sensorId, alertDelay, description,
-					triggerAlways, self.clientAddress, self.clientPort))
+					self.clientAddress, self.clientPort))
 
 				for tempAlertLevel in alertLevels:
 					logging.debug("[%s]: Sensor has alertLevel: %d (%s:%d)."
@@ -747,7 +746,7 @@ class ClientCommunication:
 				if configuration == "new":
 					# add sensor to database
 					if not self.storage.addSensor(self.username, sensorId,
-						alertDelay, alertLevels, description, triggerAlways):
+						alertDelay, alertLevels, description):
 						logging.error("[%s]: Unable to add " % self.fileName
 							+ "sensor to database (%s:%d)."
 							% (self.clientAddress, self.clientPort))
@@ -768,7 +767,7 @@ class ClientCommunication:
 				elif configuration == "old":
 					# check received sensor configuration with database
 					if not self.storage.checkSensor(self.username, sensorId,
-						alertDelay, alertLevels, description, triggerAlways):
+						alertDelay, alertLevels, description):
 						logging.error("[%s]: Sensor check in " % self.fileName
 							+ "database failed (%s:%d)."
 							% (self.clientAddress, self.clientPort))
@@ -2639,8 +2638,7 @@ class ConnectionWatchdog(threading.Thread):
 
 					# get a tuple of (sensorId, nodeId,
 					# remoteSensorId, description, state,
-					# lastStateUpdated, alertDelay,
-					# triggerAlways)
+					# lastStateUpdated, alertDelay)
 					timedOutSensor = self.storage.getSensorInformation(
 						oldTimedOutSensorId)
 
