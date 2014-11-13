@@ -17,7 +17,7 @@ import base64
 import ConfigParser
 import random
 import json
-BUFSIZE = 8192
+BUFSIZE = 16384
 
 
 # simple class of an ssl tcp client 
@@ -413,7 +413,7 @@ class ServerCommunication:
 				tempSensor["triggerAlways"] = 0
 			tempSensor["clientSensorId"] = sensor.id
 			tempSensor["alertDelay"] = sensor.alertDelay
-			tempSensor["alertLevel"] = sensor.alertLevel
+			tempSensor["alertLevels"] = sensor.alertLevels
 			tempSensor["description"] = sensor.description
 			sensors.append(tempSensor)
 
@@ -443,9 +443,8 @@ class ServerCommunication:
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
-				logging.error("[%s]: Error received: '%s' (%s:%d)."
-					% (self.fileName, message["error"],
-					self.clientAddress, self.clientPort))
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				return False
 
 			if str(message["message"]).upper() != "REGISTRATION":
@@ -507,8 +506,19 @@ class ServerCommunication:
 					self.sensors[i].alertDelay)
 				registeredConfig.set('sensor%d' % i, 'description',
 					self.sensors[i].description)
-				registeredConfig.set('sensor%d' % i, 'alertLevel',
-					self.sensors[i].alertLevel)
+
+				# generate a string of the alert levels
+				alertLevelString = ""
+				firstAlertLevel = True
+				for alertLevel in self.sensors[i].alertLevels:
+					if not firstAlertLevel:
+						alertLevelString += ", "
+					else:
+						firstAlertLevel = False
+					alertLevelString += "%d" % alertLevel
+				registeredConfig.set('sensor%d' % i, 'alertLevels',
+					alertLevelString)
+
 				registeredConfig.set('sensor%d' % i, 'triggerAlways',
 					self.sensors[i].triggerAlways)
 
@@ -636,9 +646,8 @@ class ServerCommunication:
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
-				logging.error("[%s]: Error received: '%s' (%s:%d)."
-					% (self.fileName, message["error"],
-					self.clientAddress, self.clientPort))
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
@@ -757,9 +766,8 @@ class ServerCommunication:
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
-				logging.error("[%s]: Error received: '%s' (%s:%d)."
-					% (self.fileName, message["error"],
-					self.clientAddress, self.clientPort))
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
@@ -863,9 +871,8 @@ class ServerCommunication:
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
-				logging.error("[%s]: Error received: '%s' (%s:%d)."
-					% (self.fileName, message["error"],
-					self.clientAddress, self.clientPort))
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
@@ -979,9 +986,8 @@ class ServerCommunication:
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
-				logging.error("[%s]: Error received: '%s' (%s:%d)."
-					% (self.fileName, message["error"],
-					self.clientAddress, self.clientPort))
+				logging.error("[%s]: Error received: '%s'."
+					% (self.fileName, message["error"]))
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()

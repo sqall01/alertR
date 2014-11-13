@@ -25,7 +25,7 @@ class _PollingSensor:
 		self.description = None
 		self.alertDelay = None
 		self.state = None
-		self.alertLevel = None
+		self.alertLevels = list()
 		self.triggerAlert = None
 		self.triggerAlways = None
 		self.triggerState = None
