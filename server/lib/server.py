@@ -787,10 +787,9 @@ class ClientCommunication:
 		# => register alerts
 		elif self.nodeType == "alert":
 
-			# extract alerts and alertLevels from message
+			# extract alerts from message
 			try:
 				alerts = message["payload"]["alerts"]
-				alertLevels = message["payload"]["alertLevels"]
 
 				# check if alerts is of type list
 				if not isinstance(alerts, list):
@@ -805,21 +804,8 @@ class ClientCommunication:
 
 					return False
 
-				# check if alertLevels is of type list
-				if not isinstance(alertLevels, list):
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alert levels not of type list"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-
 			except Exception as e:
-				logging.exception("[%s]: No alerts or alertLevels "
+				logging.exception("[%s]: No alerts "
 					% self.fileName
 					+ "in message (%s:%d)." 
 					% (self.clientAddress, self.clientPort))
@@ -828,7 +814,7 @@ class ClientCommunication:
 				try:
 					message = {"serverTime": int(time.time()),
 						"message": message["message"],
-						"error": "no alerts or alertLevels in message"}
+						"error": "no alerts in message"}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
 					pass
@@ -867,6 +853,59 @@ class ClientCommunication:
 				try:
 					alertId = int(alerts[i]["clientAlertId"])
 					description = str(alerts[i]["description"])
+					alertLevels = alerts[i]["alertLevels"]
+
+					# check if alertLevels is a list
+					if not isinstance(alertLevels, list):
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "alertLevels not of type list"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
+					# check if all elements of the alertLevels list 
+					# are of type int
+					if not all(isinstance(item, int) for item in alertLevels):
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "alertLevels items not of type int"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
+
+					# check if alert level is configured on server
+					found = False
+					for recvAlertLevel in alertLevels:
+						for confAlertLevel in self.alertLevels:
+							if recvAlertLevel == confAlertLevel.level:
+								found = True
+								break
+
+						if not found:
+							logging.error("[%s]: Alert level %d does " 
+								% (self.fileName, recvAlertLevel)
+								+ "not exist in configuration (%s:%d)."
+								% (self.clientAddress, self.clientPort))
+
+							# send error message back
+							try:
+								message = {"serverTime": int(time.time()),
+									"message": message["message"],
+									"error": "alert level does not exist"}
+								self.sslSocket.send(json.dumps(message))
+							except Exception as e:
+								pass
+
+							return False
+
 				except Exception as e:
 					logging.exception("[%s]: Alert data " % self.fileName
 						+ "invalid (%s:%d)." % (self.clientAddress,
@@ -893,7 +932,7 @@ class ClientCommunication:
 				if configuration == "new":
 					# add alert to database
 					if not self.storage.addAlert(self.username, alertId,
-						description):
+						alertLevels, description):
 						logging.error("[%s]: Unable to add " % self.fileName
 							+ "alert to database (%s:%d)."
 							% (self.clientAddress, self.clientPort))
@@ -914,7 +953,7 @@ class ClientCommunication:
 				elif configuration == "old":
 					# check received alert configuration with database
 					if not self.storage.checkAlert(self.username, alertId,
-						description):
+						alertLevels, description):
 						logging.error("[%s]: Alert check in " % self.fileName
 							+ "database failed (%s:%d)."
 							% (self.clientAddress, self.clientPort))
@@ -929,141 +968,6 @@ class ClientCommunication:
 							pass
 
 						return False
-
-			alertLevelCount = len(alertLevels)
-
-			logging.debug("[%s]: Received alertLevels count: %d (%s:%d)." 
-					% (self.fileName, alertLevelCount, self.clientAddress,
-					self.clientPort))
-
-			# check if the client configuration is old and is the same as
-			# in the database
-			if configuration == "old":
-				# check received alert level count matches with the database
-				if not self.storage.checkAlertAlertLevelCount(self.username,
-					alertLevelCount):
-					logging.error("[%s]: Alert level count " % self.fileName
-						+ "check in database failed.")
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "wrong alertLevels count"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-
-			receivedAlertLevels = list()
-
-			for i in range(alertLevelCount):
-
-				# extract alert level data
-				try:
-					alertLevel = int(alertLevels[i]["alertLevel"])
-				except Exception as e:
-					logging.exception("[%s]: Alert level data " % self.fileName
-						+ "invalid (%s:%d)." % (self.clientAddress,
-						self.clientPort))
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alertLevel data invalid"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-
-				# check if alert level is configured on server
-				found = False
-				for tempAlertLevel in self.alertLevels:
-					if tempAlertLevel.level == alertLevel:
-						found = True
-						break
-				if not found:
-					logging.error("[%s]: Alert level does " % self.fileName
-						+ "not exist in configuration (%s:%d)."
-						% (self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alert level does not exist"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-
-				# check if alert level is unique on this client
-				if not alertLevel in receivedAlertLevels:
-					logging.debug("[%s]: Received alert level" % self.fileName
-						+ "registration: %d (%s:%d)." 
-						% (alertLevel, self.clientAddress, self.clientPort))
-					receivedAlertLevels.append(alertLevel)
-				else:
-					logging.error("[%s]: Received duplicated " % self.fileName
-						+ "alert level: %d (%s:%d)." 
-						% (alertLevel, self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alertLevels not unique"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-
-			# check if the client configuration is new and has to 
-			# be changed in the database
-			if configuration == "new":
-				# add alert levels to database
-				if not self.storage.addAlertsAlertLevels(self.username,
-					receivedAlertLevels):
-					logging.error("[%s]: Unable to add " % self.fileName
-						+ "alert levels to database (%s:%d)."
-						% (self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "unable to add alertLevels to database"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-
-			# check if the client configuration is old and is the same as
-			# in the database
-			elif configuration == "old":
-				# check received alert configuration with database
-				if not self.storage.checkAlertsAlertLevels(self.username,
-					receivedAlertLevels):
-					logging.error("[%s]: Alert levels check " % self.fileName
-						+ "in database failed (%s:%d)."
-						% (self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alertLevels check in database failed"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
 
 		# check if the type of the node is manager
 		elif self.nodeType == "manager":

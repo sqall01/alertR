@@ -43,15 +43,7 @@ class _Storage():
 	# adds the data that is given by the node for the alert to the database
 	#
 	# return True or False
-	def addAlert(self, username, remoteAlertId, description):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# adds the alert levels that are given by the node for the alert
-	# client to the database
-	#
-	# return True or False
-	def addAlertsAlertLevels(self, username, alertLevels):
+	def addAlert(self, username, remoteAlertId, alertLevels, description):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -91,15 +83,7 @@ class _Storage():
 	# are the same
 	#
 	# return True or False
-	def checkAlert(self, username, remoteAlertId, description):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given alert levels of the alert client and the alert
-	# levels in the database are the same
-	#
-	# return True or False
-	def checkAlertsAlertLevels(self, username, alertLevels):
+	def checkAlert(self, username, remoteAlertId, alertLevels, description):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -127,14 +111,6 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# checks if the given alert level count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertAlertLevelCount(self, username, alertLevelCount):
-		raise NotImplemented("Function not implemented yet.")
-
-
 	# gets the id of the node by a given username
 	# (usernames are unique to each node)
 	#
@@ -157,11 +133,27 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# gets the alert id of a alert when the id of a node is given
+	# and the remote alert id that is used by the node internally
+	#
+	# return alertId or None
+	def getAlertId(self, nodeId, remoteAlertId):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# gets all alert levels for a specific sensor given by sensorId
 	#
 	# return list of tuples of (alertLevel)
 	# or None
 	def getSensorAlertLevels(self, sensorId):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets all alert levels for a specific alert given by alertId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAlertAlertLevels(self, alertId):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -397,6 +389,27 @@ class Sqlite(_Storage):
 		return sensorId
 
 
+	# internal function that gets the alert id of an alert when the id 
+	# of a node is given and the remote alert id that is used 
+	# by the node internally
+	#
+	# return alertId or raised Exception
+	def _getAlertId(self, nodeId, remoteAlertId):
+
+		# get alertId from database
+		self.cursor.execute("SELECT id FROM alerts "
+			+ "WHERE nodeId = ? "
+			+ "AND remoteAlertId = ?", (nodeId, remoteAlertId))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Alert does not exist in database.")
+
+		alertId = result[0][0]
+
+		return alertId
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -486,9 +499,9 @@ class Sqlite(_Storage):
 		# create alertsAlertLevels table
 		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-			+ "nodeId INTEGER NOT NULL, "
+			+ "alertId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+			+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
 		# create managers table
 		self.cursor.execute("CREATE TABLE managers ("
@@ -549,9 +562,9 @@ class Sqlite(_Storage):
 					self.cursor.execute("SELECT id FROM sensors "
 						+ "WHERE nodeId = ?", (nodeId, ))
 					result = self.cursor.fetchall()
-					for tempSensorid in result:
+					for tempSensorId in result:
 						self.cursor.execute("DELETE FROM sensorsAlertLevels "
-						+ "WHERE sensorId = ?", (tempSensorid[0], ))
+						+ "WHERE sensorId = ?", (tempSensorId[0], ))
 
 					# delete the sensors
 					self.cursor.execute("DELETE FROM sensors "
@@ -584,9 +597,17 @@ class Sqlite(_Storage):
 			# if type is alert
 			elif nodeType == "alert":
 				try:
-					self.cursor.execute("DELETE FROM alerts "
+					# get the id of all alerts that are managed by this node
+					# and delete the alert levels of these alerts
+					self.cursor.execute("SELECT id FROM alerts "
 						+ "WHERE nodeId = ?", (nodeId, ))
-					self.cursor.execute("DELETE FROM alertsAlertLevels "
+					result = self.cursor.fetchall()
+					for tempAlertId in result:
+						self.cursor.execute("DELETE FROM alertsAlertLevels "
+						+ "WHERE alertId = ?", (tempAlertId[0], ))
+
+					# delete the alerts
+					self.cursor.execute("DELETE FROM alerts "
 						+ "WHERE nodeId = ?", (nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node." 
@@ -693,7 +714,7 @@ class Sqlite(_Storage):
 	# adds the data that is given by the node for the alert to the database
 	#
 	# return True or False
-	def addAlert(self, username, remoteAlertId, description):
+	def addAlert(self, username, remoteAlertId, alertLevels, description):
 
 		self._acquireLock()	
 		
@@ -721,41 +742,26 @@ class Sqlite(_Storage):
 
 			return False
 
-		# commit all changes
-		self.conn.commit()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the alert levels that are given by the node for the alert
-	# client to the database
-	#
-	# return True or False
-	def addAlertsAlertLevels(self, username, alertLevels):
-
-		self._acquireLock()	
-		
-		# get the id of the node
+		# get alertId of current added alert
 		try:
-			nodeId = self._getNodeId(username)
+			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to add alert levels."
+			logging.exception("[%s]: Not able to get alertId." 
 				% self.fileName)
 
 			self._releaseLock()
 
 			return False
 
-		# add alert levels to database
+		# add alert alert levels to database
 		try:
-			for alertLevel in alertLevels:
+			for alertLevel in alertLevels:			
 				self.cursor.execute("INSERT INTO alertsAlertLevels ("
-					+ "nodeId, "
-					+ "alertLevel) VALUES (?, ?)", (nodeId, alertLevel))
+					+ "alertId, "
+					+ "alertLevel) VALUES (?, ?)",
+					(alertId, alertLevel))
 		except Exception as e:
-			logging.exception("[%s]: Not able to add alert levels."
+			logging.exception("[%s]: Not able to add alert alert levels."
 				% self.fileName)
 
 			self._releaseLock()
@@ -944,7 +950,7 @@ class Sqlite(_Storage):
 	# are the same
 	#
 	# return True or False
-	def checkAlert(self, username, remoteAlertId, description):
+	def checkAlert(self, username, remoteAlertId, alertLevels, description):
 
 		self._acquireLock()
 
@@ -983,61 +989,53 @@ class Sqlite(_Storage):
 
 			return False
 
-		if result[0][0] == description:
+		if result[0][0] != description:
+
+			logging.error("[%s]: Alert configuration does not match."
+					% self.fileName)
 
 			self._releaseLock()
 
-			return True
+			return False
 
-		logging.error("[%s]: Alert configuration does not match."
+		# get alertId of the alert to check
+		try:
+			alertId = self._getAlertId(nodeId, remoteAlertId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get alertId." 
 				% self.fileName)
 
-		self._releaseLock()
-
-		return False
-
-
-	# checks if the given alert levels of the alert client and the alert
-	# levels in the database are the same
-	#
-	# return True or False
-	def checkAlertsAlertLevels(self, username, alertLevels):
-
-		self._acquireLock()
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert.")
-
 			self._releaseLock()
 
 			return False
 
+		# check all alert alert levels
 		self.cursor.execute("SELECT alertLevel "
 			+ "FROM alertsAlertLevels "
-			+ "WHERE nodeId = ? ", (nodeId, ))
+			+ "WHERE alertId = ? ", (alertId, ))
+		result = self.cursor.fetchall()		
 
-		result = self.cursor.fetchall()
+		# check if all alert alert levels from the db are
+		# in the list of alert levels
+		for dbAlertLevel in result:
+			if not dbAlertLevel[0] in alertLevels:
+				logging.error("[%s]: Alert alert level " % self.fileName
+					+ "from db not in list of alert levels.")
 
-		# check if the alert levels were found
-		if len(result) == 0:
-			logging.error("[%s]: Alert levels were not found." % self.fileName)
+				self._releaseLock()
 
-			self._releaseLock()
+				return False
 
-			return False
-
-		# only check of all stored alert levels are in the list of
-		# the received alert levels (because the count of the alert levels
-		# are checked before => they all match if this check succeeds)
-		for alertLevelTuple in result:
-			if not alertLevelTuple[0] in alertLevels:
-
-				logging.error("[%s]: Alert level configuration does not match."
-					% self.fileName)
+		# check if all alert alert levels from the list are
+		# in the db
+		for tempAlertLevel in alertLevels:
+			found = False
+			for dbAlertLevel in result:
+				if tempAlertLevel == dbAlertLevel[0]:
+					found = True
+			if not found:
+				logging.error("[%s]: Alert alert level " % self.fileName
+					+ "from list not in db.")
 
 				self._releaseLock()
 
@@ -1182,45 +1180,6 @@ class Sqlite(_Storage):
 		return True
 
 
-	# checks if the given alert level count of the alert node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertAlertLevelCount(self, username, alertLevelCount):
-
-		self._acquireLock()
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert level count.")
-
-			self._releaseLock()
-
-			return False		
-
-		# get all alert levels on this nodes
-		self.cursor.execute("SELECT id FROM alertsAlertLevels "
-			+ "WHERE nodeId = ?", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != alertLevelCount:
-			logging.error("[%s]: Alert level count " % self.fileName
-				+ "does not match with database.")
-
-			self._releaseLock()
-
-			return False
-
-		self._releaseLock()
-
-		return True
-
-
 	# gets the id of the node by a given username
 	# (usernames are unique to each node)
 	#
@@ -1330,6 +1289,29 @@ class Sqlite(_Storage):
 		return sensorId
 
 
+	# gets the alert id of a alert when the id of a node is given
+	# and the remote alert id that is used by the node internally
+	#
+	# return alertId or None
+	def getAlertId(self, nodeId, remoteAlertId):
+
+		self._acquireLock()
+
+		try:
+			alertId = self._getAlertId(nodeId, remoteAlertId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get alertId from database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		self._releaseLock()
+
+		return alertId		
+
+
 	# gets all alert levels for a specific sensor given by sensorId
 	#
 	# return list of tuples of (alertLevel)
@@ -1348,6 +1330,36 @@ class Sqlite(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for sensor with id %d." % sensorId)
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
+
+
+	# gets all alert levels for a specific alert given by alertId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAlertAlertLevels(self, alertId):
+
+		self._acquireLock()
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM alertsAlertLevels "
+				+ "WHERE alertId = ?", (alertId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for alert with id %d." % alertId)
 
 			self._releaseLock()
 
@@ -2141,6 +2153,27 @@ class Mysql(_Storage):
 		return sensorId
 
 
+	# internal function that gets the alert id of an alert when the id 
+	# of a node is given and the remote alert id that is used 
+	# by the node internally
+	#
+	# return alertId or raised Exception
+	def _getAlertId(self, nodeId, remoteAlertId):
+
+		# get alertId from database
+		self.cursor.execute("SELECT id FROM alerts "
+			+ "WHERE nodeId = %s "
+			+ "AND remoteAlertId = %s", (nodeId, remoteAlertId))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Alert does not exist in database.")
+
+		alertId = result[0][0]
+
+		return alertId
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -2233,9 +2266,9 @@ class Mysql(_Storage):
 		# create alertsAlertLevels table
 		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "nodeId INTEGER NOT NULL, "
+			+ "alertId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+			+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
 		# create managers table
 		self.cursor.execute("CREATE TABLE managers ("
@@ -2310,9 +2343,9 @@ class Mysql(_Storage):
 					self.cursor.execute("SELECT id FROM sensors "
 						+ "WHERE nodeId = %s", (nodeId, ))
 					result = self.cursor.fetchall()
-					for tempSensorid in result:
+					for tempSensorId in result:
 						self.cursor.execute("DELETE FROM sensorsAlertLevels "
-						+ "WHERE sensorId = %s", (tempSensorid[0], ))
+						+ "WHERE sensorId = %s", (tempSensorId[0], ))
 
 					# delete the sensors
 					self.cursor.execute("DELETE FROM sensors "
@@ -2345,9 +2378,17 @@ class Mysql(_Storage):
 			# if type is alert
 			elif nodeType == "alert":
 				try:
-					self.cursor.execute("DELETE FROM alerts "
+					# get the id of all alerts that are managed by this node
+					# and delete the alert levels of these alerts
+					self.cursor.execute("SELECT id FROM alerts "
 						+ "WHERE nodeId = %s", (nodeId, ))
-					self.cursor.execute("DELETE FROM alertsAlertLevels "
+					result = self.cursor.fetchall()
+					for tempAlertId in result:
+						self.cursor.execute("DELETE FROM alertsAlertLevels "
+						+ "WHERE alertId = %s", (tempAlertId[0], ))
+
+					# delete the alerts
+					self.cursor.execute("DELETE FROM alerts "
 						+ "WHERE nodeId = %s", (nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node." 
@@ -2471,7 +2512,7 @@ class Mysql(_Storage):
 	# adds the data that is given by the node for the alert to the database
 	#
 	# return True or False
-	def addAlert(self, username, remoteAlertId, description):
+	def addAlert(self, username, remoteAlertId, alertLevels, description):
 
 		self._acquireLock()	
 		
@@ -2510,55 +2551,26 @@ class Mysql(_Storage):
 
 			return False
 
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the alert levels that are given by the node for the alert
-	# client to the database
-	#
-	# return True or False
-	def addAlertsAlertLevels(self, username, alertLevels):
-
-		self._acquireLock()	
-		
-		# connect to the database
+		# get alertId of current added alert
 		try:
-			self._openConnection()
+			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			logging.exception("[%s]: Not able to get alertId." 
 				% self.fileName)
 
 			self._releaseLock()
 
 			return False
 
-		# get the id of the node
+		# add alert alert levels to database
 		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert levels."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add alert levels to database
-		try:
-			for alertLevel in alertLevels:
+			for alertLevel in alertLevels:			
 				self.cursor.execute("INSERT INTO alertsAlertLevels ("
-					+ "nodeId, "
-					+ "alertLevel) VALUES (%s, %s)", (nodeId, alertLevel))
+					+ "alertId, "
+					+ "alertLevel) VALUES (%s, %s)",
+					(alertId, alertLevel))
 		except Exception as e:
-			logging.exception("[%s]: Not able to add alert levels."
+			logging.exception("[%s]: Not able to add alert alert levels."
 				% self.fileName)
 
 			self._releaseLock()
@@ -2816,7 +2828,7 @@ class Mysql(_Storage):
 	# are the same
 	#
 	# return True or False
-	def checkAlert(self, username, remoteAlertId, description):
+	def checkAlert(self, username, remoteAlertId, alertLevels, description):
 
 		self._acquireLock()
 
@@ -2872,81 +2884,62 @@ class Mysql(_Storage):
 
 			return False
 
-		if result[0][0] == description:
+		if result[0][0] != description:
+
+			logging.error("[%s]: Alert configuration does not match."
+					% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
 
 			self._releaseLock()
 
-			return True
+			return False
 
-		logging.error("[%s]: Alert configuration does not match."
-				% self.fileName)
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return False
-
-
-	# checks if the given alert levels of the alert client and the alert
-	# levels in the database are the same
-	#
-	# return True or False
-	def checkAlertsAlertLevels(self, username, alertLevels):
-
-		self._acquireLock()
-
-		# connect to the database
+		# get alertId of the alert to check
 		try:
-			self._openConnection()
+			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			logging.exception("[%s]: Not able to get alertId." 
 				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
 			return False
 
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert.")
-
-			self._releaseLock()
-
-			return False
-
+		# check all alert alert levels
 		self.cursor.execute("SELECT alertLevel "
 			+ "FROM alertsAlertLevels "
-			+ "WHERE nodeId = %s ", (nodeId, ))
+			+ "WHERE alertId = %s ", (alertId, ))
+		result = self.cursor.fetchall()		
 
-		result = self.cursor.fetchall()
+		# check if all alert alert levels from the db are
+		# in the list of alert levels
+		for dbAlertLevel in result:
+			if not dbAlertLevel[0] in alertLevels:
+				logging.error("[%s]: Alert alert level " % self.fileName
+					+ "from db not in list of alert levels.")
 
-		# check if the alert levels were found
-		if len(result) == 0:
-			logging.error("[%s]: Alert levels were not found." % self.fileName)
+				# close connection to the database
+				self._closeConnection()
 
-			# close connection to the database
-			self._closeConnection()
+				self._releaseLock()
 
-			self._releaseLock()
+				return False
 
-			return False
-
-		# only check of all stored alert levels are in the list of
-		# the received alert levels (because the count of the alert levels
-		# are checked before => they all match if this check succeeds)
-		for alertLevelTuple in result:
-			if not alertLevelTuple[0] in alertLevels:
-
-				logging.error("[%s]: Alert level configuration does not match."
-					% self.fileName)
+		# check if all alert alert levels from the list are
+		# in the db
+		for tempAlertLevel in alertLevels:
+			found = False
+			for dbAlertLevel in result:
+				if tempAlertLevel == dbAlertLevel[0]:
+					found = True
+			if not found:
+				logging.error("[%s]: Alert alert level " % self.fileName
+					+ "from list not in db.")
 
 				# close connection to the database
 				self._closeConnection()
@@ -3154,62 +3147,6 @@ class Mysql(_Storage):
 		return True
 
 
-	# checks if the given alert level count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertAlertLevelCount(self, username, alertLevelCount):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert level count.")
-
-			self._releaseLock()
-
-			return False		
-
-		# get all alert levels on this nodes
-		self.cursor.execute("SELECT id FROM alertsAlertLevels "
-			+ "WHERE nodeId = %s ", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != alertLevelCount:
-			logging.error("[%s]: Alert level count " % self.fileName
-				+ "does not match with database.")
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
 	# gets the id of the node by a given username
 	# (usernames are unique to each node)
 	#
@@ -3381,6 +3318,46 @@ class Mysql(_Storage):
 		return sensorId
 
 
+	# gets the alert id of a alert when the id of a node is given
+	# and the remote alert id that is used by the node internally
+	#
+	# return alertId or None
+	def getAlertId(self, nodeId, remoteAlertId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		try:
+			alertId = self._getAlertId(nodeId, remoteAlertId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get alertId from database."
+				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		return alertId
+
+
 	# gets all alert levels for a specific sensor given by sensorId
 	#
 	# return list of tuples of (alertLevel)
@@ -3410,6 +3387,53 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for sensor with id %d." % sensorId)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
+
+
+	# gets all alert levels for a specific alert given by alertId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAlertAlertLevels(self, alertId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM alertsAlertLevels "
+				+ "WHERE alertId = %s", (alertId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for alert with id %d." % alertId)
 
 			# close connection to the database
 			self._closeConnection()
@@ -4473,6 +4497,29 @@ class Postgresql(_Storage):
 		return sensorId
 
 
+	# internal function that gets the alert id of an alert when the id 
+	# of a node is given and the remote alert id that is used 
+	# by the node internally
+	#
+	# return alertId or raised Exception
+	def _getAlertId(self, nodeId, remoteAlertId):
+
+		# get alertId from database
+		# (because of problems with postgresql table names are
+		# written in lowercase and not in camel case)		
+		self.cursor.execute("SELECT id FROM alerts "
+			+ "WHERE nodeId = %s "
+			+ "AND remoteAlertId = %s", (nodeId, remoteAlertId))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Alert does not exist in database.")
+
+		alertId = result[0][0]
+
+		return alertId
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -4585,9 +4632,9 @@ class Postgresql(_Storage):
 		# in lowercase and not in camel case)
 		self.cursor.execute("CREATE TABLE alertsalertlevels ("
 			+ "id SERIAL PRIMARY KEY, "
-			+ "nodeId INTEGER NOT NULL, "
+			+ "alertId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+			+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
 		# create managers table
 		# (because of problems with postgresql table names are written
@@ -4668,9 +4715,9 @@ class Postgresql(_Storage):
 					self.cursor.execute("SELECT id FROM sensors "
 						+ "WHERE nodeId = %s", (nodeId, ))
 					result = self.cursor.fetchall()
-					for tempSensorid in result:
+					for tempSensorId in result:
 						self.cursor.execute("DELETE FROM sensorsalertlevels "
-						+ "WHERE sensorId = %s", (tempSensorid[0], ))
+						+ "WHERE sensorId = %s", (tempSensorId[0], ))
 
 					# delete the sensors
 					# (because of problems with postgresql table names are
@@ -4709,9 +4756,19 @@ class Postgresql(_Storage):
 				try:
 					# (because of problems with postgresql table names are
 					# written in lowercase and not in camel case)
-					self.cursor.execute("DELETE FROM alerts "
+					# get the id of all alerts that are managed by this node
+					# and delete the alert levels of these alerts
+					self.cursor.execute("SELECT id FROM alerts "
 						+ "WHERE nodeId = %s", (nodeId, ))
-					self.cursor.execute("DELETE FROM alertsalertlevels "
+					result = self.cursor.fetchall()
+					for tempAlertId in result:
+						self.cursor.execute("DELETE FROM alertsalertlevels "
+						+ "WHERE alertId = %s", (tempAlertId[0], ))
+
+					# (because of problems with postgresql table names are
+					# written in lowercase and not in camel case)
+					# delete the alerts
+					self.cursor.execute("DELETE FROM alerts "
 						+ "WHERE nodeId = %s", (nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node." 
@@ -4841,7 +4898,7 @@ class Postgresql(_Storage):
 	# adds the data that is given by the node for the alert to the database
 	#
 	# return True or False
-	def addAlert(self, username, remoteAlertId, description):
+	def addAlert(self, username, remoteAlertId, alertLevels, description):
 
 		self._acquireLock()	
 		
@@ -4882,57 +4939,28 @@ class Postgresql(_Storage):
 
 			return False
 
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the alert levels that are given by the node for the alert
-	# client to the database
-	#
-	# return True or False
-	def addAlertsAlertLevels(self, username, alertLevels):
-
-		self._acquireLock()	
-		
-		# connect to the database
+		# get alertId of current added alert
 		try:
-			self._openConnection()
+			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			logging.exception("[%s]: Not able to get alertId." 
 				% self.fileName)
 
 			self._releaseLock()
 
 			return False
 
-		# get the id of the node
+		# add alert alert levels to database
 		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert levels."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add alert levels to database
-		try:
-			for alertLevel in alertLevels:
+			for alertLevel in alertLevels:		
 				# (because of problems with postgresql table names are
-				# written in lowercase and not in camel case)
+				# written in lowercase and not in camel case)	
 				self.cursor.execute("INSERT INTO alertsalertlevels ("
-					+ "nodeId, "
-					+ "alertLevel) VALUES (%s, %s)", (nodeId, alertLevel))
+					+ "alertId, "
+					+ "alertLevel) VALUES (%s, %s)",
+					(alertId, alertLevel))
 		except Exception as e:
-			logging.exception("[%s]: Not able to add alert levels."
+			logging.exception("[%s]: Not able to add alert alert levels."
 				% self.fileName)
 
 			self._releaseLock()
@@ -5147,8 +5175,10 @@ class Postgresql(_Storage):
 			return False
 
 		# check all sensor alert levels
+		# (because of problems with postgresql table names are
+		# written in lowercase and not in camel case)		
 		self.cursor.execute("SELECT alertLevel "
-			+ "FROM sensorsAlertLevels "
+			+ "FROM sensorsalertlevels "
 			+ "WHERE sensorId = %s ", (sensorId, ))
 		result = self.cursor.fetchall()		
 
@@ -5197,7 +5227,7 @@ class Postgresql(_Storage):
 	# are the same
 	#
 	# return True or False
-	def checkAlert(self, username, remoteAlertId, description):
+	def checkAlert(self, username, remoteAlertId, alertLevels, description):
 
 		self._acquireLock()
 
@@ -5255,83 +5285,64 @@ class Postgresql(_Storage):
 
 			return False
 
-		if result[0][0] == description:
+		if result[0][0] != description:
+
+			logging.error("[%s]: Alert configuration does not match."
+					% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
 
 			self._releaseLock()
 
-			return True
+			return False
 
-		logging.error("[%s]: Alert configuration does not match."
-				% self.fileName)
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return False
-
-
-	# checks if the given alert levels of the alert client and the alert
-	# levels in the database are the same
-	#
-	# return True or False
-	def checkAlertsAlertLevels(self, username, alertLevels):
-
-		self._acquireLock()
-
-		# connect to the database
+		# get alertId of the alert to check
 		try:
-			self._openConnection()
+			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			logging.exception("[%s]: Not able to get alertId." 
 				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
 			return False
 
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert.")
-
-			self._releaseLock()
-
-			return False
-
+		# check all alert alert levels
 		# (because of problems with postgresql table names are
-		# written in lowercase and not in camel case)
+		# written in lowercase and not in camel case)		
 		self.cursor.execute("SELECT alertLevel "
 			+ "FROM alertsalertlevels "
-			+ "WHERE nodeId = %s ", (nodeId, ))
+			+ "WHERE alertId = %s ", (alertId, ))
+		result = self.cursor.fetchall()		
 
-		result = self.cursor.fetchall()
+		# check if all alert alert levels from the db are
+		# in the list of alert levels
+		for dbAlertLevel in result:
+			if not dbAlertLevel[0] in alertLevels:
+				logging.error("[%s]: Alert alert level " % self.fileName
+					+ "from db not in list of alert levels.")
 
-		# check if the alert levels were found
-		if len(result) == 0:
-			logging.error("[%s]: Alert levels were not found." % self.fileName)
+				# close connection to the database
+				self._closeConnection()
 
-			# close connection to the database
-			self._closeConnection()
+				self._releaseLock()
 
-			self._releaseLock()
+				return False
 
-			return False
-
-		# only check of all stored alert levels are in the list of
-		# the received alert levels (because the count of the alert levels
-		# are checked before => they all match if this check succeeds)
-		for alertLevelTuple in result:
-			if not alertLevelTuple[0] in alertLevels:
-
-				logging.error("[%s]: Alert level configuration does not match."
-					% self.fileName)
+		# check if all alert alert levels from the list are
+		# in the db
+		for tempAlertLevel in alertLevels:
+			found = False
+			for dbAlertLevel in result:
+				if tempAlertLevel == dbAlertLevel[0]:
+					found = True
+			if not found:
+				logging.error("[%s]: Alert alert level " % self.fileName
+					+ "from list not in db.")
 
 				# close connection to the database
 				self._closeConnection()
@@ -5545,64 +5556,6 @@ class Postgresql(_Storage):
 		return True
 
 
-	# checks if the given alert level count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertAlertLevelCount(self, username, alertLevelCount):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert level count.")
-
-			self._releaseLock()
-
-			return False		
-
-		# get all alert levels on this nodes
-		# (because of problems with postgresql table names are
-		# written in lowercase and not in camel case)
-		self.cursor.execute("SELECT id FROM alertsalertlevels "
-			+ "WHERE nodeId = %s ", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != alertLevelCount:
-			logging.error("[%s]: Alert level count " % self.fileName
-				+ "does not match with database.")
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
 	# gets the id of the node by a given username
 	# (usernames are unique to each node)
 	#
@@ -5780,6 +5733,46 @@ class Postgresql(_Storage):
 		return sensorId
 
 
+	# gets the alert id of a alert when the id of a node is given
+	# and the remote alert id that is used by the node internally
+	#
+	# return alertId or None
+	def getAlertId(self, nodeId, remoteAlertId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		try:
+			alertId = self._getAlertId(nodeId, remoteAlertId)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get alertId from database."
+				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		return alertId		
+
+
 	# gets all alert levels for a specific sensor given by sensorId
 	#
 	# return list of tuples of (alertLevel)
@@ -5811,6 +5804,55 @@ class Postgresql(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for sensor with id %d." % sensorId)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of tuples of (alertLevel)
+		return result
+
+
+	# gets all alert levels for a specific alert given by alertId
+	#
+	# return list of tuples of (alertLevel)
+	# or None
+	def getAlertAlertLevels(self, alertId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		try:
+			# (because of problems with postgresql table names are
+			# written in lowercase and not in camel case)
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM alertsalertlevels "
+				+ "WHERE alertId = %s", (alertId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for alert with id %d." % alertId)
 
 			# close connection to the database
 			self._closeConnection()
