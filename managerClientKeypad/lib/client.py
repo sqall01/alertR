@@ -532,6 +532,9 @@ class ServerCommunication:
 		for alert in self.alerts:
 			alert.checked = False
 
+		for alertLevel in self.alertLevels:
+			alertLevel.checked = False
+
 
 	# internal function that checks if all options are checked
 	def _checkAllOptionsAreChecked(self):
@@ -606,6 +609,26 @@ class ServerCommunication:
 				# to delete all references to object
 				# => object will be deleted by garbage collector
 				self.alerts.remove(alert)
+
+		for alertLevel in self.alertLevels:
+			if alertLevel.checked is False:
+
+				# check if alert level object has a link to 
+				# the alert level urwid object
+				if not alertLevel.alertLevelUrwid is None:
+					# check if alert level urwid object is 
+					# linked to alert level object
+					if not alertLevel.alertLevelUrwid.alertLevel is None:
+						# used for urwid only:
+						# remove reference from urwid object to 
+						# alert level object
+						# (the objects are double linked)
+						alertLevel.alertLevelUrwid.alertLevel = None
+
+				# remove alert level from list of alert levels
+				# to delete all references to object
+				# => object will be deleted by garbage collector
+				self.alertLevels.remove(alertLevel)
 
 
 	# internal function that handles received status updates
@@ -1166,16 +1189,6 @@ class ServerCommunication:
 				alert.alertLevels = alertAlertLevels
 				alert.description = description
 				self.alerts.append(alert)
-
-
-
-
-
-
-
-
-
-
 
 		logging.debug("[%s]: Received alertLevel count: %d." 
 				% (self.fileName, len(alertLevels)))
