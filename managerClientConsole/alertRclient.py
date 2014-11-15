@@ -72,6 +72,9 @@ class GlobalData:
 		# this is a list of all sensor alert objects that are received
 		self.sensorAlerts = list()
 
+		# this is a list of all alert level objects that are received
+		self.alertLevels = list()
+
 		# this is the instance of the screen updateter object that is
 		# responsible of updating the screen
 		self.screenUpdater = None

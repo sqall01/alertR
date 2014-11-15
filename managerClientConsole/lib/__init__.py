@@ -9,5 +9,5 @@
 
 from client import ServerCommunication, ConnectionWatchdog, Receiver
 from smtp import SMTPAlert
-from serverObjects import Option, Node, Sensor, Manager, Alert
+from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel
 from screen import ScreenUpdater, Console

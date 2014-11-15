@@ -7,7 +7,8 @@
 #
 # Licensed under the GNU Public License, version 2.
 
-from serverObjects import Option, Node, Sensor, Manager, Alert, SensorAlert
+from serverObjects import Option, Node, Sensor, Manager, Alert, SensorAlert, \
+	AlertLevel
 import socket
 import time
 import ssl
@@ -18,7 +19,7 @@ import base64
 import ConfigParser
 import random
 import json
-BUFSIZE = 8192
+BUFSIZE = 16384
 
 
 # simple class of an ssl tcp client 
@@ -99,8 +100,9 @@ class ServerCommunication:
 		self.nodes = self.globalData.nodes
 		self.sensors = self.globalData.sensors
 		self.managers = self.globalData.managers
-		self.alerts = self.globalData.alerts
-		self.sensorAlerts = self.globalData.sensorAlerts		
+		self.alerts = self.globalData.alerts		
+		self.sensorAlerts = self.globalData.sensorAlerts
+		self.alertLevels = self.globalData.alertLevels		
 		
 		# time the last message was received by the client
 		self.lastRecv = 0.0
@@ -687,6 +689,20 @@ class ServerCommunication:
 
 				return False
 
+			alertLevels = incomingMessage["payload"]["alertLevels"]
+			# check if alerts is of type list
+			if not isinstance(alertLevels, list):
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "alertLevels not of type list"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 		except Exception as e:
 			logging.exception("[%s]: Received status " % self.fileName
 				+ "invalid.")
@@ -870,7 +886,35 @@ class ServerCommunication:
 				nodeId = int(sensors[i]["nodeId"])
 				sensorId = int(sensors[i]["sensorId"])
 				alertDelay = int(sensors[i]["alertDelay"])
-				alertLevel = int(sensors[i]["alertLevel"])
+
+				sensorAlertLevels = sensors[i]["alertLevels"]
+				# check if alertLevels is a list
+				if not isinstance(sensorAlertLevels, list):
+					# send error message back
+					try:
+						message = {"clientTime": int(time.time()),
+							"message": message["message"],
+							"error": "alertLevels not of type list"}
+						self.client.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+				# check if all elements of the alertLevels list 
+				# are of type int
+				if not all(isinstance(item, int) for item in
+					sensorAlertLevels):
+					# send error message back
+					try:
+						message = {"clientTime": int(time.time()),
+							"message": message["message"],
+							"error": "alertLevels items not of type int"}
+						self.client.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
 				description = str(sensors[i]["description"])
 				lastStateUpdated = int(sensors[i]["lastStateUpdated"])
 				state = int(sensors[i]["state"])
@@ -890,8 +934,8 @@ class ServerCommunication:
 				return False
 
 			logging.debug("[%s]: Received sensor " % self.fileName
-				+ "information: %d:%d:%d:%d:'%s':%d:%d." 
-				% (nodeId, sensorId, alertDelay, alertLevel, description,
+				+ "information: %d:%d:%d:'%s':%d:%d." 
+				% (nodeId, sensorId, alertDelay, description,
 				lastStateUpdated, state))
 
 			# search sensor in list of known sensors
@@ -926,7 +970,7 @@ class ServerCommunication:
 
 					sensor.nodeId = nodeId
 					sensor.alertDelay = alertDelay
-					sensor.alertLevel = alertLevel
+					sensor.alertLevels = sensorAlertLevels				
 					sensor.description = description
 					sensor.serverTime = serverTime
 
@@ -944,7 +988,7 @@ class ServerCommunication:
 				sensor.sensorId = sensorId
 				sensor.nodeId = nodeId
 				sensor.alertDelay = alertDelay
-				sensor.alertLevel = alertLevel
+				sensor.alertLevels = sensorAlertLevels
 				sensor.description = description
 				sensor.lastStateUpdated = lastStateUpdated
 				sensor.state = state
@@ -1032,6 +1076,34 @@ class ServerCommunication:
 				nodeId = int(alerts[i]["nodeId"])
 				alertId =int(alerts[i]["alertId"])
 				description = str(alerts[i]["description"])
+
+				alertAlertLevels = alerts[i]["alertLevels"]
+				# check if alertLevels is a list
+				if not isinstance(alertAlertLevels, list):
+					# send error message back
+					try:
+						message = {"clientTime": int(time.time()),
+							"message": message["message"],
+							"error": "alertLevels not of type list"}
+						self.client.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+				# check if all elements of the alertLevels list 
+				# are of type int
+				if not all(isinstance(item, int) for item in alertAlertLevels):
+					# send error message back
+					try:
+						message = {"clientTime": int(time.time()),
+							"message": message["message"],
+							"error": "alertLevels items not of type int"}
+						self.client.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
 			except Exception as e:
 				logging.exception("[%s]: Received alert " % self.fileName
 				+ "invalid.")
@@ -1080,6 +1152,7 @@ class ServerCommunication:
 				if alert.alertId == alertId:
 					alert.checked = True
 					alert.nodeId = nodeId
+					alert.alertLevels = alertAlertLevels
 					alert.description = description
 					found = True
 					break
@@ -1090,8 +1163,99 @@ class ServerCommunication:
 				alert.checked = True
 				alert.alertId = alertId
 				alert.nodeId = nodeId
+				alert.alertLevels = alertAlertLevels
 				alert.description = description
 				self.alerts.append(alert)
+
+
+
+
+
+
+
+
+
+
+
+		logging.debug("[%s]: Received alertLevel count: %d." 
+				% (self.fileName, len(alertLevels)))
+
+		# process received alertLevels
+		for i in range(len(alertLevels)):
+
+			try:
+				level = int(alertLevels[i]["alertLevel"])
+				name = str(alertLevels[i]["name"])
+				triggerAlways = int(alertLevels[i]["triggerAlways"])
+				smtpActivated = int(alertLevels[i]["smtpActivated"])
+				toAddr = str(alertLevels[i]["toAddr"])
+
+			except Exception as e:
+				logging.exception("[%s]: Received alertLevel " % self.fileName
+				+ "invalid.")
+
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "received alertLevel invalid"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			logging.debug("[%s]: Received alertLevel " % self.fileName
+				+ "information: %d:'%s':%d:%d:'%s'" 
+				% (level, name, triggerAlways, smtpActivated, toAddr))
+
+			# search alertLevel in list of known alertLevels
+			# => if not known add it
+			found = False
+			for alertLevel in self.alertLevels:
+				# ignore alertLevels that are already checked
+				if alertLevel.checked:
+
+					# check if the level is unique
+					if alertLevel.level == level:
+						logging.error("[%s]: Received alertLevel "
+							% self.fileName
+							+ "'%d' is not unique." % level)
+
+						# send error message back
+						try:
+							message = {"clientTime": int(time.time()),
+								"message": incomingMessage["message"],
+								"error": "received alertLevel not unique"}
+							self.client.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
+
+					continue
+
+				# when found => mark alertLevel as checked
+				# and update information
+				if alertLevel.level == level:
+					alertLevel.checked = True
+					alertLevel.smtpActivated = smtpActivated
+					alertLevel.toAddr = toAddr
+					alertLevel.name = name
+					alertLevel.triggerAlways = triggerAlways
+
+					found = True
+					break
+			# when not found => add alertLevel to list
+			if not found:
+				alertLevel = AlertLevel()
+				alertLevel.checked = True
+				alertLevel.level = level
+				alertLevel.smtpActivated = smtpActivated
+				alertLevel.toAddr = toAddr
+				alertLevel.name = name
+				alertLevel.triggerAlways = triggerAlways
+				self.alertLevels.append(alertLevel)
 
 		# sending sensor alert response
 		logging.debug("[%s]: Sending status " % self.fileName
@@ -1128,7 +1292,34 @@ class ServerCommunication:
 			serverTime = int(incomingMessage["serverTime"])
 			sensorId = int(incomingMessage["payload"]["sensorId"])
 			state = int(incomingMessage["payload"]["state"])
-			alertLevel = int(incomingMessage["payload"]["alertLevel"])
+
+			alertLevels = incomingMessage["payload"]["alertLevels"]
+			# check if alertLevels is a list
+			if not isinstance(alertLevels, list):
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
+						"error": "alertLevels not of type list"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+			# check if all elements of the alertLevels list 
+			# are of type int
+			if not all(isinstance(item, int) for item in alertLevels):
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
+						"error": "alertLevels items not of type int"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 			description = str(incomingMessage["payload"]["description"])
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
@@ -1166,6 +1357,7 @@ class ServerCommunication:
 		sensorAlert.sensorId = sensorId
 		sensorAlert.state = state
 		sensorAlert.timeReceived = int(time.time())
+		sensorAlert.alertLevels = alertLevels
 		self.sensorAlerts.append(sensorAlert)
 
 		# update information in sensor which triggered the alert

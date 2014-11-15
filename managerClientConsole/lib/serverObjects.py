@@ -79,6 +79,7 @@ class Alert:
 	def __init__(self):
 		self.nodeId = None
 		self.alertId = None
+		self.alertLevels = list()
 		self.description = None
 
 		# flag that marks this object as checked
@@ -98,3 +99,22 @@ class SensorAlert:
 		self.state = None
 		self.timeReceived = None
 		self.alertLevels = list()
+
+
+# this class represents an alert level that is configured on the server
+class AlertLevel:
+
+	def __init__(self):
+		self.smtpActivated = None
+		self.toAddr = None
+		self.level = None
+		self.name = None
+		self.triggerAlways = None
+
+		# flag that marks this object as checked
+		# (is used to verify if this object is still connected to the server)
+		self.checked = False
+
+		# used for urwid only:
+		# reference to the alert urwid object
+		self.alertLevelUrwid = None
