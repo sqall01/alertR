@@ -57,10 +57,6 @@ class GlobalData:
 		# this variable holds the object of the server communication
 		self.serverComm = None
 
-		# this is a list of all alert levels that are configured
-		# on this alert client
-		self.alertLevels = list()
-
 
 if __name__ == '__main__':
 
@@ -144,11 +140,6 @@ if __name__ == '__main__':
 				alert.description = config.get(section, "description")
 				alert.alertLevels = map(int,
 					config.get(section, "alertLevels").split(","))
-
-				# register alert levels globally (only once)
-				for alertLevel in alert.alertLevels:
-					if not alertLevel in globalData.alertLevels:
-						globalData.alertLevels.append(alertLevel)
 
 				# check if description is empty
 				if len(alert.description) == 0:

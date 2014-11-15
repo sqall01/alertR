@@ -18,7 +18,7 @@ import ConfigParser
 import random
 import json
 from alert import AsynchronousAlertExecuter
-BUFSIZE = 8192
+BUFSIZE = 16384
 
 
 # simple class of an ssl tcp client 
@@ -101,9 +101,6 @@ class ServerCommunication:
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
-
-		# list of all unique alert levels that are configured on this client
-		self.alertLevels = self.globalData.alertLevels
 
 		# list of all handled alerts
 		self.alerts = self.globalData.alerts
@@ -415,15 +412,8 @@ class ServerCommunication:
 
 			tempAlert["clientAlertId"] = alert.id
 			tempAlert["description"] = alert.description
+			tempAlert["alertLevels"] = alert.alertLevels
 			alerts.append(tempAlert)
-
-		# build alert levels list for the message
-		alertLevels = list()
-		for alertLevel in self.alertLevels:
-			tempAlertLevel = dict()
-
-			tempAlertLevel["alertLevel"] = alertLevel
-			alertLevels.append(tempAlertLevel)
 
 		# send registration message
 		try:
@@ -432,8 +422,7 @@ class ServerCommunication:
 				"configuration": configuration,
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
-				"alerts": alerts,
-				"alertLevels": alertLevels}
+				"alerts": alerts}
 			message = {"clientTime": int(time.time()),
 				"message": "registration", "payload": payload}
 			self.client.send(json.dumps(message))
@@ -547,7 +536,34 @@ class ServerCommunication:
 		try:
 			sensorId = int(incomingMessage["payload"]["sensorId"])
 			state = int(incomingMessage["payload"]["state"])
-			alertLevel = int(incomingMessage["payload"]["alertLevel"])
+
+			alertLevels = incomingMessage["payload"]["alertLevels"]
+			# check if alertLevels is a list
+			if not isinstance(alertLevels, list):
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
+						"error": "alertLevels not of type list"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+			# check if all elements of the alertLevels list 
+			# are of type int
+			if not all(isinstance(item, int) for item in alertLevels):
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
+						"error": "alertLevels items not of type int"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 			description = str(incomingMessage["payload"]["description"])
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
@@ -582,16 +598,16 @@ class ServerCommunication:
 
 		# trigger all alerts that have the same alert level
 		for alert in self.alerts:
-			if alertLevel in alert.alertLevels:
-
-				# trigger alert in an own thread to not block this one
-				alertTriggerProcess = AsynchronousAlertExecuter(alert)
-				alertTriggerProcess.sensorDescription = description
-				# set thread to daemon
-				# => threads terminates when main thread terminates	
-				alertTriggerProcess.daemon = True
-				alertTriggerProcess.triggerAlert = True
-				alertTriggerProcess.start()
+			for alertLevel in alertLevels:
+				if alertLevel in alert.alertLevels:
+					# trigger alert in an own thread to not block this one
+					alertTriggerProcess = AsynchronousAlertExecuter(alert)
+					alertTriggerProcess.sensorDescription = description
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					alertTriggerProcess.daemon = True
+					alertTriggerProcess.triggerAlert = True
+					alertTriggerProcess.start()
 
 		return True
 
