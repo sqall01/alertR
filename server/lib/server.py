@@ -1497,10 +1497,33 @@ class ClientCommunication:
 		# generating alerts list
 		alerts = list()
 		for i in range(alertCount):
+
+			alertId = alertsInformation[i][1]
+
+			# create list of alert levels of this alert
+			dbAlertLevels = self.storage.getAlertAlertLevels(alertId)
+			alertLevels = list()
+			for tempAlertLevel in dbAlertLevels:
+				alertLevels.append(tempAlertLevel[0])
+
 			tempDict = {"nodeId": alertsInformation[i][0],
-				"alertId": alertsInformation[i][1],
+				"alertId": alertId,
+				"alertLevels": alertLevels,
 				"description": alertsInformation[i][2]}
 			alerts.append(tempDict)
+
+		# generating alertLevels list
+		alertLevels = list()
+		for i in range(len(self.alertLevels)):
+
+			tempDict = {"alertLevel": self.alertLevels[i].level,
+				"name": self.alertLevels[i].name,
+				"triggerAlways": (1 if self.alertLevels[i].triggerAlways
+				else 0),
+				"smtpActivated": (1 if self.alertLevels[i].smtpActivated
+				else 0),
+				"toAddr": self.alertLevels[i].toAddr}
+			alertLevels.append(tempDict)
 
 		logging.debug("[%s]: Sending status message (%s:%d)." 
 			% (self.fileName, self.clientAddress, self.clientPort))
@@ -1513,7 +1536,8 @@ class ClientCommunication:
 				"nodes": nodes,
 				"sensors": sensors,
 				"managers": managers,
-				"alerts": alerts}
+				"alerts": alerts,
+				"alertLevels": alertLevels}
 			message = {"serverTime": int(time.time()),
 				"message": "status", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
