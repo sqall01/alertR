@@ -314,7 +314,7 @@ class SensorUrwid:
 	# (and changes color arcordingly)
 	def updateConnected(self, connected):
 
-		# only change text widget text if the information should be
+		# only change widget text if the information should be
 		# displayed
 		if self.showConnected:
 			self.connectedWidget.set_text("Connected: " + str(connected))
@@ -339,7 +339,7 @@ class SensorUrwid:
 	# this function updates the alert delay of the object
 	def updateAlertDelay(self, alertDelay):
 
-		# only change text widget text if the information should be
+		# only change widget text if the information should be
 		# displayed
 		if self.showAlertDelay:
 			self.alertDelayWidget.set_text("Alert delay (sec): "
@@ -350,7 +350,7 @@ class SensorUrwid:
 	# (and changes color arcordingly)
 	def updateLastUpdated(self, lastStateUpdated):
 
-		# only change text widget text if the information should be
+		# only change widget text if the information should be
 		# displayed
 		if self.showLastUpdated:
 			self.lastUpdatedWidget.set_text("Last updated: " 
@@ -368,7 +368,7 @@ class SensorUrwid:
 	# (and changes color arcordingly)
 	def updateState(self, state):
 
-		# only change text widget text if the information should be
+		# only change widget text if the information should be
 		# displayed
 		if self.showState:
 			self.stateWidget.set_text("State: " + str(state))
@@ -393,7 +393,7 @@ class SensorUrwid:
 	# this function updates the alert levels of the object
 	def updateAlertLevels(self, alertLevels):
 
-		# only change text widget text if the information should be
+		# only change widget text if the information should be
 		# displayed
 		if self.showAlertLevels:
 
@@ -442,7 +442,10 @@ class SensorUrwid:
 # this class is an urwid object for an alert
 class AlertUrwid:
 
-	def __init__(self, alert, node):
+	def __init__(self, alert, node, showAlertLevels):
+
+		# options which information should be displayed
+		self.showAlertLevels = showAlertLevels
 
 		# store reference to alert object and node object
 		self.alert = alert
@@ -454,6 +457,24 @@ class AlertUrwid:
 		alertPileList = list()
 		self.descriptionWidget = urwid.Text("Desc.: " + self.alert.description)
 		alertPileList.append(self.descriptionWidget)
+
+		# create text widget for the "alert levels" information if
+		# it should be displayed
+		if self.showAlertLevels:
+
+			# generate formatted string from alert levels
+			alertLevelsString = ""
+			first = True
+			for alertLevel in alert.alertLevels:
+				if first:
+					first = False
+				else:
+					alertLevelsString += ", "
+				alertLevelsString += str(alertLevel)
+
+			self.alertLevelWidget = urwid.Text("Alert levels: "
+				+ alertLevelsString)
+			alertPileList.append(self.alertLevelWidget)
 
 		alertPile = urwid.Pile(alertPileList)
 		alertBox = urwid.LineBox(alertPile, title=node.hostname)
@@ -476,6 +497,27 @@ class AlertUrwid:
 	# this function updates the description of the object
 	def updateDescription(self, description):
 		self.descriptionWidget.set_text("Desc.: " + description)
+
+
+	# this function updates the alert levels of the object
+	def updateAlertLevels(self, alertLevels):
+
+		# only change widget text if the information should be
+		# displayed
+		if self.showAlertLevels:
+
+			# generate formatted string from alert levels
+			alertLevelsString = ""
+			first = True
+			for alertLevel in self.alert.alertLevels:
+				if first:
+					first = False
+				else:
+					alertLevelsString += ", "
+				alertLevelsString += str(alertLevel)
+
+			self.alertLevelWidget.set_text("Alert levels: "
+				+ alertLevelsString)
 
 
 	# this function updates the connected status of the object
@@ -501,6 +543,7 @@ class AlertUrwid:
 			return False
 
 		self.updateDescription(self.alert.description)
+		self.updateAlertLevels(self.alert.alertLevels)
 		self.updateConnected(self.node.connected)
 
 		# return true if object was updated
@@ -569,6 +612,7 @@ class Console:
 		self.managers = self.globalData.managers
 		self.alerts = self.globalData.alerts
 		self.sensorAlerts = self.globalData.sensorAlerts
+		self.alertLevels = self.globalData.alertLevels
 		self.connectionTimeout = self.globalData.connectionTimeout
 		self.serverComm = self.globalData.serverComm
 		self.timeShowSensorAlert = self.globalData.timeShowSensorAlert
@@ -593,6 +637,11 @@ class Console:
 			= self.globalData.urwidSensorShowState
 		self.urwidSensorShowAlertLevels \
 			= self.globalData.urwidSensorShowAlertLevels
+
+		# options which information should be displayed
+		# by an alert urwid object
+		self.urwidAlertShowAlertLevels \
+			= self.globalData.urwidAlertShowAlertLevels
 
 		# urwid grid object for sensors
 		self.sensorsGrid = None
@@ -978,7 +1027,8 @@ class Console:
 
 			# create new alert urwid object
 			# (also links urwid object to alert object)
-			alertUrwid = AlertUrwid(alert, nodeAlertBelongs)
+			alertUrwid = AlertUrwid(alert, nodeAlertBelongs,
+				self.urwidAlertShowAlertLevels)
 
 			# append the final alert urwid object to the list
 			# of alert objects
@@ -1229,7 +1279,8 @@ class Console:
 
 					# create new alert urwid object
 					# (also links urwid object to alert object)
-					alertUrwid = AlertUrwid(alert, nodeAlertBelongs)
+					alertUrwid = AlertUrwid(alert, nodeAlertBelongs,
+						self.urwidAlertShowAlertLevels)
 
 					# append the final alert urwid object to the list
 					# of alert objects

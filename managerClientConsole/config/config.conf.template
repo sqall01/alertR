@@ -66,6 +66,10 @@ urwidSensorShowState = False
 # be shown or not ("True" or "False")
 urwidSensorShowAlertLevels = False
 
+# should the "alert levels" information of an alert
+# be shown or not ("True" or "False")
+urwidAlertShowAlertLevels = False
+
 # the time in seconds the received sensor alerts should be displayed in a list
 # before they are removed
 timeShowSensorAlert = 3600
