@@ -102,9 +102,6 @@ class ServerCommunication:
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
-		# list of all unique alert levels that are configured on this client
-		self.alertLevels = self.globalData.alertLevels
-
 		# list of all handled alerts
 		self.alerts = self.globalData.alerts
 
@@ -415,15 +412,8 @@ class ServerCommunication:
 
 			tempAlert["clientAlertId"] = alert.id
 			tempAlert["description"] = alert.description
+			tempAlert["alertLevels"] = alert.alertLevels
 			alerts.append(tempAlert)
-
-		# build alert levels list for the message
-		alertLevels = list()
-		for alertLevel in self.alertLevels:
-			tempAlertLevel = dict()
-
-			tempAlertLevel["alertLevel"] = alertLevel
-			alertLevels.append(tempAlertLevel)
 
 		# send registration message
 		try:
@@ -432,8 +422,7 @@ class ServerCommunication:
 				"configuration": configuration,
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
-				"alerts": alerts,
-				"alertLevels": alertLevels}
+				"alerts": alerts}
 			message = {"clientTime": int(time.time()),
 				"message": "registration", "payload": payload}
 			self.client.send(json.dumps(message))
