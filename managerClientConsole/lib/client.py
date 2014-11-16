@@ -591,6 +591,20 @@ class ServerCommunication:
 
 		for manager in self.managers:
 			if manager.checked is False:
+
+				# check if manager object has a link to the 
+				# manager urwid object
+				if not manager.managerUrwid is None:
+					# check if manager urwid object is linked to manager object
+					if not manager.managerUrwid.manager is None:
+						# used for urwid only:
+						# remove reference from urwid object to manager object
+						# (the objects are double linked)
+						manager.managerUrwid.manager = None
+
+				# remove manager from list of managers
+				# to delete all references to object
+				# => object will be deleted by garbage collector
 				self.managers.remove(manager)
 
 		for alert in self.alerts:

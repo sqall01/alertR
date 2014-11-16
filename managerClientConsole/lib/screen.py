@@ -556,6 +556,81 @@ class AlertUrwid:
 		self.alertUrwidMap.set_attr_map({None: "connectionfail"})
 
 
+# this class is an urwid object for an manager
+class ManagerUrwid:
+
+	def __init__(self, manager, node):
+
+		# store reference to manager object and node object
+		self.manager = manager
+		self.node = node
+
+		# store reference in manager object to this urwid manager object
+		self.manager.managerUrwid = self
+
+		managerPileList = list()
+		self.descriptionWidget = urwid.Text("Desc.: "
+			+ self.manager.description)
+		managerPileList.append(self.descriptionWidget)
+
+		managerPile = urwid.Pile(managerPileList)
+		managerBox = urwid.LineBox(managerPile, title=node.hostname)
+		paddedManagerBox = urwid.Padding(managerBox, left=1, right=1)
+
+		# check if node is connected and set the color accordingly
+		if self.node.connected == 0:
+			self.managerUrwidMap = urwid.AttrMap(paddedManagerBox,
+				"disconnected")
+		else:
+			self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "connected")
+
+
+	# this function returns the final urwid widget that is used
+	# to render the box of an manager
+	def get(self):
+		return self.managerUrwidMap
+
+
+	# this function updates the description of the object
+	def updateDescription(self, description):
+		self.descriptionWidget.set_text("Desc.: " + description)
+
+
+	# this function updates the connected status of the object
+	# (and changes color arcordingly)
+	def updateConnected(self, connected):
+
+		# change color according to connection state
+		if connected == 0:
+			self.managerUrwidMap.set_attr_map({None: "disconnected"})
+		else:
+			self.managerUrwidMap.set_attr_map({None: "connected"})
+
+
+	# this function updates all internal widgets and checks if
+	# the manager/node still exists
+	def updateCompleteWidget(self):
+
+		# check if manager/node still exists
+		if (self.manager is None
+			or self.node is None):
+
+			# return false if object no longer exists
+			return False
+
+		self.updateDescription(self.manager.description)
+		self.updateConnected(self.node.connected)
+
+		# return true if object was updated
+		return True
+
+
+	# this functions sets the color when the connection to the server
+	# has failed
+	def setConnectionFail(self):
+		self.managerUrwidMap.set_attr_map({None: "connectionfail"})
+
+
 # this class is an urwid object for a sensor alert
 class SensorAlertUrwid:
 
@@ -621,6 +696,8 @@ class Console:
 			self.globalData.maxCountShowSensorsPerPage
 		self.maxCountShowAlertsPerPage = \
 			self.globalData.maxCountShowAlertsPerPage
+		self.maxCountShowManagersPerPage = \
+			self.globalData.maxCountShowManagersPerPage
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
@@ -673,6 +750,15 @@ class Console:
 		# a list of all urwid alert objects that are shown on the page
 		self.shownAlertUrwidObjects = list()
 
+		# a list of all urwid manager objects
+		self.managerUrwidObjects = list()
+
+		# a list of all urwid manager objects that are shown on the page
+		self.shownManagerUrwidObjects = list()
+
+		# urwid grid object for managers
+		self.managersGrid = None
+
 		# the file descriptor for the urwid callback to update the screen
 		self.screenFd = None
 
@@ -687,6 +773,12 @@ class Console:
 
 		# the footer of the alert box (which shows the current page number)
 		self.alertsFooter = None
+
+		# the current page of the manager objects that is shown
+		self.currentManagerPage = 0
+
+		# the footer of the manager box (which shows the current page number)
+		self.managersFooter = None
 
 		
 	# internal function that acquires the lock
@@ -873,6 +965,92 @@ class Console:
 		self._showAlertsAtPageIndex(self.currentAlertPage)
 
 
+	# internal function that shows the manager urwid objects given
+	# by a page index
+	def _showManagersAtPageIndex(self, pageIndex):
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# check if the index to show is within the page range
+		if pageIndex >= managerPageCount:
+			pageIndex = 0
+		elif pageIndex < 0:
+			pageIndex = managerPageCount - 1
+
+		logging.debug("[%s]: Update shown managers with page index: %d."
+			% (self.fileName, pageIndex))
+
+		# get all manager urwid objects that should be shown on the new page
+		del self.shownManagerUrwidObjects[:]
+		for i in range(self.maxCountShowManagersPerPage):
+			tempItemIndex = i + (pageIndex * self.maxCountShowManagersPerPage)
+			if tempItemIndex >= len(self.managerUrwidObjects):
+				break
+			self.shownManagerUrwidObjects.append(
+				self.managerUrwidObjects[tempItemIndex])
+
+		# delete all old shown manager objects and replace them by the new ones
+		del self.managersGrid.contents[:]
+		for newShownManager in self.shownManagerUrwidObjects:
+			self.managersGrid.contents.append((newShownManager.get(),
+				self.managersGrid.options()))
+
+		# update managers page footer
+		tempText = "Page %d / %d " % (pageIndex + 1, managerPageCount)
+		self.managersFooter.set_text(tempText)
+
+
+	# internal function that shows the next page of manager objects
+	def _showManagersNextPage(self):
+
+		logging.debug("[%s]: Show next managers page." % self.fileName)
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if managerPageCount == 0:
+			return
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentManagerPage += 1
+		if self.currentManagerPage >= managerPageCount:
+			self.currentManagerPage = 0
+
+		# update shown managers
+		self._showManagersAtPageIndex(self.currentManagerPage)
+
+
+	# internal function that shows the previous page of manager objects
+	def _showManagersPreviousPage(self):
+
+		logging.debug("[%s]: Show previous managers page." % self.fileName)
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if managerPageCount == 0:
+			return
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentManagerPage -= 1
+		if self.currentManagerPage < 0:
+			self.currentManagerPage = managerPageCount - 1
+
+		# update shown managers
+		self._showManagersAtPageIndex(self.currentManagerPage)
+
+
 	# this function is called to update the screen
 	def updateScreen(self, status):
 
@@ -923,21 +1101,29 @@ class Console:
 		elif key in ['q', 'Q']:
 			raise urwid.ExitMainLoop()
 
-		# check if key b/B is pressed => show next page of sensors
-		elif key in ['b', 'B']:
+		# check if key g/G is pressed => show next page of sensors
+		elif key in ['g', 'G']:
 			self._showSensorsNextPage()
 
-		# check if key v/V is pressed => show previous page of sensors
-		elif key in ['v', 'V']:
+		# check if key f/F is pressed => show previous page of sensors
+		elif key in ['f', 'F']:
 			self._showSensorsPreviousPage()
 
-		# check if key m/M is pressed => show next page of alerts
-		elif key in ['m', 'M']:
+		# check if key j/J is pressed => show next page of alerts
+		elif key in ['j', 'J']:
 			self._showAlertsNextPage()
 
-		# check if key n/N is pressed => show previous page of alerts
-		elif key in ['n', 'N']:
+		# check if key h/H is pressed => show previous page of alerts
+		elif key in ['h', 'H']:
 			self._showAlertsPreviousPage()
+
+		# check if key m/M is pressed => show next page of managers
+		elif key in ['m', 'M']:
+			self._showManagersNextPage()
+
+		# check if key n/N is pressed => show previous page of managers
+		elif key in ['n', 'N']:
+			self._showManagersPreviousPage()
 
 		return True
 
@@ -973,7 +1159,7 @@ class Console:
 			self.sensorUrwidObjects.append(sensorUrwid)
 
 		# check if sensor urwid objects list is not empty
-		if self.sensorUrwidObjects != list():
+		if self.sensorUrwidObjects:
 
 			# get the sensor objects for the first page
 			for i in range(self.maxCountShowSensorsPerPage):
@@ -1004,7 +1190,7 @@ class Console:
 		tempText = "Page 1 / %d " % sensorPageCount 
 		self.sensorsFooter = urwid.Text(tempText, align='center')
 		keyBindings = urwid.Text(
-			"Key bindings: v - previous page, b - next page", align='center')
+			"Key bindings: f - previous page, g - next page", align='center')
 
 		# build box around the sensor grid with title
 		sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
@@ -1035,7 +1221,7 @@ class Console:
 			self.alertUrwidObjects.append(alertUrwid)
 
 		# check if alert urwid objects list is not empty
-		if self.alertUrwidObjects != list():
+		if self.alertUrwidObjects:
 
 			# get the alert objects for the first page
 			for i in range(self.maxCountShowAlertsPerPage):
@@ -1065,12 +1251,70 @@ class Console:
 		tempText = "Page 1 / %d " % alertPageCount 
 		self.alertsFooter = urwid.Text(tempText, align='center')
 		keyBindings = urwid.Text(
-			"Key bindings: n - previous page, m - next page", align='center')
+			"Key bindings: h - previous page, j - next page", align='center')
 
 		# build box around the alert grid with title
 		alertsBox = urwid.LineBox(urwid.Pile([self.alertsGrid,
 			urwid.Divider(), self.alertsFooter, keyBindings]),
 			title="alert clients")
+
+		# generate all manager urwid objects
+		for manager in self.managers:
+
+			# get node the manager belongs to
+			nodeManagerBelongs = None
+			for node in self.nodes:
+				if node.nodeType != "manager":
+					continue
+				if manager.nodeId == node.nodeId:
+					nodeManagerBelongs = node
+					break
+
+			# create new manager urwid object
+			# (also links urwid object to manager object)
+			managerUrwid = ManagerUrwid(manager, nodeManagerBelongs)
+
+			# append the final manager urwid object to the list
+			# of manager objects
+			self.managerUrwidObjects.append(managerUrwid)
+
+		# check if manager urwid objects list is not empty
+		if self.managerUrwidObjects:
+
+			# get the manager objects for the first page
+			for i in range(self.maxCountShowManagersPerPage):
+				# break if there are less manager urwid objects than should
+				# be shown
+				if i >= len(self.managerUrwidObjects):
+					break
+				self.shownManagerUrwidObjects.append(
+					self.managerUrwidObjects[i])
+
+			# create grid object for the managers
+			self.managersGrid = urwid.GridFlow(
+				map(lambda x: x.get(), self.shownManagerUrwidObjects),
+				40, 1, 1, 'left')
+		else:
+			# create empty grid object for the managers
+			self.managersGrid = urwid.GridFlow([], 40, 1, 1, 'left')
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# generate footer text for sensors box
+		tempText = "Page 1 / %d " % managerPageCount 
+		self.managersFooter = urwid.Text(tempText, align='center')
+		keyBindings = urwid.Text(
+			"Key bindings: n - previous page, m - next page", align='center')
+
+		# build box around the manager grid with title
+		managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
+			urwid.Divider(), self.managersFooter, keyBindings]),
+			title="manager clients")
 
 		# create empty sensor alerts pile
 		self.sensorAlertsPile = urwid.Pile([])
@@ -1108,7 +1352,7 @@ class Console:
 
 		# generate right part of the display
 		rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox,
-			alertsBox])
+			alertsBox, managersBox])
 
 		# generate final body object
 		finalBody = urwid.Columns([leftDisplayPart, rightDisplayPart])

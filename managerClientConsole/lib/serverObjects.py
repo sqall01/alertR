@@ -72,6 +72,10 @@ class Manager:
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
 
+		# used for urwid only:
+		# reference to the manager urwid object
+		self.managerUrwid = None
+
 
 # this class represents an alert client of the alert system
 class Alert:
