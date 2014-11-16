@@ -1533,6 +1533,51 @@ class Console:
 					# update shown alerts
 					self._showAlertsAtPageIndex(self.currentAlertPage)
 
+			# update the information of all manager urwid widgets
+			for managerUrwidObject in self.managerUrwidObjects:
+				# if update method returns false
+				# => manager object no longer exists
+				# => remove it 
+				if not managerUrwidObject.updateCompleteWidget():
+
+					# remove manager urwid object from the list of the
+					# current shown objects if it is shown
+					if managerUrwidObject in self.shownManagerUrwidObjects:
+						self.shownManagerUrwidObjects.remove(
+							managerUrwidObject)
+
+						# update shown managers
+						self._showManagersAtPageIndex(self.currentManagerPage)
+
+					# remove manager urwid object from list of objects
+					# to delete all references to object
+					# => object will be deleted by garbage collector
+					self.managerUrwidObjects.remove(managerUrwidObject)
+
+			# add all managers that were newly added
+			for manager in self.managers:
+				# check if a new manager was added
+				if manager.managerUrwid == None:
+					# get node the manager belongs to
+					nodeManagerBelongs = None
+					for node in self.nodes:
+						if node.nodeType != "manager":
+							continue
+						if manager.nodeId == node.nodeId:
+							nodeManagerBelongs = node
+							break
+
+					# create new manager urwid object
+					# (also links urwid object to manager object)
+					managerUrwid = ManagerUrwid(manager, nodeManagerBelongs)
+
+					# append the final manager urwid object to the list
+					# of manager objects
+					self.managerUrwidObjects.append(managerUrwid)
+
+					# update shown managers
+					self._showManagersAtPageIndex(self.currentManagerPage)
+
 		# check if the connection to the server failed
 		if receivedData == "connectionfail":
 			logging.debug("[%s]: Status connection failed "  % self.fileName
@@ -1552,6 +1597,10 @@ class Console:
 			# update all alert urwid widgets
 			for alertUrwidObject in self.alertUrwidObjects:
 				alertUrwidObject.setConnectionFail()
+
+			# update all manager urwid widgets
+			for managerUrwidObject in self.managerUrwidObjects:
+				managerUrwidObject.setConnectionFail()		
 
 		# check if a sensor alert was received from the server
 		if receivedData == "sensoralert":
