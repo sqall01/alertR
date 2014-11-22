@@ -17,7 +17,7 @@ The clients do not have to be configured at the server side (only on the client 
 
 A init.d example file for Debian systems is located inside the "init.d_example" folder if you want to start the server with the start of the host computer.
 
-Nevertheless, a short but more detailed example of how to set up this client is given below.
+Nevertheless, a short but more detailed example of how to set up the server is given below.
 
 
 Configuration example
@@ -156,37 +156,65 @@ username = alertr
 password = <SECRET>
 
 
-# alert level 0 is used for "top" windows
+# alert level 0 is used global notifications
 [alertLevel0]
 level = 0
 emailAlert = False
 toAddr = none
+name = global notification
+triggerAlways = True
 
 
-# alert level 1 is used for "bottom" windows
+# alert level 1 is used for xbmc pause
 [alertLevel1]
 level = 1
-emailAlert = True
-toAddr = window-alert@someaddress.org
+emailAlert = False
+toAddr = none
+name = xbmc pause
+triggerAlways = True
 
 
-# alert level 2 is used for the front door
+# alert level 2 is used for eMail notification (only when activated)
 [alertLevel2]
 level = 2
 emailAlert = True
-toAddr = frontdoor-alert@someaddress.org
+toAddr = EMERGENCY@someaddress.de
+name = eMail notification (only activated)
+triggerAlways = False
 
 
-# alert level 3 is used for server availability
+# alert level 3 is used for eMail notification (always)
 [alertLevel3]
 level = 3
 emailAlert = True
-toAddr = ping-alert@someaddress.org
+toAddr = EMERGENCY@someaddress.de
+name = eMail notification (always)
+triggerAlways = False
 
 
-# alert level 4 is used for smoke detectors
+# alert level 4 is used for private eMail notification (always)
 [alertLevel4]
 level = 4
 emailAlert = True
-toAddr = FIRE@someaddress.org
+toAddr = private@someaddress.de
+name = eMail notification (always/private)
+triggerAlways = True
+
+
+# alert level 5 is used to activate the siren (only when activated)
+[alertLevel5]
+level = 5
+emailAlert = False
+toAddr = none
+name = sirens (only activated)
+triggerAlways = False
+
+
+# alert level 6 is used to activate the siren (always)
+[alertLevel6]
+level = 6
+emailAlert = False
+toAddr = none
+name = sirens (always)
+triggerAlways = True
 ```

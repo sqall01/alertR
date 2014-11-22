@@ -106,13 +106,11 @@ fromAddr = alertR@h4des.org
 toAddr = some@address.org
 
 
-[alert1]
+[alert0]
 id = 0
-description = pi alert
-
-# this alert should be triggered if alert level 1 or 2 is triggered
-alertLevels = 1, 2
-gpioPin = 26
+description = siren outdoor
+alertLevels = 5, 6
+gpioPin = 16
 gpioPinStateNormal = 0
 gpioPinStateTriggered = 1
 ```

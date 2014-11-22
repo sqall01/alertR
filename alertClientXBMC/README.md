@@ -97,10 +97,10 @@ fromAddr = alertR@h4des.org
 toAddr = some@address.org
 
 
-[alert1]
+[alert0]
 id = 0
 description = xbmc pause
-alertLevels = 4
+alertLevels = 1
 host = localhost
 port = 8080
 pausePlayer = True
@@ -109,14 +109,14 @@ displayTime = 10000
 triggerDelay = 10
 
 
-[alert2]
+[alert1]
 id = 1
 description = xbmc notification
-alertLevels = 3, 4, 5
+alertLevels = 0
 host = localhost
 port = 8080
 pausePlayer = False
 showMessage = True
 displayTime = 10000
-triggerDelay = 10
+triggerDelay = 2
 ```

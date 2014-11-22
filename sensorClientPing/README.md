@@ -97,31 +97,94 @@ fromAddr = alertR@h4des.org
 toAddr = some@address.org
 
 
-[sensor1]
+[sensor0]
 id = 0
-description = some.server.org reachable
+description = storageserver reachable
 alertDelay = 0
-alertLevel = 3
+alertLevels = 0, 4
 triggerAlert = True
 triggerAlways = True
 triggerState = 1
-host = some.server.org
+host = storageserver.h4des.org
 execute = /bin/ping
 timeout = 30
 intervalToCheck = 60
 
+[sensor1]
+id = 1
+description = firewall reachable
+alertDelay = 0
+alertLevels = 0, 4
+triggerAlert = True
+triggerAlways = True
+triggerState = 1
+host = firewall.h4des.org
+execute = /bin/ping
+timeout = 30
+intervalToCheck = 60
 
 [sensor2]
-id = 1
-description = other.server.org reachable
+id = 2
+description = sensor raspberry reachable
 alertDelay = 0
-alertLevel = 3
+alertLevels = 0, 4
 triggerAlert = True
 triggerAlways = True
 triggerState = 1
-host = other.server.org
+host = sensorrasp.h4des.org
 execute = /bin/ping
 timeout = 30
 intervalToCheck = 60
 
+[sensor3]
+id = 3
+description = sensor2 raspberry reachable
+alertDelay = 0
+alertLevels = 0, 4
+triggerAlert = True
+triggerAlways = True
+triggerState = 1
+host = sensorrasp2.h4des.org
+execute = /bin/ping
+timeout = 30
+intervalToCheck = 60
+
+[sensor4]
+id = 4
+description = sensor3 raspberry reachable
+alertDelay = 0
+alertLevels = 0, 4
+triggerAlert = True
+triggerAlways = True
+triggerState = 1
+host = sensorrasp3.h4des.org
+execute = /bin/ping
+timeout = 30
+intervalToCheck = 60
+
+[sensor5]
+id = 5
+description = printer reachable
+alertDelay = 0
+alertLevels = 0, 4
+triggerAlert = True
+triggerAlways = True
+triggerState = 1
+host = printer.h4des.org
+execute = /bin/ping
+timeout = 30
+intervalToCheck = 60
+
+[sensor6]
+id = 6
+description = xbmc reachable
+alertDelay = 0
+alertLevels = 0
+triggerAlert = False
+triggerAlways = False
+triggerState = 1
+host = xbmc.h4des.org
+execute = /bin/ping
+timeout = 30
+intervalToCheck = 60
 ```

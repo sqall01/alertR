@@ -101,43 +101,76 @@ fromAddr = alertR@h4des.org
 toAddr = some@address.org
 
 
-[sensor1]
+[sensor0]
+type = polling
 id = 0
-description = front door
+description = front door (notification)
 gpioPin = 21
-alertDelay = 20
-alertLevel = 2
+alertDelay = 0
+alertLevels = 0
 triggerAlert = True
-triggerAlways = False
+triggerState = 1
+
+[sensor1]
+type = polling
+id = 1
+description = front door (alarm)
+gpioPin = 21
+alertDelay = 30
+alertLevels = 2, 5
+triggerAlert = True
 triggerState = 1
 
 [sensor2]
-id = 1
+type = polling
+id = 2
 description = living room window left bottom
 gpioPin = 26
 alertDelay = 0
-alertLevel = 1
+alertLevels = 0, 2, 5
 triggerAlert = True
-triggerAlways = False
 triggerState = 1
 
 [sensor3]
-id = 2
+type = polling
+id = 3
 description = living room window right top
 gpioPin = 24
 alertDelay = 0
-alertLevel = 0
+alertLevels = 2, 5
 triggerAlert = False
-triggerAlways = False
 triggerState = 1
 
 [sensor4]
-id = 3
+type = polling
+id = 4
 description = living room window left top
 gpioPin = 23
 alertDelay = 0
-alertLevel = 0
+alertLevels = 2, 5
 triggerAlert = False
-triggerAlways = False
 triggerState = 1
+
+[sensor5]
+type = polling
+id = 5
+description = living room window right bottom
+gpioPin = 22
+alertDelay = 0
+alertLevels = 0, 2, 5
+triggerAlert = True
+triggerState = 1
+
+[sensor6]
+type = interrupt
+id = 6
+description = door bell
+gpioPin = 18
+alertDelay = 0
+alertLevels = 0, 1
+triggerAlert = True
+edge = 0
+pulledUpOrDown = 1
+delayBetweenTriggers = 10
+timeSensorTriggered = 5
 ```

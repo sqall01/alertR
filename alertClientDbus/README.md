@@ -110,10 +110,10 @@ fromAddr = alertR@h4des.org
 toAddr = some@address.org
 
 
-[alert1]
-id = 1
+[alert0]
+id = 0
 description = pc notification
-alertLevels = 3, 4, 5
+alertLevels = 0
 displayTime = 10000
 triggerDelay = 2
 ```
