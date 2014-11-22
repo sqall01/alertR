@@ -1,4 +1,4 @@
-protocol schematics version 0.21
+protocol schematics version 0.22
 
 ---
 
@@ -114,16 +114,22 @@ c->s:	json(
 						dict(
 							clientSensorId = clientSensorId
 							alertDelay = alertDelay
-							alertLevel = alertLevel
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 							description = description
-							triggerAlways = triggerAlways
 						),
 						dict(
 							clientSensorId = clientSensorId
 							alertDelay = alertDelay
-							alertLevel = alertLevel
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 							description = description
-							triggerAlways = triggerAlways
 						),
 						[...]
 					)
@@ -174,11 +180,11 @@ c->s:	json(
 					sensors = list(
 						dict(
 							clientSensorId = clientSensorId
-							state = state
+							state = state (0 or 1)
 						),
 						dict(
 							clientSensorId = clientSensorId
-							state = state
+							state = state (0 or 1)
 						),
 						[...]
 					)
@@ -227,7 +233,7 @@ c->s:	json(
 				payload = dict(
 					type = "request"
 					clientSensorId = clientSensorId
-					state = state
+					state = state (0 or 1)
 				)
 			)
 		)
@@ -273,7 +279,7 @@ c->s:	json(
 				payload = dict(
 					type = "request"
 					clientSensorId = clientSensorId
-					state = state
+					state = state (0 or 1)
 				)
 			)
 		)
@@ -386,19 +392,27 @@ s->c:	json(
 							nodeId = nodeId
 							sensorId = sensorId
 							alertDelay = alertDelay
-							alertLevel = alertLevel
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 							description = description
 							lastStateUpdated = lastStateUpdated
-							state = state
+							state = state (0 or 1)
 						),
 						dict(
 							nodeId = nodeId
 							sensorId = sensorId
 							alertDelay = alertDelay
-							alertLevel = alertLevel
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 							description = description
 							lastStateUpdated = lastStateUpdated
-							state = state
+							state = state (0 or 1)
 						),
 						[...]
 					)
@@ -420,11 +434,38 @@ s->c:	json(
 							nodeId = nodeId
 							alertId = alertId
 							description = description
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 						),
 						dict(
 							nodeId = nodeId
 							alertId = alertId
 							description = description
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
+						),
+						[...]
+					)
+					alertLevels = list(
+						dict(
+							alertLevel = alertLevel
+							name = name
+							triggerAlways = triggerAlways (0 or 1)
+							smtpActivated = smtpActivated (0 or 1)
+							toAddr = toAddr
+						),
+						dict(
+							alertLevel = alertLevel
+							name = name
+							triggerAlways = triggerAlways (0 or 1)
+							smtpActivated = smtpActivated (0 or 1)
+							toAddr = toAddr
 						),
 						[...]
 					)
@@ -520,8 +561,12 @@ s->c:	json(
 				payload = dict(
 					type = "request"
 					sensorId = sensorId
-					state = state
-					alertLevel = alertLevel
+					state = state (0 or 1)
+					alertLevels = list(
+						alertLevel1,
+						alertLevel2,
+						[...]
+					)
 					description = description
 				)
 			)
@@ -568,7 +613,7 @@ s->c:	json(
 				payload = dict(
 					type = "request"
 					sensorId = sensorId
-					state = state
+					state = state (0 or 1)
 				)
 			)
 		)
@@ -586,7 +631,7 @@ c->s:	json(
 
 ============= client "alert" =============
 
-initialize communication (manager alert):
+initialize communication (alert client):
 
 # first version verification and authentication
 SEE GENERAL FOR DETAILS
@@ -605,19 +650,20 @@ c->s:	json(
 						dict(
 							clientAlertId = clientAlertId
 							description = description
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 						),
 						dict(
 							clientAlertId = clientAlertId
 							description = description
-						),
-						[...]
-					)
-					alertLevels = list(
-						dict(
-							alertLevel = alertLevel
-						),
-						dict(
-							alertLevel = alertLevel
+							alertLevels = list(
+								alertLevel1,
+								alertLevel2,
+								[...]
+							)
 						),
 						[...]
 					)
@@ -666,8 +712,13 @@ s->c:	json(
 				payload = dict(
 					type = "request"
 					sensorId = sensorId
-					state = state
-					alertLevel = alertLevel
+					state = state (0 or 1)
+					alertLevels = list(
+						alertLevel1,
+						alertLevel2,
+						[...]
+					)
+					description = description
 				)
 			)
 		)

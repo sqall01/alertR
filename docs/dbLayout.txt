@@ -1,3 +1,7 @@
+db layout version 0.22
+
+---
+
 Used for internal settings/options/values that should not be changed from the outside.
 
 table internals
@@ -37,8 +41,6 @@ table sensors
 -state (0 = not triggered, 1 = triggered)
 -lastStateUpdated (unix timestamp)
 -alertDelay
--alertLevel
--triggerAlways (0 = no, 1 = yes)
 
 ---
 
@@ -62,11 +64,20 @@ table alerts
 
 ---
 
-Used for the registered alert levels (you can think of an alert level as an category).
+Used for the registered alert levels (you can think of an alert level as an category) for alert clients.
 
-table alertLevels
+table alertsAlertLevels
 -id
--nodeId (id to the entry in the "nodes" table)
+-alertId (id to the entry in the "alerts" table)
+-alertLevel
+
+---
+
+Used for the registered alert levels (you can think of an alert level as an category) for sensor clients.
+
+table sensorsAlertLevels
+-id
+-sensorId (id to the entry in the "sensors" table)
 -alertLevel
 
 ---
