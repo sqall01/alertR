@@ -136,6 +136,12 @@ toAddr = someotheraddress@somehost.de
 # name of the alert level (for example for what it is used)
 name = alarm sirens
 
+# this flag indicates if this alert level should trigger always
+# an alert on all alert clients even if the alerting system
+# is not activated
+# ("True" or "False")
+triggerAlways = False
+
 
 # ------------------------------------------------------------
 # section for a single alert level that could be triggered
@@ -156,3 +162,9 @@ toAddr = youraddress@somehost.de
 
 # name of the alert level (for example for what it is used)
 name = pausing xbmc
+
+# this flag indicates if this alert level should trigger always
+# an alert on all alert clients even if the alerting system
+# is not activated
+# ("True" or "False")
+triggerAlways = True
