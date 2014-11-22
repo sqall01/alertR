@@ -70,6 +70,18 @@ urwidSensorShowAlertLevels = False
 # be shown or not ("True" or "False")
 urwidAlertShowAlertLevels = False
 
+# should the "trigger always" information of an alert level
+# be shown or not ("True" or "False")
+urwidAlertLevelShowTriggerAlways = True
+
+# should the "smtp activated" information of an alert level
+# be shown or not ("True" or "False")
+urwidAlertLevelShowSmtpActivated = False
+
+# should the "to addr" information of an alert level
+# be shown or not ("True" or "False")
+urwidAlertLevelShowToAddr = True
+
 # the time in seconds the received sensor alerts should be displayed in a list
 # before they are removed
 timeShowSensorAlert = 3600
@@ -85,6 +97,9 @@ maxCountShowAlertsPerPage = 4
 
 # the maximum count of manager clients that should be displayed per page
 maxCountShowManagersPerPage = 4
+
+# the maximum count of alert levels that should be displayed per page
+maxCountShowAlertLevelsPerPage = 2
 
 
 # ------------------------------------------------------------

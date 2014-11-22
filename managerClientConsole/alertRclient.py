@@ -112,6 +112,21 @@ class GlobalData:
 		# for an alert
 		self.urwidAlertShowAlertLevels = None
 
+		# this option tells the screen thread if
+		# the "trigger always" information should be shown
+		# for an alert level
+		urwidAlertLevelShowTriggerAlways = None
+
+		# this option tells the screen thread if
+		# the "smtp activated" information should be shown
+		# for an alert level
+		urwidAlertLevelShowSmtpActivated = None
+
+		# this option tells the screen thread if
+		# the "to addr" information should be shown
+		# for an alert level
+		urwidAlertLevelShowToAddr = None
+
 		# this is the time in seconds when the sensor should be
 		# displayed as timed out
 		self.connectionTimeout = 60
@@ -133,6 +148,9 @@ class GlobalData:
 
 		# the maximum number of managers that is shown per manager page
 		self.maxCountShowManagersPerPage = None
+
+		# the maximum number of alert levels that is shown per alert level page
+		self.maxCountShowAlertLevelsPerPage = None
 
 		# this is an instance of the console object that handles
 		# the screen
@@ -212,6 +230,12 @@ if __name__ == '__main__':
 			"urwidSensorShowAlertLevels")
 		globalData.urwidAlertShowAlertLevels = config.getboolean("general",
 			"urwidAlertShowAlertLevels")
+		globalData.urwidAlertLevelShowTriggerAlways = config.getboolean(
+			"general", "urwidAlertLevelShowTriggerAlways")
+		globalData.urwidAlertLevelShowSmtpActivated = config.getboolean(
+			"general", "urwidAlertLevelShowSmtpActivated")
+		globalData.urwidAlertLevelShowToAddr = config.getboolean("general",
+			"urwidAlertLevelShowToAddr")				
 		globalData.timeShowSensorAlert = config.getint("general",
 			"timeShowSensorAlert")
 		globalData.maxCountShowSensorAlert = config.getint("general",
@@ -222,6 +246,8 @@ if __name__ == '__main__':
 			"maxCountShowAlertsPerPage")
 		globalData.maxCountShowManagersPerPage = config.getint("general",
 			"maxCountShowManagersPerPage")
+		globalData.maxCountShowAlertLevelsPerPage = config.getint("general",
+			"maxCountShowAlertLevelsPerPage")
 
 		# parse smtp options if activated
 		smtpActivated = config.getboolean("smtp", "smtpActivated")

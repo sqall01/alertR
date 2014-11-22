@@ -556,7 +556,7 @@ class AlertUrwid:
 		self.alertUrwidMap.set_attr_map({None: "connectionfail"})
 
 
-# this class is an urwid object for an manager
+# this class is an urwid object for a manager
 class ManagerUrwid:
 
 	def __init__(self, manager, node):
@@ -586,7 +586,7 @@ class ManagerUrwid:
 
 
 	# this function returns the final urwid widget that is used
-	# to render the box of an manager
+	# to render the box of a manager
 	def get(self):
 		return self.managerUrwidMap
 
@@ -629,6 +629,151 @@ class ManagerUrwid:
 	# has failed
 	def setConnectionFail(self):
 		self.managerUrwidMap.set_attr_map({None: "connectionfail"})
+
+
+# this class is an urwid object for an alert level
+class AlertLevelUrwid:
+
+	def __init__(self, alertLevel, showTriggerAlways, showSmtpActivated,
+		showToAddr):
+
+		# store reference to alert level object
+		self.alertLevel = alertLevel
+
+		# store reference in alert level object to
+		# this urwid alert level object
+		self.alertLevel.alertLevelUrwid = self
+
+		# options which information should be displayed
+		self.showTriggerAlways = showTriggerAlways
+		self.showSmtpActivated = showSmtpActivated
+		self.showToAddr = showToAddr
+
+		alertLevelPileList = list()
+		self.nameWidget = urwid.Text("Name: "
+			+ self.alertLevel.name)
+		alertLevelPileList.append(self.nameWidget)
+
+		# create text widget for the "trigger always" information if
+		# it should be displayed
+		if self.showTriggerAlways:
+			self.triggerAlwaysWidget = urwid.Text("Trigger always: "
+			+ ("yes" if self.alertLevel.triggerAlways == 1 else "no"))
+			alertLevelPileList.append(self.triggerAlwaysWidget)
+
+		# create text widget for the "smtp activated" information if
+		# it should be displayed
+		if self.showSmtpActivated:
+			self.smtpActivatedWidget = urwid.Text("Send eMail alert: "
+			+ ("yes" if self.alertLevel.smtpActivated == 1 else "no"))
+			alertLevelPileList.append(self.smtpActivatedWidget)
+
+		# create text widget for the "to addr" information if
+		# it should be displayed
+		if self.showToAddr:
+			if self.alertLevel.smtpActivated == 1:
+				self.toAddrWidget = urwid.Text("eMail recipient: "
+					+ self.alertLevel.toAddr)
+			else:
+				self.toAddrWidget = urwid.Text("eMail recipient: none")
+			alertLevelPileList.append(self.toAddrWidget)
+
+		alertLevelPile = urwid.Pile(alertLevelPileList)
+		alertLevelBox = urwid.LineBox(alertLevelPile, title="Level: %d" %
+			self.alertLevel.level)
+		paddedAlertLevelBox = urwid.Padding(alertLevelBox, left=1, right=1)
+
+		# set the color of the urwid object
+		self.alertLevelUrwidMap = urwid.AttrMap(paddedAlertLevelBox,
+			"greenColor")
+
+
+	# this function returns the final urwid widget that is used
+	# to render the box of an alert level
+	def get(self):
+		return self.alertLevelUrwidMap
+
+
+	# this function updates the description of the object
+	def updateName(self, name):
+		self.nameWidget.set_text("Name: " + name)
+
+
+	# this function updates the description of the object
+	def updateTriggerAlways(self, triggerAlways):
+
+		# only change widget text if the information should be displayed
+		if self.showTriggerAlways:
+			self.triggerAlwaysWidget.set_text("Trigger always: "
+				+ ("yes" if triggerAlways == 1 else "no"))
+
+
+	# this function updates the description of the object
+	def updateSmtpActivated(self, smtpActivated):
+
+		# only change widget text if the information should be displayed
+		if self.showSmtpActivated:
+			self.smtpActivatedWidget.set_text("Send eMail alert: "
+			+ ("yes" if smtpActivated == 1 else "no"))
+
+
+	# this function updates the description of the object
+	def updateToAddr(self, smtpActivated, toAddr):
+
+		# only change widget text if the information should be displayed
+		if self.showToAddr:
+			if smtpActivated == 1:
+				self.toAddrWidget.set_text("eMail recipient: " + toAddr)
+			else:
+				self.toAddrWidget.set_text("eMail recipient: none")
+
+
+	# this function changes the color of this urwid object to red
+	def turnRed(self):
+		self.alertLevelUrwidMap.set_attr_map({None: "redColor"})
+
+
+	# this function changes the color of this urwid object to green
+	def turnGreen(self):
+		self.alertLevelUrwidMap.set_attr_map({None: "greenColor"})
+
+
+	# this function changes the color of this urwid object to gray
+	def turnGray(self):
+		self.alertLevelUrwidMap.set_attr_map({None: "grayColor"})
+
+
+	# this function changes the color of this urwid object to the
+	# neutral color scheme
+	def turnNeutral(self):
+		self.alertLevelUrwidMap.set_attr_map({None: "neutral"})
+
+
+	# this function updates all internal widgets and checks if
+	# the alert level still exists
+	def updateCompleteWidget(self):
+
+		# check if alert level still exists
+		if (self.alertLevel is None):
+
+			# return false if object no longer exists
+			return False
+
+		self.turnGreen()
+		self.updateName(self.alertLevel.name)
+		self.updateTriggerAlways(self.alertLevel.triggerAlways)
+		self.updateSmtpActivated(self.alertLevel.smtpActivated)
+		self.updateToAddr(self.alertLevel.smtpActivated,
+			self.alertLevel.toAddr)
+
+		# return true if object was updated
+		return True
+
+
+	# this functions sets the color when the connection to the server
+	# has failed
+	def setConnectionFail(self):
+		self.alertLevelUrwidMap.set_attr_map({None: "connectionfail"})
 
 
 # this class is an urwid object for a sensor alert
@@ -698,6 +843,8 @@ class Console:
 			self.globalData.maxCountShowAlertsPerPage
 		self.maxCountShowManagersPerPage = \
 			self.globalData.maxCountShowManagersPerPage
+		self.maxCountShowAlertLevelsPerPage = \
+			self.globalData.maxCountShowAlertLevelsPerPage
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
@@ -714,17 +861,24 @@ class Console:
 			= self.globalData.urwidSensorShowState
 		self.urwidSensorShowAlertLevels \
 			= self.globalData.urwidSensorShowAlertLevels
+		self.urwidAlertLevelShowTriggerAlways \
+			= self.globalData.urwidAlertLevelShowTriggerAlways
+		self.urwidAlertLevelShowSmtpActivated \
+			= self.globalData.urwidAlertLevelShowSmtpActivated
+		self.urwidAlertLevelShowToAddr \
+			= self.globalData.urwidAlertLevelShowToAddr
 
 		# options which information should be displayed
 		# by an alert urwid object
 		self.urwidAlertShowAlertLevels \
 			= self.globalData.urwidAlertShowAlertLevels
 
-		# urwid grid object for sensors
-		self.sensorsGrid = None
-
 		# urwid grid object for sensor alerts
 		self.sensorAlertsPile = None
+
+		# this urwid object is used as an empty sensor alert
+		# to fill up the list of sensor alerts
+		self.emtpySensorAlert = None
 
 		# urwid object that shows the connection status
 		self.connectionStatus = None
@@ -732,23 +886,35 @@ class Console:
 		# urwid object that shows if the alert system is active
 		self.alertSystemActive = None
 
-		# urwid grid object for alerts
-		self.alertsGrid = None
-
 		# a list of all urwid sensor objects
 		self.sensorUrwidObjects = list()
 
 		# a list of all urwid sensor objects that are shown on the page
 		self.shownSensorUrwidObjects = list()
 
-		# a list of all urwid sensor alert objects
-		self.sensorAlertUrwidObjects = list()
+		# urwid grid object for sensors
+		self.sensorsGrid = None
+
+		# the current page of the sensor objects that is shown
+		self.currentSensorPage = 0
+
+		# the footer of the sensor box (which shows the current page number)
+		self.sensorsFooter = None
 
 		# a list of all urwid alert objects
 		self.alertUrwidObjects = list()
 
 		# a list of all urwid alert objects that are shown on the page
 		self.shownAlertUrwidObjects = list()
+
+		# urwid grid object for alerts
+		self.alertsGrid = None
+
+		# the current page of the alert objects that is shown
+		self.currentAlertPage = 0
+
+		# the footer of the alert box (which shows the current page number)
+		self.alertsFooter = None
 
 		# a list of all urwid manager objects
 		self.managerUrwidObjects = list()
@@ -759,26 +925,33 @@ class Console:
 		# urwid grid object for managers
 		self.managersGrid = None
 
-		# the file descriptor for the urwid callback to update the screen
-		self.screenFd = None
-
-		# the current page of the sensor objects that is shown
-		self.currentSensorPage = 0
-
-		# the footer of the sensor box (which shows the current page number)
-		self.sensorsFooter = None
-
-		# the current page of the alert objects that is shown
-		self.currentAlertPage = 0
-
-		# the footer of the alert box (which shows the current page number)
-		self.alertsFooter = None
-
 		# the current page of the manager objects that is shown
 		self.currentManagerPage = 0
 
 		# the footer of the manager box (which shows the current page number)
 		self.managersFooter = None
+
+		# a list of all urwid alert level objects
+		self.alertLevelUrwidObjects = list()
+
+		# a list of all urwid alert level objects that are shown on the page
+		self.shownAlertLevelUrwidObjects = list()
+
+		# urwid grid object for alert levels
+		self.alertLevelsGrid = None
+
+		# the current page of the alert level objects that is shown
+		self.currentAlertLevelPage = 0
+
+		# the footer of the alert level box
+		# (which shows the current page number)
+		self.alertLevelsFooter = None
+
+		# a list of all urwid sensor alert objects
+		self.sensorAlertUrwidObjects = list()
+
+		# the file descriptor for the urwid callback to update the screen
+		self.screenFd = None
 
 		
 	# internal function that acquires the lock
@@ -1051,6 +1224,98 @@ class Console:
 		self._showManagersAtPageIndex(self.currentManagerPage)
 
 
+	# internal function that shows the alert level urwid objects given
+	# by a page index
+	def _showAlertLevelsAtPageIndex(self, pageIndex):
+
+		# calculate how many pages the alert level urwid objects have
+		alertLevelPageCount = (len(self.alertLevelUrwidObjects) 
+			/ self.maxCountShowAlertLevelsPerPage)
+		if ((len(self.alertLevelUrwidObjects)
+			% self.maxCountShowAlertLevelsPerPage) 
+			!= 0):
+			alertLevelPageCount += 1
+
+		# check if the index to show is within the page range
+		if pageIndex >= alertLevelPageCount:
+			pageIndex = 0
+		elif pageIndex < 0:
+			pageIndex = alertLevelPageCount - 1
+
+		logging.debug("[%s]: Update shown alert levels with page index: %d."
+			% (self.fileName, pageIndex))
+
+		# get all alert level urwid objects
+		# that should be shown on the new page
+		del self.shownAlertLevelUrwidObjects[:]
+		for i in range(self.maxCountShowAlertLevelsPerPage):
+			tempItemIndex = i + (pageIndex
+				* self.maxCountShowAlertLevelsPerPage)
+			if tempItemIndex >= len(self.alertLevelUrwidObjects):
+				break
+			self.shownAlertLevelUrwidObjects.append(
+				self.alertLevelUrwidObjects[tempItemIndex])
+
+		# delete all old shown alert level objects
+		# and replace them by the new ones
+		del self.alertLevelsGrid.contents[:]
+		for newShownAlertLevel in self.shownAlertLevelUrwidObjects:
+			self.alertLevelsGrid.contents.append((newShownAlertLevel.get(),
+				self.alertLevelsGrid.options()))
+
+		# update alert levels page footer
+		tempText = "Page %d / %d " % (pageIndex + 1, alertLevelPageCount)
+		self.alertLevelsFooter.set_text(tempText)
+
+
+	# internal function that shows the next page of alert level objects
+	def _showAlertLevelsNextPage(self):
+
+		logging.debug("[%s]: Show next alert levels page." % self.fileName)
+
+		# calculate how many pages the alert level urwid objects have
+		alertLevelPageCount = (len(self.alertLevelUrwidObjects) 
+			/ self.maxCountShowAlertLevelsPerPage)
+		if alertLevelPageCount == 0:
+			return
+		if ((len(self.alertLevelUrwidObjects)
+			% self.maxCountShowAlertLevelsPerPage)
+			!= 0):
+			alertLevelPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentAlertLevelPage += 1
+		if self.currentAlertLevelPage >= alertLevelPageCount:
+			self.currentAlertLevelPage = 0
+
+		# update shown alert levels
+		self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
+
+
+	# internal function that shows the previous page of alert level objects
+	def _showAlertLevelsPreviousPage(self):
+
+		logging.debug("[%s]: Show previous alert levels page." % self.fileName)
+
+		# calculate how many pages the alert level urwid objects have
+		alertLevelPageCount = (len(self.alertLevelUrwidObjects)
+			/ self.maxCountShowAlertLevelsPerPage)
+		if alertLevelPageCount == 0:
+			return
+		if ((len(self.alertLevelUrwidObjects)
+			% self.maxCountShowAlertLevelsPerPage)
+			!= 0):
+			alertLevelPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentAlertLevelPage -= 1
+		if self.currentAlertLevelPage < 0:
+			self.currentAlertLevelPage = alertLevelPageCount - 1
+
+		# update shown alert levels
+		self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
+
+
 	# this function is called to update the screen
 	def updateScreen(self, status):
 
@@ -1117,13 +1382,21 @@ class Console:
 		elif key in ['h', 'H']:
 			self._showAlertsPreviousPage()
 
-		# check if key m/M is pressed => show next page of managers
-		elif key in ['m', 'M']:
+		# check if key b/B is pressed => show next page of managers
+		elif key in ['b', 'B']:
 			self._showManagersNextPage()
 
-		# check if key n/N is pressed => show previous page of managers
-		elif key in ['n', 'N']:
+		# check if key v/V is pressed => show previous page of managers
+		elif key in ['v', 'V']:
 			self._showManagersPreviousPage()
+
+		# check if key m/M is pressed => show next page of alert levels
+		elif key in ['m', 'M']:
+			self._showAlertLevelsNextPage()
+
+		# check if key n/N is pressed => show previous page of alert levels
+		elif key in ['n', 'N']:
+			self._showAlertLevelsPreviousPage()
 
 		return True
 
@@ -1197,7 +1470,65 @@ class Console:
 			urwid.Divider(), self.sensorsFooter, keyBindings]),
 			title="sensors")
 
-		leftDisplayPart = urwid.Pile([sensorsBox])
+		# generate all manager urwid objects
+		for manager in self.managers:
+
+			# get node the manager belongs to
+			nodeManagerBelongs = None
+			for node in self.nodes:
+				if node.nodeType != "manager":
+					continue
+				if manager.nodeId == node.nodeId:
+					nodeManagerBelongs = node
+					break
+
+			# create new manager urwid object
+			# (also links urwid object to manager object)
+			managerUrwid = ManagerUrwid(manager, nodeManagerBelongs)
+
+			# append the final manager urwid object to the list
+			# of manager objects
+			self.managerUrwidObjects.append(managerUrwid)
+
+		# check if manager urwid objects list is not empty
+		if self.managerUrwidObjects:
+
+			# get the manager objects for the first page
+			for i in range(self.maxCountShowManagersPerPage):
+				# break if there are less manager urwid objects than should
+				# be shown
+				if i >= len(self.managerUrwidObjects):
+					break
+				self.shownManagerUrwidObjects.append(
+					self.managerUrwidObjects[i])
+
+			# create grid object for the managers
+			self.managersGrid = urwid.GridFlow(
+				map(lambda x: x.get(), self.shownManagerUrwidObjects),
+				40, 1, 1, 'left')
+		else:
+			# create empty grid object for the managers
+			self.managersGrid = urwid.GridFlow([], 40, 1, 1, 'left')
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# generate footer text for sensors box
+		tempText = "Page 1 / %d " % managerPageCount 
+		self.managersFooter = urwid.Text(tempText, align='center')
+		keyBindings = urwid.Text(
+			"Key bindings: v - previous page, b - next page", align='center')
+
+		# build box around the manager grid with title
+		managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
+			urwid.Divider(), self.managersFooter, keyBindings]),
+			title="manager clients")
+
+		leftDisplayPart = urwid.Pile([sensorsBox, managersBox])
 
 		# generate all alert urwid objects
 		for alert in self.alerts:
@@ -1258,66 +1589,64 @@ class Console:
 			urwid.Divider(), self.alertsFooter, keyBindings]),
 			title="alert clients")
 
-		# generate all manager urwid objects
-		for manager in self.managers:
+		# generate all alert level urwid objects
+		for alertLevel in self.alertLevels:
 
-			# get node the manager belongs to
-			nodeManagerBelongs = None
-			for node in self.nodes:
-				if node.nodeType != "manager":
-					continue
-				if manager.nodeId == node.nodeId:
-					nodeManagerBelongs = node
-					break
+			# create new alert level urwid object
+			# (also links urwid object to alert level object)
+			alertLevelUrwid = AlertLevelUrwid(alertLevel,
+				self.urwidAlertLevelShowTriggerAlways,
+				self.urwidAlertLevelShowSmtpActivated,
+				self.urwidAlertLevelShowToAddr)
 
-			# create new manager urwid object
-			# (also links urwid object to manager object)
-			managerUrwid = ManagerUrwid(manager, nodeManagerBelongs)
+			# append the final alert level urwid object to the list
+			# of alert level objects
+			self.alertLevelUrwidObjects.append(alertLevelUrwid)
 
-			# append the final manager urwid object to the list
-			# of manager objects
-			self.managerUrwidObjects.append(managerUrwid)
+		# check if alert level urwid objects list is not empty
+		if self.alertLevelUrwidObjects:
 
-		# check if manager urwid objects list is not empty
-		if self.managerUrwidObjects:
-
-			# get the manager objects for the first page
-			for i in range(self.maxCountShowManagersPerPage):
-				# break if there are less manager urwid objects than should
+			# get the alert level objects for the first page
+			for i in range(self.maxCountShowAlertLevelsPerPage):
+				# break if there are less alert level urwid objects than should
 				# be shown
-				if i >= len(self.managerUrwidObjects):
+				if i >= len(self.alertLevelUrwidObjects):
 					break
-				self.shownManagerUrwidObjects.append(
-					self.managerUrwidObjects[i])
+				self.shownAlertLevelUrwidObjects.append(
+					self.alertLevelUrwidObjects[i])
 
-			# create grid object for the managers
-			self.managersGrid = urwid.GridFlow(
-				map(lambda x: x.get(), self.shownManagerUrwidObjects),
+			# create grid object for the alert levels
+			self.alertLevelsGrid = urwid.GridFlow(
+				map(lambda x: x.get(), self.shownAlertLevelUrwidObjects),
 				40, 1, 1, 'left')
 		else:
-			# create empty grid object for the managers
-			self.managersGrid = urwid.GridFlow([], 40, 1, 1, 'left')
+			# create empty grid object for the alert levels
+			self.alertLevelsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
-		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
-			!= 0):
-			managerPageCount += 1
+		# calculate how many pages the alert level urwid objects have
+		alertLevelPageCount = (len(self.alertLevelUrwidObjects)
+			/ self.maxCountShowAlertLevelsPerPage)
+		if ((len(self.alertLevelUrwidObjects) 
+			% self.maxCountShowAlertLevelsPerPage) != 0):
+			alertLevelPageCount += 1
 
 		# generate footer text for sensors box
-		tempText = "Page 1 / %d " % managerPageCount 
-		self.managersFooter = urwid.Text(tempText, align='center')
+		tempText = "Page 1 / %d " % alertLevelPageCount 
+		self.alertLevelsFooter = urwid.Text(tempText, align='center')
 		keyBindings = urwid.Text(
 			"Key bindings: n - previous page, m - next page", align='center')
 
-		# build box around the manager grid with title
-		managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
-			urwid.Divider(), self.managersFooter, keyBindings]),
-			title="manager clients")
+		# build box around the alert level grid with title
+		alertLevelsBox = urwid.LineBox(urwid.Pile([self.alertLevelsGrid,
+			urwid.Divider(), self.alertLevelsFooter, keyBindings]),
+			title="alert levels")
 
 		# create empty sensor alerts pile
-		self.sensorAlertsPile = urwid.Pile([])
+		emptySensorAlerts = list()
+		self.emtpySensorAlert = urwid.Text("")
+		for i in range(self.maxCountShowSensorAlert):
+			emptySensorAlerts.append(self.emtpySensorAlert)
+		self.sensorAlertsPile = urwid.Pile(emptySensorAlerts)
 
 		# build box around the sensor alerts grid with title
 		sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile,
@@ -1352,7 +1681,7 @@ class Console:
 
 		# generate right part of the display
 		rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox,
-			alertsBox, managersBox])
+			alertsBox, alertLevelsBox])
 
 		# generate final body object
 		finalBody = urwid.Columns([leftDisplayPart, rightDisplayPart])
@@ -1578,6 +1907,48 @@ class Console:
 					# update shown managers
 					self._showManagersAtPageIndex(self.currentManagerPage)
 
+			# update the information of all alert level urwid widgets
+			for alertLevelUrwidObject in self.alertLevelUrwidObjects:
+				# if update method returns false
+				# => alert level object no longer exists
+				# => remove it 
+				if not alertLevelUrwidObject.updateCompleteWidget():
+
+					# remove alert level urwid object from the list of the
+					# current shown objects if it is shown
+					if (alertLevelUrwidObject
+						in self.shownAlertLevelUrwidObjects):
+						self.shownAlertLevelUrwidObjects.remove(
+							alertLevelUrwidObject)
+
+						# update shown alert levels
+						self._showAlertLevelsAtPageIndex(
+							self.currentAlertLevelPage)
+
+					# remove alert level urwid object from list of objects
+					# to delete all references to object
+					# => object will be deleted by garbage collector
+					self.alertLevelUrwidObjects.remove(alertLevelUrwidObject)
+
+			# add all alert levels that were newly added
+			for alertLevel in self.alertLevels:
+				# check if a new alert level was added
+				if alertLevel.alertLevelUrwid == None:
+					# create new alert level urwid object
+					# (also links urwid object to alert level object)
+					alertLevelUrwid = AlertLevelUrwid(alertLevel,
+						self.urwidAlertLevelShowTriggerAlways,
+						self.urwidAlertLevelShowSmtpActivated,
+						self.urwidAlertLevelShowToAddr)
+
+					# append the final alert level urwid object to the list
+					# of alert level objects
+					self.alertLevelUrwidObjects.append(alertLevelUrwid)
+
+					# update shown alert levels
+					self._showAlertLevelsAtPageIndex(
+						self.currentAlertLevelPage)
+
 		# check if the connection to the server failed
 		if receivedData == "connectionfail":
 			logging.debug("[%s]: Status connection failed "  % self.fileName
@@ -1600,7 +1971,11 @@ class Console:
 
 			# update all manager urwid widgets
 			for managerUrwidObject in self.managerUrwidObjects:
-				managerUrwidObject.setConnectionFail()		
+				managerUrwidObject.setConnectionFail()
+
+			# update all alert level urwid widgets
+			for alertLevelUrwidObject in self.alertLevelUrwidObjects:
+				alertLevelUrwidObject.setConnectionFail()
 
 		# check if a sensor alert was received from the server
 		if receivedData == "sensoralert":
@@ -1625,12 +2000,22 @@ class Console:
 
 						break
 
-				# remove the first sensor alert object if there are more
-				# than the configured count of sensor alert widgets
-				# (the first one is the oldest because of the appending)
-				if (len(self.sensorAlertUrwidObjects)
-					>= self.maxCountShowSensorAlert):
+				# check if more sensor alerts are shown than are received
+				# => there still exists empty sensor alerts
+				#=> remove them first
+				if (len(self.sensorAlertsPile.contents)
+					> len(self.sensorAlertUrwidObjects)):
 
+					# search for an empty sensor alert and remove it
+					for pileTuple in self.sensorAlertsPile.contents:
+						if self.emtpySensorAlert == pileTuple[0]:
+							self.sensorAlertsPile.contents.remove(
+								pileTuple)
+							break
+
+				# remove the first sensor alert object
+				# (the first one is the oldest because of the appending)
+				else:
 					sensorAlertWidgetToRemove = self.sensorAlertUrwidObjects[0]
 					# search in the pile widget for the sensor alert
 					# widget object to remove it
@@ -1644,6 +2029,7 @@ class Console:
 							# => object will be deleted by garbage collector
 							self.sensorAlertUrwidObjects.remove(
 								sensorAlertWidgetToRemove)
+							break
 
 				# create new sensor alert urwid object
 				sensorAlertUrwid = SensorAlertUrwid(sensorAlert,
