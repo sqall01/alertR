@@ -92,8 +92,9 @@ gpioPin = 26
 # to register with it at the server)
 alertDelay = 0
 
-# alert level which this sensor should trigger
-alertLevel = 0
+# comma seperated list that indicates the alert levels which the
+# sensor should trigger
+alertLevels = 0, 3
 
 # this flag indicates if this sensor should trigger an alert
 # for example it could be just used to signal the state to the server
@@ -183,8 +184,9 @@ gpioPin = 24
 # to register with it at the server)
 alertDelay = 0
 
-# alert level which this sensor should trigger
-alertLevel = 0
+# comma seperated list that indicates the alert levels which the
+# sensor should trigger
+alertLevels = 0
 
 # this flag indicates if this sensor should trigger an alert
 # for example it could be just used to signal the state to the server

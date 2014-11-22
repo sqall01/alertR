@@ -26,7 +26,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.21
+		self.version = 0.22
 
 		# interval in which a ping should be send when 
 		# no data was received/send
@@ -131,7 +131,8 @@ if __name__ == '__main__':
 				sensor.id = config.getint(section, "id")
 				sensor.description = config.get(section, "description")
 				sensor.alertDelay = config.getint(section, "alertDelay")
-				sensor.alertLevel = config.getint(section, "alertLevel")
+				sensor.alertLevels = map(int,
+					config.get(section, "alertLevels").split(","))
 				sensor.triggerAlert = config.getboolean(section,
 					"triggerAlert")
 				sensor.triggerState = config.getint(section, "triggerState")
@@ -186,8 +187,9 @@ if __name__ == '__main__':
 							"alertDelay")
 						tempDescription = registeredConfig.get(section,
 							"description")
-						tempAlertLevel = registeredConfig.getint(section,
-							"alertLevel")
+						tempAlertLevels = map(int,
+							registeredConfig.get(section,
+							"alertLevels").split(","))
 
 						# find sensor with the same id parsed from the
 						# regular config file
@@ -200,11 +202,23 @@ if __name__ == '__main__':
 							globalData.registered = False
 							break
 
+						# check if the alert levels of the sensors
+						# have changed
+						for alertLevel in tempSensor.alertLevels:
+							if not alertLevel in tempAlertLevels:
+								globalData.registered = False
+								break
+						for tempAlertLevel in tempAlertLevels:
+							if not tempAlertLevel in tempSensor.alertLevels:
+								globalData.registered = False
+								break
+						if globalData.registered is False:
+							break
+
 						# check if the sensor data has changed since
 						# the last registration
 						if (tempAlertDelay != tempSensor.alertDelay
-							or tempDescription != tempSensor.description
-							or tempAlertLevel != tempSensor.alertLevel):
+							or tempDescription != tempSensor.description):
 							globalData.registered = False
 							break
 
