@@ -67,6 +67,10 @@ class SensorAlertExecuter(threading.Thread):
 
 	def run(self):
 
+		# create an empty list for sensor alerts
+		# that have to be handled
+		sensorAlertsToHandle = list()
+
 		while 1:
 
 			# check if thread should terminate
@@ -80,13 +84,13 @@ class SensorAlertExecuter(threading.Thread):
 					self.globalData.managerUpdateExecuter
 
 			# get a list of all sensor alerts from database
-			# list is a list of tuples of tuples (sensorAlertId, sensorId,
+			# list is a list of tuples (sensorAlertId, sensorId, nodeId,
 			# timeReceived, alertDelay, state, description)
 			sensorAlertList = self.storage.getSensorAlerts()
 
-			# check if no sensor alerts exist in database
-			if (sensorAlertList is None
-				or len(sensorAlertList) == 0):
+			# check if no sensor alerts are to handle and exist in database
+			if (not sensorAlertsToHandle
+				and not sensorAlertList):
 				# wait until the next sensor alert occurs
 				self.sensorAlertEvent.wait()
 				self.sensorAlertEvent.clear()
@@ -95,82 +99,131 @@ class SensorAlertExecuter(threading.Thread):
 			# get the flag if the system is active or not
 			isAlertSystemActive = self.storage.isAlertSystemActive()
 
-			# check all sensor alerts that have triggered
+			# check if sensor alerts from the database
+			# have to be handled
 			for sensorAlert in sensorAlertList:
 				sensorAlertId = sensorAlert[0]
 				sensorId = sensorAlert[1]
-				timeReceived = sensorAlert[2]
-				alertDelay = sensorAlert[3]
-				state = sensorAlert[4]
-				description = sensorAlert[5]
+
+				# delete sensor alert from the database
+				self.storage.deleteSensorAlert(sensorAlertId)
 
 				# get all alert levels for this sensor
 				sensorAlertLevels = self.storage.getSensorAlertLevels(sensorId)
 				if sensorAlertLevels is None:
 					logging.error("[%s]: No alert levels " % self.fileName
 						+ "for sensor in database. Can not trigger alert.")
+					continue
+
+				# get all alert levels that are triggered
+				# because of this sensor alert (used as a pre filter)
+				triggeredAlertLevels = list()
+				for configuredAlertLevel in self.alertLevels:
+					for sensorAlertLevel in sensorAlertLevels:
+						if (configuredAlertLevel.level == 
+							sensorAlertLevel[0]):
+							# check if alert system is active
+							# or alert level triggers always
+							if (isAlertSystemActive 
+								or configuredAlertLevel.triggerAlways):
+								triggeredAlertLevels.append(
+									configuredAlertLevel)
+
+				# add sensorId of the sensor alert
+				# to the queue for state changes of the
+				# manager update executer
+				if self.managerUpdateExecuter != None:
+					self.managerUpdateExecuter.queueStateChange.append(
+						sensorId)
+
+				# check if an alert level to trigger was found
+				# if not => just ignore it
+				if not triggeredAlertLevels:
+					logging.debug("[%s]: No alert level " % self.fileName
+						+ "to trigger was found.")	
+
+					continue
+
+				# update alert levels to trigger
+				else:
+
+					# add sensor alert with alert levels
+					# to the list of sensor alerts to handle
+					sensorAlertsToHandle.append( [sensorAlert,
+						triggeredAlertLevels] )
+
+			# wake up manager update executer 
+			# => state change will be transmitted
+			# (because it is in the queue)
+			if self.managerUpdateExecuter != None:
+				self.managerUpdateExecuter.managerUpdateEvent.set()
+
+			# when no sensor alerts exist to handle => restart loop
+			if not sensorAlertsToHandle:
+				continue
+
+			# get the flag if the system is active or not
+			isAlertSystemActive = self.storage.isAlertSystemActive()
+
+			# check all sensor alerts to handle if they have to be triggered
+			for sensorAlertToHandle in list(sensorAlertsToHandle):
+				sensorAlertId = sensorAlertToHandle[0][0]
+				sensorId = sensorAlertToHandle[0][1]
+				nodeId = sensorAlertToHandle[0][2]
+				timeReceived = sensorAlertToHandle[0][3]
+				alertDelay = sensorAlertToHandle[0][4]
+				state = self.storage.getSensorState(sensorId)
+				description = sensorAlertToHandle[0][6]
+
+				# get all alert levels that are triggered
+				# because of this sensor alert
+				triggeredAlertLevels = list()
+				for configuredAlertLevel in self.alertLevels:
+					for sensorAlertLevel in sensorAlertToHandle[1]:
+						if (configuredAlertLevel.level == 
+							sensorAlertLevel.level):
+							# check if alert system is active
+							# or alert level triggers always
+							if (isAlertSystemActive 
+								or configuredAlertLevel.triggerAlways):
+								triggeredAlertLevels.append(
+									configuredAlertLevel)
+
+				# check if an alert level to trigger remains
+				# if not => just remove sensor alert to handle from the list
+				if not triggeredAlertLevels:
+					logging.debug("[%s]: No alert level " % self.fileName
+						+ "to trigger remains.")	
+
+					sensorAlertsToHandle.remove(sensorAlertToHandle)
+
+					continue
+
+				# update alert levels to trigger
+				else:
+					sensorAlertToHandle[1] = triggeredAlertLevels
 
 				# check if sensor alert has triggered
 				if (time.time() - timeReceived) > alertDelay:
 
-					# get all alert levels that are triggered
-					# because of this sensor alert
-					triggeredAlertLevels = list()
-					for configuredAlertLevel in self.alertLevels:
-						for sensorAlertLevel in sensorAlertLevels:
-							if (configuredAlertLevel.level == 
-								sensorAlertLevel[0]):
-								# check if alert system is active
-								# or alert level triggers always
-								if (isAlertSystemActive 
-									or configuredAlertLevel.triggerAlways):
-									triggeredAlertLevels.append(
-										configuredAlertLevel)
-
-					# check if a alert level to trigger was found
-					# if not => just trigger state change for manager clients
-					if not triggeredAlertLevels:
-						logging.debug("[%s]: No alert level " % self.fileName
-							+ "to trigger was found.")
-
-						# alert can not be handled => delete it
-						self.storage.deleteSensorAlert(sensorAlertId)
-
-						# add sensorId of the triggered sensor alert
-						# to the queue for state changes of the
-						# manager update executer
-						if self.managerUpdateExecuter != None:
-							self.managerUpdateExecuter.queueStateChange.append(
-								sensorId)
-
-						continue
-
 					# check if one of the triggered alert levels
 					# has email notification (smtpAlert) activated
-					# => send email alert
-					for triggeredAlertLevel in triggeredAlertLevels:
+					# => send email alert (to all of the alert levels)
+					for triggeredAlertLevel in sensorAlertToHandle[1]:
 						if triggeredAlertLevel.smtpActivated:
 
-							# get tuple of (hostname, description,
-							# timeReceived)
-							# from database for email alert
-							resultTuple = self.storage.getSensorAlertDetails(
-								sensorAlertId)
+							# get hostname of the client that triggered the
+							# sensor alert
+							hostname = self.storage.getNodeHostnameById(nodeId)
 
-							# check if storage backend returned sensor alert
-							# details
-							if not resultTuple is None:
-								hostname = resultTuple[0]
-								description = resultTuple[1]
-								timeReceived = resultTuple[2]
+							# check if storage backend returned a valid
+							# hostname
+							if not hostname is None:
 
 								# send email alert to configured email address
 								self.smtpAlert.sendSensorAlert(hostname,
 									description, timeReceived,
 									triggeredAlertLevel.toAddr)
-
-							# send only one email for a triggered sensor alert
-							break
 
 					# send sensor alert to all manager and alert clients
 					for serverSession in self.serverSessions:
@@ -211,24 +264,9 @@ class SensorAlertExecuter(threading.Thread):
 							serverSession.clientComm.clientPort))
 						sensorAlertProcess.start()
 
-					# after alert triggers => delete it
-					self.storage.deleteSensorAlert(sensorAlertId)
-
-				# if the sensor alert has not triggered yet
-				# => send state change to manager clients
-				else:
-					# add sensorId of the triggered sensor alert
-					# to the queue for state changes of the
-					# manager update executer
-					if self.managerUpdateExecuter != None:
-						self.managerUpdateExecuter.queueStateChange.append(
-							sensorId)
-
-			# wake up manager update executer even if sensor alerts are
-			# deactivated => state change will be transmitted
-			# (because it is in the queue)
-			if self.managerUpdateExecuter != None:
-				self.managerUpdateExecuter.managerUpdateEvent.set()
+					# after sensor alert was triggered
+					# => remove sensor alert to handle
+					sensorAlertsToHandle.remove(sensorAlertToHandle)
 
 			time.sleep(0.5)
 

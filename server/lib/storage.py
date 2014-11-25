@@ -159,19 +159,10 @@ class _Storage():
 
 	# gets all sensor alerts in the database
 	#
-	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-	# alertDelay, state)
+	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
+	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# gets all details of a sensor alert that are for example used
-	# to generate a notification
-	#
-	# return tuple of (hostname, description, timeReceived)
-	# or None
-	def getSensorAlertDetails(self, sensorAlertId):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -1430,7 +1421,7 @@ class Sqlite(_Storage):
 
 	# gets all sensor alerts in the database
 	#
-	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
+	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
 	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
@@ -1441,6 +1432,7 @@ class Sqlite(_Storage):
 			
 			self.cursor.execute("SELECT sensorAlerts.id, "
 				+ "sensors.id, "
+				+ "sensors.nodeId, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
@@ -1461,8 +1453,8 @@ class Sqlite(_Storage):
 
 		self._releaseLock()
 
-		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, state, description)
+		# return a list of tuples (sensorAlertId, sensorId, nodeId,
+		# timeReceived, alertDelay, state, description)
 		return result
 
 
@@ -1519,53 +1511,6 @@ class Sqlite(_Storage):
 			return True
 		elif alertSystemActive == 0:
 			return False
-
-
-	# gets all details of a sensor alert that are for example used
-	# to generate a notification
-	#
-	# return tuple of (hostname, description, timeReceived)
-	# or None
-	def getSensorAlertDetails(self, sensorAlertId):
-
-		self._acquireLock()
-
-		try:
-			self.cursor.execute("SELECT nodeId, sensorId, timeReceived "
-				+ "FROM sensorAlerts "
-				+ "WHERE id = ?", (sensorAlertId, ))
-			result = self.cursor.fetchall()
-			nodeId = result[0][0]
-			sensorId = result[0][1]
-			timeReceived = result[0][2]
-
-			self.cursor.execute("SELECT description "
-				+ "FROM sensors "
-				+ "WHERE id = ?", (sensorId, ))
-			result = self.cursor.fetchall()
-			description = result[0][0]
-
-			self.cursor.execute("SELECT hostname "
-				+ "FROM nodes "
-				+ "WHERE id = ?", (nodeId, ))
-			result = self.cursor.fetchall()
-			hostname = result[0][0]
-
-		except Exception as e:
-
-			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "sensor alert details.")
-
-			self._releaseLock()
-
-			# return None if action failed
-			return None
-
-		self._releaseLock()
-
-		# return tuple of (hostname, description, timeReceived)
-		returnTuple = (hostname, description, timeReceived)
-		return returnTuple
 
 
 	# gets all alert levels for the alert clients from the database
@@ -3527,7 +3472,7 @@ class Mysql(_Storage):
 
 	# gets all sensor alerts in the database
 	#
-	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
+	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
 	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
@@ -3549,6 +3494,7 @@ class Mysql(_Storage):
 			
 			self.cursor.execute("SELECT sensorAlerts.id, "
 				+ "sensors.id, "
+				+ "sensors.nodeId, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
@@ -3572,8 +3518,8 @@ class Mysql(_Storage):
 
 		self._releaseLock()
 
-		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, state, description)
+		# return a list of tuples (sensorAlertId, sensorId, nodeId,
+		# timeReceived, alertDelay, state, description)
 		return result
 
 
@@ -3658,67 +3604,6 @@ class Mysql(_Storage):
 			return True
 		elif alertSystemActive == 0:
 			return False
-
-
-	# gets all details of a sensor alert that are for example used
-	# to generate a notification
-	#
-	# return tuple of (hostname, description, timeReceived)
-	# or None
-	def getSensorAlertDetails(self, sensorAlertId):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return None
-
-		try:
-			self.cursor.execute("SELECT nodeId, sensorId, timeReceived "
-				+ "FROM sensorAlerts "
-				+ "WHERE id = %s", (sensorAlertId, ))
-			result = self.cursor.fetchall()
-			nodeId = result[0][0]
-			sensorId = result[0][1]
-			timeReceived = result[0][2]
-
-			self.cursor.execute("SELECT description "
-				+ "FROM sensors "
-				+ "WHERE id = %s", (sensorId, ))
-			result = self.cursor.fetchall()
-			description = result[0][0]
-
-			self.cursor.execute("SELECT hostname "
-				+ "FROM nodes "
-				+ "WHERE id = %s", (nodeId, ))
-			result = self.cursor.fetchall()
-			hostname = result[0][0]
-
-		except Exception as e:
-
-			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "sensor alert details.")
-
-			self._releaseLock()
-
-			# return None if action failed
-			return None
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		# return tuple of (hostname, description, timeReceived)
-		returnTuple = (hostname, description, timeReceived)
-		return returnTuple
 
 
 	# gets all alert levels for the alert clients from the database
@@ -5952,7 +5837,7 @@ class Postgresql(_Storage):
 
 	# gets all sensor alerts in the database
 	#
-	# return a list of tuples (sensorAlertId, sensorId, timeReceived,
+	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
 	# alertDelay, state, description)
 	# or None
 	def getSensorAlerts(self):
@@ -5975,6 +5860,7 @@ class Postgresql(_Storage):
 			# written in lowercase and not in camel case)
 			self.cursor.execute("SELECT sensorAlerts.id, "
 				+ "sensors.id, "
+				+ "sensors.nodeId, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
@@ -5998,8 +5884,8 @@ class Postgresql(_Storage):
 
 		self._releaseLock()
 
-		# return a list of tuples (sensorAlertId, sensorId, timeReceived,
-		# alertDelay, state, description)
+		# return a list of tuples (sensorAlertId, sensorId, nodeId,
+		# timeReceived, alertDelay, state, description)
 		return result
 
 
@@ -6088,73 +5974,6 @@ class Postgresql(_Storage):
 			return True
 		elif alertSystemActive == 0:
 			return False
-
-
-	# gets all details of a sensor alert that are for example used
-	# to generate a notification
-	#
-	# return tuple of (hostname, description, timeReceived)
-	# or None
-	def getSensorAlertDetails(self, sensorAlertId):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return None
-
-		try:
-			# (because of problems with postgresql table names are
-			# written in lowercase and not in camel case)
-			self.cursor.execute("SELECT nodeId, sensorId, timeReceived "
-				+ "FROM sensoralerts "
-				+ "WHERE id = %s", (sensorAlertId, ))
-			result = self.cursor.fetchall()
-			nodeId = result[0][0]
-			sensorId = result[0][1]
-			timeReceived = result[0][2]
-
-			# (because of problems with postgresql table names are
-			# written in lowercase and not in camel case)
-			self.cursor.execute("SELECT description "
-				+ "FROM sensors "
-				+ "WHERE id = %s", (sensorId, ))
-			result = self.cursor.fetchall()
-			description = result[0][0]
-
-			# (because of problems with postgresql table names are
-			# written in lowercase and not in camel case)
-			self.cursor.execute("SELECT hostname "
-				+ "FROM nodes "
-				+ "WHERE id = %s", (nodeId, ))
-			result = self.cursor.fetchall()
-			hostname = result[0][0]
-
-		except Exception as e:
-
-			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "sensor alert details.")
-
-			self._releaseLock()
-
-			# return None if action failed
-			return None
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		# return tuple of (hostname, description, timeReceived)
-		returnTuple = (hostname, description, timeReceived)
-		return returnTuple
 
 
 	# gets all alert levels for the alert clients from the database
