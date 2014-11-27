@@ -8,7 +8,7 @@
 # Licensed under the GNU Public License, version 2.
 
 from serverObjects import Option, Node, Sensor, Manager, Alert, SensorAlert, \
-	AlertLevel
+	AlertLevel, ServerEventHandler
 import socket
 import time
 import ssl
@@ -93,8 +93,7 @@ class ServerCommunication:
 		self.nodeType = self.globalData.nodeType
 		self.registeredFile = self.globalData.registeredFile
 		self.registered = self.globalData.registered
-		self.description = self.globalData.description
-		self.screenUpdater = self.globalData.screenUpdater
+		self.description = self.globalData.description		
 		# list of alert system information
 		self.options = self.globalData.options
 		self.nodes = self.globalData.nodes
@@ -104,6 +103,9 @@ class ServerCommunication:
 		self.sensorAlerts = self.globalData.sensorAlerts
 		self.alertLevels = self.globalData.alertLevels		
 		
+		# create the object that handles all incoming server events
+		self.serverEventHandler = ServerEventHandler(self.globalData)
+
 		# time the last message was received by the client
 		self.lastRecv = 0.0
 		
@@ -139,8 +141,8 @@ class ServerCommunication:
 		# set client as disconnected
 		self.isConnected = False
 
-		# wake up the screen updater
-		self.screenUpdater.screenUpdaterEvent.set()	
+		# handle closing event
+		self.serverEventHandler.handleEvent()
 
 		self.client.close()
 
@@ -1303,8 +1305,8 @@ class ServerCommunication:
 		# remove all nodes that are not checked
 		self._removeNotCheckedNodes()
 
-		# wake up the screen updater
-		self.screenUpdater.screenUpdaterEvent.set()
+		# handle status update event
+		self.serverEventHandler.handleEvent()
 
 		return True
 
@@ -1625,8 +1627,9 @@ class ServerCommunication:
 
 		# set client as connected
 		self.isConnected = True
-		# wake up the screen updater
-		self.screenUpdater.screenUpdaterEvent.set()		
+
+		# handle connection initialized event 
+		self.serverEventHandler.handleEvent()	
 
 		return True
 
@@ -1842,8 +1845,8 @@ class ServerCommunication:
 				self._releaseLock()
 				return
 
-			# wake up the screen updater
-			self.screenUpdater.screenUpdaterEvent.set()
+			# handle handle incoming message event
+			self.serverEventHandler.handleEvent()
 
 			self.lastRecv = time.time()
 

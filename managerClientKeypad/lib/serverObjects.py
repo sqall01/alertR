@@ -122,3 +122,21 @@ class AlertLevel:
 		# used for urwid only:
 		# reference to the alert urwid object
 		self.alertLevelUrwid = None
+
+
+# this class handles an incoming server event (sensor alert message,
+# status update, ...)
+class ServerEventHandler:
+
+	def __init__(self, globalData):
+
+		# get global configured data
+		self.globalData = globalData
+		self.screenUpdater = self.globalData.screenUpdater
+
+
+	# is called when an incoming server event has to be handled
+	def handleEvent(self):
+
+		# wake up the screen updater
+		self.screenUpdater.screenUpdaterEvent.set()
