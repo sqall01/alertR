@@ -149,6 +149,11 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid log level in config file.")
 
+		# initialize logging
+		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
+			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
+			level=loglevel)
+
 		# parse smtp options if activated
 		smtpActivated = config.getboolean("smtp", "smtpActivated")
 		if smtpActivated is True:
@@ -213,11 +218,6 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 	else:
 		globalData.smtpAlert = None
-
-	# initialize logging
-	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
-		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
-		level=loglevel)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
