@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRclient.py
+# Provides:          alertRManagerClientMobile.sh
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
