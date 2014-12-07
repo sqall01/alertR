@@ -46,61 +46,6 @@ keyFile = /absolute/path/to/client.key
 # the description of this manager client
 description = test manager
 
-# should the "connected" information of a sensor
-# be shown or not ("True" or "False")
-urwidSensorShowConnected = False
-
-# should the "alert delay" information of a sensor
-# be shown or not ("True" or "False")
-urwidSensorShowAlertDelay = False
-
-# should the "last updated" information of a sensor
-# be shown or not ("True" or "False")
-urwidSensorShowLastUpdated = True
-
-# should the "state" information of a sensor
-# be shown or not ("True" or "False")
-urwidSensorShowState = False
-
-# should the "alert levels" information of a sensor
-# be shown or not ("True" or "False")
-urwidSensorShowAlertLevels = False
-
-# should the "alert levels" information of an alert
-# be shown or not ("True" or "False")
-urwidAlertShowAlertLevels = False
-
-# should the "trigger always" information of an alert level
-# be shown or not ("True" or "False")
-urwidAlertLevelShowTriggerAlways = True
-
-# should the "smtp activated" information of an alert level
-# be shown or not ("True" or "False")
-urwidAlertLevelShowSmtpActivated = False
-
-# should the "to addr" information of an alert level
-# be shown or not ("True" or "False")
-urwidAlertLevelShowToAddr = True
-
-# the time in seconds the received sensor alerts should be displayed in a list
-# before they are removed
-timeShowSensorAlert = 3600
-
-# the maximum count of sensor alerts that should be displayed 
-maxCountShowSensorAlert = 15
-
-# the maximum count of sensors that should be displayed per page
-maxCountShowSensorsPerPage = 7
-
-# the maximum count of alert clients that should be displayed per page
-maxCountShowAlertsPerPage = 4
-
-# the maximum count of manager clients that should be displayed per page
-maxCountShowManagersPerPage = 4
-
-# the maximum count of alert levels that should be displayed per page
-maxCountShowAlertLevelsPerPage = 2
-
 
 # ------------------------------------------------------------
 # in this section options for email alerts are configured
@@ -121,3 +66,29 @@ fromAddr = alertSystem@h4des.org
 
 # email address to which the email should be sent
 toAddr = youraddress@somehost.de
+
+
+# ------------------------------------------------------------
+# in this section options for the storage backed are configured
+[storage]
+
+# chose how the data of the alert system is stored
+# only valid options: mysql
+method = mysql
+
+# the address of the database server (only processed if mysql
+# is used)
+server = 127.0.0.1
+
+# the port of the database server (only processed if mysql
+# is used; default value mysql uses is 3306)
+port = 3306
+
+# the name of the database (only processed if mysql
+# is used)
+database = alertr
+
+# the user credentials for the database server
+# (only processed if mysql is used)
+username = username
+password = password
