@@ -7,11 +7,17 @@
 // 
 // Licensed under the GNU Public License, version 2.
 
+// mysql db credentials that are needed to access the information
+// that is gathered by the manager client mobile
 $configMysqlDb = "alertr";
 $configMysqlUsername = "alertr";
 $configMysqlPassword = "<SECRET>";
 $configMysqlServer = "localhost";
 $configMysqlPort = 3306;
-$configUnixSocket = "/path/to/alertR/client/unix/socket";
+
+// the path to the unix socket that is created by the manager client mobile
+// (resides usually inside the config directory of the manager client mobile
+// component)
+$configUnixSocket = "/path/to/alertR/managerClientMobile/config/localsocket";
 
 ?>
