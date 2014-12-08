@@ -1,6 +1,8 @@
 alertR Mobile Manager - Android
 ======
 
+This is the Android client for the alertR mobile manager.
+
 
 How to use it?
 ======
