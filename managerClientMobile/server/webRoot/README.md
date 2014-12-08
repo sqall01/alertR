@@ -9,6 +9,8 @@ How to use it?
 
 To use this part you have to configure it first. A commented configuration template file is located inside the "config" folder. The web page is written in PHP5 and therefore needs a webserver with PHP and MySQL db installed.
 
+You should use HTTPS for the connection to your webserver. Elsewise, other people are able to see your login credentials and therefore can deactivate the alerting system.
+
 Nevertheless, a short but more detailed example of how to set up the server is given below.
 
 
