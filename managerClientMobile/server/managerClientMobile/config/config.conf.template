@@ -86,7 +86,7 @@ port = 3306
 
 # the name of the database (only processed if mysql
 # is used)
-database = alertr
+database = alertr_mobile_manager
 
 # the user credentials for the database server
 # (only processed if mysql is used)

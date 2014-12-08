@@ -65,6 +65,7 @@ class Mysql(_Storage):
 		self._openConnection()
 
 		# delete all tables from the database to clear old data
+		self.cursor.execute("DROP TABLE IF EXISTS internals")
 		self.cursor.execute("DROP TABLE IF EXISTS options")
 		self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
 		self.cursor.execute("DROP TABLE IF EXISTS sensors")
@@ -127,11 +128,23 @@ class Mysql(_Storage):
 		# connect to the database
 		self._openConnection()
 
+		# create internals table (used internally by the client)
+		self.cursor.execute("CREATE TABLE internals ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "type VARCHAR(255) NOT NULL UNIQUE, "
+			+ "value DOUBLE NOT NULL)")
+
+		# insert server time field
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)",
+			("serverTime", 0.0))
+
 		# create options table
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value FLOAT NOT NULL)")
+			+ "value DOUBLE NOT NULL)")
 
 		# create nodes table
 		self.cursor.execute("CREATE TABLE nodes ("
@@ -205,6 +218,22 @@ class Mysql(_Storage):
 
 		# connect to the database
 		self._openConnection()
+
+		# update server time
+		if sensors:
+			try:
+				self.cursor.execute("UPDATE internals SET "
+					+ "value = %s "
+					+ "WHERE type = %s",
+					(sensors[0].serverTime, "serverTime"))
+
+			except Exception as e:
+				logging.exception("[%s]: Not able to update server time." 
+					% self.fileName)
+
+				self._releaseLock()
+
+				return False
 
 
 		# step one: delete all objects that do not exist anymore

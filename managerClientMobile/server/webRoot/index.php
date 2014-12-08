@@ -140,12 +140,21 @@ if(isset($_GET["activate"])) {
 					// get JSON response and parse it
 					response = request.responseText;
 					alertSystemInformation = JSON.parse(response);
+					internals = alertSystemInformation["internals"];
 					options = alertSystemInformation["options"];
 					nodes = alertSystemInformation["nodes"];
 					sensors = alertSystemInformation["sensors"];
 					managers = alertSystemInformation["managers"];
 					alerts = alertSystemInformation["alerts"];
 					alertLevels = alertSystemInformation["alertLevels"];
+
+					// get server time
+					serverTime = 0.0;
+					for(i = 0; i < internals.length; i++) {
+						if(internals[i]["type"] == "serverTime") {
+							serverTime = internals[i]["value"]
+						}
+					}
 
 					// process options of the alert system
 					for(i = 0; i < options.length; i++) {
@@ -223,9 +232,8 @@ if(isset($_GET["activate"])) {
 							newTd.style.backgroundColor = "#fff000";
 						}
 						// set color to red if the sensor has timed out
-						currentTime = parseInt(new Date().getTime() / 1000)
 						if(sensors[i]["lastStateUpdated"] <
-							(currentTime - 2* 60)) {
+							(serverTime - 2* 60)) {
 							// set background color to red
 							newTd.style.backgroundColor = "#ff0000";
 						}
@@ -269,9 +277,8 @@ if(isset($_GET["activate"])) {
 							newTd.style.backgroundColor = "#fff000";
 						}
 						// set color to red if the sensor has timed out
-						currentTime = parseInt(new Date().getTime() / 1000)
 						if(sensors[i]["lastStateUpdated"] <
-							(currentTime - 2* 60)) {
+							(serverTime - 2* 60)) {
 							// set background color to red
 							newTd.style.backgroundColor = "#ff0000";
 						}

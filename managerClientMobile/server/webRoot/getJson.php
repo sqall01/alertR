@@ -23,6 +23,7 @@ if(!mysql_select_db($configMysqlDb, $mysqlConnection)) {
 }
 
 // get all alert system information stored in the database
+$resultInternals = mysql_query("SELECT * FROM internals");
 $resultOptions = mysql_query("SELECT * FROM options");
 $resultNodes = mysql_query("SELECT * FROM nodes");
 $resultSensors = mysql_query("SELECT * FROM sensors");
@@ -36,6 +37,15 @@ $resultAlertLevels = mysql_query("SELECT * FROM alertLevels");
 
 // process the alert system information and generate arrays to output
 // it as json data
+
+// generate internals array
+$internalsArray = array();
+while($row = mysql_fetch_array($resultInternals)) {
+	$internalEntry = array("id" => $row["id"],
+		"type" => $row["type"],
+		"value" => $row["value"]);
+	array_push($internalsArray, $internalEntry);
+}
 
 // generate options array
 $optionsArray = array();
@@ -131,7 +141,8 @@ while($row = mysql_fetch_array($resultAlertLevels)) {
 }
 
 // generate array that contains all other arrays
-$alertSystemInformation = array("options" => $optionsArray,
+$alertSystemInformation = array("internals" => $internalsArray,
+	"options" => $optionsArray,
 	"nodes" => $nodesArray,
 	"sensors" => $sensorsArray,
 	"alerts" => $alertsArray,
