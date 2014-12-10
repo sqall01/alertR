@@ -51,11 +51,6 @@ class ManagerUpdateExecuter(threading.Thread):
 		# that should be sent to the manager clients
 		self.queueStateChange = collections.deque()
 
-		# this is the last known state if the alert system is activated
-		# (needed when the database is changed directly for example
-		# via the mobile manager app)
-		self.lastAlertSystemActiveState = False
-
 
 	def run(self):
 
@@ -68,70 +63,27 @@ class ManagerUpdateExecuter(threading.Thread):
 			# check if state change queue is empty before waiting
 			# for event (or timeout)
 			if len(self.queueStateChange) == 0:
-				# wait 2 of seconds before checking if sending a
-				# status update to all manager nodes or check it when
-				# the event is triggered
-				self.managerUpdateEvent.wait(2)
+				# wait 10 seconds before checking if a
+				# status update to all manager nodes has to be sent
+				# or check it when the event is triggered
+				self.managerUpdateEvent.wait(10)
 				self.managerUpdateEvent.clear()
 
 			# get current state of the alert system (active or not)
 			alertSystemActiveState = self.storage.isAlertSystemActive()
 
 			# check if last status update has timed out
-			# or a new manager has connected
-			# or the last known alert system active state is not
-			# the same as the current alert system active state
-			# (this can happen when the database is changed directly
-			# for example via the mobile manager app)
+			# or a status update is forced
 			# => send status update to all manager
 			if (((int(time.time()) - self.managerUpdateInterval)
 				> self.lastStatusUpdateSend)
-				or self.forceStatusUpdate
-				or self.lastAlertSystemActiveState 
-				!= alertSystemActiveState):
-
-				# check if the current alert system active state is not the
-				# same as the last known
-				# (this can happen when the database is changed directly
-				# for example via the mobile manager app)
-				# => send alerts off to all alert clients
-				if (alertSystemActiveState != self.lastAlertSystemActiveState
-					and alertSystemActiveState == 0):
-					for serverSession in self.serverSessions:
-						# ignore sessions which do not exist yet
-						# and that are not managers
-						if serverSession.clientComm == None:
-							continue
-						if serverSession.clientComm.nodeType != "alert":
-							continue
-						if not serverSession.clientComm.clientInitialized:
-							continue
-
-						# sending sensor alerts off to alert client
-						# via a thread to not block this one
-						sensorAlertsOffProcess = AsynchronousSender(
-							self.globalData, serverSession.clientComm)
-						# set thread to daemon
-						# => threads terminates when main thread terminates	
-						sensorAlertsOffProcess.daemon = True
-						sensorAlertsOffProcess.sendAlertSensorAlertsOff = True
-						logging.debug("[%s]: Sending sensor " % self.fileName
-							+ "alerts off to alert client (%s:%d)."
-							% (serverSession.clientComm.clientAddress,
-							serverSession.clientComm.clientPort))
-						sensorAlertsOffProcess.start()
+				or self.forceStatusUpdate):
 
 				# update time when last status update was sent
 				self.lastStatusUpdateSend = int(time.time())
 
 				# reset new client variable
 				self.forceStatusUpdate = False
-
-				# update the alert system active state with the
-				# state during this update
-				# (is needed if the database is changed directly
-				# for example via the mobile manager app)
-				self.lastAlertSystemActiveState = alertSystemActiveState
 
 				# empty current state queue
 				# (because the state changes are also transmitted
