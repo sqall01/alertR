@@ -69,9 +69,6 @@ class ManagerUpdateExecuter(threading.Thread):
 				self.managerUpdateEvent.wait(10)
 				self.managerUpdateEvent.clear()
 
-			# get current state of the alert system (active or not)
-			alertSystemActiveState = self.storage.isAlertSystemActive()
-
 			# check if last status update has timed out
 			# or a status update is forced
 			# => send status update to all manager
