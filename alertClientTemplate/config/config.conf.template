@@ -23,7 +23,7 @@ serverPort = 12345
 serverCAFile = /absolute/path/to/server_CA.pem
 
 # user credentials of this client
-# (have to be unique for each client or strange behavior will happen)
+# (WARNING: have to be unique for each client or strange behavior will happen)
 username = user
 password = pass
 
