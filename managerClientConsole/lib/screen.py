@@ -1412,11 +1412,15 @@ class Console:
 			# get node the sensor belongs to
 			nodeSensorBelongs = None
 			for node in self.nodes:
-				if node.nodeType != "sensor":
-					continue
 				if sensor.nodeId == node.nodeId:
 					nodeSensorBelongs = node
 					break
+			if nodeSensorBelongs is None:
+				raise ValueError(
+					"Could not find a node the sensor belongs to.")
+			elif nodeSensorBelongs.nodeType != "sensor":
+				raise ValueError(
+					'Node the sensor belongs to is not of type "sensor"')
 
 			# create new sensor urwid object
 			# (also links urwid object to sensor object)
@@ -1476,11 +1480,16 @@ class Console:
 			# get node the manager belongs to
 			nodeManagerBelongs = None
 			for node in self.nodes:
-				if node.nodeType != "manager":
-					continue
 				if manager.nodeId == node.nodeId:
 					nodeManagerBelongs = node
 					break
+			if nodeManagerBelongs is None:
+				raise ValueError(
+					"Could not find a node the manager belongs to.")
+			elif nodeManagerBelongs.nodeType != "manager":
+				raise ValueError(
+					'Node the manager belongs to is not of '
+					+ 'type "manager"')
 
 			# create new manager urwid object
 			# (also links urwid object to manager object)
@@ -1536,11 +1545,16 @@ class Console:
 			# get node the alert belongs to
 			nodeAlertBelongs = None
 			for node in self.nodes:
-				if node.nodeType != "alert":
-					continue
 				if alert.nodeId == node.nodeId:
 					nodeAlertBelongs = node
 					break
+			if nodeAlertBelongs is None:
+				raise ValueError(
+					"Could not find a node the alert belongs to.")
+			elif nodeAlertBelongs.nodeType != "alert":
+				raise ValueError(
+					'Node the alert belongs to is not of '
+					+ 'type "alert"')					
 
 			# create new alert urwid object
 			# (also links urwid object to alert object)
@@ -1795,11 +1809,16 @@ class Console:
 					# get node the sensor belongs to
 					nodeSensorBelongs = None
 					for node in self.nodes:
-						if node.nodeType != "sensor":
-							continue
 						if sensor.nodeId == node.nodeId:
 							nodeSensorBelongs = node
 							break
+					if nodeSensorBelongs is None:
+						raise ValueError(
+							"Could not find a node the sensor belongs to.")
+					elif nodeSensorBelongs.nodeType != "sensor":
+						raise ValueError(
+							'Node the sensor belongs to is not of '
+							+ 'type "sensor"')							
 
 					# create new sensor urwid object
 					# (also links urwid object to sensor object)
@@ -1844,11 +1863,16 @@ class Console:
 					# get node the alert belongs to
 					nodeAlertBelongs = None
 					for node in self.nodes:
-						if node.nodeType != "alert":
-							continue
 						if alert.nodeId == node.nodeId:
 							nodeAlertBelongs = node
 							break
+					if nodeAlertBelongs is None:
+						raise ValueError(
+							"Could not find a node the alert belongs to.")
+					elif nodeAlertBelongs.nodeType != "alert":
+						raise ValueError(
+							'Node the alert belongs to is not of '
+							+ 'type "alert"')
 
 					# create new alert urwid object
 					# (also links urwid object to alert object)
@@ -1890,11 +1914,16 @@ class Console:
 					# get node the manager belongs to
 					nodeManagerBelongs = None
 					for node in self.nodes:
-						if node.nodeType != "manager":
-							continue
 						if manager.nodeId == node.nodeId:
 							nodeManagerBelongs = node
 							break
+					if nodeManagerBelongs is None:
+						raise ValueError(
+							"Could not find a node the manager belongs to.")
+					elif nodeManagerBelongs.nodeType != "manager":
+						raise ValueError(
+							'Node the manager belongs to is not of '
+							+ 'type "manager"')
 
 					# create new manager urwid object
 					# (also links urwid object to manager object)
