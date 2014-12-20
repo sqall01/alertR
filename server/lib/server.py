@@ -39,6 +39,7 @@ class ClientCommunication:
 		self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
 		self.asyncOptionExecutersLock \
 			= self.globalData.asyncOptionExecutersLock
+		self.serverSessions = self.globalData.serverSessions
 
 		# time the last message was received by the server
 		self.lastRecv = 0.0
@@ -379,7 +380,7 @@ class ClientCommunication:
 		try:
 
 			self.username = str(message["payload"]["username"])
-			password = str(message["payload"]["password"])
+			password = str(message["payload"]["password"])			
 
 		except Exception as e:
 
@@ -400,6 +401,30 @@ class ClientCommunication:
 		logging.debug("[%s]: Received username and password for '%s' (%s:%d)." 
 			% (self.fileName, self.username, self.clientAddress, 
 			self.clientPort))
+
+		# check if username is already in use
+		# => terminate connection
+		for serverSession in self.serverSessions:
+
+			# ignore THIS server session 
+			if serverSession.clientComm == self:
+				continue
+
+			if serverSession.clientComm.username == self.username:
+
+				logging.error("[%s]: Username already in use (%s:%d)." 
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "username already in use"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
 
 		# check if the given user credentials are valid
 		if not self.userBackend.areUserCredentialsValid(self.username,
