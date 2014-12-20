@@ -14,7 +14,7 @@ import threading
 import logging
 import os
 import base64
-import ConfigParser
+import xml.etree.cElementTree
 import random
 import json
 from alert import AsynchronousAlertExecuter
@@ -491,33 +491,37 @@ class ServerCommunication:
 		if self.registered is False:
 
 			# create config from the values that were transmitted to server
-			registeredConfig = ConfigParser.RawConfigParser()
-			registeredConfig.add_section('general')
-			registeredConfig.set('general', 'hostname', socket.gethostname())
-			registeredConfig.set('general', 'alertcount', len(self.alerts))
+			configRoot = xml.etree.cElementTree.Element("config")
+			configGeneral = xml.etree.cElementTree.SubElement(configRoot,
+				"general")
+
+			temp = xml.etree.cElementTree.SubElement(configGeneral,
+				"server")
+			temp.set("host", socket.gethostname())
+
+			configAlerts = xml.etree.cElementTree.SubElement(configRoot,
+				"alerts")
 
 			for i in range(len(self.alerts)):
-				registeredConfig.add_section('alert%d' % i)
-				registeredConfig.set('alert%d' % i, 'id', self.alerts[i].id)
-				registeredConfig.set('alert%d' % i, 'description',
-					self.alerts[i].description)
 
-				# generate a string of the alert levels
-				alertLevelString = ""
-				firstAlertLevel = True
+				tempAlert = xml.etree.cElementTree.SubElement(configAlerts,
+				"alert")
+
+				temp = xml.etree.cElementTree.SubElement(tempAlert,
+				"general")
+				temp.set("id", str(self.alerts[i].id))
+				temp.set("description", str(self.alerts[i].description))
+
 				for alertLevel in self.alerts[i].alertLevels:
-					if not firstAlertLevel:
-						alertLevelString += ", "
-					else:
-						firstAlertLevel = False
-					alertLevelString += "%d" % alertLevel
-				registeredConfig.set('alert%d' % i, 'alertLevels',
-					alertLevelString)
+					temp = xml.etree.cElementTree.SubElement(tempAlert,
+						"alertLevel")
+					temp.text = str(alertLevel)
+
+			configTree = xml.etree.cElementTree.ElementTree(configRoot)
 
 			# write config
 			try:
-				with open(self.registeredFile, 'w') as f:
-					registeredConfig.write(f)
+				configTree.write(self.registeredFile)
 			# if there was an exception in creating the file
 			# log it but do not abort
 			except Exception as e:
