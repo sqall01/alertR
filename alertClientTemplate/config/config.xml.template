@@ -116,14 +116,17 @@
 			-->
 			<general
 				id="0"
-				description="alert in trigger always" />
+				description="first template alert" />
 
 			<!--
 				the alert level of the current configured alert
 				(an alert must have one but can have multiple alert levels)
 			-->
+			<alertLevel>0</alertLevel>
 			<alertLevel>1</alertLevel>
-			<alertLevel>2</alertLevel>
+			<alertLevel>5</alertLevel>
+			<alertLevel>32</alertLevel>
+			<alertLevel>6</alertLevel>
 
 		</alert>
 
@@ -141,13 +144,13 @@
 			-->
 			<general
 				id="1"
-				description="alert not in trigger always" />
+				description="second template alert" />
 
 			<!--
 				the alert level of the current configured alert
 				(an alert must have one but can have multiple alert levels)
 			-->
-			<alertLevel>2</alertLevel>
+			<alertLevel>1</alertLevel>
 
 		</alert>
 
