@@ -113,7 +113,7 @@
 			-->
 			<general
 				id="0"
-				description="first template alert" />
+				description="window manager notification" />
 
 			<!--
 				the alert level of the current configured alert
@@ -125,29 +125,16 @@
 			<alertLevel>32</alertLevel>
 			<alertLevel>6</alertLevel>
 
-		</alert>
-
-
-		<!--
-			a single alert is configured in an "alert" element
-			if you need additional alerts just add a new one
-		-->
-		<alert>
-
 			<!--
-				the general configuration of an alert
-				id - local id of this alert (has to be unique on this client)
-				description - description of this alert
+				dbus specific settings for the notification
+				displayTime - how long should the message be shown
+					(in milliseconds and at least 2000)
+				triggerDelay - how many seconds should be elapsed before
+					the alert could be triggered again
 			-->
-			<general
-				id="1"
-				description="second template alert" />
-
-			<!--
-				the alert level of the current configured alert
-				(an alert must have one but can have multiple alert levels)
-			-->
-			<alertLevel>1</alertLevel>
+			<dbus
+				displayTime="10000"
+				triggerDelay="2" />
 
 		</alert>
 

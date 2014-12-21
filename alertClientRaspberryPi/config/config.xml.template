@@ -125,6 +125,22 @@
 			<alertLevel>32</alertLevel>
 			<alertLevel>6</alertLevel>
 
+			<!--
+				Raspberry Pi gpio specific settings for the alert
+				gpioPin - raspberry pi gpio pin that is used by this alert
+					NOTE: python uses the actual pin number and not
+					the gpio number
+				gpioPinStateNormal - the state that the gpio pin is set
+					to under normal conditions when no alert is triggered
+					(1 or 0)
+				gpioPinStateTriggered - the state that the gpio pin is set
+					to when an alert is triggered (1 or 0)
+			-->
+			<gpio
+				gpioPin="26"
+				gpioPinStateNormal="0"
+				gpioPinStateTriggered="1" />
+
 		</alert>
 
 
@@ -148,6 +164,22 @@
 				(an alert must have one but can have multiple alert levels)
 			-->
 			<alertLevel>1</alertLevel>
+
+			<!--
+				Raspberry Pi gpio specific settings for the alert
+				gpioPin - raspberry pi gpio pin that is used by this alert
+					NOTE: python uses the actual pin number and not
+					the gpio number
+				gpioPinStateNormal - the state that the gpio pin is set
+					to under normal conditions when no alert is triggered
+					(1 or 0)
+				gpioPinStateTriggered - the state that the gpio pin is set
+					to when an alert is triggered (1 or 0)
+			-->
+			<gpio
+				gpioPin="24"
+				gpioPinStateNormal="0"
+				gpioPinStateTriggered="1" />
 
 		</alert>
 

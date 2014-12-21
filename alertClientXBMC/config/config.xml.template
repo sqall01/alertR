@@ -125,29 +125,25 @@
 			<alertLevel>32</alertLevel>
 			<alertLevel>6</alertLevel>
 
-		</alert>
-
-
-		<!--
-			a single alert is configured in an "alert" element
-			if you need additional alerts just add a new one
-		-->
-		<alert>
-
 			<!--
-				the general configuration of an alert
-				id - local id of this alert (has to be unique on this client)
-				description - description of this alert
+				xbmc specific settings for the notification
+				host - the address of the xbmc json rpc service
+				port - port of the xbmc json rpc service
+				triggerDelay - how many seconds should be elapsed before
+					the alert could be triggered again
+				pausePlayer - should the player be paused
+					(only if audio or video is shown)
+				showMessage - should a notification be shown on the display
+				displayTime - how long should the message be shown
+					(in milliseconds and at least 2000)
 			-->
-			<general
-				id="1"
-				description="second template alert" />
-
-			<!--
-				the alert level of the current configured alert
-				(an alert must have one but can have multiple alert levels)
-			-->
-			<alertLevel>1</alertLevel>
+			<xbmc
+				host="localhost"
+				port="8080"
+				triggerDelay="10"
+				pausePlayer="True"
+				showMessage="True"
+				displayTime="10000" />
 
 		</alert>
 
