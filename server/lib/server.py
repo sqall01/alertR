@@ -2294,10 +2294,6 @@ class ClientCommunication:
 					self._releaseLock()
 					return
 
-				# wake up manager update executer
-				self.managerUpdateExecuter.forceStatusUpdate = True
-				self.managerUpdateExecuter.managerUpdateEvent.set()
-
 			# command is unknown => close connection
 			else:
 				logging.error("[%s]: Received unknown " % self.fileName
@@ -2762,6 +2758,7 @@ class AsynchronousOptionExecuter(threading.Thread):
 		self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
 		self.asyncOptionExecutersLock \
 			= self.globalData.asyncOptionExecutersLock
+		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 
 		# get option data to change
 		self.optionType = optionType
@@ -2831,3 +2828,7 @@ class AsynchronousOptionExecuter(threading.Thread):
 					% (serverSession.clientComm.clientAddress,
 					serverSession.clientComm.clientPort))
 				sensorAlertsOffProcess.start()
+
+		# wake up manager update executer
+		self.managerUpdateExecuter.forceStatusUpdate = True
+		self.managerUpdateExecuter.managerUpdateEvent.set()
