@@ -496,7 +496,7 @@ class ServerCommunication:
 				"general")
 
 			temp = xml.etree.cElementTree.SubElement(configGeneral,
-				"server")
+				"client")
 			temp.set("host", socket.gethostname())
 
 			configAlerts = xml.etree.cElementTree.SubElement(configRoot,

@@ -192,7 +192,7 @@ if __name__ == '__main__':
 				globalData.registeredFile).getroot()
 
 			hostname = logfile = str(regConfigRoot.find("general").find(
-				"server").attrib["host"])			
+				"client").attrib["host"])			
 
 			# check if the hostname
 			if (hostname == socket.gethostname()):
