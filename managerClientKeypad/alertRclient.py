@@ -15,9 +15,9 @@ from lib import ScreenUpdater
 from lib import Console
 import logging
 import time
-import ConfigParser
 import socket
 import random
+import xml.etree.ElementTree
 
 
 # this class is a global configuration class that holds 
@@ -46,7 +46,7 @@ class GlobalData:
 
 		# path to the configuration file of the client
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/config/config.conf"
+			+ "/config/config.xml"
 
 		# this flags indicate if email alerts via smtp are active
 		self.smtpAlert = None
@@ -107,45 +107,17 @@ if __name__ == '__main__':
 
 	fileName = os.path.basename(__file__)
 
-	# parse config file
+	# parse config file, get logfile configurations
+	# and initialize logging
 	try:
-		config = ConfigParser.RawConfigParser(allow_no_value=False)
+		configRoot = xml.etree.ElementTree.parse(
+			globalData.configFile).getroot()
 
-		# get config file
-		config.read([globalData.configFile])
-
-		logfile = config.get("general", "logfile")
-		server = config.get("general", "server")
-		serverPort = config.getint("general", "serverPort")
-		globalData.description = config.get("general", "description")
-
-		# get server certificate file and check if it does exist
-		serverCAFile = os.path.abspath(
-			config.get("general", "serverCAFile"))
-		if os.path.exists(serverCAFile) is False:
-			raise ValueError("Server CA does not exist.")
-
-		# get client certificate and keyfile (if required)
-		certificateRequired = config.getboolean("general",
-			"certificateRequired")
-		if certificateRequired is True:
-			clientCertFile = os.path.abspath(config.get("general",
-				"certificateFile"))
-			clientKeyFile = os.path.abspath(config.get("general",
-				"keyFile"))
-			if (os.path.exists(clientCertFile) is False
-				or os.path.exists(clientKeyFile) is False):
-				raise ValueError("Client certificate or key does not exist.")
-		else:
-			clientCertFile = None
-			clientKeyFile = None
-
-		# get user credentials
-		username = config.get("general", "username")
-		password = config.get("general", "password")
+		logfile = str(configRoot.find("general").find("log").attrib["file"])
 
 		# parse chosen log level
-		tempLoglevel = config.get("general", "loglevel")
+		tempLoglevel = str(
+			configRoot.find("general").find("log").attrib["level"])
 		tempLoglevel = tempLoglevel.upper()
 		if tempLoglevel == "DEBUG":
 			loglevel = logging.DEBUG
@@ -160,46 +132,109 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid log level in config file.")
 
-		# get options that modify the manager behavior
-		globalData.timeDelayedActivation = config.getint("general",
-			"timeDelayedActivation")
+		# initialize logging
+		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
+			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
+			level=loglevel)
+
+	except Exception as e:
+		print "Config could not be parsed."
+		print e
+		sys.exit(1)
+
+	# parse the rest of the config with initialized logging
+	try:
+
+		# parse server configurations
+		server = str(configRoot.find("general").find("server").attrib["host"])
+		serverPort = int(
+			configRoot.find("general").find("server").attrib["port"])
+
+		# get server certificate file and check if it does exist
+		serverCAFile = os.path.abspath(
+			str(configRoot.find("general").find("server").attrib["caFile"]))
+		if os.path.exists(serverCAFile) is False:
+			raise ValueError("Server CA does not exist.")
+
+		# get client certificate and keyfile (if required)
+		certificateRequired = (str(
+			configRoot.find("general").find("client").attrib[
+			"certificateRequired"]).upper()	== "TRUE")
+
+		if certificateRequired is True:
+			clientCertFile = os.path.abspath(str(
+			configRoot.find("general").find("client").attrib["certFile"]))
+			clientKeyFile = os.path.abspath(str(
+			configRoot.find("general").find("client").attrib["keyFile"]))
+			if (os.path.exists(clientCertFile) is False
+				or os.path.exists(clientKeyFile) is False):
+				raise ValueError("Client certificate or key does not exist.")
+		else:
+			clientCertFile = None
+			clientKeyFile = None
+		
+		# get user credentials
+		username = str(
+			configRoot.find("general").find("credentials").attrib["username"])
+		password = str(
+			configRoot.find("general").find("credentials").attrib["password"])
 
 		# parse smtp options if activated
-		smtpActivated = config.getboolean("smtp", "smtpActivated")
+		smtpActivated = (str(
+			configRoot.find("smtp").find("general").attrib[
+			"activated"]).upper()	== "TRUE")
 		if smtpActivated is True:
-			smtpServer = config.get("smtp", "server")
-			smtpPort = config.getint("smtp", "serverPort")
-			smtpFromAddr = config.get("smtp", "fromAddr")
-			smtpToAddr = config.get("smtp", "toAddr")
+			smtpServer = str(
+				configRoot.find("smtp").find("server").attrib["host"])
+			smtpPort = int(
+				configRoot.find("smtp").find("server").attrib["port"])
+			smtpFromAddr = str(
+				configRoot.find("smtp").find("general").attrib["fromAddr"])
+			smtpToAddr = str(
+				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# parse pins
-		tempPins = config.get("keypad", "pins")
-		globalData.pins = tempPins.strip().replace(" ", "").split(",")
-		# remove empty pins
-		for pin in globalData.pins:
-			if pin == "":
-				globalData.pins.remove(pin)
+		# get manager settings
+		globalData.description = str(
+			configRoot.find("manager").find("general").attrib[
+			"description"])
+
+		# get settings for the keypad
+		globalData.timeDelayedActivation = int(
+			configRoot.find("manager").find("keypad").attrib[
+			"timeDelayedActivation"])
+
+		# parse all pins
+		for item in configRoot.find("manager").find("keypad").iterfind("pin"):
+			globalData.pins.append(item.text)
 
 		# check if the client has already registered itself at the server
 		# with the same data
 		if os.path.exists(globalData.registeredFile):
 
-			# parse registered values
-			registeredConfig = ConfigParser.RawConfigParser(
-				allow_no_value=False)
-			registeredConfig.read([globalData.registeredFile])
+			regConfigRoot = xml.etree.ElementTree.parse(
+				globalData.registeredFile).getroot()
 
-			hostname = registeredConfig.get("general", "hostname")
-			description = registeredConfig.get("general", "description")
+			hostname = logfile = str(regConfigRoot.find("general").find(
+				"client").attrib["host"])			
 
 			# check if the hostname
-			if (hostname == socket.gethostname()
-				and globalData.description == description):
+			if (hostname == socket.gethostname()):
 
-				# check if the registered value has changed
-				# during the checks => if not set it to True
-				if globalData.registered == None:
-					globalData.registered = True
+				description = str(
+					regConfigRoot.find("manager").find("general").attrib[
+					"description"])
+
+				# check if manager settings had changed since the
+				# last registration at the server
+				if description == globalData.description:
+
+					# check if the registered value has changed
+					# during the checks => if not set it to True
+					if globalData.registered == None:
+						globalData.registered = True
+
+				else:
+					globalData.registered = False
 
 			else:
 				globalData.registered = False
@@ -207,10 +242,8 @@ if __name__ == '__main__':
 		else:
 			globalData.registered = False
 
-
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		logging.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)
 
 	random.seed()

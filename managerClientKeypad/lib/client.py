@@ -16,7 +16,7 @@ import threading
 import logging
 import os
 import base64
-import ConfigParser
+import xml.etree.cElementTree
 import random
 import json
 BUFSIZE = 16384
@@ -498,16 +498,24 @@ class ServerCommunication:
 		if self.registered is False:
 
 			# create config from the values that were transmitted to server
-			registeredConfig = ConfigParser.RawConfigParser()
-			registeredConfig.add_section('general')
-			registeredConfig.set('general', 'hostname', socket.gethostname())
-			registeredConfig.set('general', 'description',
-				self.description)
+			configRoot = xml.etree.cElementTree.Element("config")
+			configGeneral = xml.etree.cElementTree.SubElement(configRoot,
+				"general")
+
+			temp = xml.etree.cElementTree.SubElement(configGeneral,
+				"client")
+			temp.set("host", socket.gethostname())
+
+			configManager = xml.etree.cElementTree.SubElement(configRoot,
+				"manager")
+
+			temp = xml.etree.cElementTree.SubElement(configManager,
+				"general")
+			temp.set("description", str(self.description))
 
 			# write config
 			try:
-				with open(self.registeredFile, 'w') as f:
-					registeredConfig.write(f)
+				configTree.write(self.registeredFile)
 			# if there was an exception in creating the file
 			# log it but do not abort
 			except Exception as e:

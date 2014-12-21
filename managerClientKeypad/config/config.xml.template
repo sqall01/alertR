@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+
+<!--
+	this is a template configuration file
+	please rename this template to "config.xml" if you want to use it
+	for the client
+-->
+<config>
+
+	<!--
+		in this section general options are configured
+	-->
+	<general>
+
+		<!--
+			the settings for the logfile
+			file - absolute path to the logfile
+			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+		-->
+		<log
+			file="/absolute/path/to/logfile.log"
+			level="INFO" />
+
+		<!--
+			the settings for the server
+			host - location/address of the server
+			port - port that is used by the server
+			caFile - path to the CA file to check the correctness of the
+				used SSL connection
+		-->
+		<server
+			host="server.h4des.org"
+			port="12345"
+			caFile="/absolute/path/to/server_CA.pem" />
+
+		<!--
+			the settings for a client certificate
+			certificateRequired - sets if it is required for the client
+				to authenticate itself via a certificate or not
+				(if you have the alert system reachable from the internet
+				you should use client certificates)
+				("True" or "False")
+			certFile - path to the certificate file of the client
+				this is used for the SSL connection
+				(only processed if "certificateRequired" is set to "True")
+			keyFile - path to the key file of the client that is used
+				for the SSL connection
+				(only processed if "certificateRequired" is set to "True")
+		-->
+		<client
+			certificateRequired="True"
+			certFile="/absolute/path/to/client.crt"
+			keyFile="/absolute/path/to/client.key" />
+
+		<!--
+			user credentials of this client
+			(WARNING: have to be unique for each client or strange
+			behavior will happen)
+			username - the username
+			password - the password (thanks cpt obvious ...)
+		-->
+		<credentials
+			username="user"
+			password="pass" />
+
+	</general>
+
+
+	<!--
+		in this section options for email alerts are configured
+	-->
+	<smtp>
+
+		<!--
+			the general settings of the email notifications
+			activated - are email alerts active? ("True" or "False")
+			fromAddr - email address from which this email should be sent
+			toAddr - email address to which the email should be sent
+		-->
+		<general
+			activated="True"
+			fromAddr="alertSystem@h4des.org"
+			toAddr="youraddress@somehost.de" />
+
+		<!--
+			the server settings of the email notifications
+			host - address of the used smtp server
+				(only 127.0.0.1 supported at the moment)
+			port - port of the used smtp server
+		-->
+		<server
+			host="127.0.0.1"
+			port="25" />
+
+	</smtp>
+
+
+	<!--
+		section of manager specific settings
+	-->
+	<manager>
+
+		<!--
+			the general settings of the manager client
+			description - description of the client
+		-->
+		<general
+			description="test manager" />
+
+		<!--
+			keypad specific settings
+			timeDelayedActivation - this value gives the seconds of the 3rd
+				option (delayed activation of the alert system) which are used
+				to activate the alert system after the given time
+		-->
+		<keypad
+			timeDelayedActivation="30">
+
+			<!--
+				a single pin that is configured to login to the manager
+				if you need additional pins just add a new one
+			-->
+			<pin>1234</pin>
+			<pin>2354</pin>
+
+		</keypad>
+
+	</manager>
+
+</config>
