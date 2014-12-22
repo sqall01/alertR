@@ -145,6 +145,14 @@ if __name__ == '__main__':
 	# parse the rest of the config with initialized logging
 	try:
 
+		# check if config and client version are compatible
+		version = float(configRoot.attrib["version"])
+		if version != globalData.version:
+			raise ValueError("Config version '%.3f' not "
+				% version
+				+ "compatible with client version '%.3f'."
+				% globalData.version)
+
 		# parse server configurations
 		server = str(configRoot.find("general").find("server").attrib["host"])
 		serverPort = int(
