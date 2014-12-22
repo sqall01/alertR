@@ -1,0 +1,243 @@
+<?xml version="1.0"?>
+
+<!--
+	this is a template configuration file
+	please rename this template to "config.xml" if you want to use it
+	for the server
+-->
+<config version="0.22">
+
+	<!--
+		in this section general options are configured
+	-->
+	<general>
+
+		<!--
+			the settings for the logfile
+			file - absolute path to the logfile
+			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+		-->
+		<log
+			file="/absolute/path/to/logfile.log"
+			level="INFO" />
+
+		<!--
+			the settings for the server
+			certFile - path to the certificate file of the server
+				that is used for the SSL connection
+			keyFile - path to the key file of the server that is used for
+				the SSL connection
+			port - port that is used by the server
+		-->
+		<server
+			certFile="/absolute/path/to/server.crt"
+			keyFile="/absolute/path/to/server.key"
+			port="12345" />
+
+		<!--
+			the settings for a client certificate
+			useClientCertificates - sets if it is required for all clients to
+				authenticate themselves via a certificate or not (if you have
+				the alert system reachable from the internet you should use
+				client certificates)
+				("True" or "False")
+			clientCAFile - path to the CA file that is used to check the
+				client certificates
+				(only processed if "useClientCertificates" is set to "True")
+		-->
+		<client
+			useClientCertificates="True"
+			clientCAFile="/absolute/path/to/some_CA.pem" />
+
+	</general>
+
+
+	<!--
+		in this section options for email alerts are configured
+	-->
+	<smtp>
+
+		<!--
+			the general settings of the email notifications
+			activated - are email alerts active? ("True" or "False")
+			fromAddr - email address from which this email should be sent
+			toAddr - email address to which the email should be sent
+		-->
+		<general
+			activated="True"
+			fromAddr="alertSystem@h4des.org"
+			toAddr="youraddress@somehost.de" />
+
+		<!--
+			the server settings of the email notifications
+			host - address of the used smtp server
+				(only 127.0.0.1 supported at the moment)
+			port - port of the used smtp server
+		-->
+		<server
+			host="127.0.0.1"
+			port="25" />
+
+	</smtp>
+
+
+	<!--
+		in this section options for the storage are configured
+	-->
+	<storage>
+
+		<!--
+			the settings for the user backend
+			method - choose how the user credentials are stored/checked
+				only valid options: csv
+		-->
+		<userBackend
+			method="csv" />
+
+		<!--
+			the settings for the storage backend
+			method - choose how the data of the alert system is stored
+				only valid options: sqlite, mysql
+			server - the address of the database server
+				(only processed if mysql is used)
+			port - the port of the database server
+				(only processed if mysql is used;
+				default value mysql uses is 3306)
+			database - the name of the database
+				(only processed if mysql/postgresql is used)
+			username - the username for the database server
+				(only processed if mysql/postgresql is used)
+			password - the password for the database server
+				(only processed if mysql/postgresql is used)
+		-->
+		<storageBackend
+			method="sqlite"
+			server="127.0.0.1"
+			port="3306"
+			database="alertr"
+			username="username"
+			password="password" />
+
+	</storage>
+
+
+	<!--
+		section of all alert levels that are configured
+	-->
+	<alertLevels>
+
+		<!--
+			a single alert level is configured in an "alertLevel" element
+			if you need additional alert levels just add a new one
+		-->
+		<alertLevel>
+
+			<!--
+				general settings of the alert level
+				level - level of this alert (has to be unique)
+				name - name of the alert level
+					(for example for what it is used)
+				triggerAlways - this flag indicates if this alert level should
+					trigger always an alert on all alert clients even if the
+					alerting system is not activated
+					("True" or "False")
+			-->
+			<general
+				level="0"
+				name="display notification"
+				triggerAlways="False" />
+
+			<!--
+				email alert settings for this alert level
+				emailAlert - should an email notification be generated and
+					sent if a sensor alert of this level is triggered
+					("True" or "False" and works only if smtp is activated)
+				toAddr - email address to which the email should be sent
+					(works only if smtp is activated)
+				triggerAlways - this flag indicates if this alert level should
+					trigger always an alert on all alert clients even if the
+					alerting system is not activated
+					("True" or "False")
+			-->
+			<smtp
+				emailAlert="True"
+				toAddr="youraddress@somehost.de"
+				triggerAlways="True" />
+
+		</alertLevel>
+
+
+		<!--
+			a single alert level is configured in an "alertLevel" element
+			if you need additional alert levels just add a new one
+		-->
+		<alertLevel>
+
+			<!--
+				general settings of the alert level
+				level - level of this alert (has to be unique)
+				name - name of the alert level
+					(for example for what it is used)
+				triggerAlways - this flag indicates if this alert level should
+					trigger always an alert on all alert clients even if the
+					alerting system is not activated
+					("True" or "False")
+			-->
+			<general
+				level="1"
+				name="alarm sirens"
+				triggerAlways="False" />
+
+			<!--
+				email alert settings for this alert level
+				emailAlert - should an email notification be generated and
+					sent if a sensor alert of this level is triggered
+					("True" or "False" and works only if smtp is activated)
+				toAddr - email address to which the email should be sent
+					(works only if smtp is activated)
+			-->
+			<smtp
+				emailAlert="True"
+				toAddr="someotheraddress@somehost.de" />
+
+		</alertLevel>
+
+
+		<!--
+			a single alert level is configured in an "alertLevel" element
+			if you need additional alert levels just add a new one
+		-->
+		<alertLevel>
+
+			<!--
+				general settings of the alert level
+				level - level of this alert (has to be unique)
+				name - name of the alert level
+					(for example for what it is used)
+				triggerAlways - this flag indicates if this alert level should
+					trigger always an alert on all alert clients even if the
+					alerting system is not activated
+					("True" or "False")
+			-->
+			<general
+				level="10"
+				name="pausing xbmc"
+				triggerAlways="True" />
+
+			<!--
+				email alert settings for this alert level
+				emailAlert - should an email notification be generated and
+					sent if a sensor alert of this level is triggered
+					("True" or "False" and works only if smtp is activated)
+				toAddr - email address to which the email should be sent
+					(works only if smtp is activated)
+			-->
+			<smtp
+				emailAlert="True"
+				toAddr="youraddress@somehost.de" />
+
+		</alertLevel>
+
+	</alertLevels>
+
+</config>

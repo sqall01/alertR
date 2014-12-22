@@ -19,7 +19,7 @@ import logging
 import time
 import threading
 import random
-import ConfigParser
+import xml.etree.ElementTree
 
 
 # this class is a global configuration class that holds 
@@ -55,7 +55,7 @@ class GlobalData:
 
 		# path to the configuration file of the client
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/config/config.conf"
+			+ "/config/config.xml"
 
 		# path to the csv user credentials file (if csv is used as backend)
 		self.userBackendCsvFile = os.path.dirname(os.path.abspath(__file__)) \
@@ -98,17 +98,17 @@ if __name__ == '__main__':
 
 	fileName = os.path.basename(__file__)
 
-	# parse config file
+	# parse config file, get logfile configurations
+	# and initialize logging
 	try:
-		config = ConfigParser.RawConfigParser(allow_no_value=False)
+		configRoot = xml.etree.ElementTree.parse(
+			globalData.configFile).getroot()
 
-		# get config file
-		config.read([globalData.configFile])
-
-		logfile = config.get("general", "logfile")
+		logfile = str(configRoot.find("general").find("log").attrib["file"])
 
 		# parse chosen log level
-		tempLoglevel = config.get("general", "loglevel")
+		tempLoglevel = str(
+			configRoot.find("general").find("log").attrib["level"])
 		tempLoglevel = tempLoglevel.upper()
 		if tempLoglevel == "DEBUG":
 			loglevel = logging.DEBUG
@@ -123,52 +123,75 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid log level in config file.")
 
+		# initialize logging
 		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
 			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
 			level=loglevel)
 
-		# configure smtp alert if activated
-		smtpActivated = config.getboolean("smtp", "smtpActivated")
+	except Exception as e:
+		print "Config could not be parsed."
+		print e
+		sys.exit(1)
+
+	# parse the rest of the config with initialized logging
+	try:
+
+		# check if config and client version are compatible
+		version = float(configRoot.attrib["version"])
+		if version != globalData.version:
+			raise ValueError("Config version '%.3f' not "
+				% version
+				+ "compatible with client version '%.3f'."
+				% globalData.version)
+
+		# parse smtp options if activated
+		smtpActivated = (str(
+			configRoot.find("smtp").find("general").attrib[
+			"activated"]).upper() == "TRUE")
 		if smtpActivated is True:
-			smtpServer = config.get("smtp", "server")
-			smtpPort = config.getint("smtp", "serverPort")
-			smtpFromAddr = config.get("smtp", "fromAddr")
-			smtpToAddr = config.get("smtp", "toAddr")
+			smtpServer = str(
+				configRoot.find("smtp").find("server").attrib["host"])
+			smtpPort = int(
+				configRoot.find("smtp").find("server").attrib["port"])
+			smtpFromAddr = str(
+				configRoot.find("smtp").find("general").attrib["fromAddr"])
+			smtpToAddr = str(
+				configRoot.find("smtp").find("general").attrib["toAddr"])
 			globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort,
 			smtpFromAddr, smtpToAddr)
 
 		# configure user credentials backend
-		userBackendMethod = config.get("userBackend", "method")
-		if userBackendMethod.upper() == "CSV":
+		userBackendMethod = str(
+			configRoot.find("storage").find("userBackend").attrib[
+			"method"]).upper()
+		if userBackendMethod == "CSV":
 			globalData.userBackend = CSVBackend(globalData.userBackendCsvFile)
+
 		else:
 			raise ValueError("No valid user backend method in config file.")
 
 		# configure storage backend (check which backend is configured)
-		userBackendMethod = config.get("storage", "method")
-		if userBackendMethod.upper() == "SQLITE":
+		userBackendMethod = str(
+			configRoot.find("storage").find("storageBackend").attrib[
+			"method"]).upper()
+		if userBackendMethod == "SQLITE":
 			globalData.storage = Sqlite(globalData.storageBackendSqliteFile,
 				globalData.version)
-		elif userBackendMethod.upper() == "MYSQL":
 
-			backendUsername = config.get("storage", "username")
-			backendPassword = config.get("storage", "password")
-			backendServer = config.get("storage", "server")
-			backendPort = config.getint("storage", "port")
-			backendDatabase = config.get("storage", "database")
+		elif userBackendMethod == "MYSQL":
+
+			backendUsername = str(configRoot.find("storage").find(
+				"storageBackend").attrib["username"])
+			backendPassword = str(configRoot.find("storage").find(
+				"storageBackend").attrib["password"])
+			backendServer = str(configRoot.find("storage").find(
+				"storageBackend").attrib["server"])
+			backendPort = int(configRoot.find("storage").find(
+				"storageBackend").attrib["port"])
+			backendDatabase = str(configRoot.find("storage").find(
+				"storageBackend").attrib["database"])
 
 			globalData.storage = Mysql(backendServer, backendPort,
-				backendDatabase, backendUsername, backendPassword,
-				globalData.version)
-		elif userBackendMethod.upper() == "POSTGRESQL":
-
-			backendUsername = config.get("storage", "username")
-			backendPassword = config.get("storage", "password")
-			backendServer = config.get("storage", "server")
-			backendPort = config.getint("storage", "port")
-			backendDatabase = config.get("storage", "database")
-
-			globalData.storage = Postgresql(backendServer, backendPort,
 				backendDatabase, backendUsername, backendPassword,
 				globalData.version)
 
@@ -176,42 +199,55 @@ if __name__ == '__main__':
 			raise ValueError("No valid storage backend method in config file.")
 
 		# get server configurations
-		globalData.serverCertFile = config.get("server", "certificateFile")
-		globalData.serverKeyFile = config.get("server", "keyFile")
+		globalData.serverCertFile = str(configRoot.find("general").find(
+				"server").attrib["certFile"])
+		globalData.serverKeyFile = str(configRoot.find("general").find(
+				"server").attrib["keyFile"])
+		port = int(configRoot.find("general").find("server").attrib["port"])
+
 		if (os.path.exists(globalData.serverCertFile) is False
 			or os.path.exists(globalData.serverKeyFile) is False):
 			raise ValueError("Server certificate or key does not exist.")
-		port = config.getint("server", "port")
-		globalData.useClientCertificates = config.getboolean("server",
-			"useClientCertificates")
+		
+		# get client configurations
+		globalData.useClientCertificates = (str(
+			configRoot.find("general").find("client").attrib[
+			"useClientCertificates"]).upper() == "TRUE")
+
 		if globalData.useClientCertificates is True:
-			globalData.clientCAFile = config.get("server", "clientCAFile")
+
+			globalData.clientCAFile = str(configRoot.find("general").find(
+				"client").attrib["clientCAFile"])
+
 			if os.path.exists(globalData.clientCAFile) is False:
-				raise ValueError("Client CA does not exist.")
+				raise ValueError("Client CA file does not exist.")
 
 		# parse all alert levels
-		for section in config.sections():
-			if section.find("alertLevel") != -1:
+		for item in configRoot.find("alertLevels").iterfind("alertLevel"):
 
-				alertLevel = AlertLevel()
-				alertLevel.level = config.getint(section, "level")
-				alertLevel.name = config.get(section, "name")
-				alertLevel.triggerAlways = config.getboolean(section,
-					"triggerAlways")
-				alertLevel.smtpActivated = config.getboolean(section,
-					"emailAlert")
-				if ((not smtpActivated)
-					and alertLevel.smtpActivated):
-					raise ValueError("Alert level can not have email alert"
-						+ "activated when smtp is not activated.")
-				alertLevel.toAddr = config.get(section, "toAddr")
+			alertLevel = AlertLevel()
 
-				# check if the alert level only exists once
-				for tempAlertLevel in globalData.alertLevels:
-					if tempAlertLevel.level == alertLevel.level:
-						raise ValueError("Alert level must be unique.")
+			alertLevel.level = int(item.find("general").attrib["level"])
+			alertLevel.name = str(item.find("general").attrib["name"])
+			alertLevel.triggerAlways = (str(item.find("general").attrib[
+				"triggerAlways"]).upper() == "TRUE")
 
-				globalData.alertLevels.append(alertLevel)
+			alertLevel.smtpActivated = (str(item.find("smtp").attrib[
+				"emailAlert"]).upper() == "TRUE")
+
+			if ((not smtpActivated)
+				and alertLevel.smtpActivated):
+				raise ValueError("Alert level can not have email alert"
+					+ "activated when smtp is not activated.")
+
+			alertLevel.toAddr = str(item.find("smtp").attrib["toAddr"])
+
+			# check if the alert level only exists once
+			for tempAlertLevel in globalData.alertLevels:
+				if tempAlertLevel.level == alertLevel.level:
+					raise ValueError("Alert level must be unique.")
+
+			globalData.alertLevels.append(alertLevel)
 
 		# check if all alert levels for alert clients that exist in the
 		# database are configured in the configuration file
@@ -250,8 +286,7 @@ if __name__ == '__main__':
 					+ "in the database that is not configured.")
 
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		logging.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)
 
 	random.seed()
