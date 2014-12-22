@@ -14,7 +14,7 @@ import threading
 import logging
 import os
 import base64
-import ConfigParser
+import xml.etree.cElementTree
 import random
 import json
 BUFSIZE = 16384
@@ -490,34 +490,38 @@ class ServerCommunication:
 		if self.registered is False:
 
 			# create config from the values that were transmitted to server
-			registeredConfig = ConfigParser.RawConfigParser()
-			registeredConfig.add_section('general')
-			registeredConfig.set('general', 'hostname', socket.gethostname())
-			registeredConfig.set('general', 'sensorcount', len(self.sensors))
-			for i in range(len(self.sensors)):
-				registeredConfig.add_section('sensor%d' % i)
-				registeredConfig.set('sensor%d' % i, 'id', self.sensors[i].id)
-				registeredConfig.set('sensor%d' % i, 'alertDelay',
-					self.sensors[i].alertDelay)
-				registeredConfig.set('sensor%d' % i, 'description',
-					self.sensors[i].description)
+			configRoot = xml.etree.cElementTree.Element("config")
+			configGeneral = xml.etree.cElementTree.SubElement(configRoot,
+				"general")
 
-				# generate a string of the alert levels
-				alertLevelString = ""
-				firstAlertLevel = True
+			temp = xml.etree.cElementTree.SubElement(configGeneral,
+				"client")
+			temp.set("host", socket.gethostname())
+
+			configSensors = xml.etree.cElementTree.SubElement(configRoot,
+				"sensors")
+
+			for i in range(len(self.sensors)):
+
+				tempSensor = xml.etree.cElementTree.SubElement(configSensors,
+				"sensor")
+
+				temp = xml.etree.cElementTree.SubElement(tempSensor,
+				"general")
+				temp.set("id", str(self.sensors[i].id))
+				temp.set("description", str(self.sensors[i].description))
+				temp.set("alertDelay", str(self.sensors[i].alertDelay))
+
 				for alertLevel in self.sensors[i].alertLevels:
-					if not firstAlertLevel:
-						alertLevelString += ", "
-					else:
-						firstAlertLevel = False
-					alertLevelString += "%d" % alertLevel
-				registeredConfig.set('sensor%d' % i, 'alertLevels',
-					alertLevelString)
+					temp = xml.etree.cElementTree.SubElement(tempSensor,
+						"alertLevel")
+					temp.text = str(alertLevel)
+
+			configTree = xml.etree.cElementTree.ElementTree(configRoot)
 
 			# write config
 			try:
-				with open(self.registeredFile, 'w') as f:
-					registeredConfig.write(f)
+				configTree.write(self.registeredFile)
 			# if there was an exception in creating the file
 			# log it but do not abort
 			except Exception as e:
