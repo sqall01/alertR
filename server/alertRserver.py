@@ -10,7 +10,7 @@
 import sys
 import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
-from lib import Sqlite, Mysql, Postgresql
+from lib import Sqlite, Mysql
 from lib import SensorAlertExecuter, AlertLevel
 from lib import CSVBackend
 from lib import SMTPAlert
