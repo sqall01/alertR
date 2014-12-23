@@ -36,14 +36,6 @@ class GlobalData:
 		# type of this node/client
 		self.nodeType = "manager"
 
-		# path to the configuration file that holds the parameters
-		# that are registered at the server
-		self.registeredFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/config/registered"
-
-		# this flags indicates if the client is already registered or not
-		self.registered = None
-
 		# path to the configuration file of the client
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
 			+ "/config/config.xml"
@@ -309,41 +301,6 @@ if __name__ == '__main__':
 		globalData.maxCountShowAlertLevelsPerPage = int(
 			configRoot.find("manager").find("console").attrib[
 			"maxCountShowAlertLevelsPerPage"])
-
-		# check if the client has already registered itself at the server
-		# with the same data
-		if os.path.exists(globalData.registeredFile):
-
-			regConfigRoot = xml.etree.ElementTree.parse(
-				globalData.registeredFile).getroot()
-
-			hostname = logfile = str(regConfigRoot.find("general").find(
-				"client").attrib["host"])			
-
-			# check if the hostname
-			if (hostname == socket.gethostname()):
-
-				description = str(
-					regConfigRoot.find("manager").find("general").attrib[
-					"description"])
-
-				# check if manager settings had changed since the
-				# last registration at the server
-				if description == globalData.description:
-
-					# check if the registered value has changed
-					# during the checks => if not set it to True
-					if globalData.registered == None:
-						globalData.registered = True
-
-				else:
-					globalData.registered = False
-
-			else:
-				globalData.registered = False
-
-		else:
-			globalData.registered = False
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)

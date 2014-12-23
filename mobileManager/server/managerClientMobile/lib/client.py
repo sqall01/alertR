@@ -16,7 +16,6 @@ import threading
 import logging
 import os
 import base64
-import xml.etree.cElementTree
 import random
 import json
 BUFSIZE = 16384
@@ -91,8 +90,6 @@ class ServerCommunication:
 		self.globalData = globalData
 		self.version = self.globalData.version
 		self.nodeType = self.globalData.nodeType
-		self.registeredFile = self.globalData.registeredFile
-		self.registered = self.globalData.registered
 		self.description = self.globalData.description		
 		# list of alert system information
 		self.options = self.globalData.options
@@ -411,13 +408,6 @@ class ServerCommunication:
 	# internal function to register the node
 	def _registerNode(self):
 
-		# check if node is already registered at server with this
-		# configuration
-		if self.registered is True:
-			configuration = "old"
-		else:
-			configuration = "new"
-
 		# build manager dict for the message
 		manager = dict()
 		manager["description"] = self.description
@@ -426,7 +416,6 @@ class ServerCommunication:
 		try:
 
 			payload = {"type": "request",
-				"configuration": configuration,
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
 				"manager": manager}
@@ -492,35 +481,6 @@ class ServerCommunication:
 			logging.exception("[%s]: Receiving registration response failed."
 				% self.fileName)
 			return False
-
-		# check if client was registered before
-		# if not => create registered config file
-		if self.registered is False:
-
-			# create config from the values that were transmitted to server
-			configRoot = xml.etree.cElementTree.Element("config")
-			configGeneral = xml.etree.cElementTree.SubElement(configRoot,
-				"general")
-
-			temp = xml.etree.cElementTree.SubElement(configGeneral,
-				"client")
-			temp.set("host", socket.gethostname())
-
-			configManager = xml.etree.cElementTree.SubElement(configRoot,
-				"manager")
-
-			temp = xml.etree.cElementTree.SubElement(configManager,
-				"general")
-			temp.set("description", str(self.description))
-
-			# write config
-			try:
-				configTree.write(self.registeredFile)
-			# if there was an exception in creating the file
-			# log it but do not abort
-			except Exception as e:
-				logging.exception("[%s]: Not able to create registered file." 
-				% self.fileName)
 
 		return True
 
