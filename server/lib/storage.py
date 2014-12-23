@@ -24,7 +24,7 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# adds a node if it does not exist or changes the registration
+	# adds a node if it does not exist or changes the registered
 	# values if it does exist
 	#
 	# return True or False
@@ -32,25 +32,26 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# adds the data that is given by the node for the sensor to the database
+	# adds/updates the data that is given by the node for the sensors
+	# to the database
 	#
 	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description):
+	def addSensors(self, username, sensors):
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# adds the data that is given by the node for the alert to the database
+	# adds/updates the data that is given by the node for the alerts
+	# to the database
 	#
 	# return True or False
-	def addAlert(self, username, remoteAlertId, alertLevels, description):
-		raise NotImplemented("Function not implemented yet.")
+	def addAlerts(self, username, alerts):
 
 
-	# adds the data that is given by the node for the manager to the database
+	# adds/updates the data that is given by the node for
+	# the manager to the database
 	#
 	# return True or False
-	def addManager(self, username, description):
+	def addManager(self, username, manager):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -59,55 +60,6 @@ class _Storage():
 	#
 	# return True or False
 	def addSensorAlert(self, nodeId, remoteSensorId, state):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given data of the node and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkNode(self, username, hostname, nodeType):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given data of the sensor and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given data of the alert and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkAlert(self, username, remoteAlertId, alertLevels, description):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given data of the manager and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkManager(self, username, description):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given sensor count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkSensorCount(username, sensorCount):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# checks if the given alert count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertCount(self, username, alertCount):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -334,7 +286,7 @@ class Sqlite(_Storage):
 
 		# check if the username does exist => if not node is not known
 		self.cursor.execute("SELECT id FROM nodes WHERE username = ? ",
-			[username])
+			(username, ))
 		result = self.cursor.fetchall()
 
 		# return if username was found or not
@@ -351,7 +303,7 @@ class Sqlite(_Storage):
 		if self._usernameInDb(username):
 			# get id of username
 			self.cursor.execute("SELECT id FROM nodes WHERE username = ? ",
-				[username])
+				(username, ))
 			result = self.cursor.fetchall()
 
 			return result[0][0]
@@ -399,6 +351,25 @@ class Sqlite(_Storage):
 		alertId = result[0][0]
 
 		return alertId
+
+
+	# internal function that gets the manager id of a manager when the id 
+	# of a node is given
+	#
+	# return managerId or raised Exception
+	def _getManagerId(self, nodeId):
+
+		# get managerId from database
+		self.cursor.execute("SELECT id FROM managers "
+			+ "WHERE nodeId = ?", (nodeId, ))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Manager does not exist in database.")
+
+		managerId = result[0][0]
+
+		return managerId
 
 
 	# internal function that acquires the lock
@@ -507,116 +478,31 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 
-	# adds a node if it does not exist or changes the registration
+	# adds a node if it does not exist or changes the registered
 	# values if it does exist
 	#
 	# return True or False
 	def addNode(self, username, hostname, nodeType):
 
 		self._acquireLock()
-		
-		# check if node with the same username already exists
-		# => only update information
-		if self._usernameInDb(username):
+
+		# check if a node with the same username already exists
+		# => if not add node
+		if not self._usernameInDb(username):
+
+			logging.info("[%s]: Node with username '%s' does not exist "
+				% (self.fileName, username)
+				+ "in database. Adding it.")
+
 			try:
-				self.cursor.execute("UPDATE nodes SET "
-					+ "hostname = ?, "
-					+ "nodeType = ?, "
-					+ "connected = 1 WHERE username = ?", (hostname, nodeType,
-					username))
-			except Exception as e:
-				logging.exception("[%s]: Not able to add node."
-					% self.fileName)
-
-				self._releaseLock()
-
-				return False
-
-			# get the id of the node
-			try:
-				nodeId = self._getNodeId(username)
-			except Exception as e:
-				logging.exception("[%s]: Not able to add node." 
-					% self.fileName)
-
-				self._releaseLock()
-
-				return False
-
-			# remove old sensors data from database
-			# (complete node will be newly added)
-			# if type is sensor
-			if nodeType == "sensor":
-				try:
-					# get the id of all sensors that are managed by this node
-					# and delete the alert levels of these sensors
-					self.cursor.execute("SELECT id FROM sensors "
-						+ "WHERE nodeId = ?", (nodeId, ))
-					result = self.cursor.fetchall()
-					for tempSensorId in result:
-						self.cursor.execute("DELETE FROM sensorsAlertLevels "
-						+ "WHERE sensorId = ?", (tempSensorId[0], ))
-
-					# delete the sensors
-					self.cursor.execute("DELETE FROM sensors "
-						+ "WHERE nodeId = ?", (nodeId, ))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add node." 
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			# remove old manager data from database
-			# (complete node will be newly added)
-			# if type is manager
-			elif nodeType == "manager":
-				try:
-					self.cursor.execute("DELETE FROM managers "
-						+ "WHERE nodeId = ?", (nodeId, ) )
-				except Exception as e:
-					logging.exception("[%s]: Not able to add node." 
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			# remove old alerts data from database
-			# (complete node will be newly added)
-			# if type is alert
-			elif nodeType == "alert":
-				try:
-					# get the id of all alerts that are managed by this node
-					# and delete the alert levels of these alerts
-					self.cursor.execute("SELECT id FROM alerts "
-						+ "WHERE nodeId = ?", (nodeId, ))
-					result = self.cursor.fetchall()
-					for tempAlertId in result:
-						self.cursor.execute("DELETE FROM alertsAlertLevels "
-						+ "WHERE alertId = ?", (tempAlertId[0], ))
-
-					# delete the alerts
-					self.cursor.execute("DELETE FROM alerts "
-						+ "WHERE nodeId = ?", (nodeId, ))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add node." 
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False	
-
-		# if node does not exist => add it
-		else:
-			try:
+				# NOTE: connection state is changed later on
+				# in the registration process
 				self.cursor.execute("INSERT INTO nodes ("
 					+ "hostname, "
 					+ "username, "
 					+ "nodeType, "
 					+ "connected) VALUES (?, ?, ?, ?)",
-					(hostname, username, nodeType, 1))
+					(hostname, username, nodeType, 0))
 			except Exception as e:
 				logging.exception("[%s]: Not able to add node."
 					% self.fileName)
@@ -625,546 +511,835 @@ class Sqlite(_Storage):
 
 				return False
 
-		# commit all changes
-		self.conn.commit()
+		# if a node with this node exists
+		# => check if everything is the same
+		else:
 
-		self._releaseLock()
+			logging.info("[%s]: Node with username '%s' already exists "
+				% (self.fileName, username)
+				+ "in database.")
 
-		return True
-
-
-	# adds the data that is given by the node for the sensor to the database
-	#
-	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description):
-
-		self._acquireLock()	
-		
-		# get the id of the node
-		try:
 			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor." % self.fileName)
 
-			self._releaseLock()
-
-			return False
-
-		# add sensor to database
-		try:
-			self.cursor.execute("INSERT INTO sensors ("
-				+ "nodeId, "
-				+ "remoteSensorId, "
-				+ "description, "
-				+ "state, "
-				+ "lastStateUpdated, "
-				+ "alertDelay) VALUES (?, ?, ?, ?, ?, ?)",
-				(nodeId, remoteSensorId, description, 0, 0, alertDelay))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get sensorId of current added sensor
-		try:
-			sensorId = self._getSensorId(nodeId, remoteSensorId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get sensorId." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add sensor alert levels to database
-		try:
-			for alertLevel in alertLevels:			
-				self.cursor.execute("INSERT INTO sensorsAlertLevels ("
-					+ "sensorId, "
-					+ "alertLevel) VALUES (?, ?)",
-					(sensorId, alertLevel))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor alert levels."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# commit all changes
-		self.conn.commit()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the data that is given by the node for the alert to the database
-	#
-	# return True or False
-	def addAlert(self, username, remoteAlertId, alertLevels, description):
-
-		self._acquireLock()	
-		
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add alert to database
-		try:
-			self.cursor.execute("INSERT INTO alerts ("
-				+ "nodeId, "
-				+ "remoteAlertId, "
-				+ "description) VALUES (?, ?, ?)", (nodeId,
-				remoteAlertId, description))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get alertId of current added alert
-		try:
-			alertId = self._getAlertId(nodeId, remoteAlertId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get alertId." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add alert alert levels to database
-		try:
-			for alertLevel in alertLevels:			
-				self.cursor.execute("INSERT INTO alertsAlertLevels ("
-					+ "alertId, "
-					+ "alertLevel) VALUES (?, ?)",
-					(alertId, alertLevel))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert alert levels."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# commit all changes
-		self.conn.commit()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the data that is given by the node for the manager to the database
-	#
-	# return True or False
-	def addManager(self, username, description):
-
-		self._acquireLock()	
-		
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add manager." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add manager to database
-		try:
-			self.cursor.execute("INSERT INTO managers ("
-				+ "nodeId, "
-				+ "description) VALUES (?, ?)", (nodeId, description))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add manager." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# commit all changes
-		self.conn.commit()
-
-		self._releaseLock()
-
-		return True		
-
-
-	# checks if the given data of the node and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkNode(self, username, hostname, nodeType):
-
-		self._acquireLock()
-
-		# check if the username does exist
-		if self._usernameInDb(username):
-			# get hostname and nodeType of username
-			self.cursor.execute("SELECT hostname, nodeType FROM nodes "
-				+ "WHERE username = ? ", (username, ))
-			result = self.cursor.fetchall()
-
-			if (result[0][0] == hostname
-				and result[0][1] == nodeType):
-
-				self._releaseLock()
-
-				return True
-
-		self._releaseLock()
-
-		return False
-
-
-	# checks if the given data of the sensor and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description):
-
-		self._acquireLock()
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check sensor.")
-
-			self._releaseLock()
-
-			return False
-
-		self.cursor.execute("SELECT alertDelay, "
-			+ "description "
-			+ "FROM sensors "
-			+ "WHERE nodeId = ? "
-			+ "AND remoteSensorId = ?", (nodeId, remoteSensorId))
-
-		result = self.cursor.fetchall()
-
-		# check if the sensor was found
-		if len(result) == 0:
-			logging.error("[%s]: Sensor was not found." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# check if the sensor was found multiple times
-		elif len(result) > 1:
-			logging.error("[%s]: Sensor was found multiple times."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# check if values of sensors table are correct
-		sensorsTableCorrect = False
-		if (result[0][0] == alertDelay
-			and result[0][1] == description):
-			sensorsTableCorrect = True
-		if not sensorsTableCorrect:
-			logging.error("[%s]: Sensor configuration does not match."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get sensorId of the sensor to check
-		try:
-			sensorId = self._getSensorId(nodeId, remoteSensorId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get sensorId." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# check all sensor alert levels
-		self.cursor.execute("SELECT alertLevel "
-			+ "FROM sensorsAlertLevels "
-			+ "WHERE sensorId = ? ", (sensorId, ))
-		result = self.cursor.fetchall()		
-
-		# check if all sensor alert levels from the db are
-		# in the list of alert levels
-		for dbAlertLevel in result:
-			if not dbAlertLevel[0] in alertLevels:
-				logging.error("[%s]: Sensor alert level " % self.fileName
-					+ "from db not in list of alert levels.")
-
-				self._releaseLock()
-
-				return False
-
-		# check if all sensor alert levels from the list are
-		# in the db
-		for tempAlertLevel in alertLevels:
-			found = False
-			for dbAlertLevel in result:
-				if tempAlertLevel == dbAlertLevel[0]:
-					found = True
-			if not found:
-				logging.error("[%s]: Sensor alert level " % self.fileName
-					+ "from list not in db.")
-
-				self._releaseLock()
-
-				return False
-
-		self._releaseLock()
-
-		return True
-
-
-	# checks if the given data of the alert and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkAlert(self, username, remoteAlertId, alertLevels, description):
-
-		self._acquireLock()
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert.")
-
-			self._releaseLock()
-
-			return False
-
-		self.cursor.execute("SELECT description "
-			+ "FROM alerts "
-			+ "WHERE nodeId = ? "
-			+ "AND remoteAlertId = ?", (nodeId, remoteAlertId))
-
-		result = self.cursor.fetchall()
-
-		# check if the alert was found
-		if len(result) == 0:
-			logging.error("[%s]: Alert was not found." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# check if the alert was found multiple times
-		elif len(result) > 1:
-			logging.error("[%s]: Alert was found multiple times."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		if result[0][0] != description:
-
-			logging.error("[%s]: Alert configuration does not match."
+			# get hostname and nodeType
+			try:
+				self.cursor.execute("SELECT hostname, "
+					+ "nodeType "
+					+ "FROM nodes WHERE id = ? ",
+					(nodeId, ))
+				result = self.cursor.fetchall()
+				dbHostname = result[0][0]
+				dbNodeType = result[0][1]
+
+			except Exception as e:
+				logging.exception("[%s]: Not able to get node information."
 					% self.fileName)
 
-			self._releaseLock()
-
-			return False
-
-		# get alertId of the alert to check
-		try:
-			alertId = self._getAlertId(nodeId, remoteAlertId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get alertId." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# check all alert alert levels
-		self.cursor.execute("SELECT alertLevel "
-			+ "FROM alertsAlertLevels "
-			+ "WHERE alertId = ? ", (alertId, ))
-		result = self.cursor.fetchall()		
-
-		# check if all alert alert levels from the db are
-		# in the list of alert levels
-		for dbAlertLevel in result:
-			if not dbAlertLevel[0] in alertLevels:
-				logging.error("[%s]: Alert alert level " % self.fileName
-					+ "from db not in list of alert levels.")
-
 				self._releaseLock()
 
 				return False
 
-		# check if all alert alert levels from the list are
-		# in the db
-		for tempAlertLevel in alertLevels:
+			# change hostname if it had changed
+			if dbHostname != hostname:
+
+				logging.info("[%s]: Hostname of node has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbHostname, hostname))
+
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "hostname = ? "
+						+ "WHERE id = ?",
+						(hostname, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update hostname of node.")
+
+					self._releaseLock()
+
+					return False
+
+			# if node type has changed
+			# => delete sensors/alerts/manager information of old node
+			# and change node type
+			if dbNodeType != nodeType:
+
+				logging.info("[%s]: Type of node has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbNodeType, nodeType))
+
+				# if old node had type "sensor"
+				# => delete all sensors
+				if dbNodeType == "sensor":
+
+					try:
+						# get all sensor ids that are connected to
+						# the old sensor
+						self.cursor.execute("SELECT id FROM sensors "
+							+ "WHERE nodeId = ? ", (nodeId, ))
+						result = self.cursor.fetchall()
+
+						# delete all sensor alert levels and sensors of
+						# this node
+						for sensorIdResult in result:
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsAlertLevels "
+								+ "WHERE sensorId = ?",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM sensors "
+								+ "WHERE id = ?",
+								(sensorIdResult[0], ))
+
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "delete sensors of the node.")
+
+						self._releaseLock()
+
+						return False
+
+				# if old node had type "alert"
+				# => delete all alerts
+				elif dbNodeType == "alert":
+
+					try:
+						# get all alert ids that are connected to
+						# the old alert
+						self.cursor.execute("SELECT id FROM alerts "
+							+ "WHERE nodeId = ?", (nodeId, ))
+						result = self.cursor.fetchall()
+
+						# delete all alert alert levels and alerts of
+						# this node
+						for alertIdResult in result:
+
+							self.cursor.execute("DELETE FROM "
+								+ "alertsAlertLevels "
+								+ "WHERE alertId = ?",
+								(alertIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM alerts "
+								+ "WHERE id = ?",
+								(alertIdResult[0], ))
+
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "delete alerts of the node.")
+
+						self._releaseLock()
+
+						return False
+
+				# if old node had type "manager"
+				# => delete all manager information
+				elif dbNodeType == "manager":
+					
+					try:
+						self.cursor.execute("DELETE FROM managers "
+							+ "WHERE nodeId = ?",
+							(nodeId, ))
+
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "delete manager information of the node.")
+
+						self._releaseLock()
+
+						return False
+
+				# node type in database not known
+				else:
+
+					logging.error("[%s]: Unknown node type " % self.fileName
+						+ "when deleting old sensors/alerts/manager "
+						+ "information.")
+
+					self._releaseLock()
+
+					return False
+
+				# update node type
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "nodeType = ? "
+						+ "WHERE id = ?",
+						(nodeType, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update type of node.")
+
+					self._releaseLock()
+
+					return False
+
+		# commit all changes
+		self.conn.commit()
+
+		self._releaseLock()
+
+		return True
+
+
+	# adds/updates the data that is given by the node for the sensors
+	# to the database
+	#
+	# return True or False
+	def addSensors(self, username, sensors):
+
+		self._acquireLock()	
+
+		# get the id of the node
+		try:
+			nodeId = self._getNodeId(username)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get node id." % self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# add/update all sensors
+		for sensor in sensors:
+
+			# check if a sensor with the same remote id for this node
+			# already exists in the database
+			self.cursor.execute("SELECT id FROM sensors "
+				+ "WHERE nodeId = ? AND remoteSensorId = ?",
+				(nodeId, int(sensor["clientSensorId"])))
+			result = self.cursor.fetchall()
+
+			# if the sensor does not exist
+			# => add it
+			if len(result) == 0:
+
+				logging.info("[%s]: Sensor with client id '%d' does not exist "
+					% (self.fileName, int(sensor["clientSensorId"]))
+					+ "in database. Adding it.")
+
+				# add sensor to database
+				try:
+					self.cursor.execute("INSERT INTO sensors ("
+						+ "nodeId, "
+						+ "remoteSensorId, "
+						+ "description, "
+						+ "state, "
+						+ "lastStateUpdated, "
+						+ "alertDelay) VALUES (?, ?, ?, ?, ?, ?)",
+						(nodeId, int(sensor["clientSensorId"]),
+						str(sensor["description"]), 0, 0,
+						int(sensor["alertDelay"])))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add sensor."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+				# get sensorId of current added sensor
+				try:
+					sensorId = self._getSensorId(nodeId,
+						int(sensor["clientSensorId"]))
+				except Exception as e:
+					logging.exception("[%s]: Not able to get sensorId." 
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+				# add sensor alert levels to database
+				try:
+					for alertLevel in sensor["alertLevels"]:			
+						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+							+ "sensorId, "
+							+ "alertLevel) VALUES (?, ?)",
+							(sensorId, alertLevel))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "add sensor alert levels.")
+
+					self._releaseLock()
+
+					return False
+
+			# if the sensor does already exist
+			# => check if everything is the same
+			else:
+
+				logging.info("[%s]: Sensor with client id '%d' already exists "
+					% (self.fileName, int(sensor["clientSensorId"]))
+					+ "in database.")
+
+				# get sensorId, description and alertDelay
+				try:
+					sensorId = self._getSensorId(nodeId,
+						int(sensor["clientSensorId"]))
+
+					self.cursor.execute("SELECT description, "
+						+ "alertDelay "
+						+ "FROM sensors "
+						+ "WHERE id = ?",
+						(sensorId, ))
+					result = self.cursor.fetchall()
+					dbDescription = result[0][0]
+					dbAlertDelay = result[0][1]
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get sensor information.")
+
+					self._releaseLock()
+
+					return False
+
+				# change description if it had changed
+				if dbDescription != str(sensor["description"]):
+
+					logging.info("[%s]: Description of sensor has changed "
+						% self.fileName
+						+ "from '%s' to '%s'. Updating database."
+						% (dbDescription, str(sensor["description"])))
+
+					try:
+						self.cursor.execute("UPDATE sensors SET "
+							+ "description = ? "
+							+ "WHERE id = ?",
+							(str(sensor["description"]), sensorId))
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "update description of sensor.")
+
+						self._releaseLock()
+
+						return False
+
+				# change alert delay if it had changed
+				if dbAlertDelay != int(sensor["alertDelay"]):
+
+					logging.info("[%s]: Alert delay of sensor has changed "
+						% self.fileName
+						+ "from '%d' to '%d'. Updating database."
+						% (dbAlertDelay, int(sensor["alertDelay"])))
+
+					try:
+						self.cursor.execute("UPDATE sensors SET "
+							+ "alertDelay = ? "
+							+ "WHERE id = ?",
+							(int(sensor["alertDelay"]), sensorId))
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "update alert delay of sensor.")
+
+						self._releaseLock()
+
+						return False
+
+				# get sensor alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM sensorsAlertLevels "
+						+ "WHERE sensorId = ? ", (sensorId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get alert levels of the sensor.")
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels do already
+				# exist in the database
+				# => add alert level if it does not
+				for alertLevel in sensor["alertLevels"]:
+
+					# check if alert level already exists
+					found = False
+					for dbAlertLevel in result:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' of sensor does not "
+						% (self.fileName, alertLevel)
+						+ "exist in database. Adding it.")
+
+					# add sensor alert level to database
+					self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+						+ "sensorId, "
+						+ "alertLevel) VALUES (?, ?)",
+						(sensorId, alertLevel))
+
+				# get updated sensor alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM sensorsAlertLevels "
+						+ "WHERE sensorId = ? ", (sensorId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get updated alert levels of the sensor.")
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels from the database
+				# do still exist in the sensor
+				# => delete alert level if it does not
+				for dbAlertLevel in result:
+
+					# check if database alert level does exist
+					found = False
+					for alertLevel in sensor["alertLevels"]:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' in database does "
+						% (self.fileName, dbAlertLevel[1])
+						+ "not exist anymore for sensor. Deleting it.")
+
+					self.cursor.execute("DELETE FROM sensorsAlertLevels "
+						+ "WHERE id = ?",
+						(dbAlertLevel[0], ))
+
+		# get updated sensors from database
+		try:
+					
+			self.cursor.execute("SELECT id, "
+				+ "remoteSensorId "
+				+ "FROM sensors "
+				+ "WHERE nodeId = ? ", (nodeId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+			logging.exception("[%s]: Not able to " % self.fileName
+				+ "get updated sensors from database.")
+
+			self._releaseLock()
+
+			return False
+
+		# check if the sensors from the database
+		# do still exist in the node
+		# => delete sensor if it does not
+		for dbSensor in result:
+
 			found = False
-			for dbAlertLevel in result:
-				if tempAlertLevel == dbAlertLevel[0]:
+			for sensor in sensors:
+				if dbSensor[1] == int(sensor["clientSensorId"]):
 					found = True
-			if not found:
-				logging.error("[%s]: Alert alert level " % self.fileName
-					+ "from list not in db.")
+					break
+			if found:
+				continue
+
+			logging.info("[%s]: Sensor with client id '%d' in database does "
+				% (self.fileName, dbSensor[1])
+				+ "not exist anymore for the node. Deleting it.")
+
+			try:
+				self.cursor.execute("DELETE FROM sensorsAlertLevels "
+					+ "WHERE sensorId = ?",
+					(dbSensor[0], ))
+
+				self.cursor.execute("DELETE FROM sensors "
+					+ "WHERE id = ?",
+					(dbSensor[0], ))
+			except Exception as e:
+				logging.exception("[%s]: Not able to delete sensor." 
+					% self.fileName)
 
 				self._releaseLock()
 
 				return False
 
+		# commit all changes
+		self.conn.commit()
+
 		self._releaseLock()
 
 		return True
 
 
-	# checks if the given data of the manager and the data in the database
-	# are the same
+	# adds/updates the data that is given by the node for the alerts
+	# to the database
 	#
 	# return True or False
-	def checkManager(self, username, description):
+	def addAlerts(self, username, alerts):
 
-		self._acquireLock()
+		self._acquireLock()	
 
 		# get the id of the node
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check manager.")
+			logging.exception("[%s]: Not able to get node id." % self.fileName)
 
 			self._releaseLock()
 
 			return False
 
-		self.cursor.execute("SELECT description "
-			+ "FROM managers "
-			+ "WHERE nodeId = ?", (nodeId, ))
+		# add/update all alerts
+		for alert in alerts:
 
+			# check if a alert with the same remote id for this node
+			# already exists in the database
+			self.cursor.execute("SELECT id FROM alerts "
+				+ "WHERE nodeId = ? AND remoteAlertId = ?",
+				(nodeId, int(alert["clientAlertId"])))
+			result = self.cursor.fetchall()
+
+			# if the alert does not exist
+			# => add it
+			if len(result) == 0:
+
+				logging.info("[%s]: Alert with client id '%d' does not exist "
+					% (self.fileName, int(alert["clientAlertId"]))
+					+ "in database. Adding it.")
+
+				# add alert to database
+				try:
+					self.cursor.execute("INSERT INTO alerts ("
+						+ "nodeId, "
+						+ "remoteAlertId, "
+						+ "description) VALUES (?, ?, ?)", (nodeId,
+						int(alert["clientAlertId"]),
+						str(alert["description"])))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add alert."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+				# get alertId of current added alert
+				try:
+					alertId = self._getAlertId(nodeId,
+						int(alert["clientAlertId"]))
+				except Exception as e:
+					logging.exception("[%s]: Not able to get alertId." 
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+				# add alert alert levels to database
+				try:
+					for alertLevel in alert["alertLevels"]:			
+						self.cursor.execute("INSERT INTO alertsAlertLevels ("
+							+ "alertId, "
+							+ "alertLevel) VALUES (?, ?)",
+							(alertId, alertLevel))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "add alert alert levels.")
+
+					self._releaseLock()
+
+					return False
+
+			# if the alert does already exist
+			# => check if everything is the same
+			else:
+
+				logging.info("[%s]: Alert with client id '%d' already exists "
+					% (self.fileName, int(alert["clientAlertId"]))
+					+ "in database.")
+
+				# get alertId and description
+				try:
+					alertId = self._getAlertId(nodeId,
+						int(alert["clientAlertId"]))
+
+					self.cursor.execute("SELECT description "
+						+ "FROM alerts "
+						+ "WHERE id = ?",
+						(alertId, ))
+					result = self.cursor.fetchall()
+					dbDescription = result[0][0]
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get alert information.")
+
+					self._releaseLock()
+
+					return False
+
+				# change description if it had changed
+				if dbDescription != str(alert["description"]):
+
+					logging.info("[%s]: Description of alert has changed "
+						% self.fileName
+						+ "from '%s' to '%s'. Updating database."
+						% (dbDescription, str(alert["description"])))
+
+					try:
+						self.cursor.execute("UPDATE alerts SET "
+							+ "description = ? "
+							+ "WHERE id = ?",
+							(str(alert["description"]), alertId))
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "update description of alert.")
+
+						self._releaseLock()
+
+						return False
+
+				# get alert alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM alertsAlertLevels "
+						+ "WHERE alertId = ? ", (alertId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get alert levels of the alert.")
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels do already
+				# exist in the database
+				# => add alert level if it does not
+				for alertLevel in alert["alertLevels"]:
+
+					# check if alert level already exists
+					found = False
+					for dbAlertLevel in result:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' of alert does not "
+						% (self.fileName, alertLevel)
+						+ "exist in database. Adding it.")
+
+					# add alert alert level to database
+					self.cursor.execute("INSERT INTO alertsAlertLevels ("
+						+ "alertId, "
+						+ "alertLevel) VALUES (?, ?)",
+						(alertId, alertLevel))
+
+				# get updated alert alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM alertsAlertLevels "
+						+ "WHERE alertId = ? ", (alertId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get updated alert levels of the alert.")
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels from the database
+				# do still exist in the alert
+				# => delete alert level if it does not
+				for dbAlertLevel in result:
+
+					# check if database alert level does exist
+					found = False
+					for alertLevel in alert["alertLevels"]:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' in database does "
+						% (self.fileName, dbAlertLevel[1])
+						+ "not exist anymore for alert. Deleting it.")
+
+					self.cursor.execute("DELETE FROM alertsAlertLevels "
+						+ "WHERE id = ?",
+						(dbAlertLevel[0], ))
+
+		# get updated alerts from database
+		try:
+					
+			self.cursor.execute("SELECT id, "
+				+ "remoteAlertId "
+				+ "FROM alerts "
+				+ "WHERE nodeId = ? ", (nodeId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+			logging.exception("[%s]: Not able to " % self.fileName
+				+ "get updated alerts from database.")
+
+			self._releaseLock()
+
+			return False
+
+		# check if the alerts from the database
+		# do still exist in the node
+		# => delete alert if it does not
+		for dbAlert in result:
+
+			found = False
+			for alert in alerts:
+				if dbAlert[1] == int(alert["clientAlertId"]):
+					found = True
+					break
+			if found:
+				continue
+
+			logging.info("[%s]: Alert with client id '%d' in database does "
+				% (self.fileName, dbAlert[1])
+				+ "not exist anymore for the node. Deleting it.")
+
+			try:
+				self.cursor.execute("DELETE FROM alertsAlertLevels "
+					+ "WHERE alertId = ?",
+					(dbAlert[0], ))
+
+				self.cursor.execute("DELETE FROM alerts "
+					+ "WHERE id = ?",
+					(dbAlert[0], ))
+			except Exception as e:
+				logging.exception("[%s]: Not able to delete alert." 
+					% self.fileName)
+
+				self._releaseLock()
+
+				return False
+
+		# commit all changes
+		self.conn.commit()
+
+		self._releaseLock()
+
+		return True
+
+
+	# adds/updates the data that is given by the node for
+	# the manager to the database
+	#
+	# return True or False
+	def addManager(self, username, manager):
+
+		self._acquireLock()	
+
+		# get the id of the node
+		try:
+			nodeId = self._getNodeId(username)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get node id." % self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# check if a manager with the same node id
+		# already exists in the database
+		self.cursor.execute("SELECT id FROM managers "
+			+ "WHERE nodeId = ?",
+			(nodeId, ))
 		result = self.cursor.fetchall()
 
-		# check if the manager was found
+		# if the manager does not exist
+		# => add it
 		if len(result) == 0:
-			logging.error("[%s]: Manager was not found." % self.fileName)
 
-			self._releaseLock()
+			logging.info("[%s]: Manager does not exist "
+				% self.fileName
+				+ "in database. Adding it.")
 
-			return False
+			# add manager to database
+			try:
+				self.cursor.execute("INSERT INTO managers ("
+					+ "nodeId, "
+					+ "description) VALUES (?, ?)", (nodeId,
+					str(manager["description"])))
+			except Exception as e:
+				logging.exception("[%s]: Not able to add manager."
+					% self.fileName)
 
-		# check if the manager was found multiple times
-		elif len(result) > 1:
-			logging.error("[%s]: Manager was found multiple times."
-				% self.fileName)
+				self._releaseLock()
 
-			self._releaseLock()
+				return False
 
-			return False
+		# if the manager does already exist
+		# => check if everything is the same
+		else:
 
-		if (result[0][0] == description):
+			logging.info("[%s]: Manager already exists "
+				% self.fileName
+				+ "in database.")
 
-			self._releaseLock()
+			# get managerId and description
+			try:
+				managerId = self._getManagerId(nodeId)
 
-			return True
+				self.cursor.execute("SELECT description "
+					+ "FROM managers "
+					+ "WHERE id = ?",
+					(managerId, ))
+				result = self.cursor.fetchall()
+				dbDescription = result[0][0]
 
-		logging.error("[%s]: Manager configuration does not match."
-				% self.fileName)
+			except Exception as e:
+				logging.exception("[%s]: Not able to " % self.fileName
+					+ "get manager information.")
 
-		self._releaseLock()
+				self._releaseLock()
 
-		return False
+				return False
 
+			# change description if it had changed
+			if dbDescription != str(manager["description"]):
 
-	# checks if the given sensor count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkSensorCount(self, username, sensorCount):
+				logging.info("[%s]: Description of manager has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbDescription, str(manager["description"])))
 
-		self._acquireLock()
+				try:
+					self.cursor.execute("UPDATE managers SET "
+						+ "description = ? "
+						+ "WHERE id = ?",
+						(str(manager["description"]), managerId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update description of manager.")
 
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check sensor count.")
+					self._releaseLock()
 
-			self._releaseLock()
+					return False
 
-			return False		
-
-		# get all sensors on this nodes
-		self.cursor.execute("SELECT id FROM sensors "
-			+ "WHERE nodeId = ?", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != sensorCount:
-			logging.error("[%s]: Sensor count does not match with database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		self._releaseLock()
-
-		return True
-
-
-	# checks if the given alert count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertCount(self, username, alertCount):
-
-		self._acquireLock()
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert count.")
-
-			self._releaseLock()
-
-			return False		
-
-		# get all alerts on this nodes
-		self.cursor.execute("SELECT id FROM alerts "
-			+ "WHERE nodeId = ?", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != alertCount:
-			logging.error("[%s]: Alert count does not match with database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
+		# commit all changes
+		self.conn.commit()
 
 		self._releaseLock()
 
@@ -2119,6 +2294,25 @@ class Mysql(_Storage):
 		return alertId
 
 
+	# internal function that gets the manager id of a manager when the id 
+	# of a node is given
+	#
+	# return managerId or raised Exception
+	def _getManagerId(self, nodeId):
+
+		# get managerId from database
+		self.cursor.execute("SELECT id FROM managers "
+			+ "WHERE nodeId = %s", (nodeId, ))
+		result = self.cursor.fetchall()
+
+		if len(result) != 1:
+			raise ValueError("Manager does not exist in database.")
+
+		managerId = result[0][0]
+
+		return managerId
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -2231,14 +2425,14 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 
-	# adds a node if it does not exist or changes the registration
+	# adds a node if it does not exist or changes the registered
 	# values if it does exist
 	#
 	# return True or False
 	def addNode(self, username, hostname, nodeType):
 
 		self._acquireLock()
-		
+
 		# connect to the database
 		try:
 			self._openConnection()
@@ -2250,492 +2444,27 @@ class Mysql(_Storage):
 
 			return False
 
-		# check if node with the same username already exists
-		# => only update information
-		if self._usernameInDb(username):
+		# check if a node with the same username already exists
+		# => if not add node
+		if not self._usernameInDb(username):
+
+			logging.info("[%s]: Node with username '%s' does not exist "
+				% (self.fileName, username)
+				+ "in database. Adding it.")
+
 			try:
-				self.cursor.execute("UPDATE nodes SET "
-					+ "hostname = %s, "
-					+ "nodeType = %s, "
-					+ "connected = 1 WHERE username = %s", (hostname, nodeType,
-					username))
-			except Exception as e:
-				logging.exception("[%s]: Not able to add node."
-					% self.fileName)
-
-				self._releaseLock()
-
-				return False
-
-			# get the id of the node
-			try:
-				nodeId = self._getNodeId(username)
-			except Exception as e:
-				logging.exception("[%s]: Not able to add node." 
-					% self.fileName)
-
-				self._releaseLock()
-
-				return False
-
-			# remove old sensors data from database
-			# (complete node will be newly added)
-			# if type is sensor
-			if nodeType == "sensor":
-				try:
-					# get the id of all sensors that are managed by this node
-					# and delete the alert levels of these sensors
-					self.cursor.execute("SELECT id FROM sensors "
-						+ "WHERE nodeId = %s", (nodeId, ))
-					result = self.cursor.fetchall()
-					for tempSensorId in result:
-						self.cursor.execute("DELETE FROM sensorsAlertLevels "
-						+ "WHERE sensorId = %s", (tempSensorId[0], ))
-
-					# delete the sensors
-					self.cursor.execute("DELETE FROM sensors "
-						+ "WHERE nodeId = %s", (nodeId, ))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add node." 
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			# remove old manager data from database
-			# (complete node will be newly added)
-			# if type is manager
-			elif nodeType == "manager":
-				try:
-					self.cursor.execute("DELETE FROM managers "
-						+ "WHERE nodeId = %s", (nodeId, ) )
-				except Exception as e:
-					logging.exception("[%s]: Not able to add node." 
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			# remove old alerts data from database
-			# (complete node will be newly added)
-			# if type is alert
-			elif nodeType == "alert":
-				try:
-					# get the id of all alerts that are managed by this node
-					# and delete the alert levels of these alerts
-					self.cursor.execute("SELECT id FROM alerts "
-						+ "WHERE nodeId = %s", (nodeId, ))
-					result = self.cursor.fetchall()
-					for tempAlertId in result:
-						self.cursor.execute("DELETE FROM alertsAlertLevels "
-						+ "WHERE alertId = %s", (tempAlertId[0], ))
-
-					# delete the alerts
-					self.cursor.execute("DELETE FROM alerts "
-						+ "WHERE nodeId = %s", (nodeId, ))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add node." 
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False	
-
-		# if node does not exist => add it
-		else:
-			try:
+				# NOTE: connection state is changed later on
+				# in the registration process
 				self.cursor.execute("INSERT INTO nodes ("
 					+ "hostname, "
 					+ "username, "
 					+ "nodeType, "
 					+ "connected) VALUES (%s, %s, %s, %s)",
-					(hostname, username, nodeType, 1))
+					(hostname, username, nodeType, 0))
 			except Exception as e:
 				logging.exception("[%s]: Not able to add node."
 					% self.fileName)
 
-				self._releaseLock()
-
-				return False
-
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the data that is given by the node for the sensor to the database
-	#
-	# return True or False
-	def addSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description):
-
-		self._acquireLock()	
-		
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add sensor to database
-		try:
-			self.cursor.execute("INSERT INTO sensors ("
-				+ "nodeId, "
-				+ "remoteSensorId, "
-				+ "description, "
-				+ "state, "
-				+ "lastStateUpdated, "
-				+ "alertDelay) VALUES (%s, %s, %s, %s, %s, %s)",
-				(nodeId, remoteSensorId, description, 0, 0, alertDelay))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get sensorId of current added sensor
-		try:
-			sensorId = self._getSensorId(nodeId, remoteSensorId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get sensorId." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add sensor alert levels to database
-		try:
-			for alertLevel in alertLevels:			
-				self.cursor.execute("INSERT INTO sensorsAlertLevels ("
-					+ "sensorId, "
-					+ "alertLevel) VALUES (%s, %s)",
-					(sensorId, alertLevel))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor alert levels."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the data that is given by the node for the alert to the database
-	#
-	# return True or False
-	def addAlert(self, username, remoteAlertId, alertLevels, description):
-
-		self._acquireLock()	
-		
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add alert to database
-		try:
-			self.cursor.execute("INSERT INTO alerts ("
-				+ "nodeId, "
-				+ "remoteAlertId, "
-				+ "description) VALUES (%s, %s, %s)", (nodeId,
-				remoteAlertId, description))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get alertId of current added alert
-		try:
-			alertId = self._getAlertId(nodeId, remoteAlertId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get alertId." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add alert alert levels to database
-		try:
-			for alertLevel in alertLevels:			
-				self.cursor.execute("INSERT INTO alertsAlertLevels ("
-					+ "alertId, "
-					+ "alertLevel) VALUES (%s, %s)",
-					(alertId, alertLevel))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add alert alert levels."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# adds the data that is given by the node for the manager to the database
-	#
-	# return True or False
-	def addManager(self, username, description):
-
-		self._acquireLock()	
-		
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to add manager." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# add manager to database
-		try:
-			self.cursor.execute("INSERT INTO managers ("
-				+ "nodeId, "
-				+ "description) VALUES (%s, %s)", (nodeId, description))
-		except Exception as e:
-			logging.exception("[%s]: Not able to add manager." % self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True		
-
-
-	# checks if the given data of the node and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkNode(self, username, hostname, nodeType):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# check if the username does exist
-		if self._usernameInDb(username):
-			# get hostname and nodeType of username
-			self.cursor.execute("SELECT hostname, nodeType FROM nodes "
-				+ "WHERE username = %s ", (username, ))
-			result = self.cursor.fetchall()
-
-			if (result[0][0] == hostname
-				and result[0][1] == nodeType):
-
-				# close connection to the database
-				self._closeConnection()
-
-				self._releaseLock()
-
-				return True
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return False
-
-
-	# checks if the given data of the sensor and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkSensor(self, username, remoteSensorId, alertDelay, alertLevels,
-		description):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check sensor.")
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		self.cursor.execute("SELECT alertDelay, "
-			+ "description "
-			+ "FROM sensors "
-			+ "WHERE nodeId = %s "
-			+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
-
-		result = self.cursor.fetchall()
-
-		# check if the sensor was found
-		if len(result) == 0:
-			logging.error("[%s]: Sensor was not found." % self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# check if the sensor was found multiple times
-		elif len(result) > 1:
-			logging.error("[%s]: Sensor was found multiple times."
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# check if values of sensors table are correct
-		sensorsTableCorrect = False
-		if (result[0][0] == alertDelay
-			and result[0][1] == description):
-			sensorsTableCorrect = True
-		if not sensorsTableCorrect:
-			logging.error("[%s]: Sensor configuration does not match."
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# get sensorId of the sensor to check
-		try:
-			sensorId = self._getSensorId(nodeId, remoteSensorId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get sensorId." 
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# check all sensor alert levels
-		self.cursor.execute("SELECT alertLevel "
-			+ "FROM sensorsAlertLevels "
-			+ "WHERE sensorId = %s ", (sensorId, ))
-		result = self.cursor.fetchall()		
-
-		# check if all sensor alert levels from the db are
-		# in the list of alert levels
-		for dbAlertLevel in result:
-			if not dbAlertLevel[0] in alertLevels:
-				logging.error("[%s]: Sensor alert level " % self.fileName
-					+ "from db not in list of alert levels.")
-
 				# close connection to the database
 				self._closeConnection()
 
@@ -2743,131 +2472,30 @@ class Mysql(_Storage):
 
 				return False
 
-		# check if all sensor alert levels from the list are
-		# in the db
-		for tempAlertLevel in alertLevels:
-			found = False
-			for dbAlertLevel in result:
-				if tempAlertLevel == dbAlertLevel[0]:
-					found = True
-			if not found:
-				logging.error("[%s]: Sensor alert level " % self.fileName
-					+ "from list not in db.")
+		# if a node with this node exists
+		# => check if everything is the same
+		else:
 
-				# close connection to the database
-				self._closeConnection()
+			logging.info("[%s]: Node with username '%s' already exists "
+				% (self.fileName, username)
+				+ "in database.")
 
-				self._releaseLock()
-
-				return False
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# checks if the given data of the alert and the data in the database
-	# are the same
-	#
-	# return True or False
-	def checkAlert(self, username, remoteAlertId, alertLevels, description):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
 			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert.")
 
-			self._releaseLock()
+			# get hostname and nodeType
+			try:
+				self.cursor.execute("SELECT hostname, "
+					+ "nodeType "
+					+ "FROM nodes WHERE id = %s ",
+					(nodeId, ))
+				result = self.cursor.fetchall()
+				dbHostname = result[0][0]
+				dbNodeType = result[0][1]
 
-			return False
-
-		self.cursor.execute("SELECT description "
-			+ "FROM alerts "
-			+ "WHERE nodeId = %s "
-			+ "AND remoteAlertId = %s", (nodeId, remoteAlertId))
-
-		result = self.cursor.fetchall()
-
-		# check if the alert was found
-		if len(result) == 0:
-			logging.error("[%s]: Alert was not found." % self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# check if the alert was found multiple times
-		elif len(result) > 1:
-			logging.error("[%s]: Alert was found multiple times."
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		if result[0][0] != description:
-
-			logging.error("[%s]: Alert configuration does not match."
+			except Exception as e:
+				logging.exception("[%s]: Not able to get node information."
 					% self.fileName)
 
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# get alertId of the alert to check
-		try:
-			alertId = self._getAlertId(nodeId, remoteAlertId)
-		except Exception as e:
-			logging.exception("[%s]: Not able to get alertId." 
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# check all alert alert levels
-		self.cursor.execute("SELECT alertLevel "
-			+ "FROM alertsAlertLevels "
-			+ "WHERE alertId = %s ", (alertId, ))
-		result = self.cursor.fetchall()		
-
-		# check if all alert alert levels from the db are
-		# in the list of alert levels
-		for dbAlertLevel in result:
-			if not dbAlertLevel[0] in alertLevels:
-				logging.error("[%s]: Alert alert level " % self.fileName
-					+ "from db not in list of alert levels.")
-
 				# close connection to the database
 				self._closeConnection()
 
@@ -2875,16 +2503,490 @@ class Mysql(_Storage):
 
 				return False
 
-		# check if all alert alert levels from the list are
-		# in the db
-		for tempAlertLevel in alertLevels:
+			# change hostname if it had changed
+			if dbHostname != hostname:
+
+				logging.info("[%s]: Hostname of node has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbHostname, hostname))
+
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "hostname = %s "
+						+ "WHERE id = %s",
+						(hostname, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update hostname of node.")
+
+				# close connection to the database
+				self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+			# if node type has changed
+			# => delete sensors/alerts/manager information of old node
+			# and change node type
+			if dbNodeType != nodeType:
+
+				logging.info("[%s]: Type of node has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbNodeType, nodeType))
+
+				# if old node had type "sensor"
+				# => delete all sensors
+				if dbNodeType == "sensor":
+
+					try:
+						# get all sensor ids that are connected to
+						# the old sensor
+						self.cursor.execute("SELECT id FROM sensors "
+							+ "WHERE nodeId = %s ", (nodeId, ))
+						result = self.cursor.fetchall()
+
+						# delete all sensor alert levels and sensors of
+						# this node
+						for sensorIdResult in result:
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsAlertLevels "
+								+ "WHERE sensorId = %s",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM sensors "
+								+ "WHERE id = %s",
+								(sensorIdResult[0], ))
+
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "delete sensors of the node.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock()
+
+						return False
+
+				# if old node had type "alert"
+				# => delete all alerts
+				elif dbNodeType == "alert":
+
+					try:
+						# get all alert ids that are connected to
+						# the old alert
+						self.cursor.execute("SELECT id FROM alerts "
+							+ "WHERE nodeId = %s", (nodeId, ))
+						result = self.cursor.fetchall()
+
+						# delete all alert alert levels and alerts of
+						# this node
+						for alertIdResult in result:
+
+							self.cursor.execute("DELETE FROM "
+								+ "alertsAlertLevels "
+								+ "WHERE alertId = %s",
+								(alertIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM alerts "
+								+ "WHERE id = %s",
+								(alertIdResult[0], ))
+
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "delete alerts of the node.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock()
+
+						return False
+
+				# if old node had type "manager"
+				# => delete all manager information
+				elif dbNodeType == "manager":
+					
+					try:
+						self.cursor.execute("DELETE FROM managers "
+							+ "WHERE nodeId = %s",
+							(nodeId, ))
+
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "delete manager information of the node.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock()
+
+						return False
+
+				# node type in database not known
+				else:
+
+					logging.error("[%s]: Unknown node type " % self.fileName
+						+ "when deleting old sensors/alerts/manager "
+						+ "information.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# update node type
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "nodeType = %s "
+						+ "WHERE id = %s",
+						(nodeType, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update type of node.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		return True
+
+
+	# adds/updates the data that is given by the node for the sensors
+	# to the database
+	#
+	# return True or False
+	def addSensors(self, username, sensors):
+
+		self._acquireLock()	
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# get the id of the node
+		try:
+			nodeId = self._getNodeId(username)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get node id." % self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return False
+
+		# add/update all sensors
+		for sensor in sensors:
+
+			# check if a sensor with the same remote id for this node
+			# already exists in the database
+			self.cursor.execute("SELECT id FROM sensors "
+				+ "WHERE nodeId = %s AND remoteSensorId = %s",
+				(nodeId, int(sensor["clientSensorId"])))
+			result = self.cursor.fetchall()
+
+			# if the sensor does not exist
+			# => add it
+			if len(result) == 0:
+
+				logging.info("[%s]: Sensor with client id '%d' does not exist "
+					% (self.fileName, int(sensor["clientSensorId"]))
+					+ "in database. Adding it.")
+
+				# add sensor to database
+				try:
+					self.cursor.execute("INSERT INTO sensors ("
+						+ "nodeId, "
+						+ "remoteSensorId, "
+						+ "description, "
+						+ "state, "
+						+ "lastStateUpdated, "
+						+ "alertDelay) VALUES (%s, %s, %s, %s, %s, %s)",
+						(nodeId, int(sensor["clientSensorId"]),
+						str(sensor["description"]), 0, 0,
+						int(sensor["alertDelay"])))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add sensor."
+						% self.fileName)
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# get sensorId of current added sensor
+				try:
+					sensorId = self._getSensorId(nodeId,
+						int(sensor["clientSensorId"]))
+				except Exception as e:
+					logging.exception("[%s]: Not able to get sensorId." 
+						% self.fileName)
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# add sensor alert levels to database
+				try:
+					for alertLevel in sensor["alertLevels"]:			
+						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+							+ "sensorId, "
+							+ "alertLevel) VALUES (%s, %s)",
+							(sensorId, alertLevel))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "add sensor alert levels.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+			# if the sensor does already exist
+			# => check if everything is the same
+			else:
+
+				logging.info("[%s]: Sensor with client id '%d' already exists "
+					% (self.fileName, int(sensor["clientSensorId"]))
+					+ "in database.")
+
+				# get sensorId, description and alertDelay
+				try:
+					sensorId = self._getSensorId(nodeId,
+						int(sensor["clientSensorId"]))
+
+					self.cursor.execute("SELECT description, "
+						+ "alertDelay "
+						+ "FROM sensors "
+						+ "WHERE id = %s",
+						(sensorId, ))
+					result = self.cursor.fetchall()
+					dbDescription = result[0][0]
+					dbAlertDelay = result[0][1]
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get sensor information.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# change description if it had changed
+				if dbDescription != str(sensor["description"]):
+
+					logging.info("[%s]: Description of sensor has changed "
+						% self.fileName
+						+ "from '%s' to '%s'. Updating database."
+						% (dbDescription, str(sensor["description"])))
+
+					try:
+						self.cursor.execute("UPDATE sensors SET "
+							+ "description = %s "
+							+ "WHERE id = %s",
+							(str(sensor["description"]), sensorId))
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "update description of sensor.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock()
+
+						return False
+
+				# change alert delay if it had changed
+				if dbAlertDelay != int(sensor["alertDelay"]):
+
+					logging.info("[%s]: Alert delay of sensor has changed "
+						% self.fileName
+						+ "from '%d' to '%d'. Updating database."
+						% (dbAlertDelay, int(sensor["alertDelay"])))
+
+					try:
+						self.cursor.execute("UPDATE sensors SET "
+							+ "alertDelay = %s "
+							+ "WHERE id = %s",
+							(int(sensor["alertDelay"]), sensorId))
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "update alert delay of sensor.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock()
+
+						return False
+
+				# get sensor alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM sensorsAlertLevels "
+						+ "WHERE sensorId = %s ", (sensorId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get alert levels of the sensor.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels do already
+				# exist in the database
+				# => add alert level if it does not
+				for alertLevel in sensor["alertLevels"]:
+
+					# check if alert level already exists
+					found = False
+					for dbAlertLevel in result:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' of sensor does not "
+						% (self.fileName, alertLevel)
+						+ "exist in database. Adding it.")
+
+					# add sensor alert level to database
+					self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+						+ "sensorId, "
+						+ "alertLevel) VALUES (%s, %s)",
+						(sensorId, alertLevel))
+
+				# get updated sensor alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM sensorsAlertLevels "
+						+ "WHERE sensorId = %s ", (sensorId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get updated alert levels of the sensor.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels from the database
+				# do still exist in the sensor
+				# => delete alert level if it does not
+				for dbAlertLevel in result:
+
+					# check if database alert level does exist
+					found = False
+					for alertLevel in sensor["alertLevels"]:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' in database does "
+						% (self.fileName, dbAlertLevel[1])
+						+ "not exist anymore for sensor. Deleting it.")
+
+					self.cursor.execute("DELETE FROM sensorsAlertLevels "
+						+ "WHERE id = %s",
+						(dbAlertLevel[0], ))
+
+		# get updated sensors from database
+		try:
+					
+			self.cursor.execute("SELECT id, "
+				+ "remoteSensorId "
+				+ "FROM sensors "
+				+ "WHERE nodeId = %s ", (nodeId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+			logging.exception("[%s]: Not able to " % self.fileName
+				+ "get updated sensors from database.")
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return False
+
+		# check if the sensors from the database
+		# do still exist in the node
+		# => delete sensor if it does not
+		for dbSensor in result:
+
 			found = False
-			for dbAlertLevel in result:
-				if tempAlertLevel == dbAlertLevel[0]:
+			for sensor in sensors:
+				if dbSensor[1] == int(sensor["clientSensorId"]):
 					found = True
-			if not found:
-				logging.error("[%s]: Alert alert level " % self.fileName
-					+ "from list not in db.")
+					break
+			if found:
+				continue
+
+			logging.info("[%s]: Sensor with client id '%d' in database does "
+				% (self.fileName, dbSensor[1])
+				+ "not exist anymore for the node. Deleting it.")
+
+			try:
+				self.cursor.execute("DELETE FROM sensorsAlertLevels "
+					+ "WHERE sensorId = %s",
+					(dbSensor[0], ))
+
+				self.cursor.execute("DELETE FROM sensors "
+					+ "WHERE id = %s",
+					(dbSensor[0], ))
+			except Exception as e:
+				logging.exception("[%s]: Not able to delete sensor." 
+					% self.fileName)
 
 				# close connection to the database
 				self._closeConnection()
@@ -2893,6 +2995,9 @@ class Mysql(_Storage):
 
 				return False
 
+		# commit all changes
+		self.conn.commit()
+
 		# close connection to the database
 		self._closeConnection()
 
@@ -2901,13 +3006,13 @@ class Mysql(_Storage):
 		return True
 
 
-	# checks if the given data of the manager and the data in the database
-	# are the same
+	# adds/updates the data that is given by the node for the alerts
+	# to the database
 	#
 	# return True or False
-	def checkManager(self, username, description):
+	def addAlerts(self, username, alerts):
 
-		self._acquireLock()
+		self._acquireLock()	
 
 		# connect to the database
 		try:
@@ -2924,165 +3029,413 @@ class Mysql(_Storage):
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check manager.")
+			logging.exception("[%s]: Not able to get node id." % self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
 			return False
 
-		self.cursor.execute("SELECT description "
-			+ "FROM managers "
-			+ "WHERE nodeId = %s ", (nodeId, ))
+		# add/update all alerts
+		for alert in alerts:
 
+			# check if a alert with the same remote id for this node
+			# already exists in the database
+			self.cursor.execute("SELECT id FROM alerts "
+				+ "WHERE nodeId = %s AND remoteAlertId = %s",
+				(nodeId, int(alert["clientAlertId"])))
+			result = self.cursor.fetchall()
+
+			# if the alert does not exist
+			# => add it
+			if len(result) == 0:
+
+				logging.info("[%s]: Alert with client id '%d' does not exist "
+					% (self.fileName, int(alert["clientAlertId"]))
+					+ "in database. Adding it.")
+
+				# add alert to database
+				try:
+					self.cursor.execute("INSERT INTO alerts ("
+						+ "nodeId, "
+						+ "remoteAlertId, "
+						+ "description) VALUES (%s, %s, %s)", (nodeId,
+						int(alert["clientAlertId"]),
+						str(alert["description"])))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add alert."
+						% self.fileName)
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# get alertId of current added alert
+				try:
+					alertId = self._getAlertId(nodeId,
+						int(alert["clientAlertId"]))
+				except Exception as e:
+					logging.exception("[%s]: Not able to get alertId." 
+						% self.fileName)
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# add alert alert levels to database
+				try:
+					for alertLevel in alert["alertLevels"]:			
+						self.cursor.execute("INSERT INTO alertsAlertLevels ("
+							+ "alertId, "
+							+ "alertLevel) VALUES (%s, %s)",
+							(alertId, alertLevel))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "add alert alert levels.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+			# if the alert does already exist
+			# => check if everything is the same
+			else:
+
+				logging.info("[%s]: Alert with client id '%d' already exists "
+					% (self.fileName, int(alert["clientAlertId"]))
+					+ "in database.")
+
+				# get alertId and description
+				try:
+					alertId = self._getAlertId(nodeId,
+						int(alert["clientAlertId"]))
+
+					self.cursor.execute("SELECT description "
+						+ "FROM alerts "
+						+ "WHERE id = %s",
+						(alertId, ))
+					result = self.cursor.fetchall()
+					dbDescription = result[0][0]
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get alert information.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# change description if it had changed
+				if dbDescription != str(alert["description"]):
+
+					logging.info("[%s]: Description of alert has changed "
+						% self.fileName
+						+ "from '%s' to '%s'. Updating database."
+						% (dbDescription, str(alert["description"])))
+
+					try:
+						self.cursor.execute("UPDATE alerts SET "
+							+ "description = %s "
+							+ "WHERE id = %s",
+							(str(alert["description"]), alertId))
+					except Exception as e:
+						logging.exception("[%s]: Not able to " % self.fileName
+							+ "update description of alert.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock()
+
+						return False
+
+				# get alert alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM alertsAlertLevels "
+						+ "WHERE alertId = %s ", (alertId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get alert levels of the alert.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels do already
+				# exist in the database
+				# => add alert level if it does not
+				for alertLevel in alert["alertLevels"]:
+
+					# check if alert level already exists
+					found = False
+					for dbAlertLevel in result:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' of alert does not "
+						% (self.fileName, alertLevel)
+						+ "exist in database. Adding it.")
+
+					# add alert alert level to database
+					self.cursor.execute("INSERT INTO alertsAlertLevels ("
+						+ "alertId, "
+						+ "alertLevel) VALUES (%s, %s)",
+						(alertId, alertLevel))
+
+				# get updated alert alert levels from database
+				try:
+					
+					self.cursor.execute("SELECT id, "
+						+ "alertLevel "
+						+ "FROM alertsAlertLevels "
+						+ "WHERE alertId = %s ", (alertId, ))
+					result = self.cursor.fetchall()
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "get updated alert levels of the alert.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+				# check if the alert levels from the database
+				# do still exist in the alert
+				# => delete alert level if it does not
+				for dbAlertLevel in result:
+
+					# check if database alert level does exist
+					found = False
+					for alertLevel in alert["alertLevels"]:
+						if dbAlertLevel[1] == alertLevel:
+							found = True
+							break
+					if found:
+						continue
+
+					logging.info("[%s]: Alert level '%d' in database does "
+						% (self.fileName, dbAlertLevel[1])
+						+ "not exist anymore for alert. Deleting it.")
+
+					self.cursor.execute("DELETE FROM alertsAlertLevels "
+						+ "WHERE id = %s",
+						(dbAlertLevel[0], ))
+
+		# get updated alerts from database
+		try:
+					
+			self.cursor.execute("SELECT id, "
+				+ "remoteAlertId "
+				+ "FROM alerts "
+				+ "WHERE nodeId = %s ", (nodeId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+			logging.exception("[%s]: Not able to " % self.fileName
+				+ "get updated alerts from database.")
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return False
+
+		# check if the alerts from the database
+		# do still exist in the node
+		# => delete alert if it does not
+		for dbAlert in result:
+
+			found = False
+			for alert in alerts:
+				if dbAlert[1] == int(alert["clientAlertId"]):
+					found = True
+					break
+			if found:
+				continue
+
+			logging.info("[%s]: Alert with client id '%d' in database does "
+				% (self.fileName, dbAlert[1])
+				+ "not exist anymore for the node. Deleting it.")
+
+			try:
+				self.cursor.execute("DELETE FROM alertsAlertLevels "
+					+ "WHERE alertId = %s",
+					(dbAlert[0], ))
+
+				self.cursor.execute("DELETE FROM alerts "
+					+ "WHERE id = %s",
+					(dbAlert[0], ))
+			except Exception as e:
+				logging.exception("[%s]: Not able to delete alert." 
+					% self.fileName)
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock()
+
+				return False
+
+		# commit all changes
+		self.conn.commit()
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		return True
+
+
+	# adds/updates the data that is given by the node for
+	# the manager to the database
+	#
+	# return True or False
+	def addManager(self, username, manager):
+
+		self._acquireLock()	
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		# get the id of the node
+		try:
+			nodeId = self._getNodeId(username)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get node id." % self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return False
+
+		# check if a manager with the same node id
+		# already exists in the database
+		self.cursor.execute("SELECT id FROM managers "
+			+ "WHERE nodeId = %s",
+			(nodeId, ))
 		result = self.cursor.fetchall()
 
-		# check if the manager was found
+		# if the manager does not exist
+		# => add it
 		if len(result) == 0:
-			logging.error("[%s]: Manager was not found." % self.fileName)
 
-			# close connection to the database
-			self._closeConnection()
+			logging.info("[%s]: Manager does not exist "
+				% self.fileName
+				+ "in database. Adding it.")
 
-			self._releaseLock()
+			# add manager to database
+			try:
+				self.cursor.execute("INSERT INTO managers ("
+					+ "nodeId, "
+					+ "description) VALUES (%s, %s)", (nodeId,
+					str(manager["description"])))
+			except Exception as e:
+				logging.exception("[%s]: Not able to add manager."
+					% self.fileName)
 
-			return False
+				# close connection to the database
+				self._closeConnection()
 
-		# check if the manager was found multiple times
-		elif len(result) > 1:
-			logging.error("[%s]: Manager was found multiple times."
-				% self.fileName)
+				self._releaseLock()
 
-			# close connection to the database
-			self._closeConnection()
+				return False
 
-			self._releaseLock()
+		# if the manager does already exist
+		# => check if everything is the same
+		else:
 
-			return False
+			logging.info("[%s]: Manager already exists "
+				% self.fileName
+				+ "in database.")
 
-		if (result[0][0] == description):
+			# get managerId and description
+			try:
+				managerId = self._getManagerId(nodeId)
 
-			# close connection to the database
-			self._closeConnection()
+				self.cursor.execute("SELECT description "
+					+ "FROM managers "
+					+ "WHERE id = %s",
+					(managerId, ))
+				result = self.cursor.fetchall()
+				dbDescription = result[0][0]
 
-			self._releaseLock()
+			except Exception as e:
+				logging.exception("[%s]: Not able to " % self.fileName
+					+ "get manager information.")
 
-			return True
+				# close connection to the database
+				self._closeConnection()
 
-		logging.error("[%s]: Manager configuration does not match."
-				% self.fileName)
+				self._releaseLock()
 
-		# close connection to the database
-		self._closeConnection()
+				return False
 
-		self._releaseLock()
+			# change description if it had changed
+			if dbDescription != str(manager["description"]):
 
-		return False
+				logging.info("[%s]: Description of manager has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbDescription, str(manager["description"])))
 
+				try:
+					self.cursor.execute("UPDATE managers SET "
+						+ "description = %s "
+						+ "WHERE id = %s",
+						(str(manager["description"]), managerId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update description of manager.")
 
-	# checks if the given sensor count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkSensorCount(self, username, sensorCount):
+					# close connection to the database
+					self._closeConnection()
 
-		self._acquireLock()
+					self._releaseLock()
 
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
+					return False
 
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check sensor count.")
-
-			self._releaseLock()
-
-			return False		
-
-		# get all sensors on this nodes
-		self.cursor.execute("SELECT id FROM sensors "
-			+ "WHERE nodeId = %s ", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != sensorCount:
-			logging.error("[%s]: Sensor count does not match with database."
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return True
-
-
-	# checks if the given alert count of the node does match
-	# the count in the database
-	#
-	# return True or False
-	def checkAlertCount(self, username, alertCount):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return False
-
-		# get the id of the node
-		try:
-			nodeId = self._getNodeId(username)
-		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
-				+ "check alert count.")
-
-			self._releaseLock()
-
-			return False		
-
-		# get all alerts on this nodes
-		self.cursor.execute("SELECT id FROM alerts "
-			+ "WHERE nodeId = %s ", (nodeId, ))
-
-		result = self.cursor.fetchall()
-
-		# check if the count does match the received count
-		if len(result) != alertCount:
-			logging.error("[%s]: Alert count does not match with database."
-				% self.fileName)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return False
+		# commit all changes
+		self.conn.commit()
 
 		# close connection to the database
 		self._closeConnection()
@@ -3207,6 +3560,9 @@ class Mysql(_Storage):
 			except Exception as e:
 				logging.exception("[%s]: Not able to update sensor state."
 					% self.fileName)
+
+				# close connection to the database
+				self._closeConnection()
 
 				self._releaseLock()
 
@@ -3455,6 +3811,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to add sensor alert."
 				% self.fileName)
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return False
@@ -3509,6 +3868,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to get sensor alerts."
 				% self.fileName)			
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return None
@@ -3547,6 +3909,9 @@ class Mysql(_Storage):
 		except Exception as e:
 			logging.exception("[%s]: Not able to delete sensor alert." 
 				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3590,6 +3955,9 @@ class Mysql(_Storage):
 		except Exception as e:
 			logging.exception("[%s]: Not able to check " % self.fileName
 				+ "if alert system is active.")
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3635,6 +4003,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "all alert levels for alert clients.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			# return None if action failed
@@ -3677,6 +4048,9 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "all alert levels for sensors.")
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3723,6 +4097,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "all node ids.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			# return None if action failed
@@ -3762,6 +4139,9 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to mark " % self.fileName
 				+ "node '%d' as not connected." % nodeId)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3803,6 +4183,9 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to mark " % self.fileName
 				+ "node '%d' as connected." % nodeId)
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3854,6 +4237,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "nodes from database which sensors were not updated.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return None
@@ -3904,6 +4290,9 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "sensor information from sensor id.")
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -3960,6 +4349,9 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "hostname for node from database.")
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 
@@ -4071,6 +4463,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "all nodes information from database.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return None
@@ -4139,6 +4534,9 @@ class Mysql(_Storage):
 			logging.exception("[%s]: Not able to update " % self.fileName
 				+ "option in database.")
 
+			# close connection to the database
+			self._closeConnection()
+
 			self._releaseLock()
 
 			return False
@@ -4194,6 +4592,9 @@ class Mysql(_Storage):
 
 			logging.exception("[%s]: Not able to get " % self.fileName
 				+ "sensor state from database.")
+
+			# close connection to the database
+			self._closeConnection()
 
 			self._releaseLock()
 

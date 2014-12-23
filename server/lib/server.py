@@ -536,27 +536,8 @@ class ClientCommunication:
 
 		# extract general client configuration from message
 		try:
-			configuration = str(message["payload"]["configuration"])
 			self.hostname = str(message["payload"]["hostname"])
 			self.nodeType = str(message["payload"]["nodeType"])
-
-			# check if the configuration value is valid (either "new" or "old")
-			if not (configuration == "new"
-				or configuration == "old"):
-				logging.error("[%s]: Configuration value " % self.fileName
-					+ "invalid. Client sent: '%s' (%s:%d)." 
-					% (data, self.clientAddress, self.clientPort))
-
-				# send error message back
-				try:
-					message = {"serverTime": int(time.time()),
-						"message": message["message"],
-						"error": "configuration value invalid"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
-
-				return False
 
 		except Exception as e:
 
@@ -574,52 +555,25 @@ class ClientCommunication:
 
 			return False
 
-		logging.debug("[%s]: Received node registration '%s': %s:%s (%s:%d)." 
-				% (self.fileName, configuration, self.hostname, self.nodeType,
+		logging.debug("[%s]: Received node registration %s:%s (%s:%d)." 
+				% (self.fileName, self.hostname, self.nodeType,
 					self.clientAddress, self.clientPort))
 
-		# check if the client configuration is new and has to be changed
-		# in the database
-		if configuration == "new":
-			# add node to database
-			if not self.storage.addNode(self.username, self.hostname,
-				self.nodeType):
-				logging.error("[%s]: Unable to add node to database." 
-					% self.fileName)
+		# add node to database
+		if not self.storage.addNode(self.username, self.hostname,
+			self.nodeType):
+			logging.error("[%s]: Unable to add node to database." 
+				% self.fileName)
 
-				# send error message back
-				try:
-					message = {"serverTime": int(time.time()),
-						"message": message["message"],
-						"error": "unable to add node to database"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "unable to add node to database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
 
-				return False
-
-		# check if the client configuration is old and is the same as
-		# in the database
-		elif configuration == "old":
-			# check received node configuration with database
-			if not self.storage.checkNode(self.username, self.hostname,
-				self.nodeType):
-				logging.error("[%s]: Node check in database failed." 
-					% self.fileName)
-
-				# send error message back
-				try:
-					message = {"serverTime": int(time.time()),
-						"message": message["message"],
-						"error": "node check in database failed"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
-
-				return False
-
-		# only new/old are allowed => abort if other value
-		else:
 			return False
 
 		# check if the type of the node got sensors
@@ -663,26 +617,6 @@ class ClientCommunication:
 			logging.debug("[%s]: Sensor count: %d (%s:%d)." 
 					% (self.fileName, sensorCount, self.clientAddress,
 					self.clientPort))
-
-			# check if the client configuration is old and is the same as
-			# in the database
-			if configuration == "old":
-				# check received sensor count matches with the database
-				if not self.storage.checkSensorCount(self.username,
-					sensorCount):
-					logging.error("[%s]: Sensor count check " % self.fileName
-						+ "in database failed.")
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "wrong sensors count"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False			
 
 			for i in range(sensorCount):
 
@@ -766,47 +700,22 @@ class ClientCommunication:
 
 						return False					
 
-				# check if the client configuration is new and has to 
-				# be changed in the data59base
-				if configuration == "new":
-					# add sensor to database
-					if not self.storage.addSensor(self.username, sensorId,
-						alertDelay, alertLevels, description):
-						logging.error("[%s]: Unable to add " % self.fileName
-							+ "sensor to database (%s:%d)."
-							% (self.clientAddress, self.clientPort))
+			# add sensors to database
+			if not self.storage.addSensors(self.username, sensors):
+				logging.error("[%s]: Unable to add " % self.fileName
+					+ "sensors to database (%s:%d)."
+					% (self.clientAddress, self.clientPort))
 
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "unable to add sensor to database"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "unable to add sensors to database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
 
-						return False
-
-				# check if the client configuration is old and is the same as
-				# in the database
-				elif configuration == "old":
-					# check received sensor configuration with database
-					if not self.storage.checkSensor(self.username, sensorId,
-						alertDelay, alertLevels, description):
-						logging.error("[%s]: Sensor check in " % self.fileName
-							+ "database failed (%s:%d)."
-							% (self.clientAddress, self.clientPort))
-
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "sensor check in database failed"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
+				return False
 
 		# check if the type of the node is alert
 		# => register alerts
@@ -851,26 +760,6 @@ class ClientCommunication:
 			logging.debug("[%s]: Received alerts count: %d (%s:%d)." 
 					% (self.fileName, alertCount, self.clientAddress,
 					self.clientPort))
-
-			# check if the client configuration is old and is the same as
-			# in the database
-			if configuration == "old":
-				# check received alert count matches with the database
-				if not self.storage.checkAlertCount(self.username,
-					alertCount):
-					logging.error("[%s]: Alert count check " % self.fileName
-						+ "in database failed.")
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "wrong alerts count"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False			
 
 			for i in range(alertCount):
 
@@ -952,47 +841,22 @@ class ClientCommunication:
 					% (alertId, description,
 					self.clientAddress, self.clientPort))
 
-				# check if the client configuration is new and has to 
-				# be changed in the database
-				if configuration == "new":
-					# add alert to database
-					if not self.storage.addAlert(self.username, alertId,
-						alertLevels, description):
-						logging.error("[%s]: Unable to add " % self.fileName
-							+ "alert to database (%s:%d)."
-							% (self.clientAddress, self.clientPort))
+			# add alerts to database
+			if not self.storage.addAlerts(self.username, alerts):
+				logging.error("[%s]: Unable to add " % self.fileName
+					+ "alerts to database (%s:%d)."
+					% (self.clientAddress, self.clientPort))
 
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "unable to add alert to database"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "unable to add alerts to database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
 
-						return False
-
-				# check if the client configuration is old and is the same as
-				# in the database
-				elif configuration == "old":
-					# check received alert configuration with database
-					if not self.storage.checkAlert(self.username, alertId,
-						alertLevels, description):
-						logging.error("[%s]: Alert check in " % self.fileName
-							+ "database failed (%s:%d)."
-							% (self.clientAddress, self.clientPort))
-
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "alert check in database failed"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
+				return False
 
 		# check if the type of the node is manager
 		elif self.nodeType == "manager":
@@ -1051,45 +915,22 @@ class ClientCommunication:
 			logging.debug("[%s]: Received manager information (%s:%d)." 
 					% (self.fileName, self.clientAddress, self.clientPort))
 
-			# check if the client configuration is new and has to 
-			# be changed in the database
-			if configuration == "new":
-				# add manager to database
-				if not self.storage.addManager(self.username, description):
-					logging.error("[%s]: Unable to add " % self.fileName
-						+ "manager to database (%s:%d)."
-						% (self.clientAddress, self.clientPort))
+			# add manager to database
+			if not self.storage.addManager(self.username, manager):
+				logging.error("[%s]: Unable to add " % self.fileName
+					+ "manager to database (%s:%d)."
+					% (self.clientAddress, self.clientPort))
 
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "unable to add manager to database"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "unable to add manager to database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
 
-					return False
-
-			# check if the client configuration is old and is the same as
-			# in the database
-			elif configuration == "old":
-				# check received manager configuration with database
-				if not self.storage.checkManager(self.username, description):
-					logging.error("[%s]: Manager check " % self.fileName
-						+ "in database failed (%s:%d)."
-						% (self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "manager check in database failed"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
+				return False
 
 		# if nodetype is not sensor, alert or manager => not known
 		else:
