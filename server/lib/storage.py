@@ -24,6 +24,14 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# checks the version of the server and the version in the database
+	# and clears every compatibility issue
+	#
+	# no return value but raise exception if it fails
+	def checkVersionAndClearConflict(self):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# adds a node if it does not exist or changes the registered
 	# values if it does exist
 	#
@@ -281,6 +289,9 @@ class Sqlite(_Storage):
 				check_same_thread=False)
 			self.cursor = self.conn.cursor()
 
+			# check if the versions are compatible
+			self.checkVersionAndClearConflict()
+
 
 	# internal function that checks if the username is known
 	def _usernameInDb(self, username):
@@ -385,13 +396,11 @@ class Sqlite(_Storage):
 		self.dbLock.release()
 
 
-	# creates the database (should only be called if the database
-	# does not exist)
+	# internal function that creates the database
+	# (should only be called if the database does not exist)
 	#
 	# no return value but raise exception if it fails
-	def createStorage(self):
-
-		self._acquireLock()
+	def _createStorage(self):
 
 		# create internals table
 		self.cursor.execute("CREATE TABLE internals ("
@@ -475,6 +484,63 @@ class Sqlite(_Storage):
 
 		# commit all changes
 		self.conn.commit()
+
+
+	# checks the version of the server and the version in the database
+	# and clears every compatibility issue
+	#
+	# no return value but raise exception if it fails
+	def checkVersionAndClearConflict(self):
+
+		self._acquireLock()
+
+		# get version from the current database
+		self.cursor.execute("SELECT value FROM internals "
+			+ "WHERE type = ?",
+			("version", ))
+		result = self.cursor.fetchall()
+
+		# if the versions are not compatible
+		# => delete old database schema
+		if result[0][0] != self.version:
+
+			logging.info("[%s]: Client version "
+				% self.fileName
+				+ "'%.3f' not compatible "
+				% self.version
+				+ "with database version '%.3f'. "
+				% result[0][0]
+				+ "Updating database.")
+
+			# delete all tables from the database to clear the old version
+			self.cursor.execute("DROP TABLE IF EXISTS internals")
+			self.cursor.execute("DROP TABLE IF EXISTS options")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+			self.cursor.execute("DROP TABLE IF EXISTS sensors")
+			self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+			self.cursor.execute("DROP TABLE IF EXISTS alerts")
+			self.cursor.execute("DROP TABLE IF EXISTS managers")
+			self.cursor.execute("DROP TABLE IF EXISTS nodes")
+
+			# create new database
+			self._createStorage()
+
+			# commit all changes
+			self.conn.commit()
+
+		self._releaseLock()
+
+
+	# creates the database (should only be called if the database
+	# does not exist)
+	#
+	# no return value but raise exception if it fails
+	def createStorage(self):
+
+		self._acquireLock()
+
+		self._createStorage()
 
 		self._releaseLock()
 
@@ -2190,6 +2256,8 @@ class Mysql(_Storage):
 		# close connection to the database
 		self._closeConnection()
 
+		# if one table does not exist
+		# => create all tables
 		if (len(internalsResult) == 0
 			or len(optionsResult) == 0
 			or len(nodesResult) == 0
@@ -2200,6 +2268,10 @@ class Mysql(_Storage):
 			or len(alertsAlertLevelsResult) == 0
 			or len(managersResult) == 0):
 			self.createStorage()
+
+		# check if the versions are compatible
+		else:
+			self.checkVersionAndClearConflict()
 
 
 	# internal function that connects to the mysql server
@@ -2326,16 +2398,11 @@ class Mysql(_Storage):
 		self.dbLock.release()
 
 
-	# creates the database (should only be called if the database
-	# does not exist)
+	# internal function that creates the database
+	# (should only be called if the database does not exist)
 	#
 	# no return value but raise exception if it fails
-	def createStorage(self):
-
-		self._acquireLock()
-
-		# connect to the database
-		self._openConnection()
+	def _createStorage(self):
 
 		# create internals table
 		self.cursor.execute("CREATE TABLE internals ("
@@ -2419,6 +2486,72 @@ class Mysql(_Storage):
 
 		# commit all changes
 		self.conn.commit()
+
+
+	# checks the version of the server and the version in the database
+	# and clears every compatibility issue
+	#
+	# no return value but raise exception if it fails
+	def checkVersionAndClearConflict(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		self._openConnection()
+
+		# get version from the current database
+		self.cursor.execute("SELECT value FROM internals "
+			+ "WHERE type = %s",
+			("version", ))
+		result = self.cursor.fetchall()
+
+		# if the versions are not compatible
+		# => delete old database schema
+		if result[0][0] != self.version:
+
+			logging.info("[%s]: Client version "
+				% self.fileName
+				+ "'%.3f' not compatible "
+				% self.version
+				+ "with database version '%.3f'. "
+				% result[0][0]
+				+ "Updating database.")
+
+			# delete all tables from the database to clear the old version
+			self.cursor.execute("DROP TABLE IF EXISTS internals")
+			self.cursor.execute("DROP TABLE IF EXISTS options")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+			self.cursor.execute("DROP TABLE IF EXISTS sensors")
+			self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+			self.cursor.execute("DROP TABLE IF EXISTS alerts")
+			self.cursor.execute("DROP TABLE IF EXISTS managers")
+			self.cursor.execute("DROP TABLE IF EXISTS nodes")
+
+			# create new database
+			self._createStorage()
+
+			# commit all changes
+			self.conn.commit()
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+
+	# creates the database (should only be called if the database
+	# does not exist)
+	#
+	# no return value but raise exception if it fails
+	def createStorage(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		self._openConnection()
+
+		self._createStorage()
 
 		# close connection to the database
 		self._closeConnection()
