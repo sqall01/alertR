@@ -45,6 +45,7 @@ class _Storage():
 	#
 	# return True or False
 	def addAlerts(self, username, alerts):
+		raise NotImplemented("Function not implemented yet.")
 
 
 	# adds/updates the data that is given by the node for
