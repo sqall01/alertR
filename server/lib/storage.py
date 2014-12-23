@@ -2521,8 +2521,8 @@ class Mysql(_Storage):
 					logging.exception("[%s]: Not able to " % self.fileName
 						+ "update hostname of node.")
 
-				# close connection to the database
-				self._closeConnection()
+					# close connection to the database
+					self._closeConnection()
 
 					self._releaseLock()
 
