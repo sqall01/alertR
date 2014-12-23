@@ -1,4 +1,4 @@
-protocol schematics version 0.221
+protocol schematics version 0.22
 
 ---
 
@@ -107,6 +107,7 @@ c->s:	json(
 				message = "registration"
 				payload = dict(
 					type = "request"
+					configuration = "new"/"old"
 					hostname = hostname
 					nodeType = "sensor"
 					sensors = list(
@@ -308,6 +309,7 @@ c->s:	json(
 				message = "registration"
 				payload = dict(
 					type = "request"
+					configuration = "new"/"old"
 					hostname = hostname
 					nodeType = "manager"
 					manager = dict(
@@ -641,6 +643,7 @@ c->s:	json(
 				message = "registration"
 				payload = dict(
 					type = "request"
+					configuration = "new"/"old"
 					hostname = hostname
 					nodeType = "alert"
 					alerts = list(
