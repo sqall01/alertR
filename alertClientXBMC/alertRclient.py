@@ -35,14 +35,6 @@ class GlobalData:
 		# type of this node/client
 		self.nodeType = "alert"
 
-		# path to the configuration file that holds the parameters
-		# that are registered at the server
-		self.registeredFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/config/registered"
-
-		# this flags indicates if the client is already registered or not
-		self.registered = None
-
 		# path to the configuration file of the client
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
 			+ "/config/config.xml"
@@ -195,79 +187,6 @@ if __name__ == '__main__':
 						% section + "is already taken.")				
 
 			globalData.alerts.append(alert)
-
-		# check if the client has already registered itself at the server
-		# with the same data
-		if os.path.exists(globalData.registeredFile):
-
-			regConfigRoot = xml.etree.ElementTree.parse(
-				globalData.registeredFile).getroot()
-
-			hostname = logfile = str(regConfigRoot.find("general").find(
-				"client").attrib["host"])			
-
-			# check if the hostname
-			if (hostname == socket.gethostname()):
-
-				# check all alerts if their data has changed since the
-				# last registration at the server
-				alertCount = 0
-				for item in regConfigRoot.find("alerts").iterfind("alert"):
-					alertCount += 1
-
-					# get values from the file that are registered at
-					# the server
-					tempId = int(item.find("general").attrib["id"])
-					tempDescription = str(item.find("general").attrib[
-						"description"])
-					tempAlertLevels = list()
-					for alertLevelXml in item.iterfind("alertLevel"):
-						tempAlertLevels.append(int(alertLevelXml.text))
-
-					# find alert with the same id parsed from the
-					# regular config file
-					tempAlert = None
-					for alert in globalData.alerts:
-						if alert.id == tempId:
-							tempAlert = alert
-							break
-					if tempAlert == None:					
-						globalData.registered = False
-						break
-
-					# check if the alert data has changed since
-					# the last registration
-					if tempDescription != tempAlert.description:
-						globalData.registered = False
-						break
-
-					# check if the alert levels of the alert
-					# have changed
-					for alertLevel in tempAlert.alertLevels:
-						if not alertLevel in tempAlertLevels:
-							globalData.registered = False
-							break
-					for tempAlertLevel in tempAlertLevels:
-						if not tempAlertLevel in tempAlert.alertLevels:
-							globalData.registered = False
-							break
-					if globalData.registered is False:
-						break
-
-				# check if the count of the alerts has changed
-				if alertCount != len(globalData.alerts):
-					globalData.registered = False
-
-				# check if the registered value has changed
-				# during the checks => if not set it to True
-				if globalData.registered == None:
-					globalData.registered = True
-
-			else:
-				globalData.registered = False
-
-		else:
-			globalData.registered = False
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)

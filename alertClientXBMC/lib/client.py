@@ -14,7 +14,6 @@ import threading
 import logging
 import os
 import base64
-import xml.etree.cElementTree
 import random
 import json
 from alert import AsynchronousAlertExecuter
@@ -90,8 +89,6 @@ class ServerCommunication:
 		self.globalData = globalData
 		self.version = self.globalData.version
 		self.nodeType = self.globalData.nodeType
-		self.registeredFile = self.globalData.registeredFile
-		self.registered = self.globalData.registered
 
 		# time the last message was received by the client
 		self.lastRecv = 0.0
@@ -398,13 +395,6 @@ class ServerCommunication:
 	# internal function to register the node
 	def _registerNode(self):
 
-		# check if node is already registered at server with this
-		# configuration
-		if self.registered is True:
-			configuration = "old"
-		else:
-			configuration = "new"
-
 		# build alerts list for the message
 		alerts = list()
 		for alert in self.alerts:
@@ -419,7 +409,6 @@ class ServerCommunication:
 		try:
 
 			payload = {"type": "request",
-				"configuration": configuration,
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
 				"alerts": alerts}
@@ -485,48 +474,6 @@ class ServerCommunication:
 			logging.exception("[%s]: Receiving registration response failed."
 				% self.fileName)
 			return False
-
-		# check if client was registered before
-		# if not => create registered config file
-		if self.registered is False:
-
-			# create config from the values that were transmitted to server
-			configRoot = xml.etree.cElementTree.Element("config")
-			configGeneral = xml.etree.cElementTree.SubElement(configRoot,
-				"general")
-
-			temp = xml.etree.cElementTree.SubElement(configGeneral,
-				"client")
-			temp.set("host", socket.gethostname())
-
-			configAlerts = xml.etree.cElementTree.SubElement(configRoot,
-				"alerts")
-
-			for i in range(len(self.alerts)):
-
-				tempAlert = xml.etree.cElementTree.SubElement(configAlerts,
-				"alert")
-
-				temp = xml.etree.cElementTree.SubElement(tempAlert,
-				"general")
-				temp.set("id", str(self.alerts[i].id))
-				temp.set("description", str(self.alerts[i].description))
-
-				for alertLevel in self.alerts[i].alertLevels:
-					temp = xml.etree.cElementTree.SubElement(tempAlert,
-						"alertLevel")
-					temp.text = str(alertLevel)
-
-			configTree = xml.etree.cElementTree.ElementTree(configRoot)
-
-			# write config
-			try:
-				configTree.write(self.registeredFile)
-			# if there was an exception in creating the file
-			# log it but do not abort
-			except Exception as e:
-				logging.exception("[%s]: Not able to create registered file." 
-				% self.fileName)
 
 		return True
 
