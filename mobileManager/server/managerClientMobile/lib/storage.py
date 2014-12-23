@@ -270,7 +270,7 @@ class Mysql(_Storage):
 						(sensor.sensorId, ))
 
 					self.cursor.execute("DELETE FROM sensors "
-						+ "WHERE id = %s ",
+						+ "WHERE id = %s",
 						(sensor.sensorId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to delete sensor." 
@@ -293,7 +293,7 @@ class Mysql(_Storage):
 						(alert.alertId, ))
 
 					self.cursor.execute("DELETE FROM alerts "
-						+ "WHERE id = %s ",
+						+ "WHERE id = %s",
 						(alert.alertId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to delete alert." 
@@ -312,7 +312,7 @@ class Mysql(_Storage):
 			if not manager in managers:
 				try:
 					self.cursor.execute("DELETE FROM managers "
-						+ "WHERE id = %s ",
+						+ "WHERE id = %s",
 						(manager.managerId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to delete manager." 
@@ -331,7 +331,7 @@ class Mysql(_Storage):
 			if not node in nodes:
 				try:
 					self.cursor.execute("DELETE FROM nodes "
-						+ "WHERE id = %s ",
+						+ "WHERE id = %s",
 						(node.nodeId, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to delete node." 
@@ -350,7 +350,7 @@ class Mysql(_Storage):
 			if not alertLevel in alertLevels:
 				try:
 					self.cursor.execute("DELETE FROM alertLevels "
-						+ "WHERE alertLevel = %s ",
+						+ "WHERE alertLevel = %s",
 						(alertLevel.level, ))
 				except Exception as e:
 					logging.exception("[%s]: Not able to delete alert level." 
