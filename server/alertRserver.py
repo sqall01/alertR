@@ -29,7 +29,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.22
+		self.version = 0.221
 
 		# list of all sessions that are handled by the server
 		self.serverSessions = list()

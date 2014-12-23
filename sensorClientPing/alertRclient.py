@@ -26,7 +26,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.22
+		self.version = 0.221
 
 		# interval in which a ping should be send when
 		# no data was received/send
