@@ -154,15 +154,10 @@
 					("True" or "False" and works only if smtp is activated)
 				toAddr - email address to which the email should be sent
 					(works only if smtp is activated)
-				triggerAlways - this flag indicates if this alert level should
-					trigger always an alert on all alert clients even if the
-					alerting system is not activated
-					("True" or "False")
 			-->
 			<smtp
 				emailAlert="True"
-				toAddr="youraddress@somehost.de"
-				triggerAlways="True" />
+				toAddr="youraddress@somehost.de" />
 
 		</alertLevel>
 
