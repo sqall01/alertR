@@ -17,6 +17,7 @@ import logging
 import time
 import socket
 import random
+import xml.etree.ElementTree
 
 
 # this class is a global configuration class that holds 
