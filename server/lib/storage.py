@@ -2792,6 +2792,9 @@ class Mysql(_Storage):
 
 					return False
 
+		# commit all changes
+		self.conn.commit()
+
 		# close connection to the database
 		self._closeConnection()
 
