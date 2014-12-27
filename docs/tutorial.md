@@ -93,6 +93,8 @@ sensor_pi, password2
 alert_dbus, password3
 alert_pi, password4
 manager_mobile, password5
+manager_keypad, password6
+alert_xbmc, password7
 
 
 #################### generate self signed certificate ####################
@@ -1268,4 +1270,278 @@ Require valid-user
 sqall@webserver:/var/www/alertR$ htpasswd -c testfile mobile_user
 New password: <SECRET>
 Re-type new password: <SECRET>
+```
+
+
+alertR Manager Client Keypad
+------
+
+```bash
+#################### used hardware ####################
+
+TaoTronics TT-CM05 4,3 Zoll PAL/NTSC Digital MIni TFT LCD Monitor
+
+with a resolution of 320x200 and a usb keypad
+
+#################### configure output ####################
+
+root@raspberrypi:/boot# vim config.txt
+[...]
+sdtv_aspect=1
+sdtv_mode=2
+framebuffer_width=320
+framebuffer_height=240
+
+#################### install packets ####################
+
+root@raspberrypi:/home/pi# pip install urwid
+
+#################### add user for keypad ####################
+
+root@raspberrypi:/home# adduser --disabled-password keypad
+
+#################### configure alertR ####################
+
+root@raspberrypi:/home/keypad/alertR/managerClientKeypad/config# vim config.xml
+
+<?xml version="1.0"?>
+
+<config version="0.221">
+
+	<general>
+
+		<log
+			file="/home/keypad/alertR/managerClientKeypad/logfile.log"
+			level="INFO" />
+
+		<server
+			host="alertR.h4des.org"
+			port="6666"
+			caFile="/home/keypad/alertR/managerClientKeypad/server.crt" />
+
+		<client
+			certificateRequired="False"
+			certFile="none"
+			keyFile="none" />
+
+		<credentials
+			username="manager_keypad"
+			password="password6" />
+
+	</general>
+
+
+	<smtp>
+
+		<general
+			activated="True"
+			fromAddr="alertR@h4des.org"
+			toAddr="mainProblemAddress@someaddress.org" />
+
+		<server
+			host="127.0.0.1"
+			port="25" />
+
+	</smtp>
+
+
+	<manager>
+
+		<general
+			description="keypad manager" />
+
+		<keypad
+			timeDelayedActivation="30">
+
+			<pin>5345</pin>
+			<pin>3245</pin>
+
+		</keypad>
+
+	</manager>
+
+</config>
+
+---
+
+configure and compile shell wrapper program:
+
+root@raspberrypi:/home/keypad/alertR/managerClientKeypad/shellWrapper# vim shellWrapper.c
+[...]
+// change these two lines acording to your configuration
+#define PYTHON27 "/usr/bin/python2.7"
+#define PATHTOSCRIPT "/home/keypad/alertR/managerClientKeypad/alertRclient.py"
+[...]
+
+root@raspberrypi:/home/keypad/alertR/managerClientKeypad/shellWrapper# gcc shellWrapper.c -o shellWrapper
+
+root@raspberrypi:/home/keypad/alertR/managerClientKeypad/shellWrapper# chown keypad:keypad shellWrapper
+
+#################### configure auto login for keypad ####################
+
+change shell for "keypad" user:
+root@raspberrypi:/home/keypad# vim /etc/passwd
+[...]
+keypad:x:1001:1004:,,,:/home/keypad:/home/keypad/alertR/managerClientKeypad/shellWrapper/shellWrapper
+
+configure the system such that "keypad" automatically logs in on tty1:
+
+root@raspberrypi:/etc# vim inittab
+
+change line:
+1:2345:respawn:/sbin/getty --noclear 38400 tty1
+
+to:
+1:2345:respawn:/sbin/getty --autologin keypad --noclear 38400 tty1
+
+With this configuration the keypad manager will be started automatically on tty1 when the host is started. Because of the shell wrapper, the user "keypad" has no shell to fall back and will log out when someone presses ctrl+c or the keypad manager shuts down unexpectedly. Because the tty1 is configured to log in as the user "keypad", the keypad manager will be instantly started again. Therefore we build a kind of "kiosk-mode" for the keypad manager.
+```
+
+
+alertR Alert Client XBMC
+------
+
+```bash
+#################### configure autostart ####################
+
+root@xbmc:/etc/init.d# chmod 775 alertRalarm.sh 
+root@xbmc:/etc/init.d# vim alertRalarm.sh 
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          alertRalarm.py
+# Required-Start:    $all
+# Should-Start:      $all
+# Required-Stop:     $remote_fs $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: h4des.org alertRclient daemon start/stop script
+# Description:       Start/Stop script for the h4des.org alertRclient daemon
+### END INIT INFO
+
+set -e
+
+# change USER to the user which runs the alertRclient
+USER=someUser
+# change DAEMON to the path to run the alertRclient
+DAEMON=/home/someUser/alertClientXBMC/alertRclient.py
+
+NAME=alertRclient.py
+PIDFILE=/var/run/$NAME.pid
+DAEMON_OPTS=""
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+case "$1" in
+        start)
+                echo -n "Starting daemon: "$NAME
+                start-stop-daemon --start --quiet -b --make-pidfile \
+                        --pidfile $PIDFILE --chuid $USER --exec $DAEMON -- $DAEMON_OPTS
+                echo "."
+        ;;
+        stop)
+                echo -n "Stopping daemon: "$NAME
+                start-stop-daemon --stop --pidfile $PIDFILE --verbose \
+                        --retry=TERM/30/KILL/5
+                echo "."
+        ;;
+        *)
+                echo "Usage: "$1" {start|stop}"
+                exit 1
+        ;;
+esac
+
+exit 0
+
+---
+
+root@xbmc:/etc/init.d# update-rc.d alertRalarm.sh defaults
+
+
+#################### configure alertR ####################
+
+someUser@xbmc:~/alertClientXBMC/config# vim config.xml
+
+<?xml version="1.0"?>
+
+<config version="0.221">
+
+	<general>
+
+		<log
+			file="/home/someUser/alertClientXBMC/logfile.log"
+			level="INFO" />
+
+		<server
+			host="alertR.h4des.org"
+			port="6666"
+			caFile="/home/someUser/alertClientXBMC/server.crt" />
+
+		<client
+			certificateRequired="False"
+			certFile="none"
+			keyFile="none" />
+
+		<credentials
+			username="alert_xbmc"
+			password="password7" />
+
+	</general>
+
+
+	<smtp>
+
+		<general
+			activated="True"
+			fromAddr="alertR@h4des.org"
+			toAddr="mainProblemAddress@someaddress.org" />
+
+		<server
+			host="127.0.0.1"
+			port="25" />
+
+	</smtp>
+
+
+	<alerts>
+
+		<alert>
+
+			<general
+				id="0"
+				description="xbmc pause" />
+
+			<alertLevel>1</alertLevel>
+
+			<xbmc
+				host="localhost"
+				port="8080"
+				triggerDelay="10"
+				pausePlayer="True"
+				showMessage="False"
+				displayTime="10000" />
+
+		</alert>
+
+
+		<alert>
+
+			<general
+				id="1"
+				description="xbmc notification" />
+
+			<alertLevel>0</alertLevel>
+
+			<xbmc
+				host="localhost"
+				port="8080"
+				triggerDelay="2"
+				pausePlayer="False"
+				showMessage="True"
+				displayTime="10000" />
+
+		</alert>
+
+	</alerts>
+
+</config>
 ```

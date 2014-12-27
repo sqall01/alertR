@@ -8,3 +8,5 @@ How to use it?
 ======
 
 To use this client you have to configure it first. A commented configuration template file is located inside the "config" folder. The client uses urwid to display all information, so you have to install it first. Whenn configured, just execute the "alertRclient.py".
+
+Nevertheless, a short but more detailed basic example configuration of how to set up the client is given in the document directory ([/docs/tutorial.md](/docs/tutorial.md)).

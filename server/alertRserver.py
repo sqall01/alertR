@@ -242,6 +242,56 @@ if __name__ == '__main__':
 
 			alertLevel.toAddr = str(item.find("smtp").attrib["toAddr"])
 
+
+
+
+
+
+			# TODO
+			# read and parse rules
+			alertLevel.rulesActivated = (str(item.find("rules").attrib[
+				"activated"]).upper() == "TRUE")
+
+			if alertLevel.rulesActivated:
+				rulesRoot = item.find("rules")
+
+
+				if not rulesRoot.find("or") is None:
+					print "or"
+				elif not rulesRoot.find("and") is None:
+
+					currentRule = rulesRoot.find("and")
+
+
+					for xmlSensor in currentRule.iterfind("sensor"):
+
+						print  "sensor"
+
+					for xmlAnd in currentRule.iterfind("and"):
+
+						print "and"
+
+					for xmlAnd in currentRule.iterfind("or"):
+
+						print "or"
+
+				elif not rulesRoot.find("not") is None:
+
+					print "not"
+
+				else:
+					raise ValueError("Rule has no valid entry.")
+
+
+
+
+
+
+
+			print "lot to do"
+			sys.exit(0)
+
+
 			# check if the alert level only exists once
 			for tempAlertLevel in globalData.alertLevels:
 				if tempAlertLevel.level == alertLevel.level:

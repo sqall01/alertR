@@ -37,6 +37,14 @@ class AlertLevel:
 		# should trigger regardless of if the alert system is active or not
 		self.triggerAlways = None
 
+		# this flag tells if the alert level has rules activated
+		# that has to match before an alert is triggered (flag: True) or
+		# if it just triggers when a sensor alert is received (flag: False)
+		self.rulesActivated = None
+
+
+
+
 
 # this class is woken up if a sensor alert is received
 # and executes all necessary steps
