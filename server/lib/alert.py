@@ -102,6 +102,8 @@ class AlertLevel:
 		self.rulesActivated = None
 
 
+		self.rules = list()
+
 
 
 
@@ -137,6 +139,259 @@ class SensorAlertExecuter(threading.Thread):
 
 		# set exit flag as false
 		self.exitFlag = False
+
+
+
+
+
+	def _updateRuleValuesRecursively(self, sensorAlertList,
+		currentRuleElement):
+
+		# check if rule element is of type "sensor"
+		# => update values of rule
+		if currentRuleElement.type == "sensor":
+
+			# get node id of sensor client
+			ruleNodeId = self.storage.getNodeId(
+				currentRuleElement.element.username)
+			if ruleNodeId is None:
+				logging.error("[%s]: Not able to get " % self.fileName
+					+ "node id for sensor to update rule.")
+				return False
+
+			# get sensor id of sensor
+			ruleSensorId = self.storage.getSensorId(ruleNodeId,
+				currentRuleElement.element.remoteSensorId)
+			if ruleSensorId is None:
+				logging.error("[%s]: Not able to get " % self.fileName
+					+ "sensor id for sensor to update rule.")
+				return False
+
+			# update sensor rule element (set as triggered/not triggered)
+			# check if sensor still counts as triggered
+			# => set triggered flag
+			if ((currentRuleElement.timeWhenTriggered
+				+ currentRuleElement.timeTriggeredFor) > time.time()):
+
+				logging.debug("[%s]: Sensor " % self.fileName
+					+ "with id '%d' counts as triggered."
+					% ruleSensorId)
+				# TODO DEBUG
+				print "Sensor with id '%d' counts as triggered."% ruleSensorId
+
+				currentRuleElement.triggered = True
+
+			# if sensor does not count as triggered
+			# => unset triggered flag and
+			# reset time when triggered
+			else:
+
+				logging.debug("[%s]: Sensor " % self.fileName
+					+ "with id '%d' does not count as triggered."
+					% ruleSensorId)
+				# TODO DEBUG
+				print "Sensor with id '%d' does not count as triggered." % ruleSensorId
+
+				currentRuleElement.timeWhenTriggered = 0.0
+				currentRuleElement.triggered = False
+
+			# update sensor rule values with current sensor alerts
+			for sensorAlert in sensorAlertList:
+				sensorAlertNodeId = sensorAlert[2]
+				sensorAlertSensorId = sensorAlert[1]
+				sensorAlertTimeReceived = sensorAlert[3]
+				sensorAlertAlertDelay = sensorAlert[4]
+
+				# check if received sensor alert is triggered by
+				# the sensor of the rule
+				if (sensorAlertNodeId == ruleNodeId
+					and sensorAlertSensorId == ruleSensorId):
+
+					logging.debug("[%s]: Found match " % self.fileName
+						+ "for sensor with id '%d' and sensor in rule."
+						% ruleSensorId)
+
+					# checked if the received sensor alert
+					# is newer than the stored time when triggered
+					# => update time when triggered
+					if ((sensorAlertTimeReceived + sensorAlertAlertDelay)
+						> currentRuleElement.timeWhenTriggered):
+
+						logging.debug("[%s]: New sensor " % self.fileName
+							+ "alert for sensor with id '%d' received."
+							% ruleSensorId)
+						# TODO DEBUG
+						print "New sensor alert for sensor with id '%d' received." % ruleSensorId
+
+						currentRuleElement.timeWhenTriggered = \
+							sensorAlertTimeReceived + sensorAlertAlertDelay
+
+						# check if sensor still counts as triggered
+						# => set triggered flag
+						if ((currentRuleElement.timeWhenTriggered
+							+ currentRuleElement.timeTriggeredFor)
+							> time.time()):
+
+							logging.debug("[%s]: Sensor " % self.fileName
+							+ "with id '%d' counts as triggered."
+							% ruleSensorId)
+							# TODO DEBUG
+							print "Sensor with id '%d' counts as triggered."% ruleSensorId
+
+							currentRuleElement.triggered = True
+
+						# if sensor does not count as triggered
+						# => unset triggered flag and
+						# reset time when triggered
+						else:
+
+							logging.debug("[%s]: Sensor " % self.fileName
+							+ "with id '%d' does not count as triggered."
+							% ruleSensorId)
+							# TODO DEBUG
+							print "Sensor with id '%d' does not count as triggered." % ruleSensorId
+
+							currentRuleElement.timeWhenTriggered = 0.0
+							currentRuleElement.triggered = False
+
+		# check if rule element is of type "rule"
+		# => traverse rule recursively
+		elif currentRuleElement.type == "rule":
+
+			# update values of all rule elements in current rule element
+			for ruleElement in currentRuleElement.element.elements:
+				self._updateRuleValuesRecursively(sensorAlertList,
+					ruleElement)
+
+		else:
+			logging.error("[%s]: Rule element " % self.fileName
+				+ "has an invalid type.")
+			return False
+
+		return True
+
+
+
+
+	def _evaluateRuleRecursively(self, currentRuleElement):
+
+		if currentRuleElement.type == "rule":
+
+			# evaluate "and" rule element
+			if currentRuleElement.element.type == "and":
+
+				andElement = currentRuleElement.element
+
+
+				# TODO
+				# "and" has to be evaluated next <--------------- NEXT
+
+
+
+			# evaluate "or" rule element
+			elif currentRuleElement.element.type == "or":
+
+				orElement = currentRuleElement.element
+
+				# first check all elements if there exist a "not rule" element
+				# that is triggered
+				# => if it does, set current rule element
+				# also as triggered and return
+				# (done for optimization)
+				for element in orElement.elements:
+
+					if element.type == "sensor":
+						and element.triggered = True:
+						currentRuleElement.triggered = True
+						return
+
+				# if there exists no element that is already triggered
+				# => update rule elements and evaluate them
+				for element in orElement.elements:
+
+					# only update rule elements
+					if element.type == "rule":
+						self._evaluateRuleRecursively(element)
+
+						# check if rule element was set to triggered
+						# => if it was, set current rule element
+						# also as triggered and return
+						if element.triggered:
+							currentRuleElement.triggered = True
+							return
+
+			# evaluate "not" rule element
+			elif currentRuleElement.element.type == "not":
+
+				# TODO
+				raise NotImplementedError("Not implemented yet.")
+
+
+
+
+
+
+	def updateRule(self, sensorAlertList, alertLevel):
+
+		logging.debug("[%s]: Updating rule values " % self.fileName
+			+ "for alert level '%d'." % alertLevel.level)
+
+		for ruleElement in alertLevel.rules:
+
+			# update all rule values (sets also the sensors as triggered
+			# or not triggered)
+			if not self._updateRuleValuesRecursively(sensorAlertList,
+				ruleElement):
+				logging.error("[%s]: Not able to update " % self.fileName
+					+ "values for alert level '%d'." % alertLevel.level)
+				return False
+
+
+
+
+
+			# update triggered values
+			self._evaluateRuleRecursively(ruleElement)
+
+
+
+
+
+
+
+
+
+
+
+
+
+		# empty sensor alert list after values are updated in rule
+		del sensorAlertList[:]
+
+
+
+
+
+
+			# TODO
+			# update triggered values
+
+
+
+
+		# TODO
+		# improve by only update rule when sensoralertlist is not empty
+
+
+
+		# TODO
+		# remove all sensor alerts from sensorAlertList when rule updating
+		# is done ( because it can happen that one sensor is used more than
+		# once in the rule)
+
+
+
+
 
 
 	def run(self):
@@ -397,6 +652,10 @@ class SensorAlertExecuter(threading.Thread):
 
 				print sensorAlertToHandle
 
+
+
+				self.updateRule(sensorAlertToHandle[0], sensorAlertToHandle[1])
+
 				'''
 				sensorAlertId = sensorAlertToHandle[0][0]
 				sensorId = sensorAlertToHandle[0][1]
@@ -421,6 +680,9 @@ class SensorAlertExecuter(threading.Thread):
 				#sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
 
 
+
+				# TODO
+				# check alertDelay for triggered sensor alert
 
 
 			time.sleep(0.5)

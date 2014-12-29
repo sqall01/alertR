@@ -144,29 +144,29 @@ def parseRuleRecursively(currentRoot, currentRule):
 			currentRule.elements.append(ruleElement)
 
 			# parse rule starting from the new element
-			parseRule(item, ruleNew)
+			parseRuleRecursively(item, ruleNew)
 
 		# parse all "or" tags
 		for item in currentRoot.iterfind("or"):
 
 			# create a new "or" rule
-			temp = Rule()
-			temp.type = "or"
+			ruleNew = Rule()
+			ruleNew.type = "or"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
-			ruleEle = RuleElement()
-			ruleEle.type = "rule"
-			ruleEle.element = temp
+			ruleElement = RuleElement()
+			ruleElement.type = "rule"
+			ruleElement.element = ruleNew
 			ruleElement.timeTriggeredFor = float(
 				item.attrib["timeTriggeredFor"])
 
 			# add wrapper element to the current rule
-			currentRule.elements.append(ruleEle)
+			currentRule.elements.append(ruleElement)
 
 			# parse rule starting from the new element
-			parseRule(item, temp)
+			parseRuleRecursively(item, ruleNew)
 
 		# parse all "not" tags
 		for item in currentRoot.iterfind("not"):
@@ -184,26 +184,35 @@ def parseRuleRecursively(currentRoot, currentRule):
 # DEBUG
 def printRule(ruleElement, tab):
 
-	for i in range(tab):
-		print "\t",
-	print ("%s (triggeredFor=%.2f)"
-		% (ruleElement.element.type, ruleElement.timeTriggeredFor))
+	if ruleElement.type == "rule":
+		for i in range(tab):
+			print "\t",
+		print ("%s (triggeredFor=%.2f)"
+			% (ruleElement.element.type, ruleElement.timeTriggeredFor))
 
-	for item in ruleElement.element.elements:
+		for item in ruleElement.element.elements:
 
-		if item.type == "rule":
-			printRule(item, tab+1)
-		elif item.type == "sensor":
+			if item.type == "rule":
+				printRule(item, tab+1)
+			elif item.type == "sensor":
 
-			for i in range(tab):
-				print "\t",
-			print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
-				% (item.timeTriggeredFor, item.element.username,
-				item.element.remoteSensorId))
-		else:
-			raise ValueError("Rule has invalid type.")
+				for i in range(tab):
+					print "\t",
+				print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
+					% (item.timeTriggeredFor, item.element.username,
+					item.element.remoteSensorId))
+			else:
+				raise ValueError("Rule has invalid type.")
 
+	elif ruleElement.type == "sensor":
+		for i in range(tab):
+			print "\t",
+		print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
+			% (ruleElement.timeTriggeredFor, ruleElement.element.username,
+			ruleElement.element.remoteSensorId))
 
+	else:
+		raise ValueError("Rule has invalid type.")
 
 
 
@@ -388,18 +397,20 @@ if __name__ == '__main__':
 				orRule = firstRule.find("or")
 				andRule = firstRule.find("and")
 				notRule = firstRule.find("not")
+				sensorRule = firstRule.find("sensor")
 
-				# check that only that only one and/or/not tag is given in rule
-				if ((orRule is None and andRule is None and notRule is None)
-					or (orRule is None and not andRule is None
-						and not notRule is None)
-					or (not orRule is None and andRule is None
-						and not notRule is None)
-					or (not orRule is None and not andRule is None
-						and notRule is None)
-					or (not orRule is None and not andRule is None
-						and not notRule is None)):
-					raise ValueError("Only one or/and/not tag "
+				# check that only one tag is given in rule
+				counter = 0
+				if not orRule is None:
+					counter += 1
+				if not andRule is None:
+					counter += 1
+				if not notRule is None:
+					counter += 1
+				if not sensorRule is None:
+					counter += 1
+				if counter != 1:
+					raise ValueError("Only one or/and/not/sensor tag "
 						+ "is valid as starting part of the rule.")
 
 				# start parsing the rule
@@ -452,9 +463,36 @@ if __name__ == '__main__':
 					# TODO
 					raise NotImplementedError("Not implemented yet.")
 
-				else:
-					raise ValueError("No valid or/and/not tag was found.")
+				elif not sensorRule is None:
 
+					ruleSensorNew = RuleSensor()
+					ruleSensorNew.username = str(sensorRule.attrib["username"])
+					ruleSensorNew.remoteSensorId = int(sensorRule.attrib[
+						"remoteSensorId"])
+
+					# create a wrapper element around the sensor element
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "sensor"
+					ruleElement.element = ruleSensorNew
+					ruleElement.timeTriggeredFor = float(
+						sensorRule.attrib["timeTriggeredFor"])
+
+				else:
+					raise ValueError("No valid or/and/not/sensor "
+						+ "tag was found.")
+
+
+
+
+
+				# TODO
+				# rule element could also be a sensor not only and/or/not
+
+
+
+				alertLevel.rules.append(ruleElement)
 
 
 				# TODO
