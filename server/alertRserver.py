@@ -137,8 +137,6 @@ def parseRuleRecursively(currentRoot, currentRule):
 			ruleElement = RuleElement()
 			ruleElement.type = "rule"
 			ruleElement.element = ruleNew
-			ruleElement.timeTriggeredFor = float(
-				item.attrib["timeTriggeredFor"])
 
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
@@ -159,8 +157,6 @@ def parseRuleRecursively(currentRoot, currentRule):
 			ruleElement = RuleElement()
 			ruleElement.type = "rule"
 			ruleElement.element = ruleNew
-			ruleElement.timeTriggeredFor = float(
-				item.attrib["timeTriggeredFor"])
 
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
@@ -187,8 +183,8 @@ def printRule(ruleElement, tab):
 	if ruleElement.type == "rule":
 		for i in range(tab):
 			print "\t",
-		print ("%s (triggeredFor=%.2f)"
-			% (ruleElement.element.type, ruleElement.timeTriggeredFor))
+		print ("%s"
+			% (ruleElement.element.type))
 
 		for item in ruleElement.element.elements:
 
@@ -425,8 +421,6 @@ if __name__ == '__main__':
 					ruleElement = RuleElement()
 					ruleElement.type = "rule"
 					ruleElement.element = ruleStart
-					ruleElement.timeTriggeredFor = float(
-						orRule.attrib["timeTriggeredFor"])
 
 					parseRuleRecursively(orRule, ruleStart)
 
@@ -441,8 +435,6 @@ if __name__ == '__main__':
 					ruleElement = RuleElement()
 					ruleElement.type = "rule"
 					ruleElement.element = ruleStart
-					ruleElement.timeTriggeredFor = float(
-						andRule.attrib["timeTriggeredFor"])
 
 					parseRuleRecursively(andRule, ruleStart)
 
@@ -457,8 +449,6 @@ if __name__ == '__main__':
 					ruleElement = RuleElement()
 					ruleElement.type = "rule"
 					ruleElement.element = ruleStart
-					ruleElement.timeTriggeredFor = float(
-						notRule.attrib["timeTriggeredFor"])
 
 					# TODO
 					raise NotImplementedError("Not implemented yet.")
