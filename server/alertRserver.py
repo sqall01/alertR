@@ -457,13 +457,9 @@ if __name__ == '__main__':
 
 
 
+				# TODO
 				printRule(ruleElement, 0)
 
-
-
-
-			print "lots to do"
-			sys.exit(0)
 
 
 			# check if the alert level only exists once
