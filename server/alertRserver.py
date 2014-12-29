@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import SensorAlertExecuter, AlertLevel
+from lib import SensorAlertExecuter, AlertLevel, RuleElement, RuleSensor, Rule
 from lib import CSVBackend
 from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
@@ -89,6 +89,126 @@ class GlobalData:
 		# list and lock of/for the asynchronous option executer
 		self.asyncOptionExecutersLock = threading.BoundedSemaphore(1)
 		self.asyncOptionExecuters = list()
+
+
+
+
+
+# TODO
+# parses the alert level rule recursively
+def parseRuleRecursively(currentRoot, currentRule):
+	
+	if currentRoot.tag == "not":
+		# TODO
+		raise NotImplementedError("Not implemented yet.")
+
+	elif (currentRoot.tag == "and"
+		or currentRoot.tag == "or"):
+
+		# parse all "sensor" tags
+		for item in currentRoot.iterfind("sensor"):
+
+			ruleSensorNew = RuleSensor()
+			ruleSensorNew.username = str(item.attrib["username"])
+			ruleSensorNew.remoteSensorId = int(item.attrib["remoteSensorId"])
+
+			# create a wrapper element around the sensor element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "sensor"
+			ruleElement.element = ruleSensorNew
+			ruleElement.timeTriggeredFor = float(
+				item.attrib["timeTriggeredFor"])
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+		# parse all "and" tags
+		for item in currentRoot.iterfind("and"):
+
+			# create a new "and" rule
+			ruleNew = Rule()
+			ruleNew.type = "and"
+
+			# create a wrapper element around the rule
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "rule"
+			ruleElement.element = ruleNew
+			ruleElement.timeTriggeredFor = float(
+				item.attrib["timeTriggeredFor"])
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+			# parse rule starting from the new element
+			parseRule(item, ruleNew)
+
+		# parse all "or" tags
+		for item in currentRoot.iterfind("or"):
+
+			# create a new "or" rule
+			temp = Rule()
+			temp.type = "or"
+
+			# create a wrapper element around the rule
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleEle = RuleElement()
+			ruleEle.type = "rule"
+			ruleEle.element = temp
+			ruleElement.timeTriggeredFor = float(
+				item.attrib["timeTriggeredFor"])
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleEle)
+
+			# parse rule starting from the new element
+			parseRule(item, temp)
+
+		# parse all "not" tags
+		for item in currentRoot.iterfind("not"):
+			# TODO
+			raise NotImplementedError("Not implemented yet.")
+
+
+	else:
+		raise ValueError("No valid tag found in rule.")
+
+
+
+
+# TODO
+# DEBUG
+def printRule(ruleElement, tab):
+
+	for i in range(tab):
+		print "\t",
+	print ("%s (triggeredFor=%.2f)"
+		% (ruleElement.element.type, ruleElement.timeTriggeredFor))
+
+	for item in ruleElement.element.elements:
+
+		if item.type == "rule":
+			printRule(item, tab+1)
+		elif item.type == "sensor":
+
+			for i in range(tab):
+				print "\t",
+			print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
+				% (item.timeTriggeredFor, item.element.username,
+				item.element.remoteSensorId))
+		else:
+			raise ValueError("Rule has invalid type.")
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -253,42 +373,96 @@ if __name__ == '__main__':
 				"activated"]).upper() == "TRUE")
 
 			if alertLevel.rulesActivated:
+
+
+
 				rulesRoot = item.find("rules")
 
 
-				if not rulesRoot.find("or") is None:
-					print "or"
-				elif not rulesRoot.find("and") is None:
-
-					currentRule = rulesRoot.find("and")
+				# TODO
+				# at the moment only for one rule => more rules and id important
+				firstRule = rulesRoot.find("rule")
 
 
-					for xmlSensor in currentRule.iterfind("sensor"):
+				# get start of the rule ("or", "and" or "not")
+				orRule = firstRule.find("or")
+				andRule = firstRule.find("and")
+				notRule = firstRule.find("not")
 
-						print  "sensor"
+				# check that only that only one and/or/not tag is given in rule
+				if ((orRule is None and andRule is None and notRule is None)
+					or (orRule is None and not andRule is None
+						and not notRule is None)
+					or (not orRule is None and andRule is None
+						and not notRule is None)
+					or (not orRule is None and not andRule is None
+						and notRule is None)
+					or (not orRule is None and not andRule is None
+						and not notRule is None)):
+					raise ValueError("Only one or/and/not tag "
+						+ "is valid as starting part of the rule.")
 
-					for xmlAnd in currentRule.iterfind("and"):
+				# start parsing the rule
+				if not orRule is None:
 
-						print "and"
+					ruleStart = Rule()
+					ruleStart.type = "or"
 
-					for xmlAnd in currentRule.iterfind("or"):
+					# create a wrapper element around the rule
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "rule"
+					ruleElement.element = ruleStart
+					ruleElement.timeTriggeredFor = float(
+						orRule.attrib["timeTriggeredFor"])
 
-						print "or"
+					parseRuleRecursively(orRule, ruleStart)
 
-				elif not rulesRoot.find("not") is None:
+				elif not andRule is None:
 
-					print "not"
+					ruleStart = Rule()
+					ruleStart.type = "and"
+
+					# create a wrapper element around the rule
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "rule"
+					ruleElement.element = ruleStart
+					ruleElement.timeTriggeredFor = float(
+						andRule.attrib["timeTriggeredFor"])
+
+					parseRuleRecursively(andRule, ruleStart)
+
+				elif not notRule is None:
+
+					ruleStart = Rule()
+					ruleStart.type = "not"
+
+					# create a wrapper element around the rule
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "rule"
+					ruleElement.element = ruleStart
+					ruleElement.timeTriggeredFor = float(
+						notRule.attrib["timeTriggeredFor"])
+
+					# TODO
+					raise NotImplementedError("Not implemented yet.")
 
 				else:
-					raise ValueError("Rule has no valid entry.")
+					raise ValueError("No valid or/and/not tag was found.")
+
+
+
+				printRule(ruleElement, 0)
 
 
 
 
-
-
-
-			print "lot to do"
+			print "lots to do"
 			sys.exit(0)
 
 

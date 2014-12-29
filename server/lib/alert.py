@@ -14,6 +14,65 @@ import logging
 from server import AsynchronousSender
 
 
+
+
+
+
+
+
+# TODO
+
+
+class RuleSensor:
+
+	def __init__(self):
+
+		def __init__(self):
+
+			self.username = None
+			self.remoteSensorId = None
+
+
+
+class RuleElement:
+
+	def __init__(self):
+
+		# sensor, rule
+		self.type = None 
+
+		self.triggered = False
+
+		# time when rule element triggered
+		self.timeWhenTriggered = 0.0 
+
+		# time how long this element counts as triggered
+		self.timeTriggeredFor = 0.0 
+
+		self.element = None
+
+
+
+class Rule:
+
+	def __init__(self):
+
+		# and, or, not
+		self.type = None
+
+		self.elements = list()
+
+
+
+
+
+
+
+
+
+
+
+
 # this class represents a single alert level that is configured
 class AlertLevel:
 
