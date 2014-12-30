@@ -441,8 +441,66 @@ class SensorAlertExecuter(threading.Thread):
 			# evaluate "not" rule element
 			elif currentRuleElement.element.type == "not":
 
-				# TODO
-				raise NotImplementedError("Not implemented yet.")
+				notElement = currentRuleElement.element
+
+				element = notElement.elements[0]
+
+				# check if sensor rule element and current not rule element
+				# have the same triggered value
+				# => toggle current not element triggered value
+				if element.type == "sensor":
+					if element.triggered == currentRuleElement.triggered:
+
+						logging.debug("[%s]: Sensor rule element with "
+							% self.fileName
+							+ "remote id '%d' and username '%s' has same "
+							% (element.element.remoteSensorId,
+							element.element.username)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# TODO DEBUG
+						print ("Sensor rule element with "
+							+ "remote id '%d' and username '%s' has same "
+							% (element.element.remoteSensorId,
+							element.element.username)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# toggle current rule element triggered value
+						currentRuleElement.triggered = not element.triggered
+
+					return True
+
+				elif element.type == "rule":
+					if not self._evaluateRuleElementsRecursively(element):
+						return False
+
+					# check if rule element was evaluated to the same
+					# triggered value as the not rule element
+					# => toggle current not element triggered value
+					if element.triggered == currentRuleElement.triggered:
+
+						logging.debug("[%s]: Rule element evaluates "
+							% self.fileName
+							+ "to the same triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# TODO DEBUG
+						print ("Rule element evaluates "
+							+ "to the same triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# toggle current rule element triggered value
+						currentRuleElement.triggered = not element.triggered
+
+					return True
+
+				else:
+					logging.error("[%s]: Type of " % self.fileName
+						+ "rule element not valid.")
+					return False
+
 
 
 

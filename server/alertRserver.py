@@ -99,8 +99,109 @@ class GlobalData:
 def parseRuleRecursively(currentRoot, currentRule):
 	
 	if currentRoot.tag == "not":
-		# TODO
-		raise NotImplementedError("Not implemented yet.")
+
+		# get possible elemts
+		orItem = currentRoot.find("or")
+		andItem = currentRoot.find("and")
+		notItem = currentRoot.find("not")
+		sensorItem = currentRoot.find("sensor")
+
+		# check that only one tag is given in not tag
+		# (because only one is allowed)
+		counter = 0
+		if not orItem is None:
+			counter += 1
+		if not andItem is None:
+			counter += 1
+		if not notItem is None:
+			counter += 1
+		if not sensorItem is None:
+			counter += 1
+		if counter != 1:
+			raise ValueError("Only one or/and/not/sensor tag "
+				+ "is valid as starting part of the rule.")
+
+		# start parsing the rule
+		if not orItem is None:
+
+			# create a new "or" rule
+			ruleNew = Rule()
+			ruleNew.type = "or"
+
+			# create a wrapper element around the rule
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "rule"
+			ruleElement.element = ruleNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+			# parse rule starting from the new element
+			parseRuleRecursively(orItem, ruleNew)
+
+		elif not andItem is None:
+
+			# create a new "and" rule
+			ruleNew = Rule()
+			ruleNew.type = "and"
+
+			# create a wrapper element around the rule
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "rule"
+			ruleElement.element = ruleNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+			# parse rule starting from the new element
+			parseRuleRecursively(andItem, ruleNew)
+
+		elif not notItem is None:
+
+			# create a new "not" rule
+			ruleNew = Rule()
+			ruleNew.type = "not"
+
+			# create a wrapper element around the rule
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "rule"
+			ruleElement.element = ruleNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+			# parse rule starting from the new element
+			parseRuleRecursively(notItem, ruleNew)
+
+		elif not sensorItem is None:
+
+			ruleSensorNew = RuleSensor()
+			ruleSensorNew.username = str(sensorItem.attrib["username"])
+			ruleSensorNew.remoteSensorId = int(sensorItem.attrib[
+				"remoteSensorId"])
+
+			# create a wrapper element around the sensor element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "sensor"
+			ruleElement.element = ruleSensorNew
+			ruleElement.timeTriggeredFor = float(
+				sensorItem.attrib["timeTriggeredFor"])
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+		else:
+			raise ValueError("No valid or/and/not/sensor "
+				+ "tag was found.")
+
 
 	elif (currentRoot.tag == "and"
 		or currentRoot.tag == "or"):
@@ -166,9 +267,23 @@ def parseRuleRecursively(currentRoot, currentRule):
 
 		# parse all "not" tags
 		for item in currentRoot.iterfind("not"):
-			# TODO
-			raise NotImplementedError("Not implemented yet.")
 
+			# create a new "not" rule
+			ruleNew = Rule()
+			ruleNew.type = "not"
+
+			# create a wrapper element around the rule
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "rule"
+			ruleElement.element = ruleNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
+			# parse rule starting from the new element
+			parseRuleRecursively(item, ruleNew)
 
 	else:
 		raise ValueError("No valid tag found in rule.")
@@ -450,8 +565,7 @@ if __name__ == '__main__':
 					ruleElement.type = "rule"
 					ruleElement.element = ruleStart
 
-					# TODO
-					raise NotImplementedError("Not implemented yet.")
+					parseRuleRecursively(notRule, ruleStart)
 
 				elif not sensorRule is None:
 
