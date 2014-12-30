@@ -44,7 +44,6 @@ class RuleElement:
 		self.triggered = False
 
 		# time when rule element triggered
-		# (not used by type "rule")
 		self.timeWhenTriggered = 0.0 
 
 		# time how long this element counts as triggered
@@ -169,32 +168,19 @@ class SensorAlertExecuter(threading.Thread):
 					+ "sensor id for sensor to update rule.")
 				return False
 
-			# update sensor rule element (set as triggered/not triggered)
-			# check if sensor still counts as triggered
-			# => set triggered flag
-			if ((currentRuleElement.timeWhenTriggered
-				+ currentRuleElement.timeTriggeredFor) > time.time()):
-
-				logging.debug("[%s]: Sensor " % self.fileName
-					+ "with id '%d' counts as triggered."
-					% ruleSensorId)
-				# TODO DEBUG
-				print "Sensor with id '%d' counts as triggered."% ruleSensorId
-
-				currentRuleElement.triggered = True
-
+			# update sensor rule element (set as not triggered)
 			# if sensor does not count as triggered
-			# => unset triggered flag and
-			# reset time when triggered
-			else:
+			# => unset triggered flag
+			if (((currentRuleElement.timeWhenTriggered
+				+ currentRuleElement.timeTriggeredFor) < time.time())
+				and currentRuleElement.triggered):
 
 				logging.debug("[%s]: Sensor " % self.fileName
-					+ "with id '%d' does not count as triggered."
+					+ "with id '%d' does not count as triggered anymore."
 					% ruleSensorId)
 				# TODO DEBUG
-				print "Sensor with id '%d' does not count as triggered." % ruleSensorId
+				print "Sensor with id '%d' does not count as triggered anymore." % ruleSensorId
 
-				currentRuleElement.timeWhenTriggered = 0.0
 				currentRuleElement.triggered = False
 
 			# update sensor rule values with current sensor alerts
@@ -243,8 +229,7 @@ class SensorAlertExecuter(threading.Thread):
 							currentRuleElement.triggered = True
 
 						# if sensor does not count as triggered
-						# => unset triggered flag and
-						# reset time when triggered
+						# => unset triggered flag
 						else:
 
 							logging.debug("[%s]: Sensor " % self.fileName
@@ -253,7 +238,6 @@ class SensorAlertExecuter(threading.Thread):
 							# TODO DEBUG
 							print "Sensor with id '%d' does not count as triggered." % ruleSensorId
 
-							currentRuleElement.timeWhenTriggered = 0.0
 							currentRuleElement.triggered = False
 
 		# check if rule element is of type "rule"
@@ -290,27 +274,29 @@ class SensorAlertExecuter(threading.Thread):
 
 					# check if sensor element is not triggered
 					# => if it is, set current rule element also as
-					# not triggered and return
+					# not triggered (if it was triggered) and return
 					if element.type == "sensor":
 						if not element.triggered:
 
-							logging.debug("[%s]: Sensor rule element with "
-								% self.fileName
-								+ "remote id '%d' and username '%s' not "
-								% (element.element.remoteSensorId,
-								element.element.username)
-								+ "triggered. Set 'and' rule "
-								+ "also to not triggered.")
+							if currentRuleElement.triggered:
+								logging.debug("[%s]: Sensor rule element with "
+									% self.fileName
+									+ "remote id '%d' and username '%s' not "
+									% (element.element.remoteSensorId,
+									element.element.username)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
 
-							# TODO DEBUG
-							print ("Sensor rule element with "
-								+ "remote id '%d' and username '%s' not "
-								% (element.element.remoteSensorId,
-								element.element.username)
-								+ "triggered. Set 'and' rule "
-								+ "also to not triggered.")
+								# TODO DEBUG
+								print ("Sensor rule element with "
+									+ "remote id '%d' and username '%s' not "
+									% (element.element.remoteSensorId,
+									element.element.username)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
 
-							currentRuleElement.triggered = False
+								currentRuleElement.triggered = False
+
 							return True
 
 					elif element.type == "rule":
@@ -319,20 +305,23 @@ class SensorAlertExecuter(threading.Thread):
 
 						# check if rule element was set to not triggered
 						# => if it was, set current rule element
-						# also as not triggered and return
+						# also as not triggered (when it was triggered)
+						# and return
 						if not element.triggered:
 
-							logging.debug("[%s]: Rule element evaluates "
-								% self.fileName
-								+ "to not triggered. Set 'and' rule "
-								+ "also to not triggered.")
+							if currentRuleElement.triggered:
+								logging.debug("[%s]: Rule element evaluates "
+									% self.fileName
+									+ "to not triggered. Set 'and' rule "
+									+ "also to not triggered.")
 
-							# TODO DEBUG
-							print ("Rule element evaluates "
-								+ "to not triggered. Set 'and' rule "
-								+ "also to not triggered.")
+								# TODO DEBUG
+								print ("Rule element evaluates "
+									+ "to not triggered. Set 'and' rule "
+									+ "also to not triggered.")
 
-							currentRuleElement.triggered = False
+								currentRuleElement.triggered = False
+
 							return True
 
 					else:
@@ -342,19 +331,23 @@ class SensorAlertExecuter(threading.Thread):
 
 				# when this point is reached, every element of the "and"
 				# rule is triggered
-				# => set current element as triggered and return
+				# => set current element as triggered (when not triggered)
+				# and return
+				if not currentRuleElement.triggered:
 
-				logging.debug("[%s]: Each rule element evaluates "
-					% self.fileName
-					+ "to triggered. Set 'and' rule "
-					+ "also to triggered.")
+					logging.debug("[%s]: Each rule element evaluates "
+						% self.fileName
+						+ "to triggered. Set 'and' rule "
+						+ "also to triggered.")
 
-				# TODO DEBUG
-				print ("Each rule element evaluates "
-					+ "to triggered. Set 'and' rule "
-					+ "also to triggered.")
+					# TODO DEBUG
+					print ("Each rule element evaluates "
+						+ "to triggered. Set 'and' rule "
+						+ "also to triggered.")
 
-				currentRuleElement.triggered = True
+					currentRuleElement.triggered = True
+					currentRuleElement.timeWhenTriggered = time.time()
+
 				return True
 
 			# evaluate "or" rule element
@@ -365,30 +358,33 @@ class SensorAlertExecuter(threading.Thread):
 				# first check all elements if there exist a "not rule" element
 				# that is triggered
 				# => if it does, set current rule element
-				# also as triggered and return
+				# also as triggered (if it was not triggered) and return
 				# (done for optimization)
 				for element in orElement.elements:
 
 					if (element.type == "sensor"
 						and element.triggered == True):
 
-						logging.debug("[%s]: Sensor rule element with "
-							% self.fileName
-							+ "remote id '%d' and username '%s' "
-							% (element.element.remoteSensorId,
-							element.element.username)
-							+ "triggered. Set 'or' rule "
-							+ "also to triggered.")
+						if not currentRuleElement.triggered:
+							logging.debug("[%s]: Sensor rule element with "
+								% self.fileName
+								+ "remote id '%d' and username '%s' "
+								% (element.element.remoteSensorId,
+								element.element.username)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
 
-						# TODO DEBUG
-						print ("Sensor rule element with "
-							+ "remote id '%d' and username '%s' "
-							% (element.element.remoteSensorId,
-							element.element.username)
-							+ "triggered. Set 'or' rule "
-							+ "also to triggered.")
+							# TODO DEBUG
+							print ("Sensor rule element with "
+								+ "remote id '%d' and username '%s' "
+								% (element.element.remoteSensorId,
+								element.element.username)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
 
-						currentRuleElement.triggered = True
+							currentRuleElement.triggered = True
+							currentRuleElement.timeWhenTriggered = time.time()
+
 						return True
 
 				# if there exists no element that is already triggered
@@ -402,37 +398,44 @@ class SensorAlertExecuter(threading.Thread):
 
 						# check if rule element was set to triggered
 						# => if it was, set current rule element
-						# also as triggered and return
+						# also as triggered (if it was not triggered)
+						# and return
 						if element.triggered:
 
-							logging.debug("[%s]: Rule element evaluates "
-								% self.fileName
-								+ "to triggered. Set 'or' rule "
-								+ "also to triggered.")
+							if not currentRuleElement.triggered:
+								logging.debug("[%s]: Rule element evaluates "
+									% self.fileName
+									+ "to triggered. Set 'or' rule "
+									+ "also to triggered.")
 
-							# TODO DEBUG
-							print ("Rule element evaluates "
-								+ "to triggered. Set 'or' rule "
-								+ "also to triggered.")
+								# TODO DEBUG
+								print ("Rule element evaluates "
+									+ "to triggered. Set 'or' rule "
+									+ "also to triggered.")
 
-							currentRuleElement.triggered = True
+								currentRuleElement.triggered = True
+								currentRuleElement.timeWhenTriggered = \
+									time.time()
+
 							return True
 
 				# when this point is reached, every element of the "or"
 				# rule is not triggered
-				# => set current element as not triggered and return
+				# => set current element as not triggered (if it was triggered)
+				# and return
+				if currentRuleElement.triggered:
+					logging.debug("[%s]: Each rule element evaluates "
+						% self.fileName
+						+ "to not triggered. Set 'or' rule "
+						+ "also to not triggered.")
 
-				logging.debug("[%s]: Each rule element evaluates "
-					% self.fileName
-					+ "to not triggered. Set 'or' rule "
-					+ "also to not triggered.")
+					# TODO DEBUG
+					print ("Each rule element evaluates "
+						+ "to not triggered. Set 'or' rule "
+						+ "also to not triggered.")
 
-				# TODO DEBUG
-				print ("Each rule element evaluates "
-					+ "to not triggered. Set 'or' rule "
-					+ "also to not triggered.")
+					currentRuleElement.triggered = False
 
-				currentRuleElement.triggered = False
 				return True
 
 			# evaluate "not" rule element
@@ -446,7 +449,7 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
-	def updateRule(self, sensorAlertList, alertLevel):
+	def _updateRule(self, sensorAlertList, alertLevel):
 
 		logging.debug("[%s]: Updating rule values " % self.fileName
 			+ "for alert level '%d'." % alertLevel.level)
@@ -466,12 +469,6 @@ class SensorAlertExecuter(threading.Thread):
 				logging.error("[%s]: Not able to evaluate " % self.fileName
 					+ "rule for alert level '%d'." % alertLevel.level)
 				return False
-
-
-
-
-
-
 
 
 
@@ -504,6 +501,76 @@ class SensorAlertExecuter(threading.Thread):
 		# once in the rule)
 
 
+
+
+
+
+	def _evaluateRules(self, alertLevel):
+
+		logging.debug("[%s]: Evaluate rules " % self.fileName
+			+ "for alert level '%d'." % alertLevel.level)
+
+		# check only the "root" element of the last rule
+		# if it has triggered, because only the last rule in the rules chain
+		# have to be triggered to trigger the alert level (all other rules
+		# in the chain had to be triggered at some point in time to trigger
+		# the last rule)
+		ruleElement = alertLevel.rules[-1]
+		return ruleElement.triggered
+
+
+
+
+
+
+
+	def _checkRulesCanTriggerRecursively(self, currentRuleElement):
+
+
+		# check if rule element is of type "sensor"
+		# => return if it is triggered
+		if currentRuleElement.type == "sensor":
+
+			return currentRuleElement.triggered
+
+		# check if rule element is of type "rule"
+		# => traverse rule recursively
+		elif currentRuleElement.type == "rule":
+
+			# check all rule elements of the current rule element
+			# if one rule element is triggered => rule can still trigger
+			for ruleElement in currentRuleElement.element.elements:
+
+				if self._checkRulesCanTriggerRecursively(ruleElement):
+					return True
+
+			# when this point is reached, no rule element of the current one
+			# is triggered
+			return False
+
+		else:
+			logging.error("[%s]: Rule element " % self.fileName
+				+ "has an invalid type while checking.")
+			return False
+
+
+
+
+
+	def _checkRulesCanTrigger(self, alertLevel):
+
+		logging.debug("[%s]: Check if rules of " % self.fileName
+			+ "alert level '%d' can trigger." % alertLevel.level)
+
+		# check all rules if they can still trigger
+		# if one of the rules chain can => complete rules chain can trigger
+		for ruleElement in alertLevel.rules:
+			if self._checkRulesCanTriggerRecursively(ruleElement):
+				return True
+
+		# when this point is reached, no rule of the rules chain can trigger
+		# at the moment
+		return False
 
 
 
@@ -766,9 +833,54 @@ class SensorAlertExecuter(threading.Thread):
 
 				print sensorAlertToHandle
 
+				sensorAlertList = sensorAlertToHandle[0]
+				alertLevel = sensorAlertToHandle[1]
+
+				self._updateRule(sensorAlertList, alertLevel)
 
 
-				self.updateRule(sensorAlertToHandle[0], sensorAlertToHandle[1])
+
+
+
+				if self._evaluateRules(alertLevel):
+
+					logging.info("[%s]: Alert level " % self.fileName
+						+ "'%d' rules have triggered." % alertLevel.level)
+
+
+
+					# TODO
+					# send sensor alerts to clients (and email)
+					print "Rule has triggered"
+
+
+
+					# remove sensor alert to handle from list
+					# after it has triggered
+					sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
+
+				else:
+					print "Rule has not triggered (yet)"
+
+					if not self._checkRulesCanTrigger(alertLevel):
+
+						logging.debug("[%s]: Alert level " % self.fileName
+							+ "'%d' rules can not trigger at the moment."
+							% alertLevel.level)
+
+
+						print "Rule can not trigger at the moment"
+
+						# remove sensor alert to handle from list
+						# when it can not trigger at the current state
+						sensorAlertsToHandleWithRules.remove(
+							sensorAlertToHandle)
+
+
+					# TODO
+					# check if each element of rule is false => remove sensor alert
+
+
 
 				'''
 				sensorAlertId = sensorAlertToHandle[0][0]
