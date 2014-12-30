@@ -1,7 +1,7 @@
 alertR Sensor Client Development
 ======
 
-This client is only for developer. It has no purpose than to emulate sensors and to trigger them via the keyboard input. This means it can not be used as a daemon and have to be actively used.
+This client is only for developers. It has no purpose than to emulate sensors and to trigger them via keyboard input. This means it can not be used as a daemon and have to be actively used.
 
 
 How to use it?
