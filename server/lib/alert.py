@@ -22,6 +22,19 @@ from server import AsynchronousSender
 
 # TODO
 
+class RuleMonthday:
+
+	def __init__(self):
+
+		def __init__(self):
+
+			# local/utc
+			self.time = None
+
+			# 1 - 31
+			self.monthday = None
+
+
 class RuleWeekday:
 
 	def __init__(self):
@@ -51,7 +64,7 @@ class RuleElement:
 
 	def __init__(self):
 
-		# sensor, rule, weekday
+		# sensor, rule, weekday, monthday
 		self.type = None 
 
 		self.triggered = False
@@ -60,7 +73,7 @@ class RuleElement:
 		self.timeWhenTriggered = 0.0 
 
 		# time how long this element counts as triggered
-		# (not used by type "rule", "weekday")
+		# (not used by type "rule", "weekday", "monthday")
 		self.timeTriggeredFor = 0.0 
 
 		self.element = None
@@ -336,6 +349,89 @@ class SensorAlertExecuter(threading.Thread):
 					+ "'time' attribute in weekday tag.")
 				return False
 
+		# check if rule element is of type "monthday"
+		# => update values of rule according to the date
+		elif currentRuleElement.type == "monthday":
+
+			monthdayElement = currentRuleElement.element
+
+			if monthdayElement.time == "local":
+
+				# check if month day matches
+				# => set rule element as triggered if it is not yet triggered
+				if monthdayElement.monthday == time.localtime().tm_mday:
+					
+					# check if rule element is not triggered
+					# => set as triggered
+					if not currentRuleElement.triggered:
+
+						logging.debug("[%s]: Month day " % self.fileName
+							+ "with value '%d' for '%s' counts as triggered."
+							% (monthdayElement.monthday, monthdayElement.time))
+						# TODO DEBUG
+						print ("Month day "
+							+ "with value '%d' for '%s' counts as triggered."
+							% (monthdayElement.monthday, monthdayElement.time))
+
+						currentRuleElement.triggered = True
+
+				# check if rule element is triggered
+				# => set rule element as not triggered
+				elif currentRuleElement.triggered:
+
+					logging.debug("[%s]: Month day " % self.fileName
+						+ "with value '%d' for '%s' no longer "
+						% (monthdayElement.monthday, monthdayElement.time)
+						+ "counts as triggered.")
+					# TODO DEBUG
+					print ("Month day "
+						+ "with value '%d' for '%s' no longer "
+						% (monthdayElement.monthday, monthdayElement.time)
+						+ "counts as triggered.")
+
+					currentRuleElement.triggered = False
+
+			elif monthdayElement.time == "utc":
+
+				# check if month day matches
+				# => set rule element as triggered if it is not yet triggered
+				if monthdayElement.monthday == time.gmtime().tm_mday:
+
+					# check if rule element is not triggered
+					# => set as triggered
+					if not currentRuleElement.triggered:
+
+						logging.debug("[%s]: Month day " % self.fileName
+							+ "with value '%d' for '%s' counts as triggered."
+							% (monthdayElement.monthday, monthdayElement.time))
+						# TODO DEBUG
+						print ("Month day "
+							+ "with value '%d' for '%s' counts as triggered."
+							% (monthdayElement.monthday, monthdayElement.time))
+
+						currentRuleElement.triggered = True
+
+				# check if rule element is triggered
+				# => set rule element as not triggered
+				elif currentRuleElement.triggered:
+
+					logging.debug("[%s]: Month day " % self.fileName
+						+ "with value '%d' for '%s' no longer "
+						% (monthdayElement.monthday, monthdayElement.time)
+						+ "counts as triggered.")
+					# TODO DEBUG
+					print ("Month day "
+						+ "with value '%d' for '%s' no longer "
+						% (monthdayElement.monthday, monthdayElement.time)
+						+ "counts as triggered.")
+
+					currentRuleElement.triggered = False
+
+			else:
+				logging.error("[%s]: No valid value for " % self.fileName
+					+ "'time' attribute in monthday tag.")
+				return False
+
 		# check if rule element is of type "rule"
 		# => traverse rule recursively
 		elif currentRuleElement.type == "rule":
@@ -415,6 +511,34 @@ class SensorAlertExecuter(threading.Thread):
 								print ("Week day rule element "
 									+ "with value '%d' for '%s' not "
 									% (element.element.weekday,
+									element.element.time)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
+
+								currentRuleElement.triggered = False
+
+							return True
+
+					# check if monthday element is not triggered
+					# => if it is, set current rule element also as
+					# not triggered (if it was triggered) and return
+					elif element.type == "monthday":
+
+						if not element.triggered:
+
+							if currentRuleElement.triggered:
+								logging.debug("[%s]: Month day rule element "
+									% self.fileName
+									+ "with value '%d' for '%s' not "
+									% (element.element.monthday,
+									element.element.time)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
+
+								# TODO DEBUG
+								print ("Month day rule element "
+									+ "with value '%d' for '%s' not "
+									% (element.element.monthday,
 									element.element.time)
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
@@ -536,6 +660,31 @@ class SensorAlertExecuter(threading.Thread):
 
 						return True
 
+					elif (element.type == "monthday"
+						and element.triggered == True):
+
+						if not currentRuleElement.triggered:
+							logging.debug("[%s]: Month day rule element with "
+								% self.fileName
+								+ "value '%d' for '%s' "
+								% (element.element.monthday,
+								element.element.time)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
+
+							# TODO DEBUG
+							print ("Month day rule element with "
+								+ "value '%d' for '%s' "
+								% (element.element.monthday,
+								element.element.time)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
+
+							currentRuleElement.triggered = True
+							currentRuleElement.timeWhenTriggered = time.time()
+
+						return True
+
 				# if there exists no element that is already triggered
 				# => update rule elements and evaluate them
 				for element in orElement.elements:
@@ -639,6 +788,33 @@ class SensorAlertExecuter(threading.Thread):
 						print ("Week day rule element with "
 							+ "value '%d' for '%s' has same "
 							% (element.element.weekday,
+							element.element.time)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# toggle current rule element triggered value
+						currentRuleElement.triggered = not element.triggered
+
+					return True
+
+				# check if month day rule element and current not rule element
+				# have the same triggered value
+				# => toggle current not element triggered value
+				elif element.type == "monthday":
+					if element.triggered == currentRuleElement.triggered:
+
+						logging.debug("[%s]: Month day rule element with "
+							% self.fileName
+							+ "value '%d' for '%s' has same "
+							% (element.element.monthday,
+							element.element.time)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# TODO DEBUG
+						print ("Month day rule element with "
+							+ "value '%d' for '%s' has same "
+							% (element.element.monthday,
 							element.element.time)
 							+ "triggered value as 'not' rule. "
 							+ "Toggle triggered value of 'not' rule.")
@@ -773,6 +949,12 @@ class SensorAlertExecuter(threading.Thread):
 		# check if rule element is of type "weekday"
 		# => return if it is triggered
 		elif currentRuleElement.type == "weekday":
+
+			return currentRuleElement.triggered
+
+		# check if rule element is of type "monthday"
+		# => return if it is triggered
+		elif currentRuleElement.type == "monthday":
 
 			return currentRuleElement.triggered
 

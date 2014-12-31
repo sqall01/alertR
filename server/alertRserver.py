@@ -12,7 +12,7 @@ import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import SensorAlertExecuter, AlertLevel, Rule, RuleElement, \
-	RuleSensor, RuleWeekday
+	RuleSensor, RuleWeekday, RuleMonthday
 from lib import CSVBackend
 from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
@@ -107,6 +107,7 @@ def parseRuleRecursively(currentRoot, currentRule):
 		notItem = currentRoot.find("not")
 		sensorItem = currentRoot.find("sensor")
 		weekdayItem = currentRoot.find("weekday")
+		monthdayItem = currentRoot.find("monthday")
 
 		# check that only one tag is given in not tag
 		# (because only one is allowed)
@@ -120,6 +121,8 @@ def parseRuleRecursively(currentRoot, currentRule):
 		if not sensorItem is None:
 			counter += 1
 		if not weekdayItem is None:
+			counter += 1
+		if not monthdayItem is None:
 			counter += 1
 		if counter != 1:
 			raise ValueError("Only one tag is valid inside a 'not' tag.")
@@ -230,12 +233,60 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
+		elif not monthdayItem is None:
+
+			ruleMonthdayNew = RuleMonthday()
+
+			# get time attribute and check if valid
+			ruleMonthdayNew.time = str(monthdayItem.attrib["time"])
+			if (ruleMonthdayNew.time != "local" and
+				ruleMonthdayNew.time != "utc"):
+				raise ValueError("No valid value for 'time' attribute "
+					+ "in monthday tag.")
+
+			# get monthday attribute and check if valid
+			ruleMonthdayNew.monthday = int(monthdayItem.attrib[
+				"monthday"])
+			if (ruleMonthdayNew.monthday < 1 or
+				ruleMonthdayNew.monthday > 31):
+				raise ValueError("No valid value for 'monthday' "
+					+ "attribute in monthday tag.")
+
+			# create a wrapper element around the monthday element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "monthday"
+			ruleElement.element = ruleMonthdayNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
 		else:
 			raise ValueError("No valid tag was found.")
 
 
 	elif (currentRoot.tag == "and"
 		or currentRoot.tag == "or"):
+
+		# parse all "sensor" tags
+		for item in currentRoot.iterfind("sensor"):
+
+			ruleSensorNew = RuleSensor()
+			ruleSensorNew.username = str(item.attrib["username"])
+			ruleSensorNew.remoteSensorId = int(item.attrib["remoteSensorId"])
+
+			# create a wrapper element around the sensor element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "sensor"
+			ruleElement.element = ruleSensorNew
+			ruleElement.timeTriggeredFor = float(
+				item.attrib["timeTriggeredFor"])
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
 
 		# parse all "weekday" tags
 		for item in currentRoot.iterfind("weekday"):
@@ -267,21 +318,32 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
-		# parse all "sensor" tags
-		for item in currentRoot.iterfind("sensor"):
+		# parse all "monthday" tags
+		for item in currentRoot.iterfind("monthday"):
 
-			ruleSensorNew = RuleSensor()
-			ruleSensorNew.username = str(item.attrib["username"])
-			ruleSensorNew.remoteSensorId = int(item.attrib["remoteSensorId"])
+			ruleMonthdayNew = RuleMonthday()
 
-			# create a wrapper element around the sensor element
+			# get time attribute and check if valid
+			ruleMonthdayNew.time = str(item.attrib["time"])
+			if (ruleMonthdayNew.time != "local" and
+				ruleMonthdayNew.time != "utc"):
+				raise ValueError("No valid value for 'time' attribute "
+					+ "in monthday tag.")
+
+			# get monthday attribute and check if valid
+			ruleMonthdayNew.monthday = int(item.attrib[
+				"monthday"])
+			if (ruleMonthdayNew.monthday < 1 or
+				ruleMonthdayNew.monthday > 31):
+				raise ValueError("No valid value for 'monthday' "
+					+ "attribute in monthday tag.")
+
+			# create a wrapper element around the monthday element
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "sensor"
-			ruleElement.element = ruleSensorNew
-			ruleElement.timeTriggeredFor = float(
-				item.attrib["timeTriggeredFor"])
+			ruleElement.type = "monthday"
+			ruleElement.element = ruleMonthdayNew
 
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
@@ -366,7 +428,7 @@ def printRule(ruleElement, tab):
 
 			if item.type == "rule":
 				printRule(item, tab+1)
-				
+
 			elif item.type == "sensor":
 
 				for i in range(tab):
@@ -382,6 +444,14 @@ def printRule(ruleElement, tab):
 				print ("weekday (time=%s, weekday=%d)"
 					% (item.element.time,
 					item.element.weekday))
+
+			elif item.type == "monthday":
+
+				for i in range(tab):
+					print "\t",
+				print ("monthday (time=%s, monthday=%d)"
+					% (item.element.time,
+					item.element.monthday))
 
 			else:
 				raise ValueError("Rule has invalid type: '%s'."
@@ -400,6 +470,13 @@ def printRule(ruleElement, tab):
 		print ("weekday (time=%s, weekday=%d)"
 			% (ruleElement.element.time,
 			ruleElement.element.weekday))
+
+	elif ruleElement.type == "monthday":
+		for i in range(tab):
+			print "\t",
+		print ("monthday (time=%s, monthday=%d)"
+			% (ruleElement.element.time,
+			ruleElement.element.monthday))
 
 	else:
 		raise ValueError("Rule has invalid type: '%s'." % ruleElement.type)
@@ -589,6 +666,7 @@ if __name__ == '__main__':
 				notRule = firstRule.find("not")
 				sensorRule = firstRule.find("sensor")
 				weekdayRule = firstRule.find("weekday")
+				monthdayRule = firstRule.find("monthday")
 
 				# check that only one tag is given in rule
 				counter = 0
@@ -601,6 +679,8 @@ if __name__ == '__main__':
 				if not sensorRule is None:
 					counter += 1
 				if not weekdayRule is None:
+					counter += 1
+				if not monthdayRule is None:
 					counter += 1
 				if counter != 1:
 					raise ValueError("Only one tag "
@@ -690,6 +770,32 @@ if __name__ == '__main__':
 					ruleElement = RuleElement()
 					ruleElement.type = "weekday"
 					ruleElement.element = ruleWeekdayNew
+
+				elif not monthdayRule is None:
+
+					ruleMonthdayNew = RuleMonthday()
+
+					# get time attribute and check if valid
+					ruleMonthdayNew.time = str(monthdayRule.attrib["time"])
+					if (ruleMonthdayNew.time != "local" and
+						ruleMonthdayNew.time != "utc"):
+						raise ValueError("No valid value for 'time' attribute "
+							+ "in monthday tag.")
+
+					# get monthday attribute and check if valid
+					ruleMonthdayNew.monthday = int(monthdayRule.attrib[
+						"monthday"])
+					if (ruleMonthdayNew.monthday < 1 or
+						ruleMonthdayNew.monthday > 31):
+						raise ValueError("No valid value for 'monthday' "
+							+ "attribute in monthday tag.")
+
+					# create a wrapper element around the sensor element
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "monthday"
+					ruleElement.element = ruleMonthdayNew
 
 				else:
 					raise ValueError("No valid tag was found.")
