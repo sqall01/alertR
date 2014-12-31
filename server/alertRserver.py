@@ -11,7 +11,8 @@ import sys
 import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import SensorAlertExecuter, AlertLevel, RuleElement, RuleSensor, Rule
+from lib import SensorAlertExecuter, AlertLevel, Rule, RuleElement, \
+	RuleSensor, RuleWeekday
 from lib import CSVBackend
 from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
@@ -105,6 +106,7 @@ def parseRuleRecursively(currentRoot, currentRule):
 		andItem = currentRoot.find("and")
 		notItem = currentRoot.find("not")
 		sensorItem = currentRoot.find("sensor")
+		weekdayItem = currentRoot.find("weekday")
 
 		# check that only one tag is given in not tag
 		# (because only one is allowed)
@@ -117,9 +119,10 @@ def parseRuleRecursively(currentRoot, currentRule):
 			counter += 1
 		if not sensorItem is None:
 			counter += 1
+		if not weekdayItem is None:
+			counter += 1
 		if counter != 1:
-			raise ValueError("Only one or/and/not/sensor tag "
-				+ "is valid as starting part of the rule.")
+			raise ValueError("Only one tag is valid inside a 'not' tag.")
 
 		# start parsing the rule
 		if not orItem is None:
@@ -198,13 +201,71 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
+		elif not weekdayItem is None:
+
+			ruleWeekdayNew = RuleWeekday()
+
+			# get time attribute and check if valid
+			ruleWeekdayNew.time = str(weekdayItem.attrib["time"])
+			if (ruleWeekdayNew.time != "local" and
+				ruleWeekdayNew.time != "utc"):
+				raise ValueError("No valid value for 'time' attribute "
+					+ "in weekday tag.")
+
+			# get weekday attribute and check if valid
+			ruleWeekdayNew.weekday = int(weekdayItem.attrib[
+				"weekday"])
+			if (ruleWeekdayNew.weekday < 0 or
+				ruleWeekdayNew.weekday > 6):
+				raise ValueError("No valid value for 'weekday' "
+					+ "attribute in weekday tag.")
+
+			# create a wrapper element around the weekday element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "weekday"
+			ruleElement.element = ruleWeekdayNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
 		else:
-			raise ValueError("No valid or/and/not/sensor "
-				+ "tag was found.")
+			raise ValueError("No valid tag was found.")
 
 
 	elif (currentRoot.tag == "and"
 		or currentRoot.tag == "or"):
+
+		# parse all "weekday" tags
+		for item in currentRoot.iterfind("weekday"):
+
+			ruleWeekdayNew = RuleWeekday()
+
+			# get time attribute and check if valid
+			ruleWeekdayNew.time = str(item.attrib["time"])
+			if (ruleWeekdayNew.time != "local" and
+				ruleWeekdayNew.time != "utc"):
+				raise ValueError("No valid value for 'time' attribute "
+					+ "in weekday tag.")
+
+			# get weekday attribute and check if valid
+			ruleWeekdayNew.weekday = int(item.attrib[
+				"weekday"])
+			if (ruleWeekdayNew.weekday < 0 or
+				ruleWeekdayNew.weekday > 6):
+				raise ValueError("No valid value for 'weekday' "
+					+ "attribute in weekday tag.")
+
+			# create a wrapper element around the weekday element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "weekday"
+			ruleElement.element = ruleWeekdayNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
 
 		# parse all "sensor" tags
 		for item in currentRoot.iterfind("sensor"):
@@ -305,6 +366,7 @@ def printRule(ruleElement, tab):
 
 			if item.type == "rule":
 				printRule(item, tab+1)
+				
 			elif item.type == "sensor":
 
 				for i in range(tab):
@@ -312,8 +374,18 @@ def printRule(ruleElement, tab):
 				print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
 					% (item.timeTriggeredFor, item.element.username,
 					item.element.remoteSensorId))
+
+			elif item.type == "weekday":
+
+				for i in range(tab):
+					print "\t",
+				print ("weekday (time=%s, weekday=%d)"
+					% (item.element.time,
+					item.element.weekday))
+
 			else:
-				raise ValueError("Rule has invalid type.")
+				raise ValueError("Rule has invalid type: '%s'."
+					% ruleElement.type)
 
 	elif ruleElement.type == "sensor":
 		for i in range(tab):
@@ -322,8 +394,15 @@ def printRule(ruleElement, tab):
 			% (ruleElement.timeTriggeredFor, ruleElement.element.username,
 			ruleElement.element.remoteSensorId))
 
+	elif ruleElement.type == "weekday":
+		for i in range(tab):
+			print "\t",
+		print ("weekday (time=%s, weekday=%d)"
+			% (ruleElement.element.time,
+			ruleElement.element.weekday))
+
 	else:
-		raise ValueError("Rule has invalid type.")
+		raise ValueError("Rule has invalid type: '%s'." % ruleElement.type)
 
 
 
@@ -509,6 +588,7 @@ if __name__ == '__main__':
 				andRule = firstRule.find("and")
 				notRule = firstRule.find("not")
 				sensorRule = firstRule.find("sensor")
+				weekdayRule = firstRule.find("weekday")
 
 				# check that only one tag is given in rule
 				counter = 0
@@ -520,8 +600,10 @@ if __name__ == '__main__':
 					counter += 1
 				if not sensorRule is None:
 					counter += 1
+				if not weekdayRule is None:
+					counter += 1
 				if counter != 1:
-					raise ValueError("Only one or/and/not/sensor tag "
+					raise ValueError("Only one tag "
 						+ "is valid as starting part of the rule.")
 
 				# start parsing the rule
@@ -583,9 +665,34 @@ if __name__ == '__main__':
 					ruleElement.timeTriggeredFor = float(
 						sensorRule.attrib["timeTriggeredFor"])
 
+				elif not weekdayRule is None:
+
+					ruleWeekdayNew = RuleWeekday()
+
+					# get time attribute and check if valid
+					ruleWeekdayNew.time = str(weekdayRule.attrib["time"])
+					if (ruleWeekdayNew.time != "local" and
+						ruleWeekdayNew.time != "utc"):
+						raise ValueError("No valid value for 'time' attribute "
+							+ "in weekday tag.")
+
+					# get weekday attribute and check if valid
+					ruleWeekdayNew.weekday = int(weekdayRule.attrib[
+						"weekday"])
+					if (ruleWeekdayNew.weekday < 0 or
+						ruleWeekdayNew.weekday > 6):
+						raise ValueError("No valid value for 'weekday' "
+							+ "attribute in weekday tag.")
+
+					# create a wrapper element around the sensor element
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "weekday"
+					ruleElement.element = ruleWeekdayNew
+
 				else:
-					raise ValueError("No valid or/and/not/sensor "
-						+ "tag was found.")
+					raise ValueError("No valid tag was found.")
 
 
 

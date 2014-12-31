@@ -22,6 +22,19 @@ from server import AsynchronousSender
 
 # TODO
 
+class RuleWeekday:
+
+	def __init__(self):
+
+		def __init__(self):
+
+			# local/utc
+			self.time = None
+
+			# 0: Monday
+			# 6: Sunday
+			self.weekday = None
+
 
 class RuleSensor:
 
@@ -38,7 +51,7 @@ class RuleElement:
 
 	def __init__(self):
 
-		# sensor, rule
+		# sensor, rule, weekday
 		self.type = None 
 
 		self.triggered = False
@@ -47,7 +60,7 @@ class RuleElement:
 		self.timeWhenTriggered = 0.0 
 
 		# time how long this element counts as triggered
-		# (not used by type "rule")
+		# (not used by type "rule", "weekday")
 		self.timeTriggeredFor = 0.0 
 
 		self.element = None
@@ -221,8 +234,8 @@ class SensorAlertExecuter(threading.Thread):
 							> time.time()):
 
 							logging.debug("[%s]: Sensor " % self.fileName
-							+ "with id '%d' counts as triggered."
-							% ruleSensorId)
+								+ "with id '%d' counts as triggered."
+								% ruleSensorId)
 							# TODO DEBUG
 							print "Sensor with id '%d' counts as triggered."% ruleSensorId
 
@@ -239,6 +252,89 @@ class SensorAlertExecuter(threading.Thread):
 							print "Sensor with id '%d' does not count as triggered." % ruleSensorId
 
 							currentRuleElement.triggered = False
+
+		# check if rule element is of type "weekday"
+		# => update values of rule according to the date
+		elif currentRuleElement.type == "weekday":
+
+			weekdayElement = currentRuleElement.element
+
+			if weekdayElement.time == "local":
+
+				# check if week day matches
+				# => set rule element as triggered if it is not yet triggered
+				if weekdayElement.weekday == time.localtime().tm_wday:
+					
+					# check if rule element is not triggered
+					# => set as triggered
+					if not currentRuleElement.triggered:
+
+						logging.debug("[%s]: Week day " % self.fileName
+							+ "with value '%d' for '%s' counts as triggered."
+							% (weekdayElement.weekday, weekdayElement.time))
+						# TODO DEBUG
+						print ("Week day "
+							+ "with value '%d' for '%s' counts as triggered."
+							% (weekdayElement.weekday, weekdayElement.time))
+
+						currentRuleElement.triggered = True
+
+				# check if rule element is triggered
+				# => set rule element as not triggered
+				elif currentRuleElement.triggered:
+
+					logging.debug("[%s]: Week day " % self.fileName
+						+ "with value '%d' for '%s' no longer "
+						% (weekdayElement.weekday, weekdayElement.time)
+						+ "counts as triggered.")
+					# TODO DEBUG
+					print ("Week day "
+						+ "with value '%d' for '%s' no longer "
+						% (weekdayElement.weekday, weekdayElement.time)
+						+ "counts as triggered.")
+
+					currentRuleElement.triggered = False
+
+			elif weekdayElement.time == "utc":
+
+				# check if week day matches
+				# => set rule element as triggered if it is not yet triggered
+				if weekdayElement.weekday == time.gmtime().tm_wday:
+
+					# check if rule element is not triggered
+					# => set as triggered
+					if not currentRuleElement.triggered:
+
+						logging.debug("[%s]: Week day " % self.fileName
+							+ "with value '%d' for '%s' counts as triggered."
+							% (weekdayElement.weekday, weekdayElement.time))
+						# TODO DEBUG
+						print ("Week day "
+							+ "with value '%d' for '%s' counts as triggered."
+							% (weekdayElement.weekday, weekdayElement.time))
+
+						currentRuleElement.triggered = True
+
+				# check if rule element is triggered
+				# => set rule element as not triggered
+				elif currentRuleElement.triggered:
+
+					logging.debug("[%s]: Week day " % self.fileName
+						+ "with value '%d' for '%s' no longer "
+						% (weekdayElement.weekday, weekdayElement.time)
+						+ "counts as triggered.")
+					# TODO DEBUG
+					print ("Week day "
+						+ "with value '%d' for '%s' no longer "
+						% (weekdayElement.weekday, weekdayElement.time)
+						+ "counts as triggered.")
+
+					currentRuleElement.triggered = False
+
+			else:
+				logging.error("[%s]: No valid value for " % self.fileName
+					+ "'time' attribute in weekday tag.")
+				return False
 
 		# check if rule element is of type "rule"
 		# => traverse rule recursively
@@ -292,6 +388,34 @@ class SensorAlertExecuter(threading.Thread):
 									+ "remote id '%d' and username '%s' not "
 									% (element.element.remoteSensorId,
 									element.element.username)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
+
+								currentRuleElement.triggered = False
+
+							return True
+
+					# check if weekday element is not triggered
+					# => if it is, set current rule element also as
+					# not triggered (if it was triggered) and return
+					elif element.type == "weekday":
+
+						if not element.triggered:
+
+							if currentRuleElement.triggered:
+								logging.debug("[%s]: Week day rule element "
+									% self.fileName
+									+ "with value '%d' for '%s' not "
+									% (element.element.weekday,
+									element.element.time)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
+
+								# TODO DEBUG
+								print ("Week day rule element "
+									+ "with value '%d' for '%s' not "
+									% (element.element.weekday,
+									element.element.time)
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
 
@@ -387,6 +511,31 @@ class SensorAlertExecuter(threading.Thread):
 
 						return True
 
+					elif (element.type == "weekday"
+						and element.triggered == True):
+
+						if not currentRuleElement.triggered:
+							logging.debug("[%s]: Week day rule element with "
+								% self.fileName
+								+ "value '%d' for '%s' "
+								% (element.element.weekday,
+								element.element.time)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
+
+							# TODO DEBUG
+							print ("Week day rule element with "
+								+ "value '%d' for '%s' "
+								% (element.element.weekday,
+								element.element.time)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
+
+							currentRuleElement.triggered = True
+							currentRuleElement.timeWhenTriggered = time.time()
+
+						return True
+
 				# if there exists no element that is already triggered
 				# => update rule elements and evaluate them
 				for element in orElement.elements:
@@ -472,6 +621,36 @@ class SensorAlertExecuter(threading.Thread):
 
 					return True
 
+				# check if week day rule element and current not rule element
+				# have the same triggered value
+				# => toggle current not element triggered value
+				elif element.type == "weekday":
+					if element.triggered == currentRuleElement.triggered:
+
+						logging.debug("[%s]: Week day rule element with "
+							% self.fileName
+							+ "value '%d' for '%s' has same "
+							% (element.element.weekday,
+							element.element.time)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# TODO DEBUG
+						print ("Week day rule element with "
+							+ "value '%d' for '%s' has same "
+							% (element.element.weekday,
+							element.element.time)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# toggle current rule element triggered value
+						currentRuleElement.triggered = not element.triggered
+
+					return True
+
+				# check if rule element evaluates to the same triggered value
+				# as the current not rule element
+				# => toggle current not element triggered value
 				elif element.type == "rule":
 					if not self._evaluateRuleElementsRecursively(element):
 						return False
@@ -588,6 +767,12 @@ class SensorAlertExecuter(threading.Thread):
 		# check if rule element is of type "sensor"
 		# => return if it is triggered
 		if currentRuleElement.type == "sensor":
+
+			return currentRuleElement.triggered
+
+		# check if rule element is of type "weekday"
+		# => return if it is triggered
+		elif currentRuleElement.type == "weekday":
 
 			return currentRuleElement.triggered
 
