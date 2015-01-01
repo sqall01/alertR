@@ -12,7 +12,7 @@ import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import SensorAlertExecuter, AlertLevel, Rule, RuleElement, \
-	RuleSensor, RuleWeekday, RuleMonthday, RuleHour
+	RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute
 from lib import CSVBackend
 from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
@@ -109,6 +109,7 @@ def parseRuleRecursively(currentRoot, currentRule):
 		weekdayItem = currentRoot.find("weekday")
 		monthdayItem = currentRoot.find("monthday")
 		hourItem = currentRoot.find("hour")
+		minuteItem = currentRoot.find("minute")
 
 		# check that only one tag is given in not tag
 		# (because only one is allowed)
@@ -126,6 +127,8 @@ def parseRuleRecursively(currentRoot, currentRule):
 		if not monthdayItem is None:
 			counter += 1
 		if not hourItem is None:
+			counter += 1
+		if not minuteItem is None:
 			counter += 1
 		if counter != 1:
 			raise ValueError("Only one tag is valid inside a 'not' tag.")
@@ -306,6 +309,40 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
+		elif not minuteItem is None:
+
+			ruleMinuteNew = RuleMinute()
+
+			# get start attribute and check if valid
+			ruleMinuteNew.start = int(minuteItem.attrib[
+				"start"])
+			if (ruleMinuteNew.start < 0 or
+				ruleMinuteNew.start > 59):
+				raise ValueError("No valid value for 'start' "
+					+ "attribute in minute tag.")
+
+			# get end attribute and check if valid
+			ruleMinuteNew.end = int(minuteItem.attrib[
+				"end"])
+			if (ruleMinuteNew.start < 0 or
+				ruleMinuteNew.start > 59):
+				raise ValueError("No valid value for 'end' "
+					+ "attribute in minute tag.")
+
+			if ruleMinuteNew.start > ruleMinuteNew.end:
+				raise ValueError("'start' attribute not allowed to be "
+					+ "greater than 'end' attribute in minute tag.")
+
+			# create a wrapper element around the minute element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "minute"
+			ruleElement.element = ruleMinuteNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
 		else:
 			raise ValueError("No valid tag was found.")
 
@@ -434,6 +471,41 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
+		# parse all "minute" tags
+		for item in currentRoot.iterfind("minute"):
+
+			ruleMinuteNew = RuleMinute()
+
+			# get start attribute and check if valid
+			ruleMinuteNew.start = int(item.attrib[
+				"start"])
+			if (ruleMinuteNew.start < 0 or
+				ruleMinuteNew.start > 59):
+				raise ValueError("No valid value for 'start' "
+					+ "attribute in minute tag.")
+
+			# get end attribute and check if valid
+			ruleMinuteNew.end = int(item.attrib[
+				"end"])
+			if (ruleMinuteNew.start < 0 or
+				ruleMinuteNew.start > 59):
+				raise ValueError("No valid value for 'end' "
+					+ "attribute in minute tag.")
+
+			if ruleMinuteNew.start > ruleMinuteNew.end:
+				raise ValueError("'start' attribute not allowed to be "
+					+ "greater than 'end' attribute in minute tag.")
+
+			# create a wrapper element around the minute element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "minute"
+			ruleElement.element = ruleMinuteNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
 		# parse all "and" tags
 		for item in currentRoot.iterfind("and"):
 
@@ -547,6 +619,13 @@ def printRule(ruleElement, tab):
 					% (item.element.time,
 					item.element.start, item.element.end))
 
+			elif item.type == "minute":
+
+				for i in range(tab):
+					print "\t",
+				print ("minute (start=%d, end=%d)"
+					% (item.element.start, item.element.end))
+
 			else:
 				raise ValueError("Rule has invalid type: '%s'."
 					% ruleElement.type)
@@ -573,12 +652,17 @@ def printRule(ruleElement, tab):
 			ruleElement.element.monthday))
 
 	elif item.type == "hour":
-
 		for i in range(tab):
 			print "\t",
 		print ("hour (time=%s, start=%d, end=%d)"
 			% (item.element.time,
 			item.element.start, item.element.end))
+
+	elif item.type == "minute":
+		for i in range(tab):
+			print "\t",
+		print ("minute (start=%d, end=%d)"
+			% (item.element.start, item.element.end))
 
 	else:
 		raise ValueError("Rule has invalid type: '%s'." % ruleElement.type)
@@ -770,6 +854,7 @@ if __name__ == '__main__':
 				weekdayRule = firstRule.find("weekday")
 				monthdayRule = firstRule.find("monthday")
 				hourRule = firstRule.find("hour")
+				minuteRule = firstRule.find("minute")
 
 				# check that only one tag is given in rule
 				counter = 0
@@ -786,6 +871,8 @@ if __name__ == '__main__':
 				if not monthdayRule is None:
 					counter += 1
 				if not hourRule is None:
+					counter += 1
+				if not minuteRule is None:
 					counter += 1
 				if counter != 1:
 					raise ValueError("Only one tag "
@@ -939,6 +1026,37 @@ if __name__ == '__main__':
 					ruleElement = RuleElement()
 					ruleElement.type = "hour"
 					ruleElement.element = ruleHourNew
+
+				elif not minuteRule is None:
+
+					ruleMinuteNew = RuleMinute()
+
+					# get start attribute and check if valid
+					ruleMinuteNew.start = int(minuteRule.attrib[
+						"start"])
+					if (ruleMinuteNew.start < 0 or
+						ruleMinuteNew.start > 59):
+						raise ValueError("No valid value for 'start' "
+							+ "attribute in minute tag.")
+
+					# get end attribute and check if valid
+					ruleMinuteNew.end = int(minuteRule.attrib[
+						"end"])
+					if (ruleMinuteNew.start < 0 or
+						ruleMinuteNew.start > 59):
+						raise ValueError("No valid value for 'end' "
+							+ "attribute in minute tag.")
+
+					if ruleMinuteNew.start > ruleMinuteNew.end:
+						raise ValueError("'start' attribute not allowed to be "
+							+ "greater than 'end' attribute in minute tag.")
+
+					# create a wrapper element around the minute element
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "minute"
+					ruleElement.element = ruleMinuteNew
 
 				else:
 					raise ValueError("No valid tag was found.")
