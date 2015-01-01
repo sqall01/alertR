@@ -12,7 +12,7 @@ import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import SensorAlertExecuter, AlertLevel, Rule, RuleElement, \
-	RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute
+	RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from lib import CSVBackend
 from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
@@ -110,6 +110,7 @@ def parseRuleRecursively(currentRoot, currentRule):
 		monthdayItem = currentRoot.find("monthday")
 		hourItem = currentRoot.find("hour")
 		minuteItem = currentRoot.find("minute")
+		secondItem = currentRoot.find("second")
 
 		# check that only one tag is given in not tag
 		# (because only one is allowed)
@@ -129,6 +130,8 @@ def parseRuleRecursively(currentRoot, currentRule):
 		if not hourItem is None:
 			counter += 1
 		if not minuteItem is None:
+			counter += 1
+		if not secondItem is None:
 			counter += 1
 		if counter != 1:
 			raise ValueError("Only one tag is valid inside a 'not' tag.")
@@ -343,6 +346,40 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
+		elif not secondItem is None:
+
+			ruleSecondNew = RuleSecond()
+
+			# get start attribute and check if valid
+			ruleSecondNew.start = int(secondItem.attrib[
+				"start"])
+			if (ruleSecondNew.start < 0 or
+				ruleSecondNew.start > 59):
+				raise ValueError("No valid value for 'start' "
+					+ "attribute in second tag.")
+
+			# get end attribute and check if valid
+			ruleSecondNew.end = int(secondItem.attrib[
+				"end"])
+			if (ruleSecondNew.start < 0 or
+				ruleSecondNew.start > 59):
+				raise ValueError("No valid value for 'end' "
+					+ "attribute in second tag.")
+
+			if ruleSecondNew.start > ruleSecondNew.end:
+				raise ValueError("'start' attribute not allowed to be "
+					+ "greater than 'end' attribute in second tag.")
+
+			# create a wrapper element around the second element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "second"
+			ruleElement.element = ruleSecondNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
 		else:
 			raise ValueError("No valid tag was found.")
 
@@ -506,6 +543,41 @@ def parseRuleRecursively(currentRoot, currentRule):
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
 
+		# parse all "second" tags
+		for item in currentRoot.iterfind("second"):
+
+			ruleSecondNew = RuleSecond()
+
+			# get start attribute and check if valid
+			ruleSecondNew.start = int(item.attrib[
+				"start"])
+			if (ruleSecondNew.start < 0 or
+				ruleSecondNew.start > 59):
+				raise ValueError("No valid value for 'start' "
+					+ "attribute in second tag.")
+
+			# get end attribute and check if valid
+			ruleSecondNew.end = int(item.attrib[
+				"end"])
+			if (ruleSecondNew.start < 0 or
+				ruleSecondNew.start > 59):
+				raise ValueError("No valid value for 'end' "
+					+ "attribute in second tag.")
+
+			if ruleSecondNew.start > ruleSecondNew.end:
+				raise ValueError("'start' attribute not allowed to be "
+					+ "greater than 'end' attribute in second tag.")
+
+			# create a wrapper element around the second element
+			# to have meta information (i.e. triggered,
+			# time when triggered, etc.)
+			ruleElement = RuleElement()
+			ruleElement.type = "second"
+			ruleElement.element = ruleSecondNew
+
+			# add wrapper element to the current rule
+			currentRule.elements.append(ruleElement)
+
 		# parse all "and" tags
 		for item in currentRoot.iterfind("and"):
 
@@ -626,6 +698,13 @@ def printRule(ruleElement, tab):
 				print ("minute (start=%d, end=%d)"
 					% (item.element.start, item.element.end))
 
+			elif item.type == "second":
+
+				for i in range(tab):
+					print "\t",
+				print ("second (start=%d, end=%d)"
+					% (item.element.start, item.element.end))
+
 			else:
 				raise ValueError("Rule has invalid type: '%s'."
 					% ruleElement.type)
@@ -662,6 +741,12 @@ def printRule(ruleElement, tab):
 		for i in range(tab):
 			print "\t",
 		print ("minute (start=%d, end=%d)"
+			% (item.element.start, item.element.end))
+
+	elif item.type == "second":
+		for i in range(tab):
+			print "\t",
+		print ("second (start=%d, end=%d)"
 			% (item.element.start, item.element.end))
 
 	else:
@@ -855,6 +940,7 @@ if __name__ == '__main__':
 				monthdayRule = firstRule.find("monthday")
 				hourRule = firstRule.find("hour")
 				minuteRule = firstRule.find("minute")
+				secondRule = firstRule.find("second")
 
 				# check that only one tag is given in rule
 				counter = 0
@@ -873,6 +959,8 @@ if __name__ == '__main__':
 				if not hourRule is None:
 					counter += 1
 				if not minuteRule is None:
+					counter += 1
+				if not secondRule is None:
 					counter += 1
 				if counter != 1:
 					raise ValueError("Only one tag "
@@ -1057,6 +1145,37 @@ if __name__ == '__main__':
 					ruleElement = RuleElement()
 					ruleElement.type = "minute"
 					ruleElement.element = ruleMinuteNew
+
+				elif not secondRule is None:
+
+					ruleSecondNew = RuleSecond()
+
+					# get start attribute and check if valid
+					ruleSecondNew.start = int(secondRule.attrib[
+						"start"])
+					if (ruleSecondNew.start < 0 or
+						ruleSecondNew.start > 59):
+						raise ValueError("No valid value for 'start' "
+							+ "attribute in second tag.")
+
+					# get end attribute and check if valid
+					ruleSecondNew.end = int(secondRule.attrib[
+						"end"])
+					if (ruleSecondNew.start < 0 or
+						ruleSecondNew.start > 59):
+						raise ValueError("No valid value for 'end' "
+							+ "attribute in second tag.")
+
+					if ruleSecondNew.start > ruleSecondNew.end:
+						raise ValueError("'start' attribute not allowed to be "
+							+ "greater than 'end' attribute in second tag.")
+
+					# create a wrapper element around the second element
+					# to have meta information (i.e. triggered,
+					# time when triggered, etc.)
+					ruleElement = RuleElement()
+					ruleElement.type = "second"
+					ruleElement.element = ruleSecondNew
 
 				else:
 					raise ValueError("No valid tag was found.")
