@@ -22,6 +22,24 @@ from server import AsynchronousSender
 
 # TODO
 
+class RuleHour:
+
+	def __init__(self):
+
+		def __init__(self):
+
+			# local/utc
+			self.time = None
+
+			# 0-23
+			self.start = None
+
+			# 0-23
+			self.end = None
+
+			# end >= start
+
+
 class RuleMonthday:
 
 	def __init__(self):
@@ -64,7 +82,7 @@ class RuleElement:
 
 	def __init__(self):
 
-		# sensor, rule, weekday, monthday
+		# sensor, rule, weekday, monthday, hour
 		self.type = None 
 
 		self.triggered = False
@@ -432,6 +450,101 @@ class SensorAlertExecuter(threading.Thread):
 					+ "'time' attribute in monthday tag.")
 				return False
 
+		# check if rule element is of type "hour"
+		# => update values of rule according to the date
+		elif currentRuleElement.type == "hour":
+
+			hourElement = currentRuleElement.element
+
+			if hourElement.time == "local":
+
+				# check if the current hour lies between the start/end
+				# of the hour rule element
+				# => set rule element as triggered if it is not yet triggered
+				if (hourElement.start <= time.localtime().tm_hour
+					and time.localtime().tm_hour <= hourElement.end):
+					
+					# check if rule element is not triggered
+					# => set as triggered
+					if not currentRuleElement.triggered:
+
+						logging.debug("[%s]: Hour " % self.fileName
+							+ "from '%d' to '%d' for '%s' counts as triggered."
+							% (hourElement.start, hourElement.end,
+							hourElement.time))
+						# TODO DEBUG
+						print ("Hour "
+							+ "from '%d' to '%d' for '%s' counts as triggered."
+							% (hourElement.start, hourElement.end,
+							hourElement.time))
+
+						currentRuleElement.triggered = True
+
+				# check if rule element is triggered
+				# => set rule element as not triggered
+				elif currentRuleElement.triggered:
+
+					logging.debug("[%s]: Hour " % self.fileName
+						+ "from '%d' to '%d' for '%s' no longer "
+						% (hourElement.start, hourElement.end,
+						hourElement.time)
+						+ "counts as triggered.")
+					# TODO DEBUG
+					print ("Hour "
+						+ "from '%d' to '%d' for '%s' no longer "
+						% (hourElement.start, hourElement.end,
+						hourElement.time)
+						+ "counts as triggered.")
+
+					currentRuleElement.triggered = False
+
+			elif hourElement.time == "utc":
+
+				# check if the current hour lies between the start/end
+				# of the hour rule element
+				# => set rule element as triggered if it is not yet triggered
+				if (hourElement.start <= time.gmtime().tm_hour
+					and time.gmtime().tm_hour <= hourElement.end):
+					
+					# check if rule element is not triggered
+					# => set as triggered
+					if not currentRuleElement.triggered:
+
+						logging.debug("[%s]: Hour " % self.fileName
+							+ "from '%d' to '%d' for '%s' counts as triggered."
+							% (hourElement.start, hourElement.end,
+							hourElement.time))
+						# TODO DEBUG
+						print ("Hour "
+							+ "from '%d' to '%d' for '%s' counts as triggered."
+							% (hourElement.start, hourElement.start,
+							hourElement.time))
+
+						currentRuleElement.triggered = True
+
+				# check if rule element is triggered
+				# => set rule element as not triggered
+				elif currentRuleElement.triggered:
+
+					logging.debug("[%s]: Hour " % self.fileName
+						+ "from '%d' to '%d' for '%s' no longer "
+						% (hourElement.start, hourElement.end,
+						hourElement.time)
+						+ "counts as triggered.")
+					# TODO DEBUG
+					print ("Hour "
+						+ "from '%d' to '%d' for '%s' no longer "
+						% (hourElement.start, hourElement.start,
+						hourElement.time)
+						+ "counts as triggered.")
+
+					currentRuleElement.triggered = False
+
+			else:
+				logging.error("[%s]: No valid value for " % self.fileName
+					+ "'time' attribute in hour tag.")
+				return False
+
 		# check if rule element is of type "rule"
 		# => traverse rule recursively
 		elif currentRuleElement.type == "rule":
@@ -539,6 +652,36 @@ class SensorAlertExecuter(threading.Thread):
 								print ("Month day rule element "
 									+ "with value '%d' for '%s' not "
 									% (element.element.monthday,
+									element.element.time)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
+
+								currentRuleElement.triggered = False
+
+							return True
+
+					# check if hour element is not triggered
+					# => if it is, set current rule element also as
+					# not triggered (if it was triggered) and return
+					elif element.type == "hour":
+
+						if not element.triggered:
+
+							if currentRuleElement.triggered:
+								logging.debug("[%s]: Hour rule element "
+									% self.fileName
+									+ "from '%d' to '%d' for '%s' not "
+									% (element.element.start,
+									element.element.end,
+									element.element.time)
+									+ "triggered. Set 'and' rule "
+									+ "also to not triggered.")
+
+								# TODO DEBUG
+								print ("Hour rule element "
+									+ "from '%d' to '%d' for '%s' not "
+									% (element.element.start,
+									element.element.end,
 									element.element.time)
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
@@ -676,6 +819,33 @@ class SensorAlertExecuter(threading.Thread):
 							print ("Month day rule element with "
 								+ "value '%d' for '%s' "
 								% (element.element.monthday,
+								element.element.time)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
+
+							currentRuleElement.triggered = True
+							currentRuleElement.timeWhenTriggered = time.time()
+
+						return True
+
+					elif (element.type == "hour"
+						and element.triggered == True):
+
+						if not currentRuleElement.triggered:
+							logging.debug("[%s]: Hour rule element from "
+								% self.fileName
+								+ "'%d' to '%d' for '%s' "
+								% (element.element.start,
+								element.element.end,
+								element.element.time)
+								+ "triggered. Set 'or' rule "
+								+ "also to triggered.")
+
+							# TODO DEBUG
+							print ("Hour rule element from "
+								+ "'%d' to '%d' for '%s' "
+								% (element.element.start,
+								element.element.end,
 								element.element.time)
 								+ "triggered. Set 'or' rule "
 								+ "also to triggered.")
@@ -824,6 +994,35 @@ class SensorAlertExecuter(threading.Thread):
 
 					return True
 
+				# check if hour rule element and current not rule element
+				# have the same triggered value
+				# => toggle current not element triggered value
+				elif element.type == "hour":
+					if element.triggered == currentRuleElement.triggered:
+
+						logging.debug("[%s]: Hour rule element from "
+							% self.fileName
+							+ "'%d' to '%d' for '%s' has same "
+							% (element.element.start,
+							element.element.end,
+							element.element.time)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# TODO DEBUG
+						print ("Hour rule element from "
+							+ "'%d' to '%d' for '%s' has same "
+							% (element.element.start,
+							element.element.end,
+							element.element.time)
+							+ "triggered value as 'not' rule. "
+							+ "Toggle triggered value of 'not' rule.")
+
+						# toggle current rule element triggered value
+						currentRuleElement.triggered = not element.triggered
+
+					return True
+
 				# check if rule element evaluates to the same triggered value
 				# as the current not rule element
 				# => toggle current not element triggered value
@@ -955,6 +1154,12 @@ class SensorAlertExecuter(threading.Thread):
 		# check if rule element is of type "monthday"
 		# => return if it is triggered
 		elif currentRuleElement.type == "monthday":
+
+			return currentRuleElement.triggered
+
+		# check if rule element is of type "hour"
+		# => return if it is triggered
+		elif currentRuleElement.type == "hour":
 
 			return currentRuleElement.triggered
 
