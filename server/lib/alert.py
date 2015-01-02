@@ -1849,6 +1849,71 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
+
+
+
+					# TODO
+					# for email send new email send function needed
+
+
+
+
+					# send sensor alert to all manager and alert clients
+					for serverSession in self.serverSessions:
+						# ignore sessions which do not exist yet
+						# and that are not managers
+						if serverSession.clientComm == None:
+							continue
+						if (serverSession.clientComm.nodeType != "manager"
+							and serverSession.clientComm.nodeType != "alert"):
+							continue
+						if not serverSession.clientComm.clientInitialized:
+							continue
+
+						# sending sensor alert to manager/alert node
+						# via a thread to not block the sensor alert executer
+						sensorAlertProcess = AsynchronousSender(
+							self.globalData, serverSession.clientComm)
+						# set thread to daemon
+						# => threads terminates when main thread terminates	
+						sensorAlertProcess.daemon = True
+						sensorAlertProcess.sendSensorAlert = True
+
+
+						# TODO
+						# protocol changes needed here
+						sensorAlertProcess.sensorAlertSensorId = 0
+						sensorAlertProcess.sensorAlertState = 1
+
+
+
+
+
+						sensorAlertProcess.sensorAlertAlertLevels = \
+							[alertLevel.level]
+
+						sensorAlertProcess.sensorAlertSensorDescription = \
+							"Rule of Alert Level: '%s'" % alertLevel.name
+
+						logging.debug("[%s]: Sending sensor " % self.fileName
+							+ "alert to manager/alert (%s:%d)."
+							% (serverSession.clientComm.clientAddress,
+							serverSession.clientComm.clientPort))
+						sensorAlertProcess.start()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 					# remove sensor alert to handle from list
 					# after it has triggered
 					sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
