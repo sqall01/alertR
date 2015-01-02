@@ -93,11 +93,7 @@ class GlobalData:
 		self.asyncOptionExecuters = list()
 
 
-
-
-
-# TODO
-# parses the alert level rule recursively
+# function is used to parse a rule of an alert level recursively
 def parseRuleRecursively(currentRoot, currentRule):
 	
 	if currentRoot.tag == "not":
@@ -643,125 +639,165 @@ def parseRuleRecursively(currentRoot, currentRule):
 		raise ValueError("No valid tag found in rule.")
 
 
-
-
-# TODO
-# DEBUG
-def logRule(ruleElement, tab):
+# function is used to write the parsed rules to the log file
+def logRule(ruleElement, spaces, fileName):
 
 	if isinstance(ruleElement, RuleStart):
-		print ("RULE (order=%d, minTimeAfterPrev=%.2f, maxTimeAfterPrev=%.2f)" %
-			(ruleElement.order, ruleElement.minTimeAfterPrev,
-			ruleElement.maxTimeAfterPrev))
+		logString = ("RULE (order=%d, " % ruleElement.order
+			+ "minTimeAfterPrev=%.2f, " % ruleElement.minTimeAfterPrev
+			+ "maxTimeAfterPrev=%.2f)" % ruleElement.maxTimeAfterPrev)
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
+
+	spaceString = ""
+	for i in range(spaces):
+		spaceString += "   "
 
 	if ruleElement.type == "rule":
-		for i in range(tab):
-			print "\t",
-		print ("%s"
-			% (ruleElement.element.type))
+		logString = "%s %s" % (spaceString, ruleElement.element.type)
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
+
+		spaceString += "   "
 
 		for item in ruleElement.element.elements:
 
 			if item.type == "rule":
-				logRule(item, tab+1)
+				logRule(item, spaces+1, fileName)
 
 			elif item.type == "sensor":
+				logString = ("%s sensor " % spaceString
+					+ "(triggeredFor=%.2f, " % item.timeTriggeredFor
+					+ "user=%s, " % item.element.username
+					+ "remoteId=%d)" % item.element.remoteSensorId)
+				logging.info("[%s]: %s" % (fileName, logString))
 
-				for i in range(tab):
-					print "\t",
-				print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
-					% (item.timeTriggeredFor, item.element.username,
-					item.element.remoteSensorId))
+				# TODO DEBUG
+				print logString
 
 			elif item.type == "weekday":
 
-				for i in range(tab):
-					print "\t",
-				print ("weekday (time=%s, weekday=%d)"
-					% (item.element.time,
-					item.element.weekday))
+				logString = ("%s weekday " % spaceString
+					+ "(time=%s, " % item.element.time
+					+ "weekday=%d)" % item.element.weekday)
+				logging.info("[%s]: %s" % (fileName, logString))
+
+				# TODO DEBUG
+				print logString
 
 			elif item.type == "monthday":
 
-				for i in range(tab):
-					print "\t",
-				print ("monthday (time=%s, monthday=%d)"
-					% (item.element.time,
-					item.element.monthday))
+				logString = ("%s monthday " % spaceString
+					+ "(time=%s, " % item.element.time
+					+ "monthday=%d)" % item.element.monthday)
+				logging.info("[%s]: %s" % (fileName, logString))
+
+				# TODO DEBUG
+				print logString
 
 			elif item.type == "hour":
 
-				for i in range(tab):
-					print "\t",
-				print ("hour (time=%s, start=%d, end=%d)"
-					% (item.element.time,
-					item.element.start, item.element.end))
+				logString = ("%s hour " % spaceString
+					+ "(time=%s, " % item.element.time
+					+ "start=%d, " % item.element.start
+					+ "end=%d)") % item.element.end
+				logging.info("[%s]: %s" % (fileName, logString))
+
+				# TODO DEBUG
+				print logString
 
 			elif item.type == "minute":
 
-				for i in range(tab):
-					print "\t",
-				print ("minute (start=%d, end=%d)"
-					% (item.element.start, item.element.end))
+				logString = ("%s minute " % spaceString
+					+ "(start=%d, " % item.element.start
+					+ "end=%d)") % item.element.end
+				logging.info("[%s]: %s" % (fileName, logString))
+
+				# TODO DEBUG
+				print logString
 
 			elif item.type == "second":
 
-				for i in range(tab):
-					print "\t",
-				print ("second (start=%d, end=%d)"
-					% (item.element.start, item.element.end))
+				logString = ("%s second " % spaceString
+					+ "(start=%d, " % item.element.start
+					+ "end=%d)") % item.element.end
+				logging.info("[%s]: %s" % (fileName, logString))
+
+				# TODO DEBUG
+				print logString
 
 			else:
 				raise ValueError("Rule has invalid type: '%s'."
 					% ruleElement.type)
 
 	elif ruleElement.type == "sensor":
-		for i in range(tab):
-			print "\t",
-		print ("sensor (triggeredFor=%.2f, user=%s, remoteId=%d)"
-			% (ruleElement.timeTriggeredFor, ruleElement.element.username,
-			ruleElement.element.remoteSensorId))
+
+		logString = ("%s sensor " % spaceString
+			+ "(triggeredFor=%.2f, " % ruleElement.timeTriggeredFor
+			+ "user=%s, " % ruleElement.element.username
+			+ "remoteId=%d)" % ruleElement.element.remoteSensorId)
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
 
 	elif ruleElement.type == "weekday":
-		for i in range(tab):
-			print "\t",
-		print ("weekday (time=%s, weekday=%d)"
-			% (ruleElement.element.time,
-			ruleElement.element.weekday))
+
+		logString = ("%s weekday " % spaceString
+			+ "(time=%s, " % ruleElement.element.time
+			+ "weekday=%d)" % ruleElement.element.weekday)
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
 
 	elif ruleElement.type == "monthday":
-		for i in range(tab):
-			print "\t",
-		print ("monthday (time=%s, monthday=%d)"
-			% (ruleElement.element.time,
-			ruleElement.element.monthday))
+
+		logString = ("%s monthday " % spaceString
+			+ "(time=%s, " % ruleElement.element.time
+			+ "monthday=%d)" % ruleElement.element.monthday)
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
 
 	elif ruleElement.type == "hour":
-		for i in range(tab):
-			print "\t",
-		print ("hour (time=%s, start=%d, end=%d)"
-			% (ruleElement.element.time,
-			ruleElement.element.start, ruleElement.element.end))
+
+		logString = ("%s hour " % spaceString
+			+ "(time=%s, " % ruleElement.element.time
+			+ "start=%d, " % ruleElement.element.start
+			+ "end=%d)") % ruleElement.element.end
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
 
 	elif ruleElement.type == "minute":
-		for i in range(tab):
-			print "\t",
-		print ("minute (start=%d, end=%d)"
-			% (ruleElement.element.start, ruleElement.element.end))
+
+		logString = ("%s minute " % spaceString
+			+ "(start=%d, " % ruleElement.element.start
+			+ "end=%d)") % ruleElement.element.end
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
 
 	elif ruleElement.type == "second":
-		for i in range(tab):
-			print "\t",
-		print ("second (start=%d, end=%d)"
-			% (ruleElement.element.start, ruleElement.element.end))
+
+		logString = ("%s second " % spaceString
+			+ "(start=%d, " % ruleElement.element.start
+			+ "end=%d)") % ruleElement.element.end
+		logging.info("[%s]: %s" % (fileName, logString))
+
+		# TODO DEBUG
+		print logString
 
 	else:
 		raise ValueError("Rule has invalid type: '%s'." % ruleElement.type)
-
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -1188,8 +1224,12 @@ if __name__ == '__main__':
 				# check if parsed rules should be logged
 				if (loglevel == logging.INFO
 					or loglevel == logging.DEBUG):
+
+					logging.info("[%s]: Parsed rules for alert level %d."
+						% (fileName, alertLevel.level))
+
 					for ruleElement in alertLevel.rules:
-						logRule(ruleElement, 0)
+						logRule(ruleElement, 0, fileName)
 
 			# check if the alert level only exists once
 			for tempAlertLevel in globalData.alertLevels:
