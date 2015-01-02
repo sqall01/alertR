@@ -127,6 +127,20 @@ class RuleElement:
 		self.element = None
 
 
+class RuleStart(RuleElement):
+
+	def __init__(self):
+		RuleElement.__init__(self)
+
+		self.order = None
+
+		self.maxTimeAfterPrev = None
+
+		self.minTimeAfterPrev = None
+
+		# maxTimeAfterPrev >= minTimeAfterPrev
+
+
 
 class Rule:
 
@@ -338,6 +352,7 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (weekdayElement.weekday, weekdayElement.time))
 
+						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -374,6 +389,7 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (weekdayElement.weekday, weekdayElement.time))
 
+						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -421,6 +437,7 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (monthdayElement.monthday, monthdayElement.time))
 
+						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -457,6 +474,7 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (monthdayElement.monthday, monthdayElement.time))
 
+						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -508,6 +526,7 @@ class SensorAlertExecuter(threading.Thread):
 							% (hourElement.start, hourElement.end,
 							hourElement.time))
 
+						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -550,6 +569,7 @@ class SensorAlertExecuter(threading.Thread):
 							% (hourElement.start, hourElement.start,
 							hourElement.time))
 
+						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -599,6 +619,7 @@ class SensorAlertExecuter(threading.Thread):
 						+ "from '%d' to '%d' counts as triggered."
 						% (minuteElement.start, minuteElement.end))
 
+					currentRuleElement.timeWhenTriggered = time.time()
 					currentRuleElement.triggered = True
 
 			# check if rule element is triggered
@@ -641,6 +662,7 @@ class SensorAlertExecuter(threading.Thread):
 						+ "from '%d' to '%d' counts as triggered."
 						% (secondElement.start, secondElement.end))
 
+					currentRuleElement.timeWhenTriggered = time.time()
 					currentRuleElement.triggered = True
 
 			# check if rule element is triggered
@@ -1331,6 +1353,11 @@ class SensorAlertExecuter(threading.Thread):
 						+ "rule element not valid.")
 					return False
 
+		# if current rule element is not of type "rule"
+		# => just return
+		else:
+			return True
+
 
 
 
@@ -1342,51 +1369,100 @@ class SensorAlertExecuter(threading.Thread):
 		logging.debug("[%s]: Updating rule values " % self.fileName
 			+ "for alert level '%d'." % alertLevel.level)
 
-		for ruleElement in alertLevel.rules:
+		for ruleStart in alertLevel.rules:
 
 			# update all rule values (sets also the sensors as triggered
 			# or not triggered)
 			if not self._updateRuleValuesRecursively(sensorAlertList,
-				ruleElement):
+				ruleStart):
 				logging.error("[%s]: Not able to update " % self.fileName
-					+ "values for alert level '%d'." % alertLevel.level)
+					+ "values for rule with order '%d' "
+					% ruleStart.order
+					+ "for alert level '%d'."
+					% alertLevel.level)
 				return False
 
 			# evaluate all and/or/not rule elements
-			if not self._evaluateRuleElementsRecursively(ruleElement):
+			if not self._evaluateRuleElementsRecursively(ruleStart):
 				logging.error("[%s]: Not able to evaluate " % self.fileName
-					+ "rule for alert level '%d'." % alertLevel.level)
+					+ "rule with order '%d' for alert level '%d'."
+					% (ruleStart.order, alertLevel.level))
 				return False
 
 
+		# if more than one rule exists
+		# => check if they had triggered in the correct time frame
+		if len(alertLevel.rules) > 1:
+			for idx in range(len(alertLevel.rules)):
+
+				# skip first rule start
+				if idx == 0:
+					continue
+
+				prevRuleStart = alertLevel.rules[idx - 1]
+				currRuleStart = alertLevel.rules[idx]
+
+				# check if current rule was triggered
+				if currRuleStart.triggered:
+					# check if current rule was triggered right between
+					# min and max time after previous rule
+
+					# TODO DEBUG
+					print "Min time:"
+					print (prevRuleStart.timeWhenTriggered
+						+ currRuleStart.minTimeAfterPrev)
+					
+					print "Max time:"
+					print (prevRuleStart.timeWhenTriggered
+						+ currRuleStart.maxTimeAfterPrev)
+
+					print "Curr time:"
+					print currRuleStart.timeWhenTriggered
 
 
+					if (((prevRuleStart.timeWhenTriggered
+						+ currRuleStart.minTimeAfterPrev)
+						<= currRuleStart.timeWhenTriggered)
+						and
+						((prevRuleStart.timeWhenTriggered
+						+ currRuleStart.maxTimeAfterPrev)
+						>= currRuleStart.timeWhenTriggered)):
 
+						# DEBUG TODO
+						print ("Rule with order '%d' "
+							% (currRuleStart.order)
+							+ "for alert level '%d' DID trigger "
+							% alertLevel.level
+							+ "in time.")
+
+
+						continue
+
+					# if rule had not triggered right between min
+					# and max time
+					# => reset it
+					else:
+						logging.debug("[%s]: Rule with order '%d' "
+							% (self.fileName, currRuleStart.order)
+							+ "for alert level '%d' did not trigger "
+							% alertLevel.level
+							+ "in time. Reset rule.")
+
+						# DEBUG TODO
+						print ("Rule with order '%d' "
+							% (currRuleStart.order)
+							+ "for alert level '%d' did not trigger "
+							% alertLevel.level
+							+ "in time. Reset rule.")
+
+
+						currRuleStart.triggered = False
+						currRuleStart.timeWhenTriggered = 0.0
 
 
 		# empty sensor alert list after values are updated in rule
 		del sensorAlertList[:]
 
-
-
-
-
-
-			# TODO
-			# update triggered values
-
-
-
-
-		# TODO
-		# improve by only update rule when sensoralertlist is not empty
-
-
-
-		# TODO
-		# remove all sensor alerts from sensorAlertList when rule updating
-		# is done ( because it can happen that one sensor is used more than
-		# once in the rule)
 
 
 
@@ -1403,8 +1479,8 @@ class SensorAlertExecuter(threading.Thread):
 		# have to be triggered to trigger the alert level (all other rules
 		# in the chain had to be triggered at some point in time to trigger
 		# the last rule)
-		ruleElement = alertLevel.rules[-1]
-		return ruleElement.triggered
+		ruleStart = alertLevel.rules[-1]
+		return ruleStart.triggered
 
 
 
