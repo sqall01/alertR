@@ -485,9 +485,6 @@ class ServerCommunication:
 		
 		# extract sensor alert values
 		try:
-			sensorId = int(incomingMessage["payload"]["sensorId"])
-			state = int(incomingMessage["payload"]["state"])
-
 			alertLevels = incomingMessage["payload"]["alertLevels"]
 			# check if alertLevels is a list
 			if not isinstance(alertLevels, list):
