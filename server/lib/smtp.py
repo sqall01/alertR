@@ -69,6 +69,37 @@ class SMTPAlert:
 
 
 	# this function sends an email alert in case of
+	# a sensor alert is triggered for an alert level with an activated rule
+	def sendSensorAlertRulesActivated(self, alertLevelName, timeTriggered,
+		toAddr):
+
+		subject = "[alertR] Alert level rule triggered"
+
+		message = "The rule of the alert level '%s' " % alertLevelName \
+			+ "triggered on %s." \
+			% time.strftime("%D %H:%M:%S", time.localtime(timeTriggered))
+
+		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
+			% (self.fromAddr, toAddr, subject)
+
+		# sending eMail alert to configured smtp server
+		logging.info("[%s]: Sending eMail alert to %s." 
+			% (self.fileName, toAddr))
+		try:
+
+			smtpServer = smtplib.SMTP(self.host, self.port)
+			smtpServer.sendmail(self.fromAddr, toAddr, 
+				emailHeader + message)
+			smtpServer.quit()
+		except Exception as e:
+			logging.exception("[%s]: Unable to send eMail alert. " 
+				% self.fileName)
+			return False
+
+		return True
+
+
+	# this function sends an email alert in case of
 	# a timed out sensor
 	def sendSensorTimeoutAlert(self, hostname, description, lastStateUpdated):
 

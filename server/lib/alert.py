@@ -1480,7 +1480,17 @@ class SensorAlertExecuter(threading.Thread):
 		# in the chain had to be triggered at some point in time to trigger
 		# the last rule)
 		ruleStart = alertLevel.rules[-1]
-		return ruleStart.triggered
+
+		# if the last rule of the chain has triggered
+		# => reset all rules in the chain
+		if ruleStart.triggered:
+			for rule in alertLevel.rules:
+				rule.timeWhenTriggered = 0.0
+				rule.triggered = False
+
+			return True
+		else:
+			return False
 
 
 
@@ -1795,6 +1805,7 @@ class SensorAlertExecuter(threading.Thread):
 						# => threads terminates when main thread terminates	
 						sensorAlertProcess.daemon = True
 						sensorAlertProcess.sendSensorAlert = True
+						sensorAlertProcess.sensorAlertRulesActivated = False
 						sensorAlertProcess.sensorAlertSensorId = sensorId
 						sensorAlertProcess.sensorAlertState = state
 						sensorAlertProcess.sensorAlertAlertLevels = \
@@ -1849,14 +1860,14 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
+					# check if the alert level that has triggered a sensor
+					# alert has email notification (smtpAlert) activated
+					# => send email alert
+					if alertLevel.smtpActivated:
 
-
-
-					# TODO
-					# for email send new email send function needed
-
-
-
+						# send email alert to configured email address
+						self.smtpAlert.sendSensorAlertRulesActivated(
+							alertLevel.name, time.time(), alertLevel.toAddr)
 
 					# send sensor alert to all manager and alert clients
 					for serverSession in self.serverSessions:
@@ -1878,17 +1889,7 @@ class SensorAlertExecuter(threading.Thread):
 						# => threads terminates when main thread terminates	
 						sensorAlertProcess.daemon = True
 						sensorAlertProcess.sendSensorAlert = True
-
-
-						# TODO
-						# protocol changes needed here
-						sensorAlertProcess.sensorAlertSensorId = 0
-						sensorAlertProcess.sensorAlertState = 1
-
-
-
-
-
+						sensorAlertProcess.sensorAlertRulesActivated = True
 						sensorAlertProcess.sensorAlertAlertLevels = \
 							[alertLevel.level]
 
@@ -1900,19 +1901,6 @@ class SensorAlertExecuter(threading.Thread):
 							% (serverSession.clientComm.clientAddress,
 							serverSession.clientComm.clientPort))
 						sensorAlertProcess.start()
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 					# remove sensor alert to handle from list
 					# after it has triggered

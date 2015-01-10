@@ -1388,7 +1388,8 @@ class ClientCommunication:
 				else 0),
 				"smtpActivated": (1 if self.alertLevels[i].smtpActivated
 				else 0),
-				"toAddr": self.alertLevels[i].toAddr}
+				"toAddr": self.alertLevels[i].toAddr,
+				"rulesActivated": self.alertLevels[i].rulesActivated}
 			alertLevels.append(tempDict)
 
 		logging.debug("[%s]: Sending status message (%s:%d)." 
@@ -1701,7 +1702,8 @@ class ClientCommunication:
 
 
 	# function that sends a sensor alert to an alert/manager client
-	def sendSensorAlert(self, sensorId, state, alertLevels, description):
+	def sendSensorAlert(self, sensorId, state, alertLevels, description,
+		rulesActivated):
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("sensoralert", acquireLock=True):
@@ -1711,11 +1713,21 @@ class ClientCommunication:
 		logging.debug("[%s]: Sending sensor alert message (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
 		try:
-			payload = {"type": "request",
-				"sensorId": sensorId,
-				"state": state,
-				"alertLevels": alertLevels,
-				"description": description}
+
+			# differentiate payload of message when rules are activated or not
+			if rulesActivated:
+				payload = {"type": "request",
+					"alertLevels": alertLevels,
+					"description": description,
+					"rulesActivated": rulesActivated}
+			else:
+				payload = {"type": "request",
+					"sensorId": sensorId,
+					"state": state,
+					"alertLevels": alertLevels,
+					"description": description,
+					"rulesActivated": rulesActivated}
+
 			message = {"serverTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -2490,6 +2502,7 @@ class AsynchronousSender(threading.Thread):
 		# this options are used when the thread should
 		# send a sensor alert to the client
 		self.sendSensorAlert = False
+		self.sensorAlertRulesActivated = None
 		self.sensorAlertSensorId = None
 		self.sensorAlertState = None
 		self.sensorAlertAlertLevels = None
@@ -2538,7 +2551,8 @@ class AsynchronousSender(threading.Thread):
 
 			if not self.clientComm.sendSensorAlert(self.sensorAlertSensorId,
 				self.sensorAlertState, self.sensorAlertAlertLevels,
-				self.sensorAlertSensorDescription):
+				self.sensorAlertSensorDescription,
+				self.sensorAlertRulesActivated):
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "alert to manager/alert failed (%s:%d)."
 					% (self.clientComm.clientAddress,
