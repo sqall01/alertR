@@ -102,6 +102,7 @@ class Alert:
 class SensorAlert:
 
 	def __init__(self):
+		self.rulesActivated = None
 		self.sensorId = None
 		self.state = None
 		self.timeReceived = None

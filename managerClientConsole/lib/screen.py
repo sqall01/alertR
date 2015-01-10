@@ -2017,17 +2017,27 @@ class Console:
 
 				description = ""
 
-				# search for the sensor urwid object and update it
-				for sensor in self.sensors:
-					if sensorAlert.sensorId == sensor.sensorId:
-						sensor.sensorUrwid.updateState(sensorAlert.state)
-						sensor.sensorUrwid.updateLastUpdated(
-							sensorAlert.timeReceived)
+				# if rules of the triggered alert level are not activated
+				# => search for the sensor urwid object and update it
+				if not sensorAlert.rulesActivated:
+					for sensor in self.sensors:
+						if sensorAlert.sensorId == sensor.sensorId:
+							sensor.sensorUrwid.updateState(sensorAlert.state)
+							sensor.sensorUrwid.updateLastUpdated(
+								sensorAlert.timeReceived)
 
-						# get description for the sensor alert to add
-						description = sensor.description
+							# get description for the sensor alert to add
+							description = sensor.description
 
-						break
+							break
+
+				# if rules of the triggered alert level are activated
+				# => use name of the first alert level for its description
+				else:
+					for alertLevel in self.alertLevels:
+						if sensorAlert.alertLevels[0] == alertLevel.level:
+							description = alertLevel.name
+							break
 
 				# check if more sensor alerts are shown than are received
 				# => there still exists empty sensor alerts
@@ -2062,7 +2072,7 @@ class Console:
 
 				# create new sensor alert urwid object
 				sensorAlertUrwid = SensorAlertUrwid(sensorAlert,
-					description, self.timeShowSensorAlert,)
+					description, self.timeShowSensorAlert)
 
 				# add sensor alert urwid object to the list of
 				# sensor alerts urwid objects

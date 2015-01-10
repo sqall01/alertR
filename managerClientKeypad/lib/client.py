@@ -1287,8 +1287,17 @@ class ServerCommunication:
 		# extract sensor alert values
 		try:
 			serverTime = int(incomingMessage["serverTime"])
-			sensorId = int(incomingMessage["payload"]["sensorId"])
-			state = int(incomingMessage["payload"]["state"])
+
+			rulesActivated = bool(incomingMessage["payload"]["rulesActivated"])
+
+			# check if rules are activated
+			# => if not sensorId and state have to be processed
+			if not rulesActivated:
+				sensorId = int(incomingMessage["payload"]["sensorId"])
+				state = int(incomingMessage["payload"]["state"])
+			else:
+				sensorId = None
+				state = None
 
 			alertLevels = incomingMessage["payload"]["alertLevels"]
 			# check if alertLevels is a list
@@ -1351,18 +1360,23 @@ class ServerCommunication:
 
 		# generate sensor alert object
 		sensorAlert = SensorAlert()
+		sensorAlert.rulesActivated = rulesActivated
 		sensorAlert.sensorId = sensorId
 		sensorAlert.state = state
 		sensorAlert.timeReceived = int(time.time())
 		sensorAlert.alertLevels = alertLevels
 		self.sensorAlerts.append(sensorAlert)
 
-		# update information in sensor which triggered the alert
-		for sensor in self.sensors:
-			if sensor.sensorId == sensorId:
-				sensor.state = state
-				sensor.lastStateUpdated = serverTime
-				sensor.serverTime = serverTime
+		# if rules are not activated (and therefore the sensor alert was
+		# only triggered by one distinct sensor)
+		# => update information in sensor which triggered the alert
+		if not rulesActivated:
+			for sensor in self.sensors:
+				if sensor.sensorId == sensorId:
+					sensor.state = state
+					sensor.lastStateUpdated = serverTime
+					sensor.serverTime = serverTime
+					break
 
 		return True
 
