@@ -14,152 +14,174 @@ import logging
 from server import AsynchronousSender
 
 
-
-
-
-
-
-
-# TODO
+# this class represents a rule that triggeres when the current second
+# lies between the start and end
 class RuleSecond:
 
 	def __init__(self):
 
 		def __init__(self):
 
-			# 0-59
+			# start second of rule
+			# (values: 0 - 59)
 			self.start = None
 
-			# 0-59
+			# end second of rule
+			# (values: 0 - 59)
 			self.end = None
 
-			# end >= start
+			# important: "end >= start"
 
 
+# this class represents a rule that triggeres when the current minute
+# lies between the start and end
 class RuleMinute:
 
 	def __init__(self):
 
 		def __init__(self):
 
-			# 0-59
+			# start minute of rule
+			# (values: 0 - 59)
 			self.start = None
 
-			# 0-59
+			# end minute of rule
+			# (values: 0 - 59)
 			self.end = None
 
-			# end >= start
+			# important: "end >= start"
 
 
-
+# this class represents a rule that triggeres when the current hour
+# lies between the start and end
 class RuleHour:
 
 	def __init__(self):
 
 		def __init__(self):
 
-			# local/utc
+			# the used timezone for the calculation
+			# (possible values: local or utc)
 			self.time = None
 
-			# 0-23
+			# start hour of rule
+			# (values: 0 - 23)
 			self.start = None
 
-			# 0-23
+			# end hour of rule
+			# (values: 0 - 23)
 			self.end = None
 
-			# end >= start
+			# important: "end >= start"
 
 
+# this class represents a rule that triggeres when the current day of the month
+# matches with the configured one
 class RuleMonthday:
 
 	def __init__(self):
 
 		def __init__(self):
 
-			# local/utc
+			# the used timezone for the calculation
+			# (possible values: local or utc)
 			self.time = None
 
-			# 1 - 31
+			# the day of the month
+			# (values: 1 - 31)
 			self.monthday = None
 
 
+# this class represents a rule that triggeres when the current day of the week
+# matches with the configured one
 class RuleWeekday:
 
 	def __init__(self):
 
 		def __init__(self):
 
-			# local/utc
+			# the used timezone for the calculation
+			# (possible values: local or utc)
 			self.time = None
 
-			# 0: Monday
-			# 6: Sunday
+			# the day of the week
+			# (values: 0 - 6 (0: Monday, ..., 6: Sunday))
 			self.weekday = None
 
 
+# this class represents a rule that triggeres when the triggered sensor
+# matches with the configured one
 class RuleSensor:
 
 	def __init__(self):
 
 		def __init__(self):
 
+			# username of the node that handles the sensor
 			self.username = None
+
+			# the id that is configured for the sensor on the client side
 			self.remoteSensorId = None
 
 
+# this class represents a boolean operator for the rule engine
+class RuleBoolean:
 
+	def __init__(self):
+
+		# the type of boolean operator this element represents
+		# (values: and, or, not)
+		self.type = None
+
+		# a list of rule elements this boolean operator contains
+		# (important: "not" can only contain one element)
+		self.elements = list()
+
+
+# this class represents a rule element in the given rules of the alert level
+# and has all meta information of the rule
 class RuleElement:
 
 	def __init__(self):
 
-		# sensor, rule, weekday, monthday, hour, minute, second
+		# the type of the rule element
+		# (values: sensor, boolean, weekday, monthday, hour, minute, second)
 		self.type = None 
 
+		# is the rule element triggered
 		self.triggered = False
 
 		# time when rule element triggered
 		self.timeWhenTriggered = 0.0 
 
 		# time how long this element counts as triggered
-		# (not used by type "rule", "weekday", "monthday")
 		self.timeTriggeredFor = 0.0 
 
+		# the element of this rule element (for example a sensor rule)
 		self.element = None
 
 
+# this class represents the start of a rule and has all meta information that
+# is needed for it
 class RuleStart(RuleElement):
 
 	def __init__(self):
 		RuleElement.__init__(self)
 
+		# the order of the rule in the chain in which the rules have to trigger
 		self.order = None
 
+		# the maximum amount of time that this rule has to trigger after
+		# the previous rule has triggered in the chain (not used by the first
+		# rule in the chain)
 		self.maxTimeAfterPrev = None
 
+		# the minimum amount of time that this rule has to trigger after
+		# the previous rule has triggered in the chain (not used by the first
+		# rule in the chain)
 		self.minTimeAfterPrev = None
 
-		# maxTimeAfterPrev >= minTimeAfterPrev
-
-
-
-class Rule:
-
-	def __init__(self):
-
-		# and, or, not
-		self.type = None
-
-		self.elements = list()
-
-
-
-
-
-
-
-
-
-
+		# important: maxTimeAfterPrev >= minTimeAfterPrev
 
 
 # this class represents a single alert level that is configured
@@ -190,17 +212,11 @@ class AlertLevel:
 		# if it just triggers when a sensor alert is received (flag: False)
 		self.rulesActivated = None
 
-
+		# a list of rules (rule chain) that have to evaluate before the
+		# alert level triggers a sensor alert
+		# (the order in which the elements are stored in this list is the
+		# order in which the rules have to evaluate)
 		self.rules = list()
-
-
-
-
-
-
-
-
-
 
 
 # this class is woken up if a sensor alert is received
@@ -681,9 +697,9 @@ class SensorAlertExecuter(threading.Thread):
 
 				currentRuleElement.triggered = False
 
-		# check if rule element is of type "rule"
+		# check if rule element is of type "boolean"
 		# => traverse rule recursively
-		elif currentRuleElement.type == "rule":
+		elif currentRuleElement.type == "boolean":
 
 			# update values of all rule elements in current rule element
 			for ruleElement in currentRuleElement.element.elements:
@@ -702,8 +718,8 @@ class SensorAlertExecuter(threading.Thread):
 
 	def _evaluateRuleElementsRecursively(self, currentRuleElement):
 
-		# only evaluate rule elements of type "rule"
-		if currentRuleElement.type == "rule":
+		# only evaluate rule elements of type "boolean"
+		if currentRuleElement.type == "boolean":
 
 			# evaluate "and" rule element
 			if currentRuleElement.element.type == "and":
@@ -882,7 +898,7 @@ class SensorAlertExecuter(threading.Thread):
 
 							return True
 
-					elif element.type == "rule":
+					elif element.type == "boolean":
 						if not self._evaluateRuleElementsRecursively(element):
 							return False
 
@@ -1102,7 +1118,7 @@ class SensorAlertExecuter(threading.Thread):
 				for element in orElement.elements:
 
 					# only update rule elements
-					if element.type == "rule":
+					if element.type == "boolean":
 						if not self._evaluateRuleElementsRecursively(element):
 							return False
 
@@ -1324,7 +1340,7 @@ class SensorAlertExecuter(threading.Thread):
 				# check if rule element evaluates to the same triggered value
 				# as the current not rule element
 				# => toggle current not element triggered value
-				elif element.type == "rule":
+				elif element.type == "boolean":
 					if not self._evaluateRuleElementsRecursively(element):
 						return False
 
@@ -1353,7 +1369,7 @@ class SensorAlertExecuter(threading.Thread):
 						+ "rule element not valid.")
 					return False
 
-		# if current rule element is not of type "rule"
+		# if current rule element is not of type "boolean"
 		# => just return
 		else:
 			return True
@@ -1537,9 +1553,9 @@ class SensorAlertExecuter(threading.Thread):
 
 			return currentRuleElement.triggered
 
-		# check if rule element is of type "rule"
+		# check if rule element is of type "boolean"
 		# => traverse rule recursively
-		elif currentRuleElement.type == "rule":
+		elif currentRuleElement.type == "boolean":
 
 			# check all rule elements of the current rule element
 			# if one rule element is triggered => rule can still trigger
@@ -1924,33 +1940,8 @@ class SensorAlertExecuter(threading.Thread):
 							sensorAlertToHandle)
 
 
-					# TODO
-					# check if each element of rule is false => remove sensor alert
 
 
-
-				'''
-				sensorAlertId = sensorAlertToHandle[0][0]
-				sensorId = sensorAlertToHandle[0][1]
-				nodeId = sensorAlertToHandle[0][2]
-				timeReceived = sensorAlertToHandle[0][3]
-				alertDelay = sensorAlertToHandle[0][4]
-				state = self.storage.getSensorState(sensorId)
-				description = sensorAlertToHandle[0][6]
-				'''
-				
-
-
-				# TODO
-				# store timeReceived of sensor alert in timeWhenTriggered
-				# (but only if it is newer then the timeWhenTriggered)
-
-				# steps:
-				# 1) update metadata in rule (with newly received sensor alerts)
-				# 2) check if alert level has triggered => remove sensor alert
-				# 3) check if everything is false => remove sensor alert
-
-				#sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
 
 
 

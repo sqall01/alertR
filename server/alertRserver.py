@@ -12,7 +12,7 @@ import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import SensorAlertExecuter, AlertLevel, RuleStart, RuleElement, \
-	Rule, RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute, \
+	RuleBoolean, RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute, \
 	RuleSecond
 from lib import CSVBackend
 from lib import SMTPAlert
@@ -137,14 +137,14 @@ def parseRuleRecursively(currentRoot, currentRule):
 		if not orItem is None:
 
 			# create a new "or" rule
-			ruleNew = Rule()
+			ruleNew = RuleBoolean()
 			ruleNew.type = "or"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "rule"
+			ruleElement.type = "boolean"
 			ruleElement.element = ruleNew
 
 			# add wrapper element to the current rule
@@ -156,14 +156,14 @@ def parseRuleRecursively(currentRoot, currentRule):
 		elif not andItem is None:
 
 			# create a new "and" rule
-			ruleNew = Rule()
+			ruleNew = RuleBoolean()
 			ruleNew.type = "and"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "rule"
+			ruleElement.type = "boolean"
 			ruleElement.element = ruleNew
 
 			# add wrapper element to the current rule
@@ -175,14 +175,14 @@ def parseRuleRecursively(currentRoot, currentRule):
 		elif not notItem is None:
 
 			# create a new "not" rule
-			ruleNew = Rule()
+			ruleNew = RuleBoolean()
 			ruleNew.type = "not"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "rule"
+			ruleElement.type = "boolean"
 			ruleElement.element = ruleNew
 
 			# add wrapper element to the current rule
@@ -579,14 +579,14 @@ def parseRuleRecursively(currentRoot, currentRule):
 		for item in currentRoot.iterfind("and"):
 
 			# create a new "and" rule
-			ruleNew = Rule()
+			ruleNew = RuleBoolean()
 			ruleNew.type = "and"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "rule"
+			ruleElement.type = "boolean"
 			ruleElement.element = ruleNew
 
 			# add wrapper element to the current rule
@@ -599,14 +599,14 @@ def parseRuleRecursively(currentRoot, currentRule):
 		for item in currentRoot.iterfind("or"):
 
 			# create a new "or" rule
-			ruleNew = Rule()
+			ruleNew = RuleBoolean()
 			ruleNew.type = "or"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "rule"
+			ruleElement.type = "boolean"
 			ruleElement.element = ruleNew
 
 			# add wrapper element to the current rule
@@ -619,14 +619,14 @@ def parseRuleRecursively(currentRoot, currentRule):
 		for item in currentRoot.iterfind("not"):
 
 			# create a new "not" rule
-			ruleNew = Rule()
+			ruleNew = RuleBoolean()
 			ruleNew.type = "not"
 
 			# create a wrapper element around the rule
 			# to have meta information (i.e. triggered,
 			# time when triggered, etc.)
 			ruleElement = RuleElement()
-			ruleElement.type = "rule"
+			ruleElement.type = "boolean"
 			ruleElement.element = ruleNew
 
 			# add wrapper element to the current rule
@@ -655,7 +655,7 @@ def logRule(ruleElement, spaces, fileName):
 	for i in range(spaces):
 		spaceString += "   "
 
-	if ruleElement.type == "rule":
+	if ruleElement.type == "boolean":
 		logString = "%s %s" % (spaceString, ruleElement.element.type)
 		logging.info("[%s]: %s" % (fileName, logString))
 
@@ -666,7 +666,7 @@ def logRule(ruleElement, spaces, fileName):
 
 		for item in ruleElement.element.elements:
 
-			if item.type == "rule":
+			if item.type == "boolean":
 				logRule(item, spaces+1, fileName)
 
 			elif item.type == "sensor":
@@ -1023,33 +1023,33 @@ if __name__ == '__main__':
 					# start parsing the rule
 					if not orRule is None:
 
-						ruleStart = Rule()
+						ruleStart = RuleBoolean()
 						ruleStart.type = "or"
 
 						# fill wrapper element
-						ruleElement.type = "rule"
+						ruleElement.type = "boolean"
 						ruleElement.element = ruleStart
 
 						parseRuleRecursively(orRule, ruleStart)
 
 					elif not andRule is None:
 
-						ruleStart = Rule()
+						ruleStart = RuleBoolean()
 						ruleStart.type = "and"
 
 						# fill wrapper element
-						ruleElement.type = "rule"
+						ruleElement.type = "boolean"
 						ruleElement.element = ruleStart
 
 						parseRuleRecursively(andRule, ruleStart)
 
 					elif not notRule is None:
 
-						ruleStart = Rule()
+						ruleStart = RuleBoolean()
 						ruleStart.type = "not"
 
 						# fill wrapper element
-						ruleElement.type = "rule"
+						ruleElement.type = "boolean"
 						ruleElement.element = ruleStart
 
 						parseRuleRecursively(notRule, ruleStart)
