@@ -457,6 +457,7 @@ s->c:	json(
 							triggerAlways = triggerAlways (0 or 1)
 							smtpActivated = smtpActivated (0 or 1)
 							toAddr = toAddr
+							rulesActivated = (true or false)
 						),
 						dict(
 							alertLevel = alertLevel
@@ -464,6 +465,7 @@ s->c:	json(
 							triggerAlways = triggerAlways (0 or 1)
 							smtpActivated = smtpActivated (0 or 1)
 							toAddr = toAddr
+							rulesActivated = (true or false)
 						),
 						[...]
 					)
@@ -558,14 +560,19 @@ s->c:	json(
 				message = "sensoralert"
 				payload = dict(
 					type = "request"
-					sensorId = sensorId
-					state = state (0 or 1)
 					alertLevels = list(
 						alertLevel1,
 						alertLevel2,
 						[...]
 					)
 					description = description
+					rulesActivated = (true or false)
+
+					(only send/processed when rulesActivated = true)
+					sensorId = sensorId 
+
+					(only send/processed when rulesActivated = true)
+					state = state (0 or 1)
 				)
 			)
 		)
@@ -708,14 +715,19 @@ s->c:	json(
 				message = "sensoralert"
 				payload = dict(
 					type = "request"
-					sensorId = sensorId
-					state = state (0 or 1)
 					alertLevels = list(
 						alertLevel1,
 						alertLevel2,
 						[...]
 					)
 					description = description
+					rulesActivated = (true or false)
+
+					(only send/processed when rulesActivated = true)
+					sensorId = sensorId 
+
+					(only send/processed when rulesActivated = true)
+					state = state (0 or 1)
 				)
 			)
 		)
