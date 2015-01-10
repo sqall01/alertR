@@ -1186,6 +1186,7 @@ class ServerCommunication:
 				triggerAlways = int(alertLevels[i]["triggerAlways"])
 				smtpActivated = int(alertLevels[i]["smtpActivated"])
 				toAddr = str(alertLevels[i]["toAddr"])
+				rulesActivated = bool(alertLevels[i]["rulesActivated"])
 
 			except Exception as e:
 				logging.exception("[%s]: Received alertLevel " % self.fileName
@@ -1240,6 +1241,7 @@ class ServerCommunication:
 					alertLevel.toAddr = toAddr
 					alertLevel.name = name
 					alertLevel.triggerAlways = triggerAlways
+					alertLevel.rulesActivated = rulesActivated
 
 					found = True
 					break
@@ -1252,6 +1254,7 @@ class ServerCommunication:
 				alertLevel.toAddr = toAddr
 				alertLevel.name = name
 				alertLevel.triggerAlways = triggerAlways
+				alertLevel.rulesActivated = rulesActivated
 				self.alertLevels.append(alertLevel)
 
 		# sending sensor alert response

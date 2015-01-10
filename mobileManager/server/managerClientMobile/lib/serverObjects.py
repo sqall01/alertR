@@ -118,6 +118,7 @@ class AlertLevel:
 		self.level = None
 		self.name = None
 		self.triggerAlways = None
+		self.rulesActivated = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
