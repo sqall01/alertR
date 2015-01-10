@@ -309,6 +309,27 @@ class SensorAlertExecuter(threading.Thread):
 					if ((sensorAlertTimeReceived + sensorAlertAlertDelay)
 						> currentRuleElement.timeWhenTriggered):
 
+						# check if an alert delay has to be considered
+						if not ((time.time() - sensorAlertTimeReceived)
+							> sensorAlertAlertDelay):
+
+							logging.debug("[%s]: Sensor alert " % self.fileName
+								+ "for sensor with id '%d' still delayed for "
+								% ruleSensorId
+								+ "'%.2f' seconds."
+								% (sensorAlertAlertDelay
+								- (time.time() - sensorAlertTimeReceived)))
+
+							# TODO DEBUG
+							print ("Sensor alert "
+								+ "for sensor with id '%d' still delayed for "
+								% ruleSensorId
+								+ "'%.2f' seconds."
+								% (sensorAlertAlertDelay
+								- (time.time() - sensorAlertTimeReceived)))
+
+							continue
+
 						logging.debug("[%s]: New sensor " % self.fileName
 							+ "alert for sensor with id '%d' received."
 							% ruleSensorId)
@@ -1435,7 +1456,6 @@ class SensorAlertExecuter(threading.Thread):
 					print "Curr time:"
 					print currRuleStart.timeWhenTriggered
 
-
 					if (((prevRuleStart.timeWhenTriggered
 						+ currRuleStart.minTimeAfterPrev)
 						<= currRuleStart.timeWhenTriggered)
@@ -1475,12 +1495,24 @@ class SensorAlertExecuter(threading.Thread):
 						currRuleStart.triggered = False
 						currRuleStart.timeWhenTriggered = 0.0
 
+		# check if all received sensor alerts count as triggered 
+		# and therefore can be removed
+		for sensorAlert in list(sensorAlertList):
+			sensorAlertTimeReceived = sensorAlert[3]
+			sensorAlertAlertDelay = sensorAlert[4]
 
-		# empty sensor alert list after values are updated in rule
-		del sensorAlertList[:]
+			# if there does not exist an alert delay
+			# => remove sensor alert
+			if sensorAlertAlertDelay == 0:
+				sensorAlertList.remove(sensorAlert)
 
-
-
+			# if there exist an alert delay
+			# => only remove sensor alert from the list when there is no
+			# delay to wait (add an artificial delay from 5 seconds
+			# to make race condition unlikely)
+			elif ((time.time() - sensorAlertTimeReceived)
+				> (sensorAlertAlertDelay + 5)):
+				sensorAlertList.remove(sensorAlert)
 
 
 
@@ -1577,10 +1609,15 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
-	def _checkRulesCanTrigger(self, alertLevel):
+	def _checkRulesCanTrigger(self, sensorAlertList, alertLevel):
 
 		logging.debug("[%s]: Check if rules of " % self.fileName
 			+ "alert level '%d' can trigger." % alertLevel.level)
+
+		# check if a sensor alert is still in the list (this happens
+		# when a sensor has a delay until it counts as triggered)
+		if sensorAlertList:
+			return True
 
 		# check all rules if they can still trigger
 		# if one of the rules chain can => complete rules chain can trigger
@@ -1925,7 +1962,8 @@ class SensorAlertExecuter(threading.Thread):
 				else:
 					print "Rule has not triggered (yet)"
 
-					if not self._checkRulesCanTrigger(alertLevel):
+					if not self._checkRulesCanTrigger(sensorAlertList,
+						alertLevel):
 
 						logging.debug("[%s]: Alert level " % self.fileName
 							+ "'%d' rules can not trigger at the moment."
@@ -1940,13 +1978,6 @@ class SensorAlertExecuter(threading.Thread):
 							sensorAlertToHandle)
 
 
-
-
-
-
-
-				# TODO
-				# check alertDelay for triggered sensor alert
 
 
 			time.sleep(0.5)
