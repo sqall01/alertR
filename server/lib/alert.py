@@ -183,6 +183,23 @@ class RuleStart(RuleElement):
 
 		# important: maxTimeAfterPrev >= minTimeAfterPrev
 
+		# this flag is set when the counter of the rule is activated
+		self.counterActivated = None
+
+		# the list of timeWhenTriggered values for the counter
+		# (only processed if counterActivated is set)
+		self.counterList = list()
+
+		# the max value/limit of the counter (when it is reached
+		# the trigger is reset)
+		# (only processed if counterActivated is set)
+		self.counterLimit = 0
+
+		# the time that has to be passed before a timeWhenTriggered is removed
+		# from the counter
+		# (only processed if counterActivated is set)
+		self.counterWaitTime = 0
+
 
 # this class represents a single alert level that is configured
 class AlertLevel:
@@ -1495,6 +1512,7 @@ class SensorAlertExecuter(threading.Thread):
 						currRuleStart.triggered = False
 						currRuleStart.timeWhenTriggered = 0.0
 
+
 		# check if all received sensor alerts count as triggered 
 		# and therefore can be removed
 		for sensorAlert in list(sensorAlertList):
@@ -1515,6 +1533,72 @@ class SensorAlertExecuter(threading.Thread):
 				sensorAlertList.remove(sensorAlert)
 
 
+		# check if the counter is activated and when it is activated
+		# if the counter limit is reached
+		for ruleStart in alertLevel.rules:
+
+			# skip counter checking when counter is not activated
+			if not ruleStart.counterActivated:
+				continue
+
+			# remove all triggered elements from the counter
+			# if the time that they have to wait has passed
+			for counterTimeWhenTriggered in list(ruleStart.counterList):
+				if ((counterTimeWhenTriggered + ruleStart.counterWaitTime)
+					< time.time()):
+
+					logging.debug("[%s]: Counter for rule with order '%d' "
+						% (self.fileName, ruleStart.order)
+						+ "for alert level '%d' has expired. Removing it."
+						% alertLevel.level)
+
+					# TODO DEBUG
+					print ("Counter for rule with order '%d' "
+						% ruleStart.order
+						+ "for alert level '%d' has expired. Removing it."
+						% alertLevel.level)
+
+					ruleStart.counterList.remove(counterTimeWhenTriggered)
+
+			# only process counter if the rule is triggered
+			if ruleStart.triggered:
+
+				# check if timeWhenTriggered is already processed in the
+				# counter list
+				# => do nothing
+				if ruleStart.timeWhenTriggered in ruleStart.counterList:
+					pass
+
+				# when it is not processed yet
+				# => add it or reset the trigger
+				else:
+
+					# check if the limit of the counter is not yet reached
+					# => add timeWhenTriggered to the counter list
+					if len(ruleStart.counterList) < ruleStart.counterLimit:
+
+						ruleStart.counterList.append(
+							ruleStart.timeWhenTriggered)
+
+					# when the limit is already reached
+					# => reset the trigger
+					else:
+
+						logging.debug("[%s]: Counter for rule with order '%d' "
+							% (self.fileName, ruleStart.order)
+							+ "for alert level '%d' has reached its limit. "
+							% alertLevel.level
+							+ "Resetting rule.")
+
+						# TODO DEBUG
+						print ("Counter for rule with order '%d' "
+							% ruleStart.order
+							+ "for alert level '%d' has reached its limit. "
+							% alertLevel.level
+							+ "Resetting rule.")
+
+						ruleStart.triggered = False
+						ruleStart.timeWhenTriggered = 0.0
 
 
 	def _evaluateRules(self, alertLevel):
@@ -1879,16 +1963,15 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
-
+			# TODO DEBUG
 			print "check of sensor alerts with rules NOW"
 
-
-			# TODO
 
 			# check all sensor alerts to handle with alert levels that have
 			# rules if they have to be triggered
 			for sensorAlertToHandle in list(sensorAlertsToHandleWithRules):
 
+				# TODO DEBUG
 				print sensorAlertToHandle
 
 				sensorAlertList = sensorAlertToHandle[0]
@@ -1907,8 +1990,7 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
-					# TODO
-					# send sensor alerts to clients (and email)
+					# TODO DEBUG
 					print "Rule has triggered"
 
 
@@ -1960,6 +2042,8 @@ class SensorAlertExecuter(threading.Thread):
 					sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
 
 				else:
+
+					# TODO DEBUG
 					print "Rule has not triggered (yet)"
 
 					if not self._checkRulesCanTrigger(sensorAlertList,
@@ -1969,7 +2053,7 @@ class SensorAlertExecuter(threading.Thread):
 							+ "'%d' rules can not trigger at the moment."
 							% alertLevel.level)
 
-
+						# TODO DEBUG
 						print "Rule can not trigger at the moment"
 
 						# remove sensor alert to handle from list

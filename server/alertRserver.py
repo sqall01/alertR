@@ -645,7 +645,10 @@ def logRule(ruleElement, spaces, fileName):
 	if isinstance(ruleElement, RuleStart):
 		logString = ("RULE (order=%d, " % ruleElement.order
 			+ "minTimeAfterPrev=%.2f, " % ruleElement.minTimeAfterPrev
-			+ "maxTimeAfterPrev=%.2f)" % ruleElement.maxTimeAfterPrev)
+			+ "maxTimeAfterPrev=%.2f, " % ruleElement.maxTimeAfterPrev
+			+ "counterActivated=%s, " % str(ruleElement.counterActivated)
+			+ "counterLimit=%d, " % ruleElement.counterLimit
+			+ "counterWaitTime=%d)" % ruleElement.counterWaitTime)
 		logging.info("[%s]: %s" % (fileName, logString))
 
 		# TODO DEBUG
@@ -1019,6 +1022,29 @@ if __name__ == '__main__':
 						raise ValueError("'minTimeAfterPrev' attribute not "
 							+ "allowed to be greater than "
 							+ "'maxTimeAfterPrev' attribute in rule tag.")
+
+					# get counterActivated attribute
+					ruleElement.counterActivated = (str(firstRule.attrib[
+						"counterActivated"]).upper() == "TRUE")
+
+					# only parse counter attributes if it is activated
+					if ruleElement.counterActivated:
+
+						# get counterLimit attribute
+						ruleElement.counterLimit = int(firstRule.attrib[
+						"counterLimit"])
+
+						if ruleElement.counterLimit < 0:
+							raise ValueError("'counterLimit' attribute "
+							+ "not allowed to be smaller than 0.")
+
+						# get counterWaitTime attribute
+						ruleElement.counterWaitTime = int(firstRule.attrib[
+						"counterWaitTime"])
+
+						if ruleElement.counterWaitTime < 0:
+							raise ValueError("'counterWaitTime' attribute "
+							+ "not allowed to be smaller than 0.")
 
 					# start parsing the rule
 					if not orRule is None:
