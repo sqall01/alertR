@@ -263,10 +263,10 @@ class SensorAlertExecuter(threading.Thread):
 		self.exitFlag = False
 
 
-	# this function recursively updates all values of the rule elements
-	# it processes received sensor alerts, updates the timeWhenTriggered
-	# values and sets the rule elements to triggered or not triggered
-	# respectively
+	# this internal function recursively updates all values of 
+	# the rule elements it processes received sensor alerts,
+	# updates the timeWhenTriggered values and sets the rule elements
+	# to triggered or not triggered respectively
 	def _updateRuleValuesRecursively(self, sensorAlertList,
 		currentRuleElement):
 
@@ -661,7 +661,8 @@ class SensorAlertExecuter(threading.Thread):
 		return True
 
 
-	# this function evaluates rule elements from type "boolean" recursively
+	# this internal function evaluates rule elements from type
+	# "boolean" recursively
 	# (means AND, OR and NOT are evaluated as triggered/not triggered)
 	def _evaluateRuleElementsRecursively(self, currentRuleElement):
 
@@ -1148,17 +1149,14 @@ class SensorAlertExecuter(threading.Thread):
 			return True
 
 
-
-
-
-
-
-
+	# this internal function updates all rules and their rule elements
+	# (sets new values for them, evaluates the boolean elements etc)
 	def _updateRule(self, sensorAlertList, alertLevel):
 
 		logging.debug("[%s]: Updating rule values " % self.fileName
 			+ "for alert level '%d'." % alertLevel.level)
 
+		# update and evaluate all rules of the alert level
 		for ruleStart in alertLevel.rules:
 
 			# update all rule values (sets also the sensors as triggered
@@ -1297,6 +1295,8 @@ class SensorAlertExecuter(threading.Thread):
 						ruleStart.timeWhenTriggered = 0.0
 
 
+	# this internal function evaluates if the rule chain of the given
+	# alert level is triggered
 	def _evaluateRules(self, alertLevel):
 
 		logging.debug("[%s]: Evaluate rules " % self.fileName
@@ -1321,13 +1321,9 @@ class SensorAlertExecuter(threading.Thread):
 			return False
 
 
-
-
-
-
-
+	# this internal function checks recusrively if a rule element is triggered
+	# and therefore the rule is likely to trigger during the next evaluation
 	def _checkRulesCanTriggerRecursively(self, currentRuleElement):
-
 
 		# check if rule element is of type "sensor"
 		# => return if it is triggered
@@ -1386,9 +1382,8 @@ class SensorAlertExecuter(threading.Thread):
 			return False
 
 
-
-
-
+	# this internal function checks if a rule is likely to trigger
+	# during the next check (means an element of it counts still as triggered)
 	def _checkRulesCanTrigger(self, sensorAlertList, alertLevel):
 
 		logging.debug("[%s]: Check if rules of " % self.fileName
@@ -1410,8 +1405,7 @@ class SensorAlertExecuter(threading.Thread):
 		return False
 
 
-
-
+	# this function starts the endless loop of the alert executer thread
 	def run(self):
 
 		# create an empty list for sensor alerts
@@ -1657,39 +1651,23 @@ class SensorAlertExecuter(threading.Thread):
 					sensorAlertsToHandle.remove(sensorAlertToHandle)
 
 
-
-
-			# TODO DEBUG
-			print "check of sensor alerts with rules NOW"
-
-
 			# check all sensor alerts to handle with alert levels that have
 			# rules if they have to be triggered
 			for sensorAlertToHandle in list(sensorAlertsToHandleWithRules):
 
-				# TODO DEBUG
-				print sensorAlertToHandle
-
 				sensorAlertList = sensorAlertToHandle[0]
 				alertLevel = sensorAlertToHandle[1]
 
+				# update the rule chain of the alert level with
+				# the received sensor alerts
 				self._updateRule(sensorAlertList, alertLevel)
 
-
-
-
-
+				# check if the rule chain evaluates to triggered
+				# => trigger sensor alert for the alert level
 				if self._evaluateRules(alertLevel):
 
 					logging.info("[%s]: Alert level " % self.fileName
 						+ "'%d' rules have triggered." % alertLevel.level)
-
-
-
-					# TODO DEBUG
-					print "Rule has triggered"
-
-
 
 					# check if the alert level that has triggered a sensor
 					# alert has email notification (smtpAlert) activated
@@ -1737,11 +1715,10 @@ class SensorAlertExecuter(threading.Thread):
 					# after it has triggered
 					sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
 
+				# if rule chain did not evaluate to triggered
+				# => check if it is likely that it can trigger during the
+				# next evaluation if not => remove the sensor alert to handle
 				else:
-
-					# TODO DEBUG
-					print "Rule has not triggered (yet)"
-
 					if not self._checkRulesCanTrigger(sensorAlertList,
 						alertLevel):
 
@@ -1749,16 +1726,10 @@ class SensorAlertExecuter(threading.Thread):
 							+ "'%d' rules can not trigger at the moment."
 							% alertLevel.level)
 
-						# TODO DEBUG
-						print "Rule can not trigger at the moment"
-
 						# remove sensor alert to handle from list
 						# when it can not trigger at the current state
 						sensorAlertsToHandleWithRules.remove(
 							sensorAlertToHandle)
-
-
-
 
 			time.sleep(0.5)
 
