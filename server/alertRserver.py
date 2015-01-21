@@ -651,9 +651,6 @@ def logRule(ruleElement, spaces, fileName):
 			+ "counterWaitTime=%d)" % ruleElement.counterWaitTime)
 		logging.info("[%s]: %s" % (fileName, logString))
 
-		# TODO DEBUG
-		print logString
-
 	spaceString = ""
 	for i in range(spaces):
 		spaceString += "   "
@@ -661,9 +658,6 @@ def logRule(ruleElement, spaces, fileName):
 	if ruleElement.type == "boolean":
 		logString = "%s %s" % (spaceString, ruleElement.element.type)
 		logging.info("[%s]: %s" % (fileName, logString))
-
-		# TODO DEBUG
-		print logString
 
 		spaceString += "   "
 
@@ -679,9 +673,6 @@ def logRule(ruleElement, spaces, fileName):
 					+ "remoteId=%d)" % item.element.remoteSensorId)
 				logging.info("[%s]: %s" % (fileName, logString))
 
-				# TODO DEBUG
-				print logString
-
 			elif item.type == "weekday":
 
 				logString = ("%s weekday " % spaceString
@@ -689,18 +680,12 @@ def logRule(ruleElement, spaces, fileName):
 					+ "weekday=%d)" % item.element.weekday)
 				logging.info("[%s]: %s" % (fileName, logString))
 
-				# TODO DEBUG
-				print logString
-
 			elif item.type == "monthday":
 
 				logString = ("%s monthday " % spaceString
 					+ "(time=%s, " % item.element.time
 					+ "monthday=%d)" % item.element.monthday)
 				logging.info("[%s]: %s" % (fileName, logString))
-
-				# TODO DEBUG
-				print logString
 
 			elif item.type == "hour":
 
@@ -710,9 +695,6 @@ def logRule(ruleElement, spaces, fileName):
 					+ "end=%d)") % item.element.end
 				logging.info("[%s]: %s" % (fileName, logString))
 
-				# TODO DEBUG
-				print logString
-
 			elif item.type == "minute":
 
 				logString = ("%s minute " % spaceString
@@ -720,18 +702,12 @@ def logRule(ruleElement, spaces, fileName):
 					+ "end=%d)") % item.element.end
 				logging.info("[%s]: %s" % (fileName, logString))
 
-				# TODO DEBUG
-				print logString
-
 			elif item.type == "second":
 
 				logString = ("%s second " % spaceString
 					+ "(start=%d, " % item.element.start
 					+ "end=%d)") % item.element.end
 				logging.info("[%s]: %s" % (fileName, logString))
-
-				# TODO DEBUG
-				print logString
 
 			else:
 				raise ValueError("Rule has invalid type: '%s'."
@@ -745,9 +721,6 @@ def logRule(ruleElement, spaces, fileName):
 			+ "remoteId=%d)" % ruleElement.element.remoteSensorId)
 		logging.info("[%s]: %s" % (fileName, logString))
 
-		# TODO DEBUG
-		print logString
-
 	elif ruleElement.type == "weekday":
 
 		logString = ("%s weekday " % spaceString
@@ -755,18 +728,12 @@ def logRule(ruleElement, spaces, fileName):
 			+ "weekday=%d)" % ruleElement.element.weekday)
 		logging.info("[%s]: %s" % (fileName, logString))
 
-		# TODO DEBUG
-		print logString
-
 	elif ruleElement.type == "monthday":
 
 		logString = ("%s monthday " % spaceString
 			+ "(time=%s, " % ruleElement.element.time
 			+ "monthday=%d)" % ruleElement.element.monthday)
 		logging.info("[%s]: %s" % (fileName, logString))
-
-		# TODO DEBUG
-		print logString
 
 	elif ruleElement.type == "hour":
 
@@ -776,9 +743,6 @@ def logRule(ruleElement, spaces, fileName):
 			+ "end=%d)") % ruleElement.element.end
 		logging.info("[%s]: %s" % (fileName, logString))
 
-		# TODO DEBUG
-		print logString
-
 	elif ruleElement.type == "minute":
 
 		logString = ("%s minute " % spaceString
@@ -786,18 +750,12 @@ def logRule(ruleElement, spaces, fileName):
 			+ "end=%d)") % ruleElement.element.end
 		logging.info("[%s]: %s" % (fileName, logString))
 
-		# TODO DEBUG
-		print logString
-
 	elif ruleElement.type == "second":
 
 		logString = ("%s second " % spaceString
 			+ "(start=%d, " % ruleElement.element.start
 			+ "end=%d)") % ruleElement.element.end
 		logging.info("[%s]: %s" % (fileName, logString))
-
-		# TODO DEBUG
-		print logString
 
 	else:
 		raise ValueError("Rule has invalid type: '%s'." % ruleElement.type)

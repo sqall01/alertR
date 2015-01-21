@@ -263,9 +263,10 @@ class SensorAlertExecuter(threading.Thread):
 		self.exitFlag = False
 
 
-
-
-
+	# this function recursively updates all values of the rule elements
+	# it processes received sensor alerts, updates the timeWhenTriggered
+	# values and sets the rule elements to triggered or not triggered
+	# respectively
 	def _updateRuleValuesRecursively(self, sensorAlertList,
 		currentRuleElement):
 
@@ -299,8 +300,6 @@ class SensorAlertExecuter(threading.Thread):
 				logging.debug("[%s]: Sensor " % self.fileName
 					+ "with id '%d' does not count as triggered anymore."
 					% ruleSensorId)
-				# TODO DEBUG
-				print "Sensor with id '%d' does not count as triggered anymore." % ruleSensorId
 
 				currentRuleElement.triggered = False
 
@@ -337,21 +336,11 @@ class SensorAlertExecuter(threading.Thread):
 								% (sensorAlertAlertDelay
 								- (time.time() - sensorAlertTimeReceived)))
 
-							# TODO DEBUG
-							print ("Sensor alert "
-								+ "for sensor with id '%d' still delayed for "
-								% ruleSensorId
-								+ "'%.2f' seconds."
-								% (sensorAlertAlertDelay
-								- (time.time() - sensorAlertTimeReceived)))
-
 							continue
 
 						logging.debug("[%s]: New sensor " % self.fileName
 							+ "alert for sensor with id '%d' received."
 							% ruleSensorId)
-						# TODO DEBUG
-						print "New sensor alert for sensor with id '%d' received." % ruleSensorId
 
 						currentRuleElement.timeWhenTriggered = \
 							sensorAlertTimeReceived + sensorAlertAlertDelay
@@ -365,8 +354,6 @@ class SensorAlertExecuter(threading.Thread):
 							logging.debug("[%s]: Sensor " % self.fileName
 								+ "with id '%d' counts as triggered."
 								% ruleSensorId)
-							# TODO DEBUG
-							print "Sensor with id '%d' counts as triggered."% ruleSensorId
 
 							currentRuleElement.triggered = True
 
@@ -377,8 +364,6 @@ class SensorAlertExecuter(threading.Thread):
 							logging.debug("[%s]: Sensor " % self.fileName
 							+ "with id '%d' does not count as triggered."
 							% ruleSensorId)
-							# TODO DEBUG
-							print "Sensor with id '%d' does not count as triggered." % ruleSensorId
 
 							currentRuleElement.triggered = False
 
@@ -401,10 +386,6 @@ class SensorAlertExecuter(threading.Thread):
 						logging.debug("[%s]: Week day " % self.fileName
 							+ "with value '%d' for '%s' counts as triggered."
 							% (weekdayElement.weekday, weekdayElement.time))
-						# TODO DEBUG
-						print ("Week day "
-							+ "with value '%d' for '%s' counts as triggered."
-							% (weekdayElement.weekday, weekdayElement.time))
 
 						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
@@ -414,11 +395,6 @@ class SensorAlertExecuter(threading.Thread):
 				elif currentRuleElement.triggered:
 
 					logging.debug("[%s]: Week day " % self.fileName
-						+ "with value '%d' for '%s' no longer "
-						% (weekdayElement.weekday, weekdayElement.time)
-						+ "counts as triggered.")
-					# TODO DEBUG
-					print ("Week day "
 						+ "with value '%d' for '%s' no longer "
 						% (weekdayElement.weekday, weekdayElement.time)
 						+ "counts as triggered.")
@@ -438,10 +414,6 @@ class SensorAlertExecuter(threading.Thread):
 						logging.debug("[%s]: Week day " % self.fileName
 							+ "with value '%d' for '%s' counts as triggered."
 							% (weekdayElement.weekday, weekdayElement.time))
-						# TODO DEBUG
-						print ("Week day "
-							+ "with value '%d' for '%s' counts as triggered."
-							% (weekdayElement.weekday, weekdayElement.time))
 
 						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
@@ -451,11 +423,6 @@ class SensorAlertExecuter(threading.Thread):
 				elif currentRuleElement.triggered:
 
 					logging.debug("[%s]: Week day " % self.fileName
-						+ "with value '%d' for '%s' no longer "
-						% (weekdayElement.weekday, weekdayElement.time)
-						+ "counts as triggered.")
-					# TODO DEBUG
-					print ("Week day "
 						+ "with value '%d' for '%s' no longer "
 						% (weekdayElement.weekday, weekdayElement.time)
 						+ "counts as triggered.")
@@ -486,10 +453,6 @@ class SensorAlertExecuter(threading.Thread):
 						logging.debug("[%s]: Month day " % self.fileName
 							+ "with value '%d' for '%s' counts as triggered."
 							% (monthdayElement.monthday, monthdayElement.time))
-						# TODO DEBUG
-						print ("Month day "
-							+ "with value '%d' for '%s' counts as triggered."
-							% (monthdayElement.monthday, monthdayElement.time))
 
 						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
@@ -499,11 +462,6 @@ class SensorAlertExecuter(threading.Thread):
 				elif currentRuleElement.triggered:
 
 					logging.debug("[%s]: Month day " % self.fileName
-						+ "with value '%d' for '%s' no longer "
-						% (monthdayElement.monthday, monthdayElement.time)
-						+ "counts as triggered.")
-					# TODO DEBUG
-					print ("Month day "
 						+ "with value '%d' for '%s' no longer "
 						% (monthdayElement.monthday, monthdayElement.time)
 						+ "counts as triggered.")
@@ -523,10 +481,6 @@ class SensorAlertExecuter(threading.Thread):
 						logging.debug("[%s]: Month day " % self.fileName
 							+ "with value '%d' for '%s' counts as triggered."
 							% (monthdayElement.monthday, monthdayElement.time))
-						# TODO DEBUG
-						print ("Month day "
-							+ "with value '%d' for '%s' counts as triggered."
-							% (monthdayElement.monthday, monthdayElement.time))
 
 						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
@@ -536,11 +490,6 @@ class SensorAlertExecuter(threading.Thread):
 				elif currentRuleElement.triggered:
 
 					logging.debug("[%s]: Month day " % self.fileName
-						+ "with value '%d' for '%s' no longer "
-						% (monthdayElement.monthday, monthdayElement.time)
-						+ "counts as triggered.")
-					# TODO DEBUG
-					print ("Month day "
 						+ "with value '%d' for '%s' no longer "
 						% (monthdayElement.monthday, monthdayElement.time)
 						+ "counts as triggered.")
@@ -574,11 +523,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "from '%d' to '%d' for '%s' counts as triggered."
 							% (hourElement.start, hourElement.end,
 							hourElement.time))
-						# TODO DEBUG
-						print ("Hour "
-							+ "from '%d' to '%d' for '%s' counts as triggered."
-							% (hourElement.start, hourElement.end,
-							hourElement.time))
 
 						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
@@ -588,12 +532,6 @@ class SensorAlertExecuter(threading.Thread):
 				elif currentRuleElement.triggered:
 
 					logging.debug("[%s]: Hour " % self.fileName
-						+ "from '%d' to '%d' for '%s' no longer "
-						% (hourElement.start, hourElement.end,
-						hourElement.time)
-						+ "counts as triggered.")
-					# TODO DEBUG
-					print ("Hour "
 						+ "from '%d' to '%d' for '%s' no longer "
 						% (hourElement.start, hourElement.end,
 						hourElement.time)
@@ -617,11 +555,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "from '%d' to '%d' for '%s' counts as triggered."
 							% (hourElement.start, hourElement.end,
 							hourElement.time))
-						# TODO DEBUG
-						print ("Hour "
-							+ "from '%d' to '%d' for '%s' counts as triggered."
-							% (hourElement.start, hourElement.start,
-							hourElement.time))
 
 						currentRuleElement.timeWhenTriggered = time.time()
 						currentRuleElement.triggered = True
@@ -633,12 +566,6 @@ class SensorAlertExecuter(threading.Thread):
 					logging.debug("[%s]: Hour " % self.fileName
 						+ "from '%d' to '%d' for '%s' no longer "
 						% (hourElement.start, hourElement.end,
-						hourElement.time)
-						+ "counts as triggered.")
-					# TODO DEBUG
-					print ("Hour "
-						+ "from '%d' to '%d' for '%s' no longer "
-						% (hourElement.start, hourElement.start,
 						hourElement.time)
 						+ "counts as triggered.")
 
@@ -668,10 +595,6 @@ class SensorAlertExecuter(threading.Thread):
 					logging.debug("[%s]: Minute " % self.fileName
 						+ "from '%d' to '%d' counts as triggered."
 						% (minuteElement.start, minuteElement.end))
-					# TODO DEBUG
-					print ("Minute "
-						+ "from '%d' to '%d' counts as triggered."
-						% (minuteElement.start, minuteElement.end))
 
 					currentRuleElement.timeWhenTriggered = time.time()
 					currentRuleElement.triggered = True
@@ -681,11 +604,6 @@ class SensorAlertExecuter(threading.Thread):
 			elif currentRuleElement.triggered:
 
 				logging.debug("[%s]: Minute " % self.fileName
-					+ "from '%d' to '%d' no longer "
-					% (minuteElement.start, minuteElement.end)
-					+ "counts as triggered.")
-				# TODO DEBUG
-				print ("Minute "
 					+ "from '%d' to '%d' no longer "
 					% (minuteElement.start, minuteElement.end)
 					+ "counts as triggered.")
@@ -711,10 +629,6 @@ class SensorAlertExecuter(threading.Thread):
 					logging.debug("[%s]: Second " % self.fileName
 						+ "from '%d' to '%d' counts as triggered."
 						% (secondElement.start, secondElement.end))
-					# TODO DEBUG
-					print ("Second "
-						+ "from '%d' to '%d' counts as triggered."
-						% (secondElement.start, secondElement.end))
 
 					currentRuleElement.timeWhenTriggered = time.time()
 					currentRuleElement.triggered = True
@@ -724,11 +638,6 @@ class SensorAlertExecuter(threading.Thread):
 			elif currentRuleElement.triggered:
 
 				logging.debug("[%s]: Second " % self.fileName
-					+ "from '%d' to '%d' no longer "
-					% (secondElement.start, secondElement.end)
-					+ "counts as triggered.")
-				# TODO DEBUG
-				print ("Second "
 					+ "from '%d' to '%d' no longer "
 					% (secondElement.start, secondElement.end)
 					+ "counts as triggered.")
@@ -752,8 +661,8 @@ class SensorAlertExecuter(threading.Thread):
 		return True
 
 
-
-
+	# this function evaluates rule elements from type "boolean" recursively
+	# (means AND, OR and NOT are evaluated as triggered/not triggered)
 	def _evaluateRuleElementsRecursively(self, currentRuleElement):
 
 		# only evaluate rule elements of type "boolean"
@@ -782,14 +691,6 @@ class SensorAlertExecuter(threading.Thread):
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
 
-								# TODO DEBUG
-								print ("Sensor rule element with "
-									+ "remote id '%d' and username '%s' not "
-									% (element.element.remoteSensorId,
-									element.element.username)
-									+ "triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
 								currentRuleElement.triggered = False
 
 							return True
@@ -810,14 +711,6 @@ class SensorAlertExecuter(threading.Thread):
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
 
-								# TODO DEBUG
-								print ("Week day rule element "
-									+ "with value '%d' for '%s' not "
-									% (element.element.weekday,
-									element.element.time)
-									+ "triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
 								currentRuleElement.triggered = False
 
 							return True
@@ -832,14 +725,6 @@ class SensorAlertExecuter(threading.Thread):
 							if currentRuleElement.triggered:
 								logging.debug("[%s]: Month day rule element "
 									% self.fileName
-									+ "with value '%d' for '%s' not "
-									% (element.element.monthday,
-									element.element.time)
-									+ "triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
-								# TODO DEBUG
-								print ("Month day rule element "
 									+ "with value '%d' for '%s' not "
 									% (element.element.monthday,
 									element.element.time)
@@ -867,15 +752,6 @@ class SensorAlertExecuter(threading.Thread):
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
 
-								# TODO DEBUG
-								print ("Hour rule element "
-									+ "from '%d' to '%d' for '%s' not "
-									% (element.element.start,
-									element.element.end,
-									element.element.time)
-									+ "triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
 								currentRuleElement.triggered = False
 
 							return True
@@ -890,14 +766,6 @@ class SensorAlertExecuter(threading.Thread):
 							if currentRuleElement.triggered:
 								logging.debug("[%s]: Minute rule element "
 									% self.fileName
-									+ "from '%d' to '%d' not "
-									% (element.element.start,
-									element.element.end)
-									+ "triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
-								# TODO DEBUG
-								print ("Minute rule element "
 									+ "from '%d' to '%d' not "
 									% (element.element.start,
 									element.element.end)
@@ -924,14 +792,6 @@ class SensorAlertExecuter(threading.Thread):
 									+ "triggered. Set 'and' rule "
 									+ "also to not triggered.")
 
-								# TODO DEBUG
-								print ("Second rule element "
-									+ "from '%d' to '%d' not "
-									% (element.element.start,
-									element.element.end)
-									+ "triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
 								currentRuleElement.triggered = False
 
 							return True
@@ -952,11 +812,6 @@ class SensorAlertExecuter(threading.Thread):
 									+ "to not triggered. Set 'and' rule "
 									+ "also to not triggered.")
 
-								# TODO DEBUG
-								print ("Rule element evaluates "
-									+ "to not triggered. Set 'and' rule "
-									+ "also to not triggered.")
-
 								currentRuleElement.triggered = False
 
 							return True
@@ -974,11 +829,6 @@ class SensorAlertExecuter(threading.Thread):
 
 					logging.debug("[%s]: Each rule element evaluates "
 						% self.fileName
-						+ "to triggered. Set 'and' rule "
-						+ "also to triggered.")
-
-					# TODO DEBUG
-					print ("Each rule element evaluates "
 						+ "to triggered. Set 'and' rule "
 						+ "also to triggered.")
 
@@ -1011,14 +861,6 @@ class SensorAlertExecuter(threading.Thread):
 								+ "triggered. Set 'or' rule "
 								+ "also to triggered.")
 
-							# TODO DEBUG
-							print ("Sensor rule element with "
-								+ "remote id '%d' and username '%s' "
-								% (element.element.remoteSensorId,
-								element.element.username)
-								+ "triggered. Set 'or' rule "
-								+ "also to triggered.")
-
 							currentRuleElement.triggered = True
 							currentRuleElement.timeWhenTriggered = time.time()
 
@@ -1036,14 +878,6 @@ class SensorAlertExecuter(threading.Thread):
 								+ "triggered. Set 'or' rule "
 								+ "also to triggered.")
 
-							# TODO DEBUG
-							print ("Week day rule element with "
-								+ "value '%d' for '%s' "
-								% (element.element.weekday,
-								element.element.time)
-								+ "triggered. Set 'or' rule "
-								+ "also to triggered.")
-
 							currentRuleElement.triggered = True
 							currentRuleElement.timeWhenTriggered = time.time()
 
@@ -1055,14 +889,6 @@ class SensorAlertExecuter(threading.Thread):
 						if not currentRuleElement.triggered:
 							logging.debug("[%s]: Month day rule element with "
 								% self.fileName
-								+ "value '%d' for '%s' "
-								% (element.element.monthday,
-								element.element.time)
-								+ "triggered. Set 'or' rule "
-								+ "also to triggered.")
-
-							# TODO DEBUG
-							print ("Month day rule element with "
 								+ "value '%d' for '%s' "
 								% (element.element.monthday,
 								element.element.time)
@@ -1087,15 +913,6 @@ class SensorAlertExecuter(threading.Thread):
 								+ "triggered. Set 'or' rule "
 								+ "also to triggered.")
 
-							# TODO DEBUG
-							print ("Hour rule element from "
-								+ "'%d' to '%d' for '%s' "
-								% (element.element.start,
-								element.element.end,
-								element.element.time)
-								+ "triggered. Set 'or' rule "
-								+ "also to triggered.")
-
 							currentRuleElement.triggered = True
 							currentRuleElement.timeWhenTriggered = time.time()
 
@@ -1113,14 +930,6 @@ class SensorAlertExecuter(threading.Thread):
 								+ "triggered. Set 'or' rule "
 								+ "also to triggered.")
 
-							# TODO DEBUG
-							print ("Minute rule element from "
-								+ "'%d' to '%d' "
-								% (element.element.start,
-								element.element.end)
-								+ "triggered. Set 'or' rule "
-								+ "also to triggered.")
-
 							currentRuleElement.triggered = True
 							currentRuleElement.timeWhenTriggered = time.time()
 
@@ -1132,14 +941,6 @@ class SensorAlertExecuter(threading.Thread):
 						if not currentRuleElement.triggered:
 							logging.debug("[%s]: Second rule element from "
 								% self.fileName
-								+ "'%d' to '%d' "
-								% (element.element.start,
-								element.element.end)
-								+ "triggered. Set 'or' rule "
-								+ "also to triggered.")
-
-							# TODO DEBUG
-							print ("Second rule element from "
 								+ "'%d' to '%d' "
 								% (element.element.start,
 								element.element.end)
@@ -1172,11 +973,6 @@ class SensorAlertExecuter(threading.Thread):
 									+ "to triggered. Set 'or' rule "
 									+ "also to triggered.")
 
-								# TODO DEBUG
-								print ("Rule element evaluates "
-									+ "to triggered. Set 'or' rule "
-									+ "also to triggered.")
-
 								currentRuleElement.triggered = True
 								currentRuleElement.timeWhenTriggered = \
 									time.time()
@@ -1190,11 +986,6 @@ class SensorAlertExecuter(threading.Thread):
 				if currentRuleElement.triggered:
 					logging.debug("[%s]: Each rule element evaluates "
 						% self.fileName
-						+ "to not triggered. Set 'or' rule "
-						+ "also to not triggered.")
-
-					# TODO DEBUG
-					print ("Each rule element evaluates "
 						+ "to not triggered. Set 'or' rule "
 						+ "also to not triggered.")
 
@@ -1223,14 +1014,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "triggered value as 'not' rule. "
 							+ "Toggle triggered value of 'not' rule.")
 
-						# TODO DEBUG
-						print ("Sensor rule element with "
-							+ "remote id '%d' and username '%s' has same "
-							% (element.element.remoteSensorId,
-							element.element.username)
-							+ "triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
 						# toggle current rule element triggered value
 						currentRuleElement.triggered = not element.triggered
 
@@ -1250,14 +1033,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "triggered value as 'not' rule. "
 							+ "Toggle triggered value of 'not' rule.")
 
-						# TODO DEBUG
-						print ("Week day rule element with "
-							+ "value '%d' for '%s' has same "
-							% (element.element.weekday,
-							element.element.time)
-							+ "triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
 						# toggle current rule element triggered value
 						currentRuleElement.triggered = not element.triggered
 
@@ -1271,14 +1046,6 @@ class SensorAlertExecuter(threading.Thread):
 
 						logging.debug("[%s]: Month day rule element with "
 							% self.fileName
-							+ "value '%d' for '%s' has same "
-							% (element.element.monthday,
-							element.element.time)
-							+ "triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
-						# TODO DEBUG
-						print ("Month day rule element with "
 							+ "value '%d' for '%s' has same "
 							% (element.element.monthday,
 							element.element.time)
@@ -1305,15 +1072,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "triggered value as 'not' rule. "
 							+ "Toggle triggered value of 'not' rule.")
 
-						# TODO DEBUG
-						print ("Hour rule element from "
-							+ "'%d' to '%d' for '%s' has same "
-							% (element.element.start,
-							element.element.end,
-							element.element.time)
-							+ "triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
 						# toggle current rule element triggered value
 						currentRuleElement.triggered = not element.triggered
 
@@ -1333,15 +1091,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "triggered value as 'not' rule. "
 							+ "Toggle triggered value of 'not' rule.")
 
-						# TODO DEBUG
-						print ("Minute rule element from "
-							% self.fileName
-							+ "'%d' to '%d' has same "
-							% (element.element.start,
-							element.element.end)
-							+ "triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
 						# toggle current rule element triggered value
 						currentRuleElement.triggered = not element.triggered
 
@@ -1354,15 +1103,6 @@ class SensorAlertExecuter(threading.Thread):
 					if element.triggered == currentRuleElement.triggered:
 
 						logging.debug("[%s]: Second rule element from "
-							% self.fileName
-							+ "'%d' to '%d' has same "
-							% (element.element.start,
-							element.element.end)
-							+ "triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
-						# TODO DEBUG
-						print ("Second rule element from "
 							% self.fileName
 							+ "'%d' to '%d' has same "
 							% (element.element.start,
@@ -1392,11 +1132,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "to the same triggered value as 'not' rule. "
 							+ "Toggle triggered value of 'not' rule.")
 
-						# TODO DEBUG
-						print ("Rule element evaluates "
-							+ "to the same triggered value as 'not' rule. "
-							+ "Toggle triggered value of 'not' rule.")
-
 						# toggle current rule element triggered value
 						currentRuleElement.triggered = not element.triggered
 
@@ -1411,6 +1146,7 @@ class SensorAlertExecuter(threading.Thread):
 		# => just return
 		else:
 			return True
+
 
 
 
@@ -1458,21 +1194,10 @@ class SensorAlertExecuter(threading.Thread):
 
 				# check if current rule was triggered
 				if currRuleStart.triggered:
+
 					# check if current rule was triggered right between
 					# min and max time after previous rule
-
-					# TODO DEBUG
-					print "Min time:"
-					print (prevRuleStart.timeWhenTriggered
-						+ currRuleStart.minTimeAfterPrev)
-					
-					print "Max time:"
-					print (prevRuleStart.timeWhenTriggered
-						+ currRuleStart.maxTimeAfterPrev)
-
-					print "Curr time:"
-					print currRuleStart.timeWhenTriggered
-
+					# => do not change anything
 					if (((prevRuleStart.timeWhenTriggered
 						+ currRuleStart.minTimeAfterPrev)
 						<= currRuleStart.timeWhenTriggered)
@@ -1480,14 +1205,6 @@ class SensorAlertExecuter(threading.Thread):
 						((prevRuleStart.timeWhenTriggered
 						+ currRuleStart.maxTimeAfterPrev)
 						>= currRuleStart.timeWhenTriggered)):
-
-						# DEBUG TODO
-						print ("Rule with order '%d' "
-							% (currRuleStart.order)
-							+ "for alert level '%d' DID trigger "
-							% alertLevel.level
-							+ "in time.")
-
 
 						continue
 
@@ -1500,14 +1217,6 @@ class SensorAlertExecuter(threading.Thread):
 							+ "for alert level '%d' did not trigger "
 							% alertLevel.level
 							+ "in time. Reset rule.")
-
-						# DEBUG TODO
-						print ("Rule with order '%d' "
-							% (currRuleStart.order)
-							+ "for alert level '%d' did not trigger "
-							% alertLevel.level
-							+ "in time. Reset rule.")
-
 
 						currRuleStart.triggered = False
 						currRuleStart.timeWhenTriggered = 0.0
@@ -1552,12 +1261,6 @@ class SensorAlertExecuter(threading.Thread):
 						+ "for alert level '%d' has expired. Removing it."
 						% alertLevel.level)
 
-					# TODO DEBUG
-					print ("Counter for rule with order '%d' "
-						% ruleStart.order
-						+ "for alert level '%d' has expired. Removing it."
-						% alertLevel.level)
-
 					ruleStart.counterList.remove(counterTimeWhenTriggered)
 
 			# only process counter if the rule is triggered
@@ -1586,13 +1289,6 @@ class SensorAlertExecuter(threading.Thread):
 
 						logging.debug("[%s]: Counter for rule with order '%d' "
 							% (self.fileName, ruleStart.order)
-							+ "for alert level '%d' has reached its limit. "
-							% alertLevel.level
-							+ "Resetting rule.")
-
-						# TODO DEBUG
-						print ("Counter for rule with order '%d' "
-							% ruleStart.order
 							+ "for alert level '%d' has reached its limit. "
 							% alertLevel.level
 							+ "Resetting rule.")
