@@ -159,6 +159,15 @@
 				emailAlert="True"
 				toAddr="youraddress@somehost.de" />
 
+			<!--
+				rule chain settings for this alert level
+				activated - sets if rules are activated for this alert level
+					("True or "False)
+			-->
+			<rules
+				activated="False">
+			</rules>
+
 		</alertLevel>
 
 
@@ -195,6 +204,15 @@
 				emailAlert="True"
 				toAddr="someotheraddress@somehost.de" />
 
+			<!--
+				rule chain settings for this alert level
+				activated - sets if rules are activated for this alert level
+					("True or "False)
+			-->
+			<rules
+				activated="False">
+			</rules>
+
 		</alertLevel>
 
 
@@ -230,6 +248,426 @@
 			<smtp
 				emailAlert="True"
 				toAddr="youraddress@somehost.de" />
+
+			<!--
+				rule chain settings for this alert level
+				activated - sets if rules are activated for this alert level
+					("True or "False)
+			-->
+			<rules
+				activated="False">
+			</rules>
+
+		</alertLevel>
+
+
+		<!--
+			a single alert level is configured in an "alertLevel" element
+			if you need additional alert levels just add a new one
+		-->
+		<alertLevel>
+
+			<!--
+				general settings of the alert level
+				level - level of this alert (has to be unique)
+				name - name of the alert level
+					(for example for what it is used)
+				triggerAlways - this flag indicates if this alert level should
+					trigger always an alert on all alert clients even if the
+					alerting system is not activated
+					("True" or "False")
+			-->
+			<general
+				level="20"
+				name="motion detection"
+				triggerAlways="True" />
+
+			<!--
+				email alert settings for this alert level
+				emailAlert - should an email notification be generated and
+					sent if a sensor alert of this level is triggered
+					("True" or "False" and works only if smtp is activated)
+				toAddr - email address to which the email should be sent
+					(works only if smtp is activated)
+			-->
+			<smtp
+				emailAlert="False"
+				toAddr="youraddress@somehost.de" />
+
+			<!--
+				rule chain settings for this alert level
+				activated - sets if rules are activated for this alert level
+					("True or "False)
+			-->
+			<rules
+				activated="True">
+
+				<!--
+					one rule of the rule chain
+					order - gives the order in which the rules are evaluated
+						(ascending order)
+					maxTimeAfterPrev - gives the maximum amount of time
+						(in seconds) that can be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a maximum time of 5 seconds, then 5 seconds can
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					minTimeAfterPrev - gives the minimum amount of time
+						(in seconds) that have to be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a minimum time of 2 seconds, then 2 seconds have
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					counterActivated - sets if this rule uses a counter
+					counterLimit - sets the limit of the counter. When it is
+						reached, the rule does not trigger
+					counterWaitTime - sets the time (in seconds) how long
+						the counter have to wait until it can remove a counter
+						token (and therefore can trigger again when the
+						limit is reached)
+				-->
+				<rule
+					order="0"
+					maxTimeAfterPrev="0.0"
+					minTimeAfterPrev="0.0" 
+					counterActivated="False"
+					counterLimit="0"
+					counterWaitTime="0" >
+
+					<!--
+						a boolean operator of the rule (possible boolean
+						operators are <and>, <or> and <not>)
+						(NOTE: the <not> operator can only have one rule
+						element in it)
+					-->
+					<and>
+
+						<!--
+						a sensor rule element
+						timeTriggeredFor - the time (in seconds) sets how long
+							this rule element counts as triggered for the
+							rule engine when a sensor alert for it is received
+							(NOTE: do not set this value to low)
+						username - the username of the sensor client that
+							handles this sensor
+						remoteSensorId - the sensor id of the sensor that is
+							configured on the client side
+						-->	
+						<sensor
+							timeTriggeredFor="5.0"
+							username="sensordev"
+							remoteSensorId="0" />
+
+						<!--
+						a sensor rule element
+						timeTriggeredFor - the time (in seconds) sets how long
+							this rule element counts as triggered for the
+							rule engine when a sensor alert for it is received
+							(NOTE: do not set this value to low)
+						username - the username of the sensor client that
+							handles this sensor
+						remoteSensorId - the sensor id of the sensor that is
+							configured on the client side
+						-->	
+						<sensor
+							timeTriggeredFor="5.0"
+							username="sensordev"
+							remoteSensorId="0" />
+					</and>
+
+				</rule>
+
+				<!--
+					one rule of the rule chain
+					order - gives the order in which the rules are evaluated
+						(ascending order)
+					maxTimeAfterPrev - gives the maximum amount of time
+						(in seconds) that can be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a maximum time of 5 seconds, then 5 seconds can
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					minTimeAfterPrev - gives the minimum amount of time
+						(in seconds) that have to be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a minimum time of 2 seconds, then 2 seconds have
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					counterActivated - sets if this rule uses a counter
+					counterLimit - sets the limit of the counter. When it is
+						reached, the rule does not trigger
+					counterWaitTime - sets the time (in seconds) how long
+						the counter have to wait until it can remove a counter
+						token (and therefore can trigger again when the
+						limit is reached)
+				-->
+				<rule
+					order="1"
+					maxTimeAfterPrev="5.0"
+					minTimeAfterPrev="0.0" 
+					counterActivated="False"
+					counterLimit="0"
+					counterWaitTime="0" >
+
+					<!--
+						a boolean operator of the rule (possible boolean
+						operators are <and>, <or> and <not>)
+						(NOTE: the <not> operator can only have one rule
+						element in it)
+					-->
+					<or>
+
+						<!--
+							gives the day of the week
+							time - sets the timezone that is used
+								("utc" or "local")
+							weekday - sets the day of the week
+								(0 = Monday, ..., 6 = Sunday)
+						-->
+						<weekday
+							time="utc"
+							weekday="0" />
+
+						<!--
+							gives the day of the week
+							time - sets the timezone that is used
+								("utc" or "local")
+							weekday - sets the day of the week
+								(0 = Monday, ..., 6 = Sunday)
+						-->
+						<weekday
+							time="utc"
+							weekday="1" />
+
+						<!--
+							gives the day of the week
+							time - sets the timezone that is used
+								("utc" or "local")
+							weekday - sets the day of the week
+								(0 = Monday, ..., 6 = Sunday)
+						-->
+						<weekday
+							time="utc"
+							weekday="2" />
+
+						<!--
+							gives the day of the week
+							time - sets the timezone that is used
+								("utc" or "local")
+							weekday - sets the day of the week
+								(0 = Monday, ..., 6 = Sunday)
+						-->
+						<weekday
+							time="utc"
+							weekday="3" />
+
+						<!--
+							gives the day of the week
+							time - sets the timezone that is used
+								("utc" or "local")
+							weekday - sets the day of the week
+								(0 = Monday, ..., 6 = Sunday)
+						-->
+						<weekday
+							time="utc"
+							weekday="4" />
+
+					</or>
+
+				</rule>
+
+				<!--
+					one rule of the rule chain
+					order - gives the order in which the rules are evaluated
+						(ascending order)
+					maxTimeAfterPrev - gives the maximum amount of time
+						(in seconds) that can be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a maximum time of 5 seconds, then 5 seconds can
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					minTimeAfterPrev - gives the minimum amount of time
+						(in seconds) that have to be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a minimum time of 2 seconds, then 2 seconds have
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					counterActivated - sets if this rule uses a counter
+					counterLimit - sets the limit of the counter. When it is
+						reached, the rule does not trigger
+					counterWaitTime - sets the time (in seconds) how long
+						the counter have to wait until it can remove a counter
+						token (and therefore can trigger again when the
+						limit is reached)
+				-->
+				<rule
+					order="2"
+					maxTimeAfterPrev="5.0"
+					minTimeAfterPrev="0.0" 
+					counterActivated="False"
+					counterLimit="0"
+					counterWaitTime="0" >
+
+					<!--
+						a boolean operator of the rule (possible boolean
+						operators are <and>, <or> and <not>)
+						(NOTE: the <not> operator can only have one rule
+						element in it)
+					-->
+					<and>
+
+						<!--
+							gives the hour of the day
+							time - sets the timezone that is used
+								("utc" or "local")
+							start - the start of the valid hour
+								(values: 0 - 23)
+							end - the end of the valid hour
+								(values: 0 - 23)
+								(NOTE: end >= start)
+						-->
+						<hour
+							time="utc"
+							start="15"
+							end="20" />
+
+						<!--
+							gives the minute of the day
+							start - the start of the valid minute
+								(values: 0 - 59)
+							end - the end of the valid minute
+								(values: 0 - 59)
+								(NOTE: end >= start)
+						-->
+						<minute
+							start="0"
+							end="59" />
+
+						<!--
+							gives the second of the day
+							start - the start of the valid second
+								(values: 0 - 59)
+							end - the end of the valid second
+								(values: 0 - 59)
+								(NOTE: end >= start)
+						-->
+						<second
+							start="0"
+							end="20" />
+
+					</and>
+
+				</rule>
+
+				<!--
+					one rule of the rule chain
+					order - gives the order in which the rules are evaluated
+						(ascending order)
+					maxTimeAfterPrev - gives the maximum amount of time
+						(in seconds) that can be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a maximum time of 5 seconds, then 5 seconds can
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					minTimeAfterPrev - gives the minimum amount of time
+						(in seconds) that have to be passed after the previous
+						rule has triggered. For example when the previous rule
+						of the rule chain has trigged and the current rule
+						has a minimum time of 2 seconds, then 2 seconds have
+						be passed before this rule has to be triggered (in
+						order to trigger the whole rule chain)
+						(NOTE: the first rule of the rule chain has no
+						previous rule and therefore this value for it
+						is ignored)
+					counterActivated - sets if this rule uses a counter
+					counterLimit - sets the limit of the counter. When it is
+						reached, the rule does not trigger
+					counterWaitTime - sets the time (in seconds) how long
+						the counter have to wait until it can remove a counter
+						token (and therefore can trigger again when the
+						limit is reached)
+				-->
+				<rule
+					order="3"
+					maxTimeAfterPrev="5.0"
+					minTimeAfterPrev="0.0" 
+					counterActivated="True"
+					counterLimit="1"
+					counterWaitTime="82800" >
+
+					<!--
+						a boolean operator of the rule (possible boolean
+						operators are <and>, <or> and <not>)
+						(NOTE: the <not> operator can only have one rule
+						element in it)
+					-->
+					<not>
+
+						<!--
+							a boolean operator of the rule (possible boolean
+							operators are <and>, <or> and <not>)
+							(NOTE: the <not> operator can only have one rule
+							element in it)
+						-->
+						<or>
+
+							<!--
+								gives the day of the month
+								time - sets the timezone that is used
+									("utc" or "local")
+								monthday - sets the day of the month
+									(values: 1 - 31)
+							-->
+							<monthday
+								time="utc"
+								monthday="1" />
+
+							<!--
+								gives the day of the month
+								time - sets the timezone that is used
+									("utc" or "local")
+								monthday - sets the day of the month
+									(values: 1 - 31)
+							-->
+							<monthday
+								time="utc"
+								monthday="2" />
+
+						</or>
+
+					</not>
+
+				</rule>
+
+			</rules>
 
 		</alertLevel>
 
