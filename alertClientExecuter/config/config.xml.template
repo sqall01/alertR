@@ -113,7 +113,7 @@
 			-->
 			<general
 				id="0"
-				description="first template alert" />
+				description="first executer alert" />
 
 			<!--
 				the alert level of the current configured alert
@@ -124,6 +124,32 @@
 			<alertLevel>5</alertLevel>
 			<alertLevel>32</alertLevel>
 			<alertLevel>6</alertLevel>
+
+			<!--
+				executer specific settings
+				execute - the command/program that should be executed when
+					a sensor alert was triggered (or all alerts are stopped)
+			-->
+			<executer
+				execute="/absolute/path/to/command.sh">
+
+				<!--
+					the arguments that are used for the command that
+					is executed when a sensor alert was triggered
+					(the amount of arguments are variable)
+				-->
+				<triggerArgument>startArg1</triggerArgument>
+				<triggerArgument>startArg2</triggerArgument>
+				<triggerArgument>startArg3</triggerArgument>
+
+				<!--
+					the arguments that are used for the command that
+					is executed when a all alerts are stopped
+					(the amount of arguments are variable)
+				-->
+				<stopArgument>stopArg1</stopArgument>
+				<stopArgument>stopArg2</stopArgument>
+			</executer>
 
 		</alert>
 
@@ -141,13 +167,22 @@
 			-->
 			<general
 				id="1"
-				description="second template alert" />
+				description="second executer alert" />
 
 			<!--
 				the alert level of the current configured alert
 				(an alert must have one but can have multiple alert levels)
 			-->
 			<alertLevel>1</alertLevel>
+
+			<!--
+				executer specific settings
+				execute - the command/program that should be executed when
+					a sensor alert was triggered (or all alerts are stopped)
+			-->
+			<executer
+				execute="/absolute/path/to/second/command.sh">
+			</executer>
 
 		</alert>
 

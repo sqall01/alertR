@@ -12,6 +12,7 @@ import random
 import os
 import logging
 import threading
+import subprocess
 
 
 # internal class that holds the important attributes
@@ -37,27 +38,23 @@ class _Alert:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-
-
-
-
-
-
+# class that executes an command when an alert is triggered or all alerts
+# are stopped
 class ExecuterAlert(_Alert):
 
 	def __init__(self):
 		_Alert.__init__(self)
 
-		# gives the command/path that should be executed
-		self.execute = None
+		# used for logging
+		self.fileName = os.path.basename(__file__)
 
-		# gives the argument that is used for the command when the alert is
-		# triggered
-		self.triggerArgument = None # TODO better to use a list of arguments
+		# the command to execute and the arguments to pass when
+		# an alert is triggered
+		self.triggerExecute = list()
 
-		# gives the argument that is used for the command when the alert is
-		# stopped
-		self.stopArgument = None # TODO better to use a list of arguments
+		# the command to execute and the arguments to pass when
+		# an alert is stopped
+		self.stopExecute = list()
 
 
 	# this function is called once when the alert client has connected itself
@@ -72,8 +69,11 @@ class ExecuterAlert(_Alert):
 
 		logging.debug("[%s]: Executing process " % self.fileName
 			+ "'%s' with trigger arguments." % self.description)
-		subprocess.Popen([self.execute, str(self.triggerArgument)],
-			close_fds=True)
+		try:
+			subprocess.Popen(self.triggerExecute, close_fds=True)
+		except Exception as e:
+			logging.exception("[%s]: Executing process " % self.fileName
+				+ "'%s' with trigger arguments failed." % self.description)
 		
 
 	# this function is called when the alert is stopped
@@ -81,14 +81,11 @@ class ExecuterAlert(_Alert):
 
 		logging.debug("[%s]: Executing process " % self.fileName
 			+ "'%s' with stop arguments." % self.description)
-		subprocess.Popen([self.execute, str(self.stopArgument)],
-			close_fds=True)
-
-
-
-
-
-
+		try:
+			subprocess.Popen(self.stopExecute, close_fds=True)
+		except Exception as e:
+			logging.exception("[%s]: Executing process " % self.fileName
+				+ "'%s' with stop arguments failed." % self.description)
 
 
 # this class is used to trigger or stop an alert

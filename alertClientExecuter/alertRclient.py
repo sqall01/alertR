@@ -154,13 +154,22 @@ if __name__ == '__main__':
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			# PLACE YOUR CODE HERE
-			# replace the creation of an instance of the template alert
-			# class with your own alert class (you can also add
-			# your own needed configuration parameters for this alert)
-			alert = TemplateAlert()
+			alert = ExecuterAlert()
 
+			# get executer specific values
+			tempExecute = str(item.find("executer").attrib["execute"])
+			alert.triggerExecute.append(tempExecute)
+			alert.stopExecute.append(tempExecute)
 
+			# parse all arguments that are used for the command when
+			# an alert is triggered
+			for argument in item.find("executer").iterfind("triggerArgument"):
+				alert.triggerExecute.append(str(argument.text))
+
+			# parse all arguments that are used for the command when
+			# an alert is stopped
+			for argument in item.find("executer").iterfind("stopArgument"):
+				alert.stopExecute.append(str(argument.text))
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
