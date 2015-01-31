@@ -10,4 +10,4 @@ Here a list of interesting usecases with alertR:
 
 Here a list of useful documentations to start with/understand this project:
 
-* [the infrastructure of alertR](/wiki/infrastructure)
+* [The infrastructure of alertR](wiki/infrastructure)
