@@ -163,6 +163,10 @@
 				rule chain settings for this alert level
 				activated - sets if rules are activated for this alert level
 					("True or "False)
+				NOTE: the rules of the rule chain are event based on sensor
+				triggers. This means that each rule chain has to have at least
+				one sensor (and this sensor is not allowed to be negated by
+				a NOT).
 			-->
 			<rules
 				activated="False">
@@ -208,6 +212,10 @@
 				rule chain settings for this alert level
 				activated - sets if rules are activated for this alert level
 					("True or "False)
+				NOTE: the rules of the rule chain are event based on sensor
+				triggers. This means that each rule chain has to have at least
+				one sensor (and this sensor is not allowed to be negated by
+				a NOT).
 			-->
 			<rules
 				activated="False">
@@ -253,6 +261,10 @@
 				rule chain settings for this alert level
 				activated - sets if rules are activated for this alert level
 					("True or "False)
+				NOTE: the rules of the rule chain are event based on sensor
+				triggers. This means that each rule chain has to have at least
+				one sensor (and this sensor is not allowed to be negated by
+				a NOT).
 			-->
 			<rules
 				activated="False">
@@ -298,6 +310,10 @@
 				rule chain settings for this alert level
 				activated - sets if rules are activated for this alert level
 					("True or "False)
+				NOTE: the rules of the rule chain are event based on sensor
+				triggers. This means that each rule chain has to have at least
+				one sensor (and this sensor is not allowed to be negated by
+				a NOT).
 			-->
 			<rules
 				activated="True">

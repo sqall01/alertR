@@ -380,9 +380,15 @@ def parseRuleRecursively(currentRoot, currentRule):
 		else:
 			raise ValueError("No valid tag was found.")
 
+		# NOT is always an invalid rule (ignores all elements inside the
+		# NOT element)
+		return False
 
 	elif (currentRoot.tag == "and"
 		or currentRoot.tag == "or"):
+
+		# set the current rule element to invald
+		ruleValid = False
 
 		# parse all "sensor" tags
 		for item in currentRoot.iterfind("sensor"):
@@ -402,6 +408,9 @@ def parseRuleRecursively(currentRoot, currentRule):
 
 			# add wrapper element to the current rule
 			currentRule.elements.append(ruleElement)
+
+			# a sensor element always sets the rule to a valid rule
+			ruleValid = True
 
 		# parse all "weekday" tags
 		for item in currentRoot.iterfind("weekday"):
@@ -593,7 +602,12 @@ def parseRuleRecursively(currentRoot, currentRule):
 			currentRule.elements.append(ruleElement)
 
 			# parse rule starting from the new element
-			parseRuleRecursively(item, ruleNew)
+			tempValid = parseRuleRecursively(item, ruleNew)
+
+			# only set the rule to the result of the recursively parsing
+			# if it is not already valid
+			if not ruleValid:
+				ruleValid = tempValid
 
 		# parse all "or" tags
 		for item in currentRoot.iterfind("or"):
@@ -613,7 +627,12 @@ def parseRuleRecursively(currentRoot, currentRule):
 			currentRule.elements.append(ruleElement)
 
 			# parse rule starting from the new element
-			parseRuleRecursively(item, ruleNew)
+			tempValid = parseRuleRecursively(item, ruleNew)
+
+			# only set the rule to the result of the recursively parsing
+			# if it is not already valid
+			if not ruleValid:
+				ruleValid = tempValid
 
 		# parse all "not" tags
 		for item in currentRoot.iterfind("not"):
@@ -634,6 +653,9 @@ def parseRuleRecursively(currentRoot, currentRule):
 
 			# parse rule starting from the new element
 			parseRuleRecursively(item, ruleNew)
+
+		# return if the current rule is valid
+		return ruleValid
 
 	else:
 		raise ValueError("No valid tag found in rule.")
@@ -918,6 +940,14 @@ if __name__ == '__main__':
 				"activated"]).upper() == "TRUE")
 			if alertLevel.rulesActivated:
 
+				# a list of flags that indicates if the rule is valid or
+				# invalid when it is used alone => one of the rules have to
+				# be valid in order for the rule chain to be valid
+				# NOTE: the rule engine works event based, this means that
+				# at least one sensor has to be in the rule chain that
+				# is not negated by a NOT
+				rulesValid = list()
+
 				rulesRoot = item.find("rules")
 
 				# parse all rule tags
@@ -1014,7 +1044,10 @@ if __name__ == '__main__':
 						ruleElement.type = "boolean"
 						ruleElement.element = ruleStart
 
-						parseRuleRecursively(orRule, ruleStart)
+						ruleValid = parseRuleRecursively(orRule, ruleStart)
+
+						# flag current rule as valid/invalid
+						rulesValid.append(ruleValid)
 
 					elif not andRule is None:
 
@@ -1025,7 +1058,10 @@ if __name__ == '__main__':
 						ruleElement.type = "boolean"
 						ruleElement.element = ruleStart
 
-						parseRuleRecursively(andRule, ruleStart)
+						ruleValid = parseRuleRecursively(andRule, ruleStart)
+
+						# flag current rule as valid/invalid
+						rulesValid.append(ruleValid)
 
 					elif not notRule is None:
 
@@ -1037,6 +1073,9 @@ if __name__ == '__main__':
 						ruleElement.element = ruleStart
 
 						parseRuleRecursively(notRule, ruleStart)
+
+						# flag current rule as invalid
+						rulesValid.append(False)
 
 					elif not sensorRule is None:
 
@@ -1051,6 +1090,9 @@ if __name__ == '__main__':
 						ruleElement.element = ruleSensorNew
 						ruleElement.timeTriggeredFor = float(
 							sensorRule.attrib["timeTriggeredFor"])
+
+						# flag current rule as valid
+						rulesValid.append(True)
 
 					elif not weekdayRule is None:
 
@@ -1075,6 +1117,9 @@ if __name__ == '__main__':
 						ruleElement.type = "weekday"
 						ruleElement.element = ruleWeekdayNew
 
+						# flag current rule as invalid
+						rulesValid.append(False)
+
 					elif not monthdayRule is None:
 
 						ruleMonthdayNew = RuleMonthday()
@@ -1097,6 +1142,9 @@ if __name__ == '__main__':
 						# fill wrapper element
 						ruleElement.type = "monthday"
 						ruleElement.element = ruleMonthdayNew
+
+						# flag current rule as invalid
+						rulesValid.append(False)
 
 					elif not hourRule is None:
 
@@ -1134,6 +1182,9 @@ if __name__ == '__main__':
 						ruleElement.type = "hour"
 						ruleElement.element = ruleHourNew
 
+						# flag current rule as invalid
+						rulesValid.append(False)
+
 					elif not minuteRule is None:
 
 						ruleMinuteNew = RuleMinute()
@@ -1162,6 +1213,9 @@ if __name__ == '__main__':
 						# fill wrapper element
 						ruleElement.type = "minute"
 						ruleElement.element = ruleMinuteNew
+
+						# flag current rule as invalid
+						rulesValid.append(False)
 
 					elif not secondRule is None:
 
@@ -1192,6 +1246,9 @@ if __name__ == '__main__':
 						ruleElement.type = "second"
 						ruleElement.element = ruleSecondNew
 
+						# flag current rule as invalid
+						rulesValid.append(False)
+
 					else:
 						raise ValueError("No valid tag was found.")
 
@@ -1201,6 +1258,13 @@ if __name__ == '__main__':
 							raise ValueError("Order of rule must be unique.")
 
 					alertLevel.rules.append(ruleElement)
+
+				# check if any of the rules in this rule chain is valid
+				# => if not the rule chain is not valid
+				if not any(rulesValid):
+					raise ValueError("Rule chain for alert level '%d' "
+						% alertLevel.level
+						+ "is not valid.")
 
 				# sort rules by order
 				alertLevel.rules.sort(key=lambda x: x.order)
