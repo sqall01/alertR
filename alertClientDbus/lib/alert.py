@@ -91,6 +91,8 @@ class DbusAlert(_Alert):
 			appName = "alertR alertClientDbus"
 			replacesId = 0 # not needed, every notification stands for its own
 
+			# differentiate between a generic displayed notification and
+			# a notification which also shows the received message
 			if receivedMessage is None:
 				tempMessage = "\"" \
 					+ asyncAlertExecInstance.sensorDescription \
