@@ -159,6 +159,8 @@ if __name__ == '__main__':
 			# get dbus client settings
 			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
 			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts

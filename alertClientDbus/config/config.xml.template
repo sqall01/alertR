@@ -131,10 +131,15 @@
 					(in milliseconds and at least 2000)
 				triggerDelay - how many seconds should be elapsed before
 					the alert could be triggered again
+				displayReceivedMessage - should the message that is received
+					via the sensor alert be displayed
+					(only possible if one was sent by the sensor,
+					else only a generic message is shown)
 			-->
 			<dbus
 				displayTime="10000"
-				triggerDelay="2" />
+				triggerDelay="2"
+				displayReceivedMessage="False" />
 
 		</alert>
 

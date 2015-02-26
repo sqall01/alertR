@@ -55,6 +55,9 @@ class DbusAlert(_Alert):
 		# message notification
 		self.displayTime = None
 
+		# display a received message (if any was received)
+		self.displayReceivedMessage = None
+
 
 	# this function is called once when the alert client has connected itself
 	# to the server
@@ -74,13 +77,31 @@ class DbusAlert(_Alert):
 			# set the time the alert was triggered
 			self.triggered = time.time()
 
+			# extract the received message if it was received and should be
+			# displayed
+			receivedMessage = None
+			if (self.displayReceivedMessage
+				and asyncAlertExecInstance.dataTransfer):
+
+				if ("message" in asyncAlertExecInstance.data):
+					receivedMessage = asyncAlertExecInstance.data["message"]
+
 			icon = "dialog-information"
 			title = "alertR"
 			appName = "alertR alertClientDbus"
 			replacesId = 0 # not needed, every notification stands for its own
-			tempMessage = "\"" \
-						+ asyncAlertExecInstance.sensorDescription \
-						+ "\" just triggered."
+
+			if receivedMessage is None:
+				tempMessage = "\"" \
+					+ asyncAlertExecInstance.sensorDescription \
+					+ "\" just triggered."
+			else:
+				tempMessage = "\"" \
+					+ asyncAlertExecInstance.sensorDescription \
+					+ "\" just triggered.\n" \
+					+ "Received message: \"" \
+					+ receivedMessage \
+					+ "\""
 
 			# send notification via dbus to notification system
 			try:
