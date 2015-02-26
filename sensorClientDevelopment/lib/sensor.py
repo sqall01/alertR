@@ -28,6 +28,8 @@ class _PollingSensor:
 		self.alertLevels = list()
 		self.triggerAlert = None
 		self.triggerState = None
+		self.dataTransfer = False
+		self.data = None
 
 
 	# this function returns the current state of the sensor

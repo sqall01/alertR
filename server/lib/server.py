@@ -865,7 +865,7 @@ class ClientCommunication:
 			try:
 				manager = message["payload"]["manager"]
 
-				# check if manager is of type list
+				# check if manager is of type dict
 				if not isinstance(manager, dict):
 					# send error message back
 					try:
@@ -1142,6 +1142,32 @@ class ClientCommunication:
 		try:
 			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
 			state = int(incomingMessage["payload"]["state"])
+
+			# get data of sensor alert if data transfer is activated
+			data = None
+			dataTransfer = bool(incomingMessage["payload"]["dataTransfer"])
+			if dataTransfer:
+				data = incomingMessage["payload"]["data"]
+
+				# check if data is of type dict
+				if not isinstance(data, dict):
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
+							"error": "data not of type dict"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
+			# convert received data to a json string
+			if data is None:
+				dataJson = ""
+			else:
+				dataJson = json.dumps(data)
+
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
 				+ "invalid (%s:%d)."
@@ -1159,7 +1185,8 @@ class ClientCommunication:
 			return False
 
 		# add sensor alert to database
-		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId, state):
+		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId,
+			state, dataJson):
 			logging.error("[%s]: Not able to add sensor alert (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -1411,7 +1438,7 @@ class ClientCommunication:
 
 		except Exception as e:
 			logging.exception("[%s]: Sending status " % self.fileName
-				+ "message failed (%s:%d)." 
+				+ "message failed (%s:%d)."
 				% (self.clientAddress, self.clientPort))
 			return False
 
@@ -1703,7 +1730,7 @@ class ClientCommunication:
 
 	# function that sends a sensor alert to an alert/manager client
 	def sendSensorAlert(self, sensorId, state, alertLevels, description,
-		rulesActivated):
+		rulesActivated, dataTransfer, data):
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("sensoralert", acquireLock=True):
@@ -1719,14 +1746,29 @@ class ClientCommunication:
 				payload = {"type": "request",
 					"alertLevels": alertLevels,
 					"description": description,
-					"rulesActivated": rulesActivated}
+					"rulesActivated": True,
+					"dataTransfer": False}
 			else:
-				payload = {"type": "request",
-					"sensorId": sensorId,
-					"state": state,
-					"alertLevels": alertLevels,
-					"description": description,
-					"rulesActivated": rulesActivated}
+
+				# differentiate payload of message when data transfer is
+				# activated or not
+				if dataTransfer:
+					payload = {"type": "request",
+						"sensorId": sensorId,
+						"state": state,
+						"alertLevels": alertLevels,
+						"description": description,
+						"rulesActivated": False,
+						"dataTransfer": True,
+						"data": data}
+				else:
+					payload = {"type": "request",
+						"sensorId": sensorId,
+						"state": state,
+						"alertLevels": alertLevels,
+						"description": description,
+						"rulesActivated": rulesActivated,
+						"dataTransfer": False}
 
 			message = {"serverTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}
@@ -2507,6 +2549,8 @@ class AsynchronousSender(threading.Thread):
 		self.sensorAlertState = None
 		self.sensorAlertAlertLevels = None
 		self.sensorAlertSensorDescription = None
+		self.sensorAlertDataTransfer = False
+		self.sensorAlertData = None
 
 		# this options are used when the thread should
 		# send a state change to a manager client
@@ -2552,7 +2596,9 @@ class AsynchronousSender(threading.Thread):
 			if not self.clientComm.sendSensorAlert(self.sensorAlertSensorId,
 				self.sensorAlertState, self.sensorAlertAlertLevels,
 				self.sensorAlertSensorDescription,
-				self.sensorAlertRulesActivated):
+				self.sensorAlertRulesActivated,
+				self.sensorAlertDataTransfer,
+				self.sensorAlertData):
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "alert to manager/alert failed (%s:%d)."
 					% (self.clientComm.clientAddress,

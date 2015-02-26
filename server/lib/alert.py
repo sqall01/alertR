@@ -11,6 +11,7 @@ import threading
 import os
 import time
 import logging
+import json
 from server import AsynchronousSender
 
 
@@ -1430,7 +1431,7 @@ class SensorAlertExecuter(threading.Thread):
 
 			# get a list of all sensor alerts from database
 			# list is a list of tuples (sensorAlertId, sensorId, nodeId,
-			# timeReceived, alertDelay, state, description)
+			# timeReceived, alertDelay, state, description, dataJson)
 			sensorAlertList = self.storage.getSensorAlerts()
 
 			# check if no sensor alerts are to handle and exist in database
@@ -1556,6 +1557,21 @@ class SensorAlertExecuter(threading.Thread):
 				state = self.storage.getSensorState(sensorId)
 				description = sensorAlertToHandle[0][6]
 
+				# get json data string and convert it
+				dataTransfer = False
+				data = None
+				dataJson = sensorAlertToHandle[0][7]
+				if dataJson != "":
+					dataTransfer = True
+					try:
+						data = json.loads(dataJson)
+					except Exception as e:
+						logging.exception("[%s]: Data from " % self.fileName
+							+ "database not a valid json string. "
+							+ "Ignoring data.")
+
+						dataTransfer = False
+
 				# get all alert levels that are triggered
 				# because of this sensor alert
 				triggeredAlertLevels = list()
@@ -1639,6 +1655,9 @@ class SensorAlertExecuter(threading.Thread):
 							intListAlertLevel
 						sensorAlertProcess.sensorAlertSensorDescription = \
 							description
+						sensorAlertProcess.sensorAlertDataTransfer = \
+							dataTransfer
+						sensorAlertProcess.sensorAlertData = data
 
 						logging.debug("[%s]: Sending sensor " % self.fileName
 							+ "alert to manager/alert (%s:%d)."
@@ -1704,6 +1723,9 @@ class SensorAlertExecuter(threading.Thread):
 
 						sensorAlertProcess.sensorAlertSensorDescription = \
 							"Rule of Alert Level: '%s'" % alertLevel.name
+
+						sensorAlertProcess.sensorAlertDataTransfer = False
+						sensorAlertProcess.sensorAlertData = None
 
 						logging.debug("[%s]: Sending sensor " % self.fileName
 							+ "alert to manager/alert (%s:%d)."

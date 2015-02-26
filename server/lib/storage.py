@@ -68,7 +68,7 @@ class _Storage():
 	# the id of the sensor that is used internally by the node and the state
 	#
 	# return True or False
-	def addSensorAlert(self, nodeId, remoteSensorId, state):
+	def addSensorAlert(self, nodeId, remoteSensorId, state, dataJson):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -121,7 +121,7 @@ class _Storage():
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
-	# alertDelay, state, description)
+	# alertDelay, state, description, dataJson)
 	# or None
 	def getSensorAlerts(self):
 		raise NotImplemented("Function not implemented yet.")
@@ -457,6 +457,7 @@ class Sqlite(_Storage):
 			+ "nodeId INTEGER NOT NULL, "
 			+ "sensorId INTEGER NOT NULL, "
 			+ "timeReceived INTEGER NOT NULL, "
+			+ "dataJson TEXT NOT NULL,"
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -1609,7 +1610,7 @@ class Sqlite(_Storage):
 	# the id of the sensor that is used internally by the node and the state
 	#
 	# return True or False
-	def addSensorAlert(self, nodeId, remoteSensorId, state):
+	def addSensorAlert(self, nodeId, remoteSensorId, state, dataJson):
 
 		self._acquireLock()
 
@@ -1642,8 +1643,9 @@ class Sqlite(_Storage):
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
-				+ "timeReceived) VALUES (?, ?, ?)",
-				(nodeId, sensorId, int(time.time())))
+				+ "timeReceived, "
+				+ "dataJson) VALUES (?, ?, ?, ?)",
+				(nodeId, sensorId, int(time.time()), dataJson))
 
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor alert."
@@ -1664,7 +1666,7 @@ class Sqlite(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
-	# alertDelay, state, description)
+	# alertDelay, state, description, dataJson)
 	# or None
 	def getSensorAlerts(self):
 
@@ -1678,7 +1680,8 @@ class Sqlite(_Storage):
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
-				+ "sensors.description "
+				+ "sensors.description, "
+				+ "sensorAlerts.dataJson "
 				+ "FROM sensorAlerts "
 				+ "INNER JOIN sensors "
 				+ "ON sensorAlerts.nodeId == sensors.nodeId "
@@ -1696,7 +1699,7 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, nodeId,
-		# timeReceived, alertDelay, state, description)
+		# timeReceived, alertDelay, state, description, dataJson)
 		return result
 
 
@@ -2459,6 +2462,7 @@ class Mysql(_Storage):
 			+ "nodeId INTEGER NOT NULL, "
 			+ "sensorId INTEGER NOT NULL, "
 			+ "timeReceived INTEGER NOT NULL, "
+			+ "dataJson TEXT NOT NULL,"
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -3894,7 +3898,7 @@ class Mysql(_Storage):
 	# the id of the sensor that is used internally by the node and the state
 	#
 	# return True or False
-	def addSensorAlert(self, nodeId, remoteSensorId, state):
+	def addSensorAlert(self, nodeId, remoteSensorId, state, dataJson):
 
 		self._acquireLock()
 
@@ -3941,8 +3945,9 @@ class Mysql(_Storage):
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
-				+ "timeReceived) VALUES (%s, %s, %s)",
-				(nodeId, sensorId, int(time.time())))
+				+ "timeReceived, "
+				+ "dataJson) VALUES (%s, %s, %s, %s)",
+				(nodeId, sensorId, int(time.time()), dataJson))
 
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor alert."
@@ -3969,7 +3974,7 @@ class Mysql(_Storage):
 	# gets all sensor alerts in the database
 	#
 	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
-	# alertDelay, state, description)
+	# alertDelay, state, description, dataJson)
 	# or None
 	def getSensorAlerts(self):
 
@@ -3994,7 +3999,8 @@ class Mysql(_Storage):
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
 				+ "sensors.state, "
-				+ "sensors.description "
+				+ "sensors.description, "
+				+ "sensorAlerts.dataJson "
 				+ "FROM sensorAlerts "
 				+ "INNER JOIN sensors "
 				+ "ON sensorAlerts.nodeId = sensors.nodeId "
@@ -4018,7 +4024,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a list of tuples (sensorAlertId, sensorId, nodeId,
-		# timeReceived, alertDelay, state, description)
+		# timeReceived, alertDelay, state, description, dataJson)
 		return result
 
 

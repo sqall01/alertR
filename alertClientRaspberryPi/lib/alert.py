@@ -119,6 +119,8 @@ class AsynchronousAlertExecuter(threading.Thread):
 		# this options are used to transfer data from the received
 		# sensor alert to the alert that is triggered
 		self.sensorDescription = None
+		self.dataTransfer = False # true or false
+		self.data = None # only evaluated if data transfer is true
 
 
 	def run(self):

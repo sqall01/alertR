@@ -513,6 +513,23 @@ class ServerCommunication:
 				return False
 
 			description = str(incomingMessage["payload"]["description"])
+
+			# parse received data (if data transfer is activated)
+			data = None
+			dataTransfer = bool(incomingMessage["payload"]["dataTransfer"])
+			if dataTransfer:
+				data = incomingMessage["payload"]["data"]
+
+				# check if data is of type dict
+				# => if not ignore it
+				if not isinstance(data, dict):
+					logging.warning("[%s]: Received data in sensor alert "
+						% self.fileName
+						+ "not valid. Ignoring it.")
+
+					data = None
+					dataTransfer = False
+
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
 				+ "invalid.")
@@ -551,6 +568,8 @@ class ServerCommunication:
 					# trigger alert in an own thread to not block this one
 					alertTriggerProcess = AsynchronousAlertExecuter(alert)
 					alertTriggerProcess.sensorDescription = description
+					alertTriggerProcess.dataTransfer = dataTransfer
+					alertTriggerProcess.data = data
 					# set thread to daemon
 					# => threads terminates when main thread terminates	
 					alertTriggerProcess.daemon = True

@@ -791,9 +791,21 @@ class ServerCommunication:
 			logging.debug("[%s]: Sending sensor alert message."
 				% self.fileName)
 
-			payload = {"type": "request",
-				"clientSensorId": sensor.id,
-				"state": 1}
+			# check if data should be transfered with this sensor alert
+			# => create payload of message accordingly
+			if sensor.dataTransfer:
+				payload = {"type": "request",
+					"clientSensorId": sensor.id,
+					"state": 1,
+					"dataTransfer": True,
+					"data": sensor.data}
+
+			else:
+				payload = {"type": "request",
+					"clientSensorId": sensor.id,
+					"state": 1,
+					"dataTransfer": False}
+
 			message = {"clientTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}
 			self.client.send(json.dumps(message))
