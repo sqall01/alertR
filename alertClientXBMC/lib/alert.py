@@ -60,6 +60,9 @@ class XbmcAlert(_Alert):
 		self.showMessage = None
 		self.displayTime = None
 
+		# display a received message (if any was received)
+		self.displayReceivedMessage = None
+
 		# should the player be paused
 		self.pausePlayer = None
 
@@ -81,6 +84,15 @@ class XbmcAlert(_Alert):
 
 			# set the time the alert was triggered
 			self.triggered = time.time()
+
+			# extract the received message if it was received and should be
+			# displayed
+			receivedMessage = None
+			if (self.displayReceivedMessage
+				and asyncAlertExecInstance.dataTransfer):
+
+				if ("message" in asyncAlertExecInstance.data):
+					receivedMessage = asyncAlertExecInstance.data["message"]
 
 			# connect to the xbmc json rpc service
 			try:
@@ -121,9 +133,20 @@ class XbmcAlert(_Alert):
 
 				# show a message on the display if configured
 				if self.showMessage is True:
-					tempMessage = "\"" \
-						+ asyncAlertExecInstance.sensorDescription \
-						+ "\" just triggered."
+
+					# differentiate between a generic displayed notification
+					# and a notification which also shows the received message
+					if receivedMessage is None:
+						tempMessage = "\"" \
+							+ asyncAlertExecInstance.sensorDescription \
+							+ "\" just triggered."
+					else:
+						tempMessage = "\"" \
+							+ asyncAlertExecInstance.sensorDescription \
+							+ "\" just triggered. Received message: \"" \
+							+ receivedMessage \
+							+ "\""
+
 					xbmcInstance.GUI.ShowNotification(title="alertR",
 						message=tempMessage, displaytime=self.displayTime)
 

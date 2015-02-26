@@ -165,6 +165,8 @@ if __name__ == '__main__':
 			alert.pausePlayer = (str(item.find("xbmc").attrib[
 				"pausePlayer"]).upper() == "TRUE")
 			alert.triggerDelay = int(item.find("xbmc").attrib["triggerDelay"])
+			alert.displayReceivedMessage = (str(item.find("xbmc").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
