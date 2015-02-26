@@ -148,6 +148,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 								+ "from FIFO file of sensor with id '%d' "
 								% self.id
 								+ "invalid. Ignoring data to transfer.")
+							
 							self.dataTransfer = False
 							self.data = None
 
