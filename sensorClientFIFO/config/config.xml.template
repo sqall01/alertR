@@ -1,0 +1,220 @@
+<?xml version="1.0"?>
+
+<!--
+	this is a template configuration file
+	please rename this template to "config.xml" if you want to use it
+	for the client
+-->
+<config version="0.223">
+
+	<!--
+		in this section general options are configured
+	-->
+	<general>
+
+		<!--
+			the settings for the logfile
+			file - absolute path to the logfile
+			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+		-->
+		<log
+			file="/absolute/path/to/logfile.log"
+			level="INFO" />
+
+		<!--
+			the settings for the server
+			host - location/address of the server
+			port - port that is used by the server
+			caFile - path to the CA file to check the correctness of the
+				used SSL connection
+		-->
+		<server
+			host="server.h4des.org"
+			port="12345"
+			caFile="/absolute/path/to/server_CA.pem" />
+
+		<!--
+			the settings for a client certificate
+			certificateRequired - sets if it is required for the client
+				to authenticate itself via a certificate or not
+				(if you have the alert system reachable from the internet
+				you should use client certificates)
+				("True" or "False")
+			certFile - path to the certificate file of the client
+				this is used for the SSL connection
+				(only processed if "certificateRequired" is set to "True")
+			keyFile - path to the key file of the client that is used
+				for the SSL connection
+				(only processed if "certificateRequired" is set to "True")
+		-->
+		<client
+			certificateRequired="True"
+			certFile="/absolute/path/to/client.crt"
+			keyFile="/absolute/path/to/client.key" />
+
+		<!--
+			user credentials of this client
+			(WARNING: have to be unique for each client or strange
+			behavior will happen)
+			username - the username
+			password - the password (thanks cpt obvious ...)
+		-->
+		<credentials
+			username="user"
+			password="pass" />
+
+	</general>
+
+
+	<!--
+		in this section options for email alerts are configured
+	-->
+	<smtp>
+
+		<!--
+			the general settings of the email notifications
+			activated - are email alerts active? ("True" or "False")
+			fromAddr - email address from which this email should be sent
+			toAddr - email address to which the email should be sent
+		-->
+		<general
+			activated="True"
+			fromAddr="alertSystem@h4des.org"
+			toAddr="youraddress@somehost.de" />
+
+		<!--
+			the server settings of the email notifications
+			host - address of the used smtp server
+				(only 127.0.0.1 supported at the moment)
+			port - port of the used smtp server
+		-->
+		<server
+			host="127.0.0.1"
+			port="25" />
+
+	</smtp>
+
+
+	<!--
+		section of all sensors that are monitored
+	-->
+	<sensors>
+
+		<!--
+			a single sensor is configured in a "sensor" element
+			if you need additional sensors just add a new one
+		-->
+		<sensor>
+
+			<!--
+				the general configuration of a sensor
+				id - local id of this sensor (has to be unique on this client)
+				description - description of this sensor
+				alertDelay - delay after which (when the alert system is still
+					active) the alert should trigger (this is processed
+					by the server and the value here is only used to register
+					with it at the server)
+				triggerAlert - this flag indicates if this sensor should
+					trigger an alert for example it could be just used to
+					signal the state to the server and not trigger
+					any alert (regardless of if the alert system is
+					active or not)
+					("True" or "False")
+				triggerState - on which internal state the alert should
+					trigger (either 0 or 1) for example some sensors
+					trigger with an internal state of 1 and some with an
+					internal state of 0 in order to decide if the sensor has
+					triggered this have to be set to the correct value
+					regardless on which internal state the sensor will trigger
+					the alert system uses for its communication:
+					state = 0 => not triggered
+					state = 1 => triggered
+			-->
+			<general
+				id="0"
+				description="fifo sensor 0"
+				alertDelay="0"
+				triggerAlert="True"
+				triggerState="1" />
+
+			<!--
+				the alert level that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels)
+			-->
+			<alertLevel>0</alertLevel>
+			<alertLevel>3</alertLevel>
+
+			<!--
+				the FIFO sepcific settings
+				fifoFile - the location of the FIFO file that is constantly 
+					read by the sensor (json format is expected, an exmaple
+					message would look like this:
+					'{"message": "statechange", "payload": {"state": 0}}'
+					see the alertR wiki for a more detailed message syntax
+					for the FIFO sensor)
+			-->
+			<fifo
+				fifoFile="/absolute/path/to/sensor_0.fifo" />
+
+		</sensor>
+
+		<!--
+			a single sensor is configured in a "sensor" element
+			if you need additional sensors just add a new one
+		-->
+		<sensor>
+
+			<!--
+				the general configuration of a sensor
+				id - local id of this sensor (has to be unique on this client)
+				description - description of this sensor
+				alertDelay - delay after which (when the alert system is still
+					active) the alert should trigger (this is processed
+					by the server and the value here is only used to register
+					with it at the server)
+				triggerAlert - this flag indicates if this sensor should
+					trigger an alert for example it could be just used to
+					signal the state to the server and not trigger
+					any alert (regardless of if the alert system is
+					active or not)
+					("True" or "False")
+				triggerState - on which internal state the alert should
+					trigger (either 0 or 1) for example some sensors
+					trigger with an internal state of 1 and some with an
+					internal state of 0 in order to decide if the sensor has
+					triggered this have to be set to the correct value
+					regardless on which internal state the sensor will trigger
+					the alert system uses for its communication:
+					state = 0 => not triggered
+					state = 1 => triggered
+			-->
+			<general
+				id="1"
+				description="fifo sensor 1"
+				alertDelay="0"
+				triggerAlert="True"
+				triggerState="1" />
+
+			<!--
+				the alert level that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels)
+			-->
+			<alertLevel>0</alertLevel>
+
+			<!--
+				the FIFO sepcific settings
+				fifoFile - the location of the FIFO file that is constantly 
+					read by the sensor (json format is expected, an exmaple
+					message would look like this:
+					'{"message": "statechange", "payload": {"state": 0}}'
+					see the alertR wiki for a more detailed message syntax
+					for the FIFO sensor)
+			-->
+			<fifo
+				fifoFile="/absolute/path/to/sensor_1.fifo" />
+
+		</sensor>
+
+	</sensors>
+
+</config>
