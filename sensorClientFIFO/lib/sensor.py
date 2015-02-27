@@ -153,7 +153,16 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 							self.data = None
 
 					# set the new state as temporary
-					self.temporaryState = int(message["payload"]["state"])
+					tempInputState = int(message["payload"]["state"])
+					if (tempInputState != 0
+						and tempInputState != 1):
+						logging.warning("[%s]: Received state "
+							% (self.fileName, self.dataType)
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring state change.")
+					else:
+						self.temporaryState = tempInputState
 
 				else:
 					raise ValueError("Received unvalid message type.")
