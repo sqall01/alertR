@@ -1767,7 +1767,7 @@ class ClientCommunication:
 						"state": state,
 						"alertLevels": alertLevels,
 						"description": description,
-						"rulesActivated": rulesActivated,
+						"rulesActivated": False,
 						"dataTransfer": False}
 
 			message = {"serverTime": int(time.time()),
