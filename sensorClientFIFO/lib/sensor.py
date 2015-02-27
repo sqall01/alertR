@@ -144,7 +144,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 						# check if data is of type dict
 						if not isinstance(self.data, dict):
 							logging.warning("[%s]: Received data "
-								% (self.fileName, self.dataType)
+								% self.fileName
 								+ "from FIFO file of sensor with id '%d' "
 								% self.id
 								+ "invalid. Ignoring data to transfer.")
@@ -157,7 +157,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					if (tempInputState != 0
 						and tempInputState != 1):
 						logging.warning("[%s]: Received state "
-							% (self.fileName, self.dataType)
+							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
 							% self.id
 							+ "invalid. Ignoring state change.")
