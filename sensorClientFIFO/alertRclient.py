@@ -171,6 +171,8 @@ if __name__ == '__main__':
 				sensor.alertLevels.append(int(alertLevelXml.text))
 
 			# fifo specific options
+			sensor.umask = int(item.find("fifo").attrib[
+				"umask"], 8)
 			sensor.fifoFile = str(item.find("fifo").attrib[
 				"fifoFile"])
 

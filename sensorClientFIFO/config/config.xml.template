@@ -146,6 +146,8 @@
 
 			<!--
 				the FIFO sepcific settings
+				umask - the umask value that is used for the FIFO file
+					(given as octal value)
 				fifoFile - the location of the FIFO file that is constantly 
 					read by the sensor (json format is expected, an exmaple
 					message would look like this:
@@ -154,6 +156,7 @@
 					for the FIFO sensor)
 			-->
 			<fifo
+				umask="0000"
 				fifoFile="/absolute/path/to/sensor_0.fifo" />
 
 		</sensor>
@@ -203,6 +206,8 @@
 
 			<!--
 				the FIFO sepcific settings
+				umask - the umask value that is used for the FIFO file
+					(given as octal value)
 				fifoFile - the location of the FIFO file that is constantly 
 					read by the sensor (json format is expected, an exmaple
 					message would look like this:
@@ -211,6 +216,7 @@
 					for the FIFO sensor)
 			-->
 			<fifo
+				umask="0002"
 				fifoFile="/absolute/path/to/sensor_1.fifo" />
 
 		</sensor>

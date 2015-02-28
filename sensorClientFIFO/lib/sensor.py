@@ -60,6 +60,8 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 		self.fifoFile = None
 
+		self.umask = None
+
 		self.temporaryState = None
 
 
@@ -95,6 +97,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 			# create a new FIFO file
 			try:
+				os.umask(self.umask)
 				os.mkfifo(self.fifoFile)
 			except Exception as e:
 				logging.exception("[%s]: Could not create "
