@@ -87,23 +87,25 @@ class DbusAlert(_Alert):
 					receivedMessage = asyncAlertExecInstance.data["message"]
 
 			icon = "dialog-information"
-			title = "alertR"
+			title = ("alertR (%s)"
+				% time.strftime("%d %b %Y at %H:%M:%S",
+				time.localtime(self.triggered)))
 			appName = "alertR alertClientDbus"
 			replacesId = 0 # not needed, every notification stands for its own
 
 			# differentiate between a generic displayed notification and
 			# a notification which also shows the received message
 			if receivedMessage is None:
-				tempMessage = "\"" \
-					+ asyncAlertExecInstance.sensorDescription \
-					+ "\" just triggered."
+				tempMessage = ("\""
+					+ asyncAlertExecInstance.sensorDescription
+					+ "\" just triggered.")
 			else:
-				tempMessage = "\"" \
-					+ asyncAlertExecInstance.sensorDescription \
-					+ "\" just triggered.\n" \
-					+ "Received message: \"" \
-					+ receivedMessage \
-					+ "\""
+				tempMessage = ("\""
+					+ asyncAlertExecInstance.sensorDescription
+					+ "\" just triggered.\n"
+					+ "Received message: \""
+					+ receivedMessage
+					+ "\"")
 
 			# send notification via dbus to notification system
 			try:
