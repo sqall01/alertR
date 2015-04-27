@@ -128,7 +128,8 @@
 			<!--
 				dbus specific settings for the notification
 				displayTime - how long should the message be shown
-					(in milliseconds and at least 2000)
+					in milliseconds (a value of 0 displays the message until
+					it is acknowledged by the user)
 				triggerDelay - how many seconds should be elapsed before
 					the alert could be triggered again
 				displayReceivedMessage - should the message that is received
