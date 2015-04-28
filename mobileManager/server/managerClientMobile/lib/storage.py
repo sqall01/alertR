@@ -126,7 +126,16 @@ class Mysql(_Storage):
 		self._acquireLock()
 
 		# connect to the database
-		self._openConnection()
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to MySQL server." 
+				% self.fileName)
+
+			self._releaseLock()
+
+			# remember to pass the exception
+			raise
 
 		# create internals table (used internally by the client)
 		self.cursor.execute("CREATE TABLE internals ("
@@ -217,7 +226,15 @@ class Mysql(_Storage):
 		self._acquireLock()
 
 		# connect to the database
-		self._openConnection()
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to MySQL server." 
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
 
 		# update server time
 		if sensors:
