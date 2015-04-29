@@ -178,8 +178,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 		# factors used to calculate the hull of the home quadrant
 		# (chosen by empirical tests)
-		self.factorLat = 0.10
-		self.factorLon = 0.20
+		self.factorLat = 0.4
+		self.factorLon = 0.4
 
 		# how old (in seconds) a lightning can be before it is discarded
 		# (value chosen by empirical tests)
@@ -188,10 +188,10 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 		# generate home quadrant from given gps coordinates
 		# (values chosen by empirical tests)
 		self.homeQuadrant = _Quadrant()
-		self.homeQuadrant.y1 = lat - 0.02
-		self.homeQuadrant.x1 = lon - 0.04
-		self.homeQuadrant.y2 = lat + 0.02
-		self.homeQuadrant.x2 = lon + 0.04
+		self.homeQuadrant.y1 = lat - 0.09
+		self.homeQuadrant.x1 = lon - 0.1
+		self.homeQuadrant.y2 = lat + 0.09
+		self.homeQuadrant.x2 = lon + 0.1
 
 		# sanity check for home quadrant
 		if self.homeQuadrant.y1 > self.homeQuadrant.y2:
@@ -209,7 +209,7 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 		# TODO
 
-		self.lightningTime = 600
+		self.lightningTime = 1800
 
 
 
