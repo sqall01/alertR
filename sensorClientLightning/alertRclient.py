@@ -154,15 +154,13 @@ if __name__ == '__main__':
 		for item in configRoot.find("sensors").iterfind("sensor"):
 
 
-			# lightning specific options
+			# lightning specific options needed for constructor
 			lat = float(item.find("lightning").attrib[
 				"lat"])
 			lon = float(item.find("lightning").attrib[
 				"lon"])
 
 			sensor = LightningmapSensor(lat, lon)
-
-
 
 			# these options are needed by the server to
 			# differentiate between the registered sensors
@@ -179,13 +177,10 @@ if __name__ == '__main__':
 			for alertLevelXml in item.iterfind("alertLevel"):
 				sensor.alertLevels.append(int(alertLevelXml.text))
 
-
-
-			# TODO
-
-
-
-
+			# lightning specific options
+			sensor.lightningTime = int(item.find("lightning").attrib[
+				"lightningTime"])
+			
 
 			# check if description is empty
 			if len(sensor.description) == 0:

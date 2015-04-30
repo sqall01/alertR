@@ -97,12 +97,10 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 		# used for logging
 		self.fileName = os.path.basename(__file__)
 
-		self.temporaryState = None
-
 		# factors used to calculate the hull of the home quadrant
 		# (chosen by empirical tests)
-		self.factorLat = 0.06
-		self.factorLon = 0.12
+		self.factorLat = 0.4
+		self.factorLon = 0.4
 
 		# how old (in seconds) a lightning can be before it is discarded
 		# (value chosen by empirical tests)
@@ -111,10 +109,10 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 		# generate home quadrant from given gps coordinates
 		# (values chosen by empirical tests)
 		self.homeQuadrant = _Quadrant()
-		self.homeQuadrant.y1 = lat - 0.02
-		self.homeQuadrant.x1 = lon - 0.04
-		self.homeQuadrant.y2 = lat + 0.02
-		self.homeQuadrant.x2 = lon + 0.04
+		self.homeQuadrant.y1 = lat - 0.09
+		self.homeQuadrant.x1 = lon - 0.1
+		self.homeQuadrant.y2 = lat + 0.09
+		self.homeQuadrant.x2 = lon + 0.1
 
 		# sanity check for home quadrant
 		if self.homeQuadrant.y1 > self.homeQuadrant.y2:
@@ -128,16 +126,20 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 		self.outerHull = None
 		self.innerHull = None
 
+		# time in seconds that have to passed before the
+		# hit stroke does not count as sensor trigger anymore
+		self.lightningTime = None
 
+		# internal variables to manage two different kinds of
+		# alerts by this sensor
+		self._lastTriggeredHome = 0.0
+		self._lastTriggeredHull = 0.0
 
-		# TODO
+		self._triggerHomeNext = False
+		self._triggerHullNext = False
 
-		self.lightningTime = 600
-
-
-
-
-
+		self._currentHomeMessage = ""
+		self._currentHullMessage = ""
 
 
 	# internal function that checks if the lightning occurred 
@@ -194,6 +196,27 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			direction = "ne"
 
 		return direction
+
+
+	def _convertDirectionToString(self, direction):
+		if direction == "sw":
+			return "southwest"
+		elif direction == "s":
+			return "south"
+		elif direction == "se":
+			return "southeast"
+		elif direction == "w":
+			return "west"
+		elif direction == "e":
+			return "east"
+		elif direction == "nw":
+			return "northwest"
+		elif direction == "n":
+			return "north"
+		elif direction == "ne":
+			return "northeast"
+		else:
+			return "unknown"
 
 
 	def initializeSensor(self):
@@ -356,15 +379,94 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 	def getState(self):
 		return self.state
 
+
 	def updateState(self):
-		self.state = self.temporaryState
+
+		# check if a hit in the home quadrant has to be triggered
+		if self._triggerHomeNext:
+
+			# clear flag to trigger alert for a hit in home quadrant next
+			self._triggerHomeNext = False
+
+			# clear flag to trigger alert for a hit in the hull next
+			self._triggerHullNext = False
+
+			# set sensor as triggered
+			self.state = self.triggerState
+
+			self.dataTransfer = True
+			self.data = {"message": self._currentHomeMessage}
+
+			return
+
+		# check if a hit in the hull has to be triggered
+		# (can only be triggered if hit in home quadrant is not triggered)
+		elif self._triggerHullNext:
+
+			# clear flag to trigger alert for a hit in the hull next
+			self._triggerHullNext = False
+
+			# set sensor as triggered
+			self.state = self.triggerState
+			
+			self.dataTransfer = True
+			self.data = {"message": self._currentHullMessage}
+
+			return
 
 
+		now = calendar.timegm(time.gmtime())
 
 
+		# check if last time the home quadrant was triggered
+		# is OLDER than the configured lightning time
+		if (now - self._lastTriggeredHome) > self.lightningTime:
+
+			# set sensor as not triggered
+			self.state = 1 - self.triggerState
+
+			# clear data transfer
+			self.dataTransfer = False
+			self.data = None
+
+			# check if last time the home quadrant was hit
+			# is YOUNGER than the configured lightning time
+			# => an alert for a hit in the home quadrant was not yet triggered
+			# and has to be triggered next
+			if ((now - self.innerHull.innerQuadrant.timeHit)
+				< self.lightningTime):
+
+				# set flag to trigger alert for a hit in home quadrant next
+				self._triggerHomeNext = True
+
+				# set hull and home quadrant trigger time to now
+				self._lastTriggeredHome = now
+				self._lastTriggeredHull = now
 
 
+		# check if last time the hull was triggered
+		# is OLDER than the configured lightning time
+		if (now - self._lastTriggeredHull) > self.lightningTime:
 
+			# set sensor as not triggered
+			self.state = 1 - self.triggerState
+
+			# clear data transfer
+			self.dataTransfer = False
+			self.data = None
+
+			# check if last time the hull was hit
+			# is YOUNGER than the configured lightning time
+			# => an alert for a hit in the home quadrant was not yet triggered
+			# and has to be triggered next
+			if ((now - self.innerHull.outerQuadrant.timeHit)
+				< self.lightningTime):
+
+				# set flag to trigger alert for a hit in the hull next
+				self._triggerHullNext = True
+
+				# set hull trigger time to now
+				self._lastTriggeredHull = now
 
 
 	def processData(self, data):
@@ -393,10 +495,15 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 					% (self.fileName, (now - strokeTime)))
 				continue
 
+
 			# check if stroke occurred in home quadrant
 			# => thunderstorm reached home quadrant
 			if self._checkCoordInQuadrant(self.innerHull.innerQuadrant,
 				stroke["lat"], stroke["lon"]):
+
+				logging.debug("[%s]: Sensor '%s': " 
+					% (self.fileName, self.description) 
+					+ "Stroke hit home quadrant.")
 
 				# check if last occured lightning in home quadrant
 				# is older than the configured lightning time
@@ -415,8 +522,12 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in home quadrant"
+							self._currentHomeMessage = \
+								"Thunderstorm started in home quadrant"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in home quadrant.")
 
 						# => thunderstorm skipped hull of home quadrant
 						else:
@@ -425,8 +536,14 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 							direction = self._getDirectionOfLastHit(
 								self.outerHull)
 
-							# TODO
-							print "thunderstorm reached home quadrant from %s" % direction
+							self._currentHomeMessage = \
+								"Thunderstorm reached from the %s" \
+								% self._convertDirectionToString(direction)
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "reached home quadrant from the %s."
+								% self._convertDirectionToString(direction))
 
 					# => thunderstorm reached home quadrant
 					else:
@@ -434,8 +551,14 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						# get direction from which thunderstorm approached
 						direction = self._getDirectionOfLastHit(self.innerHull)
 
-						# TODO
-						print "thunderstorm reached home quadrant from %s" % direction
+						self._currentHomeMessage = \
+							"Thunderstorm reached from the %s" \
+							% self._convertDirectionToString(direction)
+
+						logging.info("[%s]: Sensor '%s': Thunderstorm "
+							% (self.fileName, self.description)
+							+ "reached home quadrant from the %s."
+							% self._convertDirectionToString(direction))
 
 				self.outerHull.outerQuadrant.timeHit = strokeTime
 				self.innerHull.outerQuadrant.timeHit = strokeTime
@@ -446,6 +569,10 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			# => thunderstorm approaching home quadrant
 			elif self._checkCoordInQuadrant(self.innerHull.outerQuadrant,
 				stroke["lat"], stroke["lon"]):
+
+				logging.debug("[%s]: Sensor '%s': " 
+					% (self.fileName, self.description) 
+					+ "Stroke hit inner hull.")
 
 				# check if sw quadrant was hit
 				if self._checkCoordInQuadrant(self.innerHull.sw,
@@ -462,14 +589,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner sw"
+							self._currentHullMessage = \
+								"Thunderstorm started in the southwest"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the southwest.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner sw"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the southwest"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the southwest.")
 
 					# update hit time
 					self.innerHull.sw.timeHit = strokeTime
@@ -479,7 +614,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.s,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -491,14 +625,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner s"
+							self._currentHullMessage = \
+								"Thunderstorm started in the south"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the south.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner s"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the south"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the south.")
 
 					# update hit time
 					self.innerHull.s.timeHit = strokeTime
@@ -508,7 +650,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.se,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -520,14 +661,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner se"
+							self._currentHullMessage = \
+								"Thunderstorm started in the southeast"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the southeast.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner se"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the southeast"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the southeast.")
 
 					# update hit time
 					self.innerHull.se.timeHit = strokeTime
@@ -537,7 +686,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.w,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -549,14 +697,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner w"
+							self._currentHullMessage = \
+								"Thunderstorm started in the west"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the west.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner w"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the west"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the west.")
 
 					# update hit time
 					self.innerHull.w.timeHit = strokeTime
@@ -566,7 +722,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.e,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -578,14 +733,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner e"
+							self._currentHullMessage = \
+								"Thunderstorm started in the east"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the east.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner e"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the east"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the east.")
 
 					# update hit time
 					self.innerHull.e.timeHit = strokeTime
@@ -595,7 +758,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.nw,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -607,14 +769,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner nw"
+							self._currentHullMessage = \
+								"Thunderstorm started in the northwest"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the northwest.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner nw"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the northwest"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the northwest.")
 
 					# update hit time
 					self.innerHull.nw.timeHit = strokeTime
@@ -624,7 +794,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.n,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -636,14 +805,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner n"
+							self._currentHullMessage = \
+								"Thunderstorm started in the north"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the north.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner n"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the north"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the north.")
 
 					# update hit time
 					self.innerHull.n.timeHit = strokeTime
@@ -653,7 +830,6 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				elif self._checkCoordInQuadrant(self.innerHull.ne,
 					stroke["lat"], stroke["lon"]):
 
-
 					# check if last occured lightning in hull of home quadrant
 					# is older than the configured lightning time
 					if ((strokeTime - self.innerHull.outerQuadrant.timeHit)
@@ -665,14 +841,22 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 						if ((strokeTime - self.outerHull.outerQuadrant.timeHit)
 							> self.lightningTime):
 
-							# TODO
-							print "thunderstorm started in inner ne"
+							self._currentHullMessage = \
+								"Thunderstorm started in the northeast"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "started in hull in the northeast.")
 
 						# => thunderstorm approaching
 						else:
 
-							# TODO
-							print "thunderstorm approaching from inner ne"
+							self._currentHullMessage = \
+								"Thunderstorm approaches from the northeast"
+
+							logging.info("[%s]: Sensor '%s': Thunderstorm "
+								% (self.fileName, self.description)
+								+ "approaches from the northeast.")
 
 					# update hit time
 					self.innerHull.ne.timeHit = strokeTime
@@ -680,8 +864,9 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 				else:
 
-					# TODO
-					print "this should never happen inner"
+					logging.error("[%s]: Sensor '%s': No "
+						% (self.fileName, self.description)
+						+ "direction in inner hull found.")
 
 
 				# update time when hit
@@ -691,7 +876,12 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 			# check if stroke occured in outer hull
 			# => thunderstorm not yet at home quadrant
-			elif self._checkCoordInQuadrant(self.outerHull.outerQuadrant, stroke["lat"], stroke["lon"]):
+			elif self._checkCoordInQuadrant(self.outerHull.outerQuadrant,
+				stroke["lat"], stroke["lon"]):
+
+				logging.debug("[%s]: Sensor '%s': " 
+					% (self.fileName, self.description) 
+					+ "Stroke hit outer hull.")
 
 				# check if sw quadrant was hit
 				if self._checkCoordInQuadrant(self.outerHull.sw,
@@ -751,23 +941,12 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 				else:
 
-					# TODO
-					print "this should never happen outer"
+					logging.error("[%s]: Sensor '%s': No "
+						% (self.fileName, self.description)
+						+ "direction in outer hull found.")
 
 
 				self.outerHull.outerQuadrant.timeHit = strokeTime
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # class that collects lightning data from lightningmaps.org
@@ -814,7 +993,7 @@ class LightningmapDataCollector(threading.Thread):
 
 
 	def run(self):
-		
+
 		while True:
 
 			self.connect()
@@ -842,7 +1021,6 @@ class LightningmapDataCollector(threading.Thread):
 				self.connection.close()
 			except:
 				pass
-			
 
 
 # this class polls the sensor states and triggers alerts and state changes
