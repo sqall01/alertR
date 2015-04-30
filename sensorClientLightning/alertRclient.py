@@ -12,6 +12,7 @@ import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
 from lib import LightningmapSensor, LightningmapDataCollector, SensorExecuter
+from lib import UpdateChecker
 import logging
 import time
 import socket
@@ -27,6 +28,12 @@ class GlobalData:
 
 		# version of the used client (and protocol)
 		self.version = 0.223
+
+		# revision of the used client
+		self.rev = 0
+
+		# name of this client
+		self.name = "alertR Sensor Client Lightning"
 
 		# interval in which a ping should be send when 
 		# no data was received/send
@@ -150,6 +157,22 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
+		# parse update options
+		updateActivated = (str(
+			configRoot.find("update").find("general").attrib[
+			"activated"]).upper() == "TRUE")
+		if updateActivated is True:
+			updateServer = str(
+				configRoot.find("update").find("server").attrib["host"])
+			updatePort = int(
+				configRoot.find("update").find("server").attrib["port"])
+			updateLocation = str(
+				configRoot.find("update").find("server").attrib["location"])
+			updateCaFile = str(
+				configRoot.find("update").find("server").attrib["caFile"])
+			updateInterval = int(
+				configRoot.find("update").find("general").attrib["interval"])
+
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
 
@@ -180,7 +203,7 @@ if __name__ == '__main__':
 			# lightning specific options
 			sensor.lightningTime = int(item.find("lightning").attrib[
 				"lightningTime"])
-			
+
 
 			# check if description is empty
 			if len(sensor.description) == 0:
@@ -260,6 +283,15 @@ if __name__ == '__main__':
 	# => threads terminates when main thread terminates
 	dataCollector.daemon = True
 	dataCollector.start()
+
+	# only start update checker if it is activated
+	if updateActivated is True:
+		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
+			updateCaFile, updateInterval, globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates
+		updateChecker.daemon = True
+		updateChecker.start()
 
 	# set up sensor executer and execute it
 	# (note: we will not return from the executer unless the client

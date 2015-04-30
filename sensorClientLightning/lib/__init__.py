@@ -11,3 +11,4 @@ from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import LightningmapSensor, \
 	LightningmapDataCollector, SensorExecuter
+from update import UpdateChecker
