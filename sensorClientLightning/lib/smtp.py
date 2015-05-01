@@ -34,6 +34,12 @@ class SMTPAlert:
 		self.communicationAlertSent = False
 
 
+
+		# TODO
+		self.updateFailureAlertSent = False
+
+
+
 	# this function sends an email alert in case of
 	# a communication failure
 	def sendCommunicationAlert(self, connectionRetries):
@@ -105,5 +111,77 @@ class SMTPAlert:
 
 		# clear flag that a communication alert was sent before exiting
 		self.communicationAlertSent = False
+
+		return True
+
+
+	# this function sends an email in case of
+	# a problem with the update check
+	def sendUpdateCheckFailureAlert(self, updateFailCount, clientName):
+
+		if self.updateFailureAlertSent:
+			return True
+
+		subject = "[alertR] Update check problems detected"
+
+		message = "Problems detected on the client '%s' on host '%s'. " \
+			% (clientName, socket.gethostname()) \
+			+ "The client was not able to check for an update for %d times " \
+			+ "in a row." \
+			% updateFailCount
+
+		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
+			% (self.fromAddr, self.toAddr, subject)
+
+		# sending eMail alert to configured smtp server
+		logging.info("[%s]: Sending eMail alert to %s." 
+			% (self.fileName, self.toAddr))
+		try:
+			smtpServer = smtplib.SMTP(self.host, self.port)
+			smtpServer.sendmail(self.fromAddr, self.toAddr, 
+				emailHeader + message)
+			smtpServer.quit()
+		except Exception as e:
+			logging.exception("[%s]: Unable to send eMail alert. " 
+				% self.fileName)
+			return False
+
+		# set flag that an update check problem alert was sent before exiting
+		self.updateFailureAlertSent = True
+
+		return True
+
+
+	# this function sends an email in case of
+	# a problem with the update check was cleared
+	def sendUpdateCheckFailureAlertClear(self, updateFailCount, clientName):
+
+		if not self.updateFailureAlertSent:
+			return True
+
+		subject = "[alertR] Update check problems solved"
+
+		message = "The problems with the update check on the client " \
+			+ "'%s' on host '%s' were solved after %d attempts." \
+			% (clientName, socket.gethostname(), updateFailCount)
+
+		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
+			% (self.fromAddr, self.toAddr, subject)
+
+		# sending eMail alert to configured smtp server
+		logging.info("[%s]: Sending eMail alert to %s." 
+			% (self.fileName, self.toAddr))
+		try:
+			smtpServer = smtplib.SMTP(self.host, self.port)
+			smtpServer.sendmail(self.fromAddr, self.toAddr, 
+				emailHeader + message)
+			smtpServer.quit()
+		except Exception as e:
+			logging.exception("[%s]: Unable to send eMail alert. " 
+				% self.fileName)
+			return False
+
+		# clear flag that an update check problem alert was sent before exiting
+		self.updateFailureAlertSent = False
 
 		return True

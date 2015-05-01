@@ -83,6 +83,7 @@ class UpdateChecker(threading.Thread):
 			time.sleep(self.checkInterval)
 
 			# check if updates failed at least 10 times in a row
+			# => log and notify user
 			if updateFailCount >= 10:
 
 				logging.error("[%s]: Update checking failed for %d "
@@ -90,11 +91,8 @@ class UpdateChecker(threading.Thread):
 					+ "times in a row.")
 
 				if emailNotification is True:
-					pass
-					# TODO
-					# send email if activated
-
-
+					self.smtpAlert.sendUpdateCheckFailureAlert(
+						updateFailCount, self.globalData.name)
 
 			logging.info("[%s]: Checking for a new version." % self.fileName)
 
@@ -141,9 +139,20 @@ class UpdateChecker(threading.Thread):
 			logging.debug("[%s]: Newest version: %.3f-%d."
 				% (self.fileName, version, rev))
 
+			# check if updates failed at least 10 times in a row before
+			# => problems are now resolved => log and notify user
+			if updateFailCount >= 10:
+				logging.info("[%s]: Update problems resolved."
+					% self.fileName)
+
+				if emailNotification is True:
+					self.smtpAlert.sendUpdateCheckFailureAlertClear(
+						updateFailCount, self.globalData.name)
+
 			updateFailCount = 0
 
 			# check if the version on the server is newer than the used one
+			# => notify user about the new version
 			if (version > self.version or
 				(rev > self.rev and version == self.version)):
 
