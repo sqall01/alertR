@@ -182,14 +182,14 @@ if __name__ == '__main__':
 
 			# check if description is empty
 			if len(alert.description) == 0:
-				raise ValueError("Description of alert '%s' is empty."
-					% section)
+				raise ValueError("Description of alert %d is empty."
+					% alert.id)
 
 			# check if the id of the alert is unique
 			for registeredAlert in globalData.alerts:
 				if registeredAlert.id == alert.id:
-					raise ValueError("Id of alert '%s'"
-						% section + "is already taken.")				
+					raise ValueError("Id of alert %d"
+						% alert.id + "is already taken.")
 
 			globalData.alerts.append(alert)
 

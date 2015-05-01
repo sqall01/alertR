@@ -184,7 +184,6 @@ if __name__ == '__main__':
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
 
-
 			# lightning specific options needed for constructor
 			lat = float(item.find("lightning").attrib[
 				"lat"])
@@ -211,7 +210,6 @@ if __name__ == '__main__':
 			# lightning specific options
 			sensor.lightningTime = int(item.find("lightning").attrib[
 				"lightningTime"])
-
 
 			# check if description is empty
 			if len(sensor.description) == 0:
