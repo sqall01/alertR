@@ -172,6 +172,14 @@ if __name__ == '__main__':
 				configRoot.find("update").find("server").attrib["caFile"])
 			updateInterval = int(
 				configRoot.find("update").find("general").attrib["interval"])
+			updateEmailNotification = (str(
+				configRoot.find("update").find("general").attrib[
+				"emailNotification"]).upper() == "TRUE")
+
+			# email notification works only if smtp is activated
+			if (updateEmailNotification is True
+				and smtpActivated is False)
+				raise ValueError("Description of sensor '%s' is empty.")
 
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
@@ -207,14 +215,14 @@ if __name__ == '__main__':
 
 			# check if description is empty
 			if len(sensor.description) == 0:
-				raise ValueError("Description of sensor '%s' is empty."
-					% section)
+				raise ValueError("Description of sensor %d is empty."
+					% sensor.id)
 
 			# check if the id of the sensor is unique
 			for registeredSensor in globalData.sensors:
 				if registeredSensor.id == sensor.id:
-					raise ValueError("Id of sensor '%s'"
-						% section + "is already taken.")				
+					raise ValueError("Id of sensor %d"
+						% sensor.id + "is already taken.")				
 
 			globalData.sensors.append(sensor)
 
@@ -287,7 +295,7 @@ if __name__ == '__main__':
 	# only start update checker if it is activated
 	if updateActivated is True:
 		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
-			updateCaFile, updateInterval, globalData)
+			updateCaFile, updateInterval, updateEmailNotification, globalData)
 		# set thread to daemon
 		# => threads terminates when main thread terminates
 		updateChecker.daemon = True

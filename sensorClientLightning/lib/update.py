@@ -49,7 +49,8 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 
 class UpdateChecker(threading.Thread):
 
-	def __init__(self, host, port, fileLocation, caFile, interval, globalData):
+	def __init__(self, host, port, fileLocation, caFile, interval,
+		emailNotification, globalData):
 		threading.Thread.__init__(self)
 
 		# used for logging
@@ -70,12 +71,30 @@ class UpdateChecker(threading.Thread):
 		self.fileLocation = fileLocation
 		self.caFile = caFile
 
+		self.emailNotification = emailNotification
+
 
 	def run(self):
+
+		updateFailCount = 0
 
 		while True:
 
 			time.sleep(self.checkInterval)
+
+			# check if updates failed at least 10 times in a row
+			if updateFailCount >= 10:
+
+				logging.error("[%s]: Update checking failed for %d "
+					% (self.fileName, updateFailCount)
+					+ "times in a row.")
+
+				if emailNotification is True:
+					pass
+					# TODO
+					# send email if activated
+
+
 
 			logging.info("[%s]: Checking for a new version." % self.fileName)
 
@@ -99,6 +118,8 @@ class UpdateChecker(threading.Thread):
 				logging.exception("[%s]: Update check failed."
 					% self.fileName)
 
+				updateFailCount += 1
+
 				continue
 
 
@@ -113,11 +134,16 @@ class UpdateChecker(threading.Thread):
 				logging.exception("[%s]: Parsing version failed."
 					% self.fileName)
 
+				updateFailCount += 1
+
 				continue
 			
 			logging.debug("[%s]: Newest version: %.3f-%d."
 				% (self.fileName, version, rev))
 
+			updateFailCount = 0
+
+			# check if the version on the server is newer than the used one
 			if (version > self.version or
 				(rev > self.rev and version == self.version)):
 
@@ -126,8 +152,9 @@ class UpdateChecker(threading.Thread):
 				+ "(current version: %.3f-%d)."
 				% (self.version, self.rev))
 
-
-				# TODO
+				if emailNotification is True:
+					pass
+					# TODO
 
 
 
@@ -140,4 +167,5 @@ class UpdateChecker(threading.Thread):
 			# 1) if activated => email notification with new version
 			# check if smtp is activated and check if update notification
 			# is activated
+			# 2) counter for update fail
 			
