@@ -178,8 +178,9 @@ if __name__ == '__main__':
 
 			# email notification works only if smtp is activated
 			if (updateEmailNotification is True
-				and smtpActivated is False)
-				raise ValueError("Description of sensor '%s' is empty.")
+				and smtpActivated is False):
+				raise ValueError("Update check can not have email "
+					+ "notification activated when smptp is not activated.")
 
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
@@ -220,7 +221,7 @@ if __name__ == '__main__':
 			for registeredSensor in globalData.sensors:
 				if registeredSensor.id == sensor.id:
 					raise ValueError("Id of sensor %d"
-						% sensor.id + "is already taken.")				
+						% sensor.id + "is already taken.")
 
 			globalData.sensors.append(sensor)
 

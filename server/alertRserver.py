@@ -929,7 +929,7 @@ if __name__ == '__main__':
 
 			if ((not smtpActivated)
 				and alertLevel.smtpActivated):
-				raise ValueError("Alert level can not have email alert"
+				raise ValueError("Alert level can not have email alert "
 					+ "activated when smtp is not activated.")
 
 			alertLevel.toAddr = str(item.find("smtp").attrib["toAddr"])

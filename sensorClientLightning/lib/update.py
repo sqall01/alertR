@@ -43,10 +43,8 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 			ca_certs=self.servercert_file)
 
 
-
-
-
-
+# this class checks in specific intervals for updates and notifies
+# the user about new versions of this client
 class UpdateChecker(threading.Thread):
 
 	def __init__(self, host, port, fileLocation, caFile, interval,
@@ -73,6 +71,10 @@ class UpdateChecker(threading.Thread):
 
 		self.emailNotification = emailNotification
 
+		# needed to keep track of the newest version
+		self.newestVersion = self.version
+		self.newestRev = self.rev
+
 
 	def run(self):
 
@@ -90,7 +92,7 @@ class UpdateChecker(threading.Thread):
 					% (self.fileName, updateFailCount)
 					+ "times in a row.")
 
-				if emailNotification is True:
+				if self.emailNotification is True:
 					self.smtpAlert.sendUpdateCheckFailureAlert(
 						updateFailCount, self.globalData.name)
 
@@ -145,7 +147,7 @@ class UpdateChecker(threading.Thread):
 				logging.info("[%s]: Update problems resolved."
 					% self.fileName)
 
-				if emailNotification is True:
+				if self.emailNotification is True:
 					self.smtpAlert.sendUpdateCheckFailureAlertClear(
 						updateFailCount, self.globalData.name)
 
@@ -153,28 +155,23 @@ class UpdateChecker(threading.Thread):
 
 			# check if the version on the server is newer than the used one
 			# => notify user about the new version
-			if (version > self.version or
-				(rev > self.rev and version == self.version)):
+			if (version > self.newestVersion or
+				(rev > self.newestRev and version == self.newestVersion)):
 
 				logging.warning("[%s]: New version %.3f-%d available "
 				% (self.fileName, version, rev)
 				+ "(current version: %.3f-%d)."
 				% (self.version, self.rev))
 
-				if emailNotification is True:
-					pass
-					# TODO
+				# update newest known version
+				self.newestVersion = version
+				self.newestRev = rev
 
-
+				if self.emailNotification is True:
+					self.smtpAlert.sendUpdateCheckNewVersion(self.version,
+						self.rev, version, rev, self.globalData.name)
 
 			else:
 
 				logging.debug("[%s]: No new version available."
 					% self.fileName)
-
-			# TODO
-			# 1) if activated => email notification with new version
-			# check if smtp is activated and check if update notification
-			# is activated
-			# 2) counter for update fail
-			
