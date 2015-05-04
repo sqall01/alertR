@@ -32,12 +32,12 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.223
+		self.version = 0.224
 
-		# revision of the used client
+		# revision of the used server
 		self.rev = 0
 
-		# name of this client
+		# name of this server
 		self.name = "alertR Server"
 
 		# list of all sessions that are handled by the server
