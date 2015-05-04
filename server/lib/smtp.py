@@ -34,6 +34,11 @@ class SMTPAlert:
 		# are separately configured for each alert level)
 		self.toAddr = toAddr
 
+		# this values keep track about the update available
+		# notifications that were already sent (this prevents email flodding)
+		self.newestVersion = None
+		self.newestRev = None
+
 
 	# this function sends an email alert in case of
 	# a sensor alert
@@ -163,5 +168,82 @@ class SMTPAlert:
 			logging.exception("[%s]: Unable to send eMail alert. " 
 				% self.fileName)
 			return False
+
+		return True
+
+
+	# this function sends an email in case of
+	# a problem with the update check was cleared
+	def sendUpdateCheckFailureAlertClear(self, updateFailCount, clientName):
+
+		if not self.updateFailureAlertSent:
+			return True
+
+		subject = "[alertR] Update check problems solved"
+
+		message = "The problems with the update check on the client " \
+			+ "'%s' on host '%s' were solved after %d attempts." \
+			% (clientName, socket.gethostname(), updateFailCount)
+
+		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
+			% (self.fromAddr, self.toAddr, subject)
+
+		# sending eMail alert to configured smtp server
+		logging.info("[%s]: Sending eMail alert to %s." 
+			% (self.fileName, self.toAddr))
+		try:
+			smtpServer = smtplib.SMTP(self.host, self.port)
+			smtpServer.sendmail(self.fromAddr, self.toAddr, 
+				emailHeader + message)
+			smtpServer.quit()
+		except Exception as e:
+			logging.exception("[%s]: Unable to send eMail alert. " 
+				% self.fileName)
+			return False
+
+		# clear flag that an update check problem alert was sent before exiting
+		self.updateFailureAlertSent = False
+
+		return True
+
+
+	# this function sends an email in case of
+	# a new version is available for this client
+	def sendUpdateCheckNewVersion(self, currVersion, currRev, version,
+		rev, clientName):
+
+		if (self.newestVersion >= version
+			and self.newestRev >= rev):
+			return True
+
+		subject = "[alertR] Update available"
+
+		message = "For the client '%s' on host '%s' is a new version " \
+			% (clientName, socket.gethostname()) \
+			+ "available.\n\n" \
+			+ "Current version: %.3f-%d\n" \
+			% (currVersion, currRev) \
+			+ "New version: %.3f-%d\n" \
+			% (version, rev)
+
+		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
+			% (self.fromAddr, self.toAddr, subject)
+
+		# sending eMail alert to configured smtp server
+		logging.info("[%s]: Sending eMail alert to %s." 
+			% (self.fileName, self.toAddr))
+		try:
+			smtpServer = smtplib.SMTP(self.host, self.port)
+			smtpServer.sendmail(self.fromAddr, self.toAddr, 
+				emailHeader + message)
+			smtpServer.quit()
+		except Exception as e:
+			logging.exception("[%s]: Unable to send eMail alert. " 
+				% self.fileName)
+			return False
+
+		# store the new version and revision
+		self.newestVersion = version
+		self.newestRev = rev
 
 		return True

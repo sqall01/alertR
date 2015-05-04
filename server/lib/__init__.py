@@ -16,3 +16,4 @@ from alert import SensorAlertExecuter, AlertLevel, RuleStart, RuleElement, \
 from userBackend import CSVBackend
 from smtp import SMTPAlert
 from manager import ManagerUpdateExecuter
+from update import UpdateChecker

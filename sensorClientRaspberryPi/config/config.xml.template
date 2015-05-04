@@ -96,6 +96,50 @@
 
 
 	<!--
+		in this section the options of the update checking are configured
+	-->
+	<update>
+
+		<!--
+			the general settings of the update checking
+			activated - should the client check for updates?
+				("True" or "False")
+			interval - the interval in seconds in which the client checks
+				online for updates
+			emailNotification - should an email notification be sent to the
+				user if a new version is available? ("True" or "False")
+				NOTE: this option only works if smtp is activated
+				NOTE: if this option is deactivated, the client will only
+				output the notification about the new version into the log file
+		-->
+		<general
+			activated="True"
+			interval="86400"
+			emailNotification="True" />
+
+		<!--
+			the server settings of the update checking (only change these
+				settings if you want to use your own repository and not
+				the alertR master repository on github)
+			host - address of the used web server
+				NOTE: the update checking uses HTTPS and does not allow HTTP
+			port - port of the used web server
+			location - the location of the version file on the web server
+			caFile - the location of the CA/certificate file that is used
+				to validate the HTTPS connection
+				NOTE: the given location works for github on Debian like
+				distributions
+		-->
+		<server
+			host="raw.githubusercontent.com"
+			port="443"
+			location="/sqall01/alertR/master/sensorClientRaspberryPi/version.txt"
+			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+
+	</update>
+
+
+	<!--
 		section of all sensors that are monitored
 	-->
 	<sensors>

@@ -180,7 +180,7 @@ if __name__ == '__main__':
 			if (updateEmailNotification is True
 				and smtpActivated is False):
 				raise ValueError("Update check can not have email "
-					+ "notification activated when smptp is not activated.")
+					+ "notification activated when smtp is not activated.")
 
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):

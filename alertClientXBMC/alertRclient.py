@@ -12,6 +12,7 @@ import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import XbmcAlert
+from lib import UpdateChecker
 import logging
 import time
 import socket
@@ -27,6 +28,12 @@ class GlobalData:
 
 		# version of the used client (and protocol)
 		self.version = 0.223
+
+		# revision of the used client
+		self.rev = 0
+
+		# name of this client
+		self.name = "alertR Alert Client XBMC"
 
 		# interval in which a ping should be send when 
 		# no data was received/send
@@ -151,6 +158,31 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
+		# parse update options
+		updateActivated = (str(
+			configRoot.find("update").find("general").attrib[
+			"activated"]).upper() == "TRUE")
+		if updateActivated is True:
+			updateServer = str(
+				configRoot.find("update").find("server").attrib["host"])
+			updatePort = int(
+				configRoot.find("update").find("server").attrib["port"])
+			updateLocation = str(
+				configRoot.find("update").find("server").attrib["location"])
+			updateCaFile = str(
+				configRoot.find("update").find("server").attrib["caFile"])
+			updateInterval = int(
+				configRoot.find("update").find("general").attrib["interval"])
+			updateEmailNotification = (str(
+				configRoot.find("update").find("general").attrib[
+				"emailNotification"]).upper() == "TRUE")
+
+			# email notification works only if smtp is activated
+			if (updateEmailNotification is True
+				and smtpActivated is False):
+				raise ValueError("Update check can not have email "
+					+ "notification activated when smtp is not activated.")
+
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
@@ -247,6 +279,15 @@ if __name__ == '__main__':
 	# initialize all alerts
 	for alert in globalData.alerts:
 		alert.initializeAlert()
+
+	# only start update checker if it is activated
+	if updateActivated is True:
+		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
+			updateCaFile, updateInterval, updateEmailNotification, globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates
+		updateChecker.daemon = True
+		updateChecker.start()
 
 	# generate receiver to handle incoming data (for example status updates)
 	receiver = Receiver(globalData.serverComm)

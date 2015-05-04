@@ -10,3 +10,4 @@
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import SensorDev, SensorExecuter
+from update import UpdateChecker

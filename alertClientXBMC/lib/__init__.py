@@ -10,3 +10,4 @@
 from client import ServerCommunication, ConnectionWatchdog, Receiver
 from smtp import SMTPAlert
 from alert import XbmcAlert
+from update import UpdateChecker

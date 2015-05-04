@@ -12,3 +12,4 @@ from smtp import SMTPAlert
 from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
 	ServerEventHandler
 from screen import ScreenUpdater, Console
+from update import UpdateChecker
