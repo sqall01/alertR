@@ -479,6 +479,13 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 				% self.fileName)
 			return
 
+		# check if the key "strokes" exist
+		if not "strokes" in dataJson.keys():
+			logging.warning("[%s]: Received data does "
+				% self.fileName
+				+ "not contain 'strokes'.")
+			return
+
 
 		# process each lightning of the received data
 		for stroke in dataJson["strokes"]:
