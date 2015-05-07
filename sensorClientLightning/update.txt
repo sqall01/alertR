@@ -1,0 +1,9 @@
+["alertRclient.py",
+"config/config.xml.template",
+"lib/update.py",
+"lib/smtp.py",
+"lib/__init__.py",
+"lib/client.py",
+"lib/sensor.py",
+"lib/globalData.py",
+"init.d_example/alertRclient.sh"]
