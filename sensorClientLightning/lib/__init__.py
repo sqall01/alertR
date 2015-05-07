@@ -12,3 +12,4 @@ from smtp import SMTPAlert
 from sensor import LightningmapSensor, \
 	LightningmapDataCollector, SensorExecuter
 from update import UpdateChecker
+from globalData import GlobalData

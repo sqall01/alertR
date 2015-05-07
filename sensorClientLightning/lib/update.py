@@ -15,6 +15,7 @@ import os
 import time
 import logging
 import json
+import hashlib
 
 
 # HTTPSConnection like class that verifies server certificates
