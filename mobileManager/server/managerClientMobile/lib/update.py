@@ -173,5 +173,5 @@ class UpdateChecker(threading.Thread):
 
 			else:
 
-				logging.debug("[%s]: No new version available."
+				logging.info("[%s]: No new version available."
 					% self.fileName)
