@@ -64,11 +64,9 @@ class UpdateChecker(threading.Thread):
 		# set interval for update checking
 		self.checkInterval = interval
 
-		# set update server configuration
-		self.host = host
-		self.port = port
-		self.fileLocation = fileLocation
-		self.caFile = caFile
+		# create an updater process
+		self.updater = Updater(host, port, fileLocation, caFile,
+			self.globalData)
 
 		self.emailNotification = emailNotification
 
@@ -99,48 +97,9 @@ class UpdateChecker(threading.Thread):
 
 			logging.info("[%s]: Checking for a new version." % self.fileName)
 
-			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
-			versionString = ""
-
-			# get version string from the server
-			try:
-				conn.request("GET", self.fileLocation)
-				response = conn.getresponse()
-
-				# check if server responded correctly
-				if response.status == 200:
-					versionString = response.read()
-
-				else:
-					raise ValueError("Server response code not 200 (was %d)"
-						% response.status)
-
-			except Exception as e:
-				logging.exception("[%s]: Update check failed."
-					% self.fileName)
-
+			if self.updater.getNewestVersionInformation() is False:
 				updateFailCount += 1
-
 				continue
-
-
-			# parse version string
-			try:
-				jsonData = json.loads(versionString)
-
-				version = float(jsonData["version"])
-				rev = int(jsonData["rev"])
-
-			except Exception as e:
-				logging.exception("[%s]: Parsing version failed."
-					% self.fileName)
-
-				updateFailCount += 1
-
-				continue
-			
-			logging.debug("[%s]: Newest version: %.3f-%d."
-				% (self.fileName, version, rev))
 
 			# check if updates failed at least 10 times in a row before
 			# => problems are now resolved => log and notify user
@@ -154,25 +113,123 @@ class UpdateChecker(threading.Thread):
 
 			updateFailCount = 0
 
-			# check if the version on the server is newer than the used one
+			# check if the version on the server is newer than the used
+			# (or last known) one
 			# => notify user about the new version
-			if (version > self.newestVersion or
-				(rev > self.newestRev and version == self.newestVersion)):
+			if (self.updater.newestVersion > self.newestVersion or
+				(self.updater.newestRev > self.newestRev
+				and self.updater.newestVersion == self.newestVersion)):
 
 				logging.warning("[%s]: New version %.3f-%d available "
-				% (self.fileName, version, rev)
-				+ "(current version: %.3f-%d)."
-				% (self.version, self.rev))
+					% (self.fileName, self.updater.newestVersion,
+					self.updater.newestRev)
+					+ "(current version: %.3f-%d)."
+					% (self.version, self.rev))
 
 				# update newest known version
-				self.newestVersion = version
-				self.newestRev = rev
+				self.newestVersion = self.updater.newestVersion
+				self.newestRev = self.updater.newestRev
 
 				if self.emailNotification is True:
 					self.smtpAlert.sendUpdateCheckNewVersion(self.version,
-						self.rev, version, rev, self.globalData.name)
+						self.rev, self.newestVersion, self.newestRev,
+						self.globalData.name)
 
 			else:
 
 				logging.info("[%s]: No new version available."
 					% self.fileName)
+
+
+
+
+
+
+
+class Updater:
+
+
+	def __init__(self, host, port, fileLocation, caFile, globalData):
+
+		# used for logging
+		self.fileName = os.path.basename(__file__)
+
+		# get global configured data
+		self.globalData = globalData
+		self.version = self.globalData.version
+		self.rev = self.globalData.rev
+		self.smtpAlert = self.globalData.smtpAlert
+
+		# set update server configuration
+		self.host = host
+		self.port = port
+		self.fileLocation = fileLocation
+		self.caFile = caFile
+
+		# needed to keep track of the newest version
+		self.newestVersion = self.version
+		self.newestRev = self.rev
+		self.newestFiles = None
+
+
+
+	def getNewestVersionInformation(self):
+
+		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		versionString = ""
+
+		# get version string from the server
+		try:
+			conn.request("GET", self.fileLocation)
+			response = conn.getresponse()
+
+			# check if server responded correctly
+			if response.status == 200:
+				versionString = response.read()
+
+			else:
+				raise ValueError("Server response code not 200 (was %d)."
+					% response.status)
+
+		except Exception as e:
+			logging.exception("[%s]: Getting version information failed."
+				% self.fileName)
+
+			return False
+
+
+		# parse version information string
+		try:
+			jsonData = json.loads(versionString)
+
+			version = float(jsonData["version"])
+			rev = int(jsonData["rev"])
+
+			newestFiles = jsonData["files"]
+
+			if not isinstance(newestFiles, dict):
+
+				raise ValueError("Key 'files' is not of type dict.")
+
+				return False
+
+		except Exception as e:
+			logging.exception("[%s]: Parsing version information failed."
+				% self.fileName)
+
+			return False
+
+		logging.debug("[%s]: Newest version information: %.3f-%d."
+			% (self.fileName, version, rev))
+
+		# check if the version on the server is newer than the used one
+		# => update information
+		if (version > self.newestVersion or
+			(rev > self.newestRev and version == self.newestVersion)):
+
+			# update newest known version information
+			self.newestVersion = version
+			self.newestRev = rev
+			self.newestFiles = newestFiles
+
+		return True
