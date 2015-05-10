@@ -238,7 +238,7 @@ class Updater:
 				filesToUpdate[clientFile] = _FileUpdateType.NEW
 				counterNew += 1
 
-		logging.info("[%s]: Files to update: %d; New files: %d"
+		logging.info("[%s]: Files to modify: %d; New files: %d"
 			% (self.fileName, counterUpdate, counterNew))
 
 		return filesToUpdate
