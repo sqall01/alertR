@@ -18,6 +18,13 @@ import json
 import hashlib
 
 
+# internal class that is used as an enum to represent the type of file update
+class _FileUpdateType:
+	NEW = 1
+	DELETE = 2
+	MODIFY = 3
+
+
 # HTTPSConnection like class that verifies server certificates
 class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 	# needs socket and ssl lib
@@ -170,9 +177,173 @@ class Updater:
 		self.newestVersion = self.version
 		self.newestRev = self.rev
 		self.newestFiles = None
+		self.lastChecked = 0.0
 
 
+	# internal function that checks which files are new and which files have
+	# to be updated
+	#
+	# return a dict of files that are affected by this update (and how) or None
+	def _checkFilesToUpdate(self):
 
+		# check if the last version information check was done shortly before
+		# => if not get the newest version information
+		if (time.time() - self.lastChecked) > 60:
+			if self.getNewestVersionInformation() is False:
+				logging.error("[%s]: Not able to get version "
+					% self.fileName
+					+ "information for checking files.")
+				return None
+
+		counterUpdate = 0
+		counterNew = 0
+
+		# get the absolute location to this instance
+		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
+
+		# get all files that have to be updated
+		filesToUpdate = dict()
+		for clientFile in self.newestFiles.keys():
+
+			# check if file already exists
+			# => check if file has to be updated
+			if os.path.exists(instanceLocation + clientFile):
+
+				sha256Hash = self._sha256File(instanceLocation + clientFile)
+
+				# check if file has changed
+				# => if not ignore it
+				if sha256Hash == self.newestFiles[clientFile]:
+
+					logging.debug("[%s]: Not changed: '%s'"
+						% (self.fileName, clientFile))
+
+					continue
+
+				# => if it has changed add it to the list of files to update
+				else:
+
+					logging.debug("[%s]: New version: '%s'"
+						% (self.fileName, clientFile))
+
+					filesToUpdate[clientFile] = _FileUpdateType.MODIFY
+					counterUpdate += 1
+
+			# => if the file does not exist, just add it
+			else:
+
+				logging.debug("[%s]: New file: '%s'"
+					% (self.fileName, clientFile))
+
+				filesToUpdate[clientFile] = _FileUpdateType.NEW
+				counterNew += 1
+
+		logging.info("[%s]: Files to update: %d; New files: %d"
+			% (self.fileName, counterUpdate, counterNew))
+
+		return filesToUpdate
+
+
+	# internal function that checks the needed permissions to
+	# perform the update
+	#
+	# return True or False
+	def _checkFilePermissions(self, filesToUpdate):
+
+		# get the absolute location to this instance
+		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
+
+		# check permissions for each file that is affected by this update
+		for clientFile in filesToUpdate.keys():
+
+			# check if the file just has to be modified
+			if filesToUpdate[clientFile] == _FileUpdateType.MODIFY:
+
+				# check if the file is not writable
+				# => cancel update
+				if not os.access(instanceLocation + clientFile, os.W_OK):
+					logging.error("[%s]: File '%s' is not writable."
+						% (self.fileName, clientFile))
+					return False
+
+				logging.debug("[%s]: File '%s' is writable."
+						% (self.fileName, clientFile))
+
+
+			# check if the file is new and has to be created
+			elif filesToUpdate[clientFile] == _FileUpdateType.NEW:
+
+				logging.debug("[%s]: Checking write permissions for new "
+					% self.fileName
+					+ "file: '%s'"
+					% clientFile)
+
+				folderStructure = clientFile.split("/")
+
+				# check if the new file is located in the root directory
+				# of the instance
+				# => check root directory of the instance for write permissions
+				if len(folderStructure) == 1:
+					if not os.access(instanceLocation, os.W_OK):
+						logging.error("[%s]: Folder './' is not "
+							% self.fileName
+							+ "writable.")
+						return False
+
+					logging.debug("[%s]: Folder './' is writable."
+						% self.fileName)
+
+				# if new file is not located in the root directory
+				# of the instance
+				# => check all folders on the way to the new file for write
+				# permissions
+				else:
+					tempPart = ""
+					for filePart in folderStructure:
+
+						# check if folder exists
+						if os.path.exists(instanceLocation + tempPart
+							+ "/" + filePart):
+
+							# check if folder is not writable
+							# => cancel update
+							if not os.access(instanceLocation + tempPart
+								+ "/" + filePart, os.W_OK):
+								logging.error("[%s]: Folder '.%s/%s' is not "
+									% (self.fileName, tempPart, filePart)
+									+ "writable.")
+								return False
+
+							logging.debug("[%s]: Folder '.%s/%s' is writable."
+								% (self.fileName, tempPart, filePart))
+
+							tempPart += "/"
+							tempPart += filePart
+
+
+			# check if the file has to be deleted
+			elif filesToUpdate[clientFile] == _FileUpdateType.DELETE:
+				raise NotImplementedError("Feature not yet implemented.")
+
+
+		return True
+
+
+	# internal function that calculates the sha256 hash of the file
+	def _sha256File(self, inputFileName):
+		f = open(inputFileName, 'r')
+		sha256 = hashlib.sha256()
+		while True:
+			data = f.read(128)
+			if not data:
+				break
+			sha256.update(data)
+		f.close()
+		return sha256.hexdigest()
+
+
+	# function that gets the newest version information from the
+	# online repository
 	def getNewestVersionInformation(self):
 
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
@@ -232,4 +403,7 @@ class Updater:
 			self.newestRev = rev
 			self.newestFiles = newestFiles
 
+		self.lastChecked = time.time()
+
 		return True
+
