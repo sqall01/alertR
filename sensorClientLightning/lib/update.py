@@ -161,6 +161,9 @@ class Updater:
 		# used for logging
 		self.fileName = os.path.basename(__file__)
 
+		# the updater object is not thread safe
+		self.updaterLock = threading.Semaphore(1)
+
 		# get global configured data
 		self.globalData = globalData
 		self.version = self.globalData.version
@@ -178,6 +181,18 @@ class Updater:
 		self.newestRev = self.rev
 		self.newestFiles = None
 		self.lastChecked = 0.0
+
+
+	# internal function that acquires the lock
+	def _acquireLock(self):
+		logging.debug("[%s]: Acquire lock." % self.fileName)
+		self.updaterLock.acquire()
+
+
+	# internal function that releases the lock
+	def _releaseLock(self):
+		logging.debug("[%s]: Release lock." % self.fileName)
+		self.updaterLock.release()
 
 
 	# internal function that checks which files are new and which files have
@@ -346,6 +361,8 @@ class Updater:
 	# online repository
 	def getNewestVersionInformation(self):
 
+		self._acquireLock()
+
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 		versionString = ""
 
@@ -366,6 +383,8 @@ class Updater:
 			logging.exception("[%s]: Getting version information failed."
 				% self.fileName)
 
+			self._releaseLock()
+
 			return False
 
 
@@ -382,11 +401,15 @@ class Updater:
 
 				raise ValueError("Key 'files' is not of type dict.")
 
+				self._releaseLock()
+
 				return False
 
 		except Exception as e:
 			logging.exception("[%s]: Parsing version information failed."
 				% self.fileName)
+
+			self._releaseLock()
 
 			return False
 
@@ -404,6 +427,8 @@ class Updater:
 			self.newestFiles = newestFiles
 
 		self.lastChecked = time.time()
+
+		self._releaseLock()
 
 		return True
 
