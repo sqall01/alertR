@@ -174,6 +174,9 @@ if __name__ == '__main__':
 
 		updater._checkFilePermissions(test)
 
+
+		updater.test(test)
+
 		# next steps:
 		# 0) check the version update and notify the user about config changes and that the whole infrastructure has to be updated in order to work
 		# 1) check which file has to be overwritten (or are new)

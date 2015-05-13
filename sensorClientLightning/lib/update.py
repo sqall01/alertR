@@ -16,6 +16,7 @@ import time
 import logging
 import json
 import hashlib
+import tempfile
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -55,7 +56,7 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 # the user about new versions of this client
 class UpdateChecker(threading.Thread):
 
-	def __init__(self, host, port, fileLocation, caFile, interval,
+	def __init__(self, host, port, serverPath, caFile, interval,
 		emailNotification, globalData):
 		threading.Thread.__init__(self)
 
@@ -72,7 +73,7 @@ class UpdateChecker(threading.Thread):
 		self.checkInterval = interval
 
 		# create an updater process
-		self.updater = Updater(host, port, fileLocation, caFile,
+		self.updater = Updater(host, port, serverPath, caFile,
 			self.globalData)
 
 		self.emailNotification = emailNotification
@@ -156,7 +157,7 @@ class UpdateChecker(threading.Thread):
 class Updater:
 
 
-	def __init__(self, host, port, fileLocation, caFile, globalData):
+	def __init__(self, host, port, serverPath, caFile, globalData):
 
 		# used for logging
 		self.fileName = os.path.basename(__file__)
@@ -173,7 +174,7 @@ class Updater:
 		# set update server configuration
 		self.host = host
 		self.port = port
-		self.fileLocation = fileLocation
+		self.serverPath = serverPath
 		self.caFile = caFile
 
 		# needed to keep track of the newest version
@@ -181,6 +182,15 @@ class Updater:
 		self.newestRev = self.rev
 		self.newestFiles = None
 		self.lastChecked = 0.0
+
+
+
+
+
+
+
+		self.chunkSize = 4096
+
 
 
 	# internal function that acquires the lock
@@ -224,7 +234,9 @@ class Updater:
 			# => check if file has to be updated
 			if os.path.exists(instanceLocation + clientFile):
 
-				sha256Hash = self._sha256File(instanceLocation + clientFile)
+				f = open(instanceLocation + clientFile, 'r')
+				sha256Hash = self._sha256File(f)
+				f.close()
 
 				# check if file has changed
 				# => if not ignore it
@@ -344,16 +356,151 @@ class Updater:
 		return True
 
 
+	# internal function that downloads the given file into the download
+	# directory and checks if the given hash is correct
+	#
+	# return True or False
+	def _downloadFile(self, fileLocation, fileHash, downloadFolder):
+
+		# check if the file resides in the root directory or
+		# if a sub directory has to be created
+		folderStructure = fileLocation.split("/")
+		if len(folderStructure) != 1:
+
+			logging.debug("[%s]: Creating folder structure for: '%s'"
+				% (self.fileName, fileLocation))
+
+			try:
+
+				i = 0
+				tempPart = ""
+				while i < (len(folderStructure) - 1):
+
+					# check if the sub directory already exists
+					# => if not create it
+					if not os.path.exists(downloadFolder + tempPart + "/"
+						+ folderStructure[i]):
+
+						logging.debug("[%s]: Creating folder '%s/%s/%s'."
+							% (self.fileName, downloadFolder, tempPart,
+							folderStructure[i]))
+
+						os.mkdir(downloadFolder + tempPart + "/"
+							+ folderStructure[i])
+
+					# if the sub directory already exists then check
+					# if it is a directory
+					# => raise an exception if it is not
+					elif not os.path.isdir(downloadFolder + tempPart + "/"
+						+ folderStructure[i]):
+
+						raise ValueError("Location '%s' already exists "
+							% (tempPart + "/" + folderStructure[i])
+							+ "and is not a directory.")
+
+					# only log if sub directory already exists
+					else:
+						logging.debug("[%s]: Folder '%s/%s/%s' already exists."
+							% (self.fileName, downloadFolder, tempPart,
+							folderStructure[i]))
+
+					tempPart += "/"
+					tempPart += folderStructure[i]
+
+					i += 1
+
+			except Exception as e:
+
+				logging.exception("[%s]: Creating folder structure for '%s' "
+					% (self.fileName, fileLocation)
+					+ "failed.")
+
+				return False
+
+
+		# create temporary file for download
+		fileHandle = None
+		try:
+
+			# check if the file to download already exists
+			if os.path.exists(downloadFolder + fileLocation):
+
+				raise ValueError("File '%s/%s' already exists."
+					% (downloadFolder, fileLocation))
+
+			fileHandle = open(downloadFolder + fileLocation, 'wb')
+
+
+		except:
+
+			logging.exception("[%s]: Creating file '%s/%s' failed."
+				% (self.fileName, downloadFolder, fileLocation))
+
+			return False
+
+
+		# download file from server
+		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		try:
+
+			conn.request("GET", self.serverPath + "/" + fileLocation)
+			response = conn.getresponse()
+
+			# check if server responded correctly
+			# => download file
+			if response.status == 200:
+
+				while True:
+					chunk = response.read(self.chunkSize)
+
+					if not chunk:
+						break
+
+					fileHandle.write(chunk)
+				fileHandle.close()
+
+			else:
+				raise ValueError("Server response code not 200 (was %d)."
+					% response.status)
+
+			conn.close()
+
+		except Exception as e:
+			logging.exception("[%s]: Downloading file '%s' from the "
+				% (self.fileName, fileLocation)
+				+ "server failed.")
+
+			return False
+
+
+		# calculate sha256 hash of the downloaded file
+		fileHandle = open(downloadFolder + fileLocation, 'r')
+		sha256Hash = self._sha256File(fileHandle)
+		fileHandle.close()
+
+		# check if downloaded file has the correct hash
+		if sha256Hash != fileHash:
+
+			logging.error("[%s]: File '%s' does not have the correct hash."
+				% (self.fileName, fileLocation))
+
+			return False
+
+		logging.debug("[%s]: Successfully downloaded file: '%s'"
+			% (self.fileName, fileLocation))
+
+		return True
+
+
 	# internal function that calculates the sha256 hash of the file
-	def _sha256File(self, inputFileName):
-		f = open(inputFileName, 'r')
+	def _sha256File(self, fileHandle):
+		fileHandle.seek(0)
 		sha256 = hashlib.sha256()
 		while True:
-			data = f.read(128)
+			data = fileHandle.read(128)
 			if not data:
 				break
 			sha256.update(data)
-		f.close()
 		return sha256.hexdigest()
 
 
@@ -368,7 +515,8 @@ class Updater:
 
 		# get version string from the server
 		try:
-			conn.request("GET", self.fileLocation)
+
+			conn.request("GET", self.serverPath + "/version.txt")
 			response = conn.getresponse()
 
 			# check if server responded correctly
@@ -398,12 +546,7 @@ class Updater:
 			newestFiles = jsonData["files"]
 
 			if not isinstance(newestFiles, dict):
-
 				raise ValueError("Key 'files' is not of type dict.")
-
-				self._releaseLock()
-
-				return False
 
 		except Exception as e:
 			logging.exception("[%s]: Parsing version information failed."
@@ -431,4 +574,56 @@ class Updater:
 		self._releaseLock()
 
 		return True
+
+
+
+
+
+
+
+
+
+
+
+	def test(self, filesToUpdate):
+
+
+		print filesToUpdate
+
+
+
+		self._downloadFile(filesToUpdate.keys()[0],
+			self.newestFiles[filesToUpdate.keys()[0]], "/tmp/")
+
+		return
+
+
+
+		# 1) create random tmp folder 		tempfile.mkdtemp()
+		# 2) download file to tmp folder 						DONE
+		# 3) check file has same hash than version.txt 			DONE
+		# 4) repeat for all files that have to be updated
+		# 5) overwrite file of client with new file
+
+
+
+		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		conn.request("GET", "/sqall01/alertR/dev/sensorClientLightning/alertRclient.py")
+
+		response = conn.getresponse()
+
+
+
+		# check if server responded correctly
+		if response.status == 200:
+
+			while True:
+				chunk = response.read(self.chunkSize)
+				if not chunk:
+					break
+				#print chunk
+
+				#print "\n\n\n------------------------\n\n\n"
+
+
 
