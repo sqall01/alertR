@@ -54,7 +54,7 @@ if __name__ == '__main__':
 			raise ValueError("No valid log level in config file.")
 
 		# initialize logging
-		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
 			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
 			level=loglevel)
 

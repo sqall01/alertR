@@ -170,6 +170,7 @@ class Updater:
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 		self.smtpAlert = self.globalData.smtpAlert
+		self.instance = self.globalData.instance
 
 		# set update server configuration
 		self.host = host
@@ -182,8 +183,7 @@ class Updater:
 		self.newestRev = self.rev
 		self.newestFiles = None
 		self.lastChecked = 0.0
-
-
+		self.repoInstanceLocation = None
 
 
 
@@ -443,7 +443,8 @@ class Updater:
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 		try:
 
-			conn.request("GET", self.serverPath + "/" + fileLocation)
+			conn.request("GET", self.serverPath + "/"
+				+ self.repoInstanceLocation + "/" + fileLocation)
 			response = conn.getresponse()
 
 			# check if server responded correctly
@@ -511,12 +512,66 @@ class Updater:
 		self._acquireLock()
 
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
-		versionString = ""
 
-		# get version string from the server
+
+		# get repository information from the server
+		repoInfoString = ""
 		try:
 
-			conn.request("GET", self.serverPath + "/version.txt")
+			conn.request("GET", self.serverPath + "/repoInfo.json")
+			response = conn.getresponse()
+
+			# check if server responded correctly
+			if response.status == 200:
+				repoInfoString = response.read()
+
+			else:
+				raise ValueError("Server response code not 200 (was %d)."
+					% response.status)
+
+		except Exception as e:
+			logging.exception("[%s]: Getting repository information failed."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+
+		# parse repository information string
+		try:
+			jsonData = json.loads(repoInfoString)
+
+			if not isinstance(jsonData, dict):
+				raise ValueError("Received repository information is "
+					+ "not of type dict.")
+
+			if not self.instance in jsonData["instances"].keys():
+				raise ValueError("Instance '%s' is not managed by "
+					% self.instance
+					+ "used repository.")
+
+			self.repoInstanceLocation = str(
+				jsonData["instances"]["self.instance"])
+
+			if not isinstance(newestFiles, dict):
+				raise ValueError("Key 'files' is not of type dict.")
+
+		except Exception as e:
+			logging.exception("[%s]: Parsing repository information failed."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+
+		# get version string from the server
+		versionString = ""
+		try:
+
+			conn.request("GET", self.serverPath + "/"
+				+ self.repoInstanceLocation + "/version.json")
 			response = conn.getresponse()
 
 			# check if server responded correctly

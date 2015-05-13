@@ -124,7 +124,7 @@
 			host - address of the used web server
 				NOTE: the update checking uses HTTPS and does not allow HTTP
 			port - port of the used web server
-			location - the location of the version file on the web server
+			location - the location of the used alertR repository
 			caFile - the location of the CA/certificate file that is used
 				to validate the HTTPS connection
 				NOTE: the given location works for github on Debian like
@@ -133,7 +133,7 @@
 		<server
 			host="raw.githubusercontent.com"
 			port="443"
-			location="/sqall01/alertR/master/sensorClientLightning/"
+			location="/sqall01/alertR/master/"
 			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
 
 	</update>

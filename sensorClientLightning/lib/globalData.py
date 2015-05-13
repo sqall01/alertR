@@ -25,6 +25,9 @@ class GlobalData:
 		# name of this client
 		self.name = "alertR Sensor Client Lightning"
 
+		# the instance of this client
+		self.instance = "sensorClientLightning"
+
 		# interval in which a ping should be send when 
 		# no data was received/send
 		self.pingInterval = 30
