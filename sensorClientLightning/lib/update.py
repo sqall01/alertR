@@ -17,6 +17,7 @@ import logging
 import json
 import hashlib
 import tempfile
+import shutil
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -188,7 +189,7 @@ class Updater:
 
 
 
-
+		# TODO
 		self.chunkSize = 4096
 
 
@@ -362,6 +363,8 @@ class Updater:
 	# return True or False
 	def _downloadFile(self, fileLocation, fileHash, downloadFolder):
 
+		downloadFolder += "/"
+
 		# check if the file resides in the root directory or
 		# if a sub directory has to be created
 		folderStructure = fileLocation.split("/")
@@ -429,7 +432,6 @@ class Updater:
 					% (downloadFolder, fileLocation))
 
 			fileHandle = open(downloadFolder + fileLocation, 'wb')
-
 
 		except:
 
@@ -639,43 +641,47 @@ class Updater:
 
 	def test(self, filesToUpdate):
 
+		# create temp directory for the update process
+		tempDir = tempfile.mkdtemp(prefix=self.instance)
 
-		print filesToUpdate
+		# download all files that have to be updated
+		for fileToUpdate in filesToUpdate.keys():
+
+			# only download file if it is new or has to be modified
+			if (filesToUpdate[fileToUpdate] == _FileUpdateType.NEW
+				or filesToUpdate[fileToUpdate] == _FileUpdateType.MODIFY):
+
+				# download new files, if one file fails
+				# => delete temp directory and abort update process
+				if (self._downloadFile(fileToUpdate,
+					self.newestFiles[fileToUpdate], tempDir) is False):
+
+					logging.error("[%s]: Downloading files from the "
+						% self.fileName
+						+ "repository failed. Aborting update process.")
+
+					shutil.rmtree(tempDir)
+
+					return False
 
 
 
-		self._downloadFile(filesToUpdate.keys()[0],
-			self.newestFiles[filesToUpdate.keys()[0]], "/tmp/")
-
-		return
+		# TODO
+		# HERE REPLACE OLD FILES WITH NEW ONES
 
 
 
-		# 1) create random tmp folder 		tempfile.mkdtemp()
+		
+		# delete temp directory before returning
+		shutil.rmtree(tempDir)
+
+		return True
+
+
+
+		# 1) create random tmp folder 		tempfile.mkdtemp()	DONE
 		# 2) download file to tmp folder 						DONE
 		# 3) check file has same hash than version.txt 			DONE
-		# 4) repeat for all files that have to be updated
+		# 4) repeat for all files that have to be updated 		DONE
 		# 5) overwrite file of client with new file
-
-
-
-		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
-		conn.request("GET", "/sqall01/alertR/dev/sensorClientLightning/alertRclient.py")
-
-		response = conn.getresponse()
-
-
-
-		# check if server responded correctly
-		if response.status == 200:
-
-			while True:
-				chunk = response.read(self.chunkSize)
-				if not chunk:
-					break
-				#print chunk
-
-				#print "\n\n\n------------------------\n\n\n"
-
-
-
+		# 6) delete tmp folder 									DONE
