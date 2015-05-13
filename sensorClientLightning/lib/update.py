@@ -552,10 +552,7 @@ class Updater:
 					+ "used repository.")
 
 			self.repoInstanceLocation = str(
-				jsonData["instances"]["self.instance"])
-
-			if not isinstance(newestFiles, dict):
-				raise ValueError("Key 'files' is not of type dict.")
+				jsonData["instances"][self.instance])
 
 		except Exception as e:
 			logging.exception("[%s]: Parsing repository information failed."
