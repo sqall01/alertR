@@ -133,7 +133,7 @@
 		<server
 			host="raw.githubusercontent.com"
 			port="443"
-			location="/sqall01/alertR/master/sensorClientLightning/version.txt"
+			location="/sqall01/alertR/master/sensorClientLightning/"
 			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
 
 	</update>
