@@ -215,7 +215,7 @@ class Updater:
 		# check if the last version information check was done shortly before
 		# => if not get the newest version information
 		if (time.time() - self.lastChecked) > 60:
-			if self.getNewestVersionInformation() is False:
+			if self._getNewestVersionInformation() is False:
 				logging.error("[%s]: Not able to get version "
 					% self.fileName
 					+ "information for checking files.")
@@ -507,14 +507,13 @@ class Updater:
 		return sha256.hexdigest()
 
 
-	# function that gets the newest version information from the
+	# internal function that gets the newest version information from the
 	# online repository
-	def getNewestVersionInformation(self):
-
-		self._acquireLock()
+	#
+	# return True or False
+	def _getNewestVersionInformation(self):
 
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
-
 
 		# get repository information from the server
 		repoInfoString = ""
@@ -534,8 +533,6 @@ class Updater:
 		except Exception as e:
 			logging.exception("[%s]: Getting repository information failed."
 				% self.fileName)
-
-			self._releaseLock()
 
 			return False
 
@@ -560,8 +557,6 @@ class Updater:
 			logging.exception("[%s]: Parsing repository information failed."
 				% self.fileName)
 
-			self._releaseLock()
-
 			return False
 
 
@@ -585,8 +580,6 @@ class Updater:
 			logging.exception("[%s]: Getting version information failed."
 				% self.fileName)
 
-			self._releaseLock()
-
 			return False
 
 
@@ -606,8 +599,6 @@ class Updater:
 			logging.exception("[%s]: Parsing version information failed."
 				% self.fileName)
 
-			self._releaseLock()
-
 			return False
 
 		logging.debug("[%s]: Newest version information: %.3f-%d."
@@ -625,12 +616,20 @@ class Updater:
 
 		self.lastChecked = time.time()
 
-		self._releaseLock()
-
 		return True
 
 
+	# function that gets the newest version information from the
+	# online repository
+	def getNewestVersionInformation(self):
 
+		self._acquireLock()
+
+		result = self._getNewestVersionInformation()
+
+		self._releaseLock()
+
+		return result
 
 
 
