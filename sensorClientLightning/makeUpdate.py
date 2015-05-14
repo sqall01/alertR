@@ -168,14 +168,8 @@ if __name__ == '__main__':
 
 
 
-		test = updater._checkFilesToUpdate()
 
-		# TODO: CHECK LENGTH OF returned dict FOR LEN = 0 => NO UPDATE
-
-		updater._checkFilePermissions(test)
-
-
-		updater.test(test)
+		updater.updateInstance()
 
 		# next steps:
 		# 0) check the version update and notify the user about config changes and that the whole infrastructure has to be updated in order to work

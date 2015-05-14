@@ -357,21 +357,14 @@ class Updater:
 		return True
 
 
-	# internal function that downloads the given file into the download
-	# directory and checks if the given hash is correct
+	# internal function that creates sub directories in the target directory
+	# for the given file location
 	#
 	# return True or False
-	def _downloadFile(self, fileLocation, fileHash, downloadFolder):
+	def _createSubDirectories(self, fileLocation, targetDirectory):
 
-		downloadFolder += "/"
-
-		# check if the file resides in the root directory or
-		# if a sub directory has to be created
 		folderStructure = fileLocation.split("/")
 		if len(folderStructure) != 1:
-
-			logging.debug("[%s]: Creating folder structure for: '%s'"
-				% (self.fileName, fileLocation))
 
 			try:
 
@@ -381,20 +374,20 @@ class Updater:
 
 					# check if the sub directory already exists
 					# => if not create it
-					if not os.path.exists(downloadFolder + tempPart + "/"
+					if not os.path.exists(targetDirectory + tempPart + "/"
 						+ folderStructure[i]):
 
-						logging.debug("[%s]: Creating folder '%s/%s/%s'."
-							% (self.fileName, downloadFolder, tempPart,
+						logging.debug("[%s]: Creating directory '%s/%s/%s'."
+							% (self.fileName, targetDirectory, tempPart,
 							folderStructure[i]))
 
-						os.mkdir(downloadFolder + tempPart + "/"
+						os.mkdir(targetDirectory + tempPart + "/"
 							+ folderStructure[i])
 
 					# if the sub directory already exists then check
 					# if it is a directory
 					# => raise an exception if it is not
-					elif not os.path.isdir(downloadFolder + tempPart + "/"
+					elif not os.path.isdir(targetDirectory + tempPart + "/"
 						+ folderStructure[i]):
 
 						raise ValueError("Location '%s' already exists "
@@ -403,9 +396,10 @@ class Updater:
 
 					# only log if sub directory already exists
 					else:
-						logging.debug("[%s]: Folder '%s/%s/%s' already exists."
-							% (self.fileName, downloadFolder, tempPart,
-							folderStructure[i]))
+						logging.debug("[%s]: Directory '%s/%s/%s' already "
+							% (self.fileName, targetDirectory, tempPart,
+							folderStructure[i])
+							+ "exists.")
 
 					tempPart += "/"
 					tempPart += folderStructure[i]
@@ -414,11 +408,32 @@ class Updater:
 
 			except Exception as e:
 
-				logging.exception("[%s]: Creating folder structure for '%s' "
-					% (self.fileName, fileLocation)
-					+ "failed.")
+				logging.exception("[%s]: Creating directory structure for "
+					% self.fileName
+					+ "'%s' failed."
+					% fileLocation)
 
 				return False
+
+		return True
+
+
+	# internal function that downloads the given file into the download
+	# directory and checks if the given hash is correct
+	#
+	# return True or False
+	def _downloadFile(self, fileLocation, fileHash, downloadDirectory):
+
+		downloadDirectory += "/"
+
+		# create sub directories (if needed)
+		if (self._createSubDirectories(fileLocation, downloadDirectory)
+			is False):
+
+			logging.error("[%s]: Creating sub directories for '%s' failed."
+				% (self.fileName, fileLocation))
+
+			return False
 
 
 		# create temporary file for download
@@ -426,17 +441,17 @@ class Updater:
 		try:
 
 			# check if the file to download already exists
-			if os.path.exists(downloadFolder + fileLocation):
+			if os.path.exists(downloadDirectory + fileLocation):
 
 				raise ValueError("File '%s/%s' already exists."
-					% (downloadFolder, fileLocation))
+					% (downloadDirectory, fileLocation))
 
-			fileHandle = open(downloadFolder + fileLocation, 'wb')
+			fileHandle = open(downloadDirectory + fileLocation, 'wb')
 
 		except:
 
 			logging.exception("[%s]: Creating file '%s/%s' failed."
-				% (self.fileName, downloadFolder, fileLocation))
+				% (self.fileName, downloadDirectory, fileLocation))
 
 			return False
 
@@ -477,7 +492,7 @@ class Updater:
 
 
 		# calculate sha256 hash of the downloaded file
-		fileHandle = open(downloadFolder + fileLocation, 'r')
+		fileHandle = open(downloadDirectory + fileLocation, 'r')
 		sha256Hash = self._sha256File(fileHandle)
 		fileHandle.close()
 
@@ -632,13 +647,41 @@ class Updater:
 		return result
 
 
+	# function that updates this instance of the alertR infrastructure
+	def updateInstance(self):
 
+		self._acquireLock()
 
+		# check all files that have to be updated
+		filesToUpdate = self._checkFilesToUpdate()
 
+		if filesToUpdate is None:
+			logging.error("[%s] Checking files for update failed."
+				% self.fileName)
 
+			self._releaseLock()
 
+			return False
 
-	def test(self, filesToUpdate):
+		if len(filesToUpdate) == 0:
+
+			logging.info("[%s] No files have to be updated."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return True
+
+		# check file permissions of the files that have to be updated
+		if self._checkFilePermissions(filesToUpdate) is False:
+
+			logging.info("[%s] Checking file permissions failed."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
 
 		# create temp directory for the update process
 		tempDir = tempfile.mkdtemp(prefix=self.instance)
@@ -661,26 +704,63 @@ class Updater:
 
 					shutil.rmtree(tempDir)
 
+					self._releaseLock()
+
 					return False
 
+		# get the absolute location to this instance
+		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
 
+		for fileToUpdate in filesToUpdate.keys():
 
-		# TODO
-		# HERE REPLACE OLD FILES WITH NEW ONES
+			# check if the file has to be deleted
+			if filesToUpdate[fileToUpdate] == _FileUpdateType.DELETE:
+				raise NotImplementedError("Not yet implemented.")
 
+			# check if the file is new
+			# => create all sub directories (if they are missing)
+			elif filesToUpdate[fileToUpdate] == _FileUpdateType.NEW:
+				self._createSubDirectories(fileToUpdate, instanceLocation)
 
+			# copy file to correct location
+			try:
 
+				logging.debug("[%s]: Copying file '%s' to final destination."
+					% (self.fileName, fileToUpdate))
+
+				shutil.copyfile(tempDir + "/" + fileToUpdate,
+					instanceLocation + "/" + fileToUpdate)
+			except Exception as e:
+				logging.exception("[%s]: Copying file '%s' failed."
+				% (self.fileName, fileToUpdate))
+
+				self._releaseLock()
+
+				return False
+
+			# check if the hash of the copied file is correct
+			f = open(instanceLocation + "/" + fileToUpdate, 'r')
+			sha256Hash = self._sha256File(f)
+			f.close()
+			if sha256Hash != self.newestFiles[fileToUpdate]:
+				logging.error("[%s]: Hash of file '%s' is not correct "
+				% (self.fileName, fileToUpdate)
+				+ "after copying.")
+
+				self._releaseLock()
+
+				return False
 		
 		# delete temp directory before returning
 		shutil.rmtree(tempDir)
 
+		self._releaseLock()
+
 		return True
 
 
-
-		# 1) create random tmp folder 		tempfile.mkdtemp()	DONE
-		# 2) download file to tmp folder 						DONE
-		# 3) check file has same hash than version.txt 			DONE
-		# 4) repeat for all files that have to be updated 		DONE
-		# 5) overwrite file of client with new file
-		# 6) delete tmp folder 									DONE
+		# TODO
+		# creating a file and copying it can cause a possible race condition
+		# better try using:
+		# tempfile.mkstemp()
+		# shutil.copyfileobj(fsrc, fdst[, length])
