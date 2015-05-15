@@ -418,42 +418,25 @@ class Updater:
 		return True
 
 
-	# internal function that downloads the given file into the download
-	# directory and checks if the given hash is correct
+	# internal function that downloads the given file into a temporary file
+	# and checks if the given hash is correct
 	#
-	# return True or False
-	def _downloadFile(self, fileLocation, fileHash, downloadDirectory):
+	# return None or the handle to the temporary file
+	def _downloadFile(self, fileLocation, fileHash):
 
-		downloadDirectory += "/"
+		logging.info("[%s]: Downloading file: '%s'"
+			% (self.fileName, fileLocation))
 
-		# create sub directories (if needed)
-		if (self._createSubDirectories(fileLocation, downloadDirectory)
-			is False):
-
-			logging.error("[%s]: Creating sub directories for '%s' failed."
-				% (self.fileName, fileLocation))
-
-			return False
-
-
-		# create temporary file for download
-		fileHandle = None
+		# create temporary file
 		try:
+			fileHandle = tempfile.TemporaryFile()
 
-			# check if the file to download already exists
-			if os.path.exists(downloadDirectory + fileLocation):
+		except Exception as e:
 
-				raise ValueError("File '%s/%s' already exists."
-					% (downloadDirectory, fileLocation))
+			logging.exception("[%s]: Creating temporary file failed."
+				% self.fileName)
 
-			fileHandle = open(downloadDirectory + fileLocation, 'wb')
-
-		except:
-
-			logging.exception("[%s]: Creating file '%s/%s' failed."
-				% (self.fileName, downloadDirectory, fileLocation))
-
-			return False
+			return None
 
 
 		# download file from server
@@ -475,39 +458,37 @@ class Updater:
 						break
 
 					fileHandle.write(chunk)
-				fileHandle.close()
 
 			else:
 				raise ValueError("Server response code not 200 (was %d)."
 					% response.status)
-
-			conn.close()
 
 		except Exception as e:
 			logging.exception("[%s]: Downloading file '%s' from the "
 				% (self.fileName, fileLocation)
 				+ "server failed.")
 
-			return False
+			return None
 
 
 		# calculate sha256 hash of the downloaded file
-		fileHandle = open(downloadDirectory + fileLocation, 'r')
+		fileHandle.seek(0)
 		sha256Hash = self._sha256File(fileHandle)
-		fileHandle.close()
+		fileHandle.seek(0)
 
 		# check if downloaded file has the correct hash
 		if sha256Hash != fileHash:
 
-			logging.error("[%s]: File '%s' does not have the correct hash."
-				% (self.fileName, fileLocation))
+			logging.error("[%s]: Temporary file does not have the "
+				% self.fileName
+				+ "correct hash.")
 
-			return False
+			return None
 
-		logging.debug("[%s]: Successfully downloaded file: '%s'"
+		logging.info("[%s]: Successfully downloaded file: '%s'"
 			% (self.fileName, fileLocation))
 
-		return True
+		return fileHandle
 
 
 	# internal function that calculates the sha256 hash of the file
@@ -683,10 +664,8 @@ class Updater:
 			return False
 
 
-		# create temp directory for the update process
-		tempDir = tempfile.mkdtemp(prefix=self.instance)
-
 		# download all files that have to be updated
+		downloadedFileHandles = dict()
 		for fileToUpdate in filesToUpdate.keys():
 
 			# only download file if it is new or has to be modified
@@ -694,19 +673,28 @@ class Updater:
 				or filesToUpdate[fileToUpdate] == _FileUpdateType.MODIFY):
 
 				# download new files, if one file fails
-				# => delete temp directory and abort update process
-				if (self._downloadFile(fileToUpdate,
-					self.newestFiles[fileToUpdate], tempDir) is False):
+				# => close all file handles and abort update process
+				downloadedFileHandle = self._downloadFile(fileToUpdate,
+					self.newestFiles[fileToUpdate])
+				if downloadedFileHandle is None:
 
 					logging.error("[%s]: Downloading files from the "
 						% self.fileName
 						+ "repository failed. Aborting update process.")
 
-					shutil.rmtree(tempDir)
+					# close all temporary file handles
+					# => temporary file is automatically deleted
+					for fileHandle in downloadedFileHandles.keys():
+						downloadedFileHandles[fileHandle].close()
 
 					self._releaseLock()
 
 					return False
+
+				else:
+
+					downloadedFileHandles[fileToUpdate] = downloadedFileHandle
+
 
 		# get the absolute location to this instance
 		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
@@ -725,11 +713,14 @@ class Updater:
 			# copy file to correct location
 			try:
 
-				logging.debug("[%s]: Copying file '%s' to final destination."
-					% (self.fileName, fileToUpdate))
+				logging.debug("[%s]: Copying file '%s' to alertR instance "
+					% (self.fileName, fileToUpdate)
+					+ "directory.")
 
-				shutil.copyfile(tempDir + "/" + fileToUpdate,
-					instanceLocation + "/" + fileToUpdate)
+				dest = open(instanceLocation + "/" + fileToUpdate, 'wb')
+				shutil.copyfileobj(downloadedFileHandles[fileToUpdate], dest)
+				dest.close()
+
 			except Exception as e:
 				logging.exception("[%s]: Copying file '%s' failed."
 				% (self.fileName, fileToUpdate))
@@ -751,16 +742,11 @@ class Updater:
 
 				return False
 		
-		# delete temp directory before returning
-		shutil.rmtree(tempDir)
+		# close all temporary file handles
+		# => temporary file is automatically deleted
+		for fileHandle in downloadedFileHandles.keys():
+			downloadedFileHandles[fileHandle].close()
 
 		self._releaseLock()
 
 		return True
-
-
-		# TODO
-		# creating a file and copying it can cause a possible race condition
-		# better try using:
-		# tempfile.mkstemp()
-		# shutil.copyfileobj(fsrc, fdst[, length])
