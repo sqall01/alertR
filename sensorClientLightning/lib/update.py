@@ -732,6 +732,29 @@ class Updater:
 				self._releaseLock()
 
 				return False
+
+
+
+			if (fileToUpdate == "alertRclient.py"
+				or fileToUpdate == "alertRserver.py"):
+
+				logging.debug("[%s]: Changing permissions of '%s'."
+					% (self.fileName, fileToUpdate))
+
+				try:
+					os.chmod(instanceLocation + "/" + fileToUpdate,
+						stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+				except Exception as e:
+
+					logging.exception("[%s]: Changing permissions of '%s' "
+						% (self.fileName, fileToUpdate)
+						+ "failed.")
+
+					self._releaseLock()
+
+					return False
+
 		
 		# close all temporary file handles
 		# => temporary file is automatically deleted

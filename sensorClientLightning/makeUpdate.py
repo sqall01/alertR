@@ -16,6 +16,7 @@ import xml.etree.ElementTree
 import logging
 
 
+# this function asks the user for confirmation
 def userConfirmation():
 
 	while True:
