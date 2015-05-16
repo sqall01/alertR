@@ -18,6 +18,7 @@ import json
 import hashlib
 import tempfile
 import shutil
+import stat
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -733,8 +734,7 @@ class Updater:
 
 				return False
 
-
-
+			# change permission of files that have to be executable
 			if (fileToUpdate == "alertRclient.py"
 				or fileToUpdate == "alertRserver.py"):
 
