@@ -19,6 +19,7 @@ import hashlib
 import tempfile
 import shutil
 import stat
+import math
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -443,13 +444,55 @@ class Updater:
 			# => download file
 			if response.status == 200:
 
+				# get the size of the response
+				fileSize = -1
+				try:
+					headers = response.getheaders()
+					for header in headers:
+						if header[0] == "content-length":
+							fileSize = int(header[1])
+							break
+				except:
+					fileSize = -1
+
+				# check if the file size was part of the header
+				# and we can output the status of the download
+				showStatus = False
+				if fileSize > 0:
+					showStatus = True
+					maxChunks = int(math.ceil(float(fileSize)
+						/ float(self.chunkSize)))
+
+				# actually download file
+				chunkCount = 0
+				printedPercentage = 0
 				while True:
 					chunk = response.read(self.chunkSize)
-
 					if not chunk:
 						break
-
 					fileHandle.write(chunk)
+
+					# output status of the download
+					chunkCount += 1
+					if showStatus:
+						if chunkCount > maxChunks:
+							showStatus = False
+
+							logging.warning("[%s]: Concent information of "
+									% self.fileName
+									+ "received header flawed. Stopping "
+									+ "to show download status.")
+
+							continue
+
+						else:
+							percentage = int((float(chunkCount)
+								/ float(maxChunks)) * 100)
+							if (percentage / 10) > printedPercentage:
+								printedPercentage = percentage / 10
+
+								logging.info("[%s]: Download: %d%%"
+									% (self.fileName, printedPercentage * 10))
 
 			else:
 				raise ValueError("Server response code not 200 (was %d)."
