@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRManagerClientMobile.sh
+# Provides:          alertRsensorPing
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
@@ -13,11 +13,11 @@
 set -e
 
 # change USER to the user which runs the alertRclient
-USER=pi
+USER=someUser
 # change DAEMON to the path to run the alertRclient
 DAEMON=/absolute/path/to/alertRclient.py
 
-NAME=alertRManagerClientMobile.sh
+NAME=alertRsensorPing
 PIDFILE=/var/run/$NAME.pid
 DAEMON_OPTS=""
 

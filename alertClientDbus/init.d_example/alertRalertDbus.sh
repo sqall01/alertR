@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRclient.py
+# Provides:          alertRalertDbus
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
@@ -13,11 +13,17 @@
 set -e
 
 # change USER to the user which runs the alertRclient
-USER=pi
+USER=someUser
 # change DAEMON to the path to run the alertRclient
 DAEMON=/absolute/path/to/alertRclient.py
 
-NAME=alertRclient.py
+# this export is important for the dbus client to work correctly
+# normally the display of the xserver that is used by the user is ":0.0" and
+# this should work in almost all cases
+# but if this does not work, check which display is exported by our user
+export DISPLAY=":0.0"
+
+NAME=alertRalertDbus
 PIDFILE=/var/run/$NAME.pid
 DAEMON_OPTS=""
 

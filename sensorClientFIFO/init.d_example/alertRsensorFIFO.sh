@@ -1,23 +1,23 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRserver
+# Provides:          alertRsensorFIFO
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: h4des.org alertRserver daemon start/stop script
-# Description:       Start/Stop script for the h4des.org alertRserver daemon
+# Short-Description: h4des.org alertRclient daemon start/stop script
+# Description:       Start/Stop script for the h4des.org alertRclient daemon
 ### END INIT INFO
 
 set -e
 
-# change USER to the user which runs the alertRserver
+# change USER to the user which runs the alertRclient
 USER=someUser
-# change DAEMON to the path to run the alertRserver
-DAEMON=/absolute/path/to/alertRserver.py
+# change DAEMON to the path to run the alertRclient
+DAEMON=/absolute/path/to/alertRclient.py
 
-NAME=alertRserver
+NAME=alertRsensorFIFO
 PIDFILE=/var/run/$NAME.pid
 DAEMON_OPTS=""
 

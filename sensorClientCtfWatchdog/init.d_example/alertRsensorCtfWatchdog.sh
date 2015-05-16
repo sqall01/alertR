@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRclient.py
+# Provides:          alertRsensorCtfWatchdog
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
@@ -13,11 +13,11 @@
 set -e
 
 # change USER to the user which runs the alertRclient
-USER=pi
+USER=someUser
 # change DAEMON to the path to run the alertRclient
 DAEMON=/absolute/path/to/alertRclient.py
 
-NAME=alertRclient.py
+NAME=alertRsensorCtfWatchdog
 PIDFILE=/var/run/$NAME.pid
 DAEMON_OPTS=""
 
