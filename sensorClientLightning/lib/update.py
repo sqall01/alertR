@@ -150,13 +150,8 @@ class UpdateChecker(threading.Thread):
 					% self.fileName)
 
 
-
-
-
-
-
+# this class processes all actions concerning the update process
 class Updater:
-
 
 	def __init__(self, host, port, serverPath, caFile, globalData):
 
