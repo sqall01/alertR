@@ -13,4 +13,5 @@ from storage import Mysql
 from smtp import SMTPAlert
 from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
 	ServerEventHandler
-from update import UpdateChecker
+from update import UpdateChecker, Updater
+from globalData import GlobalData
