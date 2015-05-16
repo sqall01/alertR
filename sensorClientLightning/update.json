@@ -1,4 +1,5 @@
 ["alertRclient.py",
+"update.py",
 "config/config.xml.template",
 "lib/update.py",
 "lib/smtp.py",
@@ -6,4 +7,4 @@
 "lib/client.py",
 "lib/sensor.py",
 "lib/globalData.py",
-"init.d_example/alertRclient.sh"]
+"init.d_example/alertRsensorLightning.sh"]
