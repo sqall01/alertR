@@ -41,11 +41,14 @@ if __name__ == '__main__':
 
 	# parsing command line options
 	parser = optparse.OptionParser()
-	parser.add_option("-f", "--force", dest="force", action="store_true",
+	parser.add_option("-y", "--yes", dest="yes", action="store_true",
 		help="Do not ask me for confirmation. I know what I am doing.",
 		default=False)
 	parser.add_option("-u", "--update", dest="update", action="store_true",
 		help="Start update process now.",
+		default=False)
+	parser.add_option("-f", "--force", dest="force", action="store_true",
+		help="Do not check the version. Just update all files.",
 		default=False)
 	(options, args) = parser.parse_args()
 
@@ -128,7 +131,7 @@ if __name__ == '__main__':
 			print "the configuration file correctly."
 			print "Do you want to continue the update process?"
 
-			if options.force is False:
+			if options.yes is False:
 				if userConfirmation() is False:
 					print "Bye."
 					sys.exit(0)
@@ -153,7 +156,12 @@ if __name__ == '__main__':
 	# check if the received version is newer than the current one
 	if (updater.newestVersion > globalData.version or
 		(updater.newestRev > globalData.rev
-		and updater.newestVersion == globalData.version)):
+		and updater.newestVersion == globalData.version)
+		or options.force is True):
+
+		if options.force is True:
+			logging.info("[%s]: Forcing update of alertR instance."
+				% fileName)
 
 		# check if update is a major update (this means that
 		# the config and/or protocol has changed)
@@ -172,7 +180,7 @@ if __name__ == '__main__':
 			print "Are you sure you want to continue and update this",
 			print "alertR instance?"
 
-			if options.force is False:
+			if options.yes is False:
 				if userConfirmation() is False:
 					print "Bye."
 					sys.exit(0)
@@ -183,7 +191,7 @@ if __name__ == '__main__':
 		print "Please make sure that this alertR instance is stopped before",
 		print "continuing the update process."
 		print "Are you sure this alertR instance is not running?"
-		if options.force is False:
+		if options.yes is False:
 			if userConfirmation() is False:
 				print "Bye."
 				sys.exit(0)

@@ -206,8 +206,10 @@ class Updater:
 	def _checkFilesToUpdate(self):
 
 		# check if the last version information check was done shortly before
+		# or was done at all
 		# => if not get the newest version information
-		if (time.time() - self.lastChecked) > 60:
+		if ((time.time() - self.lastChecked) > 60
+			or self.newestFiles == None):
 			if self._getNewestVersionInformation() is False:
 				logging.error("[%s]: Not able to get version "
 					% self.fileName
@@ -636,9 +638,11 @@ class Updater:
 			% (self.fileName, version, rev))
 
 		# check if the version on the server is newer than the used one
+		# or we have no information about the files
 		# => update information
 		if (version > self.newestVersion or
-			(rev > self.newestRev and version == self.newestVersion)):
+			(rev > self.newestRev and version == self.newestVersion)
+			or self.newestFiles is None):
 
 			# update newest known version information
 			self.newestVersion = version
