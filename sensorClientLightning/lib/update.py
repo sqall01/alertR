@@ -186,12 +186,8 @@ class Updater:
 		self.lastChecked = 0.0
 		self.repoInstanceLocation = None
 
-
-
-
-		# TODO
+		# size of the download chunks
 		self.chunkSize = 4096
-
 
 
 	# internal function that acquires the lock
