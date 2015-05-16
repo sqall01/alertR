@@ -14,6 +14,7 @@ from lib import UpdateChecker
 from lib import Updater
 import xml.etree.ElementTree
 import logging
+import optparse
 
 
 # this function asks the user for confirmation
@@ -37,6 +38,21 @@ def userConfirmation():
 
 
 if __name__ == '__main__':
+
+	# parsing command line options
+	parser = optparse.OptionParser()
+	parser.add_option("-f", "--force", dest="force", action="store_true",
+		help="Do not ask me for confirmation. I know what I am doing.",
+		default=False)
+	parser.add_option("-u", "--update", dest="update", action="store_true",
+		help="Start update process now.",
+		default=False)
+	(options, args) = parser.parse_args()
+
+	if options.update is False:
+		print "Use --help to get all available options."
+		sys.exit(0)
+
 
 	majorUpdate = False
 
@@ -112,9 +128,12 @@ if __name__ == '__main__':
 			print "the configuration file correctly."
 			print "Do you want to continue the update process?"
 
-			if userConfirmation() is False:
-				print "Bye."
-				sys.exit(0)
+			if options.force is False:
+				if userConfirmation() is False:
+					print "Bye."
+					sys.exit(0)
+			else:
+				print "NOTE: Skipping confirmation."
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
@@ -153,17 +172,23 @@ if __name__ == '__main__':
 			print "Are you sure you want to continue and update this",
 			print "alertR instance?"
 
-			if userConfirmation() is False:
-				print "Bye."
-				sys.exit(0)
+			if options.force is False:
+				if userConfirmation() is False:
+					print "Bye."
+					sys.exit(0)
+			else:
+				print "NOTE: Skipping confirmation."
 
 		print
 		print "Please make sure that this alertR instance is stopped before",
 		print "continuing the update process."
 		print "Are you sure this alertR instance is not running?"
-		if userConfirmation() is False:
-			print "Bye."
-			sys.exit(0)
+		if options.force is False:
+			if userConfirmation() is False:
+				print "Bye."
+				sys.exit(0)
+		else:
+			print "NOTE: Skipping confirmation."
 
 		if updater.updateInstance() is False:
 
