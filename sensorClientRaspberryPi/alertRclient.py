@@ -14,47 +14,12 @@ from lib import SMTPAlert
 from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
 	SensorExecuter
 from lib import UpdateChecker
+from lib import GlobalData
 import logging
 import time
 import socket
 import random
 import xml.etree.ElementTree
-
-
-# this class is a global configuration class that holds 
-# values that are needed all over the client
-class GlobalData:
-
-	def __init__(self):
-
-		# version of the used client (and protocol)
-		self.version = 0.224
-
-		# revision of the used client
-		self.rev = 0
-
-		# name of this client
-		self.name = "alertR Sensor Client Raspberry Pi"
-
-		# interval in which a ping should be send when 
-		# no data was received/send
-		self.pingInterval = 30
-
-		# type of this node/client
-		self.nodeType = "sensor"
-
-		# path to the configuration file of the client
-		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/config/config.xml"
-
-		# instance of the email alerting object
-		self.smtpAlert = None
-
-		# this variable holds the object of the server communication
-		self.serverComm = None
-
-		# list of all sensors that are managed by this client
-		self.sensors = list()
 
 
 if __name__ == '__main__':
