@@ -36,9 +36,6 @@ def userConfirmation():
 			print "Invalid input."
 
 
-
-
-
 if __name__ == '__main__':
 
 	majorUpdate = False
@@ -112,7 +109,7 @@ if __name__ == '__main__':
 			print
 			print "NOTE: Automatic checking for updates is deactivated.",
 			print "Please, make sure you configured the update section of",
-			print "the config file correctly."
+			print "the configuration file correctly."
 			print "Do you want to continue the update process?"
 
 			if userConfirmation() is False:
@@ -148,7 +145,7 @@ if __name__ == '__main__':
 
 			print
 			print "WARNING: You are about to make a major update.", 
-			print "This means that the config and/or the protocol has",
+			print "This means that the configuration and/or the protocol has",
 			print "changed. Therefore, after you have updated this alertR",
 			print "instance you also have to update your alertR server and",
 			print "all your alertR clients in order to have a working",
@@ -160,30 +157,46 @@ if __name__ == '__main__':
 				print "Bye."
 				sys.exit(0)
 
+		print
+		print "Please make sure that this alertR instance is stopped before",
+		print "continuing the update process."
+		print "Are you sure this alertR instance is not running?"
+		if userConfirmation() is False:
+			print "Bye."
+			sys.exit(0)
 
+		if updater.updateInstance() is False:
 
+			logging.error("[%s]: Update failed." % fileName)
 
-		# TODO
+			print
+			print "UPDATE PROCESS FAILED!"
+			print "To see the reason take a look at the update",
+			print "process output.",
+			print "You can change the log level in the configuration",
+			print "file to 'DEBUG'",
+			print "and repeat the update process to get more detailed",
+			print "information."
+			sys.exit(1)
 
-		print "NEWER"
+		logging.info("[%s]: Update finished." % fileName)
 
+		print
+		print "UPDATE FINISHED!"
 
+		if majorUpdate:
+			print "Please make sure to update your configuration file",
+			print "and to update all other alertR instances before starting",
+			print "this alertR instance."
 
-
-		updater.updateInstance()
-
-		# next steps:
-		# 0) check the version update and notify the user about config changes and that the whole infrastructure has to be updated in order to work
-		# 1) check which file has to be overwritten (or are new)
-		# 2) check for the correct permissions
-		# 3) collect the new files (store in /tmp folder? or overwrite directly?)
-		# 4) if alertRclient.py change permission to execute
-		
-
-
+		else:
+			print "Please start this alertR instance now."
 
 	else:
-		logging.error("[%s]: No new version available." % fileName)
+		logging.info("[%s]: No new version available." % fileName)
+
+		print
+		print "SKIPPING UPDATE!"
+		print "No new version is available in the configured repository."
+
 		sys.exit(0)
-
-
