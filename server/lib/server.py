@@ -337,7 +337,8 @@ class ClientCommunication:
 		try:
 			version = float(message["payload"]["version"])
 
-			if self.version != version:
+			# check if used protocol version is compatible
+			if int(self.version * 10) != int(version * 10):
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
 					+ "Client has version: '%.3f' " % version

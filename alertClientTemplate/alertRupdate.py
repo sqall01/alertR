@@ -57,7 +57,8 @@ if __name__ == '__main__':
 		sys.exit(0)
 
 
-	majorUpdate = False
+	protocolUpdate = False
+	configUpdate = False
 
 	# generate object of the global needed data
 	globalData = GlobalData()
@@ -163,20 +164,48 @@ if __name__ == '__main__':
 			logging.info("[%s]: Forcing update of alertR instance."
 				% fileName)
 
-		# check if update is a major update (this means that
-		# the config and/or protocol has changed)
-		# => notify user and ask for confirmation
-		if updater.newestVersion > globalData.version:
 
-			majorUpdate = True
+		# check if the update changes the protocol
+		if int(updater.newestVersion * 10) > int(globalData.version * 10):
+			protocolUpdate = True
+			
+		# check if the update changes the configuration file
+		if updater.newestVersion > globalData.version:
+			configUpdate = True
+
+
+		# if the update changes the protocol
+		# => notify user and ask for confirmation
+		if protocolUpdate is True:
 
 			print
-			print "WARNING: You are about to make a major update.", 
-			print "This means that the configuration and/or the protocol has",
-			print "changed. Therefore, after you have updated this alertR",
+			print "WARNING: You are about to make an update that changes", 
+			print "the used network protocol.",
+			print "This means that after you have updated this alertR",
 			print "instance you also have to update your alertR server and",
 			print "all your alertR clients in order to have a working",
 			print "system again."
+			print "Are you sure you want to continue and update this",
+			print "alertR instance?"
+
+			if options.yes is False:
+				if userConfirmation() is False:
+					print "Bye."
+					sys.exit(0)
+			else:
+				print "NOTE: Skipping confirmation."
+
+
+		# if the update needs changes in the configuration file
+		# => notify user and ask for confirmation
+		if configUpdate is True:
+
+			print
+			print "WARNING: You are about to make an update that needs", 
+			print "changes in the configuration file.",
+			print "This means that you have to manually update your used",
+			print "configuration file before you can use this alertR",
+			print "instance again."
 			print "Are you sure you want to continue and update this",
 			print "alertR instance?"
 
@@ -217,13 +246,22 @@ if __name__ == '__main__':
 		print
 		print "UPDATE FINISHED!"
 
-		if majorUpdate:
-			print "Please make sure to update your configuration file",
-			print "and to update all other alertR instances before starting",
-			print "this alertR instance."
+		# if the update changes the protocol
+		# => output a reminder
+		if protocolUpdate is True:
+			print "NOTE: Please make sure you update all your alertR",
+			print "instances before you restart this instance."
 
-		else:
-			print "Please start this alertR instance now."
+		# if the update needs changes in the configuration file
+		# => output a reminder
+		if configUpdate is True:
+			print "NOTE: Please make sure you manually update the",
+			print "configuration file of this alertR instance before",
+			print "you restart this instance."
+
+		if (protocolUpdate is False
+			and configUpdate is False):
+			print "NOTE: Please start this alertR instance now."
 
 	else:
 		logging.info("[%s]: No new version available." % fileName)
