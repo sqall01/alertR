@@ -598,7 +598,7 @@ class Updater:
 		try:
 
 			conn.request("GET", self.serverPath + "/"
-				+ self.repoInstanceLocation + "/version.json")
+				+ self.repoInstanceLocation + "/instanceInfo.json")
 			response = conn.getresponse()
 
 			# check if server responded correctly
