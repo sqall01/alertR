@@ -1,15 +1,64 @@
-{"instances": {"alertClientDbus" : "alertClientDbus/",
-"alertClientExecuter": "alertClientExecuter/",
-"alertClientRaspberryPi": "alertClientRaspberryPi/",
-"alertClientTemplate": "alertClientTemplate/",
-"alertClientXBMC": "alertClientXBMC/",
-"managerClientConsole": "managerClientConsole/",
-"managerClientKeypad": "managerClientKeypad/",
-"managerClientMobile": "mobileManager/server/managerClientMobile/",
-"sensorClientCtfWatchdog": "sensorClientCtfWatchdog/",
-"sensorClientDevelopment": "sensorClientDevelopment/",
-"sensorClientFIFO": "sensorClientFIFO/",
-"sensorClientLightning": "sensorClientLightning/",
-"sensorClientPing": "sensorClientPing/",
-"sensorClientRaspberryPi": "sensorClientRaspberryPi/",
-"server": "server/"} }
+{
+"instances": {
+	"alertClientDbus" : {
+		"location": "alertClientDbus/",
+		"name": "alertR Alert Client Dbus"
+		},
+	"alertClientExecuter": {
+		"location": "alertClientExecuter/",
+		"name": "alertR Alert Client Executer"
+		},
+	"alertClientRaspberryPi": {
+		"location": "alertClientRaspberryPi/",
+		"name": "alertR Alert Client Raspberry Pi"
+		},
+	"alertClientTemplate": {
+		"location": "alertClientTemplate/",
+		"name": "alertR Alert Client Template"
+		},
+	"alertClientXBMC": {
+		"location": "alertClientXBMC/",
+		"name": "alertR Alert Client XBMC"
+		},
+	"managerClientConsole": {
+		"location": "managerClientConsole/",
+		"name": "alertR Manager Client Console"
+		},
+	"managerClientKeypad": {
+		"location": "managerClientKeypad/",
+		"name": "alertR Manager Client Keypad"
+		},
+	"managerClientMobile": {
+		"location": "mobileManager/server/managerClientMobile/",
+		"name": "alertR Mobile Manager - Server - Manger Client Mobile"
+		},
+	"sensorClientCtfWatchdog": {
+		"location": "sensorClientCtfWatchdog/",
+		"name": "alertR Sensor Client CTF Watchdog"
+		},
+	"sensorClientDevelopment": {
+		"location": "sensorClientDevelopment/",
+		"name": "alertR Sensor Client Development"
+		},
+	"sensorClientFIFO": {
+		"location": "sensorClientFIFO/",
+		"name": "alertR Sensor Client FIFO"
+		},
+	"sensorClientLightning": {
+		"location": "sensorClientLightning/",
+		"name": "alertR Sensor Client Lightning"
+		},
+	"sensorClientPing": {
+		"location": "sensorClientPing/",
+		"name": "alertR Sensor Client Ping"
+		},
+	"sensorClientRaspberryPi": {
+		"location": "sensorClientRaspberryPi/",
+		"name": "alertR Sensor Client Raspberry Pi"
+		},
+	"server": {
+		"location": "server/",
+		"name": "alertR Server"
+		}
+	}
+}
