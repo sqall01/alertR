@@ -584,7 +584,7 @@ class Updater:
 					+ "used repository.")
 
 			self.repoInstanceLocation = str(
-				jsonData["instances"][self.instance])
+				jsonData["instances"][self.instance]["location"])
 
 		except Exception as e:
 			logging.exception("[%s]: Parsing repository information failed."
