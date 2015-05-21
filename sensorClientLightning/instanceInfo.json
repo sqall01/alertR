@@ -3,11 +3,13 @@
 	"pip": [
 			{
 			"import": "websocket",
-			"packet": "websocket-client"
+			"packet": "websocket-client",
+			"version": "0.30.0"
 			},
 			{
 			"import": "blah",
-			"packet": "blub-client"
+			"packet": "blub-client",
+			"version": "0.30.0"
 			}
 		]
 	}
