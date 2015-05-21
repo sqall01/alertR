@@ -4,6 +4,10 @@
 			{
 			"import": "websocket",
 			"packet": "websocket-client"
+			},
+			{
+			"import": "blah",
+			"packet": "blub-client"
 			}
 		]
 	}
