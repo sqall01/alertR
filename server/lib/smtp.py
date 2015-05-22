@@ -208,13 +208,23 @@ class SMTPAlert:
 
 
 	# this function sends an email in case of
-	# a new version is available for this client
+	# a new version is available for this instance
 	def sendUpdateCheckNewVersion(self, currVersion, currRev, version,
 		rev, clientName):
 
 		if (self.newestVersion >= version
 			and self.newestRev >= rev):
 			return True
+
+		# check if the update changes the protocol
+		protocolUpdate = False
+		if int(version * 10) > int(currVersion * 10):
+			protocolUpdate = True
+
+		# check if the update changes the configuration file
+		configUpdate = False
+		if version > currVersion:
+			configUpdate = True
 
 		subject = "[alertR] Update available"
 
@@ -225,6 +235,25 @@ class SMTPAlert:
 			% (currVersion, currRev) \
 			+ "New version: %.3f-%d\n" \
 			% (version, rev)
+
+		# add additional information if the protocol changes after the update
+		if protocolUpdate is True:
+			message += "\n" \
+				+ "NOTE: The update changes the used protocol. This means " \
+				+ "that when you update this alertR instance " \
+				+ "you also have to update all your other alertR instances " \
+				+ "in order to have a working system again." \
+				+ "\n"
+
+		# add additional information if the configuration changes
+		# after the update
+		if configUpdate is True:
+			message += "\n" \
+				+ "NOTE: The update needs changes in the used configuration " \
+				+ "file. This means that you have to manually update your " \
+				+ "used configuration file before you can use this alertR " \
+				+ "instance again." \
+				+ "\n"
 
 		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
 			% (self.fromAddr, self.toAddr, subject)
