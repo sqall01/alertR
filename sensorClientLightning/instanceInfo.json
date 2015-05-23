@@ -4,7 +4,7 @@
 			{
 			"import": "websocket",
 			"packet": "websocket-client",
-			"version": "0.31.0"
+			"version": "0.30.0blah"
 			}
 		]
 	}
