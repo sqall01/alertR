@@ -170,6 +170,10 @@ class Updater:
 		self.smtpAlert = self.globalData.smtpAlert
 		self.instance = self.globalData.instance
 
+		# location of this instance
+		self.instanceLocation = os.path.dirname(os.path.abspath(__file__)) \
+			+ "/../"
+
 		# set update server configuration
 		self.host = host
 		self.port = port
@@ -219,18 +223,15 @@ class Updater:
 		counterUpdate = 0
 		counterNew = 0
 
-		# get the absolute location to this instance
-		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
-
 		# get all files that have to be updated
 		filesToUpdate = dict()
 		for clientFile in self.newestFiles.keys():
 
 			# check if file already exists
 			# => check if file has to be updated
-			if os.path.exists(instanceLocation + clientFile):
+			if os.path.exists(self.instanceLocation + clientFile):
 
-				f = open(instanceLocation + clientFile, 'r')
+				f = open(self.instanceLocation + clientFile, 'r')
 				sha256Hash = self._sha256File(f)
 				f.close()
 
@@ -273,9 +274,6 @@ class Updater:
 	# return True or False
 	def _checkFilePermissions(self, filesToUpdate):
 
-		# get the absolute location to this instance
-		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
-
 		# check permissions for each file that is affected by this update
 		for clientFile in filesToUpdate.keys():
 
@@ -284,7 +282,7 @@ class Updater:
 
 				# check if the file is not writable
 				# => cancel update
-				if not os.access(instanceLocation + clientFile, os.W_OK):
+				if not os.access(self.instanceLocation + clientFile, os.W_OK):
 					logging.error("[%s]: File '%s' is not writable."
 						% (self.fileName, clientFile))
 					return False
@@ -307,7 +305,7 @@ class Updater:
 				# of the instance
 				# => check root directory of the instance for write permissions
 				if len(folderStructure) == 1:
-					if not os.access(instanceLocation, os.W_OK):
+					if not os.access(self.instanceLocation, os.W_OK):
 						logging.error("[%s]: Folder './' is not "
 							% self.fileName
 							+ "writable.")
@@ -325,12 +323,12 @@ class Updater:
 					for filePart in folderStructure:
 
 						# check if folder exists
-						if os.path.exists(instanceLocation + tempPart
+						if os.path.exists(self.instanceLocation + tempPart
 							+ "/" + filePart):
 
 							# check if folder is not writable
 							# => cancel update
-							if not os.access(instanceLocation + tempPart
+							if not os.access(self.instanceLocation + tempPart
 								+ "/" + filePart, os.W_OK):
 								logging.error("[%s]: Folder '.%s/%s' is not "
 									% (self.fileName, tempPart, filePart)
@@ -735,9 +733,7 @@ class Updater:
 					downloadedFileHandles[fileToUpdate] = downloadedFileHandle
 
 
-		# get the absolute location to this instance
-		instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
-
+		# copy all files to the correct location
 		for fileToUpdate in filesToUpdate.keys():
 
 			# check if the file has to be deleted
@@ -747,7 +743,7 @@ class Updater:
 			# check if the file is new
 			# => create all sub directories (if they are missing)
 			elif filesToUpdate[fileToUpdate] == _FileUpdateType.NEW:
-				self._createSubDirectories(fileToUpdate, instanceLocation)
+				self._createSubDirectories(fileToUpdate, self.instanceLocation)
 
 			# copy file to correct location
 			try:
@@ -756,7 +752,7 @@ class Updater:
 					% (self.fileName, fileToUpdate)
 					+ "directory.")
 
-				dest = open(instanceLocation + "/" + fileToUpdate, 'wb')
+				dest = open(self.instanceLocation + "/" + fileToUpdate, 'wb')
 				shutil.copyfileobj(downloadedFileHandles[fileToUpdate], dest)
 				dest.close()
 
@@ -769,7 +765,7 @@ class Updater:
 				return False
 
 			# check if the hash of the copied file is correct
-			f = open(instanceLocation + "/" + fileToUpdate, 'r')
+			f = open(self.instanceLocation + "/" + fileToUpdate, 'r')
 			sha256Hash = self._sha256File(f)
 			f.close()
 			if sha256Hash != self.newestFiles[fileToUpdate]:
@@ -789,7 +785,7 @@ class Updater:
 					% (self.fileName, fileToUpdate))
 
 				try:
-					os.chmod(instanceLocation + "/" + fileToUpdate,
+					os.chmod(self.instanceLocation + "/" + fileToUpdate,
 						stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
 				except Exception as e:
