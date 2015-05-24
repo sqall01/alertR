@@ -3,12 +3,12 @@
 	"alertClientDbus" : {
 		"location": "alertClientDbus/",
 		"name": "alertR Alert Client Dbus",
-		"desc": "TODO"
+		"desc": "This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example you can start it on your PC and you get notified as soon as the door bell rings or the front door was opened."
 		},
 	"alertClientExecuter": {
 		"location": "alertClientExecuter/",
 		"name": "alertR Alert Client Executer",
-		"desc": "TODO"
+		"desc": "This client handles triggered alerts and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when all alerts are stopped. For example you can start a init script on a Linux system when a sensor alert was triggered and when all alerts are stopped the init script is stopped."
 		},
 	"alertClientRaspberryPi": {
 		"location": "alertClientRaspberryPi/",
