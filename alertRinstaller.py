@@ -877,6 +877,129 @@ def checkDependencies(dependencies):
 
 					return False
 
+
+	# check if all other dependencies are met
+	if "other" in dependencies.keys():
+
+		for other in dependencies["other"]:
+
+			importName = other["import"]
+
+			# only get version if it exists
+			version = None
+			if "version" in other.keys():
+				version = other["version"]
+
+			# check if the version has to be checked manually
+			# (this can happen for example if the module has no
+			# __version__ string or can only be imported as 'root')
+			if other["manual"] is True:
+
+				print 
+				print "Can not automatically verify the installed",
+				print "version of the module '%s'."  % importName,
+				print "You have to verify the version and if",
+				print "it is installed yourself."
+				print
+				print "Needed version: %s" % version
+				print
+				print "Do you have a version installed that satisfies",
+				print "the needed version?"
+
+				if not userConfirmation():
+					versionCorrect = False
+
+			# check the installed module automatically
+			else:
+
+				# try to import needed module
+				temp = None
+				try:
+
+					logging.info("[%s]: Checking module '%s'."
+						% (fileName, importName))
+
+					temp = importlib.import_module(importName)
+
+				except Exception as e:
+					
+					logging.error("[%s]: Module '%s' not installed."
+						% (fileName, importName))
+
+					print 
+					print "The needed module '%s' is not" % importName,
+					print "installed. You need to install it before",
+					print "you can use this alertR instance."
+
+					return False
+
+				# if a version string is given in the instance information
+				# => check if the installed version satisfies the
+				# needed version
+				if not version is None:
+
+					installedVersion = temp.__version__.split(".")
+					neededVersion = version.split(".")
+
+					maxLength = 0
+					if len(installedVersion) > len(neededVersion):
+						maxLength = len(installedVersion)
+					else:
+						maxLength = len(neededVersion)
+
+					# check the needed version and the installed version
+					versionCorrect = True
+					versionCheckFailed = False
+					try:
+						for i in range(maxLength):
+							if (int(installedVersion[i]) >
+								int(neededVersion[i])):
+								versionCorrect = True
+								break
+							elif (int(installedVersion[i]) <
+								int(neededVersion[i])):
+								versionCorrect = False
+								break
+
+					except Exception as e:
+
+						logging.error("[%s]: Could not verify installed "
+							% fileName
+							+ "version of module '%s'."
+							% importName)
+
+						versionCheckFailed = True
+
+					# if the version check failed, ask the user
+					# for confirmation
+					if versionCheckFailed is True:
+
+						print 
+						print "Could not automatically verify the installed",
+						print "version of the module '%s'."  % importName,
+						print "You have to verify the version yourself."
+						print
+						print "Installed version: %s" % temp.__version__
+						print "Needed version: %s" % version
+						print
+						print "Do you have a version installed that satisfies",
+						print "the needed version?"
+
+						if not userConfirmation():
+							versionCorrect = False
+
+					# if the version is not correct => abort the next checks
+					if versionCorrect is False:
+
+						print 
+						print "The needed version '%s'" % version,
+						print "of module '%s' is not satisfied" % importName,
+						print "(you have version '%s'" % temp.__version__,
+						print "installed)."
+						print "Please update your installed version."
+
+						return False
+
 	return True
 
 
