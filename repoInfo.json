@@ -3,77 +3,92 @@
 	"alertClientDbus" : {
 		"location": "alertClientDbus/",
 		"name": "alertR Alert Client Dbus",
-		"desc": "This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example you can start it on your PC and you get notified as soon as the door bell rings or the front door was opened."
+		"desc": "This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example you can start it on your PC and you get notified as soon as the door bell rings or the front door was opened.",
+		"type": "alert"
 		},
 	"alertClientExecuter": {
 		"location": "alertClientExecuter/",
 		"name": "alertR Alert Client Executer",
-		"desc": "This client handles triggered alerts and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when all alerts are stopped. For example you can start a init script on a Linux system when a sensor alert was triggered and when all alerts are stopped the init script is stopped."
+		"desc": "This client handles triggered alerts and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when all alerts are stopped. For example you can start a init script on a Linux system when a sensor alert was triggered and when all alerts are stopped the init script is stopped.",
+		"type": "alert"
 		},
 	"alertClientRaspberryPi": {
 		"location": "alertClientRaspberryPi/",
 		"name": "alertR Alert Client Raspberry Pi",
-		"desc": "TODO"
+		"desc": "This client handles triggered alerts and is written to set/unset GPIO pins of a Raspberry Pi. This means it gets notified by the server if an alert was triggered by a sensor and can set/unset configured GPIO pins, for example to activate a siren or something else.",
+		"type": "alert"
 		},
 	"alertClientTemplate": {
 		"location": "alertClientTemplate/",
 		"name": "alertR Alert Client Template",
-		"desc": "TODO"
+		"desc": "This client handles triggered alerts and is solely for developers. It is a template which handles the communication with the server, but does not do any logic when a configured alert is triggered.",
+		"type": "alert"
 		},
 	"alertClientXBMC": {
 		"location": "alertClientXBMC/",
 		"name": "alertR Alert Client XBMC",
-		"desc": "TODO"
+		"desc": "This client handles triggered alerts and is written to communicate with XBMC/Kodi. It can show a message notification on the display and can pause video/audio playback (for now). For example you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.",
+		"type": "alert"
 		},
 	"managerClientConsole": {
 		"location": "managerClientConsole/",
 		"name": "alertR Manager Client Console",
-		"desc": "TODO"
+		"desc": "This client is a manager client for the alert system. It shows the current state of all sensors, the sensor and alert clients and if the alert system is activated or not.",
+		"type": "manager"
 		},
 	"managerClientKeypad": {
 		"location": "managerClientKeypad/",
 		"name": "alertR Manager Client Keypad",
-		"desc": "TODO"
+		"desc": "This client manages the state of the alert system. It can activate or deactivate it. You have to enter a PIN before you can activate the alert system, deactivate it or activate it with a configured delay. It is written to work as a client with keypad and small display (original for a Raspbery Pi, but is not limited to it). The client should be near an entrance to allow the user to activate/deactivate the alert system when she leaves/enters.",
+		"type": "manager"
 		},
 	"managerClientMobile": {
 		"location": "mobileManager/server/managerClientMobile/",
 		"name": "alertR Mobile Manager - Server - Manger Client Mobile",
-		"desc": "TODO"
+		"desc": "This is the part of the mobile manager that connects to the alertR server and receives all information about the alerting system. The information is stored into a MySQL db as a shared medium to the web page.",
+		"type": "manager"
 		},
 	"sensorClientCtfWatchdog": {
 		"location": "sensorClientCtfWatchdog/",
 		"name": "alertR Sensor Client CTF Watchdog",
-		"desc": "TODO"
+		"desc": "This client handles watchdog scripts as sensors and informs the server if a sensor has triggered and/or the state of a sensor has changed. This means it executes configured watchdog scripts in an interval that check a service. The sensor is triggered if the watchdog scripts exit with a return code not equal to 0 or time out. The watchdog scripts get as first argument the address of the service and as second argument the port. Originally it was written to be used at the hack.lu 2014 CTF (Capture-The-Flag) competition to automatically check/watch the offered challenges. ",
+		"type": "sensor"
 		},
 	"sensorClientDevelopment": {
 		"location": "sensorClientDevelopment/",
 		"name": "alertR Sensor Client Development",
-		"desc": "TODO"
+		"desc": "This client is only for developers. It has no purpose than to emulate sensors and to trigger them via keyboard input. This means it can not be used as a daemon and have to be actively used.",
+		"type": "sensor"
 		},
 	"sensorClientFIFO": {
 		"location": "sensorClientFIFO/",
 		"name": "alertR Sensor Client FIFO",
-		"desc": "TODO"
+		"desc": "This client is build for the integration of already developed scripts or other software into the alertR infrastructure as a sensor. For each sensor it creates a FIFO file on the file system and monitors it. Other scripts/programs can write into the FIFO file to change the state of the associated sensor. For example you can use a cronjob to write into the FIFO file at specific times to trigger a sensor event or the ISC DHCP server to write into the FIFO file each time a client in a specific subnet requests an IP address.",
+		"type": "sensor"
 		},
 	"sensorClientLightning": {
 		"location": "sensorClientLightning/",
 		"name": "alertR Sensor Client Lightning",
-		"desc": "DO NOT USE YET"
+		"desc": "DO NOT USE YET",
+		"type": "sensor"
 		},
 	"sensorClientPing": {
 		"location": "sensorClientPing/",
 		"name": "alertR Sensor Client Ping",
-		"desc": "TODO"
+		"desc": "This client is specialized to just ping a server as a sensor and informing the alertR server if a pinged host is reachable or not. The sensor is triggered if the server is not reachable or a time out occur.",
+		"type": "sensor"
 		},
 	"sensorClientRaspberryPi": {
 		"location": "sensorClientRaspberryPi/",
 		"name": "alertR Sensor Client Raspberry Pi",
-		"desc": "TODO"
+		"desc": "This client handles Raspberry Pi GPIO pins as sensors. It either polls the state of a GPIO pin or uses an interrupt on a falling/rising edge and triggers an alert if the state has changed/interrupt has occurred (or a state change if it goes back from a state in which it triggers an alert to a normal state). This means it notifies the server if an alert was triggered by a sensor. A sensor connected to the GPIO pin can be anything you like for example a PIR (Passive InfraRed) sensor, a magnetic switch on a window, a water leak alarm sensor, a smoke detector and so on.",
+		"type": "sensor"
 		},
 	"server": {
 		"location": "server/",
 		"name": "alertR Server",
-		"desc": "TODO"
+		"desc": "This is the server that handles the logic of the alert system. It is mandatory in order to use alertR. It uses either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.",
+		"type": "server"
 		}
 	}
 }

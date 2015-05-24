@@ -976,8 +976,11 @@ def listAllInstances(repoInfo):
 
 		print repoInfo["instances"][instance]["name"]
 		print "-"*len(repoInfo["instances"][instance]["name"])
-		print "Instance: %s" % instance
-		print "Description: %s" % repoInfo["instances"][instance]["desc"]
+		print "Instance:"
+		print instance
+		print
+		print "Description:"
+		print repoInfo["instances"][instance]["desc"]
 
 		print
 		print

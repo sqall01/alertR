@@ -1,7 +1,7 @@
 alertR Server
 ======
 
-This is the server that handles the logic of the alert system. It is mandatory in order to use alertR. It is completly written in python and uses (at the moment) either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.
+This is the server that handles the logic of the alert system. It is mandatory in order to use alertR. It uses either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.
 
 
 How to use it?

@@ -1,7 +1,7 @@
 alertR Manager Client Keypad
 ======
 
-This client manages the state of the alert system. It can activate or deactivate it. You have to enter a PIN before you can activate the alert system, deactivate it or activate it with a delay of 30 seconds. It is written to work as a client with keypad and small display (original for a Raspbery Pi, but is not limited to it). The client should be near an entrance to allow the user to activate/deactivate the alert system when she leaves/comes. It is written for python and uses urwid to display the information and handling intput.
+This client manages the state of the alert system. It can activate or deactivate it. You have to enter a PIN before you can activate the alert system, deactivate it or activate it with a configured delay. It is written to work as a client with keypad and small display (original for a Raspbery Pi, but is not limited to it). The client should be near an entrance to allow the user to activate/deactivate the alert system when she leaves/enters.
 
 
 How to use it?

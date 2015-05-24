@@ -1,7 +1,7 @@
 alertR Sensor Client Ping
 ======
 
-This client is specialized to just ping a server as sensors and informing the alertR server if a sensor has triggered and/or the state of a sensor has changed. This means it checks if a configured server is reachable via ping. The sensor is triggered if the server is not reachable or a time out occur. 
+This client is specialized to just ping a server as a sensor and informing the alertR server if a pinged host is reachable or not. The sensor is triggered if the server is not reachable or a time out occur.
 
 
 How to use it?
