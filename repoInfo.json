@@ -2,63 +2,78 @@
 "instances": {
 	"alertClientDbus" : {
 		"location": "alertClientDbus/",
-		"name": "alertR Alert Client Dbus"
+		"name": "alertR Alert Client Dbus",
+		"desc": "TODO"
 		},
 	"alertClientExecuter": {
 		"location": "alertClientExecuter/",
-		"name": "alertR Alert Client Executer"
+		"name": "alertR Alert Client Executer",
+		"desc": "TODO"
 		},
 	"alertClientRaspberryPi": {
 		"location": "alertClientRaspberryPi/",
-		"name": "alertR Alert Client Raspberry Pi"
+		"name": "alertR Alert Client Raspberry Pi",
+		"desc": "TODO"
 		},
 	"alertClientTemplate": {
 		"location": "alertClientTemplate/",
-		"name": "alertR Alert Client Template"
+		"name": "alertR Alert Client Template",
+		"desc": "TODO"
 		},
 	"alertClientXBMC": {
 		"location": "alertClientXBMC/",
-		"name": "alertR Alert Client XBMC"
+		"name": "alertR Alert Client XBMC",
+		"desc": "TODO"
 		},
 	"managerClientConsole": {
 		"location": "managerClientConsole/",
-		"name": "alertR Manager Client Console"
+		"name": "alertR Manager Client Console",
+		"desc": "TODO"
 		},
 	"managerClientKeypad": {
 		"location": "managerClientKeypad/",
-		"name": "alertR Manager Client Keypad"
+		"name": "alertR Manager Client Keypad",
+		"desc": "TODO"
 		},
 	"managerClientMobile": {
 		"location": "mobileManager/server/managerClientMobile/",
-		"name": "alertR Mobile Manager - Server - Manger Client Mobile"
+		"name": "alertR Mobile Manager - Server - Manger Client Mobile",
+		"desc": "TODO"
 		},
 	"sensorClientCtfWatchdog": {
 		"location": "sensorClientCtfWatchdog/",
-		"name": "alertR Sensor Client CTF Watchdog"
+		"name": "alertR Sensor Client CTF Watchdog",
+		"desc": "TODO"
 		},
 	"sensorClientDevelopment": {
 		"location": "sensorClientDevelopment/",
-		"name": "alertR Sensor Client Development"
+		"name": "alertR Sensor Client Development",
+		"desc": "TODO"
 		},
 	"sensorClientFIFO": {
 		"location": "sensorClientFIFO/",
-		"name": "alertR Sensor Client FIFO"
+		"name": "alertR Sensor Client FIFO",
+		"desc": "TODO"
 		},
 	"sensorClientLightning": {
 		"location": "sensorClientLightning/",
-		"name": "alertR Sensor Client Lightning"
+		"name": "alertR Sensor Client Lightning",
+		"desc": "DO NOT USE YET"
 		},
 	"sensorClientPing": {
 		"location": "sensorClientPing/",
-		"name": "alertR Sensor Client Ping"
+		"name": "alertR Sensor Client Ping",
+		"desc": "TODO"
 		},
 	"sensorClientRaspberryPi": {
 		"location": "sensorClientRaspberryPi/",
-		"name": "alertR Sensor Client Raspberry Pi"
+		"name": "alertR Sensor Client Raspberry Pi",
+		"desc": "TODO"
 		},
 	"server": {
 		"location": "server/",
-		"name": "alertR Server"
+		"name": "alertR Server",
+		"desc": "TODO"
 		}
 	}
 }
