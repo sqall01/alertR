@@ -228,7 +228,7 @@ class SMTPAlert:
 
 		subject = "[alertR] Update available"
 
-		message = "For the client '%s' on host '%s' is a new version " \
+		message = "For the instance '%s' on host '%s' is a new version " \
 			% (clientName, socket.gethostname()) \
 			+ "available.\n\n" \
 			+ "Current version: %.3f-%d\n" \

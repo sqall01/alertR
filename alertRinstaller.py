@@ -977,10 +977,7 @@ def listAllInstances(repoInfo):
 		print repoInfo["instances"][instance]["name"]
 		print "-"*len(repoInfo["instances"][instance]["name"])
 		print "Instance: %s" % instance
-
-		# TODO
-		# -description is missing in the repository information
-		print "Description: %s" % "TODO"
+		print "Description: %s" % repoInfo["instances"][instance]["desc"]
 
 		print
 		print
@@ -1108,7 +1105,7 @@ if __name__ == '__main__':
 	# list all available instances in the used alertR repository
 	if options.list is True:
 
-		repoInfo = getRepositoryInformation(host, port, caFile)
+		repoInfo = getRepositoryInformation(host, port, caFile, serverPath)
 		if repoInfo is None:
 
 			print
