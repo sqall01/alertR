@@ -1,11 +1,1 @@
-{"files": {"lib/update.py": "852e3501f04ae86898876e1b157b6d6920383c8db0785037052eb70058db5871", "config/config.xml.template": "c242170328846dd13bb51b96763bd82e9f461ef3e7bc86da4807d857adf4643c", "alertRupdate.py": "d4fb9b9186ca673bd32d6c2e7766386492e9950ab6e4cef0f3c485d38b573053", "init.d_example/alertRsensorLightning.sh": "e88dbecb8bbbca2372735c68d62c0094e12ee9c6e20d980e896183ddafb91a0b", "lib/client.py": "5f5f25d8c49acd78a941965021d405af2935fcc61aa68bf6842aee79b9f5a8ad", "lib/globalData.py": "d272da97afbba8a45a45ddad8a2048d569f5ccad4fb6fd09a6ca6a2dbdb36c02", "alertRclient.py": "43e9a400fffb8a62fecdb97b02b0338dd438ee7d513add921dcf670131d5f26c", "lib/smtp.py": "0d5d06a2fe2f24ffb17ed4b9585d5a8db6829238861ea4a299041a0884f4d264", "lib/sensor.py": "56d78376ffef0edee1388d748865c3d6bc30ab3f360a1c51ff7ba0070f71d7e0", "lib/__init__.py": "ba53f365c121fdd8a619fd5286e7626756457d35b8bab3e1118e1383d75ba456"}, "version": 0.225, "rev": 0,
-"dependencies": {
-	"pip": [
-			{
-			"import": "websocket",
-			"packet": "websocket-client",
-			"version": "0.30.0"
-			}
-		]
-	}
-}
+{"files": {"lib/update.py": "852e3501f04ae86898876e1b157b6d6920383c8db0785037052eb70058db5871", "config/config.xml.template": "c242170328846dd13bb51b96763bd82e9f461ef3e7bc86da4807d857adf4643c", "alertRupdate.py": "d4fb9b9186ca673bd32d6c2e7766386492e9950ab6e4cef0f3c485d38b573053", "init.d_example/alertRsensorLightning.sh": "e88dbecb8bbbca2372735c68d62c0094e12ee9c6e20d980e896183ddafb91a0b", "lib/client.py": "5f5f25d8c49acd78a941965021d405af2935fcc61aa68bf6842aee79b9f5a8ad", "lib/globalData.py": "d272da97afbba8a45a45ddad8a2048d569f5ccad4fb6fd09a6ca6a2dbdb36c02", "alertRclient.py": "43e9a400fffb8a62fecdb97b02b0338dd438ee7d513add921dcf670131d5f26c", "lib/smtp.py": "3e2943933e9c7d7c31e660c34286f2d75b05e62afcaea6a4c74612e8743a382b", "lib/sensor.py": "56d78376ffef0edee1388d748865c3d6bc30ab3f360a1c51ff7ba0070f71d7e0", "lib/__init__.py": "ba53f365c121fdd8a619fd5286e7626756457d35b8bab3e1118e1383d75ba456"}, "version": 0.225, "rev": 0, "dependencies": {"pip": [{"import": "websocket", "version": "0.30.0", "packet": "websocket-client"}]}}
