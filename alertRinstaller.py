@@ -1157,9 +1157,16 @@ if __name__ == '__main__':
 
 			exit(1, caFile)
 
+		# get the correct case of the instance to install
+		found = False
+		for repoKey in repoInfo["instances"].keys():
+			if repoKey.upper() == instance.upper():
+				instance = repoKey
+				found = True
+				break
+
 		# check if chosen instance exists
-		if (not instance.upper() in
-			map(lambda x : x.upper(), repoInfo["instances"].keys())):
+		if not found:
 			
 			print
 			print "Chosen alertR instance '%s'" % instance,
