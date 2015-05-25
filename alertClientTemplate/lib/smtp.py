@@ -199,15 +199,44 @@ class SMTPAlert:
 			and self.newestRev >= rev):
 			return True
 
+		# check if the update changes the protocol
+		protocolUpdate = False
+		if int(version * 10) > int(currVersion * 10):
+			protocolUpdate = True
+
+		# check if the update changes the configuration file
+		configUpdate = False
+		if version > currVersion:
+			configUpdate = True
+
 		subject = "[alertR] Update available"
 
-		message = "For the client '%s' on host '%s' is a new version " \
+		message = "For the instance '%s' on host '%s' is a new version " \
 			% (clientName, socket.gethostname()) \
 			+ "available.\n\n" \
 			+ "Current version: %.3f-%d\n" \
 			% (currVersion, currRev) \
 			+ "New version: %.3f-%d\n" \
 			% (version, rev)
+
+		# add additional information if the protocol changes after the update
+		if protocolUpdate is True:
+			message += "\n" \
+				+ "NOTE: The update changes the used protocol. This means " \
+				+ "that when you update this alertR instance " \
+				+ "you also have to update all your other alertR instances " \
+				+ "in order to have a working system again." \
+				+ "\n"
+
+		# add additional information if the configuration changes
+		# after the update
+		if configUpdate is True:
+			message += "\n" \
+				+ "NOTE: The update needs changes in the used configuration " \
+				+ "file. This means that you have to manually update your " \
+				+ "used configuration file before you can use this alertR " \
+				+ "instance again." \
+				+ "\n"
 
 		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
 			% (self.fromAddr, self.toAddr, subject)

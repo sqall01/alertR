@@ -1,7 +1,7 @@
 alertR Manager Client Console
 ======
 
-This client is a manager client for the alert system. It shows the current state of all sensors, the sensor and alert clients and if the alert system is activated or not. It is written for python and uses urwid to display the information and handling intput.
+This client is a manager client for the alert system. It shows the current state of all sensors, the sensor and alert clients and if the alert system is activated or not.
 
 
 How to use it?

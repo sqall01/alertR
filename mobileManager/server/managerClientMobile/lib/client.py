@@ -370,7 +370,8 @@ class ServerCommunication:
 			logging.debug("[%s]: Received server version: '%.3f'." 
 				% (self.fileName, version))
 
-			if self.version != version:
+			# check if used protocol version is compatible
+			if int(self.version * 10) != int(version * 10):
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
 					+ "Client has version: '%.3f' " % self.version

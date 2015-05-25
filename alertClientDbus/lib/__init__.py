@@ -10,4 +10,5 @@
 from client import ServerCommunication, ConnectionWatchdog, Receiver
 from smtp import SMTPAlert
 from alert import DbusAlert
-from update import UpdateChecker
+from update import UpdateChecker, Updater
+from globalData import GlobalData
