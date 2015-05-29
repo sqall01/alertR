@@ -17,13 +17,13 @@ Here a list of useful documentations to start with/understand this project:
 Installation
 ======
 
-To install an alertR client or the alertR server, please use the installation script. A detailed description of how to install an alertR instance is given in the [Installation](https://github.com/sqall01/alertR/wiki/Installation) Section of the wiki.
+To install an alertR client or the alertR server, please use the installation script. A detailed description of how to install an alertR instance is given in the [Installation](https://github.com/sqall01/alertR/wiki/Installation) section of the wiki.
 
 
 Update
 ======
 
-If you have already a working alertR system installed and a newer version is available, use the update script to update your alertR instances. A detailed description of how to update an alertR instance is given in the [Update](https://github.com/sqall01/alertR/wiki/Update) Section of the wiki.
+If you have already a working alertR system installed and a newer version is available, use the update script to update your alertR instances. A detailed description of how to update an alertR instance is given in the [Update](https://github.com/sqall01/alertR/wiki/Update) section of the wiki.
 
 
 Bugs and Feedback
