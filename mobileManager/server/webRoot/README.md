@@ -11,4 +11,4 @@ To use this part you have to configure it first. A commented configuration templ
 
 You should use HTTPS for the connection to your webserver. Elsewise, other people are able to see your login credentials and therefore can deactivate the alerting system.
 
-Nevertheless, a short but more detailed basic example configuration of how to set up the server is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-configuration)).
+Nevertheless, a short but more detailed basic example configuration of how to set up the server is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
