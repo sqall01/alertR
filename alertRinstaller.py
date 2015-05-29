@@ -1116,7 +1116,12 @@ def getInstanceInformation(host, port, caFile, serverPath,
 
 
 # this function lists all available instances
-def listAllInstances(repoInfo):
+def listAllInstances(host, port, caFile, serverPath):
+
+	# download repository information
+	repoInfo = getRepositoryInformation(host, port, caFile, serverPath)
+	if repoInfo is None:
+		return False
 
 	temp = repoInfo["instances"].keys()
 	temp.sort()
@@ -1125,6 +1130,9 @@ def listAllInstances(repoInfo):
 
 	for instance in temp:
 
+		instanceInfo = getInstanceInformation(host, port, caFile, serverPath,
+			repoInfo["instances"][instance]["location"])
+
 		print repoInfo["instances"][instance]["name"]
 		print "-"*len(repoInfo["instances"][instance]["name"])
 		print "Instance:"
@@ -1132,6 +1140,38 @@ def listAllInstances(repoInfo):
 		print
 		print "Type:"
 		print repoInfo["instances"][instance]["type"]
+		print
+		print "Version:"
+		print "%.3f-%d" % (instanceInfo["version"], instanceInfo["rev"])
+		print
+		print "Dependencies:"
+
+		# print instance dependencies
+		idx = 1
+		if "pip" in instanceInfo["dependencies"].keys():			
+			for pip in instanceInfo["dependencies"]["pip"]:
+				importName = pip["import"]
+				packet = pip["packet"]
+				print "%d: %s (pip packet: %s)" % (idx, importName, packet),
+				if "version" in pip.keys():
+					print "(lowest version: %s)" % pip["version"]
+				else:
+					print
+				idx += 1
+
+		if "other" in instanceInfo["dependencies"].keys():
+			for other in instanceInfo["dependencies"]["other"]:
+				importName = other["import"]
+				print "%d: %s" % (idx, importName),
+				if "version" in other.keys():
+					print "(lowest version: %s)" % other["version"]
+				else:
+					print
+				idx += 1
+
+		if idx == 1:
+			print "None"
+
 		print
 		print "Description:"
 		print repoInfo["instances"][instance]["desc"]
@@ -1235,15 +1275,12 @@ if __name__ == '__main__':
 	# list all available instances in the used alertR repository
 	if options.list is True:
 
-		repoInfo = getRepositoryInformation(host, port, caFile, serverPath)
-		if repoInfo is None:
+		if listAllInstances(host, port, caFile, serverPath) is False:
 
 			print
-			print "Could not download information from repository."
+			print "Could not list repository information."
 
 			exit(1, caFile)
-
-		listAllInstances(repoInfo)
 
 		exit(0, caFile)
 
