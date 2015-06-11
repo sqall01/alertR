@@ -30,8 +30,8 @@ class ClientCommunication:
 
 		# get global configured data
 		self.globalData = globalData
-		self.version = self.globalData.version
-		self.rev = self.globalData.rev
+		self.serverVersion = self.globalData.version
+		self.serverRev = self.globalData.rev
 		self.storage = self.globalData.storage
 		self.userBackend = self.globalData.userBackend
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
@@ -56,6 +56,10 @@ class ClientCommunication:
 
 		# hostname of the client
 		self.hostname = None
+
+		# version and revision of client
+		self.clientVersion = None
+		self.clientRev = None
 
 		# the id of the client
 		self.nodeId = 0
@@ -336,16 +340,17 @@ class ClientCommunication:
 
 		# verify version
 		try:
-			version = float(message["payload"]["version"])
-			rev = int(message["payload"]["rev"])
+			self.clientVersion = float(message["payload"]["version"])
+			self.clientRev = int(message["payload"]["rev"])
 
 			# check if used protocol version is compatible
-			if int(self.version * 10) != int(version * 10):
+			if int(self.serverVersion * 10) != int(self.clientVersion * 10):
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
-					+ "Client has version: '%.3f-%d' " % (version, rev)
+					+ "Client has version: '%.3f-%d' "
+					% (self.clientVersion, self.clientRev)
 					+ "and server has '%.3f-%d' (%s:%d)" 
-					% (self.version, self.rev, self.clientAddress,
+					% (self.serverVersion, self.serverRev, self.clientAddress,
 					self.clientPort))
 
 				# send error message back
@@ -376,8 +381,8 @@ class ClientCommunication:
 			return False
 
 		logging.debug("[%s]: Received client version: '%.3f-%d' (%s:%d)." 
-				% (self.fileName, version, rev, self.clientAddress, 
-				self.clientPort))
+			% (self.fileName, self.clientVersion, self.clientRev,
+			self.clientAddress, self.clientPort))
 
 		# get user credentials
 		try:
@@ -452,8 +457,8 @@ class ClientCommunication:
 
 			payload = {"type": "response",
 				"result": "ok",
-				"version": self.version,
-				"rev" : self.rev}
+				"version": self.serverVersion,
+				"rev" : self.serverRev}
 			message = {"serverTime": int(time.time()),
 				"message": "authentication", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -566,7 +571,7 @@ class ClientCommunication:
 
 		# add node to database
 		if not self.storage.addNode(self.username, self.hostname,
-			self.nodeType):
+			self.nodeType, self.clientVersion, self.clientRev):
 			logging.error("[%s]: Unable to add node to database." 
 				% self.fileName)
 
