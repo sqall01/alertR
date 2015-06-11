@@ -18,7 +18,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.225
+		self.version = 0.300
 
 		# revision of the used server
 		self.rev = 0

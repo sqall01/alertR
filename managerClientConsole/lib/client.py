@@ -89,6 +89,7 @@ class ServerCommunication:
 		# get global configured data
 		self.globalData = globalData
 		self.version = self.globalData.version
+		self.rev = self.globalData.rev
 		self.nodeType = self.globalData.nodeType
 		self.description = self.globalData.description		
 		# list of alert system information
@@ -298,6 +299,7 @@ class ServerCommunication:
 
 			payload = {"type": "request",
 				"version": self.version,
+				"rev": self.rev,
 				"username": self.username,
 				"password": self.password}
 			message = {"clientTime": int(time.time()),
@@ -366,16 +368,19 @@ class ServerCommunication:
 		# verify version
 		try:
 			version = float(message["payload"]["version"])
+			rev = int(message["payload"]["rev"])
 
-			logging.debug("[%s]: Received server version: '%.3f'." 
-				% (self.fileName, version))
+			logging.debug("[%s]: Received server version: '%.3f-%d'." 
+				% (self.fileName, version, rev))
 
 			# check if used protocol version is compatible
 			if int(self.version * 10) != int(version * 10):
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
-					+ "Client has version: '%.3f' " % self.version
-					+ "and server has '%.3f" % version)
+					+ "Client has version: '%.3f-%d' "
+					% (self.version, self.rev)
+					+ "and server has '%.3f-%d"
+					% (version, rev))
 
 				# send error message back
 				try:

@@ -31,6 +31,7 @@ class ClientCommunication:
 		# get global configured data
 		self.globalData = globalData
 		self.version = self.globalData.version
+		self.rev = self.globalData.rev
 		self.storage = self.globalData.storage
 		self.userBackend = self.globalData.userBackend
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
@@ -336,14 +337,15 @@ class ClientCommunication:
 		# verify version
 		try:
 			version = float(message["payload"]["version"])
+			rev = int(message["payload"]["rev"])
 
 			# check if used protocol version is compatible
 			if int(self.version * 10) != int(version * 10):
 
 				logging.error("[%s]: Version not compatible. " % self.fileName
-					+ "Client has version: '%.3f' " % version
-					+ "and server has '%.3f (%s:%d)" 
-					% (self.version, self.clientAddress,
+					+ "Client has version: '%.3f-%d' " % (version, rev)
+					+ "and server has '%.3f-%d' (%s:%d)" 
+					% (self.version, self.rev, self.clientAddress,
 					self.clientPort))
 
 				# send error message back
@@ -373,8 +375,8 @@ class ClientCommunication:
 
 			return False
 
-		logging.debug("[%s]: Received client version: '%.3f' (%s:%d)." 
-				% (self.fileName, version, self.clientAddress, 
+		logging.debug("[%s]: Received client version: '%.3f-%d' (%s:%d)." 
+				% (self.fileName, version, rev, self.clientAddress, 
 				self.clientPort))
 
 		# get user credentials
@@ -448,8 +450,10 @@ class ClientCommunication:
 		# send authentication response
 		try:
 
-			payload = {"type": "response", "result": "ok",
-				"version": self.version}
+			payload = {"type": "response",
+				"result": "ok",
+				"version": self.version,
+				"rev" : self.rev}
 			message = {"serverTime": int(time.time()),
 				"message": "authentication", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
