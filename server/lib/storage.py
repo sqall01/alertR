@@ -36,7 +36,7 @@ class _Storage():
 	# values if it does exist
 	#
 	# return True or False
-	def addNode(self, username, hostname, nodeType, version, rev):
+	def addNode(self, username, hostname, nodeType, instance, version, rev):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -431,6 +431,7 @@ class Sqlite(_Storage):
 			+ "hostname TEXT NOT NULL, "
 			+ "username TEXT NOT NULL UNIQUE, "
 			+ "nodeType TEXT NOT NULL, "
+			+ "instance TEXT NOT NULL, "
 			+ "connected INTEGER NOT NULL, "
 			+ "version REAL NOT NULL, "
 			+ "rev INTEGER NOT NULL)")
@@ -552,7 +553,7 @@ class Sqlite(_Storage):
 	# values if it does exist
 	#
 	# return True or False
-	def addNode(self, username, hostname, nodeType, version, rev):
+	def addNode(self, username, hostname, nodeType, instance, version, rev):
 
 		self._acquireLock()
 
@@ -571,10 +572,11 @@ class Sqlite(_Storage):
 					+ "hostname, "
 					+ "username, "
 					+ "nodeType, "
+					+ "instance, "
 					+ "connected, "
 					+ "version, "
-					+ "rev) VALUES (?, ?, ?, ?, ?, ?)",
-					(hostname, username, nodeType, 0, version, rev))
+					+ "rev) VALUES (?, ?, ?, ?, ?, ?, ?)",
+					(hostname, username, nodeType, instance, 0, version, rev))
 			except Exception as e:
 				logging.exception("[%s]: Not able to add node."
 					% self.fileName)
@@ -597,6 +599,7 @@ class Sqlite(_Storage):
 			try:
 				self.cursor.execute("SELECT hostname, "
 					+ "nodeType, "
+					+ "instance, "
 					+ "version, "
 					+ "rev "
 					+ "FROM nodes WHERE id = ? ",
@@ -604,8 +607,9 @@ class Sqlite(_Storage):
 				result = self.cursor.fetchall()
 				dbHostname = result[0][0]
 				dbNodeType = result[0][1]
-				dbVersion = result[0][2]
-				dbRev = result[0][3]
+				dbInstance = result[0][2]
+				dbVersion = result[0][3]
+				dbRev = result[0][4]
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to get node information."
@@ -631,6 +635,27 @@ class Sqlite(_Storage):
 				except Exception as e:
 					logging.exception("[%s]: Not able to " % self.fileName
 						+ "update hostname of node.")
+
+					self._releaseLock()
+
+					return False
+
+			# change instance if it had changed
+			if dbInstance != instance:
+
+				logging.info("[%s]: Instance of node has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbInstance, instance))
+
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "instance = ? "
+						+ "WHERE id = ?",
+						(instance, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update instance of node.")
 
 					self._releaseLock()
 
@@ -2486,6 +2511,7 @@ class Mysql(_Storage):
 			+ "hostname VARCHAR(255) NOT NULL, "
 			+ "username VARCHAR(255) NOT NULL UNIQUE, "
 			+ "nodeType VARCHAR(255) NOT NULL, "
+			+ "instance VARCHAR(255) NOT NULL, "
 			+ "connected INTEGER NOT NULL, "
 			+ "version FLOAT NOT NULL, "
 			+ "rev INTEGER NOT NULL)")
@@ -2619,7 +2645,7 @@ class Mysql(_Storage):
 	# values if it does exist
 	#
 	# return True or False
-	def addNode(self, username, hostname, nodeType, version, rev):
+	def addNode(self, username, hostname, nodeType, instance, version, rev):
 
 		self._acquireLock()
 
@@ -2649,10 +2675,11 @@ class Mysql(_Storage):
 					+ "hostname, "
 					+ "username, "
 					+ "nodeType, "
+					+ "instance, "
 					+ "connected, "
 					+ "version, "
-					+ "rev) VALUES (%s, %s, %s, %s, %s, %s)",
-					(hostname, username, nodeType, 0, version, rev))
+					+ "rev) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+					(hostname, username, nodeType, instance, 0, version, rev))
 			except Exception as e:
 				logging.exception("[%s]: Not able to add node."
 					% self.fileName)
@@ -2678,6 +2705,7 @@ class Mysql(_Storage):
 			try:
 				self.cursor.execute("SELECT hostname, "
 					+ "nodeType, "
+					+ "instance, "
 					+ "version, "
 					+ "rev "
 					+ "FROM nodes WHERE id = %s ",
@@ -2685,8 +2713,9 @@ class Mysql(_Storage):
 				result = self.cursor.fetchall()
 				dbHostname = result[0][0]
 				dbNodeType = result[0][1]
-				dbVersion = result[0][2]
-				dbRev = result[0][3]
+				dbInstance = result[0][2]
+				dbVersion = result[0][3]
+				dbRev = result[0][4]
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to get node information."
@@ -2718,6 +2747,27 @@ class Mysql(_Storage):
 
 					# close connection to the database
 					self._closeConnection()
+
+					self._releaseLock()
+
+					return False
+
+			# change instance if it had changed
+			if dbInstance != instance:
+
+				logging.info("[%s]: Instance of node has changed "
+					% self.fileName
+					+ "from '%s' to '%s'. Updating database."
+					% (dbInstance, instance))
+
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "instance = %s "
+						+ "WHERE id = %s",
+						(instance, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update instance of node.")
 
 					self._releaseLock()
 
