@@ -54,6 +54,9 @@ class ClientCommunication:
 		# type of the client (sensor/alert/manager)
 		self.nodeType = None
 
+		# instance of the client (i.e. sensorClientPing)
+		self.instance = None
+
 		# hostname of the client
 		self.hostname = None
 
@@ -548,6 +551,7 @@ class ClientCommunication:
 		try:
 			self.hostname = str(message["payload"]["hostname"])
 			self.nodeType = str(message["payload"]["nodeType"])
+			self.instance = str(message["payload"]["instance"])
 
 		except Exception as e:
 
@@ -571,7 +575,7 @@ class ClientCommunication:
 
 		# add node to database
 		if not self.storage.addNode(self.username, self.hostname,
-			self.nodeType, self.clientVersion, self.clientRev):
+			self.nodeType, self.instance, self.clientVersion, self.clientRev):
 			logging.error("[%s]: Unable to add node to database." 
 				% self.fileName)
 
