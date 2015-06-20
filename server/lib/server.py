@@ -569,6 +569,25 @@ class ClientCommunication:
 
 			return False
 
+		# check if the given node type and instance are correct
+		if not self.userBackend.checkNodeTypeAndInstance(self.username,
+			self.nodeType, self.instance):
+
+			logging.error("[%s]: Node type or instance " % self.fileName
+				+ "for username '%s' is not correct (%s:%d)."
+				% (self.username, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "invalid node type or instance"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
 		logging.debug("[%s]: Received node registration %s:%s (%s:%d)." 
 				% (self.fileName, self.hostname, self.nodeType,
 					self.clientAddress, self.clientPort))
