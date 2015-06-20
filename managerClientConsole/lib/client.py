@@ -91,6 +91,7 @@ class ServerCommunication:
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 		self.nodeType = self.globalData.nodeType
+		self.instance = self.globalData.instance
 		self.description = self.globalData.description		
 		# list of alert system information
 		self.options = self.globalData.options
@@ -424,6 +425,7 @@ class ServerCommunication:
 			payload = {"type": "request",
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
+				"instance": self.instance,
 				"manager": manager}
 			message = {"clientTime": int(time.time()),
 				"message": "registration", "payload": payload}

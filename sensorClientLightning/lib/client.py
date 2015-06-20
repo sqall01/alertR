@@ -88,6 +88,7 @@ class ServerCommunication:
 		# get global configured data
 		self.globalData = globalData
 		self.nodeType = self.globalData.nodeType
+		self.instance = self.globalData.instance
 		self.sensors = self.globalData.sensors
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
@@ -417,6 +418,7 @@ class ServerCommunication:
 			payload = {"type": "request",
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
+				"instance": self.instance,
 				"sensors": sensors}
 			message = {"clientTime": int(time.time()),
 				"message": "registration", "payload": payload}
