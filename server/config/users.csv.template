@@ -1,11 +1,11 @@
 # characters not allowed for usage are '#' and ','
-# the values are "username, password" per line
+# the values are "username, password, type of node, instance of node" per line
 # note: whitespaces will be removed when parsing
-user1, password1
-user2, password2
-user3, password3
-user4, password4
-user5, password5
-user6, password6
-user7, password7
-user8, password8
+user1, password1, alert, alertClientDbus
+user2, password2, sensor, sensorClientRaspberryPi
+user3, password3, sensor, sensorClientPing
+user4, password4, sensor, sensorClientFIFO
+user5, password5, manager, managerClientConsole
+user6, password6, manager, managerClientKeypad
+user7, password7, alert, alertClientExecuter
+user8, password8, alert, alertClientRaspberryPi
