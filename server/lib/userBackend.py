@@ -81,9 +81,6 @@ class CSVBackend(_userBackend):
 		# and then if the password is the correct one
 		for storedTuple in self.userCredentials:
 
-			print username
-			print password
-
 			if storedTuple[0] != username:
 				continue
 
