@@ -2492,7 +2492,7 @@ class Mysql(_Storage):
 		self.cursor.execute("CREATE TABLE internals ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value FLOAT NOT NULL)")
+			+ "value DOUBLE NOT NULL)")
 
 		# insert version of server
 		self.cursor.execute("INSERT INTO internals ("
@@ -2503,7 +2503,7 @@ class Mysql(_Storage):
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value FLOAT NOT NULL)")
+			+ "value DOUBLE NOT NULL)")
 
 		# insert option to activate/deactivate alert system
 		# (0 = deactivated, 1 = activated)
@@ -2519,7 +2519,7 @@ class Mysql(_Storage):
 			+ "nodeType VARCHAR(255) NOT NULL, "
 			+ "instance VARCHAR(255) NOT NULL, "
 			+ "connected INTEGER NOT NULL, "
-			+ "version FLOAT NOT NULL, "
+			+ "version DOUBLE NOT NULL, "
 			+ "rev INTEGER NOT NULL)")
 
 		# create sensors table
