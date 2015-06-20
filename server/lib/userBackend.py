@@ -46,7 +46,7 @@ class CSVBackend(_userBackend):
 		with open(csvLocation, 'rb') as csvFile:
 			csvReader = csv.reader(csvFile, quoting=csv.QUOTE_ALL)
 			for row in csvReader:
-				if len(row) != 2:
+				if len(row) != 4:
 					continue
 				if row[0].find('#') != -1:
 					continue
@@ -79,13 +79,16 @@ class CSVBackend(_userBackend):
 
 		# check all usernames if the given username exist
 		# and then if the password is the correct one
-		for storedUsername, storedPassword in self.userCredentials:
+		for storedTuple in self.userCredentials:
 
-			if storedUsername != username:
+			print username
+			print password
+
+			if storedTuple[0] != username:
 				continue
 
 			else:
-				if storedPassword == password:
+				if storedTuple[1] == password:
 					return True
 				else:
 					return False
