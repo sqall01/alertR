@@ -9,6 +9,7 @@
 
 import csv
 import logging
+import os
 
 
 # internal abstract class for new user backends
@@ -26,6 +27,7 @@ class _userBackend():
 	#
 	# return True or False
 	def checkNodeTypeAndInstance(self, username, nodeType, instance):
+		raise NotImplemented("Function not implemented yet.")
 
 
 # user backend that uses a simple csv file
