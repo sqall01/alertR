@@ -1,0 +1,33 @@
+.box {
+	background-color: #ffffff;
+	border: 2px solid #000000;
+	border-radius: 15px;
+	padding: 2px;
+	padding-top: 5px;
+ 	padding-bottom: 5px;
+}
+
+
+.failTd {
+	background-color: #ff0000;
+}
+
+
+.okTd {
+	background-color: #00ff00;
+}
+
+
+.neutralTd {
+	background-color: #ffffff;
+}
+
+
+.boxHeaderTd {
+	background-color: #b8b0b0;
+}
+
+
+.boxEntryTd {
+	background-color: #d5cbcb;
+}
