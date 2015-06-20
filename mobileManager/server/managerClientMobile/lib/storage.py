@@ -160,7 +160,10 @@ class Mysql(_Storage):
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "hostname VARCHAR(255) NOT NULL, "
 			+ "nodeType VARCHAR(255) NOT NULL, "
-			+ "connected INTEGER NOT NULL)")
+			+ "instance VARCHAR(255) NOT NULL, "
+			+ "connected INTEGER NOT NULL, "
+			+ "version DOUBLE NOT NULL, "
+			+ "rev INTEGER NOT NULL)")
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -405,9 +408,13 @@ class Mysql(_Storage):
 					self.cursor.execute("UPDATE nodes SET "
 						+ "hostname = %s, "
 						+ "nodeType = %s, "
-						+ "connected = %s "
+						+ "instance = %s, "
+						+ "connected = %s, "
+						+ "version = %s, "
+						+ "rev = %s "
 						+ "WHERE id = %s",
-						(node.hostname, node.nodeType, node.connected,
+						(node.hostname, node.nodeType, node.instance,
+						node.connected, node.version, node.rev, 
 						node.nodeId))
 				except Exception as e:
 					logging.exception("[%s]: Not able to update node."
@@ -555,10 +562,13 @@ class Mysql(_Storage):
 						+ "id, "
 						+ "hostname, "
 						+ "nodeType, "
-						+ "connected) "
-						+ "VALUES (%s, %s, %s, %s)",
+						+ "instance, "
+						+ "connected, "
+						+ "version, "
+						+ "rev) "
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
 						(node.nodeId, node.hostname, node.nodeType,
-						node.connected))
+						node.instance, node.connected, node.version, node.rev))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node."
 						% self.fileName)

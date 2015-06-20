@@ -62,7 +62,10 @@ while($row = mysql_fetch_array($resultNodes)) {
 	$nodeEntry = array("id" => $row["id"],
 		"hostname" => $row["hostname"],
 		"nodeType" => $row["nodeType"],
-		"connected" => $row["connected"]);
+		"instance" => $row["instance"],
+		"connected" => $row["connected"],
+		"version" => $row["version"],
+		"rev" => $row["rev"]);
 	array_push($nodesArray, $nodeEntry);
 }
 
