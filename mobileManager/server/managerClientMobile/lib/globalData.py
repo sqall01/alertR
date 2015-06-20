@@ -44,6 +44,16 @@ class GlobalData:
 		self.unixSocketFile = os.path.dirname(os.path.abspath(__file__)) \
 			+ "/../config/localsocket"
 
+
+
+
+
+		# TODO REMOVE
+		self.unixSocketFile = "/tmp/localsocket"
+
+
+
+
 		# this flags indicate if email alerts via smtp are active
 		self.smtpAlert = None
 

@@ -183,7 +183,8 @@ class _Storage():
 	# list[0] = optionCount
 	# list[1] = list(tuples of (type, value))
 	# list[2] = nodeCount
-	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
+	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
+	# connected, version, rev))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
 	# description, lastStateUpdated, state))
@@ -2091,7 +2092,8 @@ class Sqlite(_Storage):
 	# list[0] = optionCount
 	# list[1] = list(tuples of (type, value))
 	# list[2] = nodeCount
-	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
+	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
+	# connected, version, rev))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
 	# description, lastStateUpdated, state))
@@ -2118,7 +2120,10 @@ class Sqlite(_Storage):
 			self.cursor.execute("SELECT id, "
 				+ "hostname, "
 				+ "nodeType, "
-				+ "connected "
+				+ "instance, "
+				+ "connected, "
+				+ "version, "
+				+ "rev "
 				+ "FROM nodes")
 			result = self.cursor.fetchall()
 			nodesInformation = result
@@ -2182,7 +2187,8 @@ class Sqlite(_Storage):
 		# list[0] = optionCount
 		# list[1] = list(tuples of (type, value))
 		# list[2] = nodeCount
-		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
+		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
+		# connected, version, rev))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
 		# description, lastStateUpdated, state))
@@ -4664,7 +4670,8 @@ class Mysql(_Storage):
 	# list[0] = optionCount
 	# list[1] = list(tuples of (type, value))
 	# list[2] = nodeCount
-	# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
+	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
+	# connected, version, rev))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
 	# description, lastStateUpdated, state))
@@ -4702,7 +4709,10 @@ class Mysql(_Storage):
 			self.cursor.execute("SELECT id, "
 				+ "hostname, "
 				+ "nodeType, "
-				+ "connected "
+				+ "instance, "
+				+ "connected, "
+				+ "version, "
+				+ "rev "
 				+ "FROM nodes")
 			result = self.cursor.fetchall()
 			nodesInformation = result
@@ -4772,7 +4782,8 @@ class Mysql(_Storage):
 		# list[0] = optionCount
 		# list[1] = list(tuples of (type, value))
 		# list[2] = nodeCount
-		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
+		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
+		# connected, version, rev))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
 		# description, lastStateUpdated, state))

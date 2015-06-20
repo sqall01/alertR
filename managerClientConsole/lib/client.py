@@ -828,7 +828,10 @@ class ServerCommunication:
 				nodeId = int(nodes[i]["nodeId"])
 				hostname = str(nodes[i]["hostname"])
 				nodeType = str(nodes[i]["nodeType"])
+				instance = str(nodes[i]["instance"])
 				connected = int(nodes[i]["connected"])
+				version = float(nodes[i]["version"])
+				rev = int(nodes[i]["rev"])
 			except Exception as e:
 				logging.exception("[%s]: Received node " % self.fileName
 				+ "invalid.")
@@ -878,7 +881,10 @@ class ServerCommunication:
 					node.checked = True
 					node.hostname = hostname
 					node.nodeType = nodeType
+					node.instance = instance
 					node.connected = connected
+					node.version = version
+					node.rev = rev
 					found = True
 					break
 			# when not found => add node to list
@@ -888,7 +894,10 @@ class ServerCommunication:
 				node.nodeId = nodeId
 				node.hostname = hostname
 				node.nodeType = nodeType
+				node.instance = instance
 				node.connected = connected
+				node.version = version
+				node.rev = rev
 				self.nodes.append(node)
 
 		logging.debug("[%s]: Received sensor count: %d." 

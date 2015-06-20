@@ -1340,7 +1340,8 @@ class ClientCommunication:
 		# list[0] = optionCount
 		# list[1] = list(tuples of (type, value))
 		# list[2] = nodeCount
-		# list[3] = list(tuples of (nodeId, hostname, nodeType, connected))
+		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
+		# connected, version, rev))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
 		# description, lastStateUpdated, state))
@@ -1388,7 +1389,10 @@ class ClientCommunication:
 			tempDict = {"nodeId": nodesInformation[i][0],
 				"hostname": nodesInformation[i][1],
 				"nodeType": nodesInformation[i][2],
-				"connected": nodesInformation[i][3]}
+				"instance": nodesInformation[i][3],
+				"connected": nodesInformation[i][4],
+				"version": nodesInformation[i][5],
+				"rev": nodesInformation[i][6]}
 			nodes.append(tempDict)
 
 		# generating sensors list
