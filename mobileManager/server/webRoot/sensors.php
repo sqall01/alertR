@@ -16,7 +16,7 @@
 			</tbody>
 		</table>
 
-		<script src="js/nodes.js"></script>
+		<script src="js/sensors.js"></script>
 
 	</body>
 
