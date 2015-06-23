@@ -39,7 +39,7 @@ function processResponse() {
 		// get server time
 		var serverTime = 0.0;
 		for(i = 0; i < internals.length; i++) {
-			if(internals[i]["type"] == "serverTime") {
+			if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
 				var serverTime = internals[i]["value"]
 			}
 		}
@@ -139,12 +139,6 @@ function processResponse() {
 			nodeTable.appendChild(newTr);
 
 
-
-
-
-
-
-
 			// get an array of sensors that are related to the current node
 			var relatedSensors = [];
 			for(j = 0; j < sensors.length; j++) {
@@ -154,10 +148,6 @@ function processResponse() {
 			}
 
 
-
-
-
-
 			// add all sensors to the node
 			for(j = 0; j < relatedSensors.length; j++) {
 
@@ -165,22 +155,23 @@ function processResponse() {
 				var description = relatedSensors[j]["description"];
 				var lastStateUpdated = relatedSensors[j]["lastStateUpdated"];
 				var state = relatedSensors[j]["state"];
+				var relatedAlertLevels = relatedSensors[j]["alertLevels"];
 
 
-
-
-
-
+				// create row for sensor output
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td");
 				newTr.appendChild(newTd);
 				nodeTable.appendChild(newTr);
 
 
+				// create sub box for sensor
 				var subBoxDiv = document.createElement("div");
-				subBoxDiv.className = "box";
+				subBoxDiv.className = "subbox";
 				newTd.appendChild(subBoxDiv);
 
+
+				// create new table for the sensor information
 				var sensorTable = document.createElement("table");
 				sensorTable.style.width = "100%";
 				sensorTable.setAttribute("border", "0");
@@ -226,31 +217,129 @@ function processResponse() {
 
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td"); 
-				newTd.textContent = state; // TODO should be yellow if triggered
-				newTd.className = "neutralTd";
+				newTd.textContent = state;
+				if(state == 1) {
+					newTd.className = "triggeredTd";
+				}
+				else {
+					newTd.className = "neutralTd";
+				}
 				newTr.appendChild(newTd);
 				sensorTable.appendChild(newTr);
 
 
+				// generate date string from timestamp
+				localDate = new Date(lastStateUpdated * 1000);
+				yearString = localDate.getFullYear();
+				monthString =
+					("0" + (localDate.getMonth() + 1)).slice(-2);
+				dateString =
+					("0" + localDate.getDate()).slice(-2);
+				hoursString =
+					("0" + localDate.getHours()).slice(-2);
+				minutesString =
+					("0" + localDate.getMinutes()).slice(-2);
+				secondsString =
+					("0" + localDate.getSeconds()).slice(-2);
 
 
+				// add last updated state to the sensor
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				var newB = document.createElement("b");
+				newB.textContent = "Last updated:";
+				newTd.appendChild(newB);
+				newTd.className = "boxEntryTd";
+				newTr.appendChild(newTd);
+				sensorTable.appendChild(newTr);
+
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				newTd.textContent = monthString + "/" + dateString + "/" +
+					yearString + " " + hoursString + ":" +
+					minutesString + ":" + secondsString;
+				newTd.className = "neutralTd";
+				newTr.appendChild(newTd);
+				sensorTable.appendChild(newTr);
+				// set color to red if the sensor has timed out
+				if(lastStateUpdated < (serverTime - 2* 60)) {
+					newTd.className = "failTd";
+				}
+				else {
+					newTd.className = "neutralTd";
+				}
+				newTr.appendChild(newTd);
+				sensorTable.appendChild(newTr);
 
 
-				HIER WEITER
+				// output all related alertLevels of this sensor
+				for(k = 0; k < relatedAlertLevels.length; k++) {
+					for(l = 0; l < alertLevels.length; l++) {
+
+						// output alertLevel when found
+						if(relatedAlertLevels[k] == 
+							alertLevels[l]["alertLevel"]) {
+
+							var alertLevel = relatedAlertLevels[k];
+							var name = alertLevels[l]["name"];
 
 
+							// create row for alertLevel output
+							var newTr = document.createElement("tr");
+							var newTd = document.createElement("td");
+							newTr.appendChild(newTd);
+							sensorTable.appendChild(newTr);
 
 
+							// create sub box for alertLevels
+							var subSubBoxDiv = document.createElement("div");
+							subSubBoxDiv.className = "subbox";
+							newTd.appendChild(subSubBoxDiv);
+
+
+							// create new table for the alertLevel information
+							var alertLevelTable =
+								document.createElement("table");
+							alertLevelTable.style.width = "100%";
+							alertLevelTable.setAttribute("border", "0");
+							subSubBoxDiv.appendChild(alertLevelTable);
+
+
+							// add alertLevel
+							var newTr = document.createElement("tr");
+							var newTd = document.createElement("td");
+							newTd.textContent = "Alert Level: " + alertLevel;
+							newTd.className = "boxHeaderTd";
+							newTr.appendChild(newTd);
+							alertLevelTable.appendChild(newTr);
+
+
+							// add name to alertLevel
+							var newTr = document.createElement("tr");
+							var newTd = document.createElement("td");
+							var newB = document.createElement("b");
+							newB.textContent = "Name:";
+							newTd.appendChild(newB);
+							newTd.className = "boxEntryTd";
+							newTr.appendChild(newTd);
+							alertLevelTable.appendChild(newTr);
+
+							var newTr = document.createElement("tr");
+							var newTd = document.createElement("td");
+							newTd.textContent = name;
+							newTd.className = "neutralTd";
+							newTr.appendChild(newTd);
+							alertLevelTable.appendChild(newTr);
+
+							break;
+
+						}
+
+					}
+					
+				}
 
 			}
-
-
-
-
-
-
-
-
 
 
 			// add node to the node table
