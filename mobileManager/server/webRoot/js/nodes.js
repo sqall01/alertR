@@ -55,6 +55,8 @@ function processResponse() {
 			var connected = nodes[i]["connected"];
 			var version = nodes[i]["version"];
 			var rev = nodes[i]["rev"];
+			var newestVersion = nodes[i]["newestVersion"];
+			var newestRev = nodes[i]["newestRev"];
 
 			var boxDiv = document.createElement("div");
 			boxDiv.className = "box";
@@ -164,8 +166,21 @@ function processResponse() {
 
 			newTr = document.createElement("tr");
 			newTd = document.createElement("td");
-			newTd.textContent = version + "-" + rev;
-			newTd.className = "neutralTd";
+			if(newestVersion < 0
+				|| newestRev < 0) {
+				newTd.textContent = version + "-" + rev;
+			}
+			else {
+				newTd.textContent = version + "-" + rev
+					+ " (newest: " + newestVersion + "-" + newestRev + ")";
+			}
+			if(newestVersion > version
+				|| (newestRev > rev && newestVersion == version)) {
+				newTd.className = "failTd";
+			}
+			else {
+				newTd.className = "neutralTd";
+			}
 			newTr.appendChild(newTd);
 			nodeTable.appendChild(newTr);
 

@@ -65,7 +65,9 @@ while($row = mysql_fetch_array($resultNodes)) {
 		"instance" => $row["instance"],
 		"connected" => $row["connected"],
 		"version" => $row["version"],
-		"rev" => $row["rev"]);
+		"rev" => $row["rev"],
+		"newestVersion" => $row["newestVersion"],
+		"newestRev" => $row["newestRev"]);
 	array_push($nodesArray, $nodeEntry);
 }
 
