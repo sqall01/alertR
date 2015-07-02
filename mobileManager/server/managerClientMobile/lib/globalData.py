@@ -86,3 +86,7 @@ class GlobalData:
 
 		# instance of the storage backend
 		self.storage = None
+
+		# instance of the version information collector (only active if
+		# automatic update checks are configured)
+		self.versionInformer = None

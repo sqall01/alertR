@@ -163,7 +163,9 @@ class Mysql(_Storage):
 			+ "instance VARCHAR(255) NOT NULL, "
 			+ "connected INTEGER NOT NULL, "
 			+ "version DOUBLE NOT NULL, "
-			+ "rev INTEGER NOT NULL)")
+			+ "rev INTEGER NOT NULL, "
+			+ "newestVersion DOUBLE NOT NULL, "
+			+ "newestRev INTEGER NOT NULL)")
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -411,11 +413,13 @@ class Mysql(_Storage):
 						+ "instance = %s, "
 						+ "connected = %s, "
 						+ "version = %s, "
-						+ "rev = %s "
+						+ "rev = %s, "
+						+ "newestVersion = %s, "
+						+ "newestRev = %s "
 						+ "WHERE id = %s",
 						(node.hostname, node.nodeType, node.instance,
 						node.connected, node.version, node.rev, 
-						node.nodeId))
+						node.newestVersion, node.newestRev, node.nodeId))
 				except Exception as e:
 					logging.exception("[%s]: Not able to update node."
 						% self.fileName)
@@ -565,10 +569,13 @@ class Mysql(_Storage):
 						+ "instance, "
 						+ "connected, "
 						+ "version, "
-						+ "rev) "
-						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+						+ "rev, "
+						+ "newestVersion, "
+						+ "newestRev) "
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
 						(node.nodeId, node.hostname, node.nodeType,
-						node.instance, node.connected, node.version, node.rev))
+						node.instance, node.connected, node.version, node.rev,
+						node.newestVersion, node.newestRev))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node."
 						% self.fileName)

@@ -15,6 +15,7 @@ from lib import Mysql
 from lib import SMTPAlert
 from lib import UpdateChecker
 from lib import GlobalData
+from lib import VersionInformer
 import logging
 import time
 import socket
@@ -271,6 +272,14 @@ if __name__ == '__main__':
 		# => threads terminates when main thread terminates
 		updateChecker.daemon = True
 		updateChecker.start()
+
+		# only start version informer if the update check is activated
+		globalData.versionInformer = VersionInformer(updateServer, updatePort,
+			updateLocation, updateCaFile, updateInterval, globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates
+		globalData.versionInformer.daemon = True
+		globalData.versionInformer.start()
 
 	# generate receiver to handle incoming data (for example status updates)
 	receiver = Receiver(globalData.serverComm)

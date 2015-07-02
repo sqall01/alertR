@@ -31,6 +31,11 @@ class Node:
 		self.version = None
 		self.rev = None
 
+		# used by mobile manager only:
+		# newest known version
+		self.newestVersion = -1.0
+		self.newestRev = -1
+
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
@@ -151,6 +156,7 @@ class ServerEventHandler:
 		self.alerts = self.globalData.alerts
 		self.alertLevels = self.globalData.alertLevels
 		self.sensorAlerts = self.globalData.sensorAlerts
+		self.versionInformer = self.globalData.versionInformer
 
 
 	# is called when an incoming server event has to be handled
@@ -158,6 +164,37 @@ class ServerEventHandler:
 
 		# empty sensor alerts list to prevent it from getting too big
 		del self.sensorAlerts[:]
+
+
+		# check if version informer instance is set
+		# => if not get it from the global data (is only set if
+		# automatic update checks are activated)
+		if self.versionInformer is None:
+			self.versionInformer = self.globalData.versionInformer
+
+		# => get newest known version from the version informer for each node
+		else:
+			for node in self.nodes:
+
+				found = False
+				for repoInstance in self.versionInformer.repoVersions.keys():
+					if node.instance.upper() == repoInstance.upper():
+
+						node.newestVersion \
+							= self.versionInformer.repoVersions[
+							repoInstance].newestVersion
+						node.newestRev \
+							= self.versionInformer.repoVersions[
+							repoInstance].newestRev
+
+						found = True
+						break
+				# if instance was not found in online repository
+				# => unset newest version and revision
+				if not found:
+					node.newestVersion = -1.0
+					node.newestRev = -1
+
 
 		# update the local server information
 		if not self.storage.updateServerInformation(self.options, self.nodes,

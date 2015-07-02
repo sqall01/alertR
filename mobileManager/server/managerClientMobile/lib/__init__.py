@@ -15,3 +15,4 @@ from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
 	ServerEventHandler
 from update import UpdateChecker, Updater
 from globalData import GlobalData
+from versionInformer import VersionInformer
