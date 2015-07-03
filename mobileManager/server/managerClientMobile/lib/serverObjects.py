@@ -8,6 +8,7 @@
 # Licensed under the GNU Public License, version 2.
 
 import os
+import logging
 
 
 # this class represents an option of the server
@@ -115,6 +116,8 @@ class SensorAlert:
 		self.state = None
 		self.timeReceived = None
 		self.alertLevels = list()
+		self.dataTransfer = None
+		self.data = None
 
 
 # this class represents an alert level that is configured on the server
@@ -162,8 +165,9 @@ class ServerEventHandler:
 	# is called when an incoming server event has to be handled
 	def handleEvent(self):
 
+		# TODO insert rule here to prevent sensor alerts list to become too big
 		# empty sensor alerts list to prevent it from getting too big
-		del self.sensorAlerts[:]
+		#del self.sensorAlerts[:]
 
 
 		# check if version informer instance is set
@@ -198,7 +202,8 @@ class ServerEventHandler:
 
 		# update the local server information
 		if not self.storage.updateServerInformation(self.options, self.nodes,
-			self.sensors, self.alerts, self.managers, self.alertLevels):
+			self.sensors, self.alerts, self.managers, self.alertLevels,
+			self.sensorAlerts):
 
 			logging.error("[%s]: Unable to update server information." 
 					% self.fileName)

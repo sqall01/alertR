@@ -134,6 +134,16 @@ while($row = mysql_fetch_array($resultManagers)) {
 	array_push($managersArray, $managerEntry);
 }
 
+// generate sensor alerts array
+$sensorAlertsArray = array();
+while($row = mysql_fetch_array($resultSensorAlerts)) {
+	$sensorAlertEntry = array("id" => $row["id"],
+		"sensorId" => $row["sensorId"],
+		"timeReceived" => $row["timeReceived"],
+		"data" => $row["dataJson"]);
+	array_push($sensorAlertsArray, $sensorAlertEntry);
+}
+
 // generate alert levels array
 $alertLevelsArray = array();
 while($row = mysql_fetch_array($resultAlertLevels)) {
@@ -152,6 +162,7 @@ $alertSystemInformation = array("internals" => $internalsArray,
 	"sensors" => $sensorsArray,
 	"alerts" => $alertsArray,
 	"managers" => $managersArray,
+	"sensorAlerts" => $sensorAlertsArray,
 	"alertLevels" => $alertLevelsArray);
 
 // output array as a json object

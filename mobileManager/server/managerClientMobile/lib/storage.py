@@ -11,6 +11,7 @@ import logging
 import os
 import threading
 import time
+import json
 
 
 # internal abstract class for new storage backends
@@ -54,6 +55,7 @@ class Mysql(_Storage):
 		self.alerts = list()
 		self.managers = list()
 		self.alertLevels = list()
+		self.sensorAlerts = list()
 
 		# mysql lock
 		self.dbLock = threading.Semaphore(1)
@@ -68,6 +70,7 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS internals")
 		self.cursor.execute("DROP TABLE IF EXISTS options")
 		self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 		self.cursor.execute("DROP TABLE IF EXISTS sensors")
 		self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
 		self.cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -177,6 +180,14 @@ class Mysql(_Storage):
 			+ "alertDelay INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
+		# create sensorAlerts table
+		self.cursor.execute("CREATE TABLE sensorAlerts ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "sensorId INTEGER NOT NULL, "
+			+ "timeReceived INTEGER NOT NULL, "
+			+ "dataJson TEXT NOT NULL,"
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
@@ -226,7 +237,7 @@ class Mysql(_Storage):
 	#
 	# return True or False
 	def updateServerInformation(self, options, nodes, sensors, alerts,
-		managers, alertLevels):
+		managers, alertLevels, sensorAlerts):
 
 		self._acquireLock()
 
@@ -260,7 +271,8 @@ class Mysql(_Storage):
 
 		# step one: delete all objects that do not exist anymore
 		# (NOTE: first delete alerts, sensors and managers before
-		# nodes because of the foreign key dependency)
+		# nodes because of the foreign key dependency; also delete
+		# sensorAlerts before sensors and nodes)
 		for option in list(self.options):
 			# check if options stored in the database do
 			# not exist anymore in the received data
@@ -281,6 +293,25 @@ class Mysql(_Storage):
 
 				self.options.remove(option)
 
+		for sensorAlert in list(self.sensorAlerts):
+			# check if sensorAlerts stored in the database do
+			# not exist anymore in the received data
+			# => delete from database and from local database elements
+			if not sensorAlert in sensorAlerts:
+				try:
+					self.cursor.execute("DELETE FROM sensorAlerts "
+						+ "WHERE sensorId = %s AND timeReceived = %s",
+						(sensorAlert.sensorId, sensorAlert.timeReceived))
+				except Exception as e:
+					logging.exception("[%s]: Not able to delete sensor alert." 
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+				self.sensors.remove(sensor)
+
 		for sensor in list(self.sensors):
 			# check if sensors stored in the database do
 			# not exist anymore in the received data
@@ -288,6 +319,10 @@ class Mysql(_Storage):
 			if not sensor in sensors:
 				try:
 					self.cursor.execute("DELETE FROM sensorsAlertLevels "
+						+ "WHERE sensorId = %s",
+						(sensor.sensorId, ))
+
+					self.cursor.execute("DELETE FROM sensorAlerts "
 						+ "WHERE sensorId = %s",
 						(sensor.sensorId, ))
 
@@ -619,6 +654,39 @@ class Mysql(_Storage):
 					return False
 
 				self.sensors.append(sensor)
+
+		for sensorAlert in sensorAlerts:
+			# when it does not exist in the database
+			# => add it and add to local database elements
+			if not sensorAlert in self.sensorAlerts:
+
+				# try to convert received data to json
+				try:
+					dataJson = json.dumps(sensorAlert.data)
+				except Exception as e:
+					logging.exception("[%s]: Not able to convert data "
+						% self.fileName
+						+ " of sensor alert to json.")
+					continue
+
+				try:
+					self.cursor.execute("INSERT INTO sensorAlerts ("
+						+ "sensorId, "
+						+ "timeReceived, "
+						+ "dataJson) "
+						+ "VALUES (%s, %s, %s)",
+						(sensorAlert.sensorId, sensorAlert.timeReceived,
+						dataJson))
+
+				except Exception as e:
+					logging.exception("[%s]: Not able to add sensor alert."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+				self.sensorAlerts.append(sensorAlert)
 
 		for alert in alerts:
 			# when it does not exist in the database

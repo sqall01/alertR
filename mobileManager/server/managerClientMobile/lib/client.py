@@ -1347,6 +1347,27 @@ class ServerCommunication:
 				return False
 
 			description = str(incomingMessage["payload"]["description"])
+
+			# parse transfer data
+			dataTransfer = (str(incomingMessage["payload"][
+				"dataTransfer"]).upper() == "TRUE")
+			if dataTransfer is True:
+				data = incomingMessage["payload"]["data"]
+			else:
+				data = dict()
+			# check if data is a dict
+			if not isinstance(data, dict):
+				# send error message back
+				try:
+					message = {"clientTime": int(time.time()),
+						"message": message["message"],
+						"error": "data not of type dict"}
+					self.client.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
 				+ "invalid.")
@@ -1385,6 +1406,8 @@ class ServerCommunication:
 		sensorAlert.state = state
 		sensorAlert.timeReceived = int(time.time())
 		sensorAlert.alertLevels = alertLevels
+		sensorAlert.dataTransfer = dataTransfer
+		sensorAlert.data = data
 		self.sensorAlerts.append(sensorAlert)
 
 		# if rules are not activated (and therefore the sensor alert was
