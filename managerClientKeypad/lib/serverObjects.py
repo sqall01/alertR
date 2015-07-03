@@ -107,6 +107,8 @@ class SensorAlert:
 		self.state = None
 		self.timeReceived = None
 		self.alertLevels = list()
+		self.dataTransfer = None
+		self.data = None
 
 
 # this class represents an alert level that is configured on the server
