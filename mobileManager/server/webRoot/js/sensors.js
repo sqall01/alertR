@@ -2,6 +2,74 @@
 var request = new XMLHttpRequest();
 
 
+// function to compare node objects
+function compareNodesAsc(a, b) {
+
+	// favor not connected nodes
+	if(a["connected"] != b["connected"]) {
+		if(a["connected"] == 1) {
+			return 1;
+		}
+		return -1;
+	}
+
+	if(a["nodeType"] < b["nodeType"]) {
+		return -1;
+	}
+	if(a["nodeType"] > b["nodeType"]) {
+		return 1;
+	}
+
+	// case nodeType == nodeType
+	if(a["instance"] < b["instance"]) {
+		return -1;
+	}
+	if(a["instance"] > b["instance"]) {
+		return 1;
+	}
+
+	// case instance == instance
+	if(a["hostname"] < b["hostname"]) {
+		return -1;
+	}
+	if(a["hostname"] > b["hostname"]) {
+		return 1;
+	}
+
+	// case hostname == hostname
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+// function to compare sensor objects
+function compareSensorsAsc(a, b) {
+
+	if(a["description"] < b["description"]) {
+		return -1;
+	}
+	if(a["description"] > b["description"]) {
+		return 1;
+	}
+
+	// case description == description
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
 // processes the response of the server for the
 // requested data
 function processResponse() {
@@ -44,6 +112,7 @@ function processResponse() {
 			}
 		}
 
+		nodes.sort(compareNodesAsc);
 
 		// add all nodes to the output
 		for(i = 0; i < nodes.length; i++) {
@@ -147,6 +216,7 @@ function processResponse() {
 				}
 			}
 
+			relatedSensors.sort(compareSensorsAsc);
 
 			// add all sensors to the node
 			for(j = 0; j < relatedSensors.length; j++) {
@@ -271,6 +341,7 @@ function processResponse() {
 				newTr.appendChild(newTd);
 				sensorTable.appendChild(newTr);
 
+				relatedAlertLevels.sort();
 
 				// output all related alertLevels of this sensor
 				for(k = 0; k < relatedAlertLevels.length; k++) {

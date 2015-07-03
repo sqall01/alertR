@@ -2,6 +2,52 @@
 var request = new XMLHttpRequest();
 
 
+// function to compare node objects
+function compareNodesAsc(a, b) {
+
+	// favor not connected nodes
+	if(a["connected"] != b["connected"]) {
+		if(a["connected"] == 1) {
+			return 1;
+		}
+		return -1;
+	}
+
+	if(a["nodeType"] < b["nodeType"]) {
+		return -1;
+	}
+	if(a["nodeType"] > b["nodeType"]) {
+		return 1;
+	}
+
+	// case nodeType == nodeType
+	if(a["instance"] < b["instance"]) {
+		return -1;
+	}
+	if(a["instance"] > b["instance"]) {
+		return 1;
+	}
+
+	// case instance == instance
+	if(a["hostname"] < b["hostname"]) {
+		return -1;
+	}
+	if(a["hostname"] > b["hostname"]) {
+		return 1;
+	}
+
+	// case hostname == hostname
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
 // processes the response of the server for the
 // requested data
 function processResponse() {
@@ -44,6 +90,7 @@ function processResponse() {
 			}
 		}
 
+		nodes.sort(compareNodesAsc);
 
 		// add all nodes to the output
 		for(i = 0; i < nodes.length; i++) {
@@ -67,7 +114,7 @@ function processResponse() {
 			boxDiv.appendChild(nodeTable);
 
 
-			// add hostname to the node
+			// add id to the node
 			newTr = document.createElement("tr");
 			newTd = document.createElement("td");
 			newTd.textContent = "Node: " + nodeId;			

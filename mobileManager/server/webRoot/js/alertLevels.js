@@ -2,6 +2,19 @@
 var request = new XMLHttpRequest();
 
 
+// function to compare alert level objects
+function compareAlertLevelAsc(a, b) {
+
+	if(a["alertLevel"] < b["alertLevel"]) {
+		return -1;
+	}
+	if(a["alertLevel"] > b["alertLevel"]) {
+		return 1;
+	}
+	return 0;
+}
+
+
 // processes the response of the server for the
 // requested data
 function processResponse() {
@@ -44,6 +57,7 @@ function processResponse() {
 			}
 		}
 
+		alertLevels.sort(compareAlertLevelAsc);
 
 		// add all alertLevels to the output
 		for(i = 0; i < alertLevels.length; i++) {
@@ -94,7 +108,7 @@ function processResponse() {
 
 
 
-
+			// TODO
 
 
 
