@@ -2,27 +2,40 @@
 var request = new XMLHttpRequest();
 
 
+// simple function to ask for confirmation if the alert system
+// should be activated
+function confirmation(activate) {
+
+	if(activate == 1) {
+		result = confirm("Do you really want to activate the alert system?");
+		if(result) {
+			window.location = "index.php?activate=1";
+		}
+	}
+	else if(activate == 0) {
+		result = confirm("Do you really want to deactivate " + 
+			"the alert system?");
+		if(result) {
+			window.location = "index.php?activate=0";
+		}
+	}
+}
+
+
 // processes the response of the server for the
 // requested data
 function processResponse() {
 	
 	if (request.readyState == 4) {
 
-		// remove old nodes output
+		// remove old table output
 		// and generate a new clear one
-		var nodeTableObj = document.getElementById("contentTable");
+		var contentTableObj = document.getElementById("contentTable");
 		var newBody = document.createElement("tbody");
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		var newB = document.createElement("b");
-		newB.textContent = "Nodes:";
-		newTd.appendChild(newB);
-		newTr.appendChild(newTd);
-		newBody.appendChild(newTr);
 		var oldBody = document.getElementById("contentTableBody");
 		oldBody.removeAttribute("id");
 		newBody.setAttribute("id", "contentTableBody");
-		nodeTableObj.replaceChild(newBody, oldBody);
+		contentTableObj.replaceChild(newBody, oldBody);
 		delete oldBody;
 
 		// get JSON response and parse it
@@ -36,6 +49,7 @@ function processResponse() {
 		var alerts = alertSystemInformation["alerts"];
 		var alertLevels = alertSystemInformation["alertLevels"];
 
+
 		// get server time
 		var serverTime = 0.0;
 		for(i = 0; i < internals.length; i++) {
@@ -43,6 +57,114 @@ function processResponse() {
 				var serverTime = internals[i]["value"]
 			}
 		}
+
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Alert System:";
+		newTd.appendChild(newB);
+		newTr.appendChild(newTd);
+		newBody.appendChild(newTr);
+
+
+		var boxDiv = document.createElement("div");
+		boxDiv.className = "box";
+
+		var optionsTable = document.createElement("table");
+		optionsTable.style.width = "100%";
+		optionsTable.setAttribute("border", "0");
+		boxDiv.appendChild(optionsTable);
+
+
+		// process options of the alert system
+		for(i = 0; i < options.length; i++) {
+
+			// only evaluate "alertSystemActive"
+			if(options[i]["type"].toUpperCase() == "ALERTSYSTEMACTIVE") {
+
+				// add status of alert system
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				var newB = document.createElement("b");
+				newB.textContent = "Status:";
+				newTd.appendChild(newB);
+				newTd.className = "boxEntryTd";
+				newTr.appendChild(newTd);
+				optionsTable.appendChild(newTr);
+
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				if(options[i]["value"] == 0) {
+					newTd.className = "deactivatedTd";
+					newTd.textContent = "deactivated";
+				}
+				if(options[i]["value"] == 1) {
+					newTd.className = "activatedTd";
+					newTd.textContent = "activated";
+				}
+				newTr.appendChild(newTd);
+				optionsTable.appendChild(newTr);
+
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				newTd.className = "neutralTd";
+				var newA = document.createElement("a");
+				newA.textContent = "activate";
+				newA.href = "javascript:void(0)";
+				newA.onclick = function(){ confirmation(1); };
+				newTd.appendChild(newA);
+				newTd.appendChild(document.createTextNode(" || "));
+				var newA = document.createElement("a");
+				newA.textContent = "deactivate";
+				newA.href = "javascript:void(0)";
+				newA.onclick = function(){ confirmation(0); };
+				newTd.appendChild(newA);
+				newTr.appendChild(newTd);
+				optionsTable.appendChild(newTr);
+
+				break;
+			}
+		}
+
+
+
+		// TODO
+		// add link for node, alert level etc infos
+
+
+
+
+
+
+		// add output to the content table
+		var contentTableObj =
+			document.getElementById("contentTableBody");
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.appendChild(boxDiv);
+		newTr.appendChild(newTd);
+		contentTableObj.appendChild(newTr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Sensors:";
+		newTd.appendChild(newB);
+		newTr.appendChild(newTd);
+		newBody.appendChild(newTr);
 
 
 		var boxDiv = document.createElement("div");
@@ -96,14 +218,14 @@ function processResponse() {
 		}
 
 
-		// add node to the node table
-		var nodeTableObj =
+		// add output to the content table
+		var contentTableObj =
 			document.getElementById("contentTableBody");
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		newTd.appendChild(boxDiv);
 		newTr.appendChild(newTd);
-		nodeTableObj.appendChild(newTr);
+		contentTableObj.appendChild(newTr);
 
 	}
 }
