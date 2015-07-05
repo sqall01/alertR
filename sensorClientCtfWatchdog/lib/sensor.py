@@ -113,6 +113,8 @@ class CtfWatchdogSensor(_PollingSensor):
 				if (int(time.time()) - self.timeExecute) > self.timeout:
 
 					self.state = 1
+					self.dataTransfer = True
+					self.data = {"message": "Timeout"}
 
 					logging.error("[%s]: Process " % self.fileName
 							+ "'%s' has timed out." % self.description)
