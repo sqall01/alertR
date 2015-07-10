@@ -121,6 +121,7 @@ class AsynchronousAlertExecuter(threading.Thread):
 		self.sensorDescription = None
 		self.dataTransfer = False # true or false
 		self.data = None # only evaluated if data transfer is true
+		self.state = None # (triggered = 1; back to normal = 0)
 
 
 	def run(self):

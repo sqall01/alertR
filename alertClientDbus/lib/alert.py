@@ -96,16 +96,36 @@ class DbusAlert(_Alert):
 			# differentiate between a generic displayed notification and
 			# a notification which also shows the received message
 			if receivedMessage is None:
-				tempMessage = ("\""
-					+ asyncAlertExecInstance.sensorDescription
-					+ "\" just triggered.")
+
+				# differentiate between a sensor alert triggered by
+				# a sensor going back in normal state or in alert state
+				if asyncAlertExecInstance.state == 1:
+					tempMessage = ("\""
+						+ asyncAlertExecInstance.sensorDescription
+						+ "\" triggered.")
+				else:
+					tempMessage = ("\""
+						+ asyncAlertExecInstance.sensorDescription
+						+ "\" back to normal.")
+
 			else:
-				tempMessage = ("\""
-					+ asyncAlertExecInstance.sensorDescription
-					+ "\" just triggered.\n"
-					+ "Received message: \""
-					+ receivedMessage
-					+ "\"")
+
+				# differentiate between a sensor alert triggered by
+				# a sensor going back in normal state or in alert state
+				if asyncAlertExecInstance.state == 1:
+					tempMessage = ("\""
+						+ asyncAlertExecInstance.sensorDescription
+						+ "\" triggered.\n"
+						+ "Received message: \""
+						+ receivedMessage
+						+ "\"")
+				else:
+					tempMessage = ("\""
+						+ asyncAlertExecInstance.sensorDescription
+						+ "\" back to normal.\n"
+						+ "Received message: \""
+						+ receivedMessage
+						+ "\"")
 
 			# send notification via dbus to notification system
 			try:
@@ -151,6 +171,7 @@ class AsynchronousAlertExecuter(threading.Thread):
 		self.sensorDescription = None
 		self.dataTransfer = False # true or false
 		self.data = None # only evaluated if data transfer is true
+		self.state = None # (triggered = 1; back to normal = 0)
 
 
 	def run(self):

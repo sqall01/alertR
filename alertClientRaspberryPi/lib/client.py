@@ -520,6 +520,7 @@ class ServerCommunication:
 
 				return False
 
+			state = int(incomingMessage["payload"]["state"])
 			description = str(incomingMessage["payload"]["description"])
 
 			# parse received data (if data transfer is activated)
@@ -576,6 +577,7 @@ class ServerCommunication:
 					# trigger alert in an own thread to not block this one
 					alertTriggerProcess = AsynchronousAlertExecuter(alert)
 					alertTriggerProcess.sensorDescription = description
+					alertTriggerProcess.state = state
 					alertTriggerProcess.dataTransfer = dataTransfer
 					alertTriggerProcess.data = data
 					# set thread to daemon
