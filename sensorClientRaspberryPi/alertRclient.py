@@ -166,6 +166,8 @@ if __name__ == '__main__':
 					"alertDelay"])
 				sensor.triggerAlert = (str(item.find("general").attrib[
 					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
 				sensor.triggerState = int(item.find("general").attrib[
 					"triggerState"])
 
@@ -189,6 +191,8 @@ if __name__ == '__main__':
 					"alertDelay"])
 				sensor.triggerAlert = (str(item.find("general").attrib[
 					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
 				sensor.triggerState = 1
 
 				sensor.alertLevels = list()

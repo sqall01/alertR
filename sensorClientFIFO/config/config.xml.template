@@ -164,6 +164,13 @@
 					any alert (regardless of if the alert system is
 					active or not)
 					("True" or "False")
+				triggerAlertNormal - this flag indicates if this sensor should
+					trigger an alert when it goes back to a normal state (and
+					not only if a triggered state is reached and the flag
+					"triggerAlert" is set). If this flag is not set, this
+					client sends only a state change to the server to inform
+					it about the new state.
+					("True" or "False")
 				triggerState - on which internal state the alert should
 					trigger (either 0 or 1) for example some sensors
 					trigger with an internal state of 1 and some with an
@@ -179,6 +186,7 @@
 				description="fifo sensor 0"
 				alertDelay="0"
 				triggerAlert="True"
+				triggerAlertNormal="False"
 				triggerState="1" />
 
 			<!--
@@ -225,6 +233,13 @@
 					any alert (regardless of if the alert system is
 					active or not)
 					("True" or "False")
+				triggerAlertNormal - this flag indicates if this sensor should
+					trigger an alert when it goes back to a normal state (and
+					not only if a triggered state is reached and the flag
+					"triggerAlert" is set). If this flag is not set, this
+					client sends only a state change to the server to inform
+					it about the new state.
+					("True" or "False")
 				triggerState - on which internal state the alert should
 					trigger (either 0 or 1) for example some sensors
 					trigger with an internal state of 1 and some with an
@@ -240,6 +255,7 @@
 				description="fifo sensor 1"
 				alertDelay="0"
 				triggerAlert="True"
+				triggerAlertNormal="False"
 				triggerState="1" />
 
 			<!--
