@@ -27,6 +27,7 @@ class _PollingSensor:
 		self.state = None
 		self.alertLevels = list()
 		self.triggerAlert = None
+		self.triggerAlertNormal = None
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
@@ -234,20 +235,42 @@ class SensorExecuter:
 
 				# only possible situation left => sensor changed
 				# back from triggering state to a normal state
-				# => just send changed state to server
 				else:
 
-					logging.debug("[%s]: State " % self.fileName
-						+ "changed by '%s'." % sensor.description)
+					# check if the sensor triggers a sensor alert when
+					# state is back to normal
+					# => send sensor alert to server
+					if sensor.triggerAlertNormal:
 
-					asyncSenderProcess = AsynchronousSender(
-						self.connection, self.globalData)
-					# set thread to daemon
-					# => threads terminates when main thread terminates	
-					asyncSenderProcess.daemon = True
-					asyncSenderProcess.sendStateChange = True
-					asyncSenderProcess.sendStateChangeSensor = sensor
-					asyncSenderProcess.start()
+						logging.info("[%s]: Sensor alert " % self.fileName
+							+ "for back to normal state "
+							+ "triggered by '%s'." % sensor.description)
+
+						asyncSenderProcess = AsynchronousSender(
+							self.connection, self.globalData)
+						# set thread to daemon
+						# => threads terminates when main thread terminates	
+						asyncSenderProcess.daemon = True
+						asyncSenderProcess.sendSensorAlert = True
+						asyncSenderProcess.sendSensorAlertSensor = sensor
+						asyncSenderProcess.start()
+
+					# if sensor does not trigger sensor alert when
+					# state is back to normal
+					# => just send changed state to server
+					else:
+
+						logging.debug("[%s]: State " % self.fileName
+							+ "changed by '%s'." % sensor.description)
+
+						asyncSenderProcess = AsynchronousSender(
+							self.connection, self.globalData)
+						# set thread to daemon
+						# => threads terminates when main thread terminates	
+						asyncSenderProcess.daemon = True
+						asyncSenderProcess.sendStateChange = True
+						asyncSenderProcess.sendStateChangeSensor = sensor
+						asyncSenderProcess.start()
 				
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update

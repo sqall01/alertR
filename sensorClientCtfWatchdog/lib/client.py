@@ -802,17 +802,32 @@ class ServerCommunication:
 			# check if data should be transfered with this sensor alert
 			# => create payload of message accordingly
 			if sensor.dataTransfer:
-				payload = {"type": "request",
-					"clientSensorId": sensor.id,
-					"state": 1,
-					"dataTransfer": True,
-					"data": sensor.data}
+				# set state of sensor alert according to state of sensor
+				if sensor.triggerState == sensor.state:
+					payload = {"type": "request",
+						"clientSensorId": sensor.id,
+						"state": 1,
+						"dataTransfer": True,
+						"data": sensor.data}
+				else:
+					payload = {"type": "request",
+						"clientSensorId": sensor.id,
+						"state": 0,
+						"dataTransfer": True,
+						"data": sensor.data}
 
 			else:
-				payload = {"type": "request",
-					"clientSensorId": sensor.id,
-					"state": 1,
-					"dataTransfer": False}
+				# set state of sensor alert according to state of sensor
+				if sensor.triggerState == sensor.state:
+					payload = {"type": "request",
+						"clientSensorId": sensor.id,
+						"state": 1,
+						"dataTransfer": False}
+				else:
+					payload = {"type": "request",
+						"clientSensorId": sensor.id,
+						"state": 0,
+						"dataTransfer": False}
 
 			message = {"clientTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}
