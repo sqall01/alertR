@@ -2030,11 +2030,11 @@ class Console:
 							description = sensor.description
 
 							# differentiate if sensor alert was triggered
-							# for a trigger state or normal state
+							# for a "triggered" or "normal" state
 							if sensorAlert.state == 0:
 								description += " (normal)"
 							else:
-								description += " (trigger)"
+								description += " (triggered)"
 
 							break
 
