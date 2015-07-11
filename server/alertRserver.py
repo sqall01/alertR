@@ -881,6 +881,9 @@ if __name__ == '__main__':
 			alertLevel.name = str(item.find("general").attrib["name"])
 			alertLevel.triggerAlways = (str(item.find("general").attrib[
 				"triggerAlways"]).upper() == "TRUE")
+			alertLevel.triggerAlertTriggered = (
+				str(item.find("general").attrib[
+				"triggerAlertTriggered"]).upper() == "TRUE")
 			alertLevel.triggerAlertNormal = (str(item.find("general").attrib[
 				"triggerAlertNormal"]).upper() == "TRUE")
 
