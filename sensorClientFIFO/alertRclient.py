@@ -186,6 +186,12 @@ if __name__ == '__main__':
 					raise ValueError("Id of sensor %d"
 						% sensor.id + "is already taken.")
 
+			if (not sensor.triggerAlert
+				and sensor.triggerAlertNormal):
+					raise ValueError("'triggerAlert' for sensor %d "
+						% sensor.id + "has to be activated when "
+						+ "'triggerAlertNormal' is activated.")
+
 			globalData.sensors.append(sensor)
 
 	except Exception as e:
