@@ -460,6 +460,7 @@ class Sqlite(_Storage):
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "sensorId INTEGER NOT NULL, "
+			+ "state INTEGER NOT NULL, "
 			+ "timeReceived INTEGER NOT NULL, "
 			+ "dataJson TEXT NOT NULL,"
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
@@ -1719,9 +1720,10 @@ class Sqlite(_Storage):
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
+				+ "state, "
 				+ "timeReceived, "
-				+ "dataJson) VALUES (?, ?, ?, ?)",
-				(nodeId, sensorId, int(time.time()), dataJson))
+				+ "dataJson) VALUES (?, ?, ?, ?, ?)",
+				(nodeId, sensorId, state, int(time.time()), dataJson))
 
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor alert."
@@ -1755,7 +1757,7 @@ class Sqlite(_Storage):
 				+ "sensors.nodeId, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
-				+ "sensors.state, "
+				+ "sensorAlerts.state, "
 				+ "sensors.description, "
 				+ "sensorAlerts.dataJson "
 				+ "FROM sensorAlerts "
@@ -2545,6 +2547,7 @@ class Mysql(_Storage):
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "sensorId INTEGER NOT NULL, "
+			+ "state INTEGER NOT NULL, "
 			+ "timeReceived INTEGER NOT NULL, "
 			+ "dataJson TEXT NOT NULL,"
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
@@ -4101,9 +4104,10 @@ class Mysql(_Storage):
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
+				+ "state, "
 				+ "timeReceived, "
-				+ "dataJson) VALUES (%s, %s, %s, %s)",
-				(nodeId, sensorId, int(time.time()), dataJson))
+				+ "dataJson) VALUES (%s, %s, %s, %s, %s)",
+				(nodeId, sensorId, state, int(time.time()), dataJson))
 
 		except Exception as e:
 			logging.exception("[%s]: Not able to add sensor alert."
@@ -4154,7 +4158,7 @@ class Mysql(_Storage):
 				+ "sensors.nodeId, "
 				+ "sensorAlerts.timeReceived, "
 				+ "sensors.alertDelay, "
-				+ "sensors.state, "
+				+ "sensorAlerts.state, "
 				+ "sensors.description, "
 				+ "sensorAlerts.dataJson "
 				+ "FROM sensorAlerts "
