@@ -2029,6 +2029,13 @@ class Console:
 							# get description for the sensor alert to add
 							description = sensor.description
 
+							# differentiate if sensor alert was triggered
+							# for a trigger state or normal state
+							if sensorAlert.state == 0:
+								description += " (normal)"
+							else:
+								description += " (trigger)"
+
 							break
 
 				# if rules of the triggered alert level are activated
