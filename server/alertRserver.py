@@ -881,6 +881,8 @@ if __name__ == '__main__':
 			alertLevel.name = str(item.find("general").attrib["name"])
 			alertLevel.triggerAlways = (str(item.find("general").attrib[
 				"triggerAlways"]).upper() == "TRUE")
+			alertLevel.triggerAlertNormal = (str(item.find("general").attrib[
+				"triggerAlertNormal"]).upper() == "TRUE")
 
 			alertLevel.smtpActivated = (str(item.find("smtp").attrib[
 				"emailAlert"]).upper() == "TRUE")

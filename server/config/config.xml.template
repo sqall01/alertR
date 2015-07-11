@@ -185,11 +185,25 @@
 					trigger always an alert on all alert clients even if the
 					alerting system is not activated
 					("True" or "False")
+				triggerAlertNormal - this flag indicates if this alert level
+					should issue a sensor alert message to all connected alert
+					clients when a sensor alert was received for a sensor
+					that reached the "normal" state. If set to "False", each
+					received sensor alert message for a "normal" state that
+					has this alert level will just be dropped. When set to
+					"True" the sensor alert message will be processed by
+					this alert level. This flag can be seen as a filter
+					for sensors that should send a sensor alert message
+					for "triggered" and "normal" state but not all alert level
+					of these sensors should handle "normal" state sensor alert
+					messages.
+					("True" or "False")
 			-->
 			<general
 				level="0"
 				name="display notification"
-				triggerAlways="False" />
+				triggerAlways="False"
+				triggerAlertNormal="True" />
 
 			<!--
 				email alert settings for this alert level
@@ -234,11 +248,25 @@
 					trigger always an alert on all alert clients even if the
 					alerting system is not activated
 					("True" or "False")
+				triggerAlertNormal - this flag indicates if this alert level
+					should issue a sensor alert message to all connected alert
+					clients when a sensor alert was received for a sensor
+					that reached the "normal" state. If set to "False", each
+					received sensor alert message for a "normal" state that
+					has this alert level will just be dropped. When set to
+					"True" the sensor alert message will be processed by
+					this alert level. This flag can be seen as a filter
+					for sensors that should send a sensor alert message
+					for "triggered" and "normal" state but not all alert level
+					of these sensors should handle "normal" state sensor alert
+					messages.
+					("True" or "False")
 			-->
 			<general
 				level="1"
 				name="alarm sirens"
-				triggerAlways="False" />
+				triggerAlways="False"
+				triggerAlertNormal="False"  />
 
 			<!--
 				email alert settings for this alert level
@@ -283,11 +311,25 @@
 					trigger always an alert on all alert clients even if the
 					alerting system is not activated
 					("True" or "False")
+				triggerAlertNormal - this flag indicates if this alert level
+					should issue a sensor alert message to all connected alert
+					clients when a sensor alert was received for a sensor
+					that reached the "normal" state. If set to "False", each
+					received sensor alert message for a "normal" state that
+					has this alert level will just be dropped. When set to
+					"True" the sensor alert message will be processed by
+					this alert level. This flag can be seen as a filter
+					for sensors that should send a sensor alert message
+					for "triggered" and "normal" state but not all alert level
+					of these sensors should handle "normal" state sensor alert
+					messages.
+					("True" or "False")
 			-->
 			<general
 				level="10"
 				name="pausing xbmc"
-				triggerAlways="True" />
+				triggerAlways="True"
+				triggerAlertNormal="False"  />
 
 			<!--
 				email alert settings for this alert level
@@ -332,11 +374,25 @@
 					trigger always an alert on all alert clients even if the
 					alerting system is not activated
 					("True" or "False")
+				triggerAlertNormal - this flag indicates if this alert level
+					should issue a sensor alert message to all connected alert
+					clients when a sensor alert was received for a sensor
+					that reached the "normal" state. If set to "False", each
+					received sensor alert message for a "normal" state that
+					has this alert level will just be dropped. When set to
+					"True" the sensor alert message will be processed by
+					this alert level. This flag can be seen as a filter
+					for sensors that should send a sensor alert message
+					for "triggered" and "normal" state but not all alert level
+					of these sensors should handle "normal" state sensor alert
+					messages.
+					("True" or "False")
 			-->
 			<general
 				level="20"
 				name="motion detection"
-				triggerAlways="True" />
+				triggerAlways="True"
+				triggerAlertNormal="False"  />
 
 			<!--
 				email alert settings for this alert level

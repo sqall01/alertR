@@ -225,6 +225,10 @@ class AlertLevel:
 		# should trigger regardless of if the alert system is active or not
 		self.triggerAlways = None
 
+		# this flag tells if the alert level should also trigger a sensor alert
+		# if the sensor goes to state "normal"
+		self.triggerAlertNormal = None
+
 		# this flag tells if the alert level has rules activated
 		# that has to match before an alert is triggered (flag: True) or
 		# if it just triggers when a sensor alert is received (flag: False)
@@ -1451,6 +1455,7 @@ class SensorAlertExecuter(threading.Thread):
 			for sensorAlert in sensorAlertList:
 				sensorAlertId = sensorAlert[0]
 				sensorId = sensorAlert[1]
+				state = sensorAlert[5]
 
 				# delete sensor alert from the database
 				self.storage.deleteSensorAlert(sensorAlertId)
@@ -1473,6 +1478,14 @@ class SensorAlertExecuter(threading.Thread):
 							# or alert level triggers always
 							if (isAlertSystemActive 
 								or configuredAlertLevel.triggerAlways):
+
+								# check if the configured alert level
+								# should trigger a sensor alert message
+								# when the sensor goes to state "normal"
+								# => if not skip configured alert level
+								if (not configuredAlertLevel.triggerAlertNormal
+									and state == 0):
+									continue
 
 								# split sensor alerts into alerts with rules
 								# (each alert level with a rule is handled
