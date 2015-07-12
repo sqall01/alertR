@@ -9,6 +9,7 @@
 
 import os
 import logging
+import time
 
 
 # this class represents an option of the server
@@ -151,6 +152,7 @@ class ServerEventHandler:
 
 		# get global configured data
 		self.globalData = globalData
+		self.sensorAlertLifeSpan = self.globalData.sensorAlertLifeSpan
 		self.storage = self.globalData.storage
 		self.options = self.globalData.options
 		self.nodes = self.globalData.nodes
@@ -162,13 +164,21 @@ class ServerEventHandler:
 		self.versionInformer = self.globalData.versionInformer
 
 
+	# this function removes all sensor alerts that are older than the
+	# configured days
+	def checkSensorAlertsLifeSpan(self):
+		for sensorAlert in list(self.sensorAlerts):
+			if ((sensorAlert.timeReceived + (self.sensorAlertLifeSpan * 86400))
+				<= int(time.time())):
+				self.sensorAlerts.remove(sensorAlert)
+
+
 	# is called when an incoming server event has to be handled
 	def handleEvent(self):
 
-		# TODO insert rule here to prevent sensor alerts list to become too big
-		# empty sensor alerts list to prevent it from getting too big
-		#del self.sensorAlerts[:]
-
+		# check and remove sensor alerts that are older than the configured
+		# amount of days
+		self.checkSensorAlertsLifeSpan()
 
 		# check if version informer instance is set
 		# => if not get it from the global data (is only set if

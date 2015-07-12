@@ -90,3 +90,7 @@ class GlobalData:
 		# instance of the version information collector (only active if
 		# automatic update checks are configured)
 		self.versionInformer = None
+
+		# the amount of days sensor alerts are kept in the database before
+		# they are removed
+		self.sensorAlertLifeSpan = None

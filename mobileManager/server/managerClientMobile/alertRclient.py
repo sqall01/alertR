@@ -183,6 +183,14 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid storage backend method in config file.")
 
+		globalData.sensorAlertLifeSpan = int(
+			configRoot.find("manager").find("options").attrib[
+			"sensorAlertLifeSpan"])
+
+		if globalData.sensorAlertLifeSpan < 0:
+			raise ValueError("Option 'sensorAlertLifeSpan' has to be "
+				+ "greater or equal to 0.")
+
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)

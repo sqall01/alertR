@@ -310,7 +310,7 @@ class Mysql(_Storage):
 
 					return False
 
-				self.sensors.remove(sensor)
+				self.sensorAlerts.remove(sensorAlert)
 
 		for sensor in list(self.sensors):
 			# check if sensors stored in the database do
