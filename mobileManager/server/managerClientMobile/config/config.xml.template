@@ -176,6 +176,21 @@
 			password="password" />
 
 		<!--
+			local unix server instance settings
+			activated - flag that indicates if the local unix server instance
+				should be started or not (the local unix server instance
+				is used as a communication channel for external applications
+				like web sites, etc.)
+				("True" or "False")
+			unixSocketFile - the location plus name of the socket file
+				that is created for the local unix server instance
+				(only processed if the local server instance is activated)
+		-->
+		<server
+			activated="False"
+			unixSocketFile="/tmp/local.socket" />
+
+		<!--
 			options for the manager
 			sensorAlertLifeSpan - gives the amount of days a sensor alert is
 				kept in the database before it is removed. If set to '0', the

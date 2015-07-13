@@ -40,19 +40,9 @@ class GlobalData:
 			+ "/../config/config.xml"
 
 		# path to the unix socket which is used to communicate
-		# with the web page
-		self.unixSocketFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/../config/localsocket"
-
-
-
-
-
-		# TODO REMOVE
-		self.unixSocketFile = "/tmp/localsocket"
-
-
-
+		# with the web page (only set when server is activated
+		# in the configuration file)
+		self.unixSocketFile = None
 
 		# this flags indicate if email alerts via smtp are active
 		self.smtpAlert = None

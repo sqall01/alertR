@@ -183,6 +183,14 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid storage backend method in config file.")
 
+		# only parse manager server configuration when the server
+		# is activated
+		if (str(configRoot.find("manager").find("server").attrib[
+				"activated"]).upper() == "TRUE"):
+			globalData.unixSocketFile = str(
+				configRoot.find("manager").find("server").attrib[
+				"unixSocketFile"])
+
 		globalData.sensorAlertLifeSpan = int(
 			configRoot.find("manager").find("options").attrib[
 			"sensorAlertLifeSpan"])
@@ -241,30 +249,36 @@ if __name__ == '__main__':
 	watchdog.daemon = True
 	watchdog.start()
 
-	# start local server process
-	while 1:
-		try:
+	# check if local unix socket server is activated
+	# => start local server process
+	if not globalData.unixSocketFile is None:
 
-			# remove unix socket file (if exists)
+		logging.exception("[%s]: Starting local unix socket server " % fileName
+			+ "instance.")
+
+		while 1:
 			try:
-				os.remove(globalData.unixSocketFile)
-			except OSError:
-				pass
 
-			# listen to the unix socket
-			server = ThreadedUnixStreamServer(globalData,
-				globalData.unixSocketFile, LocalServerSession)
+				# remove unix socket file (if exists)
+				try:
+					os.remove(globalData.unixSocketFile)
+				except OSError:
+					pass
 
-			# make socket writeable by everyone
-			os.chmod(globalData.unixSocketFile, stat.S_IRUSR | stat.S_IWUSR
-				| stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP
-				| stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
+				# listen to the unix socket
+				server = ThreadedUnixStreamServer(globalData,
+					globalData.unixSocketFile, LocalServerSession)
 
-			break
-		except Exception as e:
-			logging.exception("[%s]: Starting server failed. " % fileName
-			+ "Try again in 5 seconds.")
-			time.sleep(5)
+				# make socket writeable by everyone
+				os.chmod(globalData.unixSocketFile, stat.S_IRUSR | stat.S_IWUSR
+					| stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP
+					| stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
+
+				break
+			except Exception as e:
+				logging.exception("[%s]: Starting server failed. " % fileName
+				+ "Try again in 5 seconds.")
+				time.sleep(5)
 
 	serverThread = threading.Thread(target=server.serve_forever)
 	# set thread to daemon
