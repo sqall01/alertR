@@ -454,6 +454,41 @@ class Mysql(_Storage):
 
 				self.alertLevels.remove(alertLevel)
 
+		# delete all events that are older than the configured life span 
+		try:
+			self.cursor.execute("SELECT id, type FROM events "
+				+ "WHERE (timeOccurred + "
+				+ str(self.eventsLifeSpan * 86400)
+				+ ")"
+				+ "<= %s",
+				(int(time.time()), ))
+			result = self.cursor.fetchall()
+			
+			for idTuple in result:
+				eventId = idTuple[0]
+				eventType = idTuple[1]
+
+				if eventType.upper() == "sensorAlert".upper():
+					self.cursor.execute("DELETE FROM eventsSensorAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+
+				elif eventType.upper() == "newVersion".upper():
+					self.cursor.execute("DELETE FROM eventsNewVersion "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+
+				self.cursor.execute("DELETE FROM events "
+					+ "WHERE id = %s",
+					(eventId, ))
+		except Exception as e:
+			logging.exception("[%s]: Not able to delete old events."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
 
 		# step two: update all existing objects
 		for option in options:
@@ -796,23 +831,6 @@ class Mysql(_Storage):
 
 				self.alertLevels.append(alertLevel)
 
-
-
-
-
-
-
-
-
-		# TODO
-		# remove too old events from the database
-
-
-
-
-
-
-
 		# add all events to the database (if any exists and it is activated
 		# to store events)
 		while (len(self.events) != 0
@@ -851,7 +869,7 @@ class Mysql(_Storage):
 						+ "timeOccurred, "
 						+ "type) "
 						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "sensorAlert"))
+						(event.timeOccurred, "newVersion"))
 
 					eventId = self.cursor.lastrowid
 
