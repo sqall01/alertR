@@ -115,6 +115,7 @@ class SensorAlert:
 		self.rulesActivated = None
 		self.sensorId = None
 		self.state = None
+		self.description = None
 		self.timeReceived = None
 		self.alertLevels = list()
 		self.dataTransfer = None
@@ -153,6 +154,7 @@ class ServerEventHandler:
 		# get global configured data
 		self.globalData = globalData
 		self.sensorAlertLifeSpan = self.globalData.sensorAlertLifeSpan
+		self.eventsLifeSpan = self.globalData.eventsLifeSpan
 		self.storage = self.globalData.storage
 		self.options = self.globalData.options
 		self.nodes = self.globalData.nodes
@@ -162,10 +164,32 @@ class ServerEventHandler:
 		self.alertLevels = self.globalData.alertLevels
 		self.sensorAlerts = self.globalData.sensorAlerts
 		self.versionInformer = self.globalData.versionInformer
+		self.events = self.globalData.events
 
 
-		# TODO
-		self.events = list()
+
+
+	# this function is called when events from the received data should
+	# be created
+	def tasta(self): # TODO
+
+		# create an event for each received sensor alert
+		for sensorAlert in self.sensorAlerts:
+			tempEvent = EventSensorAlert(sensorAlert.timeReceived)
+			tempEvent.description = sensorAlert.description
+
+			# check if rules were activated for this sensor alert
+			# => set sensor alert to "triggered" state
+			if sensorAlert.rulesActivated:
+				tempEvent.state = 1
+
+			# when no rules were activated
+			# => get state from message
+			else:
+				tempEvent.state = sensorAlert.state
+			tempEvent.alertLevels = list(sensorAlert.alertLevels)
+
+			self.events.append(tempEvent)
 
 
 	# is called when an incoming server event has to be handled
@@ -176,17 +200,10 @@ class ServerEventHandler:
 		if self.sensorAlertLifeSpan == 0:
 			del self.sensorAlerts[:]
 
-
-
-
-		# TODO
-		# check here events?
-
-
-
-
-
-
+		# check if configured to store events
+		# => create events from the received data
+		if self.eventsLifeSpan != 0:
+			self.tasta()
 
 		# check if version informer instance is set
 		# => if not get it from the global data (is only set if
@@ -201,6 +218,31 @@ class ServerEventHandler:
 				found = False
 				for repoInstance in self.versionInformer.repoVersions.keys():
 					if node.instance.upper() == repoInstance.upper():
+
+						tempVersion = self.versionInformer.repoVersions[
+							repoInstance].newestVersion
+						tempRev = self.versionInformer.repoVersions[
+							repoInstance].newestRev
+
+						# check if a newer version is available than the
+						# currently used (or last known version)
+						if (node.version < tempVersion
+							and node.newestVersion < tempVersion):
+
+							pass
+							# TODO
+							# event here for new version available
+
+						# check if a newer revision for this version is
+						# available than the currently used
+						# (or last known version)
+						elif node.version == tempVersion:
+							if (node.rev < tempRev
+								and node.newestRev < tempRev):
+
+								pass
+								# TODO
+								# event here for new version available
 
 						node.newestVersion \
 							= self.versionInformer.repoVersions[
@@ -227,7 +269,8 @@ class ServerEventHandler:
 					% self.fileName)
 
 		else:
-			# empty sensor alerts list to prevent it from getting too big
+			# empty sensor alerts list to prevent it
+			# from getting too big
 			del self.sensorAlerts[:]
 
 
@@ -244,25 +287,27 @@ class ServerEventHandler:
 
 
 
-
+# TODO
+# perhaps add event for changes for sensors, nodes etc in storage backend
+# (it already has a copy of existing elements)
 
 
 
 
 
 # TODO
-# weitere events fehlen noch
+# need additional events
 
 class Event:
 
-	def __init__(self):
-		self.timeReceived = None
+	def __init__(self, timeOccurred):
+		self.timeOccurred = timeOccurred
 
 
 class EventSensorAlert(Event):
 
-	def __init__(self):
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
 		self.description = None
-		self.hostname = None
 		self.state = None
 		self.alertLevels = list()

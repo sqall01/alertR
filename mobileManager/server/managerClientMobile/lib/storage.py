@@ -187,6 +187,8 @@ class Mysql(_Storage):
 		self.cursor.execute("CREATE TABLE sensorAlerts ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorId INTEGER NOT NULL, "
+			+ "state INTEGER NOT NULL, "
+			+ "description TEXT NOT NULL,"
 			+ "timeReceived INTEGER NOT NULL, "
 			+ "dataJson TEXT NOT NULL,"
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
@@ -669,10 +671,13 @@ class Mysql(_Storage):
 			try:
 				self.cursor.execute("INSERT INTO sensorAlerts ("
 					+ "sensorId, "
+					+ "state, "
+					+ "description, "
 					+ "timeReceived, "
 					+ "dataJson) "
-					+ "VALUES (%s, %s, %s)",
-					(sensorAlert.sensorId, sensorAlert.timeReceived,
+					+ "VALUES (%s, %s, %s, %s, %s)",
+					(sensorAlert.sensorId, sensorAlert.state,
+					sensorAlert.description, sensorAlert.timeReceived,
 					dataJson))
 
 			except Exception as e:

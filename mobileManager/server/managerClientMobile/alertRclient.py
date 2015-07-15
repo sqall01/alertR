@@ -172,6 +172,14 @@ if __name__ == '__main__':
 			raise ValueError("Option 'sensorAlertLifeSpan' has to be "
 				+ "greater or equal to 0.")
 
+		globalData.eventsLifeSpan = int(
+			configRoot.find("manager").find("options").attrib[
+			"eventsLifeSpan"])
+
+		if globalData.eventsLifeSpan < 0:
+			raise ValueError("Option 'eventsLifeSpan' has to be "
+				+ "greater or equal to 0.")
+
 		# configure storage backend (check which backend is configured)
 		userBackendMethod = str(
 			configRoot.find("manager").find("storage").attrib[

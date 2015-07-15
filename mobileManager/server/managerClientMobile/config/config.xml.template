@@ -196,9 +196,16 @@
 				kept in the database before it is removed. If set to '0', the
 				sensor alert is deleted directly before written to the
 				database.
+			eventsLifeSpan - gives the amount of days a event is
+				kept in the database before it is removed. If set to '0', the
+				event is deleted directly before written to the
+				database. An event is anything that has happened on the
+				alert system for example a sensor alert, a state change
+				of an sensor, an option change etc.
 		-->
 		<options
-			sensorAlertLifeSpan="1" />
+			sensorAlertLifeSpan="1"
+			eventsLifeSpan="100" />
 
 	</manager>
 

@@ -8,6 +8,7 @@
 # Licensed under the GNU Public License, version 2.
 
 import os
+import collections
 
 
 # this class is a global configuration class that holds 
@@ -82,5 +83,14 @@ class GlobalData:
 		self.versionInformer = None
 
 		# the amount of days sensor alerts are kept in the database before
-		# they are removed
+		# they are removed (value 0 will not store any sensor alerts)
 		self.sensorAlertLifeSpan = None
+
+		# the amount of days events are kept in the database before
+		# they are removed (value 0 will not store any events)
+		self.eventsLifeSpan = None
+
+
+
+		# TODO
+		self.events = collections.deque()
