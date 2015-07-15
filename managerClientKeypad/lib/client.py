@@ -1403,6 +1403,7 @@ class ServerCommunication:
 		sensorAlert = SensorAlert()
 		sensorAlert.rulesActivated = rulesActivated
 		sensorAlert.sensorId = sensorId
+		sensorAlert.description = description
 		sensorAlert.state = state
 		sensorAlert.timeReceived = int(time.time())
 		sensorAlert.alertLevels = alertLevels

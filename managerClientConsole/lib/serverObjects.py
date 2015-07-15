@@ -105,6 +105,7 @@ class SensorAlert:
 		self.rulesActivated = None
 		self.sensorId = None
 		self.state = None
+		self.description = None
 		self.timeReceived = None
 		self.alertLevels = list()
 		self.dataTransfer = None
