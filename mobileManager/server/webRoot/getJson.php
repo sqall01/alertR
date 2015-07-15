@@ -139,6 +139,8 @@ $sensorAlertsArray = array();
 while($row = mysql_fetch_array($resultSensorAlerts)) {
 	$sensorAlertEntry = array("id" => $row["id"],
 		"sensorId" => $row["sensorId"],
+		"state" => $row["state"],
+		"description" => $row["description"],
 		"timeReceived" => $row["timeReceived"],
 		"data" => $row["dataJson"]);
 	array_push($sensorAlertsArray, $sensorAlertEntry);

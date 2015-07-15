@@ -66,23 +66,10 @@ function processResponse() {
 			var sensorId = sensorAlerts[i]["sensorId"];
 			var timeReceived = sensorAlerts[i]["timeReceived"];
 			var jsonData = sensorAlerts[i]["data"];
+			var state = sensorAlerts[i]["state"];
+			var description = sensorAlerts[i]["description"];
 			var data = JSON.parse(jsonData);
-			var description = "";
 
-
-			// TODO
-			// what happens when the sensor alert was triggered
-			// by a rule alert level?
-
-
-
-			// search for the description of the triggered sensor
-			for(j = 0; j < sensors.length; j++) {
-				if(sensorId == sensors[j]["id"]) {
-					var description = sensors[j]["description"]
-					break;
-				}
-			}
 
 			var boxDiv = document.createElement("div");
 			boxDiv.className = "box";
@@ -121,7 +108,7 @@ function processResponse() {
 			newTr = document.createElement("tr");
 			newTd = document.createElement("td");
 			newB = document.createElement("b");
-			newB.textContent = "Sensor:";
+			newB.textContent = "Description:";
 			newTd.appendChild(newB);
 			newTd.className = "boxEntryTd";
 			newTr.appendChild(newTd);
@@ -130,6 +117,29 @@ function processResponse() {
 			newTr = document.createElement("tr");
 			newTd = document.createElement("td");
 			newTd.textContent = description;
+			newTd.className = "neutralTd";
+			newTr.appendChild(newTd);
+			sensorAlertTable.appendChild(newTr);
+
+
+			// add state to the sensor alert
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newB = document.createElement("b");
+			newB.textContent = "State:";
+			newTd.appendChild(newB);
+			newTd.className = "boxEntryTd";
+			newTr.appendChild(newTd);
+			sensorAlertTable.appendChild(newTr);
+
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			if(state == 1) {
+				newTd.textContent = "triggered";
+			}
+			else {
+				newTd.textContent = "normal";
+			}
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorAlertTable.appendChild(newTr);
