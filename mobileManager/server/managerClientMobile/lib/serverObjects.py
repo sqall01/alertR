@@ -164,21 +164,29 @@ class ServerEventHandler:
 		self.versionInformer = self.globalData.versionInformer
 
 
-	# this function removes all sensor alerts that are older than the
-	# configured days
-	def checkSensorAlertsLifeSpan(self):
-		for sensorAlert in list(self.sensorAlerts):
-			if ((sensorAlert.timeReceived + (self.sensorAlertLifeSpan * 86400))
-				<= int(time.time())):
-				self.sensorAlerts.remove(sensorAlert)
+		# TODO
+		self.events = list()
 
 
 	# is called when an incoming server event has to be handled
 	def handleEvent(self):
 
-		# check and remove sensor alerts that are older than the configured
-		# amount of days
-		self.checkSensorAlertsLifeSpan()
+		# check if configured to not store sensor alerts
+		# => delete them directly
+		if self.sensorAlertLifeSpan == 0:
+			del self.sensorAlerts[:]
+
+
+
+
+		# TODO
+		# check here events?
+
+
+
+
+
+
 
 		# check if version informer instance is set
 		# => if not get it from the global data (is only set if
@@ -217,3 +225,44 @@ class ServerEventHandler:
 
 			logging.error("[%s]: Unable to update server information." 
 					% self.fileName)
+
+		else:
+			# empty sensor alerts list to prevent it from getting too big
+			del self.sensorAlerts[:]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TODO
+# weitere events fehlen noch
+
+class Event:
+
+	def __init__(self):
+		self.timeReceived = None
+
+
+class EventSensorAlert(Event):
+
+	def __init__(self):
+		self.description = None
+		self.hostname = None
+		self.state = None
+		self.alertLevels = list()

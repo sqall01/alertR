@@ -36,7 +36,7 @@ class _Storage():
 # class for using mysql as storage backend
 class Mysql(_Storage):
 
-	def __init__(self, host, port, database, username, password):
+	def __init__(self, host, port, database, username, password, globalData):
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -48,6 +48,10 @@ class Mysql(_Storage):
 		self.username = username
 		self.password = password
 
+		# get global configured data
+		self.globalData = globalData
+		self.sensorAlertLifeSpan = self.globalData.sensorAlertLifeSpan
+
 		# local copy of elements in the database (to make the update faster)
 		self.options = list()
 		self.nodes = list()
@@ -55,7 +59,6 @@ class Mysql(_Storage):
 		self.alerts = list()
 		self.managers = list()
 		self.alertLevels = list()
-		self.sensorAlerts = list()
 
 		# mysql lock
 		self.dbLock = threading.Semaphore(1)
@@ -293,24 +296,22 @@ class Mysql(_Storage):
 
 				self.options.remove(option)
 
-		for sensorAlert in list(self.sensorAlerts):
-			# check if sensorAlerts stored in the database do
-			# not exist anymore in the received data
-			# => delete from database and from local database elements
-			if not sensorAlert in sensorAlerts:
-				try:
-					self.cursor.execute("DELETE FROM sensorAlerts "
-						+ "WHERE sensorId = %s AND timeReceived = %s",
-						(sensorAlert.sensorId, sensorAlert.timeReceived))
-				except Exception as e:
-					logging.exception("[%s]: Not able to delete sensor alert." 
-						% self.fileName)
+		# delete all sensor alerts that are older than the configured
+		# life span
+		try:
+			self.cursor.execute("DELETE FROM sensorAlerts "
+				+ "WHERE (timeReceived + "
+				+ str(self.sensorAlertLifeSpan * 86400)
+				+ ")"
+				+ "<= %s",
+				(int(time.time()), ))
+		except Exception as e:
+			logging.exception("[%s]: Not able to delete sensor alert." 
+				% self.fileName)
 
-					self._releaseLock()
+			self._releaseLock()
 
-					return False
-
-				self.sensorAlerts.remove(sensorAlert)
+			return False
 
 		for sensor in list(self.sensors):
 			# check if sensors stored in the database do
@@ -656,37 +657,31 @@ class Mysql(_Storage):
 				self.sensors.append(sensor)
 
 		for sensorAlert in sensorAlerts:
-			# when it does not exist in the database
-			# => add it and add to local database elements
-			if not sensorAlert in self.sensorAlerts:
+			# try to convert received data to json
+			try:
+				dataJson = json.dumps(sensorAlert.data)
+			except Exception as e:
+				logging.exception("[%s]: Not able to convert data "
+					% self.fileName
+					+ " of sensor alert to json.")
+				continue
 
-				# try to convert received data to json
-				try:
-					dataJson = json.dumps(sensorAlert.data)
-				except Exception as e:
-					logging.exception("[%s]: Not able to convert data "
-						% self.fileName
-						+ " of sensor alert to json.")
-					continue
+			try:
+				self.cursor.execute("INSERT INTO sensorAlerts ("
+					+ "sensorId, "
+					+ "timeReceived, "
+					+ "dataJson) "
+					+ "VALUES (%s, %s, %s)",
+					(sensorAlert.sensorId, sensorAlert.timeReceived,
+					dataJson))
 
-				try:
-					self.cursor.execute("INSERT INTO sensorAlerts ("
-						+ "sensorId, "
-						+ "timeReceived, "
-						+ "dataJson) "
-						+ "VALUES (%s, %s, %s)",
-						(sensorAlert.sensorId, sensorAlert.timeReceived,
-						dataJson))
+			except Exception as e:
+				logging.exception("[%s]: Not able to add sensor alert."
+					% self.fileName)
 
-				except Exception as e:
-					logging.exception("[%s]: Not able to add sensor alert."
-						% self.fileName)
+				self._releaseLock()
 
-					self._releaseLock()
-
-					return False
-
-				self.sensorAlerts.append(sensorAlert)
+				return False
 
 		for alert in alerts:
 			# when it does not exist in the database

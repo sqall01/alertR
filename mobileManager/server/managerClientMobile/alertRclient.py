@@ -156,6 +156,22 @@ if __name__ == '__main__':
 			configRoot.find("manager").find("general").attrib[
 			"description"])
 
+		# only parse manager server configuration when the server
+		# is activated
+		if (str(configRoot.find("manager").find("server").attrib[
+				"activated"]).upper() == "TRUE"):
+			globalData.unixSocketFile = str(
+				configRoot.find("manager").find("server").attrib[
+				"unixSocketFile"])
+
+		globalData.sensorAlertLifeSpan = int(
+			configRoot.find("manager").find("options").attrib[
+			"sensorAlertLifeSpan"])
+
+		if globalData.sensorAlertLifeSpan < 0:
+			raise ValueError("Option 'sensorAlertLifeSpan' has to be "
+				+ "greater or equal to 0.")
+
 		# configure storage backend (check which backend is configured)
 		userBackendMethod = str(
 			configRoot.find("manager").find("storage").attrib[
@@ -179,25 +195,9 @@ if __name__ == '__main__':
 			"database"])
 
 			globalData.storage = Mysql(backendServer, backendPort,
-				backendDatabase, backendUsername, backendPassword)
+				backendDatabase, backendUsername, backendPassword, globalData)
 		else:
 			raise ValueError("No valid storage backend method in config file.")
-
-		# only parse manager server configuration when the server
-		# is activated
-		if (str(configRoot.find("manager").find("server").attrib[
-				"activated"]).upper() == "TRUE"):
-			globalData.unixSocketFile = str(
-				configRoot.find("manager").find("server").attrib[
-				"unixSocketFile"])
-
-		globalData.sensorAlertLifeSpan = int(
-			configRoot.find("manager").find("options").attrib[
-			"sensorAlertLifeSpan"])
-
-		if globalData.sensorAlertLifeSpan < 0:
-			raise ValueError("Option 'sensorAlertLifeSpan' has to be "
-				+ "greater or equal to 0.")
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
@@ -280,11 +280,11 @@ if __name__ == '__main__':
 				+ "Try again in 5 seconds.")
 				time.sleep(5)
 
-	serverThread = threading.Thread(target=server.serve_forever)
-	# set thread to daemon
-	# => threads terminates when main thread terminates	
-	serverThread.daemon =True
-	serverThread.start()
+		serverThread = threading.Thread(target=server.serve_forever)
+		# set thread to daemon
+		# => threads terminates when main thread terminates	
+		serverThread.daemon =True
+		serverThread.start()
 
 	# only start update checker if it is activated
 	if updateActivated is True:
