@@ -12,6 +12,7 @@ import os
 import threading
 import time
 import json
+from events import EventSensorAlert, EventNewVersion
 
 
 # internal abstract class for new storage backends
@@ -51,6 +52,8 @@ class Mysql(_Storage):
 		# get global configured data
 		self.globalData = globalData
 		self.sensorAlertLifeSpan = self.globalData.sensorAlertLifeSpan
+		self.events = self.globalData.events
+		self.eventsLifeSpan = self.globalData.eventsLifeSpan
 
 		# local copy of elements in the database (to make the update faster)
 		self.options = list()
@@ -80,6 +83,9 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS managers")
 		self.cursor.execute("DROP TABLE IF EXISTS alertLevels")
 		self.cursor.execute("DROP TABLE IF EXISTS nodes")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
+		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
 		self.conn.commit()
@@ -228,6 +234,32 @@ class Mysql(_Storage):
 			+ "triggerAlways INTEGER NOT NULL, "
 			+ "smtpActivated INTEGER NOT NULL, "
 			+ "toAddr VARCHAR(255) NOT NULL)")
+
+		# create events table
+		self.cursor.execute("CREATE TABLE events ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "timeOccurred INTEGER NOT NULL, "
+			+ "type VARCHAR(255) NOT NULL)")
+
+		# create eventsSensorAlert table
+		self.cursor.execute("CREATE TABLE eventsSensorAlert ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "state INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsSensorAlert table
+		self.cursor.execute("CREATE TABLE eventsNewVersion ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "usedVersion DOUBLE NOT NULL, "
+			+ "usedRev INTEGER NOT NULL, "
+			+ "newVersion DOUBLE NOT NULL, "
+			+ "newRev INTEGER NOT NULL, "
+			+ "instance VARCHAR(255) NOT NULL, "
+			+ "hostname VARCHAR(255) NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
 		self.conn.commit()
@@ -763,6 +795,85 @@ class Mysql(_Storage):
 					return False
 
 				self.alertLevels.append(alertLevel)
+
+
+
+
+
+
+
+
+
+		# TODO
+		# remove too old events from the database
+
+
+
+
+
+
+
+		# add all events to the database (if any exists and it is activated
+		# to store events)
+		while (len(self.events) != 0
+			and self.eventsLifeSpan > 0):
+
+			event = self.events.pop()
+
+			# insert event into the database
+			if isinstance(event, EventSensorAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "sensorAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsSensorAlert ("
+						+ "eventId, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.description, event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventNewVersion):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "sensorAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewVersion ("
+						+ "eventId, "
+						+ "usedVersion, "
+						+ "usedRev, "
+						+ "newVersion, "
+						+ "newRev, "
+						+ "instance, "
+						+ "hostname) "
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+						(eventId, event.usedVersion, event.usedRev,
+						event.newVersion, event.newRev, event.instance,
+						event.hostname))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
 
 		# commit all changes
 		self.conn.commit()

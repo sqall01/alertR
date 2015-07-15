@@ -10,6 +10,7 @@
 import os
 import logging
 import time
+from events import EventSensorAlert, EventNewVersion
 
 
 # this class represents an option of the server
@@ -226,23 +227,35 @@ class ServerEventHandler:
 
 						# check if a newer version is available than the
 						# currently used (or last known version)
+						# => create event
 						if (node.version < tempVersion
 							and node.newestVersion < tempVersion):
-
-							pass
-							# TODO
-							# event here for new version available
+							tempEvent = EventNewVersion(int(time.time()))
+							tempEvent.usedVersion = node.version
+							tempEvent.usedRev = node.rev
+							tempEvent.newVersion = tempVersion
+							tempEvent.newRev = tempRev
+							tempEvent.instance = node.instance
+							tempEvent.hostname = node.hostname
+							if self.eventsLifeSpan != 0:
+								self.events.append(tempEvent)
 
 						# check if a newer revision for this version is
 						# available than the currently used
 						# (or last known version)
+						# => create event
 						elif node.version == tempVersion:
 							if (node.rev < tempRev
 								and node.newestRev < tempRev):
-
-								pass
-								# TODO
-								# event here for new version available
+								tempEvent = EventNewVersion(int(time.time()))
+								tempEvent.usedVersion = node.version
+								tempEvent.usedRev = node.rev
+								tempEvent.newVersion = tempVersion
+								tempEvent.newRev = tempRev
+								tempEvent.instance = node.instance
+								tempEvent.hostname = node.hostname
+								if self.eventsLifeSpan != 0:
+									self.events.append(tempEvent)
 
 						node.newestVersion \
 							= self.versionInformer.repoVersions[
@@ -272,42 +285,3 @@ class ServerEventHandler:
 			# empty sensor alerts list to prevent it
 			# from getting too big
 			del self.sensorAlerts[:]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# TODO
-# perhaps add event for changes for sensors, nodes etc in storage backend
-# (it already has a copy of existing elements)
-
-
-
-
-
-# TODO
-# need additional events
-
-class Event:
-
-	def __init__(self, timeOccurred):
-		self.timeOccurred = timeOccurred
-
-
-class EventSensorAlert(Event):
-
-	def __init__(self, timeOccurred):
-		Event.__init__(self, timeOccurred)
-		self.description = None
-		self.state = None
-		self.alertLevels = list()

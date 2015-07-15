@@ -90,7 +90,8 @@ class GlobalData:
 		# they are removed (value 0 will not store any events)
 		self.eventsLifeSpan = None
 
-
-
-		# TODO
+		# a (thread safe) list of events that are occurred
+		# (an event is anything that has happened on the
+		# alert system for example a sensor alert, a state change
+		# of an sensor, an option change etc.)
 		self.events = collections.deque()
