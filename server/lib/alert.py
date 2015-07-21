@@ -1536,18 +1536,19 @@ class SensorAlertExecuter(threading.Thread):
 									triggeredAlertLevels.append(
 										configuredAlertLevel)
 
-				# add sensorId of the sensor alert
-				# to the queue for state changes of the
-				# manager update executer
-				if self.managerUpdateExecuter != None:
-					self.managerUpdateExecuter.queueStateChange.append(
-						sensorId)
-
 				# check if an alert level to trigger was found
 				# if not => just ignore it
 				if not triggeredAlertLevels:
 					logging.info("[%s]: No alert level " % self.fileName
 						+ "to trigger was found.")	
+
+					# add sensorId of the sensor alert
+					# to the queue for state changes of the
+					# manager update executer
+					if self.managerUpdateExecuter != None:
+						managerStateTuple = (sensorId, state)
+						self.managerUpdateExecuter.queueStateChange.append(
+							managerStateTuple)
 
 					continue
 

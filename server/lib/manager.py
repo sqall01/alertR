@@ -115,7 +115,9 @@ class ManagerUpdateExecuter(threading.Thread):
 			# if status change queue is not empty
 			# => send status changes to manager clients
 			while len(self.queueStateChange) != 0:
-				sensorId = self.queueStateChange.popleft()
+				managerStateTuple = self.queueStateChange.popleft()
+				sensorId = managerStateTuple[0]
+				state = managerStateTuple[1]
 
 				for serverSession in self.serverSessions:
 					# ignore sessions which do not exist yet
@@ -137,6 +139,8 @@ class ManagerUpdateExecuter(threading.Thread):
 					stateChangeProcess.sendManagerStateChange = True
 					stateChangeProcess.sendManagerStateChangeSensorId \
 						= sensorId
+					stateChangeProcess.sendManagerStateChangeState \
+						= state
 					stateChangeProcess.start()
 
 

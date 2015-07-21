@@ -1326,7 +1326,8 @@ class ClientCommunication:
 			return False
 
 		# add state change to queue and wake up manager update executer
-		self.managerUpdateExecuter.queueStateChange.append(sensorId)
+		managerStateTuple = (sensorId, state)
+		self.managerUpdateExecuter.queueStateChange.append(managerStateTuple)
 		self.managerUpdateExecuter.managerUpdateEvent.set()
 
 		return True
@@ -1543,24 +1544,7 @@ class ClientCommunication:
 
 
 	# internal function to send a state change to a manager
-	def _sendManagerStateChange(self, sensorId):
-
-		state = self.storage.getSensorState(sensorId)
-		if state is None:
-			logging.error("[%s]: Getting sensor state " % self.fileName
-				+ "from database failed (%s:%d)." 
-				% (self.clientAddress, self.clientPort))
-
-			# send error message back
-			try:
-				message = {"serverTime": int(time.time()),
-					"message": incomingMessage["message"],
-					"error": "not able to get sensor state from database"}
-				self.sslSocket.send(json.dumps(message))
-			except Exception as e:
-				pass
-
-			return False
+	def _sendManagerStateChange(self, sensorId, state):
 
 		# send state change message
 		logging.debug("[%s]: Sending state change message (%s:%d)."
@@ -1727,13 +1711,13 @@ class ClientCommunication:
 
 
 	# function that sends a state change to a manager client
-	def sendManagerStateChange(self, sensorId):
+	def sendManagerStateChange(self, sensorId, state):
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("statechange", acquireLock=True):
 			return False
 
-		returnValue = self._sendManagerStateChange(sensorId)
+		returnValue = self._sendManagerStateChange(sensorId, state)
 
 		self._releaseLock()
 		return returnValue
@@ -2595,6 +2579,7 @@ class AsynchronousSender(threading.Thread):
 		# send a state change to a manager client
 		self.sendManagerStateChange = False
 		self.sendManagerStateChangeSensorId = None
+		self.sendManagerStateChangeState = None
 
 		# this option is used when the thread should
 		# send a sensor alert off to the client
@@ -2655,7 +2640,8 @@ class AsynchronousSender(threading.Thread):
 
 			# sending state change to manager
 			if not self.clientComm.sendManagerStateChange(
-				self.sendManagerStateChangeSensorId):
+				self.sendManagerStateChangeSensorId,
+				self.sendManagerStateChangeState):
 				logging.error("[%s]: Sending state " % self.fileName
 					+ "change to manager failed (%s:%d)."
 					% (self.clientComm.clientAddress,
