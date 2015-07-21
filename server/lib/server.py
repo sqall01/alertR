@@ -1781,6 +1781,8 @@ class ClientCommunication:
 			# differentiate payload of message when rules are activated or not
 			if rulesActivated:
 				payload = {"type": "request",
+					"sensorId": -1,
+					"state": 1,
 					"alertLevels": alertLevels,
 					"description": description,
 					"rulesActivated": True,

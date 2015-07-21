@@ -23,6 +23,15 @@ class EventSensorAlert(Event):
 		self.alertLevels = list()
 
 
+class EventStateChange(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.description = None
+		self.state = None
+
+
 class EventNewVersion(Event):
 
 	def __init__(self, timeOccurred):

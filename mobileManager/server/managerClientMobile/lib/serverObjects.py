@@ -10,7 +10,7 @@
 import os
 import logging
 import time
-from events import EventSensorAlert, EventNewVersion
+from events import EventSensorAlert, EventNewVersion, EventStateChange
 
 
 # this class represents an option of the server
@@ -185,9 +185,35 @@ class ServerEventHandler:
 				tempEvent.state = 1
 
 			# when no rules were activated
-			# => get state from message
+			# => get state from message and create state change event
 			else:
 				tempEvent.state = sensorAlert.state
+
+				# create state change event for sensor alert and add it
+				# to the event queue
+				tempStateEvent = EventStateChange(sensorAlert.timeReceived)
+				tempStateEvent.state = sensorAlert.state
+				triggeredSensor = None
+				for sensor in self.sensors:
+					if sensor.sensorId == sensorAlert.sensorId:
+						tempStateEvent.description = sensor.description
+						triggeredSensor = sensor
+						break
+				if not triggeredSensor is None:
+					for node in self.nodes:
+						if node.nodeId == sensor.nodeId:
+							tempStateEvent.hostname = node.hostname
+							self.events.append(tempStateEvent)
+							break
+					if tempStateEvent.hostname is None:
+						logging.error("[%s]: Unable to find corresponding " 
+							% self.fileName
+							+ "node to sensor for state change event.")
+				else:
+					logging.error("[%s]: Unable to find corresponding " 
+						% self.fileName
+						+ "sensor to sensor alert for state change event.")
+
 			tempEvent.alertLevels = list(sensorAlert.alertLevels)
 
 			self.events.append(tempEvent)

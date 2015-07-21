@@ -12,7 +12,7 @@ import os
 import threading
 import time
 import json
-from events import EventSensorAlert, EventNewVersion
+from events import EventSensorAlert, EventNewVersion, EventStateChange
 
 
 # internal abstract class for new storage backends
@@ -85,6 +85,7 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS nodes")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
 		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
@@ -196,8 +197,7 @@ class Mysql(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "description TEXT NOT NULL,"
 			+ "timeReceived INTEGER NOT NULL, "
-			+ "dataJson TEXT NOT NULL,"
-			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+			+ "dataJson TEXT NOT NULL)")
 
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
@@ -245,6 +245,15 @@ class Mysql(_Storage):
 		self.cursor.execute("CREATE TABLE eventsSensorAlert ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "eventId INTEGER NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "state INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsStateChange table
+		self.cursor.execute("CREATE TABLE eventsStateChange ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
 			+ "description TEXT NOT NULL, "
 			+ "state INTEGER NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
@@ -472,11 +481,17 @@ class Mysql(_Storage):
 					self.cursor.execute("DELETE FROM eventsSensorAlert "
 						+ "WHERE eventId = %s",
 						(eventId, ))
-
 				elif eventType.upper() == "newVersion".upper():
 					self.cursor.execute("DELETE FROM eventsNewVersion "
 						+ "WHERE eventId = %s",
 						(eventId, ))
+				elif eventType.upper() == "stateChange".upper():
+					self.cursor.execute("DELETE FROM eventsStateChange "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				else:
+					logging.error("[%s]: Stored event not known."
+						% self.fileName)
 
 				self.cursor.execute("DELETE FROM events "
 					+ "WHERE id = %s",
@@ -892,6 +907,37 @@ class Mysql(_Storage):
 					self._releaseLock()
 
 					return False
+
+			elif isinstance(event, EventStateChange):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "stateChange"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsStateChange ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.description,
+						event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			else:
+				logging.error("[%s]: Used event not known."
+					% self.fileName)
+
 
 		# commit all changes
 		self.conn.commit()

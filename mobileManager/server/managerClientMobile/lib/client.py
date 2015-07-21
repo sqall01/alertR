@@ -1310,14 +1310,11 @@ class ServerCommunication:
 
 			rulesActivated = bool(incomingMessage["payload"]["rulesActivated"])
 
-			# check if rules are activated
-			# => if not sensorId and state have to be processed
-			if not rulesActivated:
-				sensorId = int(incomingMessage["payload"]["sensorId"])
-				state = int(incomingMessage["payload"]["state"])
-			else:
-				sensorId = None
-				state = None
+			# always -1 when no sensor is responsible for sensor alert
+			sensorId = int(incomingMessage["payload"]["sensorId"])
+
+			# state of rule sensor alerts is always set to 1 
+			state = int(incomingMessage["payload"]["state"])
 
 			alertLevels = incomingMessage["payload"]["alertLevels"]
 			# check if alertLevels is a list
