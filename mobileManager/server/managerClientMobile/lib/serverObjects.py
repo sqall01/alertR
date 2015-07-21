@@ -170,32 +170,59 @@ class ServerEventHandler:
 
 
 
-	# this function is called when events from the received data should
-	# be created
-	def tasta(self): # TODO
 
-		# create an event for each received sensor alert
-		for sensorAlert in self.sensorAlerts:
-			tempEvent = EventSensorAlert(sensorAlert.timeReceived)
-			tempEvent.description = sensorAlert.description
 
-			# check if rules were activated for this sensor alert
-			# => set sensor alert to "triggered" state
-			if sensorAlert.rulesActivated:
-				tempEvent.state = 1
 
-			# when no rules were activated
-			# => get state from message and create state change event
-			else:
-				tempEvent.state = sensorAlert.state
 
-				# create state change event for sensor alert and add it
-				# to the event queue
-				tempStateEvent = EventStateChange(sensorAlert.timeReceived)
-				tempStateEvent.state = sensorAlert.state
+
+
+
+
+	# TODO
+	# outsource status update handler from client.py to this class
+
+
+
+
+
+
+
+
+	def receivedSensorAlert(self, serverTime, rulesActivated, sensorId, state,
+		description, alertLevels, dataTransfer, data):
+
+
+		timeReceived = int(time.time())
+
+
+
+
+
+
+
+
+		# TODO
+		# specific for this manager => remove before copying to other managers
+
+		# when events are activated
+		# => create events
+		if self.eventsLifeSpan != 0:
+
+			# create sensor alert event
+			tempEvent = EventSensorAlert(timeReceived)
+			tempEvent.description = description
+			tempEvent.state = state
+			tempEvent.alertLevels = list(alertLevels)
+			self.events.append(tempEvent)
+
+			# when rules are not activated
+			# => create state change event
+			if not rulesActivated:
+				tempStateEvent = EventStateChange(int(time.time()))
+				tempStateEvent.state = state
 				triggeredSensor = None
 				for sensor in self.sensors:
-					if sensor.sensorId == sensorAlert.sensorId:
+					if sensor.sensorId == sensorId:
 						tempStateEvent.description = sensor.description
 						triggeredSensor = sensor
 						break
@@ -214,9 +241,128 @@ class ServerEventHandler:
 						% self.fileName
 						+ "sensor to sensor alert for state change event.")
 
-			tempEvent.alertLevels = list(sensorAlert.alertLevels)
 
-			self.events.append(tempEvent)
+
+
+
+
+
+
+
+
+
+
+		# generate sensor alert object
+		sensorAlert = SensorAlert()
+		sensorAlert.rulesActivated = rulesActivated
+		sensorAlert.sensorId = sensorId
+		sensorAlert.description = description
+		sensorAlert.state = state
+		sensorAlert.timeReceived = timeReceived
+		sensorAlert.alertLevels = alertLevels
+		sensorAlert.dataTransfer = dataTransfer
+		sensorAlert.data = data
+		self.sensorAlerts.append(sensorAlert)
+
+		# if rules are not activated (and therefore the sensor alert was
+		# only triggered by one distinct sensor)
+		# => update information in sensor which triggered the alert
+		if not rulesActivated:
+			for sensor in self.sensors:
+				if sensor.sensorId == sensorId:
+					sensor.state = state
+					sensor.lastStateUpdated = serverTime
+					sensor.serverTime = serverTime
+					break
+
+		return True
+
+
+
+
+
+
+
+
+
+
+
+	def receivedStateChange(self, serverTime, sensorId, state):
+
+
+
+
+		# TODO
+		# specific for this manager => remove before copying to other managers
+
+
+		# when events are activated
+		# => create state change event
+		if self.eventsLifeSpan != 0:
+			tempStateEvent = EventStateChange(int(time.time()))
+			tempStateEvent.state = state
+			triggeredSensor = None
+			for sensor in self.sensors:
+				if sensor.sensorId == sensorId:
+					tempStateEvent.description = sensor.description
+					triggeredSensor = sensor
+					break
+			if not triggeredSensor is None:
+				for node in self.nodes:
+					if node.nodeId == sensor.nodeId:
+						tempStateEvent.hostname = node.hostname
+						self.events.append(tempStateEvent)
+						break
+				if tempStateEvent.hostname is None:
+					logging.error("[%s]: Unable to find corresponding " 
+						% self.fileName
+						+ "node to sensor for state change event.")
+			else:
+				logging.error("[%s]: Unable to find corresponding " 
+					% self.fileName
+					+ "sensor to sensor alert for state change event.")
+
+
+
+
+
+
+
+
+
+
+		# search sensor in list of known sensors
+		# => if not known return failure
+		found = False
+		for sensor in self.sensors:
+
+			# when found => mark sensor as checked and update information
+			if sensor.sensorId == sensorId:
+				sensor.state = state
+				sensor.lastStateUpdated = serverTime
+				sensor.serverTime = serverTime
+
+				found = True
+				break
+		if not found:
+			logging.error("[%s]: Sensor for state change " % self.fileName
+				+ "not known.")
+
+			return False
+
+		return True
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	# is called when an incoming server event has to be handled
@@ -226,11 +372,6 @@ class ServerEventHandler:
 		# => delete them directly
 		if self.sensorAlertLifeSpan == 0:
 			del self.sensorAlerts[:]
-
-		# check if configured to store events
-		# => create events from the received data
-		if self.eventsLifeSpan != 0:
-			self.tasta()
 
 		# check if version informer instance is set
 		# => if not get it from the global data (is only set if
@@ -297,7 +438,6 @@ class ServerEventHandler:
 				if not found:
 					node.newestVersion = -1.0
 					node.newestRev = -1
-
 
 		# update the local server information
 		if not self.storage.updateServerInformation(self.options, self.nodes,

@@ -1396,30 +1396,14 @@ class ServerCommunication:
 
 			return False
 
-		# generate sensor alert object
-		sensorAlert = SensorAlert()
-		sensorAlert.rulesActivated = rulesActivated
-		sensorAlert.sensorId = sensorId
-		sensorAlert.description = description
-		sensorAlert.state = state
-		sensorAlert.timeReceived = int(time.time())
-		sensorAlert.alertLevels = alertLevels
-		sensorAlert.dataTransfer = dataTransfer
-		sensorAlert.data = data
-		self.sensorAlerts.append(sensorAlert)
+		# handle received sensor alert
+		if self.serverEventHandler.receivedSensorAlert(serverTime,
+			rulesActivated, sensorId, state, description, alertLevels,
+			dataTransfer, data) is True:
 
-		# if rules are not activated (and therefore the sensor alert was
-		# only triggered by one distinct sensor)
-		# => update information in sensor which triggered the alert
-		if not rulesActivated:
-			for sensor in self.sensors:
-				if sensor.sensorId == sensorId:
-					sensor.state = state
-					sensor.lastStateUpdated = serverTime
-					sensor.serverTime = serverTime
-					break
+			return True
 
-		return True
+		return False
 
 
 	# internal function that handles received state changes of sensors
@@ -1463,26 +1447,13 @@ class ServerCommunication:
 
 			return False
 
-		# search sensor in list of known sensors
-		# => if not known return failure
-		found = False
-		for sensor in self.sensors:
+		# handle received state change
+		if self.serverEventHandler.receivedStateChange(serverTime, sensorId,
+			state) is True:
 
-			# when found => mark sensor as checked and update information
-			if sensor.sensorId == sensorId:
-				sensor.state = state
-				sensor.lastStateUpdated = serverTime
-				sensor.serverTime = serverTime
+			return True
 
-				found = True
-				break
-		if not found:
-			logging.error("[%s]: Sensor for state change " % self.fileName
-				+ "not known.")
-
-			return False
-
-		return True
+		return False
 
 
 	# function that initializes the communication to the server
@@ -1652,7 +1623,7 @@ class ServerCommunication:
 		self.isConnected = True
 
 		# handle connection initialized event 
-		self.serverEventHandler.handleEvent()	
+		self.serverEventHandler.handleEvent()
 
 		return True
 
