@@ -92,15 +92,7 @@ class ServerCommunication:
 		self.rev = self.globalData.rev
 		self.nodeType = self.globalData.nodeType
 		self.instance = self.globalData.instance
-		self.description = self.globalData.description		
-		# list of alert system information
-		self.options = self.globalData.options
-		self.nodes = self.globalData.nodes
-		self.sensors = self.globalData.sensors
-		self.managers = self.globalData.managers
-		self.alerts = self.globalData.alerts		
-		self.sensorAlerts = self.globalData.sensorAlerts
-		self.alertLevels = self.globalData.alertLevels		
+		self.description = self.globalData.description
 		
 		# create the object that handles all incoming server events
 		self.serverEventHandler = ServerEventHandler(self.globalData)
@@ -493,150 +485,24 @@ class ServerCommunication:
 		return True
 
 
-	# internal function that marks all nodes as not checked
-	def _markAlertSystemObjectsAsNotChecked(self):
-		for option in self.options:
-			option.checked = False
-
-		for node in self.nodes:
-			node.checked = False
-
-		for sensor in self.sensors:
-			sensor.checked = False		
-
-		for manager in self.managers:
-			manager.checked = False
-
-		for alert in self.alerts:
-			alert.checked = False
-
-		for alertLevel in self.alertLevels:
-			alertLevel.checked = False
-
-
-	# internal function that checks if all options are checked
-	def _checkAllOptionsAreChecked(self):
-		for option in self.options:
-			if option.checked is False:
-				return False
-		return True
-
-
-	# internal function that removes all nodes that are not checked
-	def _removeNotCheckedNodes(self):
-		for node in self.nodes:
-			if node.checked is False:
-
-				# check if node object has a link to the sensor urwid object
-				if not node.sensorUrwid is None:
-					# check if sensor urwid object is linked to node object
-					if not node.sensorUrwid.node is None:
-						# used for urwid only:
-						# remove reference from urwid object to node object
-						# (the objects are double linked)
-						node.sensorUrwid.node = None
-
-				# check if node object has a link to the alert urwid object
-				elif not node.alertUrwid is None:
-					# check if sensor urwid object is linked to node object
-					if not node.alertUrwid.node is None:
-						# used for urwid only:
-						# remove reference from urwid object to node object
-						# (the objects are double linked)
-						node.alertUrwid.node = None
-
-				# remove sensor from list of sensors
-				# to delete all references to object
-				# => object will be deleted by garbage collector
-				self.nodes.remove(node)
-
-		for sensor in self.sensors:
-			if sensor.checked is False:
-
-				# check if sensor object has a link to the sensor urwid object
-				if not sensor.sensorUrwid is None:
-					# check if sensor urwid object is linked to sensor object
-					if not sensor.sensorUrwid.sensor is None:
-						# used for urwid only:
-						# remove reference from urwid object to sensor object
-						# (the objects are double linked)
-						sensor.sensorUrwid.sensor = None
-
-				# remove sensor from list of sensors
-				# to delete all references to object
-				# => object will be deleted by garbage collector
-				self.sensors.remove(sensor)
-
-		for manager in self.managers:
-			if manager.checked is False:
-
-				# check if manager object has a link to the 
-				# manager urwid object
-				if not manager.managerUrwid is None:
-					# check if manager urwid object is linked to manager object
-					if not manager.managerUrwid.manager is None:
-						# used for urwid only:
-						# remove reference from urwid object to manager object
-						# (the objects are double linked)
-						manager.managerUrwid.manager = None
-
-				# remove manager from list of managers
-				# to delete all references to object
-				# => object will be deleted by garbage collector
-				self.managers.remove(manager)
-
-		for alert in self.alerts:
-			if alert.checked is False:
-
-				# check if alert object has a link to the alert urwid object
-				if not alert.alertUrwid is None:
-					# check if alert urwid object is linked to alert object
-					if not alert.alertUrwid.alert is None:
-						# used for urwid only:
-						# remove reference from urwid object to alert object
-						# (the objects are double linked)
-						alert.alertUrwid.alert = None
-
-				# remove alert from list of alerts
-				# to delete all references to object
-				# => object will be deleted by garbage collector
-				self.alerts.remove(alert)
-
-		for alertLevel in self.alertLevels:
-			if alertLevel.checked is False:
-
-				# check if alert level object has a link to 
-				# the alert level urwid object
-				if not alertLevel.alertLevelUrwid is None:
-					# check if alert level urwid object is 
-					# linked to alert level object
-					if not alertLevel.alertLevelUrwid.alertLevel is None:
-						# used for urwid only:
-						# remove reference from urwid object to 
-						# alert level object
-						# (the objects are double linked)
-						alertLevel.alertLevelUrwid.alertLevel = None
-
-				# remove alert level from list of alert levels
-				# to delete all references to object
-				# => object will be deleted by garbage collector
-				self.alertLevels.remove(alertLevel)
-
-
 	# internal function that handles received status updates
 	def _statusUpdateHandler(self, incomingMessage):
 
-		# first mark all nodes as not checked
-		self._markAlertSystemObjectsAsNotChecked()
+		options = list()
+		nodes = list()
+		sensors = list()
+		managers = list()
+		alerts = list()
+		alertLevels = list()
 
 		# extract status values
 		try:
 
 			serverTime = int(incomingMessage["serverTime"])
 
-			options = incomingMessage["payload"]["options"]
+			optionsRaw = incomingMessage["payload"]["options"]
 			# check if options is of type list
-			if not isinstance(options, list):
+			if not isinstance(optionsRaw, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -648,9 +514,9 @@ class ServerCommunication:
 
 				return False
 
-			nodes = incomingMessage["payload"]["nodes"]
+			nodesRaw = incomingMessage["payload"]["nodes"]
 			# check if nodes is of type list
-			if not isinstance(nodes, list):
+			if not isinstance(nodesRaw, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -662,9 +528,9 @@ class ServerCommunication:
 
 				return False
 
-			sensors = incomingMessage["payload"]["sensors"]
+			sensorsRaw = incomingMessage["payload"]["sensors"]
 			# check if sensors is of type list
-			if not isinstance(sensors, list):
+			if not isinstance(sensorsRaw, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -676,9 +542,9 @@ class ServerCommunication:
 
 				return False
 
-			managers = incomingMessage["payload"]["managers"]
+			managersRaw = incomingMessage["payload"]["managers"]
 			# check if managers is of type list
-			if not isinstance(managers, list):
+			if not isinstance(managersRaw, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -690,9 +556,9 @@ class ServerCommunication:
 
 				return False
 
-			alerts = incomingMessage["payload"]["alerts"]
+			alertsRaw = incomingMessage["payload"]["alerts"]
 			# check if alerts is of type list
-			if not isinstance(alerts, list):
+			if not isinstance(alertsRaw, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -704,9 +570,9 @@ class ServerCommunication:
 
 				return False
 
-			alertLevels = incomingMessage["payload"]["alertLevels"]
+			alertLevelsRaw = incomingMessage["payload"]["alertLevels"]
 			# check if alerts is of type list
-			if not isinstance(alertLevels, list):
+			if not isinstance(alertLevelsRaw, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -734,14 +600,14 @@ class ServerCommunication:
 			return False
 
 		logging.debug("[%s]: Received option count: %d." 
-				% (self.fileName, len(options)))
+				% (self.fileName, len(optionsRaw)))
 
 		# process received options
-		for i in range(len(options)):
+		for i in range(len(optionsRaw)):
 
 			try:
-				optionType = str(options[i]["type"])
-				optionValue = float(options[i]["value"])
+				optionType = str(optionsRaw[i]["type"])
+				optionValue = float(optionsRaw[i]["value"])
 			except Exception as e:
 				logging.exception("[%s]: Received option " % self.fileName
 				+ "invalid.")
@@ -759,79 +625,27 @@ class ServerCommunication:
 
 			logging.debug("[%s]: Received option " % self.fileName
 				+ "information: '%s':%d."
-				% (optionType, optionValue))
+				% (optionType, optionValue))		
 
-			# search option in list of known options
-			# => if not known add it
-			found = False
-			for option in self.options:
-				# ignore options that are already checked
-				if option.checked:
-
-					# check if the type is unique
-					if option.type == optionType:
-						logging.error("[%s]: Received optionType "
-							% self.fileName
-							+ "'%s' is not unique." % optionType)
-
-						# send error message back
-						try:
-							message = {"clientTime": int(time.time()),
-								"message": incomingMessage["message"],
-								"error": "received option type not unique"}
-							self.client.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					continue
-
-				# when found => mark option as checked and update information
-				if option.type == optionType:
-					option.checked = True
-					option.value = optionValue
-					found = True
-					break
-			# when not found => add option to list
-			if not found:
-				option = Option()
-				option.checked = True
-				option.type = optionType
-				option.value = optionValue
-				self.options.append(option)
-
-		# check if all options are checked
-		# => if not, one was removed on the server
-		if not self._checkAllOptionsAreChecked():
-			logging.exception("[%s]: Options are inconsistent."
-				% self.fileName)
-
-			# send error message back
-			try:
-				message = {"clientTime": int(time.time()),
-					"message": incomingMessage["message"],
-					"error": "options are inconsistent"}
-				self.client.send(json.dumps(message))
-			except Exception as e:
-				pass
-
-			return False
+			option = Option()
+			option.type = optionType
+			option.value = optionValue
+			options.append(option)
 
 		logging.debug("[%s]: Received node count: %d." 
-				% (self.fileName, len(nodes)))
+				% (self.fileName, len(nodesRaw)))
 
 		# process received nodes
-		for i in range(len(nodes)):
+		for i in range(len(nodesRaw)):
 
 			try:
-				nodeId = int(nodes[i]["nodeId"])
-				hostname = str(nodes[i]["hostname"])
-				nodeType = str(nodes[i]["nodeType"])
-				instance = str(nodes[i]["instance"])
-				connected = int(nodes[i]["connected"])
-				version = float(nodes[i]["version"])
-				rev = int(nodes[i]["rev"])
+				nodeId = int(nodesRaw[i]["nodeId"])
+				hostname = str(nodesRaw[i]["hostname"])
+				nodeType = str(nodesRaw[i]["nodeType"])
+				instance = str(nodesRaw[i]["instance"])
+				connected = int(nodesRaw[i]["connected"])
+				version = float(nodesRaw[i]["version"])
+				rev = int(nodesRaw[i]["rev"])
 			except Exception as e:
 				logging.exception("[%s]: Received node " % self.fileName
 				+ "invalid.")
@@ -851,67 +665,28 @@ class ServerCommunication:
 				+ "information: %d:'%s':'%s':%d." 
 				% (nodeId, hostname, nodeType, connected))
 
-			# search node in list of known nodes
-			# => if not known add it
-			found = False
-			for node in self.nodes:
-				# ignore nodes that are already checked
-				if node.checked:
-
-					# check if the nodeId is unique
-					if node.nodeId == nodeId:
-						logging.error("[%s]: Received nodeId " % self.fileName
-							+ "'%d' is not unique." % nodeId)
-
-						# send error message back
-						try:
-							message = {"clientTime": int(time.time()),
-								"message": incomingMessage["message"],
-								"error": "received node id not unique"}
-							self.client.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					continue
-
-				# when found => mark node as checked and update information
-				if node.nodeId == nodeId:
-					node.checked = True
-					node.hostname = hostname
-					node.nodeType = nodeType
-					node.instance = instance
-					node.connected = connected
-					node.version = version
-					node.rev = rev
-					found = True
-					break
-			# when not found => add node to list
-			if not found:
-				node = Node()
-				node.checked = True
-				node.nodeId = nodeId
-				node.hostname = hostname
-				node.nodeType = nodeType
-				node.instance = instance
-				node.connected = connected
-				node.version = version
-				node.rev = rev
-				self.nodes.append(node)
+			node = Node()
+			node.nodeId = nodeId
+			node.hostname = hostname
+			node.nodeType = nodeType
+			node.instance = instance
+			node.connected = connected
+			node.version = version
+			node.rev = rev
+			nodes.append(node)
 
 		logging.debug("[%s]: Received sensor count: %d." 
-				% (self.fileName, len(sensors)))
+				% (self.fileName, len(sensorsRaw)))
 
 		# process received sensors
-		for i in range(len(sensors)):
+		for i in range(len(sensorsRaw)):
 
 			try:
-				nodeId = int(sensors[i]["nodeId"])
-				sensorId = int(sensors[i]["sensorId"])
-				alertDelay = int(sensors[i]["alertDelay"])
+				nodeId = int(sensorsRaw[i]["nodeId"])
+				sensorId = int(sensorsRaw[i]["sensorId"])
+				alertDelay = int(sensorsRaw[i]["alertDelay"])
 
-				sensorAlertLevels = sensors[i]["alertLevels"]
+				sensorAlertLevels = sensorsRaw[i]["alertLevels"]
 				# check if alertLevels is a list
 				if not isinstance(sensorAlertLevels, list):
 					# send error message back
@@ -939,9 +714,9 @@ class ServerCommunication:
 
 					return False
 
-				description = str(sensors[i]["description"])
-				lastStateUpdated = int(sensors[i]["lastStateUpdated"])
-				state = int(sensors[i]["state"])
+				description = str(sensorsRaw[i]["description"])
+				lastStateUpdated = int(sensorsRaw[i]["lastStateUpdated"])
+				state = int(sensorsRaw[i]["state"])
 			except Exception as e:
 				logging.exception("[%s]: Received sensor " % self.fileName
 				+ "invalid.")
@@ -962,73 +737,27 @@ class ServerCommunication:
 				% (nodeId, sensorId, alertDelay, description,
 				lastStateUpdated, state))
 
-			# search sensor in list of known sensors
-			# => if not known add it
-			found = False
-			for sensor in self.sensors:
-				# ignore sensors that are already checked
-				if sensor.checked:
-
-					# check if the sensorId is unique
-					if sensor.sensorId == sensorId:
-						logging.error("[%s]: Received sensorId "
-							% self.fileName
-							+ "'%d' is not unique." % sensorId)
-
-						# send error message back
-						try:
-							message = {"clientTime": int(time.time()),
-								"message": incomingMessage["message"],
-								"error": "received sensor id not unique"}
-							self.client.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					continue
-
-				# when found => mark sensor as checked and update information
-				if sensor.sensorId == sensorId:
-					sensor.checked = True
-
-					sensor.nodeId = nodeId
-					sensor.alertDelay = alertDelay
-					sensor.alertLevels = sensorAlertLevels				
-					sensor.description = description
-					sensor.serverTime = serverTime
-
-					# only update state if it is older than received one
-					if lastStateUpdated > sensor.lastStateUpdated:
-						sensor.lastStateUpdated = lastStateUpdated
-						sensor.state = state
-
-					found = True
-					break
-			# when not found => add sensor to list
-			if not found:
-				sensor = Sensor()
-				sensor.checked = True
-				sensor.sensorId = sensorId
-				sensor.nodeId = nodeId
-				sensor.alertDelay = alertDelay
-				sensor.alertLevels = sensorAlertLevels
-				sensor.description = description
-				sensor.lastStateUpdated = lastStateUpdated
-				sensor.state = state
-				sensor.serverTime = serverTime
-				self.sensors.append(sensor)
+			sensor = Sensor()
+			sensor.nodeId = nodeId
+			sensor.sensorId = sensorId
+			sensor.alertDelay = alertDelay
+			sensor.alertLevels = sensorAlertLevels
+			sensor.description = description
+			sensor.lastStateUpdated = lastStateUpdated
+			sensor.state = state
+			sensor.serverTime = serverTime
+			sensors.append(sensor)
 
 		logging.debug("[%s]: Received manager count: %d." 
-				% (self.fileName, len(managers)))
+				% (self.fileName, len(managersRaw)))
 
 		# process received managers
-		for i in range(len(managers)):
+		for i in range(len(managersRaw)):
 
 			try:
-				nodeId = int(managers[i]["nodeId"])
-				managerId = int(managers[i]["managerId"])
-				description = str(managers[i]["description"])
+				nodeId = int(managersRaw[i]["nodeId"])
+				managerId = int(managersRaw[i]["managerId"])
+				description = str(managersRaw[i]["description"])
 			except Exception as e:
 				logging.exception("[%s]: Received manager " % self.fileName
 				+ "invalid.")
@@ -1048,60 +777,24 @@ class ServerCommunication:
 				+ "information: %d:%d:'%s'." 
 				% (nodeId, managerId, description))
 
-			# search manager in list of known managers
-			# => if not known add it
-			found = False
-			for manager in self.managers:
-				# ignore managers that are already checked
-				if manager.checked:
-
-					# check if the managerId is unique
-					if manager.managerId == managerId:
-						logging.error("[%s]: Received managerId "
-							% self.fileName
-							+ "'%d' is not unique." % managerId)
-
-						# send error message back
-						try:
-							message = {"clientTime": int(time.time()),
-								"message": incomingMessage["message"],
-								"error": "received manager id not unique"}
-							self.client.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					continue
-
-				# when found => mark manager as checked and update information
-				if manager.managerId == managerId:
-					manager.checked = True
-					manager.nodeId = nodeId
-					manager.description = description
-					found = True
-					break
-			# when not found => add manager to list
-			if not found:
-				manager = Manager()
-				manager.checked = True
-				manager.managerId = managerId
-				manager.nodeId = nodeId
-				manager.description = description
-				self.managers.append(manager)
+			manager = Manager()
+			manager.nodeId = nodeId
+			manager.managerId = managerId
+			manager.description = description
+			managers.append(manager)
 
 		logging.debug("[%s]: Received alert count: %d." 
-				% (self.fileName, len(alerts)))
+				% (self.fileName, len(alertsRaw)))
 
 		# process received alerts
-		for i in range(len(alerts)):
+		for i in range(len(alertsRaw)):
 
 			try:
-				nodeId = int(alerts[i]["nodeId"])
-				alertId =int(alerts[i]["alertId"])
-				description = str(alerts[i]["description"])
+				nodeId = int(alertsRaw[i]["nodeId"])
+				alertId =int(alertsRaw[i]["alertId"])
+				description = str(alertsRaw[i]["description"])
 
-				alertAlertLevels = alerts[i]["alertLevels"]
+				alertAlertLevels = alertsRaw[i]["alertLevels"]
 				# check if alertLevels is a list
 				if not isinstance(alertAlertLevels, list):
 					# send error message back
@@ -1147,63 +840,26 @@ class ServerCommunication:
 				+ "information: %d:%d:'%s'" 
 				% (nodeId, alertId, description))
 
-			# search alert in list of known alerts
-			# => if not known add it
-			found = False
-			for alert in self.alerts:
-				# ignore alerts that are already checked
-				if alert.checked:
-
-					# check if the alertId is unique
-					if alert.alertId == alertId:
-						logging.error("[%s]: Received alertId " % self.fileName
-							+ "'%d' is not unique." % alertId)
-
-						# send error message back
-						try:
-							message = {"clientTime": int(time.time()),
-								"message": incomingMessage["message"],
-								"error": "received alert id not unique"}
-							self.client.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					continue
-
-				# when found => mark alert as checked and update information
-				if alert.alertId == alertId:
-					alert.checked = True
-					alert.nodeId = nodeId
-					alert.alertLevels = alertAlertLevels
-					alert.description = description
-					found = True
-					break
-
-			# when not found => add alert to list
-			if not found:
-				alert = Alert()
-				alert.checked = True
-				alert.alertId = alertId
-				alert.nodeId = nodeId
-				alert.alertLevels = alertAlertLevels
-				alert.description = description
-				self.alerts.append(alert)
+			alert = Alert()
+			alert.nodeId = nodeId
+			alert.alertId = alertId
+			alert.alertLevels = alertAlertLevels
+			alert.description = description
+			alerts.append(alert)
 
 		logging.debug("[%s]: Received alertLevel count: %d." 
-				% (self.fileName, len(alertLevels)))
+				% (self.fileName, len(alertLevelsRaw)))
 
 		# process received alertLevels
-		for i in range(len(alertLevels)):
+		for i in range(len(alertLevelsRaw)):
 
 			try:
-				level = int(alertLevels[i]["alertLevel"])
-				name = str(alertLevels[i]["name"])
-				triggerAlways = int(alertLevels[i]["triggerAlways"])
-				smtpActivated = int(alertLevels[i]["smtpActivated"])
-				toAddr = str(alertLevels[i]["toAddr"])
-				rulesActivated = bool(alertLevels[i]["rulesActivated"])
+				level = int(alertLevelsRaw[i]["alertLevel"])
+				name = str(alertLevelsRaw[i]["name"])
+				triggerAlways = int(alertLevelsRaw[i]["triggerAlways"])
+				smtpActivated = int(alertLevelsRaw[i]["smtpActivated"])
+				toAddr = str(alertLevelsRaw[i]["toAddr"])
+				rulesActivated = bool(alertLevelsRaw[i]["rulesActivated"])
 
 			except Exception as e:
 				logging.exception("[%s]: Received alertLevel " % self.fileName
@@ -1224,55 +880,30 @@ class ServerCommunication:
 				+ "information: %d:'%s':%d:%d:'%s'" 
 				% (level, name, triggerAlways, smtpActivated, toAddr))
 
-			# search alertLevel in list of known alertLevels
-			# => if not known add it
-			found = False
-			for alertLevel in self.alertLevels:
-				# ignore alertLevels that are already checked
-				if alertLevel.checked:
+			alertLevel = AlertLevel()
+			alertLevel.level = level
+			alertLevel.name = name
+			alertLevel.triggerAlways = triggerAlways
+			alertLevel.smtpActivated = smtpActivated
+			alertLevel.toAddr = toAddr
+			alertLevel.rulesActivated = rulesActivated
+			alertLevels.append(alertLevel)
 
-					# check if the level is unique
-					if alertLevel.level == level:
-						logging.error("[%s]: Received alertLevel "
-							% self.fileName
-							+ "'%d' is not unique." % level)
 
-						# send error message back
-						try:
-							message = {"clientTime": int(time.time()),
-								"message": incomingMessage["message"],
-								"error": "received alertLevel not unique"}
-							self.client.send(json.dumps(message))
-						except Exception as e:
-							pass
+		# handle received status update
+		if not self.serverEventHandler.receivedStatusUpdate(options, nodes,
+			sensors, managers, alerts, alertLevels):
 
-						return False
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "handling received data failed"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
 
-					continue
-
-				# when found => mark alertLevel as checked
-				# and update information
-				if alertLevel.level == level:
-					alertLevel.checked = True
-					alertLevel.smtpActivated = smtpActivated
-					alertLevel.toAddr = toAddr
-					alertLevel.name = name
-					alertLevel.triggerAlways = triggerAlways
-					alertLevel.rulesActivated = rulesActivated
-
-					found = True
-					break
-			# when not found => add alertLevel to list
-			if not found:
-				alertLevel = AlertLevel()
-				alertLevel.checked = True
-				alertLevel.level = level
-				alertLevel.smtpActivated = smtpActivated
-				alertLevel.toAddr = toAddr
-				alertLevel.name = name
-				alertLevel.triggerAlways = triggerAlways
-				alertLevel.rulesActivated = rulesActivated
-				self.alertLevels.append(alertLevel)
+			return False
 
 		# sending sensor alert response
 		logging.debug("[%s]: Sending status " % self.fileName
@@ -1289,9 +920,6 @@ class ServerCommunication:
 				+ "response failed.")
 
 			return False
-
-		# remove all nodes that are not checked
-		self._removeNotCheckedNodes()
 
 		# handle status update event
 		self.serverEventHandler.handleEvent()
@@ -1396,30 +1024,14 @@ class ServerCommunication:
 
 			return False
 
-		# generate sensor alert object
-		sensorAlert = SensorAlert()
-		sensorAlert.rulesActivated = rulesActivated
-		sensorAlert.sensorId = sensorId
-		sensorAlert.description = description
-		sensorAlert.state = state
-		sensorAlert.timeReceived = int(time.time())
-		sensorAlert.alertLevels = alertLevels
-		sensorAlert.dataTransfer = dataTransfer
-		sensorAlert.data = data
-		self.sensorAlerts.append(sensorAlert)
+		# handle received sensor alert
+		if self.serverEventHandler.receivedSensorAlert(serverTime,
+			rulesActivated, sensorId, state, description, alertLevels,
+			dataTransfer, data) is True:
 
-		# if rules are not activated (and therefore the sensor alert was
-		# only triggered by one distinct sensor)
-		# => update information in sensor which triggered the alert
-		if not rulesActivated:
-			for sensor in self.sensors:
-				if sensor.sensorId == sensorId:
-					sensor.state = state
-					sensor.lastStateUpdated = serverTime
-					sensor.serverTime = serverTime
-					break
+			return True
 
-		return True
+		return False
 
 
 	# internal function that handles received state changes of sensors
@@ -1463,26 +1075,13 @@ class ServerCommunication:
 
 			return False
 
-		# search sensor in list of known sensors
-		# => if not known return failure
-		found = False
-		for sensor in self.sensors:
+		# handle received state change
+		if self.serverEventHandler.receivedStateChange(serverTime, sensorId,
+			state) is True:
 
-			# when found => mark sensor as checked and update information
-			if sensor.sensorId == sensorId:
-				sensor.state = state
-				sensor.lastStateUpdated = serverTime
-				sensor.serverTime = serverTime
+			return True
 
-				found = True
-				break
-		if not found:
-			logging.error("[%s]: Sensor for state change " % self.fileName
-				+ "not known.")
-
-			return False
-
-		return True
+		return False
 
 
 	# function that initializes the communication to the server
@@ -1652,7 +1251,7 @@ class ServerCommunication:
 		self.isConnected = True
 
 		# handle connection initialized event 
-		self.serverEventHandler.handleEvent()	
+		self.serverEventHandler.handleEvent()
 
 		return True
 
