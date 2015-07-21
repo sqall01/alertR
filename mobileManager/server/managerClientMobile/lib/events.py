@@ -57,5 +57,8 @@ class EventNewVersion(Event):
 
 
 
+
+
 # TODO
-# need additional events
+# events needed: new option, new node, new sensor, new alert, new manager, deleted option, deleted node, deleted node, deleted sensor, deleted alert, deleted manager
+# perhaps: option change, node change, sensor change, alert change, manager change
