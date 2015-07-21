@@ -43,14 +43,6 @@ class Node:
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
 
-		# used for urwid only:
-		# reference to the sensor urwid object
-		self.sensorUrwid = None
-
-		# used for urwid only:
-		# reference to the alert urwid object
-		self.alertUrwid = None
-
 
 # this class represents a sensor client of the alert system
 class Sensor:
@@ -69,10 +61,6 @@ class Sensor:
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
 
-		# used for urwid only:
-		# reference to the sensor urwid object
-		self.sensorUrwid = None
-
 
 # this class represents a manager client of the alert system
 class Manager:
@@ -85,10 +73,6 @@ class Manager:
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
-
-		# used for urwid only:
-		# reference to the manager urwid object
-		self.managerUrwid = None
 
 
 # this class represents an alert client of the alert system
@@ -103,10 +87,6 @@ class Alert:
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
-
-		# used for urwid only:
-		# reference to the alert urwid object
-		self.alertUrwid = None
 
 
 # this class represents a triggered sensor alert of the alert system
@@ -137,10 +117,6 @@ class AlertLevel:
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
-
-		# used for urwid only:
-		# reference to the alert urwid object
-		self.alertLevelUrwid = None
 
 
 # this class handles an incoming server event (sensor alert message,
