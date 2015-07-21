@@ -42,6 +42,7 @@ class EventNewVersion(Event):
 # TODO
 # perhaps add event for changes for sensors, nodes etc in storage backend
 # (it already has a copy of existing elements)
+# BETTER: do it in the client.py => outsource sensor value update to other file to have client.py still compatible with other manager clients
 
 
 
