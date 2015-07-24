@@ -44,6 +44,15 @@ class EventNewVersion(Event):
 		self.hostname = None
 
 
+class EventNewNode(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.nodeType = None
+		self.instance = None
+
+
 
 
 
@@ -62,3 +71,24 @@ class EventNewVersion(Event):
 # TODO
 # events needed: new option, new node, new sensor, new alert, new manager, deleted option, deleted node, deleted node, deleted sensor, deleted alert, deleted manager
 # perhaps: option change, node change, sensor change, alert change, manager change
+#USEFUL EVENT: node goes offline, sensor timed out
+
+'''
+new option
+new node 				DONE
+new sensor
+new alert
+new manager
+deleted option
+deleted node
+deleted sensor
+deleted alert
+deleted manager
+option change
+node change
+sensor change
+alert change
+manager change
+node goes offline
+sensor timed out
+'''

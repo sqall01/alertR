@@ -10,7 +10,8 @@
 import os
 import logging
 import time
-from events import EventSensorAlert, EventNewVersion, EventStateChange
+from events import EventSensorAlert, EventNewVersion, EventStateChange, \
+	EventNewNode
 
 
 # this class represents an option of the server
@@ -278,6 +279,8 @@ class ServerEventHandler:
 	def receivedStatusUpdate(self, options, nodes, sensors, managers, alerts,
 		alertLevels):
 
+		timeReceived = int(time.time())
+
 		# mark all nodes as not checked
 		self._markAlertSystemObjectsAsNotChecked()
 
@@ -354,6 +357,13 @@ class ServerEventHandler:
 			if not found:
 				recvNode.checked = True
 				self.nodes.append(recvNode)
+
+				# create new node event
+				tempEvent = EventNewNode(timeReceived)
+				tempEvent.hostname = recvNode.hostname
+				tempEvent.nodeType = recvNode.nodeType
+				tempEvent.instance = recvNode.instance
+				self.events.append(tempEvent)
 
 		# process received sensors
 		for recvSensor in sensors:
