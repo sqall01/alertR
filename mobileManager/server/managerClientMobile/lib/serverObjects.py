@@ -11,7 +11,7 @@ import os
 import logging
 import time
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventNewNode
+	EventNewNode, EventNewSensor
 
 
 # this class represents an option of the server
@@ -406,6 +406,25 @@ class ServerEventHandler:
 			if not found:
 				recvSensor.checked = True
 				self.sensors.append(recvSensor)
+
+				# create new sensor event
+				foundNode = None
+				for node in self.nodes:
+					if node.nodeId == recvSensor.nodeId:
+						foundNode = node
+						break
+				if foundNode is None:
+					logging.error("[%s]: Could not find node with id "
+						% self.fileName
+						+ "'%d' for sensor with id '%d'."
+						% (recvSensor.nodeId, recvSensor.sensorId))
+
+					return False
+				tempEvent = EventNewSensor(timeReceived)
+				tempEvent.hostname = foundNode.hostname
+				tempEvent.description = recvSensor.description
+				tempEvent.state = recvSensor.state
+				self.events.append(tempEvent)
 
 		# process received managers
 		for recvManager in managers:

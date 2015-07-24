@@ -13,7 +13,7 @@ import threading
 import time
 import json
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventNewNode
+	EventNewNode, EventNewSensor
 
 
 # internal abstract class for new storage backends
@@ -88,6 +88,7 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
 		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
@@ -279,6 +280,15 @@ class Mysql(_Storage):
 			+ "hostname TEXT NOT NULL, "
 			+ "nodeType TEXT NOT NULL, "
 			+ "instance TEXT NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewSensor table
+		self.cursor.execute("CREATE TABLE eventsNewSensor ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "state INTEGER NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
@@ -502,6 +512,10 @@ class Mysql(_Storage):
 						(eventId, ))
 				elif eventType.upper() == "newNode".upper():
 					self.cursor.execute("DELETE FROM eventsNewNode "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newSensor".upper():
+					self.cursor.execute("DELETE FROM eventsNewSensor "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				else:
@@ -967,6 +981,32 @@ class Mysql(_Storage):
 						+ "VALUES (%s, %s, %s, %s)",
 						(eventId, event.hostname, event.nodeType,
 						event.instance))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventNewSensor):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newSensor"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewSensor ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.description,
+						event.state))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add event."
 						% self.fileName)

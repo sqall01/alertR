@@ -53,7 +53,13 @@ class EventNewNode(Event):
 		self.instance = None
 
 
+class EventNewSensor(Event):
 
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.description = None
+		self.state = None
 
 
 
@@ -76,7 +82,7 @@ class EventNewNode(Event):
 '''
 new option
 new node 				DONE
-new sensor
+new sensor 				DONE
 new alert
 new manager
 deleted option
