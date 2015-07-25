@@ -444,6 +444,497 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 
+	# adds all events from the queue to the database
+	#
+	# return True or False
+	def _addEventsToDb(self):
+
+		# add all events to the database (if any exists)
+		while len(self.events) != 0:
+
+			event = self.events.pop()
+
+			# insert event into the database
+			if isinstance(event, EventSensorAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "sensorAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsSensorAlert ("
+						+ "eventId, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.description, event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "sensor alert event.")
+
+					return False
+
+			elif isinstance(event, EventNewVersion):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newVersion"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewVersion ("
+						+ "eventId, "
+						+ "usedVersion, "
+						+ "usedRev, "
+						+ "newVersion, "
+						+ "newRev, "
+						+ "instance, "
+						+ "hostname) "
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+						(eventId, event.usedVersion, event.usedRev,
+						event.newVersion, event.newRev, event.instance,
+						event.hostname))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "new version event.")
+
+					return False
+
+			elif isinstance(event, EventStateChange):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "stateChange"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsStateChange ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.description,
+						event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "state changed event.")
+
+					return False
+
+			elif isinstance(event, EventConnectedChange):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "connectedChange"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsConnectedChange ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "nodeType, "
+						+ "instance, "
+						+ "connected) "
+						+ "VALUES (%s, %s, %s, %s, %s)",
+						(eventId, event.hostname, event.nodeType,
+						event.instance, event.connected))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "connection changed event.")
+
+					return False
+
+			elif isinstance(event, EventSensorTimeOut):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "sensorTimeOut"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsSensorTimeOut ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.description,
+						event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "sensor timed out event.")
+
+					return False
+
+			elif isinstance(event, EventNewOption):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newOption"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewOption ("
+						+ "eventId, "
+						+ "type, "
+						+ "value) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.type, event.value))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "new option event.")
+
+					return False
+
+			elif isinstance(event, EventNewNode):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newNode"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewNode ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "nodeType, "
+						+ "instance) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.nodeType,
+						event.instance))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "new node event.")
+
+					return False
+
+			elif isinstance(event, EventNewSensor):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newSensor"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewSensor ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.description,
+						event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "new sensor event.")
+
+					return False
+
+			elif isinstance(event, EventNewAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewAlert ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.hostname, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "new alert event.")
+
+					return False
+
+			elif isinstance(event, EventNewManager):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newManager"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewManager ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.hostname, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "new manager event.")
+
+					return False
+
+			elif isinstance(event, EventChangeOption):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeOption"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeOption ("
+						+ "eventId, "
+						+ "type, "
+						+ "oldValue, "
+						+ "newValue) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.type, event.oldValue, event.newValue))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "option changed event.")
+
+					return False
+
+			elif isinstance(event, EventChangeNode):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeNode"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeNode ("
+						+ "eventId, "
+						+ "oldHostname, "
+						+ "oldNodeType, "
+						+ "oldInstance, "
+						+ "oldVersion, "
+						+ "oldRev, "
+						+ "newHostname, "
+						+ "newNodeType, "
+						+ "newInstance, "
+						+ "newVersion, "
+						+ "newRev) "
+						+ "VALUES "
+						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+						(eventId, event.oldHostname, event.oldNodeType,
+						event.oldInstance, event.oldVersion,
+						event.oldRev, event.newHostname,
+						event.newNodeType, event.newInstance,
+						event.newVersion, event.newRev))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "node changed event.")
+
+					return False
+
+			elif isinstance(event, EventChangeSensor):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeSensor"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeSensor ("
+						+ "eventId, "
+						+ "oldAlertDelay, "
+						+ "oldDescription, "
+						+ "newAlertDelay, "
+						+ "newDescription) "
+						+ "VALUES "
+						+ "(%s, %s, %s, %s, %s)",
+						(eventId, event.oldAlertDelay, event.oldDescription,
+						event.newAlertDelay, event.newDescription))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "sensor changed event.")
+
+					return False
+
+			elif isinstance(event, EventChangeAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeAlert ("
+						+ "eventId, "
+						+ "oldDescription, "
+						+ "newDescription) "
+						+ "VALUES "
+						+ "(%s, %s, %s)",
+						(eventId, event.oldDescription, event.newDescription))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "alert changed event.")
+
+					return False
+
+			elif isinstance(event, EventChangeManager):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeManager"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeManager ("
+						+ "eventId, "
+						+ "oldDescription, "
+						+ "newDescription) "
+						+ "VALUES "
+						+ "(%s, %s, %s)",
+						(eventId, event.oldDescription, event.newDescription))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "manager changed event.")
+
+					return False
+
+			elif isinstance(event, EventDeleteNode):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteNode"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteNode ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "nodeType, "
+						+ "instance) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.nodeType,
+						event.instance))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "node deleted event.")
+
+					return False
+
+			elif isinstance(event, EventDeleteSensor):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteSensor"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteSensor ("
+						+ "eventId, "
+						+ "description) "
+						+ "VALUES (%s, %s)",
+						(eventId, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "sensor deleted event.")
+
+					return False
+
+			elif isinstance(event, EventDeleteAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteAlert ("
+						+ "eventId, "
+						+ "description) "
+						+ "VALUES (%s, %s)",
+						(eventId, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "alert deleted event.")
+
+					return False
+
+			elif isinstance(event, EventDeleteManager):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteManager"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteManager ("
+						+ "eventId, "
+						+ "description) "
+						+ "VALUES (%s, %s)",
+						(eventId, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add "
+						% self.fileName
+						+ "manager deleted event.")
+
+					return False
+
+			else:
+				logging.error("[%s]: Used event not known."
+					% self.fileName)
+
+		return True
+
+
 	# updates the received server information
 	#
 	# return True or False
@@ -1075,509 +1566,18 @@ class Mysql(_Storage):
 
 				self.alertLevels.append(alertLevel)
 
-		# add all events to the database (if any exists and it is activated
-		# to store events)
-		while (len(self.events) != 0
-			and self.eventsLifeSpan > 0):
 
-			event = self.events.pop()
+		# add all events to the database (if it is activated to store events)
+		if self.eventsLifeSpan > 0:
+			if not self._addEventsToDb():
 
-			# insert event into the database
-			if isinstance(event, EventSensorAlert):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "sensorAlert"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsSensorAlert ("
-						+ "eventId, "
-						+ "description, "
-						+ "state) "
-						+ "VALUES (%s, %s, %s)",
-						(eventId, event.description, event.state))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventNewVersion):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "newVersion"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsNewVersion ("
-						+ "eventId, "
-						+ "usedVersion, "
-						+ "usedRev, "
-						+ "newVersion, "
-						+ "newRev, "
-						+ "instance, "
-						+ "hostname) "
-						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-						(eventId, event.usedVersion, event.usedRev,
-						event.newVersion, event.newRev, event.instance,
-						event.hostname))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventStateChange):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "stateChange"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsStateChange ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "description, "
-						+ "state) "
-						+ "VALUES (%s, %s, %s, %s)",
-						(eventId, event.hostname, event.description,
-						event.state))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventConnectedChange):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "connectedChange"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsConnectedChange ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "nodeType, "
-						+ "instance, "
-						+ "connected) "
-						+ "VALUES (%s, %s, %s, %s, %s)",
-						(eventId, event.hostname, event.nodeType,
-						event.instance, event.connected))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventSensorTimeOut):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "sensorTimeOut"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsSensorTimeOut ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "description, "
-						+ "state) "
-						+ "VALUES (%s, %s, %s, %s)",
-						(eventId, event.hostname, event.description,
-						event.state))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventNewOption):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "newOption"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsNewOption ("
-						+ "eventId, "
-						+ "type, "
-						+ "value) "
-						+ "VALUES (%s, %s, %s)",
-						(eventId, event.type, event.value))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventNewNode):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "newNode"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsNewNode ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "nodeType, "
-						+ "instance) "
-						+ "VALUES (%s, %s, %s, %s)",
-						(eventId, event.hostname, event.nodeType,
-						event.instance))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventNewSensor):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "newSensor"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsNewSensor ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "description, "
-						+ "state) "
-						+ "VALUES (%s, %s, %s, %s)",
-						(eventId, event.hostname, event.description,
-						event.state))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventNewAlert):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "newAlert"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsNewAlert ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "description) "
-						+ "VALUES (%s, %s, %s)",
-						(eventId, event.hostname, event.description))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventNewManager):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "newManager"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsNewManager ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "description) "
-						+ "VALUES (%s, %s, %s)",
-						(eventId, event.hostname, event.description))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventChangeOption):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "changeOption"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsChangeOption ("
-						+ "eventId, "
-						+ "type, "
-						+ "oldValue, "
-						+ "newValue) "
-						+ "VALUES (%s, %s, %s, %s)",
-						(eventId, event.type, event.oldValue, event.newValue))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventChangeNode):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "changeNode"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsChangeNode ("
-						+ "eventId, "
-						+ "oldHostname, "
-						+ "oldNodeType, "
-						+ "oldInstance, "
-						+ "oldVersion, "
-						+ "oldRev, "
-						+ "newHostname, "
-						+ "newNodeType, "
-						+ "newInstance, "
-						+ "newVersion, "
-						+ "newRev) "
-						+ "VALUES "
-						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-						(eventId, event.oldHostname, event.oldNodeType,
-						event.oldInstance, event.oldVersion,
-						event.oldRev, event.newHostname,
-						event.newNodeType, event.newInstance,
-						event.newVersion, event.newRev))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventChangeSensor):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "changeSensor"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsChangeSensor ("
-						+ "eventId, "
-						+ "oldAlertDelay, "
-						+ "oldDescription, "
-						+ "newAlertDelay, "
-						+ "newDescription) "
-						+ "VALUES "
-						+ "(%s, %s, %s, %s, %s)",
-						(eventId, event.oldAlertDelay, event.oldDescription,
-						event.newAlertDelay, event.newDescription))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventChangeAlert):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "changeAlert"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsChangeAlert ("
-						+ "eventId, "
-						+ "oldDescription, "
-						+ "newDescription) "
-						+ "VALUES "
-						+ "(%s, %s, %s)",
-						(eventId, event.oldDescription, event.newDescription))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventChangeManager):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "changeManager"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsChangeManager ("
-						+ "eventId, "
-						+ "oldDescription, "
-						+ "newDescription) "
-						+ "VALUES "
-						+ "(%s, %s, %s)",
-						(eventId, event.oldDescription, event.newDescription))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventDeleteNode):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "deleteNode"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsDeleteNode ("
-						+ "eventId, "
-						+ "hostname, "
-						+ "nodeType, "
-						+ "instance) "
-						+ "VALUES (%s, %s, %s, %s)",
-						(eventId, event.hostname, event.nodeType,
-						event.instance))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventDeleteSensor):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "deleteSensor"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsDeleteSensor ("
-						+ "eventId, "
-						+ "description) "
-						+ "VALUES (%s, %s)",
-						(eventId, event.description))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventDeleteAlert):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "deleteAlert"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsDeleteAlert ("
-						+ "eventId, "
-						+ "description) "
-						+ "VALUES (%s, %s)",
-						(eventId, event.description))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			elif isinstance(event, EventDeleteManager):
-				try:
-					self.cursor.execute("INSERT INTO events ("
-						+ "timeOccurred, "
-						+ "type) "
-						+ "VALUES (%s, %s)",
-						(event.timeOccurred, "deleteManager"))
-
-					eventId = self.cursor.lastrowid
-
-					self.cursor.execute("INSERT INTO eventsDeleteManager ("
-						+ "eventId, "
-						+ "description) "
-						+ "VALUES (%s, %s)",
-						(eventId, event.description))
-				except Exception as e:
-					logging.exception("[%s]: Not able to add event."
-						% self.fileName)
-
-					self._releaseLock()
-
-					return False
-
-			else:
-				logging.error("[%s]: Used event not known."
+				logging.error("[%s]: Not able to add events."
 					% self.fileName)
+
+				self._releaseLock()
+
+				return False
+
 
 		# commit all changes
 		self.conn.commit()
