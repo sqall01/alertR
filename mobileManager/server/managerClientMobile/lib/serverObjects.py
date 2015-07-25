@@ -10,12 +10,14 @@
 import os
 import logging
 import time
-from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventConnectedChange, EventSensorTimeOut, \
-	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
-	EventNewManager, EventChangeOption, EventChangeNode, EventChangeSensor, \
-	EventChangeAlert, EventChangeManager, \
-	EventDeleteNode, EventDeleteSensor, EventDeleteAlert, EventDeleteManager
+from events import EventSensorAlert, EventNewVersion
+from events import EventStateChange, EventConnectedChange, EventSensorTimeOut
+from events import EventNewOption, EventNewNode, EventNewSensor
+from events import EventNewAlert, EventNewManager
+from events import EventChangeOption, EventChangeNode, EventChangeSensor
+from events import EventChangeAlert, EventChangeManager
+from events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
+from events import EventDeleteManager
 
 
 # this class represents an option of the server
