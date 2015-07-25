@@ -1304,6 +1304,7 @@ function processResponseOverview() {
 				tempTable.appendChild(newTr)
 
 				var newTd = document.createElement("td");
+				newTd.style.width = "50%";
 				newTd.className = "buttonTd";
 				var newA = document.createElement("a");
 				newA.className = "buttonA";
@@ -1314,6 +1315,7 @@ function processResponseOverview() {
 				newTr.appendChild(newTd);
 
 				var newTd = document.createElement("td");
+				newTd.style.width = "50%";
 				newTd.className = "buttonTd";
 				var newA = document.createElement("a");
 				newA.className = "buttonA";
