@@ -11,10 +11,11 @@ import os
 import logging
 import time
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventConnectedChange, \
+	EventConnectedChange, EventSensorTimeOut, \
 	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
 	EventNewManager, EventChangeOption, EventChangeNode, EventChangeSensor, \
-	EventChangeAlert, EventChangeManager
+	EventChangeAlert, EventChangeManager, \
+	EventDeleteNode, EventDeleteSensor, EventDeleteAlert, EventDeleteManager
 
 
 # this class represents an option of the server
@@ -146,6 +147,7 @@ class ServerEventHandler:
 		self.sensorAlerts = self.globalData.sensorAlerts
 		self.versionInformer = self.globalData.versionInformer
 		self.events = self.globalData.events
+		self.connectionTimeout = self.globalData.connectionTimeout
 
 
 	# internal function that checks if all options are checked
@@ -158,16 +160,31 @@ class ServerEventHandler:
 
 	# internal function that removes all nodes that are not checked
 	def _removeNotCheckedNodes(self):
+
+		timeReceived = int(time.time())
+
 		for node in self.nodes:
 			if node.checked is False:
 
-				# remove sensor from list of sensors
+				# create delete node event
+				tempEvent = EventDeleteNode(timeReceived)
+				tempEvent.hostname = node.hostname
+				tempEvent.nodeType = node.nodeType
+				tempEvent.instance = node.instance
+				self.events.append(tempEvent)
+
+				# remove node from list of nodes
 				# to delete all references to object
 				# => object will be deleted by garbage collector
 				self.nodes.remove(node)
 
 		for sensor in self.sensors:
 			if sensor.checked is False:
+
+				# create delete sensor event
+				tempEvent = EventDeleteSensor(timeReceived)
+				tempEvent.description = sensor.description
+				self.events.append(tempEvent)
 
 				# remove sensor from list of sensors
 				# to delete all references to object
@@ -177,6 +194,11 @@ class ServerEventHandler:
 		for manager in self.managers:
 			if manager.checked is False:
 
+				# create delete manager event
+				tempEvent = EventDeleteManager(timeReceived)
+				tempEvent.description = manager.description
+				self.events.append(tempEvent)
+
 				# remove manager from list of managers
 				# to delete all references to object
 				# => object will be deleted by garbage collector
@@ -184,6 +206,11 @@ class ServerEventHandler:
 
 		for alert in self.alerts:
 			if alert.checked is False:
+
+				# create delete alert event
+				tempEvent = EventDeleteAlert(timeReceived)
+				tempEvent.description = alert.description
+				self.events.append(tempEvent)
 
 				# remove alert from list of alerts
 				# to delete all references to object
@@ -383,6 +410,7 @@ class ServerEventHandler:
 			# => if not known add it
 			found = False
 			for sensor in self.sensors:
+
 				# ignore sensors that are already checked
 				if sensor.checked:
 
@@ -396,13 +424,16 @@ class ServerEventHandler:
 
 					continue
 
+				# update received server time for all sensors (despite the
+				# corresponding id)
+				sensor.serverTime = recvSensor.serverTime
+
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
 					sensor.checked = True
 
 					sensor.nodeId = recvSensor.nodeId
 					sensor.alertLevels = recvSensor.alertLevels
-					sensor.serverTime = recvSensor.serverTime
 
 					# create change sensor event (only add it if an information
 					# has changed)
@@ -831,6 +862,35 @@ class ServerEventHandler:
 				if not found:
 					node.newestVersion = -1.0
 					node.newestRev = -1
+
+
+		# check if a sensor has timed out
+		# => create an event for it
+		for sensor in self.sensors:
+			if (sensor.lastStateUpdated < (sensor.serverTime
+				- (2 * self.connectionTimeout))):
+
+				# create sensor time out event
+				# (only add it if node is connected)
+				foundNode = None
+				for node in self.nodes:
+					if node.nodeId == sensor.nodeId:
+						foundNode = node
+						break
+				if foundNode is None:
+					logging.error("[%s]: Could not find node with id "
+						% self.fileName
+						+ "'%d' for sensor with id '%d'."
+						% (sensor.nodeId, sensor.sensorId))
+
+					continue
+				if foundNode.connected == 1:
+					tempEvent = EventSensorTimeOut(int(time.time()))
+					tempEvent.hostname = foundNode.hostname
+					tempEvent.description = sensor.description
+					tempEvent.state = sensor.state
+					self.events.append(tempEvent)
+
 
 		# update the local server information
 		if not self.storage.updateServerInformation(self.options, self.nodes,

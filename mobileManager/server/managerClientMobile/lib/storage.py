@@ -13,10 +13,11 @@ import threading
 import time
 import json
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventConnectedChange, \
+	EventConnectedChange, EventSensorTimeOut, \
 	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
 	EventNewManager, EventChangeOption, EventChangeNode, EventChangeSensor, \
-	EventChangeAlert, EventChangeManager
+	EventChangeAlert, EventChangeManager, \
+	EventDeleteNode, EventDeleteSensor, EventDeleteAlert, EventDeleteManager
 
 
 # internal abstract class for new storage backends
@@ -91,6 +92,7 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
@@ -101,6 +103,10 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
 		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
@@ -283,6 +289,15 @@ class Mysql(_Storage):
 			+ "connected INTEGER NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
+		# create eventsSensorTimeOut table
+		self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "state INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
 		# create eventsSensorAlert table
 		self.cursor.execute("CREATE TABLE eventsNewVersion ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
@@ -386,6 +401,36 @@ class Mysql(_Storage):
 			+ "eventId INTEGER NOT NULL, "
 			+ "oldDescription VARCHAR(255) NOT NULL, "
 			+ "newDescription VARCHAR(255) NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteNode table
+		self.cursor.execute("CREATE TABLE eventsDeleteNode ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
+			+ "nodeType TEXT NOT NULL, "
+			+ "instance TEXT NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteSensor table
+		self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteAlert table
+		self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteManager table
+		self.cursor.execute("CREATE TABLE eventsDeleteManager ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "description TEXT NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
@@ -611,6 +656,10 @@ class Mysql(_Storage):
 					self.cursor.execute("DELETE FROM eventsConnectedChange "
 						+ "WHERE eventId = %s",
 						(eventId, ))
+				elif eventType.upper() == "sensorTimeOut".upper():
+					self.cursor.execute("DELETE FROM eventsSensorTimeOut "
+						+ "WHERE eventId = %s",
+						(eventId, ))
 				elif eventType.upper() == "newOption".upper():
 					self.cursor.execute("DELETE FROM eventsNewOption "
 						+ "WHERE eventId = %s",
@@ -649,6 +698,22 @@ class Mysql(_Storage):
 						(eventId, ))
 				elif eventType.upper() == "changeManager".upper():
 					self.cursor.execute("DELETE FROM eventsChangeManager "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteNode".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteNode "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteSensor".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteSensor "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteAlert".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteManager".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteManager "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				else:
@@ -1123,6 +1188,32 @@ class Mysql(_Storage):
 
 					return False
 
+			elif isinstance(event, EventSensorTimeOut):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "sensorTimeOut"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsSensorTimeOut ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description, "
+						+ "state) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.description,
+						event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
 			elif isinstance(event, EventNewOption):
 				try:
 					self.cursor.execute("INSERT INTO events ("
@@ -1379,6 +1470,101 @@ class Mysql(_Storage):
 						+ "VALUES "
 						+ "(%s, %s, %s)",
 						(eventId, event.oldDescription, event.newDescription))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventDeleteNode):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteNode"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteNode ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "nodeType, "
+						+ "instance) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.hostname, event.nodeType,
+						event.instance))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventDeleteSensor):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteSensor"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteSensor ("
+						+ "eventId, "
+						+ "description) "
+						+ "VALUES (%s, %s)",
+						(eventId, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventDeleteAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteAlert ("
+						+ "eventId, "
+						+ "description) "
+						+ "VALUES (%s, %s)",
+						(eventId, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventDeleteManager):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "deleteManager"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsDeleteManager ("
+						+ "eventId, "
+						+ "description) "
+						+ "VALUES (%s, %s)",
+						(eventId, event.description))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add event."
 						% self.fileName)

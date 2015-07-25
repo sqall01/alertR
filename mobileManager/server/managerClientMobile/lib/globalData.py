@@ -72,6 +72,10 @@ class GlobalData:
 		# this is a list of all alert level objects that are received
 		self.alertLevels = list()
 
+		# this is the time in seconds when the sensor should be
+		# handled as timed out
+		self.connectionTimeout = 60
+
 		# this variable holds the object of the server communication
 		self.serverComm = None
 

@@ -42,6 +42,15 @@ class EventConnectedChange(Event):
 		self.connected = None
 
 
+class EventSensorTimeOut(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.description = None
+		self.state = None
+
+
 class EventNewVersion(Event):
 
 	def __init__(self, timeOccurred):
@@ -146,6 +155,42 @@ class EventChangeManager(Event):
 		self.oldDescription = None
 		self.newDescription = None
 
+
+class EventDeleteNode(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.nodeType = None
+		self.instance = None
+
+
+class EventDeleteSensor(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.description = None
+
+
+class EventDeleteAlert(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.description = None
+
+
+class EventDeleteManager(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.description = None
+
+
+
+
+
+
+
 # TODO
 # perhaps add event for changes for sensors, nodes etc in storage backend
 # (it already has a copy of existing elements)
@@ -169,16 +214,15 @@ new node 				DONE
 new sensor 				DONE
 new alert 				DONE
 new manager 			DONE
-deleted option
-deleted node
-deleted sensor
-deleted alert
-deleted manager
+deleted node 			DONE
+deleted sensor 			DONE
+deleted alert 			DONE
+deleted manager 		DONE
 option change 			DONE
 node change 			DONE
 sensor change 			DONE
 alert change 			DONE
 manager change 			DONE
 node goes offline		DONE
-sensor timed out
+sensor timed out 		DONE
 '''
