@@ -161,7 +161,7 @@ function compareSensorsAsc(a, b) {
 
 
 // adds a menu for the navigation to the given table body
-function addMenu(newBody) {
+function addMenu(newBody, current) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
@@ -181,8 +181,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "alertLevels") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Alert Levels";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("alertLevels"); };
@@ -192,8 +198,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "nodes") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Clients";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("nodes"); };
@@ -203,8 +215,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "alerts") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Clients (Type: Alert)";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("alerts"); };
@@ -214,8 +232,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "managers") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Clients (Type: Manager)";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("managers"); };
@@ -225,8 +249,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "sensors") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Clients (Type: Sensor)";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("sensors"); };
@@ -236,8 +266,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "overview") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Overview";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("overview"); };
@@ -247,8 +283,14 @@ function addMenu(newBody) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		newTd.className = "neutralTd";
+		if(current == "sensorAlerts") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
 		var newA = document.createElement("a");
+		newA.className = "buttonA";
 		newA.textContent = "Sensor Alerts";
 		newA.href = "javascript:void(0)";
 		newA.onclick = function(){ requestData("sensorAlerts"); };
@@ -303,7 +345,7 @@ function processResponseAlertLevels() {
 		}
 
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "alertLevels");
 
 
 		var newTr = document.createElement("tr");
@@ -475,7 +517,7 @@ function processResponseAlerts() {
 		}
 
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "alerts");
 
 
 		var newTr = document.createElement("tr");
@@ -768,7 +810,7 @@ function processResponseManagers() {
 		}
 
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "managers");
 
 
 		var newTr = document.createElement("tr");
@@ -990,7 +1032,7 @@ function processResponseNodes() {
 		}
 
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "nodes");
 
 
 		var newTr = document.createElement("tr");
@@ -1193,9 +1235,8 @@ function processResponseOverview() {
 			}
 		}
 
-
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "overview");
 
 
 		var newTr = document.createElement("tr");
@@ -1386,7 +1427,7 @@ function processResponseSensorAlerts() {
 		}
 
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "sensorAlerts");
 
 
 		var newTr = document.createElement("tr");
@@ -1584,7 +1625,7 @@ function processResponseSensors() {
 		}
 
 		// add header of site
-		addMenu(newBody);
+		addMenu(newBody, "sensors");
 
 
 		var newTr = document.createElement("tr");

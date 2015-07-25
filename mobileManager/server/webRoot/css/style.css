@@ -1,3 +1,23 @@
+a:link {
+	text-decoration: none;
+}
+
+
+a:visited {
+	text-decoration: none;
+}
+
+
+a:hover {
+	text-decoration: none;
+}
+
+
+a:active {
+	text-decoration: none;
+}
+
+
 .box {
 	background-color: #ffffff;
 	border: 2px solid #000000;
@@ -57,4 +77,25 @@
 
 .boxEntryTd {
 	background-color: #d5cbcb;
+}
+
+
+.buttonA {
+	color: #000000;
+	display:block;
+    width:100%;
+}
+
+
+.buttonTd {
+	padding: 6px;
+	border: 2px solid #000000;
+	background-color: #55b1bc;
+}
+
+
+.buttonActiveTd {
+	padding: 6px;
+	border: 2px solid #000000;
+	background-color: #fa5b55;
 }
