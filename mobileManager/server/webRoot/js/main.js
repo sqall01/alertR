@@ -1205,6 +1205,7 @@ function processResponseOverview() {
 		var options = alertSystemInformation["options"];
 		var nodes = alertSystemInformation["nodes"];
 		var sensors = alertSystemInformation["sensors"];
+		var sensorAlerts = alertSystemInformation["sensorAlerts"];
 
 
 		// get server time
@@ -1219,6 +1220,7 @@ function processResponseOverview() {
 		addMenu(newBody, "overview");
 
 
+		// generate alert system overview output
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		var newB = document.createElement("b");
@@ -1226,7 +1228,6 @@ function processResponseOverview() {
 		newTd.appendChild(newB);
 		newTr.appendChild(newTd);
 		newBody.appendChild(newTr);
-
 
 		var boxDiv = document.createElement("div");
 		boxDiv.className = "box";
@@ -1244,15 +1245,6 @@ function processResponseOverview() {
 			if(options[i]["type"].toUpperCase() == "ALERTSYSTEMACTIVE") {
 
 				// add status of alert system
-				var newTr = document.createElement("tr");
-				var newTd = document.createElement("td");
-				var newB = document.createElement("b");
-				newB.textContent = "Status:";
-				newTd.appendChild(newB);
-				newTd.className = "boxEntryTd";
-				newTr.appendChild(newTd);
-				optionsTable.appendChild(newTr);
-
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td");
 				if(options[i]["value"] == 0) {
@@ -1305,7 +1297,7 @@ function processResponseOverview() {
 				newTd.appendChild(newA);
 				newTr.appendChild(newTd);
 
-				continue;
+				break;
 			}
 		}
 
@@ -1319,6 +1311,85 @@ function processResponseOverview() {
 		contentTableObj.appendChild(newTr);
 
 
+		// generate sensor alerts overview output
+		sensorAlerts.sort(compareSensorAlertsDesc);
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Last Sensor Alerts (Overview):";
+		newTd.appendChild(newB);
+		newTr.appendChild(newTd);
+		newBody.appendChild(newTr);
+
+
+		var boxDiv = document.createElement("div");
+		boxDiv.className = "box";
+
+		var sensorAlertsTable = document.createElement("table");
+		sensorAlertsTable.style.width = "100%";
+		sensorAlertsTable.setAttribute("border", "0");
+		boxDiv.appendChild(sensorAlertsTable);
+
+		// add the last sensor alerts to the output
+		for(i = 0; i < 5; i++) {
+
+			// skip if there are no sensor alerts left
+			if(i >= sensorAlerts.length) {
+				break;
+			}
+
+			var timeReceived = sensorAlerts[i]["timeReceived"];
+			var state = sensorAlerts[i]["state"];
+			var description = sensorAlerts[i]["description"];
+
+			// generate date string from timestamp
+			localDate = new Date(timeReceived * 1000);
+			yearString = localDate.getFullYear();
+			monthString =
+				("0" + (localDate.getMonth() + 1)).slice(-2);
+			dateString =
+				("0" + localDate.getDate()).slice(-2);
+			hoursString =
+				("0" + localDate.getHours()).slice(-2);
+			minutesString =
+				("0" + localDate.getMinutes()).slice(-2);
+			secondsString =
+				("0" + localDate.getSeconds()).slice(-2);
+			timeReceivedString = monthString + "/" + dateString + "/" +
+					yearString + " " + hoursString + ":" +
+					minutesString + ":" + secondsString;
+
+			// output sensor alert description
+			var newTr = document.createElement("tr");
+			var newTd = document.createElement("td");
+			newTd.appendChild(document.createTextNode(description));
+			if(state == 0) {
+				newTd.appendChild(document.createTextNode(" (normal)"));
+				newTd.className = "okTd";
+			}
+			else {
+				newTd.appendChild(document.createTextNode(" (triggered)"));
+				newTd.className = "triggeredTd";
+			}
+			newTd.appendChild(document.createElement("br"));
+			newTr.appendChild(newTd);
+			newTd.appendChild(document.createTextNode(timeReceivedString));
+			sensorAlertsTable.appendChild(newTr);
+
+		}
+
+		// add output to the content table
+		var contentTableObj =
+			document.getElementById("contentTableBody");
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.appendChild(boxDiv);
+		newTr.appendChild(newTd);
+		contentTableObj.appendChild(newTr);
+
+
+		// generate sensors overview output
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		var newB = document.createElement("b");
@@ -1326,7 +1397,6 @@ function processResponseOverview() {
 		newTd.appendChild(newB);
 		newTr.appendChild(newTd);
 		newBody.appendChild(newTr);
-
 
 		var boxDiv = document.createElement("div");
 		boxDiv.className = "box";
@@ -1347,14 +1417,12 @@ function processResponseOverview() {
 			var state = sensors[i]["state"];
 			var connected = 0;
 
-
 			// get connected information from corresponding node
 			for(j = 0; j < nodes.length; j++) {
 				if(nodes[j]["id"] == nodeId) {
 					var connected = nodes[j]["connected"];
 				}
 			}
-
 
 			// output sensor descriptions according to state/connected/updated
 			var newTr = document.createElement("tr");
@@ -1377,7 +1445,6 @@ function processResponseOverview() {
 
 
 		}
-
 
 		// add output to the content table
 		var contentTableObj =
@@ -2013,6 +2080,7 @@ function requestData(content) {
 				+ "?data[]=internals"
 				+ "&data[]=options"
 				+ "&data[]=nodes"
+				+ "&data[]=sensorAlerts"
 				+ "&data[]=sensors";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseOverview;
