@@ -13,7 +13,8 @@ import threading
 import time
 import json
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventNewNode, EventNewSensor
+	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
+	EventNewManager
 
 
 # internal abstract class for new storage backends
@@ -87,8 +88,11 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
 		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
@@ -273,6 +277,14 @@ class Mysql(_Storage):
 			+ "hostname VARCHAR(255) NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
+		# create eventsNewOption table
+		self.cursor.execute("CREATE TABLE eventsNewOption ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "type VARCHAR(255) NOT NULL, "
+			+ "value DOUBLE NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
 		# create eventsNewNode table
 		self.cursor.execute("CREATE TABLE eventsNewNode ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
@@ -289,6 +301,22 @@ class Mysql(_Storage):
 			+ "hostname TEXT NOT NULL, "
 			+ "description TEXT NOT NULL, "
 			+ "state INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewAlert table
+		self.cursor.execute("CREATE TABLE eventsNewAlert ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
+			+ "description TEXT NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewManager table
+		self.cursor.execute("CREATE TABLE eventsNewManager ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
+			+ "description TEXT NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
@@ -510,12 +538,24 @@ class Mysql(_Storage):
 					self.cursor.execute("DELETE FROM eventsStateChange "
 						+ "WHERE eventId = %s",
 						(eventId, ))
+				elif eventType.upper() == "newOption".upper():
+					self.cursor.execute("DELETE FROM eventsNewOption "
+						+ "WHERE eventId = %s",
+						(eventId, ))
 				elif eventType.upper() == "newNode".upper():
 					self.cursor.execute("DELETE FROM eventsNewNode "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				elif eventType.upper() == "newSensor".upper():
 					self.cursor.execute("DELETE FROM eventsNewSensor "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newAlert".upper():
+					self.cursor.execute("DELETE FROM eventsNewAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newManager".upper():
+					self.cursor.execute("DELETE FROM eventsNewManager "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				else:
@@ -963,6 +1003,30 @@ class Mysql(_Storage):
 
 					return False
 
+			elif isinstance(event, EventNewOption):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newOption"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewOption ("
+						+ "eventId, "
+						+ "type, "
+						+ "value) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.type, event.value))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
 			elif isinstance(event, EventNewNode):
 				try:
 					self.cursor.execute("INSERT INTO events ("
@@ -1015,10 +1079,57 @@ class Mysql(_Storage):
 
 					return False
 
+			elif isinstance(event, EventNewAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewAlert ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.hostname, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventNewManager):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "newManager"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsNewManager ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "description) "
+						+ "VALUES (%s, %s, %s)",
+						(eventId, event.hostname, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
 			else:
 				logging.error("[%s]: Used event not known."
 					% self.fileName)
-
 
 		# commit all changes
 		self.conn.commit()

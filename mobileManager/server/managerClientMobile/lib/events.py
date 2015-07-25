@@ -44,6 +44,14 @@ class EventNewVersion(Event):
 		self.hostname = None
 
 
+class EventNewOption(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.type = None
+		self.value = None
+
+
 class EventNewNode(Event):
 
 	def __init__(self, timeOccurred):
@@ -60,6 +68,24 @@ class EventNewSensor(Event):
 		self.hostname = None
 		self.description = None
 		self.state = None
+
+
+class EventNewAlert(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.description = None
+
+
+class EventNewManager(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.description = None
+
+
 
 
 
@@ -83,8 +109,8 @@ class EventNewSensor(Event):
 new option
 new node 				DONE
 new sensor 				DONE
-new alert
-new manager
+new alert 				DONE
+new manager 			DONE
 deleted option
 deleted node
 deleted sensor

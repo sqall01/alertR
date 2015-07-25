@@ -11,7 +11,8 @@ import os
 import logging
 import time
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
-	EventNewNode, EventNewSensor
+	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
+	EventNewManager
 
 
 # this class represents an option of the server
@@ -315,6 +316,12 @@ class ServerEventHandler:
 				recvOption.checked = True
 				self.options.append(recvOption)
 
+				# create new option event
+				tempEvent = EventNewOption(timeReceived)
+				tempEvent.type = recvOption.type
+				tempEvent.value = recvOption.value
+				self.events.append(tempEvent)
+
 		# check if all options are checked
 		# => if not, one was removed on the server
 		if not self._checkAllOptionsAreChecked():
@@ -458,6 +465,24 @@ class ServerEventHandler:
 				recvManager.checked = True
 				self.managers.append(recvManager)
 
+				# create new manager event
+				foundNode = None
+				for node in self.nodes:
+					if node.nodeId == recvManager.nodeId:
+						foundNode = node
+						break
+				if foundNode is None:
+					logging.error("[%s]: Could not find node with id "
+						% self.fileName
+						+ "'%d' for manager with id '%d'."
+						% (recvManager.nodeId, recvManager.managerId))
+
+					return False
+				tempEvent = EventNewManager(timeReceived)
+				tempEvent.hostname = foundNode.hostname
+				tempEvent.description = recvManager.description
+				self.events.append(tempEvent)
+
 		# process received alerts
 		for recvAlert in alerts:
 
@@ -490,6 +515,24 @@ class ServerEventHandler:
 			if not found:
 				recvAlert.checked = True
 				self.alerts.append(recvAlert)
+
+				# create new alert event
+				foundNode = None
+				for node in self.nodes:
+					if node.nodeId == recvAlert.nodeId:
+						foundNode = node
+						break
+				if foundNode is None:
+					logging.error("[%s]: Could not find node with id "
+						% self.fileName
+						+ "'%d' for alert with id '%d'."
+						% (recvAlert.nodeId, recvAlert.alertId))
+
+					return False
+				tempEvent = EventNewAlert(timeReceived)
+				tempEvent.hostname = foundNode.hostname
+				tempEvent.description = recvAlert.description
+				self.events.append(tempEvent)
 
 		# process received alertLevels
 		for recvAlertLevel in alertLevels:
