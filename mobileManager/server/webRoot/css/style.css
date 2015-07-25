@@ -5,6 +5,18 @@
 	padding: 2px;
 	padding-top: 5px;
  	padding-bottom: 5px;
+ 	margin-bottom: 30px;
+}
+
+
+.subbox {
+	background-color: #ffffff;
+	border: 2px solid #000000;
+	border-radius: 15px;
+	padding: 2px;
+	padding-top: 5px;
+ 	padding-bottom: 5px;
+ 	margin-top: 5px;
 }
 
 
@@ -13,7 +25,22 @@
 }
 
 
+.triggeredTd {
+	background-color: #fff000;
+}
+
+
 .okTd {
+	background-color: #00ff00;
+}
+
+
+.deactivatedTd {
+	background-color: #ff0000;
+}
+
+
+.activatedTd {
 	background-color: #00ff00;
 }
 
