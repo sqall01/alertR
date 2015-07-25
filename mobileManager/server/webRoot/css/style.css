@@ -82,8 +82,9 @@ a:active {
 
 .buttonA {
 	color: #000000;
-	display:block;
-    width:100%;
+	display: block;
+    width: 100%;
+    text-align: center;
 }
 
 
