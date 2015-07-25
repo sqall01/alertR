@@ -1289,19 +1289,39 @@ function processResponseOverview() {
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td");
 				newTd.className = "neutralTd";
+				newTr.appendChild(newTd);
+				optionsTable.appendChild(newTr);
+
+
+				// create a temporary table to have the
+				// buttons next to each other
+				var tempTable = document.createElement("table");
+				tempTable.style.width = "100%";
+				tempTable.setAttribute("border", "0");
+				newTd.appendChild(tempTable);
+
+				var newTr = document.createElement("tr");
+				tempTable.appendChild(newTr)
+
+				var newTd = document.createElement("td");
+				newTd.className = "buttonTd";
 				var newA = document.createElement("a");
+				newA.className = "buttonA";
 				newA.textContent = "activate";
 				newA.href = "javascript:void(0)";
 				newA.onclick = function(){ confirmation(1); };
 				newTd.appendChild(newA);
-				newTd.appendChild(document.createTextNode(" || "));
+				newTr.appendChild(newTd);
+
+				var newTd = document.createElement("td");
+				newTd.className = "buttonTd";
 				var newA = document.createElement("a");
+				newA.className = "buttonA";
 				newA.textContent = "deactivate";
 				newA.href = "javascript:void(0)";
 				newA.onclick = function(){ confirmation(0); };
 				newTd.appendChild(newA);
 				newTr.appendChild(newTd);
-				optionsTable.appendChild(newTr);
 
 				continue;
 			}
@@ -1320,7 +1340,7 @@ function processResponseOverview() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		var newB = document.createElement("b");
-		newB.textContent = "Sensors:";
+		newB.textContent = "Sensors (Overview):";
 		newTd.appendChild(newB);
 		newTr.appendChild(newTd);
 		newBody.appendChild(newTr);
