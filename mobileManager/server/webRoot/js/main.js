@@ -329,11 +329,6 @@ function processResponseAlertLevels() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		var internals = alertSystemInformation["internals"];
-		var options = alertSystemInformation["options"];
-		var nodes = alertSystemInformation["nodes"];
-		var sensors = alertSystemInformation["sensors"];
-		var managers = alertSystemInformation["managers"];
-		var alerts = alertSystemInformation["alerts"];
 		var alertLevels = alertSystemInformation["alertLevels"];
 
 		// get server time
@@ -501,10 +496,7 @@ function processResponseAlerts() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		var internals = alertSystemInformation["internals"];
-		var options = alertSystemInformation["options"];
 		var nodes = alertSystemInformation["nodes"];
-		var sensors = alertSystemInformation["sensors"];
-		var managers = alertSystemInformation["managers"];
 		var alerts = alertSystemInformation["alerts"];
 		var alertLevels = alertSystemInformation["alertLevels"];
 
@@ -794,12 +786,8 @@ function processResponseManagers() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		var internals = alertSystemInformation["internals"];
-		var options = alertSystemInformation["options"];
 		var nodes = alertSystemInformation["nodes"];
-		var sensors = alertSystemInformation["sensors"];
 		var managers = alertSystemInformation["managers"];
-		var alerts = alertSystemInformation["alerts"];
-		var alertLevels = alertSystemInformation["alertLevels"];
 
 		// get server time
 		var serverTime = 0.0;
@@ -1016,12 +1004,7 @@ function processResponseNodes() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		var internals = alertSystemInformation["internals"];
-		var options = alertSystemInformation["options"];
 		var nodes = alertSystemInformation["nodes"];
-		var sensors = alertSystemInformation["sensors"];
-		var managers = alertSystemInformation["managers"];
-		var alerts = alertSystemInformation["alerts"];
-		var alertLevels = alertSystemInformation["alertLevels"];
 
 		// get server time
 		var serverTime = 0.0;
@@ -1222,9 +1205,6 @@ function processResponseOverview() {
 		var options = alertSystemInformation["options"];
 		var nodes = alertSystemInformation["nodes"];
 		var sensors = alertSystemInformation["sensors"];
-		var managers = alertSystemInformation["managers"];
-		var alerts = alertSystemInformation["alerts"];
-		var alertLevels = alertSystemInformation["alertLevels"];
 
 
 		// get server time
@@ -1432,12 +1412,6 @@ function processResponseSensorAlerts() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		var internals = alertSystemInformation["internals"];
-		var options = alertSystemInformation["options"];
-		var nodes = alertSystemInformation["nodes"];
-		var sensors = alertSystemInformation["sensors"];
-		var managers = alertSystemInformation["managers"];
-		var alerts = alertSystemInformation["alerts"];
-		var alertLevels = alertSystemInformation["alertLevels"];
 		var sensorAlerts = alertSystemInformation["sensorAlerts"];
 
 		// get server time
@@ -1631,11 +1605,8 @@ function processResponseSensors() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		var internals = alertSystemInformation["internals"];
-		var options = alertSystemInformation["options"];
 		var nodes = alertSystemInformation["nodes"];
 		var sensors = alertSystemInformation["sensors"];
-		var managers = alertSystemInformation["managers"];
-		var alerts = alertSystemInformation["alerts"];
 		var alertLevels = alertSystemInformation["alertLevels"];
 
 		// get server time
@@ -1980,38 +1951,70 @@ function requestData(content) {
 	if(setTimeoutId != null) {
 		window.clearTimeout(setTimeoutId);
 	}
-
 	var nextContent = null;
-	var url = "./getJson.php";
-	request.open("GET", url, true);
 
 	switch(content) {
 		case "alertLevels":
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=alertlevels";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseAlertLevels;
 			nextContent = content;
 			break;
 		case "alerts":
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=nodes"
+				+ "&data[]=alerts"
+				+ "&data[]=alertlevels";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseAlerts;
 			nextContent = content;
 			break;
 		case "managers":
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=nodes"
+				+ "&data[]=managers";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseManagers;
 			nextContent = content;
 			break;
 		case "nodes":
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=nodes";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseNodes;
 			nextContent = content;
 			break;
 		case "sensorAlerts":
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=sensorAlerts";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseSensorAlerts;
 			nextContent = content;
 			break;
 		case "sensors":
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=nodes"
+				+ "&data[]=sensors"
+				+ "&data[]=alertLevels";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseSensors;
 			nextContent = content;
 			break;
 		case "overview":
 		default:
+			var url = "./getJson.php"
+				+ "?data[]=internals"
+				+ "&data[]=options"
+				+ "&data[]=nodes"
+				+ "&data[]=sensors";
+			request.open("GET", url, true);
 			request.onreadystatechange = processResponseOverview;
 			nextContent = "overview";
 			break;

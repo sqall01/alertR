@@ -50,6 +50,8 @@ if(isset($_GET["activate"])) {
 <html>
 	<head>
 
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+
 		<title>alertR mobile manager</title>
 
 		<link rel="stylesheet" href="css/style.css" />
