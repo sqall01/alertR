@@ -13,6 +13,7 @@ import threading
 import time
 import json
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
+	EventConnectedChange, \
 	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
 	EventNewManager
 
@@ -88,6 +89,7 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
@@ -263,6 +265,16 @@ class Mysql(_Storage):
 			+ "hostname TEXT NOT NULL, "
 			+ "description TEXT NOT NULL, "
 			+ "state INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsConnectedChange table
+		self.cursor.execute("CREATE TABLE eventsConnectedChange ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "hostname TEXT NOT NULL, "
+			+ "nodeType TEXT NOT NULL, "
+			+ "instance TEXT NOT NULL, "
+			+ "connected INTEGER NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsSensorAlert table
@@ -536,6 +548,10 @@ class Mysql(_Storage):
 						(eventId, ))
 				elif eventType.upper() == "stateChange".upper():
 					self.cursor.execute("DELETE FROM eventsStateChange "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "connectedChange".upper():
+					self.cursor.execute("DELETE FROM eventsConnectedChange "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				elif eventType.upper() == "newOption".upper():
@@ -995,6 +1011,33 @@ class Mysql(_Storage):
 						+ "VALUES (%s, %s, %s, %s)",
 						(eventId, event.hostname, event.description,
 						event.state))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventConnectedChange):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "connectedChange"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsConnectedChange ("
+						+ "eventId, "
+						+ "hostname, "
+						+ "nodeType, "
+						+ "instance, "
+						+ "connected) "
+						+ "VALUES (%s, %s, %s, %s, %s)",
+						(eventId, event.hostname, event.nodeType,
+						event.instance, event.connected))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add event."
 						% self.fileName)

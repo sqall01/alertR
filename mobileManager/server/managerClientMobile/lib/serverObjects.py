@@ -11,6 +11,7 @@ import os
 import logging
 import time
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
+	EventConnectedChange, \
 	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
 	EventNewManager
 
@@ -355,9 +356,21 @@ class ServerEventHandler:
 					node.hostname = recvNode.hostname
 					node.nodeType = recvNode.nodeType
 					node.instance = recvNode.instance
-					node.connected = recvNode.connected
 					node.version = recvNode.version
 					node.rev = recvNode.rev
+
+					# only change connected value when it has changed
+					if node.connected != recvNode.connected:
+						node.connected = recvNode.connected
+
+						# create connected change event
+						tempEvent = EventConnectedChange(timeReceived)
+						tempEvent.hostname = node.hostname
+						tempEvent.nodeType = node.nodeType
+						tempEvent.instance = node.instance
+						tempEvent.connected = node.connected
+						self.events.append(tempEvent)
+
 					found = True
 					break
 			# when not found => add node to list

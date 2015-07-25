@@ -32,6 +32,16 @@ class EventStateChange(Event):
 		self.state = None
 
 
+class EventConnectedChange(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.hostname = None
+		self.nodeType = None
+		self.instance = None
+		self.connected = None
+
+
 class EventNewVersion(Event):
 
 	def __init__(self, timeOccurred):
@@ -105,8 +115,9 @@ class EventNewManager(Event):
 # perhaps: option change, node change, sensor change, alert change, manager change
 #USEFUL EVENT: node goes offline, sensor timed out
 
+
 '''
-new option
+ option 				DONE
 new node 				DONE
 new sensor 				DONE
 new alert 				DONE
