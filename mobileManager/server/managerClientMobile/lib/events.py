@@ -8,12 +8,14 @@
 # Licensed under the GNU Public License, version 2.
 
 
+# base class for events
 class Event:
 
 	def __init__(self, timeOccurred):
 		self.timeOccurred = timeOccurred
 
 
+# class that represents a sensor alert event
 class EventSensorAlert(Event):
 
 	def __init__(self, timeOccurred):
@@ -23,6 +25,7 @@ class EventSensorAlert(Event):
 		self.alertLevels = list()
 
 
+# class that represents a state change event
 class EventStateChange(Event):
 
 	def __init__(self, timeOccurred):
@@ -32,6 +35,7 @@ class EventStateChange(Event):
 		self.state = None
 
 
+# class that represents a node changed its connection state event
 class EventConnectedChange(Event):
 
 	def __init__(self, timeOccurred):
@@ -42,6 +46,7 @@ class EventConnectedChange(Event):
 		self.connected = None
 
 
+# class that represents a sensor time out event
 class EventSensorTimeOut(Event):
 
 	def __init__(self, timeOccurred):
@@ -51,6 +56,7 @@ class EventSensorTimeOut(Event):
 		self.state = None
 
 
+# class that represents a new version for node available event
 class EventNewVersion(Event):
 
 	def __init__(self, timeOccurred):
@@ -63,6 +69,7 @@ class EventNewVersion(Event):
 		self.hostname = None
 
 
+# class that represents a new option received event
 class EventNewOption(Event):
 
 	def __init__(self, timeOccurred):
@@ -71,6 +78,7 @@ class EventNewOption(Event):
 		self.value = None
 
 
+# class that represents a new node received event
 class EventNewNode(Event):
 
 	def __init__(self, timeOccurred):
@@ -80,6 +88,7 @@ class EventNewNode(Event):
 		self.instance = None
 
 
+# class that represents a new sensor received event
 class EventNewSensor(Event):
 
 	def __init__(self, timeOccurred):
@@ -89,6 +98,7 @@ class EventNewSensor(Event):
 		self.state = None
 
 
+# class that represents a new alert received event
 class EventNewAlert(Event):
 
 	def __init__(self, timeOccurred):
@@ -97,6 +107,7 @@ class EventNewAlert(Event):
 		self.description = None
 
 
+# class that represents a new manager received event
 class EventNewManager(Event):
 
 	def __init__(self, timeOccurred):
@@ -105,6 +116,7 @@ class EventNewManager(Event):
 		self.description = None
 
 
+# class that represents an option has changed event
 class EventChangeOption(Event):
 
 	def __init__(self, timeOccurred):
@@ -114,6 +126,7 @@ class EventChangeOption(Event):
 		self.newValue = None
 
 
+# class that represents a node has changed event
 class EventChangeNode(Event):
 
 	def __init__(self, timeOccurred):
@@ -130,6 +143,7 @@ class EventChangeNode(Event):
 		self.newRev = None
 
 
+# class that represents a sensor has changed event
 class EventChangeSensor(Event):
 
 	def __init__(self, timeOccurred):
@@ -140,6 +154,7 @@ class EventChangeSensor(Event):
 		self.newDescription = None
 
 
+# class that represents an alert has changed event
 class EventChangeAlert(Event):
 
 	def __init__(self, timeOccurred):
@@ -148,6 +163,7 @@ class EventChangeAlert(Event):
 		self.newDescription = None
 
 
+# class that represents a manager has changed event
 class EventChangeManager(Event):
 
 	def __init__(self, timeOccurred):
@@ -156,6 +172,7 @@ class EventChangeManager(Event):
 		self.newDescription = None
 
 
+# class that represents a node was deleted event
 class EventDeleteNode(Event):
 
 	def __init__(self, timeOccurred):
@@ -165,6 +182,7 @@ class EventDeleteNode(Event):
 		self.instance = None
 
 
+# class that represents a sensor was deleted event
 class EventDeleteSensor(Event):
 
 	def __init__(self, timeOccurred):
@@ -172,6 +190,7 @@ class EventDeleteSensor(Event):
 		self.description = None
 
 
+# class that represents an alert was deleted event
 class EventDeleteAlert(Event):
 
 	def __init__(self, timeOccurred):
@@ -179,50 +198,9 @@ class EventDeleteAlert(Event):
 		self.description = None
 
 
+# class that represents a manager was deleted event
 class EventDeleteManager(Event):
 
 	def __init__(self, timeOccurred):
 		Event.__init__(self, timeOccurred)
 		self.description = None
-
-
-
-
-
-
-
-# TODO
-# perhaps add event for changes for sensors, nodes etc in storage backend
-# (it already has a copy of existing elements)
-# BETTER: do it in the client.py => outsource sensor value update to other file to have client.py still compatible with other manager clients
-
-
-
-
-
-
-
-# TODO
-# events needed: new option, new node, new sensor, new alert, new manager, deleted option, deleted node, deleted node, deleted sensor, deleted alert, deleted manager
-# perhaps: option change, node change, sensor change, alert change, manager change
-#USEFUL EVENT: node goes offline, sensor timed out
-
-
-'''
-new option 				DONE
-new node 				DONE
-new sensor 				DONE
-new alert 				DONE
-new manager 			DONE
-deleted node 			DONE
-deleted sensor 			DONE
-deleted alert 			DONE
-deleted manager 		DONE
-option change 			DONE
-node change 			DONE
-sensor change 			DONE
-alert change 			DONE
-manager change 			DONE
-node goes offline		DONE
-sensor timed out 		DONE
-'''
