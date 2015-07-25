@@ -935,6 +935,117 @@ class Mysql(_Storage):
 		return True
 
 
+	# remove all events from the database that are too old
+	#
+	# return True or False
+	def _removeEventsFromDb(self):
+
+		# delete all events that are older than the configured life span 
+		try:
+			self.cursor.execute("SELECT id, type FROM events "
+				+ "WHERE (timeOccurred + "
+				+ str(self.eventsLifeSpan * 86400)
+				+ ")"
+				+ "<= %s",
+				(int(time.time()), ))
+			result = self.cursor.fetchall()
+			
+			for idTuple in result:
+				eventId = idTuple[0]
+				eventType = idTuple[1]
+
+				if eventType.upper() == "sensorAlert".upper():
+					self.cursor.execute("DELETE FROM eventsSensorAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newVersion".upper():
+					self.cursor.execute("DELETE FROM eventsNewVersion "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "stateChange".upper():
+					self.cursor.execute("DELETE FROM eventsStateChange "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "connectedChange".upper():
+					self.cursor.execute("DELETE FROM eventsConnectedChange "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "sensorTimeOut".upper():
+					self.cursor.execute("DELETE FROM eventsSensorTimeOut "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newOption".upper():
+					self.cursor.execute("DELETE FROM eventsNewOption "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newNode".upper():
+					self.cursor.execute("DELETE FROM eventsNewNode "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newSensor".upper():
+					self.cursor.execute("DELETE FROM eventsNewSensor "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newAlert".upper():
+					self.cursor.execute("DELETE FROM eventsNewAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "newManager".upper():
+					self.cursor.execute("DELETE FROM eventsNewManager "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeOption".upper():
+					self.cursor.execute("DELETE FROM eventsChangeOption "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeNode".upper():
+					self.cursor.execute("DELETE FROM eventsChangeNode "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeSensor".upper():
+					self.cursor.execute("DELETE FROM eventsChangeSensor "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeAlert".upper():
+					self.cursor.execute("DELETE FROM eventsChangeAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeManager".upper():
+					self.cursor.execute("DELETE FROM eventsChangeManager "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteNode".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteNode "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteSensor".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteSensor "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteAlert".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "deleteManager".upper():
+					self.cursor.execute("DELETE FROM eventsDeleteManager "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				else:
+					logging.error("[%s]: Stored event not known."
+						% self.fileName)
+
+				self.cursor.execute("DELETE FROM events "
+					+ "WHERE id = %s",
+					(eventId, ))
+		except Exception as e:
+			logging.exception("[%s]: Not able to delete old events."
+				% self.fileName)
+
+			return False
+
+		return True
+
+
 	# updates the received server information
 	#
 	# return True or False
@@ -1119,110 +1230,16 @@ class Mysql(_Storage):
 
 				self.alertLevels.remove(alertLevel)
 
-		# delete all events that are older than the configured life span 
-		try:
-			self.cursor.execute("SELECT id, type FROM events "
-				+ "WHERE (timeOccurred + "
-				+ str(self.eventsLifeSpan * 86400)
-				+ ")"
-				+ "<= %s",
-				(int(time.time()), ))
-			result = self.cursor.fetchall()
-			
-			for idTuple in result:
-				eventId = idTuple[0]
-				eventType = idTuple[1]
+		# delete all events that are older than the configured life span
+		if self.eventsLifeSpan > 0:
+			if not self._removeEventsFromDb():
 
-				if eventType.upper() == "sensorAlert".upper():
-					self.cursor.execute("DELETE FROM eventsSensorAlert "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "newVersion".upper():
-					self.cursor.execute("DELETE FROM eventsNewVersion "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "stateChange".upper():
-					self.cursor.execute("DELETE FROM eventsStateChange "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "connectedChange".upper():
-					self.cursor.execute("DELETE FROM eventsConnectedChange "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "sensorTimeOut".upper():
-					self.cursor.execute("DELETE FROM eventsSensorTimeOut "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "newOption".upper():
-					self.cursor.execute("DELETE FROM eventsNewOption "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "newNode".upper():
-					self.cursor.execute("DELETE FROM eventsNewNode "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "newSensor".upper():
-					self.cursor.execute("DELETE FROM eventsNewSensor "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "newAlert".upper():
-					self.cursor.execute("DELETE FROM eventsNewAlert "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "newManager".upper():
-					self.cursor.execute("DELETE FROM eventsNewManager "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "changeOption".upper():
-					self.cursor.execute("DELETE FROM eventsChangeOption "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "changeNode".upper():
-					self.cursor.execute("DELETE FROM eventsChangeNode "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "changeSensor".upper():
-					self.cursor.execute("DELETE FROM eventsChangeSensor "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "changeAlert".upper():
-					self.cursor.execute("DELETE FROM eventsChangeAlert "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "changeManager".upper():
-					self.cursor.execute("DELETE FROM eventsChangeManager "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "deleteNode".upper():
-					self.cursor.execute("DELETE FROM eventsDeleteNode "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "deleteSensor".upper():
-					self.cursor.execute("DELETE FROM eventsDeleteSensor "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "deleteAlert".upper():
-					self.cursor.execute("DELETE FROM eventsDeleteAlert "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				elif eventType.upper() == "deleteManager".upper():
-					self.cursor.execute("DELETE FROM eventsDeleteManager "
-						+ "WHERE eventId = %s",
-						(eventId, ))
-				else:
-					logging.error("[%s]: Stored event not known."
-						% self.fileName)
+				logging.error("[%s]: Not able to remove old events."
+					% self.fileName)
 
-				self.cursor.execute("DELETE FROM events "
-					+ "WHERE id = %s",
-					(eventId, ))
-		except Exception as e:
-			logging.exception("[%s]: Not able to delete old events."
-				% self.fileName)
+				self._releaseLock()
 
-			self._releaseLock()
-
-			return False
+				return False
 
 
 		# step two: update all existing objects
