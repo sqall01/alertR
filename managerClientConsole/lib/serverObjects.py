@@ -389,6 +389,10 @@ class ServerEventHandler:
 
 					continue
 
+				# update received server time for all sensors (despite the
+				# corresponding id)
+				sensor.serverTime = recvSensor.serverTime
+
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
 					sensor.checked = True
@@ -397,7 +401,6 @@ class ServerEventHandler:
 					sensor.alertDelay = recvSensor.alertDelay
 					sensor.alertLevels = recvSensor.alertLevels
 					sensor.description = recvSensor.description
-					sensor.serverTime = recvSensor.serverTime
 
 					# only update state if it is older than received one
 					if recvSensor.lastStateUpdated > sensor.lastStateUpdated:
