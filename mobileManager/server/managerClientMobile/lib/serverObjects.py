@@ -13,7 +13,8 @@ import time
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
 	EventConnectedChange, \
 	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
-	EventNewManager
+	EventNewManager, EventChangeOption, EventChangeNode, EventChangeSensor, \
+	EventChangeAlert, EventChangeManager
 
 
 # this class represents an option of the server
@@ -160,24 +161,6 @@ class ServerEventHandler:
 		for node in self.nodes:
 			if node.checked is False:
 
-				# check if node object has a link to the sensor urwid object
-				if not node.sensorUrwid is None:
-					# check if sensor urwid object is linked to node object
-					if not node.sensorUrwid.node is None:
-						# used for urwid only:
-						# remove reference from urwid object to node object
-						# (the objects are double linked)
-						node.sensorUrwid.node = None
-
-				# check if node object has a link to the alert urwid object
-				elif not node.alertUrwid is None:
-					# check if sensor urwid object is linked to node object
-					if not node.alertUrwid.node is None:
-						# used for urwid only:
-						# remove reference from urwid object to node object
-						# (the objects are double linked)
-						node.alertUrwid.node = None
-
 				# remove sensor from list of sensors
 				# to delete all references to object
 				# => object will be deleted by garbage collector
@@ -185,15 +168,6 @@ class ServerEventHandler:
 
 		for sensor in self.sensors:
 			if sensor.checked is False:
-
-				# check if sensor object has a link to the sensor urwid object
-				if not sensor.sensorUrwid is None:
-					# check if sensor urwid object is linked to sensor object
-					if not sensor.sensorUrwid.sensor is None:
-						# used for urwid only:
-						# remove reference from urwid object to sensor object
-						# (the objects are double linked)
-						sensor.sensorUrwid.sensor = None
 
 				# remove sensor from list of sensors
 				# to delete all references to object
@@ -203,16 +177,6 @@ class ServerEventHandler:
 		for manager in self.managers:
 			if manager.checked is False:
 
-				# check if manager object has a link to the 
-				# manager urwid object
-				if not manager.managerUrwid is None:
-					# check if manager urwid object is linked to manager object
-					if not manager.managerUrwid.manager is None:
-						# used for urwid only:
-						# remove reference from urwid object to manager object
-						# (the objects are double linked)
-						manager.managerUrwid.manager = None
-
 				# remove manager from list of managers
 				# to delete all references to object
 				# => object will be deleted by garbage collector
@@ -221,15 +185,6 @@ class ServerEventHandler:
 		for alert in self.alerts:
 			if alert.checked is False:
 
-				# check if alert object has a link to the alert urwid object
-				if not alert.alertUrwid is None:
-					# check if alert urwid object is linked to alert object
-					if not alert.alertUrwid.alert is None:
-						# used for urwid only:
-						# remove reference from urwid object to alert object
-						# (the objects are double linked)
-						alert.alertUrwid.alert = None
-
 				# remove alert from list of alerts
 				# to delete all references to object
 				# => object will be deleted by garbage collector
@@ -237,18 +192,6 @@ class ServerEventHandler:
 
 		for alertLevel in self.alertLevels:
 			if alertLevel.checked is False:
-
-				# check if alert level object has a link to 
-				# the alert level urwid object
-				if not alertLevel.alertLevelUrwid is None:
-					# check if alert level urwid object is 
-					# linked to alert level object
-					if not alertLevel.alertLevelUrwid.alertLevel is None:
-						# used for urwid only:
-						# remove reference from urwid object to 
-						# alert level object
-						# (the objects are double linked)
-						alertLevel.alertLevelUrwid.alertLevel = None
 
 				# remove alert level from list of alert levels
 				# to delete all references to object
@@ -309,7 +252,19 @@ class ServerEventHandler:
 				# when found => mark option as checked and update information
 				if option.type == recvOption.type:
 					option.checked = True
-					option.value = recvOption.value
+
+					# only change value when it has changed
+					if option.value != recvOption.value:
+
+						# create change option event
+						tempEvent = EventChangeOption(timeReceived)
+						tempEvent.type = option.type
+						tempEvent.oldValue = option.value
+						tempEvent.newValue = recvOption.value
+						self.events.append(tempEvent)
+
+						option.value = recvOption.value
+
 					found = True
 					break
 			# when not found => add option to list
@@ -353,23 +308,59 @@ class ServerEventHandler:
 				# when found => mark node as checked and update information
 				if node.nodeId == recvNode.nodeId:
 					node.checked = True
-					node.hostname = recvNode.hostname
-					node.nodeType = recvNode.nodeType
-					node.instance = recvNode.instance
-					node.version = recvNode.version
-					node.rev = recvNode.rev
+
+					# create change node event (only add it if an information
+					# has changed)
+					changed = False
+					tempEvent = EventChangeNode(timeReceived)
+
+					# only update information if they have changed
+					tempEvent.oldHostname = node.hostname
+					tempEvent.newHostname = recvNode.hostname
+					if node.hostname != recvNode.hostname:
+						changed = True
+						node.hostname = recvNode.hostname
+
+					tempEvent.oldNodeType = node.nodeType
+					tempEvent.newNodeType = recvNode.nodeType
+					if node.nodeType != recvNode.nodeType:
+						changed = True
+						node.nodeType = recvNode.nodeType
+
+					tempEvent.oldInstance = node.instance
+					tempEvent.newInstance = recvNode.instance
+					if node.instance != recvNode.instance:
+						changed = True
+						node.instance = recvNode.instance
+
+					tempEvent.oldVersion = node.version
+					tempEvent.newVersion = recvNode.version
+					if node.version != recvNode.version:
+						changed = True
+						node.version = recvNode.version
+
+					tempEvent.oldRev = node.rev
+					tempEvent.newRev = recvNode.rev
+					if node.rev != recvNode.rev:
+						changed = True
+						node.rev = recvNode.rev
+
+					# add event to event queue if an information has changed
+					if changed:
+						self.events.append(tempEvent)
 
 					# only change connected value when it has changed
 					if node.connected != recvNode.connected:
-						node.connected = recvNode.connected
-
+						
 						# create connected change event
 						tempEvent = EventConnectedChange(timeReceived)
 						tempEvent.hostname = node.hostname
 						tempEvent.nodeType = node.nodeType
 						tempEvent.instance = node.instance
-						tempEvent.connected = node.connected
+						tempEvent.connected = recvNode.connected
 						self.events.append(tempEvent)
+
+						node.connected = recvNode.connected
 
 					found = True
 					break
@@ -410,10 +401,30 @@ class ServerEventHandler:
 					sensor.checked = True
 
 					sensor.nodeId = recvSensor.nodeId
-					sensor.alertDelay = recvSensor.alertDelay
 					sensor.alertLevels = recvSensor.alertLevels
-					sensor.description = recvSensor.description
 					sensor.serverTime = recvSensor.serverTime
+
+					# create change sensor event (only add it if an information
+					# has changed)
+					changed = False
+					tempEvent = EventChangeSensor(timeReceived)
+
+					# only update information if they have changed
+					tempEvent.oldAlertDelay = sensor.alertDelay
+					tempEvent.newAlertDelay = recvSensor.alertDelay
+					if sensor.alertDelay != recvSensor.alertDelay:
+						changed = True
+						sensor.alertDelay = recvSensor.alertDelay
+
+					tempEvent.oldDescription = sensor.description
+					tempEvent.newDescription = recvSensor.description
+					if sensor.description != recvSensor.description:
+						changed = True
+						sensor.description = recvSensor.description
+
+					# add event to event queue if an information has changed
+					if changed:
+						self.events.append(tempEvent)
 
 					# only update state if it is older than received one
 					if recvSensor.lastStateUpdated > sensor.lastStateUpdated:
@@ -469,8 +480,25 @@ class ServerEventHandler:
 				# when found => mark manager as checked and update information
 				if manager.managerId == recvManager.managerId:
 					manager.checked = True
+
 					manager.nodeId = recvManager.nodeId
-					manager.description = recvManager.description
+
+					# create change manager event
+					# (only add it if an information has changed)
+					changed = False
+					tempEvent = EventChangeManager(timeReceived)
+
+					# only update information if they have changed
+					tempEvent.oldDescription = manager.description
+					tempEvent.newDescription = recvManager.description
+					if manager.description != recvManager.description:
+						changed = True
+						manager.description = recvManager.description
+
+					# add event to event queue if an information has changed
+					if changed:
+						self.events.append(tempEvent)
+
 					found = True
 					break
 			# when not found => add manager to list
@@ -518,9 +546,26 @@ class ServerEventHandler:
 				# when found => mark alert as checked and update information
 				if alert.alertId == recvAlert.alertId:
 					alert.checked = True
+
 					alert.nodeId = recvAlert.nodeId
 					alert.alertLevels = recvAlert.alertLevels
-					alert.description = recvAlert.description
+
+					# create change alert event (only add it if an information
+					# has changed)
+					changed = False
+					tempEvent = EventChangeAlert(timeReceived)
+
+					# only update information if they have changed
+					tempEvent.oldDescription = alert.description
+					tempEvent.newDescription = recvAlert.description
+					if alert.description != recvAlert.description:
+						changed = True
+						alert.description = recvAlert.description
+
+					# add event to event queue if an information has changed
+					if changed:
+						self.events.append(tempEvent)
+
 					found = True
 					break
 

@@ -15,7 +15,8 @@ import json
 from events import EventSensorAlert, EventNewVersion, EventStateChange, \
 	EventConnectedChange, \
 	EventNewOption, EventNewNode, EventNewSensor, EventNewAlert, \
-	EventNewManager
+	EventNewManager, EventChangeOption, EventChangeNode, EventChangeSensor, \
+	EventChangeAlert, EventChangeManager
 
 
 # internal abstract class for new storage backends
@@ -95,6 +96,11 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
 		self.cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
+		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
 		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
@@ -329,6 +335,57 @@ class Mysql(_Storage):
 			+ "eventId INTEGER NOT NULL, "
 			+ "hostname TEXT NOT NULL, "
 			+ "description TEXT NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeOption table
+		self.cursor.execute("CREATE TABLE eventsChangeOption ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "type VARCHAR(255) NOT NULL, "
+			+ "oldValue DOUBLE NOT NULL, "
+			+ "newValue DOUBLE NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeNode table
+		self.cursor.execute("CREATE TABLE eventsChangeNode ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "oldHostname VARCHAR(255) NOT NULL, "
+			+ "oldNodeType VARCHAR(255) NOT NULL, "
+			+ "oldInstance VARCHAR(255) NOT NULL, "
+			+ "oldVersion DOUBLE NOT NULL, "
+			+ "oldRev INTEGER NOT NULL, "
+			+ "newHostname VARCHAR(255) NOT NULL, "
+			+ "newNodeType VARCHAR(255) NOT NULL, "
+			+ "newInstance VARCHAR(255) NOT NULL, "
+			+ "newVersion DOUBLE NOT NULL, "
+			+ "newRev INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeSensor table
+		self.cursor.execute("CREATE TABLE eventsChangeSensor ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "oldAlertDelay INTEGER NOT NULL, "
+			+ "oldDescription VARCHAR(255) NOT NULL, "
+			+ "newAlertDelay INTEGER NOT NULL, "
+			+ "newDescription VARCHAR(255) NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeAlert table
+		self.cursor.execute("CREATE TABLE eventsChangeAlert ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "oldDescription VARCHAR(255) NOT NULL, "
+			+ "newDescription VARCHAR(255) NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeManager table
+		self.cursor.execute("CREATE TABLE eventsChangeManager ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "eventId INTEGER NOT NULL, "
+			+ "oldDescription VARCHAR(255) NOT NULL, "
+			+ "newDescription VARCHAR(255) NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
@@ -572,6 +629,26 @@ class Mysql(_Storage):
 						(eventId, ))
 				elif eventType.upper() == "newManager".upper():
 					self.cursor.execute("DELETE FROM eventsNewManager "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeOption".upper():
+					self.cursor.execute("DELETE FROM eventsChangeOption "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeNode".upper():
+					self.cursor.execute("DELETE FROM eventsChangeNode "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeSensor".upper():
+					self.cursor.execute("DELETE FROM eventsChangeSensor "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeAlert".upper():
+					self.cursor.execute("DELETE FROM eventsChangeAlert "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+				elif eventType.upper() == "changeManager".upper():
+					self.cursor.execute("DELETE FROM eventsChangeManager "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				else:
@@ -1162,6 +1239,146 @@ class Mysql(_Storage):
 						+ "description) "
 						+ "VALUES (%s, %s, %s)",
 						(eventId, event.hostname, event.description))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventChangeOption):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeOption"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeOption ("
+						+ "eventId, "
+						+ "type, "
+						+ "oldValue, "
+						+ "newValue) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.type, event.oldValue, event.newValue))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventChangeNode):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeNode"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeNode ("
+						+ "eventId, "
+						+ "oldHostname, "
+						+ "oldNodeType, "
+						+ "oldInstance, "
+						+ "oldVersion, "
+						+ "oldRev, "
+						+ "newHostname, "
+						+ "newNodeType, "
+						+ "newInstance, "
+						+ "newVersion, "
+						+ "newRev) "
+						+ "VALUES "
+						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+						(eventId, event.oldHostname, event.oldNodeType,
+						event.oldInstance, event.oldVersion,
+						event.oldRev, event.newHostname,
+						event.newNodeType, event.newInstance,
+						event.newVersion, event.newRev))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventChangeSensor):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeSensor"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeSensor ("
+						+ "eventId, "
+						+ "oldAlertDelay, "
+						+ "oldDescription, "
+						+ "newAlertDelay, "
+						+ "newDescription) "
+						+ "VALUES "
+						+ "(%s, %s, %s, %s, %s)",
+						(eventId, event.oldAlertDelay, event.oldDescription,
+						event.newAlertDelay, event.newDescription))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventChangeAlert):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeAlert"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeAlert ("
+						+ "eventId, "
+						+ "oldDescription, "
+						+ "newDescription) "
+						+ "VALUES "
+						+ "(%s, %s, %s)",
+						(eventId, event.oldDescription, event.newDescription))
+				except Exception as e:
+					logging.exception("[%s]: Not able to add event."
+						% self.fileName)
+
+					self._releaseLock()
+
+					return False
+
+			elif isinstance(event, EventChangeManager):
+				try:
+					self.cursor.execute("INSERT INTO events ("
+						+ "timeOccurred, "
+						+ "type) "
+						+ "VALUES (%s, %s)",
+						(event.timeOccurred, "changeManager"))
+
+					eventId = self.cursor.lastrowid
+
+					self.cursor.execute("INSERT INTO eventsChangeManager ("
+						+ "eventId, "
+						+ "oldDescription, "
+						+ "newDescription) "
+						+ "VALUES "
+						+ "(%s, %s, %s)",
+						(eventId, event.oldDescription, event.newDescription))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add event."
 						% self.fileName)

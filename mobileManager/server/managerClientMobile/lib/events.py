@@ -96,8 +96,55 @@ class EventNewManager(Event):
 		self.description = None
 
 
+class EventChangeOption(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.type = None
+		self.oldValue = None
+		self.newValue = None
 
 
+class EventChangeNode(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.oldHostname = None
+		self.oldNodeType = None
+		self.oldInstance = None
+		self.oldVersion = None
+		self.oldRev = None
+		self.newHostname = None
+		self.newNodeType = None
+		self.newInstance = None
+		self.newVersion = None
+		self.newRev = None
+
+
+class EventChangeSensor(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.oldAlertDelay = None
+		self.oldDescription = None
+		self.newAlertDelay = None
+		self.newDescription = None
+
+
+class EventChangeAlert(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.oldDescription = None
+		self.newDescription = None
+
+
+class EventChangeManager(Event):
+
+	def __init__(self, timeOccurred):
+		Event.__init__(self, timeOccurred)
+		self.oldDescription = None
+		self.newDescription = None
 
 # TODO
 # perhaps add event for changes for sensors, nodes etc in storage backend
@@ -117,7 +164,7 @@ class EventNewManager(Event):
 
 
 '''
- option 				DONE
+new option 				DONE
 new node 				DONE
 new sensor 				DONE
 new alert 				DONE
@@ -127,11 +174,11 @@ deleted node
 deleted sensor
 deleted alert
 deleted manager
-option change
-node change
-sensor change
-alert change
-manager change
-node goes offline
+option change 			DONE
+node change 			DONE
+sensor change 			DONE
+alert change 			DONE
+manager change 			DONE
+node goes offline		DONE
 sensor timed out
 '''
