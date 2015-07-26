@@ -166,8 +166,23 @@ if(isset($_GET["data"])
 
 			// generate sensor alerts array
 			case "SENSORALERTS":
-				$resultSensorAlerts = mysql_query(
-					"SELECT * FROM sensorAlerts");
+				$resultSensorAlerts = null;
+				// check if a range is given => get range of sensor alerts
+				if(isset($_GET["sensorAlertsRangeStart"])
+					&& isset($_GET["sensorAlertsNumber"])
+					&& intval($_GET["sensorAlertsRangeStart"]) >= 0
+					&& intval($_GET["sensorAlertsNumber"]) > 0) {
+					$rangeStart = intval($_GET["sensorAlertsRangeStart"]);
+					$number = intval($_GET["sensorAlertsNumber"]);
+					$resultSensorAlerts = mysql_query(
+						"SELECT * FROM sensorAlerts ORDER BY id DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
+				}
+				// no range is given => get all sensor alerts
+				else {
+					$resultSensorAlerts = mysql_query(
+						"SELECT * FROM sensorAlerts ORDER BY id DESC");
+				}
 				$sensorAlertsArray = array();
 				while($row = mysql_fetch_array($resultSensorAlerts)) {
 					$sensorAlertEntry = array("id" => $row["id"],

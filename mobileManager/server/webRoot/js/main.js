@@ -1,163 +1,8 @@
 // set global configuration variables
 var request = new XMLHttpRequest();
 var setTimeoutId = null;
-
-
-// simple function to ask for confirmation if the alert system
-// should be activated
-function confirmation(activate) {
-
-	if(activate == 1) {
-		result = confirm("Do you really want to activate the alert system?");
-		if(result) {
-			window.location = "index.php?activate=1";
-		}
-	}
-	else if(activate == 0) {
-		result = confirm("Do you really want to deactivate " + 
-			"the alert system?");
-		if(result) {
-			window.location = "index.php?activate=0";
-		}
-	}
-}
-
-
-// function to compare alert level objects
-function compareAlertLevelAsc(a, b) {
-
-	if(a["alertLevel"] < b["alertLevel"]) {
-		return -1;
-	}
-	if(a["alertLevel"] > b["alertLevel"]) {
-		return 1;
-	}
-	return 0;
-}
-
-
-// function to compare alert objects
-function compareAlertsAsc(a, b) {
-
-	if(a["description"] < b["description"]) {
-		return -1;
-	}
-	if(a["description"] > b["description"]) {
-		return 1;
-	}
-
-	// case description == description
-	if(a["id"] < b["id"]) {
-		return -1;
-	}
-	if(a["id"] > b["id"]) {
-		return 1;
-	}
-
-	return 0;
-}
-
-
-// function to compare manager objects
-function compareManagersAsc(a, b) {
-
-	if(a["description"] < b["description"]) {
-		return -1;
-	}
-	if(a["description"] > b["description"]) {
-		return 1;
-	}
-
-	// case description == description
-	if(a["id"] < b["id"]) {
-		return -1;
-	}
-	if(a["id"] > b["id"]) {
-		return 1;
-	}
-
-	return 0;
-}
-
-
-// function to compare node objects
-function compareNodesAsc(a, b) {
-
-	// favor not connected nodes
-	if(a["connected"] != b["connected"]) {
-		if(a["connected"] == 1) {
-			return 1;
-		}
-		return -1;
-	}
-
-	if(a["nodeType"] < b["nodeType"]) {
-		return -1;
-	}
-	if(a["nodeType"] > b["nodeType"]) {
-		return 1;
-	}
-
-	// case nodeType == nodeType
-	if(a["instance"] < b["instance"]) {
-		return -1;
-	}
-	if(a["instance"] > b["instance"]) {
-		return 1;
-	}
-
-	// case instance == instance
-	if(a["hostname"] < b["hostname"]) {
-		return -1;
-	}
-	if(a["hostname"] > b["hostname"]) {
-		return 1;
-	}
-
-	// case hostname == hostname
-	if(a["id"] < b["id"]) {
-		return -1;
-	}
-	if(a["id"] > b["id"]) {
-		return 1;
-	}
-
-	return 0;
-}
-
-
-// function to compare sensor alert objects
-function compareSensorAlertsDesc(a, b) {
-	if(a["timeReceived"] < b["timeReceived"]) {
-		return 1;
-	}
-	if(a["timeReceived"] > b["timeReceived"]) {
-		return -1;
-	}
-	return 0;
-}
-
-
-// function to compare sensor objects
-function compareSensorsAsc(a, b) {
-
-	if(a["description"] < b["description"]) {
-		return -1;
-	}
-	if(a["description"] > b["description"]) {
-		return 1;
-	}
-
-	// case description == description
-	if(a["id"] < b["id"]) {
-		return -1;
-	}
-	if(a["id"] > b["id"]) {
-		return 1;
-	}
-
-	return 0;
-}
+var sensorAlertsNumber = 50;
+var sensorAlertsRangeStart = 0;
 
 
 // adds a menu for the navigation to the given table body
@@ -306,6 +151,177 @@ function addMenu(newBody, current) {
 		newTr.appendChild(newTd);
 		contentTableObj.appendChild(newTr);
 
+}
+
+
+
+
+function changeSensorAlertsNumber(number) {
+	sensorAlertsNumber = number;
+	requestData("sensorAlerts");
+}
+
+
+
+
+
+
+
+
+// function to compare alert level objects
+function compareAlertLevelAsc(a, b) {
+
+	if(a["alertLevel"] < b["alertLevel"]) {
+		return -1;
+	}
+	if(a["alertLevel"] > b["alertLevel"]) {
+		return 1;
+	}
+	return 0;
+}
+
+
+// function to compare alert objects
+function compareAlertsAsc(a, b) {
+
+	if(a["description"] < b["description"]) {
+		return -1;
+	}
+	if(a["description"] > b["description"]) {
+		return 1;
+	}
+
+	// case description == description
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+// function to compare manager objects
+function compareManagersAsc(a, b) {
+
+	if(a["description"] < b["description"]) {
+		return -1;
+	}
+	if(a["description"] > b["description"]) {
+		return 1;
+	}
+
+	// case description == description
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+// function to compare node objects
+function compareNodesAsc(a, b) {
+
+	// favor not connected nodes
+	if(a["connected"] != b["connected"]) {
+		if(a["connected"] == 1) {
+			return 1;
+		}
+		return -1;
+	}
+
+	if(a["nodeType"] < b["nodeType"]) {
+		return -1;
+	}
+	if(a["nodeType"] > b["nodeType"]) {
+		return 1;
+	}
+
+	// case nodeType == nodeType
+	if(a["instance"] < b["instance"]) {
+		return -1;
+	}
+	if(a["instance"] > b["instance"]) {
+		return 1;
+	}
+
+	// case instance == instance
+	if(a["hostname"] < b["hostname"]) {
+		return -1;
+	}
+	if(a["hostname"] > b["hostname"]) {
+		return 1;
+	}
+
+	// case hostname == hostname
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+// function to compare sensor alert objects
+function compareSensorAlertsDesc(a, b) {
+	if(a["timeReceived"] < b["timeReceived"]) {
+		return 1;
+	}
+	if(a["timeReceived"] > b["timeReceived"]) {
+		return -1;
+	}
+	return 0;
+}
+
+
+// function to compare sensor objects
+function compareSensorsAsc(a, b) {
+
+	if(a["description"] < b["description"]) {
+		return -1;
+	}
+	if(a["description"] > b["description"]) {
+		return 1;
+	}
+
+	// case description == description
+	if(a["id"] < b["id"]) {
+		return -1;
+	}
+	if(a["id"] > b["id"]) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+// simple function to ask for confirmation if the alert system
+// should be activated
+function confirmation(activate) {
+
+	if(activate == 1) {
+		result = confirm("Do you really want to activate the alert system?");
+		if(result) {
+			window.location = "index.php?activate=1";
+		}
+	}
+	else if(activate == 0) {
+		result = confirm("Do you really want to deactivate " + 
+			"the alert system?");
+		if(result) {
+			window.location = "index.php?activate=0";
+		}
+	}
 }
 
 
@@ -1332,12 +1348,7 @@ function processResponseOverview() {
 		boxDiv.appendChild(sensorAlertsTable);
 
 		// add the last sensor alerts to the output
-		for(i = 0; i < 5; i++) {
-
-			// skip if there are no sensor alerts left
-			if(i >= sensorAlerts.length) {
-				break;
-			}
+		for(i = 0; i < sensorAlerts.length; i++) {
 
 			var timeReceived = sensorAlerts[i]["timeReceived"];
 			var state = sensorAlerts[i]["state"];
@@ -1493,6 +1504,115 @@ function processResponseSensorAlerts() {
 		addMenu(newBody, "sensorAlerts");
 
 
+		// generate menu for number of shown sensor alerts output
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Number Shown Sensor Alerts:";
+		newTd.appendChild(newB);
+		newTr.appendChild(newTd);
+		newBody.appendChild(newTr);
+
+		var boxDiv = document.createElement("div");
+		boxDiv.className = "box";
+
+		var numbersTable = document.createElement("table");
+		numbersTable.style.width = "100%";
+		numbersTable.setAttribute("border", "0");
+		boxDiv.appendChild(numbersTable);
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.className = "neutralTd";
+		newTr.appendChild(newTd);
+		numbersTable.appendChild(newTr);
+
+		// create a temporary table to have the
+		// buttons next to each other
+		var tempTable = document.createElement("table");
+		tempTable.style.width = "100%";
+		tempTable.setAttribute("border", "0");
+		newTd.appendChild(tempTable);
+
+		var newTr = document.createElement("tr");
+		tempTable.appendChild(newTr)
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(sensorAlertsNumber == 50) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "50";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeSensorAlertsNumber(50); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(sensorAlertsNumber == 100) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "100";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeSensorAlertsNumber(100); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(sensorAlertsNumber == 200) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "200";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeSensorAlertsNumber(200); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(sensorAlertsNumber == -1) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "all";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeSensorAlertsNumber(-1); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+
+		// add output to the content table
+		var contentTableObj =
+			document.getElementById("contentTableBody");
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.appendChild(boxDiv);
+		newTr.appendChild(newTd);
+		contentTableObj.appendChild(newTr);
+
+
+		// generate sensor alerts output
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		var newB = document.createElement("b");
@@ -2057,9 +2177,18 @@ function requestData(content) {
 			nextContent = content;
 			break;
 		case "sensorAlerts":
-			var url = "./getJson.php"
-				+ "?data[]=internals"
-				+ "&data[]=sensorAlerts";
+			if(sensorAlertsNumber < 0) {
+				var url = "./getJson.php"
+					+ "?data[]=internals"
+					+ "&data[]=sensorAlerts";
+			}
+			else {
+				var url = "./getJson.php"
+					+ "?data[]=internals"
+					+ "&data[]=sensorAlerts"
+					+ "&sensorAlertsRangeStart=" + sensorAlertsRangeStart
+					+ "&sensorAlertsNumber=" + sensorAlertsNumber;
+			}
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseSensorAlerts;
 			nextContent = content;
@@ -2081,6 +2210,8 @@ function requestData(content) {
 				+ "&data[]=options"
 				+ "&data[]=nodes"
 				+ "&data[]=sensorAlerts"
+				+ "&sensorAlertsRangeStart=0"
+				+ "&sensorAlertsNumber=5"
 				+ "&data[]=sensors";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseOverview;
