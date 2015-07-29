@@ -94,7 +94,7 @@ case "$1" in
 		status_of_proc -p $PIDFILE "$DAEMON" "$NAME" && exit 0 || exit $?
 	;;
 	*)
-		echo "Usage: "$1" {start|restart|status|stop}"
+		echo "Usage: "$0" {start|restart|status|stop}"
 		exit 1
 	;;
 esac
