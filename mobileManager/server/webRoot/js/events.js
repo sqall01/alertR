@@ -4,7 +4,7 @@ function addEventChangeAlert(eventsTable, oldDescription, newDescription) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old description:";
+	newB.textContent = "Old Description:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -22,7 +22,7 @@ function addEventChangeAlert(eventsTable, oldDescription, newDescription) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New description:";
+	newB.textContent = "New Description:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -30,8 +30,13 @@ function addEventChangeAlert(eventsTable, oldDescription, newDescription) {
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldDescription != newDescription) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newDescription;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -44,7 +49,7 @@ function addEventChangeManager(eventsTable, oldDescription, newDescription) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old description:";
+	newB.textContent = "Old Description:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -62,7 +67,7 @@ function addEventChangeManager(eventsTable, oldDescription, newDescription) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New description:";
+	newB.textContent = "New Description:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -70,8 +75,13 @@ function addEventChangeManager(eventsTable, oldDescription, newDescription) {
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldDescription != newDescription) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newDescription;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -84,7 +94,7 @@ function addEventChangeOption(eventsTable, optionType, oldValue, newValue) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Option type:";
+	newB.textContent = "Option Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -102,7 +112,7 @@ function addEventChangeOption(eventsTable, optionType, oldValue, newValue) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old value:";
+	newB.textContent = "Old Value:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -132,7 +142,7 @@ function addEventChangeOption(eventsTable, optionType, oldValue, newValue) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New value:";
+	newB.textContent = "New Value:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -168,7 +178,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old hostname:";
+	newB.textContent = "Old Hostname:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -186,7 +196,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New hostname:";
+	newB.textContent = "New Hostname:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -194,8 +204,13 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldHostname != newHostname) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newHostname;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -204,7 +219,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old node type:";
+	newB.textContent = "Old Node Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -222,7 +237,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New node type:";
+	newB.textContent = "New Node Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -230,8 +245,13 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldNodeType != newNodeType) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newNodeType;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -240,7 +260,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old instance:";
+	newB.textContent = "Old Instance:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -258,7 +278,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New instance:";
+	newB.textContent = "New Instance:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -266,8 +286,13 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldInstance != newInstance) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newInstance;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -276,7 +301,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old version:";
+	newB.textContent = "Old Version:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -294,7 +319,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New version:";
+	newB.textContent = "New Version:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -302,8 +327,13 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldVersion != newVersion) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newVersion;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -312,7 +342,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old revision:";
+	newB.textContent = "Old Revision:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -330,7 +360,7 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New revision:";
+	newB.textContent = "New Revision:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -338,8 +368,13 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldRev != newRev) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newRev;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -353,7 +388,7 @@ function addEventChangeSensor(eventsTable, oldAlertDelay, oldDescription,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old alert delay:";
+	newB.textContent = "Old Alert Delay:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -371,7 +406,7 @@ function addEventChangeSensor(eventsTable, oldAlertDelay, oldDescription,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New alert delay:";
+	newB.textContent = "New Alert Delay:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -379,8 +414,13 @@ function addEventChangeSensor(eventsTable, oldAlertDelay, oldDescription,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldAlertDelay != newAlertDelay) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newAlertDelay;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -389,7 +429,7 @@ function addEventChangeSensor(eventsTable, oldAlertDelay, oldDescription,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Old description:";
+	newB.textContent = "Old Description:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -407,7 +447,7 @@ function addEventChangeSensor(eventsTable, oldAlertDelay, oldDescription,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New description:";
+	newB.textContent = "New Description:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -415,8 +455,13 @@ function addEventChangeSensor(eventsTable, oldAlertDelay, oldDescription,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(oldDescription != newDescription) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newDescription;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -448,7 +493,7 @@ function addEventConnectedChange(eventsTable, hostname, nodeType, instance,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Node type:";
+	newB.textContent = "Node Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -554,7 +599,7 @@ function addEventDeleteNode(eventsTable, hostname, nodeType, instance) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Node type:";
+	newB.textContent = "Node Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -714,7 +759,7 @@ function addEventNewNode(eventsTable, hostname, nodeType, instance) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Node type:";
+	newB.textContent = "Node Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -754,7 +799,7 @@ function addEventNewOption(eventsTable, optionType, value) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Option type:";
+	newB.textContent = "Option Type:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -887,7 +932,7 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Used version:";
+	newB.textContent = "Used Version:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -905,7 +950,7 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New version:";
+	newB.textContent = "New Version:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -913,8 +958,13 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(usedVersion != newVersion) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newVersion;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
@@ -923,7 +973,7 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "Used revision:";
+	newB.textContent = "Used Revision:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -941,7 +991,7 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	newB = document.createElement("b");
-	newB.textContent = "New revision:";
+	newB.textContent = "New Revision:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
@@ -949,8 +999,13 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
+	if(usedRev != newRev) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
 	newTd.textContent = newRev;
-	newTd.className = "neutralTd";
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 

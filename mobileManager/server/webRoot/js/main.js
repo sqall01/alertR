@@ -471,7 +471,7 @@ function processResponseAlertLevels() {
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
 			var newB = document.createElement("b");
-			newB.textContent = "Trigger always:";
+			newB.textContent = "Trigger Always:";
 			newTd.appendChild(newB);
 			newTd.className = "boxEntryTd";
 			newTr.appendChild(newTd);
@@ -497,7 +497,7 @@ function processResponseAlertLevels() {
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
 			var newB = document.createElement("b");
-			newB.textContent = "eMail recipient:";
+			newB.textContent = "eMail Recipient:";
 			newTd.appendChild(newB);
 			newTd.className = "boxEntryTd";
 			newTr.appendChild(newTd);
@@ -1039,7 +1039,7 @@ function processResponseEvents() {
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
 			var newB = document.createElement("b");
-			newB.textContent = "Time occurred:";
+			newB.textContent = "Time Occurred:";
 			newTd.appendChild(newB);
 			newTd.className = "boxEntryTd";
 			newTr.appendChild(newTd);
@@ -2165,7 +2165,7 @@ function processResponseSensorAlerts() {
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
 			var newB = document.createElement("b");
-			newB.textContent = "Time received:";
+			newB.textContent = "Time Received:";
 			newTd.appendChild(newB);
 			newTd.className = "boxEntryTd";
 			newTr.appendChild(newTd);
@@ -2473,7 +2473,7 @@ function processResponseSensors() {
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td");
 				var newB = document.createElement("b");
-				newB.textContent = "Last updated:";
+				newB.textContent = "Last Updated:";
 				newTd.appendChild(newB);
 				newTd.className = "boxEntryTd";
 				newTr.appendChild(newTd);
