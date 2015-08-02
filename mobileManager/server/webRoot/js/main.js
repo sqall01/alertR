@@ -3,6 +3,8 @@ var request = new XMLHttpRequest();
 var setTimeoutId = null;
 var sensorAlertsNumber = 50;
 var sensorAlertsRangeStart = 0;
+var eventsNumber = 50;
+var eventsRangeStart = 0;
 
 
 // adds a menu for the navigation to the given table body
@@ -111,6 +113,23 @@ function addMenu(newBody, current) {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
+		if(current == "events") {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "Events";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ requestData("events"); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+		menuTable.appendChild(newTr);
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
 		if(current == "overview") {
 			newTd.className = "buttonActiveTd";
 		}
@@ -154,18 +173,18 @@ function addMenu(newBody, current) {
 }
 
 
+// changes the global configuration variable (eventsNumber)
+function changeEventsNumber(number) {
+	eventsNumber = number;
+	requestData("events");
+}
 
 
+// changes the global configuration variable (sensorAlertsNumber)
 function changeSensorAlertsNumber(number) {
 	sensorAlertsNumber = number;
 	requestData("sensorAlerts");
 }
-
-
-
-
-
-
 
 
 // function to compare alert level objects
@@ -197,6 +216,28 @@ function compareAlertsAsc(a, b) {
 	}
 	if(a["id"] > b["id"]) {
 		return 1;
+	}
+
+	return 0;
+}
+
+
+// function to compare event objects
+function compareEventsDesc(a, b) {
+
+	if(a["timeOccurred"] < b["timeOccurred"]) {
+		return 1;
+	}
+	if(a["timeOccurred"] > b["timeOccurred"]) {
+		return -1;
+	}
+
+	// case timeOccurred == timeOccurred
+	if(a["id"] < b["id"]) {
+		return 1;
+	}
+	if(a["id"] > b["id"]) {
+		return -1;
 	}
 
 	return 0;
@@ -1438,22 +1479,32 @@ function processResponseOverview() {
 			// output sensor descriptions according to state/connected/updated
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
-			newTd.textContent = description;
-			if(state == 0) {
-				newTd.className = "okTd";
-			}
-			else {
-				newTd.className = "triggeredTd";
-			}
-			if(lastStateUpdated < (serverTime - 2* 60)) {
-				newTd.className = "failTd";
-			}
+			newTd.appendChild(document.createTextNode(description));
+
 			if(connected == 0) {
 				newTd.className = "failTd";
+				newTd.appendChild(document.createElement("br"));
+				newTd.appendChild(document.createTextNode(" (not connected)"));
+			}
+			else if(lastStateUpdated < (serverTime - 2* 60)) {
+				newTd.className = "failTd";
+				newTd.appendChild(document.createElement("br"));
+				newTd.appendChild(document.createTextNode(" (timed out)"));
+			}
+			else {
+				if(state == 0) {
+					newTd.className = "okTd";
+					newTd.appendChild(document.createElement("br"));
+					newTd.appendChild(document.createTextNode("(normal)"));
+				}
+				else {
+					newTd.className = "triggeredTd";
+					newTd.appendChild(document.createElement("br"));
+					newTd.appendChild(document.createTextNode("(triggered)"));
+				}
 			}
 			newTr.appendChild(newTd);
 			sensorTable.appendChild(newTr);
-
 
 		}
 
@@ -2159,6 +2210,23 @@ function requestData(content) {
 			request.onreadystatechange = processResponseAlerts;
 			nextContent = content;
 			break;
+		case "events":
+			if(eventsNumber < 0) {
+				var url = "./getJson.php"
+					+ "?data[]=internals"
+					+ "&data[]=events";
+			}
+			else {
+				var url = "./getJson.php"
+					+ "?data[]=internals"
+					+ "&data[]=events"
+					+ "&eventsRangeStart=" + eventsRangeStart
+					+ "&eventsNumber=" + eventsNumber;
+			}
+			request.open("GET", url, true);
+			request.onreadystatechange = processResponseEvents;
+			nextContent = content;
+			break;
 		case "managers":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
@@ -2228,3 +2296,1439 @@ function requestData(content) {
 
 
 requestData("overview");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// processes the response of the server for the
+// requested "events" data
+function processResponseEvents() {
+
+	if (request.readyState == 4) {
+
+		// remove old content output
+		// and generate a new clear one
+		var contentTableObj = document.getElementById("contentTable");
+		var newBody = document.createElement("tbody");
+		var oldBody = document.getElementById("contentTableBody");
+		oldBody.removeAttribute("id");
+		newBody.setAttribute("id", "contentTableBody");
+		contentTableObj.replaceChild(newBody, oldBody);
+		delete oldBody;
+
+		// get JSON response and parse it
+		var response = request.responseText;
+		var alertSystemInformation = JSON.parse(response);
+		var internals = alertSystemInformation["internals"];
+		var events = alertSystemInformation["events"];
+
+		// get server time
+		var serverTime = 0.0;
+		for(i = 0; i < internals.length; i++) {
+			if(internals[i]["type"] == "serverTime") {
+				serverTime = internals[i]["value"]
+			}
+		}
+
+		// add header of site
+		addMenu(newBody, "events");
+
+
+		// generate menu for number of shown sensor alerts output
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Number Shown Events:";
+		newTd.appendChild(newB);
+		newTr.appendChild(newTd);
+		newBody.appendChild(newTr);
+
+		var boxDiv = document.createElement("div");
+		boxDiv.className = "box";
+
+		var numbersTable = document.createElement("table");
+		numbersTable.style.width = "100%";
+		numbersTable.setAttribute("border", "0");
+		boxDiv.appendChild(numbersTable);
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.className = "neutralTd";
+		newTr.appendChild(newTd);
+		numbersTable.appendChild(newTr);
+
+		// create a temporary table to have the
+		// buttons next to each other
+		var tempTable = document.createElement("table");
+		tempTable.style.width = "100%";
+		tempTable.setAttribute("border", "0");
+		newTd.appendChild(tempTable);
+
+		var newTr = document.createElement("tr");
+		tempTable.appendChild(newTr)
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(eventsNumber == 50) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "50";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeEventsNumber(50); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(eventsNumber == 100) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "100";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeEventsNumber(100); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(eventsNumber == 200) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "200";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeEventsNumber(200); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+		var newTd = document.createElement("td");
+		newTd.style.width = "25%";
+		if(eventsNumber == -1) {
+			newTd.className = "buttonActiveTd";
+		}
+		else {
+			newTd.className = "buttonTd";
+		}
+		var newA = document.createElement("a");
+		newA.className = "buttonA";
+		newA.textContent = "all";
+		newA.href = "javascript:void(0)";
+		newA.onclick = function(){ changeEventsNumber(-1); };
+		newTd.appendChild(newA);
+		newTr.appendChild(newTd);
+
+
+		// add output to the content table
+		var contentTableObj =
+			document.getElementById("contentTableBody");
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.appendChild(boxDiv);
+		newTr.appendChild(newTd);
+		contentTableObj.appendChild(newTr);
+
+
+		// generate sensor alerts output
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Events:";
+		newTd.appendChild(newB);
+		newTr.appendChild(newTd);
+		newBody.appendChild(newTr);
+
+		events.sort(compareEventsDesc);
+
+		// add all events to the output
+		for(i = 0; i < events.length; i++) {
+
+			var eventId = events[i]["id"];
+			var timeOccurred = events[i]["timeOccurred"];
+			var type = events[i]["type"];
+
+
+			var boxDiv = document.createElement("div");
+			boxDiv.className = "box";
+
+			var eventsTable = document.createElement("table");
+			eventsTable.style.width = "100%";
+			eventsTable.setAttribute("border", "0");
+			boxDiv.appendChild(eventsTable);
+
+
+			// add id to the event
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newTd.textContent = "Event: " + eventId;			
+			newTd.className = "boxHeaderTd";
+			newTr.appendChild(newTd);
+			eventsTable.appendChild(newTr);
+
+
+			// generate date string from timestamp
+			localDate = new Date(timeOccurred * 1000);
+			yearString = localDate.getFullYear();
+			monthString =
+				("0" + (localDate.getMonth() + 1)).slice(-2);
+			dateString =
+				("0" + localDate.getDate()).slice(-2);
+			hoursString =
+				("0" + localDate.getHours()).slice(-2);
+			minutesString =
+				("0" + localDate.getMinutes()).slice(-2);
+			secondsString =
+				("0" + localDate.getSeconds()).slice(-2);
+
+
+			// add type to the events
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newB = document.createElement("b");
+			newB.textContent = "Type:";
+			newTd.appendChild(newB);
+			newTd.className = "boxEntryTd";
+			newTr.appendChild(newTd);
+			eventsTable.appendChild(newTr);
+
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newTd.textContent = type;
+			newTd.className = "neutralTd";
+			newTr.appendChild(newTd);
+			eventsTable.appendChild(newTr);
+
+
+			// add time received to the events
+			var newTr = document.createElement("tr");
+			var newTd = document.createElement("td");
+			var newB = document.createElement("b");
+			newB.textContent = "Time occurred:";
+			newTd.appendChild(newB);
+			newTd.className = "boxEntryTd";
+			newTr.appendChild(newTd);
+			eventsTable.appendChild(newTr);
+
+			var newTr = document.createElement("tr");
+			var newTd = document.createElement("td");
+			newTd.textContent = monthString + "/" + dateString + "/" +
+				yearString + " " + hoursString + ":" +
+				minutesString + ":" + secondsString;
+			newTd.className = "neutralTd";
+			newTr.appendChild(newTd);
+			eventsTable.appendChild(newTr);
+			newTd.className = "neutralTd";
+			newTr.appendChild(newTd);
+			eventsTable.appendChild(newTr);
+
+
+			// add output of the specific type to the events
+			switch(type) {
+				case "changeAlert":
+
+					var oldDescription = events[i]["oldDescription"];
+					var newDescription = events[i]["newDescription"];
+
+					// add old description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldDescription;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newDescription;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "changeManager":
+
+					var oldDescription = events[i]["oldDescription"];
+					var newDescription = events[i]["newDescription"];
+
+					// add old description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldDescription;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newDescription;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "changeNode":
+
+					var oldHostname = events[i]["oldHostname"];
+					var oldNodeType = events[i]["oldNodeType"];
+					var oldInstance = events[i]["oldInstance"];
+					var oldVersion = events[i]["oldVersion"];
+					var oldRev = events[i]["oldRev"];
+					var newHostname = events[i]["newHostname"];
+					var newNodeType = events[i]["newNodeType"];
+					var newInstance = events[i]["newInstance"];
+					var newVersion = events[i]["newVersion"];
+					var newRev = events[i]["newRev"];
+
+					// add old hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldHostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newHostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add old node type to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old node type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldNodeType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new node type to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New node type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newNodeType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add old instance to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old instance:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldInstance;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new instance to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New instance:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newInstance;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add old version to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old version:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldVersion;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new version to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New version:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newVersion;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add old revision to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old revision:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldRev;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new revision to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New revision:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newRev;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "changeOption":
+
+					var optionType = events[i]["optionType"];
+					var oldValue = events[i]["oldValue"];
+					var newValue = events[i]["newValue"];
+
+					// add option type to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Option type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = optionType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add old value to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old value:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldValue;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new value to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New value:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newValue;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "changeSensor":
+
+					var oldAlertDelay = events[i]["oldAlertDelay"];
+					var oldDescription = events[i]["oldDescription"];
+					var newAlertDelay = events[i]["newAlertDelay"];
+					var newDescription = events[i]["newDescription"];
+
+					// add old alert delay to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old alert delay:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldAlertDelay;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new alert delay to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New alert delay:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newAlertDelay;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add old description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Old description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = oldDescription;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newDescription;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "connectedChange":
+
+					var hostname = events[i]["hostname"];
+					var nodeType = events[i]["nodeType"];
+					var instance = events[i]["instance"];
+					var connected = events[i]["connected"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add nodeType to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Node type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = nodeType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add instance to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Instance:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = instance;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add connected to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Connected:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = connected;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "deleteAlert":
+
+					var description = events[i]["description"];
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "deleteManager":
+
+					var description = events[i]["description"];
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "deleteNode":
+
+					var hostname = events[i]["hostname"];
+					var nodeType = events[i]["nodeType"];
+					var instance = events[i]["instance"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add nodeType to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Node type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = nodeType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add instance to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Instance:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = instance;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "deleteSensor":
+
+					var description = events[i]["description"];
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "newAlert":
+
+					var hostname = events[i]["hostname"];
+					var description = events[i]["description"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "newManager":
+
+					var hostname = events[i]["hostname"];
+					var description = events[i]["description"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "newNode":
+
+					var hostname = events[i]["hostname"];
+					var nodeType = events[i]["nodeType"];
+					var instance = events[i]["instance"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add nodeType to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Node type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = nodeType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add instance to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Instance:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = instance;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "newOption":
+
+					var optionType = events[i]["optionType"];
+					var value = events[i]["value"];
+
+					// add optionType to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Option type:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = optionType;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add value to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Value:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = value;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "newSensor":
+
+					var hostname = events[i]["hostname"];
+					var description = events[i]["description"];
+					var state = events[i]["state"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add state to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "State:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = state;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "newVersion":
+
+					var usedVersion = events[i]["usedVersion"];
+					var usedRev = events[i]["usedRev"];
+					var newVersion = events[i]["newVersion"];
+					var newRev = events[i]["newRev"];
+					var instance = events[i]["instance"];
+					var hostname = events[i]["hostname"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add instance to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Instance:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = instance;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add used version to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Used version:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = usedVersion;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new version to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New version:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newVersion;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add used revision to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Used revision:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = usedRev;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add new revision to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "New revision:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = newRev;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "sensorAlert":
+
+					var description = events[i]["description"];
+					var state = events[i]["state"];
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add state to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "State:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = state;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "sensorTimeOut":
+
+					var hostname = events[i]["hostname"];
+					var description = events[i]["description"];
+					var state = events[i]["state"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add state to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "State:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = state;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				case "stateChange":
+
+					var hostname = events[i]["hostname"];
+					var description = events[i]["description"];
+					var state = events[i]["state"];
+
+					// add hostname to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Hostname:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = hostname;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add description to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "Description:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = description;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+
+					// add state to the events
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newB = document.createElement("b");
+					newB.textContent = "State:";
+					newTd.appendChild(newB);
+					newTd.className = "boxEntryTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					newTr = document.createElement("tr");
+					newTd = document.createElement("td");
+					newTd.textContent = state;
+					newTd.className = "neutralTd";
+					newTr.appendChild(newTd);
+					eventsTable.appendChild(newTr);
+
+					break;
+
+				default:
+					break;
+			}
+
+
+			// add events to the content table
+			contentTableObj =
+				document.getElementById("contentTableBody");
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newTd.appendChild(boxDiv);
+			newTr.appendChild(newTd);
+			contentTableObj.appendChild(newTr);
+
+		}
+
+	}
+}
