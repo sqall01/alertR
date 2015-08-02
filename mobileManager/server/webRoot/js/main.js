@@ -456,17 +456,6 @@ function processResponseAlertLevels() {
 			alertLevelTable.appendChild(newTr);
 
 
-
-
-
-			// TODO
-
-
-
-
-
-
-
 			// add triggerAlways to the alertLevel
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
@@ -490,9 +479,6 @@ function processResponseAlertLevels() {
 			alertLevelTable.appendChild(newTr);
 
 
-
-
-
 			// add email recipient to the alertLevel
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
@@ -514,9 +500,6 @@ function processResponseAlertLevels() {
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			alertLevelTable.appendChild(newTr);
-
-
-
 
 
 			// add alertLevel to the content table
