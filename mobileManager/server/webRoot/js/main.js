@@ -5,6 +5,8 @@ var sensorAlertsNumber = 50;
 var sensorAlertsRangeStart = 0;
 var eventsNumber = 50;
 var eventsRangeStart = 0;
+var configUnixSocketActive =
+	(document.body.dataset.configunixsocketactive == "true");
 
 
 // adds a menu for the navigation to the given table body
@@ -350,13 +352,13 @@ function compareSensorsAsc(a, b) {
 // should be activated
 function confirmation(activate) {
 
-	if(activate == 1) {
+	if(activate == 1 && configUnixSocketActive) {
 		result = confirm("Do you really want to activate the alert system?");
 		if(result) {
 			window.location = "index.php?activate=1";
 		}
 	}
-	else if(activate == 0) {
+	else if(activate == 0 && configUnixSocketActive) {
 		result = confirm("Do you really want to deactivate " + 
 			"the alert system?");
 		if(result) {
@@ -1705,38 +1707,40 @@ function processResponseOverview() {
 				newTr.appendChild(newTd);
 				optionsTable.appendChild(newTr);
 
+				// only display buttons if unix socket is activated
+				if(configUnixSocketActive) {
+					// create a temporary table to have the
+					// buttons next to each other
+					var tempTable = document.createElement("table");
+					tempTable.style.width = "100%";
+					tempTable.setAttribute("border", "0");
+					newTd.appendChild(tempTable);
 
-				// create a temporary table to have the
-				// buttons next to each other
-				var tempTable = document.createElement("table");
-				tempTable.style.width = "100%";
-				tempTable.setAttribute("border", "0");
-				newTd.appendChild(tempTable);
+					var newTr = document.createElement("tr");
+					tempTable.appendChild(newTr)
 
-				var newTr = document.createElement("tr");
-				tempTable.appendChild(newTr)
+					var newTd = document.createElement("td");
+					newTd.style.width = "50%";
+					newTd.className = "buttonTd";
+					var newA = document.createElement("a");
+					newA.className = "buttonA";
+					newA.textContent = "activate";
+					newA.href = "javascript:void(0)";
+					newA.onclick = function(){ confirmation(1); };
+					newTd.appendChild(newA);
+					newTr.appendChild(newTd);
 
-				var newTd = document.createElement("td");
-				newTd.style.width = "50%";
-				newTd.className = "buttonTd";
-				var newA = document.createElement("a");
-				newA.className = "buttonA";
-				newA.textContent = "activate";
-				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(1); };
-				newTd.appendChild(newA);
-				newTr.appendChild(newTd);
-
-				var newTd = document.createElement("td");
-				newTd.style.width = "50%";
-				newTd.className = "buttonTd";
-				var newA = document.createElement("a");
-				newA.className = "buttonA";
-				newA.textContent = "deactivate";
-				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(0); };
-				newTd.appendChild(newA);
-				newTr.appendChild(newTd);
+					var newTd = document.createElement("td");
+					newTd.style.width = "50%";
+					newTd.className = "buttonTd";
+					var newA = document.createElement("a");
+					newA.className = "buttonA";
+					newA.textContent = "deactivate";
+					newA.href = "javascript:void(0)";
+					newA.onclick = function(){ confirmation(0); };
+					newTd.appendChild(newA);
+					newTr.appendChild(newTd);
+				}
 
 				break;
 			}

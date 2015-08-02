@@ -15,9 +15,11 @@ $configMysqlPassword = "<SECRET>";
 $configMysqlServer = "localhost";
 $configMysqlPort = 3306;
 
+// is the unix socket reachable by this website (or should it be used)
+$configUnixSocketActive = false;
+
 // the path to the unix socket that is created by the manager client mobile
-// (resides usually inside the config directory of the manager client mobile
-// component)
-$configUnixSocket = "/path/to/alertR/managerClientMobile/config/localsocket";
+$configUnixSocketPath =
+	"/path/to/alertR/managerClientMobile/config/localsocket";
 
 ?>

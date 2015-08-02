@@ -7,20 +7,19 @@
 // 
 // Licensed under the GNU Public License, version 2.
 
+// include config data
+require_once("./config/config.php");
 
 // check if the GET parameter for activate/deactivate the alert system
 // is set
-if(isset($_GET["activate"])) {
+if(isset($_GET["activate"]) && $configUnixSocketActive) {
 
 	// validate integer
 	$activate = intval($_GET["activate"]);
 
-	// include config data
-	require_once("./config/config.php");
-
 	// open connection to local manager client
 	@$fd = stream_socket_client(
-		"unix://" . $configUnixSocket, $errno, $errstr, 5);
+		"unix://" . $configUnixSocketPath, $errno, $errstr, 5);
 
 	// check if connection could be established
 	if ($errno != 0) {
@@ -58,7 +57,14 @@ if(isset($_GET["activate"])) {
 
 	</head>
 
-	<body>
+	<body data-configUnixSocketActive="<?php
+			if($configUnixSocketActive) {
+				echo "true";
+			}
+			else {
+				echo "false";
+			}
+		?>" >
 
 		<table border="0" width="300" id="contentTable">
 			<tbody id="contentTableBody">
