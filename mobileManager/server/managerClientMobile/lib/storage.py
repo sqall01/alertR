@@ -300,7 +300,7 @@ class Mysql(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsSensorAlert table
+		# create eventsNewVersion table
 		self.cursor.execute("CREATE TABLE eventsNewVersion ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "eventId INTEGER NOT NULL, "
