@@ -1145,7 +1145,7 @@ function event_AddStateOutput(eventsTable, state) {
 		newTd.textContent = "triggered"
 	}
 	else {
-		newTd.className = "okTd";
+		newTd.className = "normalTd";
 		newTd.textContent = "normal"
 	}
 	newTr.appendChild(newTd);
@@ -1169,7 +1169,7 @@ function event_AddConnectedOutput(eventsTable, connected) {
 	newTr = document.createElement("tr");
 	newTd = document.createElement("td");
 	if(connected == 1) {
-		newTd.className = "okTd";
+		newTd.className = "normalTd";
 		newTd.textContent = "true";
 	}
 	else {

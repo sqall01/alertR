@@ -1617,7 +1617,7 @@ function processResponseNodes() {
 			}
 			if(newestVersion > version
 				|| (newestRev > rev && newestVersion == version)) {
-				newTd.className = "failTd";
+				newTd.className = "triggeredTd";
 			}
 			else {
 				newTd.className = "neutralTd";
@@ -1818,12 +1818,12 @@ function processResponseOverview() {
 			var newTd = document.createElement("td");
 			newTd.appendChild(document.createTextNode(description));
 			if(state == 0) {
+				newTd.className = "normalTd";
 				newTd.appendChild(document.createTextNode(" (normal)"));
-				newTd.className = "okTd";
 			}
 			else {
-				newTd.appendChild(document.createTextNode(" (triggered)"));
 				newTd.className = "triggeredTd";
+				newTd.appendChild(document.createTextNode(" (triggered)"));
 			}
 			newTd.appendChild(document.createElement("br"));
 			newTr.appendChild(newTd);
@@ -1894,7 +1894,7 @@ function processResponseOverview() {
 			}
 			else {
 				if(state == 0) {
-					newTd.className = "okTd";
+					newTd.className = "normalTd";
 					newTd.appendChild(document.createElement("br"));
 					newTd.appendChild(document.createTextNode("(normal)"));
 				}
@@ -2151,12 +2151,13 @@ function processResponseSensorAlerts() {
 			newTr = document.createElement("tr");
 			newTd = document.createElement("td");
 			if(state == 1) {
+				newTd.className = "triggeredTd";
 				newTd.textContent = "triggered";
 			}
 			else {
+				newTd.className = "normalTd";
 				newTd.textContent = "normal";
 			}
-			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorAlertTable.appendChild(newTr);
 
@@ -2443,12 +2444,13 @@ function processResponseSensors() {
 
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td"); 
-				newTd.textContent = state;
 				if(state == 1) {
 					newTd.className = "triggeredTd";
+					newTd.textContent = "triggered";
 				}
 				else {
-					newTd.className = "neutralTd";
+					newTd.className = "normalTd";
+					newTd.textContent = "normal";
 				}
 				newTr.appendChild(newTd);
 				sensorTable.appendChild(newTr);
