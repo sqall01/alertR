@@ -65,6 +65,7 @@ if(isset($_GET["activate"])) {
 			</tbody>
 		</table>
 
+		<script src="js/events.js"></script>
 		<script src="js/main.js"></script>
 
 	</body>
