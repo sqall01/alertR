@@ -197,11 +197,7 @@
 			<alertLevel>3</alertLevel>
 
 			<!--
-				the ping specific settings
-				host - host on which the service is running and the watchdog
-					script will get as first argument
-				port - port the service is running on and the watchdog script
-					will get as second argument
+				the executer specific settings
 				execute - watchdog script to execute
 					(command/path to execute)
 				timeout - the timeout interval in seconds tells the sensor
@@ -210,12 +206,21 @@
 				intervalToCheck - interval in seconds in which the service
 					should be tested
 			-->
-			<ctf
-				host="127.0.0.1"
-				port="1111"
+			<executer
 				execute="/absolute/path/to/watchdog_script.sh"
 				timeout="5"
-				intervalToCheck="10" />
+				intervalToCheck="10">
+
+				<!--
+					the arguments that the executed script gets passed
+					(can be completely removed if no argument should
+					be passed to the executed watchdog script)
+				-->
+				<argument>start1</argument>
+				<argument>start2</argument>
+				<argument>start2</argument>
+
+			</executer>
 
 		</sensor>
 
@@ -271,11 +276,7 @@
 			<alertLevel>0</alertLevel>
 
 			<!--
-				the ping specific settings
-				host - host on which the service is running and the watchdog
-					script will get as first argument
-				port - port the service is running on and the watchdog script
-					will get as second argument
+				the executer specific settings
 				execute - watchdog script to execute
 					(command/path to execute)
 				timeout - the timeout interval in seconds tells the sensor
@@ -284,12 +285,21 @@
 				intervalToCheck - interval in seconds in which the service
 					should be tested
 			-->
-			<ctf
-				host="127.0.0.2"
-				port="2222"
+			<executer
 				execute="/absolute/path/to/watchdog_script2.sh"
 				timeout="3"
 				intervalToCheck="5" />
+
+				<!--
+					the arguments that the executed script gets passed
+					(can be completely removed if no argument should
+					be passed to the executed watchdog script)
+				-->
+				<argument>start1</argument>
+				<argument>start2</argument>
+				<argument>start2</argument>
+
+			</executer>
 
 		</sensor>
 
