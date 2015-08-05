@@ -9,6 +9,6 @@
 
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
-from sensor import CtfWatchdogSensor, SensorExecuter
+from sensor import ExecuterSensor, SensorExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData

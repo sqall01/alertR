@@ -23,10 +23,10 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Sensor Client CTF Watchdog"
+		self.name = "alertR Sensor Client Executer"
 
 		# the instance of this client
-		self.instance = "sensorClientCtfWatchdog"
+		self.instance = "sensorClientExecuter"
 
 		# interval in which a ping should be send when 
 		# no data was received/send

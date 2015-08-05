@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRsensorCtfWatchdog
+# Provides:          alertRsensorExecuter
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
@@ -17,7 +17,7 @@ USER=someUser
 # change DAEMON to the path to run the alertRclient
 DAEMON=/absolute/path/to/alertRclient.py
 
-NAME=alertRsensorCtfWatchdog
+NAME=alertRsensorExecuter
 PIDFILE=/var/run/$NAME.pid
 DAEMON_OPTS=""
 PATH=/sbin:/usr/sbin:/bin:/usr/bin

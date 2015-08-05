@@ -49,7 +49,7 @@ class _PollingSensor:
 
 
 # class that controls one watchdog of a challenge
-class CtfWatchdogSensor(_PollingSensor):
+class ExecuterSensor(_PollingSensor):
 
 	def __init__(self):
 		_PollingSensor.__init__(self)
@@ -64,14 +64,8 @@ class CtfWatchdogSensor(_PollingSensor):
 		# should be checked
 		self.intervalToCheck = None
 
-		# gives the command/path that should be executed
-		self.execute = None
-
-		# gives the host of the service
-		self.host = None
-
-		# gives the port of the service
-		self.port = None
+		# the command to execute and the arguments to pass
+		self.execute = list()
 
 		# time when the process was executed
 		self.timeExecute = None
@@ -100,8 +94,7 @@ class CtfWatchdogSensor(_PollingSensor):
 
 				logging.debug("[%s]: Executing process " % self.fileName
 							+ "'%s'." % self.description)
-				self.process = subprocess.Popen([self.execute,
-					str(self.host), str(self.port)])
+				self.process = subprocess.Popen(self.execute)
 				self.timeExecute = int(time.time())
 
 		# => process is still running

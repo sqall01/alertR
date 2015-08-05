@@ -48,10 +48,10 @@
 		"desc": "This is the part of the mobile manager that connects to the alertR server and receives all information about the alerting system. The information is stored into a MySQL db as a shared medium to the web page.",
 		"type": "manager"
 		},
-	"sensorClientCtfWatchdog": {
-		"location": "sensorClientCtfWatchdog/",
-		"name": "alertR Sensor Client CTF Watchdog",
-		"desc": "This client handles watchdog scripts as sensors and informs the server if a sensor has triggered and/or the state of a sensor has changed. This means it executes configured watchdog scripts in an interval that check a service. The sensor is triggered if the watchdog scripts exit with a return code not equal to 0 or time out. The watchdog scripts get as first argument the address of the service and as second argument the port. Originally it was written to be used at the hack.lu 2014 CTF (Capture-The-Flag) competition to automatically check/watch the offered challenges. ",
+	"sensorClientExecuter": {
+		"location": "sensorClientExecuter/",
+		"name": "alertR Sensor Client Executer",
+		"desc": "This client handles watchdog scripts as sensors and informs the server if a sensor has triggered and/or the state of a sensor has changed. This means it executes configured watchdog scripts in an interval that check a service. The sensor is triggered if the watchdog scripts exit with a return code not equal to 0 or time out. For example you can execute a script that checks if the Internet connection is available and which triggers a sensor alert if no Internet connection is up.",
 		"type": "sensor"
 		},
 	"sensorClientDevelopment": {

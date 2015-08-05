@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import CtfWatchdogSensor, SensorExecuter
+from lib import ExecuterSensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
 import logging
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
 
-			sensor = CtfWatchdogSensor()
+			sensor = ExecuterSensor()
 
 			# these options are needed by the server to
 			# differentiate between the registered sensors
@@ -169,17 +169,16 @@ if __name__ == '__main__':
 			for alertLevelXml in item.iterfind("alertLevel"):
 				sensor.alertLevels.append(int(alertLevelXml.text))
 
-			# ctf specific options
-			sensor.timeout = int(item.find("ctf").attrib[
+			# executer specific options
+			sensor.timeout = int(item.find("executer").attrib[
 				"timeout"])
-			sensor.intervalToCheck = int(item.find("ctf").attrib[
+			sensor.intervalToCheck = int(item.find("executer").attrib[
 				"intervalToCheck"])
-			sensor.host = str(item.find("ctf").attrib[
-				"host"])
-			sensor.port = int(item.find("ctf").attrib[
-				"port"])
-			sensor.execute = str(item.find("ctf").attrib[
-				"execute"])
+			sensor.execute.append(str(item.find("executer").attrib["execute"]))
+
+			# parse all arguments that are used for the command
+			for argument in item.find("executer").iterfind("argument"):
+				sensor.execute.append(str(argument.text))
 
 			# check if description is empty
 			if len(sensor.description) == 0:
