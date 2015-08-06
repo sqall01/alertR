@@ -218,7 +218,7 @@
 				-->
 				<argument>start1</argument>
 				<argument>start2</argument>
-				<argument>start2</argument>
+				<argument>start3</argument>
 
 			</executer>
 
@@ -286,7 +286,7 @@
 					should be tested
 			-->
 			<executer
-				execute="/absolute/path/to/watchdog_script2.sh"
+				execute="/bin/bash"
 				timeout="3"
 				intervalToCheck="5" />
 
@@ -295,8 +295,8 @@
 					(can be completely removed if no argument should
 					be passed to the executed watchdog script)
 				-->
+				<argument>/absolute/path/to/watchdog_script2.sh</argument>
 				<argument>start1</argument>
-				<argument>start2</argument>
 				<argument>start2</argument>
 
 			</executer>
