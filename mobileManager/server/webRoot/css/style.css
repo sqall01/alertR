@@ -100,3 +100,10 @@ a:active {
 	border: 2px solid #000000;
 	background-color: #fa5b55;
 }
+
+
+.filterLabel {
+	display: block;
+	width: 100%;
+	text-align: left;
+}
