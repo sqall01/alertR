@@ -2392,6 +2392,7 @@ function outputOverview() {
 	sensorTable.setAttribute("border", "0");
 	boxDiv.appendChild(sensorTable);
 
+	sensors.sort(compareSensorsAsc);
 
 	// add all sensors to the output
 	for(var i = 0; i < sensors.length; i++) {
