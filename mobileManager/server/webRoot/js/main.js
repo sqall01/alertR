@@ -60,7 +60,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Alert Levels";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("alertLevels"); };
+		newA.onclick = function(){ changeOutput("alertLevels"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -77,7 +77,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Clients";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("nodes"); };
+		newA.onclick = function(){ changeOutput("nodes"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -94,7 +94,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Clients (Type: Alert)";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("alerts"); };
+		newA.onclick = function(){ changeOutput("alerts"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -111,7 +111,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Clients (Type: Manager)";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("managers"); };
+		newA.onclick = function(){ changeOutput("managers"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -128,7 +128,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Clients (Type: Sensor)";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("sensors"); };
+		newA.onclick = function(){ changeOutput("sensors"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -145,7 +145,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Events";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("events"); };
+		newA.onclick = function(){ changeOutput("events"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -162,7 +162,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Overview";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("overview"); };
+		newA.onclick = function(){ changeOutput("overview"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -179,7 +179,7 @@ function addMenu(newBody, current) {
 		newA.className = "buttonA";
 		newA.textContent = "Sensor Alerts";
 		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ requestData("sensorAlerts"); };
+		newA.onclick = function(){ changeOutput("sensorAlerts"); };
 		newTd.appendChild(newA);
 		newTr.appendChild(newTd);
 		menuTable.appendChild(newTr);
@@ -197,8 +197,16 @@ function addMenu(newBody, current) {
 
 // changes the global configuration variable (eventsNumber)
 function changeEventsNumber(number) {
-	eventsNumber = number;
-	requestData("events");
+
+	if(eventsNumber == number) {
+		outputEvents();
+	}
+	else {
+		eventsNumber = number;
+
+		// get new data because of the changed number 
+		requestData("events");	
+	}
 }
 
 
@@ -229,10 +237,172 @@ function changeEventTypesFilter(eventType) {
 }
 
 
+// changes the output that is shown (and requests data if needed)
+function changeOutput(content) {
+
+	switch(content) {
+		case "alertLevels":
+			if(internals == null
+				|| alertLevels == null) {
+				requestData("alertLevels");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "alertLevels";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputAlertLevels();
+			}
+			break;
+		case "alerts":
+			if(internals == null
+				|| alertLevels == null
+				|| alerts == null
+				|| nodes == null) {
+				requestData("alerts");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "alerts";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputAlerts();
+			}
+			break;
+		case "events":
+			if(internals == null
+				|| events == null) {
+				requestData("events");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "events";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputEvents();
+			}
+			break;
+		case "managers":
+			if(internals == null
+				|| nodes == null
+				|| managers == null) {
+				requestData("managers");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "managers";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputManagers();
+			}
+			break;
+		case "nodes":
+			if(internals == null
+				|| nodes == null) {
+				requestData("nodes");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "nodes";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputNodes();
+			}
+			break;
+		case "sensorAlerts":
+			if(internals == null
+				|| sensorAlerts == null) {
+				requestData("sensorAlerts");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "sensorAlerts";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputSensorAlerts();
+			}
+			break;
+		case "sensors":
+			if(internals == null
+				|| nodes == null
+				|| sensors == null
+				|| alertLevels == null) {
+				requestData("sensors");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "sensors";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputSensors();
+			}
+			break;
+		case "overview":
+		default:
+			if(internals == null
+				|| options == null
+				|| nodes == null
+				|| sensors == null
+				|| sensorAlerts == null) {
+				requestData("overview");
+			}
+			else {
+				// clear timeout if it is set
+				if(setTimeoutId != null) {
+					window.clearTimeout(setTimeoutId);
+				}
+				nextContent = "overview";
+				nextRequest = "requestData(\"" + nextContent + "\")";
+				setTimeoutId = window.setTimeout(nextRequest, 10000);
+
+				outputOverview();
+			}
+			break;
+	}
+}
+
+
 // changes the global configuration variable (sensorAlertsNumber)
 function changeSensorAlertsNumber(number) {
-	sensorAlertsNumber = number;
-	requestData("sensorAlerts"); // TODO hier auch laenge der objekte beachten
+
+	if(sensorAlertsNumber == number) {
+		outputSensorAlerts();
+	}
+	else {
+		sensorAlertsNumber = number;
+
+		// get new data because of the changed number 
+		requestData("sensorAlerts");
+	}
+
 }
 
 
@@ -1243,7 +1413,7 @@ function outputEvents() {
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
 	var newB = document.createElement("b");
-	newB.textContent = "Filter Types Shown:";
+	newB.textContent = "Types Shown Filter:";
 	newTd.appendChild(newB);
 	newTr.appendChild(newTd);
 	newBody.appendChild(newTr);
@@ -2887,4 +3057,4 @@ function outputSensors() {
 }
 
 
-requestData("overview");
+changeOutput("overview");
