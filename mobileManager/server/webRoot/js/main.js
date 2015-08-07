@@ -28,6 +28,9 @@ var options = null;
 var sensorAlerts = null;
 var sensors = null;
 
+// gives the output that is currently shown
+var currentOutput = null;
+
 
 // adds a menu for the navigation to the given table body
 function addMenu(newBody, current) {
@@ -242,6 +245,7 @@ function changeOutput(content) {
 
 	switch(content) {
 		case "alertLevels":
+			currentOutput = "alertLevels";
 			if(internals == null
 				|| alertLevels == null) {
 				requestData("alertLevels");
@@ -259,6 +263,7 @@ function changeOutput(content) {
 			}
 			break;
 		case "alerts":
+			currentOutput = "alerts";
 			if(internals == null
 				|| alertLevels == null
 				|| alerts == null
@@ -278,6 +283,7 @@ function changeOutput(content) {
 			}
 			break;
 		case "events":
+			currentOutput = "events";
 			if(internals == null
 				|| events == null) {
 				requestData("events");
@@ -295,6 +301,7 @@ function changeOutput(content) {
 			}
 			break;
 		case "managers":
+			currentOutput = "managers";
 			if(internals == null
 				|| nodes == null
 				|| managers == null) {
@@ -313,6 +320,7 @@ function changeOutput(content) {
 			}
 			break;
 		case "nodes":
+			currentOutput = "nodes";
 			if(internals == null
 				|| nodes == null) {
 				requestData("nodes");
@@ -330,6 +338,7 @@ function changeOutput(content) {
 			}
 			break;
 		case "sensorAlerts":
+			currentOutput = "sensorAlerts";
 			if(internals == null
 				|| sensorAlerts == null) {
 				requestData("sensorAlerts");
@@ -347,6 +356,7 @@ function changeOutput(content) {
 			}
 			break;
 		case "sensors":
+			currentOutput = "sensors";
 			if(internals == null
 				|| nodes == null
 				|| sensors == null
@@ -367,6 +377,7 @@ function changeOutput(content) {
 			break;
 		case "overview":
 		default:
+			currentOutput = "overview";
 			if(internals == null
 				|| options == null
 				|| nodes == null
@@ -597,9 +608,11 @@ function processResponseAlertLevels() {
 		internals = alertSystemInformation["internals"];
 		alertLevels = alertSystemInformation["alertLevels"];
 
-		// output received data
-		outputAlertLevels();
-
+		// only output received data if it is the current output
+		if(currentOutput == "alertLevels") {
+			// output received data
+			outputAlertLevels();
+		}
 	}
 }
 
@@ -618,8 +631,11 @@ function processResponseAlerts() {
 		alerts = alertSystemInformation["alerts"];
 		alertLevels = alertSystemInformation["alertLevels"];
 
-		// output received data
-		outputAlerts();
+		// only output received data if it is the current output
+		if(currentOutput == "alerts") {
+			// output received data
+			outputAlerts();
+		}
 
 	}
 }
@@ -637,8 +653,11 @@ function processResponseEvents() {
 		internals = alertSystemInformation["internals"];
 		events = alertSystemInformation["events"];
 
-		// output received data
-		outputEvents();
+		// only output received data if it is the current output
+		if(currentOutput == "events") {
+			// output received data
+			outputEvents();
+		}
 
 	}
 }
@@ -657,8 +676,11 @@ function processResponseManagers() {
 		nodes = alertSystemInformation["nodes"];
 		managers = alertSystemInformation["managers"];
 
-		// output received data
-		outputManagers();
+		// only output received data if it is the current output
+		if(currentOutput == "managers") {
+			// output received data
+			outputManagers();
+		}
 
 	}
 }
@@ -676,8 +698,11 @@ function processResponseNodes() {
 		internals = alertSystemInformation["internals"];
 		nodes = alertSystemInformation["nodes"];
 
-		// output received data
-		outputNodes();
+		// only output received data if it is the current output
+		if(currentOutput == "nodes") {
+			// output received data
+			outputNodes();
+		}
 
 	}
 }
@@ -698,8 +723,11 @@ function processResponseOverview() {
 		sensors = alertSystemInformation["sensors"];
 		sensorAlerts = alertSystemInformation["sensorAlerts"];
 
-		// output received data
-		outputOverview();
+		// only output received data if it is the current output
+		if(currentOutput == "overview") {
+			// output received data
+			outputOverview();
+		}
 
 	}
 }
@@ -717,8 +745,11 @@ function processResponseSensorAlerts() {
 		internals = alertSystemInformation["internals"];
 		sensorAlerts = alertSystemInformation["sensorAlerts"];
 
-		// output received data
-		outputSensorAlerts();
+		// only output received data if it is the current output
+		if(currentOutput == "sensorAlerts") {
+			// output received data
+			outputSensorAlerts();
+		}
 
 	}
 }
@@ -738,8 +769,11 @@ function processResponseSensors() {
 		sensors = alertSystemInformation["sensors"];
 		alertLevels = alertSystemInformation["alertLevels"];
 
-		// output received data
-		outputSensors();
+		// only output received data if it is the current output
+		if(currentOutput == "sensors") {
+			// output received data
+			outputSensors();
+		}
 
 	}
 }
