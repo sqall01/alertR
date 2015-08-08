@@ -1,6 +1,7 @@
 // set global configuration variables
 var request = new XMLHttpRequest();
-var setTimeoutId = null;
+var setTimeoutIdRequest = null;
+var setTimeoutIdOnlineCheck = null;
 var sensorAlertsNumber = 50;
 var sensorAlertsRangeStart = 0;
 var eventsNumber = 50;
@@ -28,6 +29,15 @@ var options = null;
 var sensorAlerts = null;
 var sensors = null;
 
+// needed to check the time out of the alertR database instance
+var serverTime = 0.0;
+var lastServerTime = 0.0;
+var lastServerTimeUpdate = null;
+var online = false;
+var timeoutInterval = 60 // in seconds
+var serverTimeTd = null;
+var onlineTd = null;
+
 // gives the output that is currently shown
 var currentOutput = null;
 
@@ -35,165 +45,233 @@ var currentOutput = null;
 // adds a menu for the navigation to the given table body
 function addMenu(newBody, current) {
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		var newB = document.createElement("b");
-		newB.textContent = "Menu:";
-		newTd.appendChild(newB);
-		newTr.appendChild(newTd);
-		newBody.appendChild(newTr);
+	// check if alertR database instance is online
+	checkOnline();
 
-		var boxDiv = document.createElement("div");
-		boxDiv.className = "box";
+	// generate date string from timestamp
+	localDate = new Date(serverTime * 1000);
+	yearString = localDate.getFullYear();
+	monthString =
+		("0" + (localDate.getMonth() + 1)).slice(-2);
+	dateString =
+		("0" + localDate.getDate()).slice(-2);
+	hoursString =
+		("0" + localDate.getHours()).slice(-2);
+	minutesString =
+		("0" + localDate.getMinutes()).slice(-2);
+	secondsString =
+		("0" + localDate.getSeconds()).slice(-2);
+	serverTimeString = monthString + "/" + dateString + "/" +
+		yearString + " " + hoursString + ":" +
+		minutesString + ":" + secondsString;
 
-		var menuTable = document.createElement("table");
-		menuTable.style.width = "100%";
-		menuTable.setAttribute("border", "0");
-		boxDiv.appendChild(menuTable);
+	var boxDiv = document.createElement("div");
+	boxDiv.className = "box";
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "alertLevels") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Alert Levels";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("alertLevels"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	var menuTable = document.createElement("table");
+	menuTable.style.width = "100%";
+	menuTable.setAttribute("border", "0");
+	boxDiv.appendChild(menuTable);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "nodes") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Clients";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("nodes"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	// add status output
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	var newB = document.createElement("b");
+	newB.textContent = "Status:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "alerts") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Clients (Type: Alert)";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("alerts"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	var newTr = document.createElement("tr");
+	onlineTd = document.createElement("td");
+	if(online) {
+		onlineTd.className = "normalTd";
+		onlineTd.textContent = "online";
+	}
+	else {
+		onlineTd.className = "failTd";
+		onlineTd.textContent = "offline";
+	}
+	newTr.appendChild(onlineTd);
+	menuTable.appendChild(newTr);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "managers") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Clients (Type: Manager)";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("managers"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	// add server time output
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	var newB = document.createElement("b");
+	newB.textContent = "Server Time:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "sensors") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Clients (Type: Sensor)";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("sensors"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	var newTr = document.createElement("tr");
+	serverTimeTd = document.createElement("td");
+	if(online) {
+		serverTimeTd.className = "normalTd";
+		serverTimeTd.textContent = serverTimeString;
+	}
+	else {
+		serverTimeTd.className = "failTd";
+		serverTimeTd.textContent = serverTimeString;
+	}
+	newTr.appendChild(serverTimeTd);
+	menuTable.appendChild(newTr);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "events") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Events";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("events"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	// add menu output
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	var newB = document.createElement("b");
+	newB.textContent = "Menu:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "overview") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Overview";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("overview"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "alertLevels") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Alert Levels";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("alertLevels"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
 
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(current == "sensorAlerts") {
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-		var newA = document.createElement("a");
-		newA.className = "buttonA";
-		newA.textContent = "Sensor Alerts";
-		newA.href = "javascript:void(0)";
-		newA.onclick = function(){ changeOutput("sensorAlerts"); };
-		newTd.appendChild(newA);
-		newTr.appendChild(newTd);
-		menuTable.appendChild(newTr);
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "nodes") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Clients";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("nodes"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
 
-		var contentTableObj =
-			document.getElementById("contentTableBody");
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		newTd.appendChild(boxDiv);
-		newTr.appendChild(newTd);
-		contentTableObj.appendChild(newTr);
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "alerts") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Clients (Type: Alert)";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("alerts"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
+
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "managers") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Clients (Type: Manager)";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("managers"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
+
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "sensors") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Clients (Type: Sensor)";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("sensors"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
+
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "events") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Events";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("events"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
+
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "overview") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Overview";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("overview"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
+
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	if(current == "sensorAlerts") {
+		newTd.className = "buttonActiveTd";
+	}
+	else {
+		newTd.className = "buttonTd";
+	}
+	var newA = document.createElement("a");
+	newA.className = "buttonA";
+	newA.textContent = "Sensor Alerts";
+	newA.href = "javascript:void(0)";
+	newA.onclick = function(){ changeOutput("sensorAlerts"); };
+	newTd.appendChild(newA);
+	newTr.appendChild(newTd);
+	menuTable.appendChild(newTr);
+
+	var contentTableObj =
+		document.getElementById("contentTableBody");
+	var newTr = document.createElement("tr");
+	var newTd = document.createElement("td");
+	newTd.appendChild(boxDiv);
+	newTr.appendChild(newTd);
+	contentTableObj.appendChild(newTr);
 
 }
 
@@ -252,12 +330,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "alertLevels";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputAlertLevels();
 			}
@@ -272,12 +350,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "alerts";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputAlerts();
 			}
@@ -290,12 +368,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "events";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputEvents();
 			}
@@ -309,12 +387,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "managers";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputManagers();
 			}
@@ -327,12 +405,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "nodes";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputNodes();
 			}
@@ -345,12 +423,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "sensorAlerts";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputSensorAlerts();
 			}
@@ -365,12 +443,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "sensors";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputSensors();
 			}
@@ -387,12 +465,12 @@ function changeOutput(content) {
 			}
 			else {
 				// clear timeout if it is set
-				if(setTimeoutId != null) {
-					window.clearTimeout(setTimeoutId);
+				if(setTimeoutIdRequest != null) {
+					window.clearTimeout(setTimeoutIdRequest);
 				}
 				nextContent = "overview";
 				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutId = window.setTimeout(nextRequest, 10000);
+				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputOverview();
 			}
@@ -414,6 +492,61 @@ function changeSensorAlertsNumber(number) {
 		requestData("sensorAlerts");
 	}
 
+}
+
+
+// checks if the alertR database instance is online
+function checkOnline() {
+
+	window.clearTimeout(setTimeoutIdOnlineCheck);
+
+	// update last server time if it has changed
+	if(serverTime > lastServerTime) {
+		lastServerTime = serverTime;
+		lastServerTimeUpdate = new Date();
+		online = true;
+
+		if(serverTimeTd != null) {
+			// generate date string from timestamp
+			localDate = new Date(serverTime * 1000);
+			yearString = localDate.getFullYear();
+			monthString =
+				("0" + (localDate.getMonth() + 1)).slice(-2);
+			dateString =
+				("0" + localDate.getDate()).slice(-2);
+			hoursString =
+				("0" + localDate.getHours()).slice(-2);
+			minutesString =
+				("0" + localDate.getMinutes()).slice(-2);
+			secondsString =
+				("0" + localDate.getSeconds()).slice(-2);
+			serverTimeString = monthString + "/" + dateString + "/" +
+				yearString + " " + hoursString + ":" +
+				minutesString + ":" + secondsString;
+
+			serverTimeTd.className = "normalTd";
+			serverTimeTd.textContent = serverTimeString;
+		}
+
+		if(onlineTd != null) {
+			onlineTd.className = "normalTd";
+			onlineTd.textContent = "online";	
+		}
+	}
+
+	// check if server time has not changed since timeout interval
+	var temp = new Date();
+	if(temp.getTime() > 
+		(lastServerTimeUpdate.getTime() + (timeoutInterval * 1000))) {
+		online = false;
+
+		if(onlineTd != null) {
+			onlineTd.className = "failTd";
+			onlineTd.textContent = "offline";	
+		}
+	}
+
+	setTimeoutIdOnlineCheck = window.setTimeout("checkOnline()", 2000);
 }
 
 
@@ -557,10 +690,10 @@ function compareSensorAlertsDesc(a, b) {
 // function to compare sensor objects
 function compareSensorsAsc(a, b) {
 
-	if(a["description"] < b["description"]) {
+	if(a["description"].toLowerCase() < b["description"].toLowerCase()) {
 		return -1;
 	}
-	if(a["description"] > b["description"]) {
+	if(a["description"].toLowerCase() > b["description"].toLowerCase()) {
 		return 1;
 	}
 
@@ -783,8 +916,8 @@ function processResponseSensors() {
 function requestData(content) {
 
 	// clear timeout if it is set
-	if(setTimeoutId != null) {
-		window.clearTimeout(setTimeoutId);
+	if(setTimeoutIdRequest != null) {
+		window.clearTimeout(setTimeoutIdRequest);
 	}
 	var nextContent = null;
 
@@ -888,7 +1021,7 @@ function requestData(content) {
 
 	// wait 10 seconds before requesting the next data update
 	nextRequest = "requestData(\"" + nextContent + "\")";
-	setTimeoutId = window.setTimeout(nextRequest, 10000);
+	setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 }
 
 
@@ -906,16 +1039,14 @@ function outputAlertLevels() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			var serverTime = internals[i]["value"]
+			serverTime = internals[i]["value"]
 		}
 	}
 
 	// add header of site
 	addMenu(newBody, "alertLevels");
-
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -1047,16 +1178,14 @@ function outputAlerts() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			var serverTime = internals[i]["value"]
+			serverTime = internals[i]["value"]
 		}
 	}
 
 	// add header of site
 	addMenu(newBody, "alerts");
-
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -1325,7 +1454,6 @@ function outputEvents() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"] == "serverTime") {
 			serverTime = internals[i]["value"]
@@ -1334,7 +1462,6 @@ function outputEvents() {
 
 	// add header of site
 	addMenu(newBody, "events");
-
 
 	// generate menu for number of shown sensor alerts output
 	var newTr = document.createElement("tr");
@@ -1803,16 +1930,14 @@ function outputManagers() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			var serverTime = internals[i]["value"]
+			serverTime = internals[i]["value"]
 		}
 	}
 
 	// add header of site
 	addMenu(newBody, "managers");
-
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -2011,7 +2136,6 @@ function outputNodes() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"] == "serverTime") {
 			serverTime = internals[i]["value"]
@@ -2020,7 +2144,6 @@ function outputNodes() {
 
 	// add header of site
 	addMenu(newBody, "nodes");
-
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -2199,16 +2322,14 @@ function outputOverview() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			var serverTime = internals[i]["value"]
+			serverTime = internals[i]["value"]
 		}
 	}
 
 	// add header of site
 	addMenu(newBody, "overview");
-
 
 	// generate alert system overview output
 	var newTr = document.createElement("tr");
@@ -2469,7 +2590,6 @@ function outputSensorAlerts() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"] == "serverTime") {
 			serverTime = internals[i]["value"]
@@ -2478,7 +2598,6 @@ function outputSensorAlerts() {
 
 	// add header of site
 	addMenu(newBody, "sensorAlerts");
-
 
 	// generate menu for number of shown sensor alerts output
 	var newTr = document.createElement("tr");
@@ -2761,16 +2880,14 @@ function outputSensors() {
 	delete oldBody;
 
 	// get server time
-	var serverTime = 0.0;
 	for(var i = 0; i < internals.length; i++) {
 		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			var serverTime = internals[i]["value"]
+			serverTime = internals[i]["value"]
 		}
 	}
 
 	// add header of site
 	addMenu(newBody, "sensors");
-
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
