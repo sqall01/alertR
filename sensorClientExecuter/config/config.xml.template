@@ -288,7 +288,7 @@
 			<executer
 				execute="/bin/bash"
 				timeout="3"
-				intervalToCheck="5" />
+				intervalToCheck="5">
 
 				<!--
 					the arguments that the executed script gets passed
