@@ -1067,11 +1067,18 @@ class Mysql(_Storage):
 
 		# update server time
 		if sensors:
+
+			# get newest server time for database
+			newestTime = 0.0
+			for sensor in sensors:
+				if sensor.serverTime > newestTime:
+					newestTime = sensor.serverTime
+
 			try:
 				self.cursor.execute("UPDATE internals SET "
 					+ "value = %s "
 					+ "WHERE type = %s",
-					(sensors[0].serverTime, "serverTime"))
+					(newestTime, "serverTime"))
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to update server time." 
