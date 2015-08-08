@@ -34,12 +34,14 @@ var serverTime = 0.0;
 var lastServerTime = 0.0;
 var lastServerTimeUpdate = null;
 var online = false;
-var timeoutInterval = 60 // in seconds
+var timeoutInterval = 80 // in seconds
 var serverTimeTd = null;
 var onlineTd = null;
 
 // gives the output that is currently shown
 var currentOutput = null;
+
+var lastResponse = null;
 
 
 // adds a menu for the navigation to the given table body
@@ -321,11 +323,14 @@ function changeEventTypesFilter(eventType) {
 // changes the output that is shown (and requests data if needed)
 function changeOutput(content) {
 
+	var currentTime = new Date()
+
 	switch(content) {
 		case "alertLevels":
 			currentOutput = "alertLevels";
 			if(internals == null
-				|| alertLevels == null) {
+				|| alertLevels == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("alertLevels");
 			}
 			else {
@@ -345,7 +350,8 @@ function changeOutput(content) {
 			if(internals == null
 				|| alertLevels == null
 				|| alerts == null
-				|| nodes == null) {
+				|| nodes == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("alerts");
 			}
 			else {
@@ -363,7 +369,8 @@ function changeOutput(content) {
 		case "events":
 			currentOutput = "events";
 			if(internals == null
-				|| events == null) {
+				|| events == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("events");
 			}
 			else {
@@ -382,7 +389,8 @@ function changeOutput(content) {
 			currentOutput = "managers";
 			if(internals == null
 				|| nodes == null
-				|| managers == null) {
+				|| managers == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("managers");
 			}
 			else {
@@ -400,7 +408,8 @@ function changeOutput(content) {
 		case "nodes":
 			currentOutput = "nodes";
 			if(internals == null
-				|| nodes == null) {
+				|| nodes == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("nodes");
 			}
 			else {
@@ -418,7 +427,8 @@ function changeOutput(content) {
 		case "sensorAlerts":
 			currentOutput = "sensorAlerts";
 			if(internals == null
-				|| sensorAlerts == null) {
+				|| sensorAlerts == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("sensorAlerts");
 			}
 			else {
@@ -438,7 +448,8 @@ function changeOutput(content) {
 			if(internals == null
 				|| nodes == null
 				|| sensors == null
-				|| alertLevels == null) {
+				|| alertLevels == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("sensors");
 			}
 			else {
@@ -460,7 +471,8 @@ function changeOutput(content) {
 				|| options == null
 				|| nodes == null
 				|| sensors == null
-				|| sensorAlerts == null) {
+				|| sensorAlerts == null
+				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("overview");
 			}
 			else {
@@ -735,6 +747,9 @@ function processResponseAlertLevels() {
 	
 	if (request.readyState == 4) {
 
+		// update time we received the last response
+		lastResponse = new Date();
+
 		// get JSON response and parse it
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
@@ -755,6 +770,9 @@ function processResponseAlertLevels() {
 function processResponseAlerts() {
 	
 	if (request.readyState == 4) {
+
+		// update time we received the last response
+		lastResponse = new Date();
 
 		// get JSON response and parse it
 		var response = request.responseText;
@@ -780,6 +798,9 @@ function processResponseEvents() {
 
 	if (request.readyState == 4) {
 
+		// update time we received the last response
+		lastResponse = new Date();
+
 		// get JSON response and parse it
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
@@ -801,6 +822,9 @@ function processResponseEvents() {
 function processResponseManagers() {
 	
 	if (request.readyState == 4) {
+
+		// update time we received the last response
+		lastResponse = new Date();
 
 		// get JSON response and parse it
 		var response = request.responseText;
@@ -825,6 +849,9 @@ function processResponseNodes() {
 
 	if (request.readyState == 4) {
 
+		// update time we received the last response
+		lastResponse = new Date();
+
 		// get JSON response and parse it
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
@@ -846,6 +873,9 @@ function processResponseNodes() {
 function processResponseOverview() {
 	
 	if (request.readyState == 4) {
+
+		// update time we received the last response
+		lastResponse = new Date();
 
 		// get JSON response and parse it
 		var response = request.responseText;
@@ -872,6 +902,9 @@ function processResponseSensorAlerts() {
 
 	if (request.readyState == 4) {
 
+		// update time we received the last response
+		lastResponse = new Date();
+
 		// get JSON response and parse it
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
@@ -893,6 +926,9 @@ function processResponseSensorAlerts() {
 function processResponseSensors() {
 	
 	if (request.readyState == 4) {
+
+		// update time we received the last response
+		lastResponse = new Date();
 
 		// get JSON response and parse it
 		var response = request.responseText;
