@@ -518,6 +518,12 @@ class Updater:
 				% self.fileName
 				+ "correct hash.")
 
+			logging.debug("[%s]: Temporary file: %s"
+				% (self.fileName, sha256Hash))
+
+			logging.debug("[%s]: Repository: %s"
+				% (self.fileName, fileHash))
+
 			return None
 
 		logging.info("[%s]: Successfully downloaded file: '%s'"
