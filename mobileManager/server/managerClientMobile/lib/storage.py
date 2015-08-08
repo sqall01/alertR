@@ -61,6 +61,8 @@ class Mysql(_Storage):
 		self.sensorAlertLifeSpan = self.globalData.sensorAlertLifeSpan
 		self.events = self.globalData.events
 		self.eventsLifeSpan = self.globalData.eventsLifeSpan
+		self.version = self.globalData.version
+		self.rev = self.globalData.rev
 
 		# local copy of elements in the database (to make the update faster)
 		self.options = list()
@@ -79,6 +81,54 @@ class Mysql(_Storage):
 		# connect to the database
 		self._openConnection()
 
+		# check if version of database is the same as version of client
+		self.cursor.execute("SHOW TABLES LIKE 'internals'")
+		result = self.cursor.fetchall()
+		if len(result) != 0:
+
+			self.cursor.execute("SELECT type, value FROM internals")
+			result = self.cursor.fetchall()
+
+			dbVersion = 0.0
+			dbRev = 0.0
+			for internalTuple in result: 
+				internalType = internalTuple[0]
+				internalValue = internalTuple[1]
+
+				if internalType.upper() == "VERSION":
+					dbVersion = internalValue
+					continue
+				elif internalType.upper() == "REV":
+					dbRev = internalValue
+					continue
+
+			# if version is not the same of db and client
+			# => delete event tables
+			if (dbVersion != self.version
+				or dbRev != self.rev):
+				
+				self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
+				self.cursor.execute(
+					"DROP TABLE IF EXISTS eventsConnectedChange")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
+				self.cursor.execute("DROP TABLE IF EXISTS events")
+
 		# delete all tables from the database to clear old data
 		self.cursor.execute("DROP TABLE IF EXISTS internals")
 		self.cursor.execute("DROP TABLE IF EXISTS options")
@@ -90,26 +140,6 @@ class Mysql(_Storage):
 		self.cursor.execute("DROP TABLE IF EXISTS managers")
 		self.cursor.execute("DROP TABLE IF EXISTS alertLevels")
 		self.cursor.execute("DROP TABLE IF EXISTS nodes")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
-		self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
-		self.cursor.execute("DROP TABLE IF EXISTS events")
 
 		# commit all changes
 		self.conn.commit()
@@ -185,6 +215,18 @@ class Mysql(_Storage):
 			+ "value) VALUES (%s, %s)",
 			("serverTime", 0.0))
 
+		# insert version field
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)",
+			("version", self.version))
+
+		# insert rev field
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)",
+			("rev", self.rev))
+
 		# create options table
 		self.cursor.execute("CREATE TABLE options ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
@@ -258,182 +300,242 @@ class Mysql(_Storage):
 			+ "smtpActivated INTEGER NOT NULL, "
 			+ "toAddr VARCHAR(255) NOT NULL)")
 
-		# create events table
-		self.cursor.execute("CREATE TABLE events ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "timeOccurred INTEGER NOT NULL, "
-			+ "type VARCHAR(255) NOT NULL)")
+		# create events table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'events'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE events ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "timeOccurred INTEGER NOT NULL, "
+				+ "type VARCHAR(255) NOT NULL)")
 
-		# create eventsSensorAlert table
-		self.cursor.execute("CREATE TABLE eventsSensorAlert ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "state INTEGER NOT NULL, "
+		# create eventsSensorAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsSensorAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsSensorAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsStateChange table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsStateChange'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsStateChange ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsConnectedChange table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsConnectedChange'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsConnectedChange ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "nodeType TEXT NOT NULL, "
+				+ "instance TEXT NOT NULL, "
+				+ "connected INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsSensorTimeOut table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsSensorTimeOut'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewVersion table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewVersion'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewVersion ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "usedVersion DOUBLE NOT NULL, "
+				+ "usedRev INTEGER NOT NULL, "
+				+ "newVersion DOUBLE NOT NULL, "
+				+ "newRev INTEGER NOT NULL, "
+				+ "instance VARCHAR(255) NOT NULL, "
+				+ "hostname VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewOption table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewOption'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewOption ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "type VARCHAR(255) NOT NULL, "
+				+ "value DOUBLE NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewNode table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewNode'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewNode ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "nodeType TEXT NOT NULL, "
+				+ "instance TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewSensor table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewSensor'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewSensor ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
 			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsStateChange table
-		self.cursor.execute("CREATE TABLE eventsStateChange ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "state INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsNewAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsConnectedChange table
-		self.cursor.execute("CREATE TABLE eventsConnectedChange ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "nodeType TEXT NOT NULL, "
-			+ "instance TEXT NOT NULL, "
-			+ "connected INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsNewManager table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewManager'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewManager ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsSensorTimeOut table
-		self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "state INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsChangeOption table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeOption'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeOption ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "type VARCHAR(255) NOT NULL, "
+				+ "oldValue DOUBLE NOT NULL, "
+				+ "newValue DOUBLE NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsNewVersion table
-		self.cursor.execute("CREATE TABLE eventsNewVersion ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "usedVersion DOUBLE NOT NULL, "
-			+ "usedRev INTEGER NOT NULL, "
-			+ "newVersion DOUBLE NOT NULL, "
-			+ "newRev INTEGER NOT NULL, "
-			+ "instance VARCHAR(255) NOT NULL, "
-			+ "hostname VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsChangeNode table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeNode'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeNode ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldHostname VARCHAR(255) NOT NULL, "
+				+ "oldNodeType VARCHAR(255) NOT NULL, "
+				+ "oldInstance VARCHAR(255) NOT NULL, "
+				+ "oldVersion DOUBLE NOT NULL, "
+				+ "oldRev INTEGER NOT NULL, "
+				+ "newHostname VARCHAR(255) NOT NULL, "
+				+ "newNodeType VARCHAR(255) NOT NULL, "
+				+ "newInstance VARCHAR(255) NOT NULL, "
+				+ "newVersion DOUBLE NOT NULL, "
+				+ "newRev INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsNewOption table
-		self.cursor.execute("CREATE TABLE eventsNewOption ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "type VARCHAR(255) NOT NULL, "
-			+ "value DOUBLE NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsChangeSensor table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeSensor'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeSensor ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldAlertDelay INTEGER NOT NULL, "
+				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "newAlertDelay INTEGER NOT NULL, "
+				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsNewNode table
-		self.cursor.execute("CREATE TABLE eventsNewNode ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "nodeType TEXT NOT NULL, "
-			+ "instance TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsChangeAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsNewSensor table
-		self.cursor.execute("CREATE TABLE eventsNewSensor ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "state INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsChangeManager table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeManager'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeManager ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsNewAlert table
-		self.cursor.execute("CREATE TABLE eventsNewAlert ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsDeleteNode table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteNode'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteNode ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "nodeType TEXT NOT NULL, "
+				+ "instance TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsNewManager table
-		self.cursor.execute("CREATE TABLE eventsNewManager ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsDeleteSensor table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteSensor'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsChangeOption table
-		self.cursor.execute("CREATE TABLE eventsChangeOption ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "type VARCHAR(255) NOT NULL, "
-			+ "oldValue DOUBLE NOT NULL, "
-			+ "newValue DOUBLE NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsDeleteAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
-		# create eventsChangeNode table
-		self.cursor.execute("CREATE TABLE eventsChangeNode ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "oldHostname VARCHAR(255) NOT NULL, "
-			+ "oldNodeType VARCHAR(255) NOT NULL, "
-			+ "oldInstance VARCHAR(255) NOT NULL, "
-			+ "oldVersion DOUBLE NOT NULL, "
-			+ "oldRev INTEGER NOT NULL, "
-			+ "newHostname VARCHAR(255) NOT NULL, "
-			+ "newNodeType VARCHAR(255) NOT NULL, "
-			+ "newInstance VARCHAR(255) NOT NULL, "
-			+ "newVersion DOUBLE NOT NULL, "
-			+ "newRev INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeSensor table
-		self.cursor.execute("CREATE TABLE eventsChangeSensor ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "oldAlertDelay INTEGER NOT NULL, "
-			+ "oldDescription VARCHAR(255) NOT NULL, "
-			+ "newAlertDelay INTEGER NOT NULL, "
-			+ "newDescription VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeAlert table
-		self.cursor.execute("CREATE TABLE eventsChangeAlert ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "oldDescription VARCHAR(255) NOT NULL, "
-			+ "newDescription VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeManager table
-		self.cursor.execute("CREATE TABLE eventsChangeManager ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "oldDescription VARCHAR(255) NOT NULL, "
-			+ "newDescription VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteNode table
-		self.cursor.execute("CREATE TABLE eventsDeleteNode ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "hostname TEXT NOT NULL, "
-			+ "nodeType TEXT NOT NULL, "
-			+ "instance TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteSensor table
-		self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteAlert table
-		self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteManager table
-		self.cursor.execute("CREATE TABLE eventsDeleteManager ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "eventId INTEGER NOT NULL, "
-			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+		# create eventsDeleteManager table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteManager'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteManager ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
 		self.conn.commit()
