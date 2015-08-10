@@ -20,10 +20,19 @@ from events import EventChangeOption, EventChangeNode, EventChangeSensor
 from events import EventChangeAlert, EventChangeManager
 from events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
 from events import EventDeleteManager
+from serverObjects import Option, Node, Sensor, Alert, Manager, AlertLevel
 
 
 # internal abstract class for new storage backends
 class _Storage():
+
+	# creates objects from the data in the database 
+	# (should only be called during the initial connection to the database)
+	#
+	# no return value but raise exception if it fails
+	def createObjectsFromDb(self):
+		raise NotImplemented("Function not implemented yet.")
+
 
 	# creates the database (should only be called if the database
 	# does not exist)
@@ -63,14 +72,20 @@ class Mysql(_Storage):
 		self.eventsLifeSpan = self.globalData.eventsLifeSpan
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
+		self.options = self.globalData.options
+		self.nodes = self.globalData.nodes
+		self.sensors = self.globalData.sensors
+		self.alerts = self.globalData.alerts
+		self.managers = self.globalData.managers
+		self.alertLevels = self.globalData.alertLevels
 
 		# local copy of elements in the database (to make the update faster)
-		self.options = list()
-		self.nodes = list()
-		self.sensors = list()
-		self.alerts = list()
-		self.managers = list()
-		self.alertLevels = list()
+		self.optionsCopy = list()
+		self.nodesCopy = list()
+		self.sensorsCopy = list()
+		self.alertsCopy = list()
+		self.managersCopy = list()
+		self.alertLevelsCopy = list()
 
 		# mysql lock
 		self.dbLock = threading.Semaphore(1)
@@ -128,47 +143,34 @@ class Mysql(_Storage):
 				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
 				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
 				self.cursor.execute("DROP TABLE IF EXISTS events")
+				self.cursor.execute("DROP TABLE IF EXISTS internals")
+				self.cursor.execute("DROP TABLE IF EXISTS options")
+				self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+				self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+				self.cursor.execute("DROP TABLE IF EXISTS sensors")
+				self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+				self.cursor.execute("DROP TABLE IF EXISTS alerts")
+				self.cursor.execute("DROP TABLE IF EXISTS managers")
+				self.cursor.execute("DROP TABLE IF EXISTS alertLevels")
+				self.cursor.execute("DROP TABLE IF EXISTS nodes")
 
-		# delete all tables from the database to clear old data
-		self.cursor.execute("DROP TABLE IF EXISTS internals")
-		self.cursor.execute("DROP TABLE IF EXISTS options")
-		self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
-		self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
-		self.cursor.execute("DROP TABLE IF EXISTS sensors")
-		self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
-		self.cursor.execute("DROP TABLE IF EXISTS alerts")
-		self.cursor.execute("DROP TABLE IF EXISTS managers")
-		self.cursor.execute("DROP TABLE IF EXISTS alertLevels")
-		self.cursor.execute("DROP TABLE IF EXISTS nodes")
+				# commit all changes
+				self.conn.commit()
 
-		# commit all changes
-		self.conn.commit()
+				# close connection to the database
+				self._closeConnection()
 
-		# close connection to the database
-		self._closeConnection()
+				self.createStorage()
 
-		self.createStorage()
+			else:
 
+				# commit all changes
+				self.conn.commit()
 
-	# internal function that connects to the mysql server
-	# (needed because direct changes to the database by another program
-	# are not seen if the connection to the mysql server is kept alive)
-	def _openConnection(self):
-		# import the needed package
-		import MySQLdb
+				# close connection to the database
+				self._closeConnection()
 
-		self.conn = MySQLdb.connect(host=self.host, port=self.port,
-			user=self.username,	passwd=self.password, db=self.database)
-
-		self.cursor = self.conn.cursor()
-
-
-	# internal function that closes the connection to the mysql server
-	def _closeConnection(self):
-		self.cursor.close()
-		self.conn.close()
-		self.cursor = None
-		self.conn = None
+				self.createObjectsFromDb()
 
 
 	# internal function that acquires the lock
@@ -177,376 +179,7 @@ class Mysql(_Storage):
 		self.dbLock.acquire()
 
 
-	# internal function that releases the lock
-	def _releaseLock(self):
-		logging.debug("[%s]: Release lock." % self.fileName)
-		self.dbLock.release()
-
-
-	# creates the database (should only be called if the database
-	# does not exist)
-	#
-	# no return value but raise exception if it fails
-	def createStorage(self):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to MySQL server." 
-				% self.fileName)
-
-			self._releaseLock()
-
-			# remember to pass the exception
-			raise
-
-		# create internals table (used internally by the client)
-		self.cursor.execute("CREATE TABLE internals ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value DOUBLE NOT NULL)")
-
-		# insert server time field
-		self.cursor.execute("INSERT INTO internals ("
-			+ "type, "
-			+ "value) VALUES (%s, %s)",
-			("serverTime", 0.0))
-
-		# insert version field
-		self.cursor.execute("INSERT INTO internals ("
-			+ "type, "
-			+ "value) VALUES (%s, %s)",
-			("version", self.version))
-
-		# insert rev field
-		self.cursor.execute("INSERT INTO internals ("
-			+ "type, "
-			+ "value) VALUES (%s, %s)",
-			("rev", self.rev))
-
-		# create options table
-		self.cursor.execute("CREATE TABLE options ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value DOUBLE NOT NULL)")
-
-		# create nodes table
-		self.cursor.execute("CREATE TABLE nodes ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "hostname VARCHAR(255) NOT NULL, "
-			+ "nodeType VARCHAR(255) NOT NULL, "
-			+ "instance VARCHAR(255) NOT NULL, "
-			+ "connected INTEGER NOT NULL, "
-			+ "version DOUBLE NOT NULL, "
-			+ "rev INTEGER NOT NULL, "
-			+ "newestVersion DOUBLE NOT NULL, "
-			+ "newestRev INTEGER NOT NULL)")
-
-		# create sensors table
-		self.cursor.execute("CREATE TABLE sensors ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "nodeId INTEGER NOT NULL, "
-			+ "description VARCHAR(255) NOT NULL, "
-			+ "state INTEGER NOT NULL, "
-			+ "lastStateUpdated INTEGER NOT NULL, "
-			+ "alertDelay INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
-		# create sensorAlerts table
-		self.cursor.execute("CREATE TABLE sensorAlerts ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "sensorId INTEGER NOT NULL, "
-			+ "state INTEGER NOT NULL, "
-			+ "description TEXT NOT NULL,"
-			+ "timeReceived INTEGER NOT NULL, "
-			+ "dataJson TEXT NOT NULL)")
-
-		# create sensorsAlertLevels table
-		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "sensorId INTEGER NOT NULL, "
-			+ "alertLevel INTEGER NOT NULL, "
-			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
-
-		# create alerts table
-		self.cursor.execute("CREATE TABLE alerts ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "nodeId INTEGER NOT NULL, "
-			+ "description VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
-		# create alertsAlertLevels table
-		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "alertId INTEGER NOT NULL, "
-			+ "alertLevel INTEGER NOT NULL, "
-			+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
-
-		# create managers table
-		self.cursor.execute("CREATE TABLE managers ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "nodeId INTEGER NOT NULL, "
-			+ "description VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
-		# create alert levels table
-		self.cursor.execute("CREATE TABLE alertLevels ("
-			+ "alertLevel INTEGER PRIMARY KEY, "
-			+ "name VARCHAR(255) NOT NULL, "
-			+ "triggerAlways INTEGER NOT NULL, "
-			+ "smtpActivated INTEGER NOT NULL, "
-			+ "toAddr VARCHAR(255) NOT NULL)")
-
-		# create events table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'events'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE events ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "timeOccurred INTEGER NOT NULL, "
-				+ "type VARCHAR(255) NOT NULL)")
-
-		# create eventsSensorAlert table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsSensorAlert'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsSensorAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "state INTEGER NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsStateChange table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsStateChange'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsStateChange ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "state INTEGER NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsConnectedChange table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsConnectedChange'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsConnectedChange ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "nodeType TEXT NOT NULL, "
-				+ "instance TEXT NOT NULL, "
-				+ "connected INTEGER NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsSensorTimeOut table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsSensorTimeOut'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "state INTEGER NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsNewVersion table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsNewVersion'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsNewVersion ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "usedVersion DOUBLE NOT NULL, "
-				+ "usedRev INTEGER NOT NULL, "
-				+ "newVersion DOUBLE NOT NULL, "
-				+ "newRev INTEGER NOT NULL, "
-				+ "instance VARCHAR(255) NOT NULL, "
-				+ "hostname VARCHAR(255) NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsNewOption table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsNewOption'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsNewOption ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "type VARCHAR(255) NOT NULL, "
-				+ "value DOUBLE NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsNewNode table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsNewNode'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsNewNode ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "nodeType TEXT NOT NULL, "
-				+ "instance TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsNewSensor table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsNewSensor'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsNewSensor ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "state INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsNewAlert table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsNewAlert'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsNewAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsNewManager table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsNewManager'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsNewManager ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeOption table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeOption'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsChangeOption ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "type VARCHAR(255) NOT NULL, "
-				+ "oldValue DOUBLE NOT NULL, "
-				+ "newValue DOUBLE NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeNode table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeNode'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsChangeNode ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "oldHostname VARCHAR(255) NOT NULL, "
-				+ "oldNodeType VARCHAR(255) NOT NULL, "
-				+ "oldInstance VARCHAR(255) NOT NULL, "
-				+ "oldVersion DOUBLE NOT NULL, "
-				+ "oldRev INTEGER NOT NULL, "
-				+ "newHostname VARCHAR(255) NOT NULL, "
-				+ "newNodeType VARCHAR(255) NOT NULL, "
-				+ "newInstance VARCHAR(255) NOT NULL, "
-				+ "newVersion DOUBLE NOT NULL, "
-				+ "newRev INTEGER NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeSensor table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeSensor'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsChangeSensor ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "oldAlertDelay INTEGER NOT NULL, "
-				+ "oldDescription VARCHAR(255) NOT NULL, "
-				+ "newAlertDelay INTEGER NOT NULL, "
-				+ "newDescription VARCHAR(255) NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeAlert table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeAlert'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsChangeAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "oldDescription VARCHAR(255) NOT NULL, "
-				+ "newDescription VARCHAR(255) NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsChangeManager table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeManager'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsChangeManager ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "oldDescription VARCHAR(255) NOT NULL, "
-				+ "newDescription VARCHAR(255) NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteNode table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteNode'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsDeleteNode ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "hostname TEXT NOT NULL, "
-				+ "nodeType TEXT NOT NULL, "
-				+ "instance TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteSensor table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteSensor'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteAlert table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteAlert'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# create eventsDeleteManager table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteManager'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE eventsDeleteManager ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
-				+ "description TEXT NOT NULL, "
-				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-		# commit all changes
-		self.conn.commit()
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-
-	# adds all events from the queue to the database
+	# internal function that adds all events from the queue to the database
 	#
 	# return True or False
 	def _addEventsToDb(self):
@@ -1037,7 +670,35 @@ class Mysql(_Storage):
 		return True
 
 
-	# remove all events from the database that are too old
+	# internal function that closes the connection to the mysql server
+	def _closeConnection(self):
+		self.cursor.close()
+		self.conn.close()
+		self.cursor = None
+		self.conn = None
+
+
+	# internal function that connects to the mysql server
+	# (needed because direct changes to the database by another program
+	# are not seen if the connection to the mysql server is kept alive)
+	def _openConnection(self):
+		# import the needed package
+		import MySQLdb
+
+		self.conn = MySQLdb.connect(host=self.host, port=self.port,
+			user=self.username,	passwd=self.password, db=self.database)
+
+		self.cursor = self.conn.cursor()
+
+
+	# internal function that releases the lock
+	def _releaseLock(self):
+		logging.debug("[%s]: Release lock." % self.fileName)
+		self.dbLock.release()
+
+
+	# internal function that removes all events from the database
+	# that are too old
 	#
 	# return True or False
 	def _removeEventsFromDb(self):
@@ -1148,6 +809,565 @@ class Mysql(_Storage):
 		return True
 
 
+	# creates objects from the data in the database 
+	# (should only be called during the initial connection to the database)
+	#
+	# no return value but raise exception if it fails
+	def createObjectsFromDb(self):
+
+		# connect to the database
+		self._openConnection()
+
+		# get last stored server time
+		self.cursor.execute("SELECT "
+			+ "value "
+			+ "FROM internals WHERE type = 'serverTime'")
+		result = self.cursor.fetchall()
+		serverTime = result[0][0]
+
+
+		# create option objects from db
+		self.cursor.execute("SELECT "
+			+ "type, "
+			+ "value "
+			+ "FROM options")
+		result = self.cursor.fetchall()
+
+		for optionTuple in result:
+			tempOption = Option()
+			tempOption.type = optionTuple[0]
+			tempOption.value = optionTuple[1]
+
+			self.options.append(tempOption)
+			self.optionsCopy.append(tempOption)
+
+
+		# create node objects from db
+		self.cursor.execute("SELECT "
+			+ "id, "
+			+ "hostname, "
+			+ "nodeType, "
+			+ "instance, "
+			+ "connected, "
+			+ "version, "
+			+ "rev, "
+			+ "newestVersion, "
+			+ "newestRev "
+			+ "FROM nodes")
+		result = self.cursor.fetchall()
+
+		for nodeTuple in result:
+			tempNode = Node()
+			tempNode.nodeId = nodeTuple[0]
+			tempNode.hostname = nodeTuple[1]
+			tempNode.nodeType = nodeTuple[2]
+			tempNode.instance = nodeTuple[3]
+			tempNode.connected = nodeTuple[4]
+			tempNode.version = nodeTuple[5]
+			tempNode.rev = nodeTuple[6]
+			tempNode.newestVersion = nodeTuple[7]
+			tempNode.newestRev = nodeTuple[8]
+
+			self.nodes.append(tempNode)
+			self.nodesCopy.append(tempNode)
+
+
+		# create sensor objects from db
+		self.cursor.execute("SELECT "
+			+ "id, "
+			+ "nodeId, "
+			+ "description, "
+			+ "state, "
+			+ "lastStateUpdated, "
+			+ "alertDelay "
+			+ "FROM sensors")
+		result = self.cursor.fetchall()
+
+		for sensorTuple in result:
+			tempSensor = Sensor()
+			tempSensor.sensorId = sensorTuple[0]
+			tempSensor.nodeId = sensorTuple[1]
+			tempSensor.description = sensorTuple[2]
+			tempSensor.state = sensorTuple[3]
+			tempSensor.lastStateUpdated = sensorTuple[4]
+			tempSensor.alertDelay = sensorTuple[5]
+			tempSensor.serverTime = serverTime
+
+			self.cursor.execute("SELECT "
+				+ "alertLevel "
+				+ "FROM sensorsAlertLevels "
+				+ "WHERE sensorId = %s", (tempSensor.sensorId, ))
+			alertLevelresult = self.cursor.fetchall()
+			for alertLevelTuple in alertLevelresult:
+				tempSensor.alertLevels.append(alertLevelTuple[0])
+
+			self.sensors.append(tempSensor)
+			self.sensorsCopy.append(tempSensor)
+
+
+		# create alert objects from db
+		self.cursor.execute("SELECT "
+			+ "id, "
+			+ "nodeId, "
+			+ "description "
+			+ "FROM alerts")
+		result = self.cursor.fetchall()
+
+		for alertTuple in result:
+			tempAlert = Alert()
+			tempAlert.alertId = alertTuple[0]
+			tempAlert.nodeId = alertTuple[1]
+			tempAlert.description = alertTuple[2]
+
+			self.cursor.execute("SELECT "
+				+ "alertLevel "
+				+ "FROM alertsAlertLevels "
+				+ "WHERE alertId = %s", (tempAlert.alertId, ))
+			alertLevelresult = self.cursor.fetchall()
+			for alertLevelTuple in alertLevelresult:
+				tempAlert.alertLevels.append(alertLevelTuple[0])
+
+			self.alerts.append(tempAlert)
+			self.alertsCopy.append(tempAlert)
+
+
+		# create manager objects from db
+		self.cursor.execute("SELECT "
+			+ "id, "
+			+ "nodeId, "
+			+ "description "
+			+ "FROM managers")
+		result = self.cursor.fetchall()
+
+		for managerTuple in result:
+			tempManager = Manager()
+			tempManager.managerId = managerTuple[0]
+			tempManager.nodeId = managerTuple[1]
+			tempManager.description = managerTuple[2]
+
+			self.managers.append(tempManager)
+			self.managersCopy.append(tempManager)
+
+
+		# create alert levels objects from db
+		self.cursor.execute("SELECT "
+			+ "alertLevel, "
+			+ "name, "
+			+ "triggerAlways, "
+			+ "smtpActivated, "
+			+ "toAddr "
+			+ "FROM alertLevels")
+		result = self.cursor.fetchall()
+
+		for alertLevelTuple in result:
+			tempAlertLevel = AlertLevel()
+			tempAlertLevel.level = alertLevelTuple[0]
+			tempAlertLevel.name = alertLevelTuple[1]
+			tempAlertLevel.triggerAlways = (alertLevelTuple[2] == 1)
+			tempAlertLevel.smtpActivated = (alertLevelTuple[3] == 1)
+			tempAlertLevel.toAddr = alertLevelTuple[4]
+
+			self.alertLevels.append(tempAlertLevel)
+			self.alertLevelsCopy.append(tempAlertLevel)
+
+		# close connection to the database
+		self._closeConnection()
+
+
+	# creates the database (should only be called if the database
+	# does not exist)
+	#
+	# no return value but raise exception if it fails
+	def createStorage(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to MySQL server." 
+				% self.fileName)
+
+			self._releaseLock()
+
+			# remember to pass the exception
+			raise
+
+		# create internals table (used internally by the client)
+		# if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'internals'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE internals ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "type VARCHAR(255) NOT NULL UNIQUE, "
+				+ "value DOUBLE NOT NULL)")
+
+			# insert server time field
+			self.cursor.execute("INSERT INTO internals ("
+				+ "type, "
+				+ "value) VALUES (%s, %s)",
+				("serverTime", 0.0))
+
+			# insert version field
+			self.cursor.execute("INSERT INTO internals ("
+				+ "type, "
+				+ "value) VALUES (%s, %s)",
+				("version", self.version))
+
+			# insert rev field
+			self.cursor.execute("INSERT INTO internals ("
+				+ "type, "
+				+ "value) VALUES (%s, %s)",
+				("rev", self.rev))
+
+		# create options table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'options'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE options ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "type VARCHAR(255) NOT NULL UNIQUE, "
+				+ "value DOUBLE NOT NULL)")
+
+		# create nodes table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'nodes'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE nodes ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "hostname VARCHAR(255) NOT NULL, "
+				+ "nodeType VARCHAR(255) NOT NULL, "
+				+ "instance VARCHAR(255) NOT NULL, "
+				+ "connected INTEGER NOT NULL, "
+				+ "version DOUBLE NOT NULL, "
+				+ "rev INTEGER NOT NULL, "
+				+ "newestVersion DOUBLE NOT NULL, "
+				+ "newestRev INTEGER NOT NULL)")
+
+		# create sensors table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensors ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "nodeId INTEGER NOT NULL, "
+				+ "description VARCHAR(255) NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "lastStateUpdated INTEGER NOT NULL, "
+				+ "alertDelay INTEGER NOT NULL, "
+				+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create sensorAlerts table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorAlerts ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "sensorId INTEGER NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL,"
+				+ "timeReceived INTEGER NOT NULL, "
+				+ "dataJson TEXT NOT NULL)")
+
+		# create sensorsAlertLevels table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "sensorId INTEGER NOT NULL, "
+				+ "alertLevel INTEGER NOT NULL, "
+				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# create alerts table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'alerts'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE alerts ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "nodeId INTEGER NOT NULL, "
+				+ "description VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create alertsAlertLevels table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'alertsAlertLevels'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE alertsAlertLevels ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "alertId INTEGER NOT NULL, "
+				+ "alertLevel INTEGER NOT NULL, "
+				+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
+
+		# create managers table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'managers'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE managers ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "nodeId INTEGER NOT NULL, "
+				+ "description VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create alert levels table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'alertLevels'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE alertLevels ("
+				+ "alertLevel INTEGER PRIMARY KEY, "
+				+ "name VARCHAR(255) NOT NULL, "
+				+ "triggerAlways INTEGER NOT NULL, "
+				+ "smtpActivated INTEGER NOT NULL, "
+				+ "toAddr VARCHAR(255) NOT NULL)")
+
+		# create events table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'events'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE events ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "timeOccurred INTEGER NOT NULL, "
+				+ "type VARCHAR(255) NOT NULL)")
+
+		# create eventsSensorAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsSensorAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsSensorAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsStateChange table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsStateChange'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsStateChange ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsConnectedChange table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsConnectedChange'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsConnectedChange ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "nodeType TEXT NOT NULL, "
+				+ "instance TEXT NOT NULL, "
+				+ "connected INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsSensorTimeOut table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsSensorTimeOut'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewVersion table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewVersion'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewVersion ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "usedVersion DOUBLE NOT NULL, "
+				+ "usedRev INTEGER NOT NULL, "
+				+ "newVersion DOUBLE NOT NULL, "
+				+ "newRev INTEGER NOT NULL, "
+				+ "instance VARCHAR(255) NOT NULL, "
+				+ "hostname VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewOption table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewOption'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewOption ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "type VARCHAR(255) NOT NULL, "
+				+ "value DOUBLE NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewNode table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewNode'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewNode ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "nodeType TEXT NOT NULL, "
+				+ "instance TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewSensor table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewSensor'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewSensor ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsNewManager table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsNewManager'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsNewManager ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeOption table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeOption'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeOption ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "type VARCHAR(255) NOT NULL, "
+				+ "oldValue DOUBLE NOT NULL, "
+				+ "newValue DOUBLE NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeNode table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeNode'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeNode ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldHostname VARCHAR(255) NOT NULL, "
+				+ "oldNodeType VARCHAR(255) NOT NULL, "
+				+ "oldInstance VARCHAR(255) NOT NULL, "
+				+ "oldVersion DOUBLE NOT NULL, "
+				+ "oldRev INTEGER NOT NULL, "
+				+ "newHostname VARCHAR(255) NOT NULL, "
+				+ "newNodeType VARCHAR(255) NOT NULL, "
+				+ "newInstance VARCHAR(255) NOT NULL, "
+				+ "newVersion DOUBLE NOT NULL, "
+				+ "newRev INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeSensor table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeSensor'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeSensor ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldAlertDelay INTEGER NOT NULL, "
+				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "newAlertDelay INTEGER NOT NULL, "
+				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsChangeManager table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsChangeManager'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsChangeManager ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteNode table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteNode'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteNode ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "hostname TEXT NOT NULL, "
+				+ "nodeType TEXT NOT NULL, "
+				+ "instance TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteSensor table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteSensor'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteAlert table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteAlert'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# create eventsDeleteManager table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteManager'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDeleteManager ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "eventId INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# commit all changes
+		self.conn.commit()
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+
 	# updates the received server information
 	#
 	# return True or False
@@ -1195,7 +1415,7 @@ class Mysql(_Storage):
 		# (NOTE: first delete alerts, sensors and managers before
 		# nodes because of the foreign key dependency; also delete
 		# sensorAlerts before sensors and nodes)
-		for option in list(self.options):
+		for option in list(self.optionsCopy):
 			# check if options stored in the database do
 			# not exist anymore in the received data
 			# => delete from database and from local database elements
@@ -1213,7 +1433,7 @@ class Mysql(_Storage):
 
 					return False
 
-				self.options.remove(option)
+				self.optionsCopy.remove(option)
 
 		# delete all sensor alerts that are older than the configured
 		# life span
@@ -1232,7 +1452,7 @@ class Mysql(_Storage):
 
 			return False
 
-		for sensor in list(self.sensors):
+		for sensor in list(self.sensorsCopy):
 			# check if sensors stored in the database do
 			# not exist anymore in the received data
 			# => delete from database and from local database elements
@@ -1257,9 +1477,9 @@ class Mysql(_Storage):
 
 					return False
 
-				self.sensors.remove(sensor)
+				self.sensorsCopy.remove(sensor)
 
-		for alert in list(self.alerts):
+		for alert in list(self.alertsCopy):
 			# check if alerts stored in the database do
 			# not exist anymore in the received data
 			# => delete from database and from local database elements	
@@ -1280,9 +1500,9 @@ class Mysql(_Storage):
 
 					return False
 
-				self.alerts.remove(alert)
+				self.alertsCopy.remove(alert)
 
-		for manager in list(self.managers):
+		for manager in list(self.managersCopy):
 			# check if managers stored in the database do
 			# not exist anymore in the received data
 			# => delete from database and from local database elements
@@ -1299,9 +1519,9 @@ class Mysql(_Storage):
 
 					return False
 
-				self.managers.remove(manager)
+				self.managersCopy.remove(manager)
 
-		for node in list(self.nodes):
+		for node in list(self.nodesCopy):
 			# check if nodes stored in the database do
 			# not exist anymore in the received data
 			# => delete from database and from local database elements
@@ -1318,9 +1538,9 @@ class Mysql(_Storage):
 
 					return False
 
-				self.nodes.remove(node)
+				self.nodesCopy.remove(node)
 
-		for alertLevel in list(self.alertLevels):
+		for alertLevel in list(self.alertLevelsCopy):
 			# check if alert levels stored in the database do
 			# not exist anymore in the received data
 			# => delete from database and from local database elements	
@@ -1337,7 +1557,7 @@ class Mysql(_Storage):
 
 					return False
 
-				self.alertLevels.remove(alertLevel)
+				self.alertLevelsCopy.remove(alertLevel)
 
 		# delete all events that are older than the configured life span
 		if self.eventsLifeSpan > 0:
@@ -1355,7 +1575,7 @@ class Mysql(_Storage):
 		for option in options:
 			# when the option was found
 			# => update it in the database
-			if option in self.options:
+			if option in self.optionsCopy:
 				try:
 					self.cursor.execute("UPDATE options SET "
 						+ "value = %s WHERE type = %s",
@@ -1371,7 +1591,7 @@ class Mysql(_Storage):
 		for node in nodes:
 			# when the node was found
 			# => update it in the database
-			if node in self.nodes:
+			if node in self.nodesCopy:
 				try:
 					self.cursor.execute("UPDATE nodes SET "
 						+ "hostname = %s, "
@@ -1397,7 +1617,7 @@ class Mysql(_Storage):
 		for sensor in sensors:
 			# when the sensor was found
 			# => update it in the database
-			if sensor in self.sensors:
+			if sensor in self.sensorsCopy:
 				try:
 					self.cursor.execute("UPDATE sensors SET "
 						+ "nodeId = %s, "
@@ -1432,7 +1652,7 @@ class Mysql(_Storage):
 		for alert in alerts:
 			# when the alert was found
 			# => update it in the database
-			if alert in self.alerts:
+			if alert in self.alertsCopy:
 				try:
 					self.cursor.execute("UPDATE alerts SET "
 						+ "nodeId = %s, "
@@ -1462,7 +1682,7 @@ class Mysql(_Storage):
 		for manager in managers:
 			# when the manager was found
 			# => update it in the database
-			if manager in self.managers:
+			if manager in self.managersCopy:
 				try:
 					self.cursor.execute("UPDATE managers SET "
 						+ "nodeId = %s, "
@@ -1481,7 +1701,7 @@ class Mysql(_Storage):
 		for alertLevel in alertLevels:
 			# when the alert level was found
 			# => update it in the database
-			if alertLevel in self.alertLevels:
+			if alertLevel in self.alertLevelsCopy:
 				try:
 					self.cursor.execute("UPDATE alertLevels SET "
 						+ "name = %s, "
@@ -1505,9 +1725,10 @@ class Mysql(_Storage):
 		# (NOTE: first add nodes before alerts, sensors and managers
 		# because of the foreign key dependency)
 		for option in options:
+
 			# when it does not exist in the database
 			# => add it and add to local database elements
-			if not option in self.options:
+			if not option in self.optionsCopy:
 				try:
 					self.cursor.execute("INSERT INTO options ("
 						+ "type, "
@@ -1521,12 +1742,12 @@ class Mysql(_Storage):
 
 					return False
 
-				self.options.append(option)
+				self.optionsCopy.append(option)
 
 		for node in nodes:
 			# when it does not exist in the database
 			# => add it and add to local database elements
-			if not node in self.nodes:
+			if not node in self.nodesCopy:
 				try:
 					self.cursor.execute("INSERT INTO nodes ("
 						+ "id, "
@@ -1550,12 +1771,12 @@ class Mysql(_Storage):
 
 					return False
 
-				self.nodes.append(node)
+				self.nodesCopy.append(node)
 
 		for sensor in sensors:
 			# when it does not exist in the database
 			# => add it and add to local database elements
-			if not sensor in self.sensors:
+			if not sensor in self.sensorsCopy:
 				try:
 					self.cursor.execute("INSERT INTO sensors ("
 						+ "id, "
@@ -1584,7 +1805,7 @@ class Mysql(_Storage):
 
 					return False
 
-				self.sensors.append(sensor)
+				self.sensorsCopy.append(sensor)
 
 		for sensorAlert in sensorAlerts:
 			# try to convert received data to json
@@ -1619,7 +1840,7 @@ class Mysql(_Storage):
 		for alert in alerts:
 			# when it does not exist in the database
 			# => add it and add to local database elements
-			if not alert in self.alerts:
+			if not alert in self.alertsCopy:
 				try:
 					self.cursor.execute("INSERT INTO alerts ("
 						+ "id, "
@@ -1643,12 +1864,12 @@ class Mysql(_Storage):
 
 					return False
 
-				self.alerts.append(alert)
+				self.alertsCopy.append(alert)
 
 		for manager in managers:
 			# when it does not exist in the database
 			# => add it and add to local database elements
-			if not manager in self.managers:
+			if not manager in self.managersCopy:
 				try:
 					self.cursor.execute("INSERT INTO managers ("
 						+ "id, "
@@ -1665,12 +1886,12 @@ class Mysql(_Storage):
 
 					return False
 
-				self.managers.append(manager)
+				self.managersCopy.append(manager)
 
 		for alertLevel in alertLevels:
 			# when it does not exist in the database
 			# => add it and add to local database elements
-			if not alertLevel in self.alertLevels:
+			if not alertLevel in self.alertLevelsCopy:
 				try:
 					self.cursor.execute("INSERT INTO alertLevels ("
 						+ "alertLevel, "
@@ -1690,7 +1911,7 @@ class Mysql(_Storage):
 
 					return False
 
-				self.alertLevels.append(alertLevel)
+				self.alertLevelsCopy.append(alertLevel)
 
 
 		# add all events to the database (if it is activated to store events)
