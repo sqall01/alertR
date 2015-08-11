@@ -414,7 +414,7 @@ class ServerEventHandler:
 				recvSensor.checked = True
 				self.sensors.append(recvSensor)
 
-		self.sensors.sort(key=lambda x: x.description)
+		self.sensors.sort(key=lambda x: x.description.lower())
 
 		# process received managers
 		for recvManager in managers:
@@ -448,7 +448,7 @@ class ServerEventHandler:
 				recvManager.checked = True
 				self.managers.append(recvManager)
 
-		self.managers.sort(key=lambda x: x.description)
+		self.managers.sort(key=lambda x: x.description.lower())
 
 		# process received alerts
 		for recvAlert in alerts:
@@ -483,7 +483,7 @@ class ServerEventHandler:
 				recvAlert.checked = True
 				self.alerts.append(recvAlert)
 
-		self.alerts.sort(key=lambda x: x.description)
+		self.alerts.sort(key=lambda x: x.description.lower())
 
 		# process received alertLevels
 		for recvAlertLevel in alertLevels:
