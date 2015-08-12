@@ -81,7 +81,8 @@ class _Storage():
 
 
 	# gets the count of the sensors of a node in the database
-	# return count of sensors in database
+	#
+	# return count of sensors or None
 	def getSensorCount(self, nodeId):
 		raise NotImplemented("Function not implemented yet.")
 
@@ -91,6 +92,14 @@ class _Storage():
 	#
 	# return sensorId or None
 	def getSensorId(self, nodeId, remoteSensorId):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets all data needed for the survey
+	#
+	# return list of tuples of (instance, version, rev)
+	# or None
+	def getSurveyData(self):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -1512,21 +1521,51 @@ class Sqlite(_Storage):
 
 
 	# gets the count of the sensors of a node in the database
-	# return count of sensors in database
+	#
+	# return count of sensors or None
 	def getSensorCount(self, nodeId):
 
 		self._acquireLock()
 
 		# get all sensors on this nodes
-		self.cursor.execute("SELECT id FROM sensors "
-			+ "WHERE nodeId = ?", (nodeId, ))
-
-		result = self.cursor.fetchall()
-		sensorCount = len(result)
+		sensorCount = None
+		try:
+			self.cursor.execute("SELECT id FROM sensors "
+				+ "WHERE nodeId = ?", (nodeId, ))
+			result = self.cursor.fetchall()
+			sensorCount = len(result)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensor count." 
+				% self.fileName)	
 
 		self._releaseLock()
 
 		return sensorCount
+
+
+	# gets all data needed for the survey
+	#
+	# return list of tuples of (instance, version, rev)
+	# or None
+	def getSurveyData(self):
+
+		self._acquireLock()
+
+		surveyData = None
+		try:
+			self.cursor.execute("SELECT "
+				+ "instance, "
+				+ "version, "
+				+ "rev "
+				+ "FROM nodes")
+			surveyData = self.cursor.fetchall()
+		except Exception as e:
+			logging.exception("[%s]: Not able to get survey data." 
+				% self.fileName)
+
+		self._releaseLock()
+
+		return surveyData
 
 
 	# updates the states of the sensors of a node in the databse
@@ -3796,12 +3835,17 @@ class Mysql(_Storage):
 
 			return False
 
-		# get all sensors on this nodes
-		self.cursor.execute("SELECT id FROM sensors "
-			+ "WHERE nodeId = %s ", (nodeId, ))
+		# get all sensors on this node
+		sensorCount = None
+		try:
+			self.cursor.execute("SELECT id FROM sensors "
+				+ "WHERE nodeId = %s ", (nodeId, ))
 
-		result = self.cursor.fetchall()
-		sensorCount = len(result)
+			result = self.cursor.fetchall()
+			sensorCount = len(result)
+		except Exception as e:
+			logging.exception("[%s]: Not able to get sensor count." 
+				% self.fileName)
 
 		# close connection to the database
 		self._closeConnection()
@@ -3809,6 +3853,45 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		return sensorCount
+
+
+	# gets all data needed for the survey
+	#
+	# return list of tuples of (instance, version, rev)
+	# or None
+	def getSurveyData(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return False
+
+		surveyData = None
+		try:
+			self.cursor.execute("SELECT "
+				+ "instance, "
+				+ "version, "
+				+ "rev "
+				+ "FROM nodes")
+			surveyData = self.cursor.fetchall()
+		except Exception as e:
+			logging.exception("[%s]: Not able to get survey data." 
+				% self.fileName)
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		return surveyData
 
 
 	# updates the states of the sensors of a node in the databse

@@ -18,3 +18,4 @@ from smtp import SMTPAlert
 from manager import ManagerUpdateExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData
+from survey import SurveyExecuter

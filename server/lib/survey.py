@@ -12,6 +12,9 @@ import ssl
 import httplib
 import urllib
 import time
+import threading
+import os
+import json
 
 
 # HTTPSConnection like class that verifies server certificates
@@ -42,7 +45,8 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 
 class SurveyExecuter(threading.Thread):
 
-	def __init__(self, globalData):
+	def __init__(self, updateActivated, updateServer, updateLocation,
+		globalData):
 		threading.Thread.__init__(self)
 
 		# used for logging
@@ -50,9 +54,14 @@ class SurveyExecuter(threading.Thread):
 
 		# get global configured data
 		self.globalData = globalData
+		self.storage = self.globalData.storage
 		self.instance = self.globalData.instance
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
+		self.updateActivated = updateActivated
+		self.updateServer = updateServer
+		self.updateLocation = updateLocation
+
 
 		# fixed values for survey
 		self.surveyInterval = 604800 # week
@@ -68,6 +77,29 @@ class SurveyExecuter(threading.Thread):
 
 
 	def sendSurveyData(self):
+
+		# gather survey data
+		surveyNodes = self.storage.getSurveyData()
+		if surveyNodes is None:
+
+			logging.error("[%s]: Did not get any survey data from "
+				% self.fileName
+				+ "the database.")
+			return False
+		serverTuple = (self.instance, self.version, self.rev)
+		surveyNodes.insert(0, serverTuple)
+		surveyData = dict()
+		surveyData["nodes"] = surveyNodes
+		
+		surveyUpdate = dict()
+		surveyUpdate["activated"] = self.updateActivated
+		surveyUpdate["server"] = self.updateServer
+		surveyUpdate["location"] = self.updateLocation
+		surveyData["update"] = surveyUpdate
+
+		print surveyData
+
+
 
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 
@@ -105,3 +137,28 @@ class SurveyExecuter(threading.Thread):
 			time.sleep(self.surveyInterval)
 
 			self.sendSurveyData()
+
+
+	def blah(self):
+
+
+		# gather survey data
+		surveyNodes = self.storage.getSurveyData()
+		if surveyNodes is None:
+
+			logging.error("[%s]: Did not get any survey data from "
+				% self.fileName
+				+ "the database.")
+			return False
+		serverTuple = (self.instance, self.version, self.rev)
+		surveyNodes.insert(0, serverTuple)
+		surveyData = dict()
+		surveyData["nodes"] = surveyNodes
+		
+		surveyUpdate = dict()
+		surveyUpdate["activated"] = self.updateActivated
+		surveyUpdate["server"] = self.updateServer
+		surveyUpdate["location"] = self.updateLocation
+		surveyData["update"] = surveyUpdate
+
+		print surveyData

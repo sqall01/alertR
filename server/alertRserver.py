@@ -19,6 +19,7 @@ from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
 from lib import UpdateChecker
 from lib import GlobalData
+from lib import SurveyExecuter
 import logging
 import time
 import threading
@@ -789,6 +790,8 @@ if __name__ == '__main__':
 		updateActivated = (str(
 			configRoot.find("update").find("general").attrib[
 			"activated"]).upper() == "TRUE")
+		updateServer = None
+		updateLocation = None
 		if updateActivated is True:
 			updateServer = str(
 				configRoot.find("update").find("server").attrib["host"])
@@ -1339,6 +1342,29 @@ if __name__ == '__main__':
 		updateChecker.start()
 
 	logging.info("[%s] server started." % fileName)
+
+
+
+
+
+
+
+
+
+
+
+	# TODO
+	test = SurveyExecuter(updateActivated, updateServer, updateLocation,
+		globalData)
+	test.blah()
+
+
+
+
+
+
+
+
 
 	# handle requests in an infinity loop
 	while True:
