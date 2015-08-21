@@ -172,6 +172,16 @@ class Mysql(_Storage):
 
 				self.createObjectsFromDb()
 
+		# tables do not exist yet
+		# => create them
+		else:
+			
+			# close connection to the database
+			self._closeConnection()
+
+			self.createStorage()
+
+
 
 	# internal function that acquires the lock
 	def _acquireLock(self):
