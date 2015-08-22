@@ -851,6 +851,11 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid storage backend method in config file.")
 
+		# get survey configurations
+		surveyActivated = (str(
+			configRoot.find("general").find("survey").attrib[
+			"participate"]).upper() == "TRUE")
+
 		# get server configurations
 		globalData.serverCertFile = str(configRoot.find("general").find(
 				"server").attrib["certFile"])
@@ -1295,12 +1300,14 @@ if __name__ == '__main__':
 	random.seed()
 
 	# start the thread that handles all sensor alerts
+	logging.info("[%s] Starting sensor alert manage thread." % fileName)
 	globalData.sensorAlertExecuter = SensorAlertExecuter(globalData)
 	# set thread to daemon
 	# => threads terminates when main thread terminates	
 	globalData.sensorAlertExecuter.daemon = True
 	globalData.sensorAlertExecuter.start()
 
+	logging.info("[%s] Starting manager client manage thread." % fileName)
 	# start the thread that handles the manager updates
 	globalData.managerUpdateExecuter = ManagerUpdateExecuter(globalData)
 	# set thread to daemon
@@ -1319,6 +1326,7 @@ if __name__ == '__main__':
 			+ "Try again in 5 seconds.")
 			time.sleep(5)
 
+	logging.info("[%s] Starting server thread." % fileName)
 	serverThread = threading.Thread(target=server.serve_forever)
 	# set thread to daemon
 	# => threads terminates when main thread terminates	
@@ -1326,6 +1334,7 @@ if __name__ == '__main__':
 	serverThread.start()
 
 	# start a watchdog thread that controls all server sessions
+	logging.info("[%s] Starting watchdog thread." % fileName)
 	watchdog = ConnectionWatchdog(globalData, globalData.connectionTimeout)
 	# set thread to daemon
 	# => threads terminates when main thread terminates	
@@ -1334,6 +1343,7 @@ if __name__ == '__main__':
 
 	# only start update checker if it is activated
 	if updateActivated is True:
+		logging.info("[%s] Starting update check thread." % fileName)
 		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
 			updateCaFile, updateInterval, updateEmailNotification, globalData)
 		# set thread to daemon
@@ -1341,30 +1351,17 @@ if __name__ == '__main__':
 		updateChecker.daemon = True
 		updateChecker.start()
 
-	logging.info("[%s] server started." % fileName)
+	# only start survey executer if user wants to participate
+	if surveyActivated:
+		logging.info("[%s] Starting survey executer thread." % fileName)
+		surveyExecuter = SurveyExecuter(updateActivated, updateServer,
+			updateLocation, globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates
+		surveyExecuter.daemon = True
+		surveyExecuter.start()
 
-
-
-
-
-
-
-
-
-
-
-	# TODO
-	test = SurveyExecuter(updateActivated, updateServer, updateLocation,
-		globalData)
-	test.blah()
-
-
-
-
-
-
-
-
+	logging.info("[%s] Server started." % fileName)
 
 	# handle requests in an infinity loop
 	while True:
