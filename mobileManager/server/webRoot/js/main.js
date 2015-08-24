@@ -370,6 +370,7 @@ function changeOutput(content) {
 			currentOutput = "events";
 			if(internals == null
 				|| events == null
+				|| events.length < eventsNumber
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("events");
 			}
@@ -428,6 +429,7 @@ function changeOutput(content) {
 			currentOutput = "sensorAlerts";
 			if(internals == null
 				|| sensorAlerts == null
+				|| sensorAlerts.length < sensorAlertsNumber
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("sensorAlerts");
 			}
