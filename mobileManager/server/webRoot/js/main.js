@@ -323,6 +323,12 @@ function changeEventTypesFilter(eventType) {
 // changes the output that is shown (and requests data if needed)
 function changeOutput(content) {
 
+	// show loader and hide content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementShown";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementHidden";
+
 	var currentTime = new Date()
 
 	switch(content) {
@@ -730,6 +736,13 @@ function confirmation(activate) {
 	if(activate == 1 && configUnixSocketActive) {
 		result = confirm("Do you really want to activate the alert system?");
 		if(result) {
+
+			// show loader and hide content
+			var loaderObj = document.getElementById("loader");
+			loaderObj.className = "elementShown";
+			var contentObj = document.getElementById("content");
+			contentObj.className = "elementHidden";
+
 			window.location = "index.php?activate=1";
 		}
 	}
@@ -737,6 +750,13 @@ function confirmation(activate) {
 		result = confirm("Do you really want to deactivate " + 
 			"the alert system?");
 		if(result) {
+
+			// show loader and hide content
+			var loaderObj = document.getElementById("loader");
+			loaderObj.className = "elementShown";
+			var contentObj = document.getElementById("content");
+			contentObj.className = "elementHidden";
+
 			window.location = "index.php?activate=0";
 		}
 	}
@@ -1066,6 +1086,12 @@ function requestData(content) {
 // outputs the "alertLevels" data
 function outputAlertLevels() {
 
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
+
 	// remove old content output
 	// and generate a new clear one
 	var contentTableObj = document.getElementById("contentTable");
@@ -1204,6 +1230,12 @@ function outputAlertLevels() {
 
 // outputs the "alerts" data
 function outputAlerts() {
+
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
 
 	// remove old content output
 	// and generate a new clear one
@@ -1480,6 +1512,12 @@ function outputAlerts() {
 
 // outputs the "events" data
 function outputEvents() {
+
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
 
 	// remove old content output
 	// and generate a new clear one
@@ -1957,6 +1995,12 @@ function outputEvents() {
 // outputs the "managers" data
 function outputManagers() {
 
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
+
 	// remove old content output
 	// and generate a new clear one
 	var contentTableObj = document.getElementById("contentTable");
@@ -2163,6 +2207,12 @@ function outputManagers() {
 // outputs the "nodes" data
 function outputNodes() {
 
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
+
 	// remove old content output
 	// and generate a new clear one
 	var contentTableObj = document.getElementById("contentTable");
@@ -2348,6 +2398,12 @@ function outputNodes() {
 
 // outputs the "overview" data
 function outputOverview() {
+
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
 
 	// remove old content output
 	// and generate a new clear one
@@ -2616,6 +2672,12 @@ function outputOverview() {
 
 // outputs the "sensorAlerts" data
 function outputSensorAlerts() {
+
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
 
 	// remove old content output
 	// and generate a new clear one
@@ -2906,6 +2968,12 @@ function outputSensorAlerts() {
 
 // outputs the "sensors" data
 function outputSensors() {
+
+	// hide loader and show content
+	var loaderObj = document.getElementById("loader");
+	loaderObj.className = "elementHidden";
+	var contentObj = document.getElementById("content");
+	contentObj.className = "elementShown";
 
 	// remove old content output
 	// and generate a new clear one

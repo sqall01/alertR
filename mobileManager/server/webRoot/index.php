@@ -91,10 +91,16 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 			}
 		?>" >
 
-		<table border="0" width="300" id="contentTable">
-			<tbody id="contentTableBody">
-			</tbody>
-		</table>
+		<div class="elementShown" id="loader">
+			<img src="img/loader.gif" />
+		</div>
+
+		<div class="elementHidden" id="content">
+			<table border="0" width="300" id="contentTable">
+				<tbody id="contentTableBody">
+				</tbody>
+			</table>
+		</div>
 
 		<script src="js/events.js"></script>
 		<script src="js/main.js"></script>
