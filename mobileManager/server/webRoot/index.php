@@ -96,6 +96,7 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 				<tr>
 					<td align="center">
 						<img src="img/loader.gif" />
+						<p>Loading ...</p>
 					</td>
 				</tr>
 			</table>
