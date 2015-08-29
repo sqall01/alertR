@@ -107,3 +107,17 @@ a:active {
 	width: 100%;
 	text-align: left;
 }
+
+
+
+.elementHidden {
+	visibility: hidden;
+	display: none;
+	overflow: hidden;
+}
+
+.elementShown {
+	visibility: visible;
+	display: block;
+	overflow: visible;
+}
