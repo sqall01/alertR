@@ -92,7 +92,13 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 		?>" >
 
 		<div class="elementShown" id="loader">
-			<img src="img/loader.gif" />
+			<table border="0" width="300">
+				<tr>
+					<td align="center">
+						<img src="img/loader.gif" />
+					</td>
+				</tr>
+			</table>
 		</div>
 
 		<div class="elementHidden" id="content">
