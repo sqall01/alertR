@@ -10,6 +10,8 @@
 import SocketServer
 import logging
 import os
+import json
+import time
 BUFSIZE = 1024
 
 
@@ -27,7 +29,7 @@ class ThreadedUnixStreamServer(SocketServer.ThreadingMixIn,
 			RequestHandlerClass)
 
 
-# this class is used for incoming local client connections (i.e. web page)
+# this class is used for incoming local client connections (i.e., web page)
 class LocalServerSession(SocketServer.BaseRequestHandler):
 
 	def __init__(self, request, clientAddress, server):
@@ -49,15 +51,109 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 		# get received data
 		data = self.request.recv(BUFSIZE).strip()
 
-		# check if the alert system should be activated or not
-		if data.upper() == "ACTIVATE":
-			logging.info("[%s]: Activating alert system" % self.fileName)
-			self.serverComm.sendOption("alertSystemActive", 1)
-		elif data.upper() == "DEACTIVATE":
-			logging.info("[%s]: Deactivating alert system" % self.fileName)
-			self.serverComm.sendOption("alertSystemActive", 0)
+		# convert data to json
+		try:
+			incomingMessage = json.loads(data)
+
+			# at the moment only option messages are allowed
+			if incomingMessage["message"] != "option":
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "only option message valid"}
+					self.request.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return
+
+		except Exception as e:
+			logging.exception("[%s]: Received message " % self.fileName
+				+ "invalid.")
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "received json message invalid"}
+				self.request.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return
+
+		# extract option type and value from message
+		try:
+			optionType = str(incomingMessage["payload"]["optionType"])
+			optionValue = float(incomingMessage["payload"]["value"])
+			optionDelay = int(incomingMessage["payload"]["timeDelay"])
+		except Exception as e:
+
+			logging.exception("[%s]: Attributes of option " % self.fileName
+				+ "message invalid.")
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "received attributes invalid"}
+				self.request.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return
+
+		# at the moment only "alertSystemActive" is an allowed option type
+		if optionType != "alertSystemActive":
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "only option type 'alertSystemActive' allowed"}
+				self.request.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return
+
+		# send option message to server
+		if self.serverComm.sendOption(optionType, optionValue,
+			optionDelay):
+
+			# send response to client
+			try:
+
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"payload": 
+						{"type": "response",
+						"result": "ok"}
+					}
+				self.request.send(json.dumps(message))
+			except Exception as e:
+				logging.exception("[%s]: Sending response " % self.fileName
+					+ "message failed.")
+
+			return
+
 		else:
-			logging.error("[%s]: Unknown command %s" % (self.fileName, data))
+
+			logging.error("[%s]: Sending message to server failed." 
+			% self.fileName)
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "sending message to server failed"}
+				self.request.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return
 
 		logging.info("[%s]: Client disconnected." 
 			% self.fileName)

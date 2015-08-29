@@ -29,11 +29,36 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 	}
 
 	// send activate/deactivate according to the given parameter
+	$message = array();
+	$message["message"] = "option";
 	if($activate === 0) {
-		fwrite($fd, "DEACTIVATE");
+		$payload = array();
+		$payload["optionType"] = "alertSystemActive";
+		$payload["value"] = 0;
+		$payload["timeDelay"] = 0;
+		$message["payload"] = $payload;
 	}
-	else if($activate === 1) {
-		fwrite($fd, "ACTIVATE");
+	else {
+		$payload = array();
+		$payload["optionType"] = "alertSystemActive";
+		$payload["value"] = 1;
+		$payload["timeDelay"] = 0;
+		$message["payload"] = $payload;	
+	}
+	fwrite($fd, json_encode($message));
+
+	// get response
+	$response = json_decode(fread($fd, 1024), true);
+	if($response == NULL) {
+		echo "Error: Could not decode server response";
+		exit(1);
+	}
+	else {
+		if($response["payload"]["result"] != "ok") {
+			echo "Error: Received response is not 'ok': "
+				. $response["payload"]["result"];
+			exit(1);
+		}
 	}
 
 	// close connection
