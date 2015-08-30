@@ -121,6 +121,80 @@ function addMenu(newBody, current) {
 	newTr.appendChild(serverTimeTd);
 	menuTable.appendChild(newTr);
 
+	// process options of the alert system
+	for(var i = 0; i < options.length; i++) {
+
+		// only evaluate "alertSystemActive"
+		if(options[i]["type"].toUpperCase() == "ALERTSYSTEMACTIVE") {
+
+			// add status of alert system
+			var newTr = document.createElement("tr");
+			var newTd = document.createElement("td");
+			var newB = document.createElement("b");
+			newB.textContent = "Status:";
+			newTd.appendChild(newB);
+			newTd.className = "boxEntryTd";
+			newTr.appendChild(newTd);
+			menuTable.appendChild(newTr);
+
+			var newTr = document.createElement("tr");
+			var newTd = document.createElement("td");
+			if(options[i]["value"] == 0) {
+				newTd.className = "deactivatedTd";
+				newTd.textContent = "deactivated";
+			}
+			if(options[i]["value"] == 1) {
+				newTd.className = "activatedTd";
+				newTd.textContent = "activated";
+			}
+			newTr.appendChild(newTd);
+			menuTable.appendChild(newTr);
+
+			var newTr = document.createElement("tr");
+			var newTd = document.createElement("td");
+			newTd.className = "neutralTd";
+			newTr.appendChild(newTd);
+			menuTable.appendChild(newTr);
+
+			// only display buttons if unix socket is activated
+			if(configUnixSocketActive) {
+				// create a temporary table to have the
+				// buttons next to each other
+				var tempTable = document.createElement("table");
+				tempTable.style.width = "100%";
+				tempTable.setAttribute("border", "0");
+				newTd.appendChild(tempTable);
+
+				var newTr = document.createElement("tr");
+				tempTable.appendChild(newTr)
+
+				var newTd = document.createElement("td");
+				newTd.style.width = "50%";
+				newTd.className = "buttonTd";
+				var newA = document.createElement("a");
+				newA.className = "buttonA";
+				newA.textContent = "activate";
+				newA.href = "javascript:void(0)";
+				newA.onclick = function(){ confirmation(1); };
+				newTd.appendChild(newA);
+				newTr.appendChild(newTd);
+
+				var newTd = document.createElement("td");
+				newTd.style.width = "50%";
+				newTd.className = "buttonTd";
+				var newA = document.createElement("a");
+				newA.className = "buttonA";
+				newA.textContent = "deactivate";
+				newA.href = "javascript:void(0)";
+				newA.onclick = function(){ confirmation(0); };
+				newTd.appendChild(newA);
+				newTr.appendChild(newTd);
+			}
+
+			break;
+		}
+	}
+
 	// add menu output
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -335,6 +409,7 @@ function changeOutput(content) {
 		case "alertLevels":
 			currentOutput = "alertLevels";
 			if(internals == null
+				|| options == null
 				|| alertLevels == null
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("alertLevels");
@@ -354,6 +429,7 @@ function changeOutput(content) {
 		case "alerts":
 			currentOutput = "alerts";
 			if(internals == null
+				|| options == null
 				|| alertLevels == null
 				|| alerts == null
 				|| nodes == null
@@ -375,6 +451,7 @@ function changeOutput(content) {
 		case "events":
 			currentOutput = "events";
 			if(internals == null
+				|| options == null
 				|| events == null
 				|| events.length < eventsNumber
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
@@ -395,6 +472,7 @@ function changeOutput(content) {
 		case "managers":
 			currentOutput = "managers";
 			if(internals == null
+				|| options == null
 				|| nodes == null
 				|| managers == null
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
@@ -415,6 +493,7 @@ function changeOutput(content) {
 		case "nodes":
 			currentOutput = "nodes";
 			if(internals == null
+				|| options == null
 				|| nodes == null
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("nodes");
@@ -434,6 +513,7 @@ function changeOutput(content) {
 		case "sensorAlerts":
 			currentOutput = "sensorAlerts";
 			if(internals == null
+				|| options == null
 				|| sensorAlerts == null
 				|| sensorAlerts.length < sensorAlertsNumber
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
@@ -454,6 +534,7 @@ function changeOutput(content) {
 		case "sensors":
 			currentOutput = "sensors";
 			if(internals == null
+				|| options == null
 				|| nodes == null
 				|| sensors == null
 				|| alertLevels == null
@@ -776,6 +857,7 @@ function processResponseAlertLevels() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		alertLevels = alertSystemInformation["alertLevels"];
 
 		// only output received data if it is the current output
@@ -800,6 +882,7 @@ function processResponseAlerts() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		nodes = alertSystemInformation["nodes"];
 		alerts = alertSystemInformation["alerts"];
 		alertLevels = alertSystemInformation["alertLevels"];
@@ -827,6 +910,7 @@ function processResponseEvents() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		events = alertSystemInformation["events"];
 
 		// only output received data if it is the current output
@@ -852,6 +936,7 @@ function processResponseManagers() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		nodes = alertSystemInformation["nodes"];
 		managers = alertSystemInformation["managers"];
 
@@ -878,6 +963,7 @@ function processResponseNodes() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		nodes = alertSystemInformation["nodes"];
 
 		// only output received data if it is the current output
@@ -931,6 +1017,7 @@ function processResponseSensorAlerts() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		sensorAlerts = alertSystemInformation["sensorAlerts"];
 
 		// only output received data if it is the current output
@@ -956,6 +1043,7 @@ function processResponseSensors() {
 		var response = request.responseText;
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
+		options = alertSystemInformation["options"];
 		nodes = alertSystemInformation["nodes"];
 		sensors = alertSystemInformation["sensors"];
 		alertLevels = alertSystemInformation["alertLevels"];
@@ -983,6 +1071,7 @@ function requestData(content) {
 		case "alertLevels":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
+				+ "&data[]=options"
 				+ "&data[]=alertlevels";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseAlertLevels;
@@ -991,6 +1080,7 @@ function requestData(content) {
 		case "alerts":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
+				+ "&data[]=options"
 				+ "&data[]=nodes"
 				+ "&data[]=alerts"
 				+ "&data[]=alertlevels";
@@ -1002,11 +1092,13 @@ function requestData(content) {
 			if(eventsNumber < 0) {
 				var url = "./getJson.php"
 					+ "?data[]=internals"
+					+ "&data[]=options"
 					+ "&data[]=events";
 			}
 			else {
 				var url = "./getJson.php"
 					+ "?data[]=internals"
+					+ "&data[]=options"
 					+ "&data[]=events"
 					+ "&eventsRangeStart=" + eventsRangeStart
 					+ "&eventsNumber=" + eventsNumber;
@@ -1018,6 +1110,7 @@ function requestData(content) {
 		case "managers":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
+				+ "&data[]=options"
 				+ "&data[]=nodes"
 				+ "&data[]=managers";
 			request.open("GET", url, true);
@@ -1027,6 +1120,7 @@ function requestData(content) {
 		case "nodes":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
+				+ "&data[]=options"
 				+ "&data[]=nodes";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseNodes;
@@ -1036,11 +1130,13 @@ function requestData(content) {
 			if(sensorAlertsNumber < 0) {
 				var url = "./getJson.php"
 					+ "?data[]=internals"
+					+ "&data[]=options"
 					+ "&data[]=sensorAlerts";
 			}
 			else {
 				var url = "./getJson.php"
 					+ "?data[]=internals"
+					+ "&data[]=options"
 					+ "&data[]=sensorAlerts"
 					+ "&sensorAlertsRangeStart=" + sensorAlertsRangeStart
 					+ "&sensorAlertsNumber=" + sensorAlertsNumber;
@@ -1052,6 +1148,7 @@ function requestData(content) {
 		case "sensors":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
+				+ "&data[]=options"
 				+ "&data[]=nodes"
 				+ "&data[]=sensors"
 				+ "&data[]=alertLevels";
@@ -2424,99 +2521,6 @@ function outputOverview() {
 
 	// add header of site
 	addMenu(newBody, "overview");
-
-	// generate alert system overview output
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	var newB = document.createElement("b");
-	newB.textContent = "Alert System:";
-	newTd.appendChild(newB);
-	newTr.appendChild(newTd);
-	newBody.appendChild(newTr);
-
-	var boxDiv = document.createElement("div");
-	boxDiv.className = "box";
-
-	var optionsTable = document.createElement("table");
-	optionsTable.style.width = "100%";
-	optionsTable.setAttribute("border", "0");
-	boxDiv.appendChild(optionsTable);
-
-
-	// process options of the alert system
-	for(var i = 0; i < options.length; i++) {
-
-		// only evaluate "alertSystemActive"
-		if(options[i]["type"].toUpperCase() == "ALERTSYSTEMACTIVE") {
-
-			// add status of alert system
-			var newTr = document.createElement("tr");
-			var newTd = document.createElement("td");
-			if(options[i]["value"] == 0) {
-				newTd.className = "deactivatedTd";
-				newTd.textContent = "deactivated";
-			}
-			if(options[i]["value"] == 1) {
-				newTd.className = "activatedTd";
-				newTd.textContent = "activated";
-			}
-			newTr.appendChild(newTd);
-			optionsTable.appendChild(newTr);
-
-			var newTr = document.createElement("tr");
-			var newTd = document.createElement("td");
-			newTd.className = "neutralTd";
-			newTr.appendChild(newTd);
-			optionsTable.appendChild(newTr);
-
-			// only display buttons if unix socket is activated
-			if(configUnixSocketActive) {
-				// create a temporary table to have the
-				// buttons next to each other
-				var tempTable = document.createElement("table");
-				tempTable.style.width = "100%";
-				tempTable.setAttribute("border", "0");
-				newTd.appendChild(tempTable);
-
-				var newTr = document.createElement("tr");
-				tempTable.appendChild(newTr)
-
-				var newTd = document.createElement("td");
-				newTd.style.width = "50%";
-				newTd.className = "buttonTd";
-				var newA = document.createElement("a");
-				newA.className = "buttonA";
-				newA.textContent = "activate";
-				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(1); };
-				newTd.appendChild(newA);
-				newTr.appendChild(newTd);
-
-				var newTd = document.createElement("td");
-				newTd.style.width = "50%";
-				newTd.className = "buttonTd";
-				var newA = document.createElement("a");
-				newA.className = "buttonA";
-				newA.textContent = "deactivate";
-				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(0); };
-				newTd.appendChild(newA);
-				newTr.appendChild(newTd);
-			}
-
-			break;
-		}
-	}
-
-	// add output to the content table
-	var contentTableObj =
-		document.getElementById("contentTableBody");
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	newTd.appendChild(boxDiv);
-	newTr.appendChild(newTd);
-	contentTableObj.appendChild(newTr);
-
 
 	// generate sensor alerts overview output
 	sensorAlerts.sort(compareSensorAlertsDesc);
