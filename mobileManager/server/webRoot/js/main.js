@@ -175,7 +175,7 @@ function addMenu(newBody, current) {
 				newA.className = "buttonA";
 				newA.textContent = "activate";
 				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(1); };
+				newA.onclick = function(){ confirmation(1, current); };
 				newTd.appendChild(newA);
 				newTr.appendChild(newTd);
 
@@ -186,7 +186,7 @@ function addMenu(newBody, current) {
 				newA.className = "buttonA";
 				newA.textContent = "deactivate";
 				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(0); };
+				newA.onclick = function(){ confirmation(0, current); };
 				newTd.appendChild(newA);
 				newTr.appendChild(newTd);
 			}
@@ -812,7 +812,7 @@ function compareSensorsAsc(a, b) {
 
 // simple function to ask for confirmation if the alert system
 // should be activated
-function confirmation(activate) {
+function confirmation(activate, current) {
 
 	if(activate == 1 && configUnixSocketActive) {
 		result = confirm("Do you really want to activate the alert system?");
@@ -824,7 +824,7 @@ function confirmation(activate) {
 			var contentObj = document.getElementById("content");
 			contentObj.className = "elementHidden";
 
-			window.location = "index.php?activate=1";
+			window.location = "index.php?activate=1#content=" + current;
 		}
 	}
 	else if(activate == 0 && configUnixSocketActive) {
@@ -838,7 +838,7 @@ function confirmation(activate) {
 			var contentObj = document.getElementById("content");
 			contentObj.className = "elementHidden";
 
-			window.location = "index.php?activate=0";
+			window.location = "index.php?activate=0#content=" + current;
 		}
 	}
 }
@@ -3319,4 +3319,15 @@ function outputSensors() {
 }
 
 
-changeOutput("overview");
+// output selected view
+var hashVar = window.location.hash;
+if(hashVar) {
+	var content = hashVar.substr(hashVar.indexOf('content='))
+		.split("&")[0]
+		.split("=")[1];
+	changeOutput(content);
+}
+else {
+	changeOutput("overview");
+}
+
