@@ -24,10 +24,10 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Mobile Manager - Server - Manger Client Mobile"
+		self.name = "alertR Manger Client Database"
 
 		# the instance of this client
-		self.instance = "managerClientMobile"
+		self.instance = "managerClientDatabase"
 
 		# interval in which a ping should be send when 
 		# no data was received/send		

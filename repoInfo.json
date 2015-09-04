@@ -42,10 +42,10 @@
 		"desc": "This client manages the state of the alert system. It can activate or deactivate it. You have to enter a PIN before you can activate the alert system, deactivate it or activate it with a configured delay. It is written to work as a client with keypad and small display (original for a Raspbery Pi, but is not limited to it). The client should be near an entrance to allow the user to activate/deactivate the alert system when she leaves/enters.",
 		"type": "manager"
 		},
-	"managerClientMobile": {
-		"location": "mobileManager/server/managerClientMobile/",
-		"name": "alertR Mobile Manager - Server - Manger Client Mobile",
-		"desc": "This is the part of the mobile manager that connects to the alertR server and receives all information about the alerting system. The information is stored into a MySQL db as a shared medium to the web page.",
+	"managerClientDatabase": {
+		"location": "managerClientDatabase/",
+		"name": "alertR Manger Client Database",
+		"desc": "This client stores the state of the alert system in a database for external usage. It uses a MySQL db to store all information about the alert system and events that occur (for example a client that disconnected from the alert system). External components, such as a website, can use the information in the database for their purposes. In the case of a website, it can process the data and show a visualization to the user. In order to let external components interact with the alert system, the manager client contains a local UNIX socket server which can be contacted.",
 		"type": "manager"
 		},
 	"sensorClientExecuter": {
