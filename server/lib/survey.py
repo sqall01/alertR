@@ -104,7 +104,7 @@ class SurveyExecuter(threading.Thread):
 			data = urllib.urlencode({
 				'data': json.dumps(surveyData)})
 
-			conn.request("POST", "/index.php", data, headers)
+			conn.request("POST", "/submit.php", data, headers)
 			response = conn.getresponse()
 
 			# check if server responded correctly
