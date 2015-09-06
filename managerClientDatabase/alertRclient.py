@@ -261,7 +261,7 @@ if __name__ == '__main__':
 	# => start local server process
 	if not globalData.unixSocketFile is None:
 
-		logging.exception("[%s]: Starting local unix socket server " % fileName
+		logging.info("[%s]: Starting local unix socket server " % fileName
 			+ "instance.")
 
 		while 1:
