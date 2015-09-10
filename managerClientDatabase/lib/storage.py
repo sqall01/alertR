@@ -147,6 +147,8 @@ class Mysql(_Storage):
 				self.cursor.execute("DROP TABLE IF EXISTS options")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+				self.cursor.execute(
+					"DROP TABLE IF EXISTS sensorAlertsAlertLevels")
 				self.cursor.execute("DROP TABLE IF EXISTS sensors")
 				self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
 				self.cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -1081,6 +1083,16 @@ class Mysql(_Storage):
 				+ "timeReceived INTEGER NOT NULL, "
 				+ "dataJson TEXT NOT NULL)")
 
+		# create sensorAlertsAlertLevels table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsAlertLevels'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorAlertsAlertLevels ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "sensorAlertId INTEGER NOT NULL, "
+				+ "alertLevel INTEGER NOT NULL, "
+				+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
 		# create sensorsAlertLevels table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
 		result = self.cursor.fetchall()
@@ -1448,12 +1460,22 @@ class Mysql(_Storage):
 		# delete all sensor alerts that are older than the configured
 		# life span
 		try:
-			self.cursor.execute("DELETE FROM sensorAlerts "
+			# delete all sensor alerts with the returned id
+			self.cursor.execute("SELECT id FROM sensorAlerts "
 				+ "WHERE (timeReceived + "
 				+ str(self.sensorAlertLifeSpan * 86400)
 				+ ")"
 				+ "<= %s",
 				(int(time.time()), ))
+			result = self.cursor.fetchall()
+			for idTuple in result:
+				self.cursor.execute("DELETE FROM sensorAlertsAlertLevels "
+					+ "WHERE sensorAlertId = %s",
+					(idTuple[0], ))
+				self.cursor.execute("DELETE FROM sensorAlerts "
+					+ "WHERE id = %s",
+					(idTuple[0], ))
+
 		except Exception as e:
 			logging.exception("[%s]: Not able to delete sensor alert." 
 				% self.fileName)
@@ -1472,9 +1494,19 @@ class Mysql(_Storage):
 						+ "WHERE sensorId = %s",
 						(sensor.sensorId, ))
 
-					self.cursor.execute("DELETE FROM sensorAlerts "
+					# delete all sensor alerts with the returned id
+					self.cursor.execute("SELECT id FROM sensorAlerts "
 						+ "WHERE sensorId = %s",
 						(sensor.sensorId, ))
+					result = self.cursor.fetchall()
+					for idTuple in result:
+						self.cursor.execute("DELETE FROM "
+							+ "sensorAlertsAlertLevels "
+							+ "WHERE sensorAlertId = %s",
+							(idTuple[0], ))
+						self.cursor.execute("DELETE FROM sensorAlerts "
+							+ "WHERE id = %s",
+							(idTuple[0], ))
 
 					self.cursor.execute("DELETE FROM sensors "
 						+ "WHERE id = %s",
@@ -1838,6 +1870,14 @@ class Mysql(_Storage):
 					(sensorAlert.sensorId, sensorAlert.state,
 					sensorAlert.description, sensorAlert.timeReceived,
 					dataJson))
+				sensorAlertId = self.cursor.lastrowid
+
+				for alertLevel in sensorAlert.alertLevels:
+					self.cursor.execute("INSERT INTO sensorAlertsAlertLevels ("
+						+ "sensorAlertId, "
+						+ "alertLevel) "
+						+ "VALUES (%s, %s)",
+						(sensorAlertId, alertLevel))
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to add sensor alert."
