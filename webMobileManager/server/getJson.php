@@ -10,6 +10,14 @@
 // include config data
 require_once("./config/config.php");
 
+// check if ssl is used (or disabled via config)
+if($configWebSSL) {
+	if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != 'on') {
+		echo "Error: SSL not used."
+		exit(1);
+	}
+}
+
 // connect to the mysql database and
 $mysqlConnection = mysql_connect($configMysqlServer . ":" . $configMysqlPort,
 	$configMysqlUsername, $configMysqlPassword);

@@ -10,6 +10,14 @@
 // include config data
 require_once("./config/config.php");
 
+// check if ssl is used (or disabled via config)
+if($configWebSSL) {
+	if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != 'on') {
+		echo "Error: SSL not used."
+		exit(1);
+	}
+}
+
 // check if the GET parameter for activate/deactivate the alert system
 // is set
 if(isset($_GET["activate"]) && $configUnixSocketActive) {
@@ -50,7 +58,7 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 	// get response
 	$response = json_decode(fread($fd, 1024), true);
 	if($response == NULL) {
-		echo "Error: Could not decode server response";
+		echo "Error: Could not decode server response.";
 		exit(1);
 	}
 	else {

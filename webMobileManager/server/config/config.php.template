@@ -22,4 +22,12 @@ $configUnixSocketActive = false;
 $configUnixSocketPath =
 	"/path/to/alertR/managerClientMobile/config/localsocket";
 
+// only allow access to the web page when SSL is used
+// WARNING: we do not recommend to disable this setting
+$configWebSSL = True;
+
+// only allow access to the web page when the user logged in via htaccess
+// WARNING: we do not recommend to disable this setting
+$configWebAuth = True;
+
 ?>
