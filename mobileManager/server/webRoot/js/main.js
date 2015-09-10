@@ -2543,7 +2543,7 @@ function outputOverview() {
 	boxDiv.appendChild(sensorAlertsTable);
 
 	// add the last sensor alerts to the output
-	for(var i = 0; i < sensorAlerts.length; i++) {
+	for(var i = 0; i < 5; i++) {
 
 		var timeReceived = sensorAlerts[i]["timeReceived"];
 		var state = sensorAlerts[i]["state"];
