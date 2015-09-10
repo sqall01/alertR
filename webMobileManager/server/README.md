@@ -1,14 +1,14 @@
-alertR Mobile Manager - Server - Web
+alertR Web Mobile Manager
 ======
 
-This is the part of the mobile manager that shows the information of the alerting system as a web page. It connects to the MySQL db and displays all gathered information. The mobile device clients connect to this web page and show the user all details.
+This is the web page of the alertR Web Mobile Manager. It shows the information of the alerting system on a web page optimized for mobile phones. To work, it needs access to the MySQL database of the alertR Manager Client Database. If wanted, the web page can use the local UNIX socket of the alertR Manager Client Database to send commands back to the alertR system. 
 
 
 How to use it?
 ======
 
-To use this part you have to configure it first. A commented configuration template file is located inside the "config" folder. The web page is written in PHP5 and therefore needs a webserver with PHP and MySQL db installed.
+To use the web page you have to configure it first. A commented configuration template file is located inside the "config" folder. The web page is written in PHP and therefore needs a webserver that can interpret PHP. Also, access to the MySQL db of the alertR Manager Client Database is needed for the web page to work. Therefore, the alertR Manager Client Database has to be installed first.
 
-You should use HTTPS for the connection to your webserver. Elsewise, other people are able to see your login credentials and therefore can deactivate the alerting system.
+We strongly recommend to use HTTPS for the connection to the webserver. Otherwise, people are able to see your login credentials and therefore can send commands to your alertR system (if it is activated, otherwise they only can see the information of your alerting system).
 
-Nevertheless, a short but more detailed basic example configuration of how to set up the server is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
+A short but more detailed basic example configuration of how to set up the web page is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
