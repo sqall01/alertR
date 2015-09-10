@@ -13,7 +13,15 @@ require_once("./config/config.php");
 // check if ssl is used (or disabled via config)
 if($configWebSSL) {
 	if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != 'on') {
-		echo "Error: SSL not used."
+		echo "Error: SSL not used.";
+		exit(1);
+	}
+}
+
+// check if the user has authenticated himself
+if($configWebAuth) {
+	if(!isset($_SERVER["REMOTE_USER"])) {
+		echo "Error: User authentication required.";
 		exit(1);
 	}
 }
