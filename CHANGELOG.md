@@ -1,3 +1,6 @@
+This file only contains major changes with respect to the alertR system. Please refer to the CHANGELOG.md files of the components to see the changes in more detail.
+
+
 ## 0.300
 
 Features:
