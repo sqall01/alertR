@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Sensor Client Ping
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRsensorPing.sh start
+ExecStop=/etc/init.d/alertRsensorPing.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

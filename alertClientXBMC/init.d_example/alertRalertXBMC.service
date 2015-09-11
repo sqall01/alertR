@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Alert Client XBMC
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRalertXBMC.sh start
+ExecStop=/etc/init.d/alertRalertXBMC.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

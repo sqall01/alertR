@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Sensor Client Raspberry Pi
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRsensorRaspberryPi.sh start
+ExecStop=/etc/init.d/alertRsensorRaspberryPi.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

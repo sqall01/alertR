@@ -1,0 +1,14 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Manger Client Database
+After=mysql.service
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRmanagerDatabase.sh start
+ExecStop=/etc/init.d/alertRmanagerDatabase.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Alert Client Raspberry Pi
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRalertRaspberryPi.sh start
+ExecStop=/etc/init.d/alertRalertRaspberryPi.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

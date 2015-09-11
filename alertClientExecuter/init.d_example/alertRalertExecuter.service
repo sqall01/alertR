@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Alert Client Executer
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRalertExecuter.sh start
+ExecStop=/etc/init.d/alertRalertExecuter.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
