@@ -75,6 +75,9 @@ class SurveyExecuter(threading.Thread):
 	# gather and send survey data
 	def sendSurveyData(self):
 
+		logging.info("[%s]: Starting to send survey data."
+				% self.fileName)
+
 		# gather survey data
 		surveyNodes = self.storage.getSurveyData()
 		if surveyNodes is None:
@@ -123,6 +126,9 @@ class SurveyExecuter(threading.Thread):
 				% self.fileName)
 
 			return False
+
+		logging.info("[%s]: Survey data successfully sent."
+				% self.fileName)
 
 		return True
 

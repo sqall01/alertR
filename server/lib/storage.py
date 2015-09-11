@@ -3949,7 +3949,7 @@ class Mysql(_Storage):
 
 		self._releaseLock()
 
-		return surveyData
+		return list(surveyData)
 
 
 	# gets the unique id from the database
