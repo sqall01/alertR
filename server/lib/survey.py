@@ -94,6 +94,8 @@ class SurveyExecuter(threading.Thread):
 		surveyUpdate["location"] = self.updateLocation
 		surveyData["update"] = surveyUpdate
 
+		surveyData["uniqueID"] = self.storage.getUniqueID()
+
 		# send survey data to server
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 		try:

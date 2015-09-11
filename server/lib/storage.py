@@ -11,6 +11,9 @@ import logging
 import os
 import threading
 import time
+import socket
+import struct
+import hashlib
 
 
 # internal abstract class for new storage backends
@@ -100,6 +103,14 @@ class _Storage():
 	# return list of tuples of (instance, version, rev)
 	# or None
 	def getSurveyData(self):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets the unique id from the database
+	#
+	# return unique id
+	# or None
+	def getUniqueID(self):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -422,6 +433,19 @@ class Sqlite(_Storage):
 		self.cursor.execute("INSERT INTO internals ("
 			+ "type, "
 			+ "value) VALUES (?, ?)", ("version", self.version))
+
+		# generate unique id for this installation
+		uniqueString = socket.gethostname() \
+			+ struct.pack("d", time.time()) \
+			+ os.urandom(200)
+		sha256 = hashlib.sha256()
+		sha256.update(uniqueString)
+		uniqueID = sha256.hexdigest()
+
+		# insert unique id
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (?, ?)", ("uniqueID", uniqueID))
 
 		# create options table
 		self.cursor.execute("CREATE TABLE options ("
@@ -1567,6 +1591,27 @@ class Sqlite(_Storage):
 
 		return surveyData
 
+	# gets the unique id from the database
+	#
+	# return unique id
+	# or None
+	def getUniqueID(self):
+
+		self._acquireLock()
+
+		uniqueID = None
+		try:
+			self.cursor.execute("SELECT value "
+				+ "FROM internals WHERE type=?", ("uniqueID", ))
+			uniqueID = self.cursor.fetchall()[0][0]
+		except Exception as e:
+			logging.exception("[%s]: Not able to get the unique id." 
+				% self.fileName)
+
+		self._releaseLock()
+
+		return uniqueID
+
 
 	# updates the states of the sensors of a node in the databse
 	# (given in a tuple of (remoteSensorId, state))
@@ -2539,6 +2584,19 @@ class Mysql(_Storage):
 		self.cursor.execute("INSERT INTO internals ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("version", self.version))
+
+		# generate unique id for this installation
+		uniqueString = socket.gethostname() \
+			+ struct.pack("d", time.time()) \
+			+ os.urandom(200)
+		sha256 = hashlib.sha256()
+		sha256.update(uniqueString)
+		uniqueID = sha256.hexdigest()
+
+		# insert unique id
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)", ("uniqueID", uniqueID))
 
 		# create options table
 		self.cursor.execute("CREATE TABLE options ("
@@ -3872,7 +3930,7 @@ class Mysql(_Storage):
 
 			self._releaseLock()
 
-			return False
+			return None
 
 		surveyData = None
 		try:
@@ -3892,6 +3950,42 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		return surveyData
+
+
+	# gets the unique id from the database
+	#
+	# return unique id
+	# or None
+	def getUniqueID(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		uniqueID = None
+		try:
+			self.cursor.execute("SELECT value "
+				+ "FROM internals WHERE type=%s", ("uniqueID", ))
+			uniqueID = self.cursor.fetchall()[0][0]
+		except Exception as e:
+			logging.exception("[%s]: Not able to get the unique id." 
+				% self.fileName)
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		return uniqueID
 
 
 	# updates the states of the sensors of a node in the databse
