@@ -4180,7 +4180,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return list of tuples of (alertLevel)
-		return result
+		return list(result)
 
 
 	# gets all alert levels for a specific alert given by alertId
@@ -4227,7 +4227,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return list of tuples of (alertLevel)
-		return result
+		return list(result)
 
 
 	# adds a sensor alert to the database when the id of a node is given,
@@ -4497,7 +4497,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return list of tuples of (alertLevel)
-		return result
+		return list(result)
 
 
 	# gets all alert levels for the sensors from the database
@@ -4543,7 +4543,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return list of tuples of (alertLevel)
-		return result
+		return list(result)
 
 
 	# gets all nodes from the database that are connected to the server
@@ -4591,7 +4591,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return list of tuples of (nodeId)
-		return result
+		return list(result)
 
 
 	# marks a node given by its id as NOT connected
@@ -4731,7 +4731,7 @@ class Mysql(_Storage):
 
 		# return list of tuples of (sensorId, nodeId,
 		# lastStateUpdated, description)
-		return result
+		return list(result)
 
 
 	# gets all information of a sensor by its given id
