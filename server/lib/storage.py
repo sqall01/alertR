@@ -427,7 +427,7 @@ class Sqlite(_Storage):
 		self.cursor.execute("CREATE TABLE internals ("
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "type TEXT NOT NULL UNIQUE, "
-			+ "value REAL NOT NULL)")
+			+ "value TEXT NOT NULL)")
 
 		# insert version of server
 		self.cursor.execute("INSERT INTO internals ("
@@ -541,14 +541,14 @@ class Sqlite(_Storage):
 
 		# if the versions are not compatible
 		# => delete old database schema
-		if result[0][0] != self.version:
+		if float(result[0][0]) != self.version:
 
-			logging.info("[%s]: Client version "
+			logging.info("[%s]: Server version "
 				% self.fileName
 				+ "'%.3f' not compatible "
 				% self.version
 				+ "with database version '%.3f'. "
-				% result[0][0]
+				% float(result[0][0])
 				+ "Updating database.")
 
 			# delete all tables from the database to clear the old version
@@ -2578,7 +2578,7 @@ class Mysql(_Storage):
 		self.cursor.execute("CREATE TABLE internals ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "type VARCHAR(255) NOT NULL UNIQUE, "
-			+ "value DOUBLE NOT NULL)")
+			+ "value VARCHAR(255) NOT NULL)")
 
 		# insert version of server
 		self.cursor.execute("INSERT INTO internals ("
@@ -2695,14 +2695,14 @@ class Mysql(_Storage):
 
 		# if the versions are not compatible
 		# => delete old database schema
-		if result[0][0] != self.version:
+		if float(result[0][0]) != self.version:
 
-			logging.info("[%s]: Client version "
+			logging.info("[%s]: Server version "
 				% self.fileName
 				+ "'%.3f' not compatible "
 				% self.version
 				+ "with database version '%.3f'. "
-				% result[0][0]
+				% float(result[0][0])
 				+ "Updating database.")
 
 			# delete all tables from the database to clear the old version
