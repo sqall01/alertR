@@ -417,8 +417,9 @@ class ClientCommunication:
 		# => terminate connection
 		for serverSession in self.serverSessions:
 
-			# ignore THIS server session 
-			if serverSession.clientComm == self:
+			# ignore THIS server session and not existing once
+			if (serverSession.clientComm is None
+				or serverSession.clientComm == self):
 				continue
 
 			if serverSession.clientComm.username == self.username:
