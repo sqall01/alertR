@@ -6,3 +6,4 @@ Features:
 * authentication message now contains version and revision
 * alert system update messages to manager clients now contain version, revision and client instance
 * shows if sensor alert was received for a "triggered" or "normal" state
+* sorts displayed sensors, alert clients and manager clients

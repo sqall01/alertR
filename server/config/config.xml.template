@@ -52,13 +52,14 @@
 		<!--
 			settings for the alertR survey
 			participate - Since alertR has an install and update script which
-			uses Github as repository, no actual data about the usage of
-			alertR exists. In order to get a better understanding of the used
-			alertR instances and the versions that are used, alertR has a
-			voluntary survey. If you participate, alertR will send once a week
-			the version, revision, instances and configured update repository
-			that is used by your installation to the survey server.
-			("True" or "False")
+				uses Github as repository, no actual data about the usage of
+				alertR exists. In order to get a better understanding of the 
+				used alertR instances and the versions that are used, alertR 
+				has a voluntary survey. If you participate, alertR will send 
+				once a week the version, revision, instances and configured 
+				update repository that is used by your installation to the
+				survey server.
+				("True" or "False")
 		-->
 		<survey
 			participate="True" />
