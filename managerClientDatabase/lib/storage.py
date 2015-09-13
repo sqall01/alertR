@@ -1249,7 +1249,7 @@ class Mysql(_Storage):
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
-			+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsNewAlert table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'eventsNewAlert'")
@@ -1448,8 +1448,10 @@ class Mysql(_Storage):
 						+ "AND value = %s",
 						(option.type, option.value))
 				except Exception as e:
-					logging.exception("[%s]: Not able to delete option." 
-						% self.fileName)
+					logging.exception("[%s]: Not able to delete option " 
+						% self.fileName
+						+ "of type %s."
+						% option.type)
 
 					self._releaseLock()
 
@@ -1477,8 +1479,10 @@ class Mysql(_Storage):
 					(idTuple[0], ))
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to delete sensor alert." 
-				% self.fileName)
+			logging.exception("[%s]: Not able to delete sensor alert " 
+				% self.fileName
+				+ "with id %d."
+				% idTuple[0])
 
 			self._releaseLock()
 
@@ -1512,8 +1516,10 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(sensor.sensorId, ))
 				except Exception as e:
-					logging.exception("[%s]: Not able to delete sensor." 
-						% self.fileName)
+					logging.exception("[%s]: Not able to delete sensor " 
+						% self.fileName
+						+ "with id %d."
+						% sensor.sensorId)
 
 					self._releaseLock()
 
@@ -1535,8 +1541,10 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(alert.alertId, ))
 				except Exception as e:
-					logging.exception("[%s]: Not able to delete alert." 
-						% self.fileName)
+					logging.exception("[%s]: Not able to delete alert " 
+						% self.fileName
+						+ "with id %d."
+						% alert.alertId)
 
 					self._releaseLock()
 
@@ -1554,8 +1562,10 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(manager.managerId, ))
 				except Exception as e:
-					logging.exception("[%s]: Not able to delete manager." 
-						% self.fileName)
+					logging.exception("[%s]: Not able to delete manager " 
+						% self.fileName
+						+ "with id %d."
+						% manager.managerId)
 
 					self._releaseLock()
 
@@ -1573,8 +1583,10 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(node.nodeId, ))
 				except Exception as e:
-					logging.exception("[%s]: Not able to delete node." 
-						% self.fileName)
+					logging.exception("[%s]: Not able to delete node "
+						% self.fileName
+						"with id %d." 
+						% node.nodeId)
 
 					self._releaseLock()
 
@@ -1592,8 +1604,10 @@ class Mysql(_Storage):
 						+ "WHERE alertLevel = %s",
 						(alertLevel.level, ))
 				except Exception as e:
-					logging.exception("[%s]: Not able to delete alert level." 
-						% self.fileName)
+					logging.exception("[%s]: Not able to delete alert level " 
+						% self.fileName
+						+ " %d."
+						% alertLevel.level)
 
 					self._releaseLock()
 
