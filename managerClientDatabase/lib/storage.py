@@ -1585,7 +1585,7 @@ class Mysql(_Storage):
 				except Exception as e:
 					logging.exception("[%s]: Not able to delete node "
 						% self.fileName
-						"with id %d." 
+						+ "with id %d." 
 						% node.nodeId)
 
 					self._releaseLock()
