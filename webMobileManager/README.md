@@ -15,6 +15,6 @@ This is explained in the according subdirectories.
 Screenshot
 ======
 
-A screenshot of the alertR Web Mobile Manager is shown in the following.
+A screenshot of the alertR Web Mobile Manager is shown in the following:
 
-![alertR Web Mobile Manager Screenshot](https://github.com/sqall01/alertR/blob/dev/docs/alertR_mobile_manager_v0.300.png)
+![alertR Web Mobile Manager Screenshot](https://github.com/sqall01/alertR/blob/master/docs/alertR_mobile_manager_v0.300.png)

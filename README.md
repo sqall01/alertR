@@ -8,6 +8,7 @@ Here a list of interesting usecases with alertR:
 * [Introducing alertR: Open-Source alerting system (with video)](http://h4des.org/blog/index.php?/archives/345-Introducing-alertR-Open-Source-alerting-system.html)
 * [alertR: dbus and xbmc notification client (with video)](http://h4des.org/blog/index.php?/archives/347-alertR-dbus-and-xbmc-notification-client.html)
 * [alertR: rule engine (with video)](http://h4des.org/blog/index.php?/archives/349-alertR-rule-engine.html)
+* [Blog articles about alertR](http://h4des.org/blog/index.php?/categories/22-alertR)
 
 Here a list of useful documentations to start with/understand this project:
 
