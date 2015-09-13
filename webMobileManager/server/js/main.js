@@ -2544,6 +2544,9 @@ function outputOverview() {
 
 	// add the last sensor alerts to the output
 	for(var i = 0; i < 5; i++) {
+		if(i >= sensorAlerts.length) {
+			break;
+		}
 
 		var timeReceived = sensorAlerts[i]["timeReceived"];
 		var state = sensorAlerts[i]["state"];
