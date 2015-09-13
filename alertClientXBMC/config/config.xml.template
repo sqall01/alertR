@@ -180,6 +180,10 @@
 				showMessage - should a notification be shown on the display
 				displayTime - how long should the message be shown
 					(in milliseconds and at least 2000)
+				displayReceivedMessage - should the message that is received
+					via the sensor alert be displayed
+					(only possible if one was sent by the sensor,
+					else only a generic message is shown)
 			-->
 			<xbmc
 				host="localhost"
@@ -187,7 +191,8 @@
 				triggerDelay="10"
 				pausePlayer="True"
 				showMessage="True"
-				displayTime="10000" />
+				displayTime="10000"
+				displayReceivedMessage="True" />
 
 		</alert>
 
