@@ -1,0 +1,4 @@
+# characters not allowed for usage are '#' and ','
+# the values are "MAC address, description" per line
+12:34:56:78:91:23,Test device 1
+13:34:56:78:91:25,Test device 2
