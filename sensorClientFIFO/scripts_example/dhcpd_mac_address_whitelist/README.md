@@ -1,7 +1,7 @@
 DHCP Lease MAC Address Whitelist
 ======
 
-This scripts checks if the MAC address that requested an IP address from your DHCPD is known. If it is not known it will trigger a sensor alert using the FIFO sensor of the alertR Sensor Client Executer. Also it is able to scan the ports of the unknown clients via Nmap and to send an eMail using the local eMail service.
+This scripts checks if the MAC address that requested an IP address from your DHCPD is known. If it is not known it will trigger a sensor alert using the FIFO sensor of the alertR Sensor Client FIFO. Also it is able to scan the ports of the unknown clients via Nmap and to send an eMail using the local eMail service.
 
 
 How to use it?
