@@ -213,7 +213,7 @@ class Updater:
 		# or was done at all
 		# => if not get the newest version information
 		if ((time.time() - self.lastChecked) > 60
-			or self.newestFiles == None):
+			or self.newestFiles is None):
 			if self._getNewestVersionInformation() is False:
 				logging.error("[%s]: Not able to get version "
 					% self.fileName
