@@ -37,7 +37,7 @@ class _Alert:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-# this function represents an example alert
+# this class represents an example alert
 # (for example a GPIO on a Raspberry Pi which should be set to high 
 # or code that executes an external command)
 class TemplateAlert(_Alert):
