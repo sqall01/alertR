@@ -585,6 +585,7 @@ class ServerCommunication:
 					alertTriggerProcess.daemon = True
 					alertTriggerProcess.triggerAlert = True
 					alertTriggerProcess.start()
+					break
 
 		return True
 
