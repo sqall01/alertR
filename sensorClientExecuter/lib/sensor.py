@@ -137,6 +137,9 @@ class ExecuterSensor(_PollingSensor):
 			# process has finished
 			else:
 
+				self.dataTransfer = False
+				self.data = None
+
 				# check if the process has exited with code 0
 				# => everything works fine
 				if self.process.poll() == 0:
