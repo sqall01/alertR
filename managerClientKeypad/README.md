@@ -11,4 +11,4 @@ To use this client you have to configure it first. A commented configuration tem
 
 It is designed to run on tty1 after the system has started. To achieve this without manual interaction, the code for a little shell wrapper program is added in the folder "shellWrapper". When compiled, this program should be used as the default shell for a special local user. It starts automatically the keypad manager client and if it is shut down, the user automatically logs out. This prevents a local attacker (that just stops the keypad manager client) from getting access to the computer.
 
-Nevertheless, a short but more detailed basic example configuration of how to set up the client is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
+If you need a more detailed description of how to set up an alertR system, a basic example configuration is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
