@@ -144,4 +144,4 @@ The following alert-specific settings have to be made for the alertR Alert Clien
 
 ```
 
-If you need a more detailed description of how to set up an alertR system, a basic example configuration is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
+If you need a more detailed description of how to set up an alertR system, a basic example configuration is given in the [wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration).

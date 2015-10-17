@@ -11,4 +11,4 @@ To use the web page you have to configure it first. A commented configuration te
 
 We strongly recommend to use HTTPS for the connection to the webserver. Otherwise, people are able to see your login credentials and therefore can send commands to your alertR system (if it is activated, otherwise they only can see the information of your alerting system).
 
-A short but more detailed basic example configuration of how to set up the web page is given in the ([wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration)).
+If you need a more detailed description of how to set up an alertR system, a basic example configuration is given in the [wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration).
