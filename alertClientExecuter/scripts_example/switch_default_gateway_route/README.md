@@ -94,7 +94,7 @@ We consider the following configuration of your alertR system:
 * You have installed a script that checks if the Internet connection is down using your normal gateway (for example on your router). This script triggers a sensor alert when the Internet connection is down (state: "triggered"), and this script triggers a sensor alert when the Internet connection is up again (state: "normal").
 * The sensor alert that is triggered by the Internet checking script is for the alert level 10 and 11. On the alertR server, alert level 10 is configured to always trigger a sensor alert and only on the "triggered" state. Alert level 11 is also configured to always trigger a sensor alert but only on the "normal" state.
 
-The following alert-specific settings have to be made for the alertR Alert Client Executer to work with given alertR system configuration:
+The following alert-specific settings have to be made for the alertR Alert Client Executer to work with the given alertR system configuration:
 
 ```bash
 
