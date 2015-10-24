@@ -16,7 +16,10 @@ Network Configuration:
 ------
 
 * Normal gateway address: 10.42.42.1
+* Nameserver used for the normal gateway: 10.42.42.1
 * Gateway address when using UMTS modem: 192.168.1.1
+* Nameserver used for the UMTS modem: 8.8.8.8
+
 
 The UMTS modem in this example registers itself as a network device
 (used UMTS modem was the Huawei E303 surfstick). The UMTS modem has always
