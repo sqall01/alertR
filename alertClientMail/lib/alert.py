@@ -96,6 +96,9 @@ class MailAlert(_Alert):
 		tempMsg = self.bodyText.replace("$MESSAGE$", receivedMessage)
 		tempMsg = tempMsg.replace("$STATE$", stateMessage)
 		tempMsg = tempMsg.replace("$SENSORDESC$", sensorDescription)
+		tempMsg = tempMsg.replace("$TIMERECEIVED$",
+			time.strftime("%d %b %Y %H:%M:%S",
+			time.localtime(asyncAlertExecInstance.timeReceived)))
 
 		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
 			% (self.fromAddr, self.toAddr, self.subject)
@@ -142,6 +145,7 @@ class AsynchronousAlertExecuter(threading.Thread):
 		self.dataTransfer = False # true or false
 		self.data = None # only evaluated if data transfer is true
 		self.state = None # (triggered = 1; back to normal = 0)
+		self.timeReceived = None # time sensor alert was received
 
 
 	def run(self):

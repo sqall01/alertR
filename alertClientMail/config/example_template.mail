@@ -22,6 +22,10 @@ description of the sensor which triggered the
 received sensor alert. This description is configured
 on each sensor client for each sensor.
 
+Keyword: $TIMERECEIVED$
+The $TIMERECEIVED$ keyword will be replaced by the
+time the sensor alert was received.
+
 This are all keywords that are currently available.
 Have fun to using them.
 

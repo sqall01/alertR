@@ -522,6 +522,7 @@ class ServerCommunication:
 
 			state = int(incomingMessage["payload"]["state"])
 			description = str(incomingMessage["payload"]["description"])
+			timeReceived = int(time.time())
 
 			# parse received data (if data transfer is activated)
 			data = None
@@ -580,6 +581,7 @@ class ServerCommunication:
 					alertTriggerProcess.state = state
 					alertTriggerProcess.dataTransfer = dataTransfer
 					alertTriggerProcess.data = data
+					alertTriggerProcess.timeReceived = timeReceived
 					# set thread to daemon
 					# => threads terminates when main thread terminates	
 					alertTriggerProcess.daemon = True
