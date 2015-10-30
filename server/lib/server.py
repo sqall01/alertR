@@ -1343,14 +1343,15 @@ class ClientCommunication:
 		# list[1] = list(tuples of (type, value))
 		# list[2] = nodeCount
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-		# connected, version, rev))
+		# connected, version, rev, username))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# description, lastStateUpdated, state))
+		# description, lastStateUpdated, state, remoteSensorId))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
-		# list[9] = list(tuples of (nodeId, alertId, description))	
+		# list[9] = list(tuples of (nodeId, alertId, description,
+		# remoteAlertId))	
 		alertSystemInformation = self.storage.getAlertSystemInformation()
 		if alertSystemInformation == None:
 			logging.error("[%s]: Getting alert system " % self.fileName
@@ -1394,7 +1395,8 @@ class ClientCommunication:
 				"instance": nodesInformation[i][3],
 				"connected": nodesInformation[i][4],
 				"version": nodesInformation[i][5],
-				"rev": nodesInformation[i][6]}
+				"rev": nodesInformation[i][6],
+				"username": nodesInformation[i][7]}
 			nodes.append(tempDict)
 
 		# generating sensors list
@@ -1415,7 +1417,8 @@ class ClientCommunication:
 				"alertLevels": alertLevels,
 				"description": sensorsInformation[i][3],
 				"lastStateUpdated": sensorsInformation[i][4],
-				"state": sensorsInformation[i][5]}
+				"state": sensorsInformation[i][5],
+				"remoteSensorId": sensorsInformation[i][6]}
 			sensors.append(tempDict)
 
 		# generating managers list
@@ -1441,7 +1444,8 @@ class ClientCommunication:
 			tempDict = {"nodeId": alertsInformation[i][0],
 				"alertId": alertId,
 				"alertLevels": alertLevels,
-				"description": alertsInformation[i][2]}
+				"description": alertsInformation[i][2],
+				"remoteAlertId": alertsInformation[i][3]}
 			alerts.append(tempDict)
 
 		# generating alertLevels list

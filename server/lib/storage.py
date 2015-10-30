@@ -204,15 +204,16 @@ class _Storage():
 	# list[1] = list(tuples of (type, value))
 	# list[2] = nodeCount
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-	# connected, version, rev))
+	# connected, version, rev, username))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# description, lastStateUpdated, state))
+	# description, lastStateUpdated, state, remoteSensorId))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
-	# list[9] = list(tuples of (nodeId, alertId, description))
-	# or None	
+	# list[9] = list(tuples of (nodeId, alertId, description,
+	# remoteAlertId))
+	# or None
 	def getAlertSystemInformation(self):
 		raise NotImplemented("Function not implemented yet.")
 
@@ -2179,15 +2180,16 @@ class Sqlite(_Storage):
 	# list[1] = list(tuples of (type, value))
 	# list[2] = nodeCount
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-	# connected, version, rev))
+	# connected, version, rev, username))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# description, lastStateUpdated, state))
+	# description, lastStateUpdated, state, remoteSensorId))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
-	# list[9] = list(tuples of (nodeId, alertId, description))
-	# or None	
+	# list[9] = list(tuples of (nodeId, alertId, description,
+	# remoteAlertId))
+	# or None
 	def getAlertSystemInformation(self):
 
 		self._acquireLock()
@@ -2209,7 +2211,8 @@ class Sqlite(_Storage):
 				+ "instance, "
 				+ "connected, "
 				+ "version, "
-				+ "rev "
+				+ "rev, "
+				+ "username "
 				+ "FROM nodes")
 			result = self.cursor.fetchall()
 			nodesInformation = result
@@ -2221,7 +2224,8 @@ class Sqlite(_Storage):
 				+ "alertDelay, "
 				+ "description, "
 				+ "lastStateUpdated, "
-				+ "state "
+				+ "state, "
+				+ "remoteSensorId "
 				+ "FROM sensors")
 			result = self.cursor.fetchall()
 			sensorsInformation = result
@@ -2239,7 +2243,8 @@ class Sqlite(_Storage):
 			# get all alerts information
 			self.cursor.execute("SELECT nodeId, "
 				+ "id, "
-				+ "description "
+				+ "description, "
+				+ "remoteAlertId "
 				+ "FROM alerts")
 			result = self.cursor.fetchall()
 			alertsInformation = result
@@ -2274,14 +2279,15 @@ class Sqlite(_Storage):
 		# list[1] = list(tuples of (type, value))
 		# list[2] = nodeCount
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-		# connected, version, rev))
+		# connected, version, rev, username))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# description, lastStateUpdated, state))
+		# description, lastStateUpdated, state, remoteSensorId))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
-		# list[9] = list(tuples of (nodeId, alertId, description))		
+		# list[9] = list(tuples of (nodeId, alertId, description,
+		# remoteAlertId))
 		return alertSystemInformation
 
 
@@ -4852,15 +4858,16 @@ class Mysql(_Storage):
 	# list[1] = list(tuples of (type, value))
 	# list[2] = nodeCount
 	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-	# connected, version, rev))
+	# connected, version, rev, username))
 	# list[4] = sensorCount
 	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# description, lastStateUpdated, state))
+	# description, lastStateUpdated, state, remoteSensorId))
 	# list[6] = managerCount
 	# list[7] = list(tuples of (nodeId, managerId, description))
 	# list[8] = alertCount
-	# list[9] = list(tuples of (nodeId, alertId, description))
-	# or None	
+	# list[9] = list(tuples of (nodeId, alertId, description,
+	# remoteAlertId))
+	# or None
 	def getAlertSystemInformation(self):
 
 		self._acquireLock()
@@ -4893,7 +4900,8 @@ class Mysql(_Storage):
 				+ "instance, "
 				+ "connected, "
 				+ "version, "
-				+ "rev "
+				+ "rev, "
+				+ "username "
 				+ "FROM nodes")
 			result = self.cursor.fetchall()
 			nodesInformation = result
@@ -4905,7 +4913,8 @@ class Mysql(_Storage):
 				+ "alertDelay, "
 				+ "description, "
 				+ "lastStateUpdated, "
-				+ "state "
+				+ "state, "
+				+ "remoteSensorId "
 				+ "FROM sensors")
 			result = self.cursor.fetchall()
 			sensorsInformation = result
@@ -4923,7 +4932,8 @@ class Mysql(_Storage):
 			# get all alerts information
 			self.cursor.execute("SELECT nodeId, "
 				+ "id, "
-				+ "description "
+				+ "description, "
+				+ "remoteAlertId "
 				+ "FROM alerts")
 			result = self.cursor.fetchall()
 			alertsInformation = result
@@ -4964,14 +4974,15 @@ class Mysql(_Storage):
 		# list[1] = list(tuples of (type, value))
 		# list[2] = nodeCount
 		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-		# connected, version, rev))
+		# connected, version, rev, username))
 		# list[4] = sensorCount
 		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# description, lastStateUpdated, state))
+		# description, lastStateUpdated, state, remoteSensorId))
 		# list[6] = managerCount
 		# list[7] = list(tuples of (nodeId, managerId, description))
 		# list[8] = alertCount
-		# list[9] = list(tuples of (nodeId, alertId, description))		
+		# list[9] = list(tuples of (nodeId, alertId, description,
+		# remoteAlertId))	
 		return alertSystemInformation
 
 
