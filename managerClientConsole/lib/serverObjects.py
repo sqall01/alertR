@@ -32,6 +32,7 @@ class Node:
 		self.connected = None
 		self.version = None
 		self.rev = None
+		self.username = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
@@ -52,6 +53,7 @@ class Sensor:
 	def __init__(self):
 		self.nodeId = None
 		self.sensorId = None
+		self.remoteSensorId = None
 		self.alertDelay = None
 		self.alertLevels = list()
 		self.description = None
@@ -91,6 +93,7 @@ class Alert:
 	def __init__(self):
 		self.nodeId = None
 		self.alertId = None
+		self.remoteAlertId = None
 		self.alertLevels = list()
 		self.description = None
 

@@ -646,6 +646,7 @@ class ServerCommunication:
 				connected = int(nodesRaw[i]["connected"])
 				version = float(nodesRaw[i]["version"])
 				rev = int(nodesRaw[i]["rev"])
+				username = str(nodesRaw[i]["username"])
 			except Exception as e:
 				logging.exception("[%s]: Received node " % self.fileName
 				+ "invalid.")
@@ -673,6 +674,7 @@ class ServerCommunication:
 			node.connected = connected
 			node.version = version
 			node.rev = rev
+			node.username = username
 			nodes.append(node)
 
 		logging.debug("[%s]: Received sensor count: %d." 
@@ -684,6 +686,8 @@ class ServerCommunication:
 			try:
 				nodeId = int(sensorsRaw[i]["nodeId"])
 				sensorId = int(sensorsRaw[i]["sensorId"])
+				remoteSensorId = int(sensorsRaw[i]["remoteSensorId"])
+
 				alertDelay = int(sensorsRaw[i]["alertDelay"])
 
 				sensorAlertLevels = sensorsRaw[i]["alertLevels"]
@@ -740,6 +744,7 @@ class ServerCommunication:
 			sensor = Sensor()
 			sensor.nodeId = nodeId
 			sensor.sensorId = sensorId
+			sensor.remoteSensorId = remoteSensorId
 			sensor.alertDelay = alertDelay
 			sensor.alertLevels = sensorAlertLevels
 			sensor.description = description
@@ -791,7 +796,8 @@ class ServerCommunication:
 
 			try:
 				nodeId = int(alertsRaw[i]["nodeId"])
-				alertId =int(alertsRaw[i]["alertId"])
+				alertId = int(alertsRaw[i]["alertId"])
+				remoteAlertId = int(alertsRaw[i]["remoteAlertId"])
 				description = str(alertsRaw[i]["description"])
 
 				alertAlertLevels = alertsRaw[i]["alertLevels"]
@@ -843,6 +849,7 @@ class ServerCommunication:
 			alert = Alert()
 			alert.nodeId = nodeId
 			alert.alertId = alertId
+			alert.remoteAlertId = remoteAlertId
 			alert.alertLevels = alertAlertLevels
 			alert.description = description
 			alerts.append(alert)

@@ -40,6 +40,7 @@ class Node:
 		self.connected = None
 		self.version = None
 		self.rev = None
+		self.username = None
 
 		# used by mobile manager only:
 		# newest known version
@@ -57,6 +58,7 @@ class Sensor:
 	def __init__(self):
 		self.nodeId = None
 		self.sensorId = None
+		self.remoteSensorId = None
 		self.alertDelay = None
 		self.alertLevels = list()
 		self.description = None
@@ -88,6 +90,7 @@ class Alert:
 	def __init__(self):
 		self.nodeId = None
 		self.alertId = None
+		self.remoteAlertId = None
 		self.alertLevels = list()
 		self.description = None
 
