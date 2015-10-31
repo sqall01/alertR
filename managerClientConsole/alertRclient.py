@@ -175,12 +175,6 @@ if __name__ == '__main__':
 		globalData.urwidAlertLevelShowTriggerAlways = (str(
 			configRoot.find("manager").find("console").attrib[
 			"urwidAlertLevelShowTriggerAlways"]).upper() == "TRUE")
-		globalData.urwidAlertLevelShowSmtpActivated = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidAlertLevelShowSmtpActivated"]).upper() == "TRUE")
-		globalData.urwidAlertLevelShowToAddr = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidAlertLevelShowToAddr"]).upper() == "TRUE")
 		globalData.timeShowSensorAlert = int(
 			configRoot.find("manager").find("console").attrib[
 			"timeShowSensorAlert"])

@@ -17,7 +17,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.300
+		self.version = 0.301
 
 		# revision of the used client
 		self.rev = 0
@@ -107,16 +107,6 @@ class GlobalData:
 		# the "trigger always" information should be shown
 		# for an alert level
 		self.urwidAlertLevelShowTriggerAlways = None
-
-		# this option tells the screen thread if
-		# the "smtp activated" information should be shown
-		# for an alert level
-		self.urwidAlertLevelShowSmtpActivated = None
-
-		# this option tells the screen thread if
-		# the "to addr" information should be shown
-		# for an alert level
-		self.urwidAlertLevelShowToAddr = None
 
 		# this is the time in seconds when the sensor should be
 		# displayed as timed out

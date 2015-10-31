@@ -634,8 +634,7 @@ class ManagerUrwid:
 # this class is an urwid object for an alert level
 class AlertLevelUrwid:
 
-	def __init__(self, alertLevel, showTriggerAlways, showSmtpActivated,
-		showToAddr):
+	def __init__(self, alertLevel, showTriggerAlways):
 
 		# store reference to alert level object
 		self.alertLevel = alertLevel
@@ -646,8 +645,6 @@ class AlertLevelUrwid:
 
 		# options which information should be displayed
 		self.showTriggerAlways = showTriggerAlways
-		self.showSmtpActivated = showSmtpActivated
-		self.showToAddr = showToAddr
 
 		alertLevelPileList = list()
 		self.nameWidget = urwid.Text("Name: "
@@ -660,23 +657,6 @@ class AlertLevelUrwid:
 			self.triggerAlwaysWidget = urwid.Text("Trigger always: "
 			+ ("yes" if self.alertLevel.triggerAlways == 1 else "no"))
 			alertLevelPileList.append(self.triggerAlwaysWidget)
-
-		# create text widget for the "smtp activated" information if
-		# it should be displayed
-		if self.showSmtpActivated:
-			self.smtpActivatedWidget = urwid.Text("Send eMail alert: "
-			+ ("yes" if self.alertLevel.smtpActivated == 1 else "no"))
-			alertLevelPileList.append(self.smtpActivatedWidget)
-
-		# create text widget for the "to addr" information if
-		# it should be displayed
-		if self.showToAddr:
-			if self.alertLevel.smtpActivated == 1:
-				self.toAddrWidget = urwid.Text("eMail recipient: "
-					+ self.alertLevel.toAddr)
-			else:
-				self.toAddrWidget = urwid.Text("eMail recipient: none")
-			alertLevelPileList.append(self.toAddrWidget)
 
 		alertLevelPile = urwid.Pile(alertLevelPileList)
 		alertLevelBox = urwid.LineBox(alertLevelPile, title="Level: %d" %
@@ -706,26 +686,6 @@ class AlertLevelUrwid:
 		if self.showTriggerAlways:
 			self.triggerAlwaysWidget.set_text("Trigger always: "
 				+ ("yes" if triggerAlways == 1 else "no"))
-
-
-	# this function updates the description of the object
-	def updateSmtpActivated(self, smtpActivated):
-
-		# only change widget text if the information should be displayed
-		if self.showSmtpActivated:
-			self.smtpActivatedWidget.set_text("Send eMail alert: "
-			+ ("yes" if smtpActivated == 1 else "no"))
-
-
-	# this function updates the description of the object
-	def updateToAddr(self, smtpActivated, toAddr):
-
-		# only change widget text if the information should be displayed
-		if self.showToAddr:
-			if smtpActivated == 1:
-				self.toAddrWidget.set_text("eMail recipient: " + toAddr)
-			else:
-				self.toAddrWidget.set_text("eMail recipient: none")
 
 
 	# this function changes the color of this urwid object to red
@@ -762,9 +722,6 @@ class AlertLevelUrwid:
 		self.turnGreen()
 		self.updateName(self.alertLevel.name)
 		self.updateTriggerAlways(self.alertLevel.triggerAlways)
-		self.updateSmtpActivated(self.alertLevel.smtpActivated)
-		self.updateToAddr(self.alertLevel.smtpActivated,
-			self.alertLevel.toAddr)
 
 		# return true if object was updated
 		return True
@@ -863,10 +820,6 @@ class Console:
 			= self.globalData.urwidSensorShowAlertLevels
 		self.urwidAlertLevelShowTriggerAlways \
 			= self.globalData.urwidAlertLevelShowTriggerAlways
-		self.urwidAlertLevelShowSmtpActivated \
-			= self.globalData.urwidAlertLevelShowSmtpActivated
-		self.urwidAlertLevelShowToAddr \
-			= self.globalData.urwidAlertLevelShowToAddr
 
 		# options which information should be displayed
 		# by an alert urwid object
@@ -1609,9 +1562,7 @@ class Console:
 			# create new alert level urwid object
 			# (also links urwid object to alert level object)
 			alertLevelUrwid = AlertLevelUrwid(alertLevel,
-				self.urwidAlertLevelShowTriggerAlways,
-				self.urwidAlertLevelShowSmtpActivated,
-				self.urwidAlertLevelShowToAddr)
+				self.urwidAlertLevelShowTriggerAlways)
 
 			# append the final alert level urwid object to the list
 			# of alert level objects
@@ -1966,9 +1917,7 @@ class Console:
 					# create new alert level urwid object
 					# (also links urwid object to alert level object)
 					alertLevelUrwid = AlertLevelUrwid(alertLevel,
-						self.urwidAlertLevelShowTriggerAlways,
-						self.urwidAlertLevelShowSmtpActivated,
-						self.urwidAlertLevelShowToAddr)
+						self.urwidAlertLevelShowTriggerAlways)
 
 					# append the final alert level urwid object to the list
 					# of alert level objects

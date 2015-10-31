@@ -8,3 +8,10 @@ Features:
 * alert levels have the option to filter out sensor alert messages that were sent for sensors going to the "normal" state
 * alert levels have the option to filter out sensor alert messages that were sent for sensors going to the "triggered" state
 * server can now participate in a survey
+
+
+## 0.400
+
+Features:
+
+* username, remoteSensorId and remoteAlertId transmitted to manager clients

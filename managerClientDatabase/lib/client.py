@@ -864,8 +864,6 @@ class ServerCommunication:
 				level = int(alertLevelsRaw[i]["alertLevel"])
 				name = str(alertLevelsRaw[i]["name"])
 				triggerAlways = int(alertLevelsRaw[i]["triggerAlways"])
-				smtpActivated = int(alertLevelsRaw[i]["smtpActivated"])
-				toAddr = str(alertLevelsRaw[i]["toAddr"])
 				rulesActivated = bool(alertLevelsRaw[i]["rulesActivated"])
 
 			except Exception as e:
@@ -884,15 +882,13 @@ class ServerCommunication:
 				return False
 
 			logging.debug("[%s]: Received alertLevel " % self.fileName
-				+ "information: %d:'%s':%d:%d:'%s'" 
-				% (level, name, triggerAlways, smtpActivated, toAddr))
+				+ "information: %d:'%s':%d:" 
+				% (level, name, triggerAlways))
 
 			alertLevel = AlertLevel()
 			alertLevel.level = level
 			alertLevel.name = name
 			alertLevel.triggerAlways = triggerAlways
-			alertLevel.smtpActivated = smtpActivated
-			alertLevel.toAddr = toAddr
 			alertLevel.rulesActivated = rulesActivated
 			alertLevels.append(alertLevel)
 

@@ -117,8 +117,6 @@ class SensorAlert:
 class AlertLevel:
 
 	def __init__(self):
-		self.smtpActivated = None
-		self.toAddr = None
 		self.level = None
 		self.name = None
 		self.triggerAlways = None
@@ -377,6 +375,12 @@ class ServerEventHandler:
 						changed = True
 						node.rev = recvNode.rev
 
+					tempEvent.oldUsername = node.username
+					tempEvent.newUsername = recvNode.username
+					if node.username != recvNode.username:
+						changed = True
+						node.username = recvNode.username
+
 					# add event to event queue if an information has changed
 					if changed:
 						self.events.append(tempEvent)
@@ -457,6 +461,12 @@ class ServerEventHandler:
 					if sensor.description != recvSensor.description:
 						changed = True
 						sensor.description = recvSensor.description
+
+					tempEvent.oldRemoteSensorId = sensor.remoteSensorId
+					tempEvent.newRemoteSensorId = recvSensor.remoteSensorId
+					if sensor.remoteSensorId != recvSensor.remoteSensorId:
+						changed = True
+						sensor.remoteSensorId = recvSensor.remoteSensorId
 
 					# add event to event queue if an information has changed
 					if changed:
@@ -598,6 +608,12 @@ class ServerEventHandler:
 						changed = True
 						alert.description = recvAlert.description
 
+					tempEvent.oldRemoteAlertId = alert.remoteAlertId
+					tempEvent.newRemoteAlertId = recvAlert.remoteAlertId
+					if alert.remoteAlertId != recvAlert.remoteAlertId:
+						changed = True
+						alert.remoteAlertId = recvAlert.remoteAlertId
+
 					# add event to event queue if an information has changed
 					if changed:
 						self.events.append(tempEvent)
@@ -652,8 +668,6 @@ class ServerEventHandler:
 				# and update information
 				if alertLevel.level == recvAlertLevel.level:
 					alertLevel.checked = True
-					alertLevel.smtpActivated = recvAlertLevel.smtpActivated
-					alertLevel.toAddr = recvAlertLevel.toAddr
 					alertLevel.name = recvAlertLevel.name
 					alertLevel.triggerAlways = recvAlertLevel.triggerAlways
 					alertLevel.rulesActivated = recvAlertLevel.rulesActivated

@@ -490,18 +490,21 @@ class Mysql(_Storage):
 						+ "oldInstance, "
 						+ "oldVersion, "
 						+ "oldRev, "
+						+ "oldUsername, "
 						+ "newHostname, "
 						+ "newNodeType, "
 						+ "newInstance, "
 						+ "newVersion, "
-						+ "newRev) "
+						+ "newRev, "
+						+ "newUsername) "
 						+ "VALUES "
-						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, "
+						+ "%s, %s, %s, %s)",
 						(eventId, event.oldHostname, event.oldNodeType,
 						event.oldInstance, event.oldVersion,
-						event.oldRev, event.newHostname,
+						event.oldRev, event.oldUsername, event.newHostname,
 						event.newNodeType, event.newInstance,
-						event.newVersion, event.newRev))
+						event.newVersion, event.newRev, event.newUsername))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add "
 						% self.fileName
@@ -523,12 +526,16 @@ class Mysql(_Storage):
 						+ "eventId, "
 						+ "oldAlertDelay, "
 						+ "oldDescription, "
+						+ "oldRemoteSensorId, "
 						+ "newAlertDelay, "
-						+ "newDescription) "
+						+ "newDescription, "
+						+ "newRemoteSensorId) "
 						+ "VALUES "
-						+ "(%s, %s, %s, %s, %s)",
+						+ "(%s, %s, %s, %s, %s, %s, %s)",
 						(eventId, event.oldAlertDelay, event.oldDescription,
-						event.newAlertDelay, event.newDescription))
+						event.oldRemoteSensorId,
+						event.newAlertDelay, event.newDescription,
+						event.newRemoteSensorId))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add "
 						% self.fileName
@@ -546,13 +553,19 @@ class Mysql(_Storage):
 
 					eventId = self.cursor.lastrowid
 
+					# TODO
+					print event.oldRemoteAlertId
+
 					self.cursor.execute("INSERT INTO eventsChangeAlert ("
 						+ "eventId, "
 						+ "oldDescription, "
-						+ "newDescription) "
+						+ "oldRemoteAlertId, "
+						+ "newDescription, "
+						+ "newRemoteAlertId) "
 						+ "VALUES "
-						+ "(%s, %s, %s)",
-						(eventId, event.oldDescription, event.newDescription))
+						+ "(%s, %s, %s, %s, %s)",
+						(eventId, event.oldDescription, event.oldRemoteAlertId,
+						event.newDescription, event.newRemoteAlertId))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add "
 						% self.fileName
@@ -864,7 +877,8 @@ class Mysql(_Storage):
 			+ "version, "
 			+ "rev, "
 			+ "newestVersion, "
-			+ "newestRev "
+			+ "newestRev, "
+			+ "username "
 			+ "FROM nodes")
 		result = self.cursor.fetchall()
 
@@ -879,6 +893,7 @@ class Mysql(_Storage):
 			tempNode.rev = nodeTuple[6]
 			tempNode.newestVersion = nodeTuple[7]
 			tempNode.newestRev = nodeTuple[8]
+			tempNode.username = nodeTuple[9]
 
 			self.nodes.append(tempNode)
 			self.nodesCopy.append(tempNode)
@@ -888,6 +903,7 @@ class Mysql(_Storage):
 		self.cursor.execute("SELECT "
 			+ "id, "
 			+ "nodeId, "
+			+ "remoteSensorId, "
 			+ "description, "
 			+ "state, "
 			+ "lastStateUpdated, "
@@ -899,10 +915,11 @@ class Mysql(_Storage):
 			tempSensor = Sensor()
 			tempSensor.sensorId = sensorTuple[0]
 			tempSensor.nodeId = sensorTuple[1]
-			tempSensor.description = sensorTuple[2]
-			tempSensor.state = sensorTuple[3]
-			tempSensor.lastStateUpdated = sensorTuple[4]
-			tempSensor.alertDelay = sensorTuple[5]
+			tempSensor.remoteSensorId = sensorTuple[2]
+			tempSensor.description = sensorTuple[3]
+			tempSensor.state = sensorTuple[4]
+			tempSensor.lastStateUpdated = sensorTuple[5]
+			tempSensor.alertDelay = sensorTuple[6]
 			tempSensor.serverTime = serverTime
 
 			self.cursor.execute("SELECT "
@@ -921,6 +938,7 @@ class Mysql(_Storage):
 		self.cursor.execute("SELECT "
 			+ "id, "
 			+ "nodeId, "
+			+ "remoteAlertId, "
 			+ "description "
 			+ "FROM alerts")
 		result = self.cursor.fetchall()
@@ -929,7 +947,8 @@ class Mysql(_Storage):
 			tempAlert = Alert()
 			tempAlert.alertId = alertTuple[0]
 			tempAlert.nodeId = alertTuple[1]
-			tempAlert.description = alertTuple[2]
+			tempAlert.remoteAlertId = alertTuple[2]
+			tempAlert.description = alertTuple[3]
 
 			self.cursor.execute("SELECT "
 				+ "alertLevel "
@@ -965,9 +984,7 @@ class Mysql(_Storage):
 		self.cursor.execute("SELECT "
 			+ "alertLevel, "
 			+ "name, "
-			+ "triggerAlways, "
-			+ "smtpActivated, "
-			+ "toAddr "
+			+ "triggerAlways "
 			+ "FROM alertLevels")
 		result = self.cursor.fetchall()
 
@@ -976,8 +993,6 @@ class Mysql(_Storage):
 			tempAlertLevel.level = alertLevelTuple[0]
 			tempAlertLevel.name = alertLevelTuple[1]
 			tempAlertLevel.triggerAlways = (alertLevelTuple[2] == 1)
-			tempAlertLevel.smtpActivated = (alertLevelTuple[3] == 1)
-			tempAlertLevel.toAddr = alertLevelTuple[4]
 
 			self.alertLevels.append(tempAlertLevel)
 			self.alertLevelsCopy.append(tempAlertLevel)
@@ -1056,7 +1071,8 @@ class Mysql(_Storage):
 				+ "version DOUBLE NOT NULL, "
 				+ "rev INTEGER NOT NULL, "
 				+ "newestVersion DOUBLE NOT NULL, "
-				+ "newestRev INTEGER NOT NULL)")
+				+ "newestRev INTEGER NOT NULL, "
+				+ "username VARCHAR(255) NOT NULL)")
 
 		# create sensors table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
@@ -1065,6 +1081,7 @@ class Mysql(_Storage):
 			self.cursor.execute("CREATE TABLE sensors ("
 				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 				+ "nodeId INTEGER NOT NULL, "
+				+ "remoteSensorId INTEGER NOT NULL, "
 				+ "description VARCHAR(255) NOT NULL, "
 				+ "state INTEGER NOT NULL, "
 				+ "lastStateUpdated INTEGER NOT NULL, "
@@ -1110,6 +1127,7 @@ class Mysql(_Storage):
 			self.cursor.execute("CREATE TABLE alerts ("
 				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 				+ "nodeId INTEGER NOT NULL, "
+				+ "remoteAlertId INTEGER NOT NULL, "
 				+ "description VARCHAR(255) NOT NULL, "
 				+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
@@ -1140,9 +1158,7 @@ class Mysql(_Storage):
 			self.cursor.execute("CREATE TABLE alertLevels ("
 				+ "alertLevel INTEGER PRIMARY KEY, "
 				+ "name VARCHAR(255) NOT NULL, "
-				+ "triggerAlways INTEGER NOT NULL, "
-				+ "smtpActivated INTEGER NOT NULL, "
-				+ "toAddr VARCHAR(255) NOT NULL)")
+				+ "triggerAlways INTEGER NOT NULL)")
 
 		# create events table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'events'")
@@ -1297,11 +1313,13 @@ class Mysql(_Storage):
 				+ "oldInstance VARCHAR(255) NOT NULL, "
 				+ "oldVersion DOUBLE NOT NULL, "
 				+ "oldRev INTEGER NOT NULL, "
+				+ "oldUsername VARCHAR(255) NOT NULL, "
 				+ "newHostname VARCHAR(255) NOT NULL, "
 				+ "newNodeType VARCHAR(255) NOT NULL, "
 				+ "newInstance VARCHAR(255) NOT NULL, "
 				+ "newVersion DOUBLE NOT NULL, "
 				+ "newRev INTEGER NOT NULL, "
+				+ "newUsername VARCHAR(255) NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsChangeSensor table if it does not exist
@@ -1313,8 +1331,10 @@ class Mysql(_Storage):
 				+ "eventId INTEGER NOT NULL, "
 				+ "oldAlertDelay INTEGER NOT NULL, "
 				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "oldRemoteSensorId INTEGER NOT NULL, "
 				+ "newAlertDelay INTEGER NOT NULL, "
 				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "newRemoteSensorId INTEGER NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsChangeAlert table if it does not exist
@@ -1325,7 +1345,9 @@ class Mysql(_Storage):
 				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 				+ "eventId INTEGER NOT NULL, "
 				+ "oldDescription VARCHAR(255) NOT NULL, "
+				+ "oldRemoteAlertId INTEGER NOT NULL, "
 				+ "newDescription VARCHAR(255) NOT NULL, "
+				+ "newRemoteAlertId INTEGER NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsChangeManager table if it does not exist
@@ -1657,11 +1679,13 @@ class Mysql(_Storage):
 						+ "version = %s, "
 						+ "rev = %s, "
 						+ "newestVersion = %s, "
-						+ "newestRev = %s "
+						+ "newestRev = %s, "
+						+ "username = %s "
 						+ "WHERE id = %s",
 						(node.hostname, node.nodeType, node.instance,
 						node.connected, node.version, node.rev, 
-						node.newestVersion, node.newestRev, node.nodeId))
+						node.newestVersion, node.newestRev, node.username,
+						node.nodeId))
 				except Exception as e:
 					logging.exception("[%s]: Not able to update node."
 						% self.fileName)
@@ -1677,12 +1701,14 @@ class Mysql(_Storage):
 				try:
 					self.cursor.execute("UPDATE sensors SET "
 						+ "nodeId = %s, "
+						+ "remoteSensorId = %s, "
 						+ "description = %s, "
 						+ "state = %s ,"
 						+ "lastStateUpdated = %s ,"
 						+ "alertDelay = %s "
 						+ "WHERE id = %s",
-						(sensor.nodeId, sensor.description, sensor.state,
+						(sensor.nodeId, sensor.remoteSensorId,
+						sensor.description, sensor.state,
 						sensor.lastStateUpdated, sensor.alertDelay,
 						sensor.sensorId))
 
@@ -1712,9 +1738,11 @@ class Mysql(_Storage):
 				try:
 					self.cursor.execute("UPDATE alerts SET "
 						+ "nodeId = %s, "
+						+ "remoteAlertId = %s, "
 						+ "description = %s "
 						+ "WHERE id = %s",
-						(alert.nodeId, alert.description, alert.alertId))
+						(alert.nodeId, alert.remoteAlertId, 
+						alert.description, alert.alertId))
 
 					self.cursor.execute("DELETE FROM alertsAlertLevels "
 						+ "WHERE alertId = %s",
@@ -1761,12 +1789,9 @@ class Mysql(_Storage):
 				try:
 					self.cursor.execute("UPDATE alertLevels SET "
 						+ "name = %s, "
-						+ "triggerAlways = %s, "
-						+ "smtpActivated = %s, "
-						+ "toAddr = %s "
+						+ "triggerAlways = %s "
 						+ "WHERE alertLevel = %s",
 						(alertLevel.name, alertLevel.triggerAlways,
-						alertLevel.smtpActivated, alertLevel.toAddr,
 						alertLevel.level))
 				except Exception as e:
 					logging.exception("[%s]: Not able to update alert level."
@@ -1814,11 +1839,12 @@ class Mysql(_Storage):
 						+ "version, "
 						+ "rev, "
 						+ "newestVersion, "
-						+ "newestRev) "
-						+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+						+ "newestRev, "
+						+ "username) "
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
 						(node.nodeId, node.hostname, node.nodeType,
 						node.instance, node.connected, node.version, node.rev,
-						node.newestVersion, node.newestRev))
+						node.newestVersion, node.newestRev, node.username))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node."
 						% self.fileName)
@@ -1837,12 +1863,14 @@ class Mysql(_Storage):
 					self.cursor.execute("INSERT INTO sensors ("
 						+ "id, "
 						+ "nodeId, "
+						+ "remoteSensorId, "
 						+ "description, "
 						+ "state, "
 						+ "lastStateUpdated, "
 						+ "alertDelay) "
-						+ "VALUES (%s, %s, %s, %s, %s, %s)",
-						(sensor.sensorId, sensor.nodeId, sensor.description,
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+						(sensor.sensorId, sensor.nodeId,
+						sensor.remoteSensorId, sensor.description,
 						sensor.state, sensor.lastStateUpdated,
 						sensor.alertDelay))
 
@@ -1909,9 +1937,11 @@ class Mysql(_Storage):
 					self.cursor.execute("INSERT INTO alerts ("
 						+ "id, "
 						+ "nodeId, "
+						+ "remoteAlertId, "
 						+ "description) "
-						+ "VALUES (%s, %s, %s)",
-						(alert.alertId, alert.nodeId, alert.description))
+						+ "VALUES (%s, %s, %s, %s)",
+						(alert.alertId, alert.nodeId,
+						alert.remoteAlertId, alert.description))
 
 					for alertAlertLevel in alert.alertLevels:
 						self.cursor.execute("INSERT INTO alertsAlertLevels ("
@@ -1960,13 +1990,10 @@ class Mysql(_Storage):
 					self.cursor.execute("INSERT INTO alertLevels ("
 						+ "alertLevel, "
 						+ "name, "
-						+ "triggerAlways, "
-						+ "smtpActivated, "
-						+ "toAddr) "
-						+ "VALUES (%s, %s, %s, %s, %s)",
+						+ "triggerAlways) "
+						+ "VALUES (%s, %s, %s)",
 						(alertLevel.level, alertLevel.name,
-						alertLevel.triggerAlways, alertLevel.smtpActivated,
-						alertLevel.toAddr))
+						alertLevel.triggerAlways))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add alert level."
 						% self.fileName)

@@ -124,8 +124,6 @@ class SensorAlert:
 class AlertLevel:
 
 	def __init__(self):
-		self.smtpActivated = None
-		self.toAddr = None
 		self.level = None
 		self.name = None
 		self.triggerAlways = None
@@ -365,6 +363,7 @@ class ServerEventHandler:
 					node.connected = recvNode.connected
 					node.version = recvNode.version
 					node.rev = recvNode.rev
+					node.username = recvNode.username
 					found = True
 					break
 			# when not found => add node to list
@@ -401,6 +400,7 @@ class ServerEventHandler:
 					sensor.checked = True
 
 					sensor.nodeId = recvSensor.nodeId
+					sensor.remoteSensorId = recvSensor.remoteSensorId
 					sensor.alertDelay = recvSensor.alertDelay
 					sensor.alertLevels = recvSensor.alertLevels
 					sensor.description = recvSensor.description
@@ -472,6 +472,7 @@ class ServerEventHandler:
 				if alert.alertId == recvAlert.alertId:
 					alert.checked = True
 					alert.nodeId = recvAlert.nodeId
+					alert.remoteAlertId = recvAlert.remoteAlertId
 					alert.alertLevels = recvAlert.alertLevels
 					alert.description = recvAlert.description
 					found = True
@@ -506,8 +507,6 @@ class ServerEventHandler:
 				# and update information
 				if alertLevel.level == recvAlertLevel.level:
 					alertLevel.checked = True
-					alertLevel.smtpActivated = recvAlertLevel.smtpActivated
-					alertLevel.toAddr = recvAlertLevel.toAddr
 					alertLevel.name = recvAlertLevel.name
 					alertLevel.triggerAlways = recvAlertLevel.triggerAlways
 					alertLevel.rulesActivated = recvAlertLevel.rulesActivated

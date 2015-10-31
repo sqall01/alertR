@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.300">
+<config version="0.301">
 
 	<!--
 		in this section general options are configured
@@ -168,11 +168,6 @@
 			urwidAlertLevelShowTriggerAlways - should the "trigger always"
 				information of an alert level be shown or not
 				("True" or "False")
-			urwidAlertLevelShowSmtpActivated - should the "smtp activated"
-				information of an alert level be shown or not
-				("True" or "False")
-			urwidAlertLevelShowToAddr - should the "to addr" information
-				of an alert level be shown or not ("True" or "False")
 			timeShowSensorAlert - the time in seconds the received sensor
 				alerts should be displayed in a list before they are removed
 			maxCountShowSensorAlert - the maximum count of sensor
@@ -194,8 +189,6 @@
 			urwidSensorShowAlertLevels="False"
 			urwidAlertShowAlertLevels="False"
 			urwidAlertLevelShowTriggerAlways="True"
-			urwidAlertLevelShowSmtpActivated="False"
-			urwidAlertLevelShowToAddr="True"
 			timeShowSensorAlert="3600"
 			maxCountShowSensorAlert="15"
 			maxCountShowSensorsPerPage="7"

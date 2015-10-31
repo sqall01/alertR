@@ -136,11 +136,13 @@ class EventChangeNode(Event):
 		self.oldInstance = None
 		self.oldVersion = None
 		self.oldRev = None
+		self.oldUsername = None
 		self.newHostname = None
 		self.newNodeType = None
 		self.newInstance = None
 		self.newVersion = None
 		self.newRev = None
+		self.newUsername = None
 
 
 # class that represents a sensor has changed event
@@ -150,8 +152,10 @@ class EventChangeSensor(Event):
 		Event.__init__(self, timeOccurred)
 		self.oldAlertDelay = None
 		self.oldDescription = None
+		self.oldRemoteSensorId = None
 		self.newAlertDelay = None
 		self.newDescription = None
+		self.newRemoteSensorId = None
 
 
 # class that represents an alert has changed event
@@ -160,7 +164,9 @@ class EventChangeAlert(Event):
 	def __init__(self, timeOccurred):
 		Event.__init__(self, timeOccurred)
 		self.oldDescription = None
+		self.oldRemoteAlertId = None
 		self.newDescription = None
+		self.newRemoteAlertId = None
 
 
 # class that represents a manager has changed event
