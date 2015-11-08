@@ -14,6 +14,13 @@ import time
 import urwid
 
 
+class FocusedElement:
+	sensors = 0
+	alerts = 1
+	managers = 3
+	alertLevels = 4
+
+
 # this class is used by the urwid console thread
 # to process actions concurrently and do not block the console thread
 class ScreenActionExecuter(threading.Thread):
@@ -273,15 +280,18 @@ class SensorUrwid:
 		if node.connected == 0:
 			self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox,
 				"disconnected")
+			self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
 
 		# check if the node is connected and no sensor alert is triggered
 		elif (node.connected == 1
 			and sensor.state != 1):
 			self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "connected")
+			self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
 		# last possible combination is a triggered sensor alert
 		else:
 			self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "sensoralert")
+			self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
 		# check if sensor has timed out and change color accordingly
 		# and consider the state of the sensor (1 = triggered)
@@ -290,6 +300,7 @@ class SensorUrwid:
 			and sensor.state != 1):
 			self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox,
 				"timedout")
+			self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
 		# store reference to sensor object and node object
 		self.sensor = sensor
@@ -324,9 +335,11 @@ class SensorUrwid:
 		if (connected == 0
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "disconnected"})
+			self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
 		elif (connected == 1
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "connected"})
+			self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
 		# check if sensor has timed out and change color accordingly
 		# and consider the state of the sensor (1 = triggered)
@@ -334,6 +347,7 @@ class SensorUrwid:
 			- (2 * self.connectionTimeout))
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "timedout"})
+			self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
 
 	# this function updates the alert delay of the object
@@ -362,6 +376,7 @@ class SensorUrwid:
 			- (2 * self.connectionTimeout))
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "timedout"})
+			self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
 
 	# this function updates the state of the object
@@ -376,18 +391,22 @@ class SensorUrwid:
 		# check if the node is connected and change the color accordingly
 		if self.node.connected == 0:
 			self.sensorUrwidMap.set_attr_map({None: "disconnected"})
+			self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
 
 		else:
 			# check to which state the color should be changed
 			if state == 0:
 				self.sensorUrwidMap.set_attr_map({None: "connected"})
+				self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 				# check if the sensor timed out and change 
 				# the color accordingly
 				if (self.sensor.lastStateUpdated < (self.sensor.serverTime
 					- (2 * self.connectionTimeout))):
 					self.sensorUrwidMap.set_attr_map({None: "timedout"})
+					self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 			elif state == 1:
 				self.sensorUrwidMap.set_attr_map({None: "sensoralert"})
+				self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
 
 	# this function updates the alert levels of the object
@@ -437,6 +456,7 @@ class SensorUrwid:
 	# has failed
 	def setConnectionFail(self):
 		self.sensorUrwidMap.set_attr_map({None: "connectionfail"})
+		self.sensorUrwidMap.set_focus_map({None: "connectionfail_focus"})
 
 
 # this class is an urwid object for an alert
@@ -484,8 +504,10 @@ class AlertUrwid:
 		if self.node.connected == 0:
 			self.alertUrwidMap = urwid.AttrMap(paddedAlertBox,
 				"disconnected")
+			self.alertUrwidMap.set_focus_map({None: "disconnected_focus"})
 		else:
 			self.alertUrwidMap = urwid.AttrMap(paddedAlertBox, "connected")
+			self.alertUrwidMap.set_focus_map({None: "connected_focus"})
 
 
 	# this function returns the final urwid widget that is used
@@ -527,8 +549,10 @@ class AlertUrwid:
 		# change color according to connection state
 		if connected == 0:
 			self.alertUrwidMap.set_attr_map({None: "disconnected"})
+			self.alertUrwidMap.set_focus_map({None: "disconnected_focus"})
 		else:
 			self.alertUrwidMap.set_attr_map({None: "connected"})
+			self.alertUrwidMap.set_focus_map({None: "connected_focus"})
 
 
 	# this function updates all internal widgets and checks if
@@ -554,6 +578,7 @@ class AlertUrwid:
 	# has failed
 	def setConnectionFail(self):
 		self.alertUrwidMap.set_attr_map({None: "connectionfail"})
+		self.alertUrwidMap.set_focus_map({None: "connectionfail_focus"})
 
 
 # this class is an urwid object for a manager
@@ -581,8 +606,10 @@ class ManagerUrwid:
 		if self.node.connected == 0:
 			self.managerUrwidMap = urwid.AttrMap(paddedManagerBox,
 				"disconnected")
+			self.managerUrwidMap.set_focus_map({None: "disconnected_focus"})
 		else:
 			self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "connected")
+			self.managerUrwidMap.set_focus_map({None: "connected_focus"})
 
 
 	# this function returns the final urwid widget that is used
@@ -603,8 +630,10 @@ class ManagerUrwid:
 		# change color according to connection state
 		if connected == 0:
 			self.managerUrwidMap.set_attr_map({None: "disconnected"})
+			self.managerUrwidMap.set_focus_map({None: "disconnected_focus"})
 		else:
 			self.managerUrwidMap.set_attr_map({None: "connected"})
+			self.managerUrwidMap.set_focus_map({None: "connected_focus"})
 
 
 	# this function updates all internal widgets and checks if
@@ -629,6 +658,7 @@ class ManagerUrwid:
 	# has failed
 	def setConnectionFail(self):
 		self.managerUrwidMap.set_attr_map({None: "connectionfail"})
+		self.managerUrwidMap.set_focus_map({None: "connectionfail_focus"})
 
 
 # this class is an urwid object for an alert level
@@ -666,6 +696,7 @@ class AlertLevelUrwid:
 		# set the color of the urwid object
 		self.alertLevelUrwidMap = urwid.AttrMap(paddedAlertLevelBox,
 			"greenColor")
+		self.alertLevelUrwidMap.set_focus_map({None: "greenColor_focus"})
 
 
 	# this function returns the final urwid widget that is used
@@ -691,16 +722,19 @@ class AlertLevelUrwid:
 	# this function changes the color of this urwid object to red
 	def turnRed(self):
 		self.alertLevelUrwidMap.set_attr_map({None: "redColor"})
+		self.alertLevelUrwidMap.set_focus_map({None: "redColor_focus"})
 
 
 	# this function changes the color of this urwid object to green
 	def turnGreen(self):
 		self.alertLevelUrwidMap.set_attr_map({None: "greenColor"})
+		self.alertLevelUrwidMap.set_focus_map({None: "greenColor_focus"})
 
 
 	# this function changes the color of this urwid object to gray
 	def turnGray(self):
 		self.alertLevelUrwidMap.set_attr_map({None: "grayColor"})
+		self.alertLevelUrwidMap.set_focus_map({None: "grayColor_focus"})
 
 
 	# this function changes the color of this urwid object to the
@@ -731,6 +765,7 @@ class AlertLevelUrwid:
 	# has failed
 	def setConnectionFail(self):
 		self.alertLevelUrwidMap.set_attr_map({None: "connectionfail"})
+		self.alertLevelUrwidMap.set_focus_map({None: "connectionfail_focus"})
 
 
 # this class is an urwid object for a sensor alert
@@ -906,7 +941,245 @@ class Console:
 		# the file descriptor for the urwid callback to update the screen
 		self.screenFd = None
 
+		# the main render loop for the interactive session
+		self.mainLoop = None
+
 		
+
+
+
+
+		# TODO
+		self.currentFocused = None
+
+		self.finalBody = None
+		self.rightDisplayPart = None
+		self.leftDisplayPart = None
+		self.sensorsKeyBindings = None
+		self.managersKeyBindings = None
+		self.alertsKeyBindings = None
+		self.alertLevelsKeyBindings = None
+		self.sensorsBox = None
+		self.alertsBox = None
+		self.managersBox = None
+		self.alertLevelsBox = None
+
+
+	# set the focus to the sensors
+	def _focusSensors(self):
+		logging.debug("[%s]: Focus sensors." % self.fileName)
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.finalBody.contents:
+			if i[0] == self.leftDisplayPart:
+				break
+			idx += 1
+		if idx >= len(self.finalBody.contents):
+			return
+		self.finalBody.focus_position = idx
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.leftDisplayPart.contents:
+			if i[0] == self.sensorsBox:
+				break
+			idx += 1
+		if idx >= len(self.leftDisplayPart.contents):
+			return
+		self.leftDisplayPart.focus_position = idx
+
+		# TODO check if it crashes when no elements are available
+		self.sensorsGrid.focus_position = 0
+
+
+	# set the focus to the alerts
+	def _focusAlerts(self):
+		logging.debug("[%s]: Focus alerts." % self.fileName)
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.finalBody.contents:
+			if i[0] == self.rightDisplayPart:
+				break
+			idx += 1
+		if idx >= len(self.finalBody.contents):
+			return
+		self.finalBody.focus_position = idx
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.rightDisplayPart.contents:
+			if i[0] == self.alertsBox:
+				break
+			idx += 1
+		if idx >= len(self.rightDisplayPart.contents):
+			return
+		self.rightDisplayPart.focus_position = idx
+
+		# TODO check if it crashes when no elements are available
+		self.alertsGrid.focus_position = 0
+
+
+	# set the focus to the managers
+	def _focusManagers(self):
+		logging.debug("[%s]: Focus managers." % self.fileName)
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.finalBody.contents:
+			if i[0] == self.leftDisplayPart:
+				break
+			idx += 1
+		if idx >= len(self.finalBody.contents):
+			return
+		self.finalBody.focus_position = idx
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.leftDisplayPart.contents:
+			if i[0] == self.managersBox:
+				break
+			idx += 1
+		if idx >= len(self.leftDisplayPart.contents):
+			return
+		self.leftDisplayPart.focus_position = idx
+
+		# TODO check if it crashes when no elements are available
+		self.managersGrid.focus_position = 0
+
+
+	# set the focus to the alert levels
+	def _focusAlertLevels(self):
+		logging.debug("[%s]: Focus alert levels." % self.fileName)
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.finalBody.contents:
+			if i[0] == self.rightDisplayPart:
+				break
+			idx += 1
+		if idx >= len(self.finalBody.contents):
+			return
+		self.finalBody.focus_position = idx
+
+		# get index of element to focus and focus it
+		idx = 0
+		for i in self.rightDisplayPart.contents:
+			if i[0] == self.alertLevelsBox:
+				break
+			idx += 1
+		if idx >= len(self.rightDisplayPart.contents):
+			return
+		self.rightDisplayPart.focus_position = idx
+
+		# TODO check if it crashes when no elements are available
+		self.alertLevelsGrid.focus_position = 0
+
+
+	# switches focus to the next element group
+	def _switchFocusedElementGroup(self):
+
+		if self.currentFocused == FocusedElement.sensors:
+			self.currentFocused = FocusedElement.alerts
+			self._focusAlerts()
+			self.alertsKeyBindings.set_text(
+				"Keys: b - previous page, n - next page")
+			self.managersKeyBindings.set_text("Keys: None")
+			self.alertLevelsKeyBindings.set_text("Keys: None")
+			self.sensorsKeyBindings.set_text("Keys: None")
+
+		elif self.currentFocused == FocusedElement.alerts:
+			self.currentFocused = FocusedElement.managers
+			self._focusManagers()
+			self.alertsKeyBindings.set_text("Keys: None")
+			self.managersKeyBindings.set_text(
+				"Keys: b - previous page, n - next page")
+			self.alertLevelsKeyBindings.set_text("Keys: None")
+			self.sensorsKeyBindings.set_text("Keys: None")
+
+		elif self.currentFocused == FocusedElement.managers:
+			self.currentFocused = FocusedElement.alertLevels
+			self._focusAlertLevels()
+			self.alertsKeyBindings.set_text("Keys: None")
+			self.managersKeyBindings.set_text("Keys: None")
+			self.alertLevelsKeyBindings.set_text(
+				"Keys: b - previous page, n - next page")
+			self.sensorsKeyBindings.set_text("Keys: None")
+
+		else:
+			self.currentFocused = FocusedElement.sensors
+			self._focusSensors()
+			self.alertsKeyBindings.set_text("Keys: None")
+			self.managersKeyBindings.set_text("Keys: None")
+			self.alertLevelsKeyBindings.set_text("Keys: None")
+			self.sensorsKeyBindings.set_text(
+				"Keys: b - previous page, n - next page")
+
+
+	def _moveFocus(self, key):
+
+		# get current focused element group
+		if self.currentFocused == FocusedElement.sensors:
+			currentElements = self.sensorsGrid
+		elif self.currentFocused == FocusedElement.alerts:
+			currentElements = self.alertsGrid
+		elif self.currentFocused == FocusedElement.managers:
+			currentElements = self.managersGrid
+		else:
+			currentElements = self.alertLevelsGrid
+
+
+		# TODO check what happens if no elements are in the group
+		currPos = None
+		if len(currentElements.contents) != 0:
+			currPos = currentElements.focus_position
+
+
+		# get the width we need for calculating the current
+		# elements per row
+		calcCellWidth = currentElements.cell_width + 1
+
+		# use the half of the total width for calculations
+		# (current design splits window in to halfs)
+		calcTotalWidth = (self.mainLoop.screen.get_cols_rows()[0]-1) / 2
+
+		# calculate the cells that are displayed per row
+		cellsPerRow = calcTotalWidth / calcCellWidth
+		if cellsPerRow == 0:
+			cellsPerRow += 1
+
+		# move focus to the element above in the grid
+		if key == "up":
+			currPos = currPos - cellsPerRow
+			if currPos >= 0:
+				currentElements.focus_position = currPos
+
+		# move focus to the element below in the grid
+		elif key == "down":
+			currPos = currPos + cellsPerRow
+			if currPos < len(currentElements.contents):
+				currentElements.focus_position = currPos
+
+		# move focus to the element left in the grid
+		elif key == "left":
+			tempPos = currPos - 1
+			if (tempPos >= 0
+				and currPos % cellsPerRow != 0):
+				currentElements.focus_position = tempPos
+
+		# move focus to the element right in the grid
+		elif key == "right":
+			tempPos = currPos + 1
+			if (tempPos < len(currentElements.contents)
+				and (currPos+1) % cellsPerRow != 0):
+				currentElements.focus_position = tempPos
+
+
+
+
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -1286,7 +1559,7 @@ class Console:
 	def handleKeypress(self, key):
 
 		# check if key 1 is pressed => send alert system activation to server 
-		if key in ['1']:
+		if key in ["1"]:
 			logging.info("[%s]: Activating alert system." % self.fileName)
 
 			# send option message to server via a thread to not block
@@ -1301,7 +1574,7 @@ class Console:
 			updateProcess.start()
 
 		# check if key 2 is pressed => send alert system deactivation to server
-		elif key in ['2']:
+		elif key in ["2"]:
 			logging.info("[%s]: Deactivating alert system." % self.fileName)
 
 			# send option message to server via a thread to not block
@@ -1316,40 +1589,87 @@ class Console:
 			updateProcess.start()
 
 		# check if key q/Q is pressed => shut down client
-		elif key in ['q', 'Q']:
+		elif key in ["q", "Q"]:
 			raise urwid.ExitMainLoop()
 
-		# check if key g/G is pressed => show next page of sensors
-		elif key in ['g', 'G']:
-			self._showSensorsNextPage()
+		# check if key b/B is pressed => show previous page of focused elements
+		elif key in ["b", "B"]:
 
-		# check if key f/F is pressed => show previous page of sensors
-		elif key in ['f', 'F']:
-			self._showSensorsPreviousPage()
+			if self.currentFocused == FocusedElement.sensors:
+				self._showSensorsPreviousPage()
 
-		# check if key j/J is pressed => show next page of alerts
-		elif key in ['j', 'J']:
-			self._showAlertsNextPage()
+			elif self.currentFocused == FocusedElement.alerts:
+				self._showAlertsPreviousPage()
 
-		# check if key h/H is pressed => show previous page of alerts
-		elif key in ['h', 'H']:
-			self._showAlertsPreviousPage()
+			elif self.currentFocused == FocusedElement.managers:
+				self._showManagersPreviousPage()
 
-		# check if key b/B is pressed => show next page of managers
-		elif key in ['b', 'B']:
-			self._showManagersNextPage()
+			else:
+				self._showAlertLevelsPreviousPage()
 
-		# check if key v/V is pressed => show previous page of managers
-		elif key in ['v', 'V']:
-			self._showManagersPreviousPage()
+		# check if key n/N is pressed => show next page of focused elements
+		elif key in ["n", "N"]:
 
-		# check if key m/M is pressed => show next page of alert levels
-		elif key in ['m', 'M']:
-			self._showAlertLevelsNextPage()
+			if self.currentFocused == FocusedElement.sensors:
+				self._showSensorsNextPage()
 
-		# check if key n/N is pressed => show previous page of alert levels
-		elif key in ['n', 'N']:
-			self._showAlertLevelsPreviousPage()
+			elif self.currentFocused == FocusedElement.alerts:
+				self._showAlertsNextPage()
+
+			elif self.currentFocused == FocusedElement.managers:
+				self._showManagersNextPage()
+
+			else:
+				self._showAlertLevelsNextPage()
+
+		# change focus to next element group
+		# order: (sensors, alerts, managers, alert levels)
+		elif key in ["tab"]:
+			self._switchFocusedElementGroup()
+
+		# move focus to next element in the element group
+		elif key in ["up", "down", "left", "right"]:
+			self._moveFocus(key)
+
+
+
+
+
+
+		# TODO
+		# open pop up with information
+		elif key in ["enter"]:
+
+			logging.error("enter")
+
+
+
+			# get current focused element group
+			if self.currentFocused == FocusedElement.sensors:
+				currentElements = self.sensorsGrid
+			elif self.currentFocused == FocusedElement.alerts:
+				currentElements = self.alertsGrid
+			elif self.currentFocused == FocusedElement.managers:
+				currentElements = self.managersGrid
+			else:
+				currentElements = self.alertLevelsGrid
+
+
+
+			# TODO check what happens if no elements are in the group
+			currPos = None
+			if len(currentElements.contents) != 0:
+				currPos = currentElements.focus_position
+
+
+			logging.error(currPos)
+
+
+
+
+
+
+
 
 		return True
 
@@ -1419,12 +1739,12 @@ class Console:
 		# generate footer text for sensors box
 		tempText = "Page 1 / %d " % sensorPageCount 
 		self.sensorsFooter = urwid.Text(tempText, align='center')
-		keyBindings = urwid.Text(
-			"Key bindings: f - previous page, g - next page", align='center')
+		self.sensorsKeyBindings = urwid.Text(
+			"Keys: b - previous page, n - next page", align='center')
 
 		# build box around the sensor grid with title
-		sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
-			urwid.Divider(), self.sensorsFooter, keyBindings]),
+		self.sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
+			urwid.Divider(), self.sensorsFooter, self.sensorsKeyBindings]),
 			title="sensors")
 
 		# generate all manager urwid objects
@@ -1482,15 +1802,15 @@ class Console:
 		# generate footer text for sensors box
 		tempText = "Page 1 / %d " % managerPageCount 
 		self.managersFooter = urwid.Text(tempText, align='center')
-		keyBindings = urwid.Text(
-			"Key bindings: v - previous page, b - next page", align='center')
+		self.managersKeyBindings = urwid.Text(
+			"Keys: None", align='center')
 
 		# build box around the manager grid with title
-		managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
-			urwid.Divider(), self.managersFooter, keyBindings]),
+		self.managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
+			urwid.Divider(), self.managersFooter, self.managersKeyBindings]),
 			title="manager clients")
 
-		leftDisplayPart = urwid.Pile([sensorsBox, managersBox])
+		self.leftDisplayPart = urwid.Pile([self.sensorsBox, self.managersBox])
 
 		# generate all alert urwid objects
 		for alert in self.alerts:
@@ -1548,12 +1868,12 @@ class Console:
 		# generate footer text for sensors box
 		tempText = "Page 1 / %d " % alertPageCount 
 		self.alertsFooter = urwid.Text(tempText, align='center')
-		keyBindings = urwid.Text(
-			"Key bindings: h - previous page, j - next page", align='center')
+		self.alertsKeyBindings = urwid.Text(
+			"Keys: None", align='center')
 
 		# build box around the alert grid with title
-		alertsBox = urwid.LineBox(urwid.Pile([self.alertsGrid,
-			urwid.Divider(), self.alertsFooter, keyBindings]),
+		self.alertsBox = urwid.LineBox(urwid.Pile([self.alertsGrid,
+			urwid.Divider(), self.alertsFooter, self.alertsKeyBindings]),
 			title="alert clients")
 
 		# generate all alert level urwid objects
@@ -1598,12 +1918,13 @@ class Console:
 		# generate footer text for sensors box
 		tempText = "Page 1 / %d " % alertLevelPageCount 
 		self.alertLevelsFooter = urwid.Text(tempText, align='center')
-		keyBindings = urwid.Text(
-			"Key bindings: n - previous page, m - next page", align='center')
+		self.alertLevelsKeyBindings = urwid.Text(
+			"Keys: None", align='center')
 
 		# build box around the alert level grid with title
-		alertLevelsBox = urwid.LineBox(urwid.Pile([self.alertLevelsGrid,
-			urwid.Divider(), self.alertLevelsFooter, keyBindings]),
+		self.alertLevelsBox = urwid.LineBox(urwid.Pile([self.alertLevelsGrid,
+			urwid.Divider(), self.alertLevelsFooter,
+			self.alertLevelsKeyBindings]),
 			title="alert levels")
 
 		# create empty sensor alerts pile
@@ -1645,19 +1966,24 @@ class Console:
 			self.connectionStatus.get()])
 
 		# generate right part of the display
-		rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox,
-			alertsBox, alertLevelsBox])
+		self.rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox,
+			self.alertsBox, self.alertLevelsBox])
 
 		# generate final body object
-		finalBody = urwid.Columns([leftDisplayPart, rightDisplayPart])
-		fillerBody = urwid.Filler(finalBody, "top")
+		self.finalBody = urwid.Columns([self.leftDisplayPart,
+			self.rightDisplayPart])
+		fillerBody = urwid.Filler(self.finalBody, "top")
+
 
 		# generate header and footer
 		header = urwid.Text("alertR console manager", align="center")
-		footer = urwid.Text("Key bindings: "
+		footer = urwid.Text("Keys: "
 			+ "1 - activate, "
 			+ "2 - deactivate, "
-			+ "q - quit")
+			+ "q - quit, "
+			+ "tab - next elements, "
+			+ "arrow keys - move cursor, "
+			+ "enter - select element")
 
 		# build frame for final rendering
 		frame = urwid.Frame(fillerBody, footer=footer, header=header)
@@ -1665,26 +1991,50 @@ class Console:
 		# color palette
 		palette = [
 			('redColor', 'black', 'dark red'),
+			('redColor_focus', 'black', 'light red'),
 			('greenColor', 'black', 'dark green'),
-			('grayColor', 'black', 'light gray'),
-            ('connected', 'black', 'dark green'),
-            ('disconnected', 'black', 'dark red'),
-            ('sensoralert', 'black', 'yellow'),
-            ('connectionfail', 'black', 'light gray'),
-            ('timedout', 'black', 'light red'),
-            ('neutral', '', ''),
-        ]
+			('greenColor_focus', 'black', 'light green'),
+			('grayColor', 'black', 'dark gray'),
+			('grayColor_focus', 'black', 'light gray'),
+			('connected', 'black', 'dark green'),
+			('connected_focus', 'black', 'light green'),
+			('disconnected', 'black', 'dark red'),
+			('disconnected_focus', 'black', 'light red'),
+			('sensoralert', 'black', 'dark cyan'),
+			('sensoralert_focus', 'black', 'light cyan'),
+			('connectionfail', 'black', 'dark gray'),
+			('connectionfail_focus', 'black', 'light gray'),
+			('timedout', 'black', 'dark magenta'),
+			('timedout_normal', 'black', 'light magenta'),
+			('neutral', '', ''),
+		]
 
-        # create urwid main loop for the rendering
-		loop = urwid.MainLoop(frame, palette=palette,
+
+
+		# TODO
+		# set focus on sensor (when no sensor available on alert, etc)
+
+
+		self.currentFocused = FocusedElement.sensors
+
+
+
+
+
+
+
+
+
+		# create urwid main loop for the rendering
+		self.mainLoop = urwid.MainLoop(frame, palette=palette,
 			unhandled_input=self.handleKeypress)
 
 		# create a file descriptor callback to give other
 		# threads the ability to communicate with the urwid thread
-		self.screenFd = loop.watch_pipe(self.screenCallback)
+		self.screenFd = self.mainLoop.watch_pipe(self.screenCallback)
 
 		# rut urwid loop
-		loop.run()
+		self.mainLoop.run()
 
 
 	# this function will be called from the urwid main loop
