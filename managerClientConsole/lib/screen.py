@@ -480,23 +480,29 @@ class SensorDetailedUrwid:
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Node"))
 		content.append(urwid.Divider("="))
-		self.nodePileWidget = self._createNodeWidgetList(node)
-		content.append(urwid.Pile(self.nodePileWidget))
+		temp = self._createNodeWidgetList(node)
+		self.nodePileWidget = urwid.Pile(temp)
+		content.append(self.nodePileWidget)
 
 		content.append(urwid.Divider())
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Sensor"))
 		content.append(urwid.Divider("="))
-		self.sensorPileWidget = self._createSensorWidgetList(sensor)
-		content.append(urwid.Pile(self.sensorPileWidget))
+		temp = self._createSensorWidgetList(sensor)
+		self.sensorPileWidget = urwid.Pile(temp)
+		content.append(self.sensorPileWidget)
 
 		content.append(urwid.Divider())
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Alert Levels"))
 		content.append(urwid.Divider("="))
-		self.alertLevelsPileWidget = \
-			self._createAlertLevelsWidgetList(alertLevels)
-		content.append(urwid.Pile(self.alertLevelsPileWidget))
+		temp = self._createAlertLevelsWidgetList(alertLevels)
+		self.alertLevelsPileWidget = None
+		if temp:
+			self.alertLevelsPileWidget = urwid.Pile(temp)
+		else:
+			self.alertLevelsPileWidget = urwid.Pile([urwid.Text("None")])
+		content.append(self.alertLevelsPileWidget)
 
 		# use ListBox here because it handles all the
 		# scrolling part automatically
@@ -512,7 +518,14 @@ class SensorDetailedUrwid:
 	def _createAlertLevelsWidgetList(self, alertLevels):
 
 		temp = list()
+		first = True
 		for alertLevel in alertLevels:
+
+			if first:
+				first = False
+			else:
+				temp.append(urwid.Divider())
+				temp.append(urwid.Divider("-"))
 
 			temp.extend(self._createAlertLevelWidgetList(alertLevel))
 
@@ -549,9 +562,6 @@ class SensorDetailedUrwid:
 			temp.append(urwid.Text("Yes"))
 		else:
 			temp.append(urwid.Text("Undefined"))
-
-		temp.append(urwid.Divider())
-		temp.append(urwid.Divider("-"))
 
 		return temp
 
@@ -788,23 +798,29 @@ class AlertDetailedUrwid:
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Node"))
 		content.append(urwid.Divider("="))
-		self.nodePileWidget = self._createNodeWidgetList(node)
-		content.append(urwid.Pile(self.nodePileWidget))
+		temp = self._createNodeWidgetList(node)
+		self.nodePileWidget = urwid.Pile(temp)
+		content.append(self.nodePileWidget)
 
 		content.append(urwid.Divider())
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Alert"))
 		content.append(urwid.Divider("="))
-		self.alertPileWidget = self._createAlertWidgetList(alert)
-		content.append(urwid.Pile(self.alertPileWidget))
+		temp = self._createAlertWidgetList(alert)
+		self.alertPileWidget = urwid.Pile(temp)
+		content.append(self.alertPileWidget)
 
 		content.append(urwid.Divider())
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Alert Levels"))
 		content.append(urwid.Divider("="))
-		self.alertLevelsPileWidget = \
-			self._createAlertLevelsWidgetList(alertLevels)
-		content.append(urwid.Pile(self.alertLevelsPileWidget))
+		temp = self._createAlertLevelsWidgetList(alertLevels)
+		self.alertLevelsPileWidget = None
+		if temp:
+			self.alertLevelsPileWidget = urwid.Pile(temp)
+		else:
+			self.alertLevelsPileWidget = urwid.Pile([urwid.Text("None")])
+		content.append(self.alertLevelsPileWidget)
 
 		# use ListBox here because it handles all the
 		# scrolling part automatically
@@ -820,7 +836,14 @@ class AlertDetailedUrwid:
 	def _createAlertLevelsWidgetList(self, alertLevels):
 
 		temp = list()
+		first = True
 		for alertLevel in alertLevels:
+
+			if first:
+				first = False
+			else:
+				temp.append(urwid.Divider())
+				temp.append(urwid.Divider("-"))
 
 			temp.extend(self._createAlertLevelWidgetList(alertLevel))
 
@@ -857,9 +880,6 @@ class AlertDetailedUrwid:
 			temp.append(urwid.Text("Yes"))
 		else:
 			temp.append(urwid.Text("Undefined"))
-
-		temp.append(urwid.Divider())
-		temp.append(urwid.Divider("-"))
 
 		return temp
 
@@ -1032,15 +1052,17 @@ class ManagerDetailedUrwid:
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Node"))
 		content.append(urwid.Divider("="))
-		self.nodePileWidget = self._createNodeWidgetList(node)
-		content.append(urwid.Pile(self.nodePileWidget))
+		temp = self._createNodeWidgetList(node)
+		self.nodePileWidget = urwid.Pile(temp)
+		content.append(self.nodePileWidget)
 
 		content.append(urwid.Divider())
 		content.append(urwid.Divider("="))
 		content.append(urwid.Text("Manager"))
 		content.append(urwid.Divider("="))
-		self.managerPileWidget = self._createManagerWidgetList(manager)
-		content.append(urwid.Pile(self.managerPileWidget))
+		temp = self._createManagerWidgetList(manager)
+		self.managerPileWidget = urwid.Pile(temp)
+		content.append(self.managerPileWidget)
 
 		# use ListBox here because it handles all the
 		# scrolling part automatically
@@ -1223,6 +1245,244 @@ class AlertLevelUrwid:
 	def setConnectionFail(self):
 		self.alertLevelUrwidMap.set_attr_map({None: "connectionfail"})
 		self.alertLevelUrwidMap.set_focus_map({None: "connectionfail_focus"})
+
+
+# this class is an urwid object for a detailed alert level output
+class AlertLevelDetailedUrwid:
+
+	def __init__(self, alertLevel, sensors, alerts):
+
+		# TODO
+		# needs an update mechanism in the case the detailed view is
+		# shown and values change
+
+		self.alertLevel = alertLevel
+
+		content = list()
+
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Alert Level"))
+		content.append(urwid.Divider("="))
+		temp = self._createAlertLevelWidgetList(alertLevel)
+		self.alertLevelPileWidget = urwid.Pile(temp)
+		content.append(self.alertLevelPileWidget)
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Alerts"))
+		content.append(urwid.Divider("="))
+		temp = self._createAlertsWidgetList(alerts)
+		self.alertsPileWidget = None
+		if temp:
+			self.alertsPileWidget = urwid.Pile(temp)
+		else:
+			self.alertsPileWidget = urwid.Pile([urwid.Text("None")])
+		content.append(self.alertsPileWidget)
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Sensors"))
+		content.append(urwid.Divider("="))
+		temp = self._createSensorsWidgetList(sensors)
+		self.sensorsPileWidget = None
+		if temp:
+			self.sensorsPileWidget = urwid.Pile(temp)
+		else:
+			self.sensorsPileWidget = urwid.Pile([urwid.Text("None")])
+		content.append(self.sensorsPileWidget)
+
+		# use ListBox here because it handles all the
+		# scrolling part automatically
+		detailedList = urwid.ListBox(content)
+		detailedFrame = urwid.Frame(detailedList,
+			footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+		self.detailedBox = urwid.LineBox(detailedFrame,
+			title="Alert Level: " + self.alertLevel.name)
+
+
+	# this function creates the detailed output of a alert level object
+	# in a list
+	def _createAlertLevelWidgetList(self, alertLevel):
+
+		temp = list()
+
+		temp.append(urwid.Text("Alert Level:"))
+		temp.append(urwid.Text(str(alertLevel.level)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Name:"))
+		temp.append(urwid.Text(alertLevel.name))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Trigger Always:"))
+		if alertLevel.triggerAlways == 0:
+			temp.append(urwid.Text("No"))
+		elif alertLevel.triggerAlways == 1:
+			temp.append(urwid.Text("Yes"))
+		else:
+			temp.append(urwid.Text("Undefined"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Rules Activated:"))
+		if alertLevel.rulesActivated == 0:
+			temp.append(urwid.Text("No"))
+		elif alertLevel.rulesActivated == 1:
+			temp.append(urwid.Text("Yes"))
+		else:
+			temp.append(urwid.Text("Undefined"))
+
+		return temp
+
+
+	# this function creates the detailed output of all alert objects
+	# in a list
+	def _createAlertsWidgetList(self, alerts):
+
+		temp = list()
+		first = True
+		for alert in alerts:
+
+			if first:
+				first = False
+			else:
+				temp.append(urwid.Divider())
+				temp.append(urwid.Divider("-"))
+
+			temp.extend(self._createAlertWidgetList(alert))
+
+		return temp
+
+
+	# this function creates the detailed output of a alert object
+	# in a list
+	def _createAlertWidgetList(self, alert):
+
+		temp = list()
+
+		temp.append(urwid.Text("Alert ID:"))
+		temp.append(urwid.Text(str(alert.alertId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Remote Alert ID:"))
+		temp.append(urwid.Text(str(alert.remoteAlertId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Description:"))
+		temp.append(urwid.Text(alert.description))
+
+		return temp
+
+
+	# this function creates the detailed output of a node object
+	# in a list
+	def _createNodeWidgetList(self, node):
+
+		temp = list()
+
+		temp.append(urwid.Text("Node ID:"))
+		temp.append(urwid.Text(str(node.nodeId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Username:"))
+		temp.append(urwid.Text(node.username))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Hostname:"))
+		temp.append(urwid.Text(node.hostname))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Node Type:"))
+		temp.append(urwid.Text(node.nodeType))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Instance:"))
+		temp.append(urwid.Text(node.instance))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Version:"))
+		versionWidget = urwid.Text(str(node.version) + "-" + str(node.rev))
+		temp.append(versionWidget)
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Connected:"))
+		if node.connected == 0:
+			temp.append(urwid.AttrMap(urwid.Text("False"),
+				"disconnected"))
+		elif node.connected == 1:
+			temp.append(urwid.AttrMap(urwid.Text("True"),
+				"neutral"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+
+		return temp
+
+
+	# this function creates the detailed output of all sensor objects
+	# in a list
+	def _createSensorsWidgetList(self, sensors):
+
+		temp = list()
+		first = True
+		for sensor in sensors:
+
+			if first:
+				first = False
+			else:
+				temp.append(urwid.Divider())
+				temp.append(urwid.Divider("-"))
+
+			temp.extend(self._createSensorWidgetList(sensor))
+
+		return temp
+
+
+	# this function creates the detailed output of a sensor object
+	# in a list
+	def _createSensorWidgetList(self, sensor):
+
+		temp = list()
+
+		temp.append(urwid.Text("Sensor ID:"))
+		temp.append(urwid.Text(str(sensor.sensorId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Remote Sensor ID:"))
+		temp.append(urwid.Text(str(sensor.remoteSensorId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Alert Delay:"))
+		temp.append(urwid.Text(str(sensor.alertDelay) + " Seconds"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Description:"))
+		temp.append(urwid.Text(sensor.description))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("State:"))
+		if sensor.state == 0:
+			temp.append(urwid.AttrMap(urwid.Text("Normal"),
+				"neutral"))
+		elif sensor.state == 1:
+			temp.append(urwid.AttrMap(urwid.Text("Triggered"),
+				"sensoralert"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Last Updated (Server Time):"))
+		lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S",
+			time.localtime(sensor.lastStateUpdated)))
+		temp.append(lastUpdatedWidget)
+
+		return temp
+
+
+	# this function returns the final urwid widget that is used
+	# to render this object
+	def get(self):
+		return self.detailedBox
 
 
 # this class is an urwid object for a sensor alert
@@ -2231,7 +2491,20 @@ class Console:
 						+ "for detailed view.")
 					return True
 
+				# get all sensors that belong to the focused alert level
+				currentSensors = list()
+				for sensor in self.sensors:
+					if currentElement.alertLevel.level in sensor.alertLevels:
+						currentSensors.append(sensor)
 
+				# get all alerts that belong to the focused alert level
+				currentAlerts = list()
+				for alert in self.alerts:
+					if currentElement.alertLevel.level in alert.alertLevels:
+						currentAlerts.append(alert)
+
+				tasta = AlertLevelDetailedUrwid(currentElement.alertLevel,
+					currentSensors, currentAlerts)
 
 
 
