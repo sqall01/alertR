@@ -459,6 +459,196 @@ class SensorUrwid:
 		self.sensorUrwidMap.set_focus_map({None: "connectionfail_focus"})
 
 
+# this class is an urwid object for a detailed sensor output
+class SensorDetailedUrwid:
+
+	def __init__(self, sensor, node, alertLevels):
+
+		# TODO
+		# needs an update mechanism in the case the detailed view is
+		# shown and values change (for example the sensor is triggered)
+
+		# TODO
+		# needs also a list of sensor alerts that are triggered by this
+		# sensor recently
+
+		self.node = node
+		self.sensor = sensor
+
+		content = list()
+
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Node"))
+		content.append(urwid.Divider("="))
+		self.nodePileWidget = self._createNodeWidgetList(node)
+		content.append(urwid.Pile(self.nodePileWidget))
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Sensor"))
+		content.append(urwid.Divider("="))
+		self.sensorPileWidget = self._createSensorWidgetList(sensor)
+		content.append(urwid.Pile(self.sensorPileWidget))
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Alert Levels"))
+		content.append(urwid.Divider("="))
+		self.alertLevelsPileWidget = \
+			self._createAlertLevelsWidgetList(alertLevels)
+		content.append(urwid.Pile(self.alertLevelsPileWidget))
+
+		# use ListBox here because it handles all the
+		# scrolling part automatically
+		detailedList = urwid.ListBox(content)
+		detailedFrame = urwid.Frame(detailedList,
+			footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+		self.detailedBox = urwid.LineBox(detailedFrame,
+			title="Sensor: " + self.sensor.description)
+
+
+	# this function creates the detailed output of all alert level objects
+	# in a list
+	def _createAlertLevelsWidgetList(self, alertLevels):
+
+		temp = list()
+		for alertLevel in alertLevels:
+
+			temp.extend(self._createAlertLevelWidgetList(alertLevel))
+
+		return temp
+
+
+	# this function creates the detailed output of a alert level object
+	# in a list
+	def _createAlertLevelWidgetList(self, alertLevel):
+
+		temp = list()
+
+		temp.append(urwid.Text("Alert Level:"))
+		temp.append(urwid.Text(str(alertLevel.level)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Name:"))
+		temp.append(urwid.Text(alertLevel.name))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Trigger Always:"))
+		if alertLevel.triggerAlways == 0:
+			temp.append(urwid.Text("No"))
+		elif alertLevel.triggerAlways == 1:
+			temp.append(urwid.Text("Yes"))
+		else:
+			temp.append(urwid.Text("Undefined"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Rules Activated:"))
+		if alertLevel.rulesActivated == 0:
+			temp.append(urwid.Text("No"))
+		elif alertLevel.rulesActivated == 1:
+			temp.append(urwid.Text("Yes"))
+		else:
+			temp.append(urwid.Text("Undefined"))
+
+		temp.append(urwid.Divider())
+		temp.append(urwid.Divider("-"))
+
+		return temp
+
+
+	# this function creates the detailed output of a node object
+	# in a list
+	def _createNodeWidgetList(self, node):
+
+		temp = list()
+
+		temp.append(urwid.Text("Node ID:"))
+		temp.append(urwid.Text(str(node.nodeId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Username:"))
+		temp.append(urwid.Text(node.username))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Hostname:"))
+		temp.append(urwid.Text(node.hostname))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Node Type:"))
+		temp.append(urwid.Text(node.nodeType))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Instance:"))
+		temp.append(urwid.Text(node.instance))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Version:"))
+		versionWidget = urwid.Text(str(node.version) + "-" + str(node.rev))
+		temp.append(versionWidget)
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Connected:"))
+		if node.connected == 0:
+			temp.append(urwid.AttrMap(urwid.Text("False"),
+				"disconnected"))
+		elif node.connected == 1:
+			temp.append(urwid.AttrMap(urwid.Text("True"),
+				"connected"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+
+		return temp
+
+
+	# this function creates the detailed output of a sensor object
+	# in a list
+	def _createSensorWidgetList(self, sensor):
+
+		temp = list()
+
+		temp.append(urwid.Text("Sensor ID:"))
+		temp.append(urwid.Text(str(sensor.sensorId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Remote Sensor ID:"))
+		temp.append(urwid.Text(str(sensor.remoteSensorId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Alert Delay:"))
+		temp.append(urwid.Text(str(sensor.alertDelay) + " Seconds"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Description:"))
+		temp.append(urwid.Text(sensor.description))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("State:"))
+		if sensor.state == 0:
+			temp.append(urwid.AttrMap(urwid.Text("Normal"),
+				"neutral"))
+		elif sensor.state == 1:
+			temp.append(urwid.AttrMap(urwid.Text("Triggered"),
+				"sensoralert"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Last Updated (Server Time):"))
+		lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S",
+			time.localtime(sensor.lastStateUpdated)))
+		temp.append(lastUpdatedWidget)
+
+		return temp
+
+
+	# this function returns the final urwid widget that is used
+	# to render this object
+	def get(self):
+		return self.detailedBox
+
+
 # this class is an urwid object for an alert
 class AlertUrwid:
 
@@ -963,6 +1153,8 @@ class Console:
 		self.alertsBox = None
 		self.managersBox = None
 		self.alertLevelsBox = None
+		self.mainFrame = None
+		self.detailView = False
 
 
 	# set the focus to the sensors
@@ -1560,77 +1752,90 @@ class Console:
 
 		# check if key 1 is pressed => send alert system activation to server 
 		if key in ["1"]:
-			logging.info("[%s]: Activating alert system." % self.fileName)
+			if not self.detailView:
+				logging.info("[%s]: Activating alert system."
+					% self.fileName)
 
-			# send option message to server via a thread to not block
-			# the urwid console thread
-			updateProcess = ScreenActionExecuter(self.globalData)
-			# set thread to daemon
-			# => threads terminates when main thread terminates	
-			updateProcess.daemon = True
-			updateProcess.sendOption = True
-			updateProcess.optionType = "alertSystemActive"
-			updateProcess.optionValue = 1
-			updateProcess.start()
+				# send option message to server via a thread to not block
+				# the urwid console thread
+				updateProcess = ScreenActionExecuter(self.globalData)
+				# set thread to daemon
+				# => threads terminates when main thread terminates	
+				updateProcess.daemon = True
+				updateProcess.sendOption = True
+				updateProcess.optionType = "alertSystemActive"
+				updateProcess.optionValue = 1
+				updateProcess.start()
 
 		# check if key 2 is pressed => send alert system deactivation to server
 		elif key in ["2"]:
-			logging.info("[%s]: Deactivating alert system." % self.fileName)
+			if not self.detailView:
+				logging.info("[%s]: Deactivating alert system."
+					% self.fileName)
 
-			# send option message to server via a thread to not block
-			# the urwid console thread
-			updateProcess = ScreenActionExecuter(self.globalData)
-			# set thread to daemon
-			# => threads terminates when main thread terminates	
-			updateProcess.daemon = True
-			updateProcess.sendOption = True
-			updateProcess.optionType = "alertSystemActive"
-			updateProcess.optionValue = 0
-			updateProcess.start()
+				# send option message to server via a thread to not block
+				# the urwid console thread
+				updateProcess = ScreenActionExecuter(self.globalData)
+				# set thread to daemon
+				# => threads terminates when main thread terminates	
+				updateProcess.daemon = True
+				updateProcess.sendOption = True
+				updateProcess.optionType = "alertSystemActive"
+				updateProcess.optionValue = 0
+				updateProcess.start()
 
 		# check if key q/Q is pressed => shut down client
 		elif key in ["q", "Q"]:
-			raise urwid.ExitMainLoop()
+			if not self.detailView:
+				raise urwid.ExitMainLoop()
 
 		# check if key b/B is pressed => show previous page of focused elements
 		elif key in ["b", "B"]:
+			if not self.detailView:
+				if self.currentFocused == FocusedElement.sensors:
+					self._showSensorsPreviousPage()
 
-			if self.currentFocused == FocusedElement.sensors:
-				self._showSensorsPreviousPage()
+				elif self.currentFocused == FocusedElement.alerts:
+					self._showAlertsPreviousPage()
 
-			elif self.currentFocused == FocusedElement.alerts:
-				self._showAlertsPreviousPage()
+				elif self.currentFocused == FocusedElement.managers:
+					self._showManagersPreviousPage()
 
-			elif self.currentFocused == FocusedElement.managers:
-				self._showManagersPreviousPage()
-
-			else:
-				self._showAlertLevelsPreviousPage()
+				else:
+					self._showAlertLevelsPreviousPage()
 
 		# check if key n/N is pressed => show next page of focused elements
 		elif key in ["n", "N"]:
+			if not self.detailView:
+				if self.currentFocused == FocusedElement.sensors:
+					self._showSensorsNextPage()
 
-			if self.currentFocused == FocusedElement.sensors:
-				self._showSensorsNextPage()
+				elif self.currentFocused == FocusedElement.alerts:
+					self._showAlertsNextPage()
 
-			elif self.currentFocused == FocusedElement.alerts:
-				self._showAlertsNextPage()
+				elif self.currentFocused == FocusedElement.managers:
+					self._showManagersNextPage()
 
-			elif self.currentFocused == FocusedElement.managers:
-				self._showManagersNextPage()
-
-			else:
-				self._showAlertLevelsNextPage()
+				else:
+					self._showAlertLevelsNextPage()
 
 		# change focus to next element group
 		# order: (sensors, alerts, managers, alert levels)
 		elif key in ["tab"]:
-			self._switchFocusedElementGroup()
+			if not self.detailView:
+				self._switchFocusedElementGroup()
 
 		# move focus to next element in the element group
 		elif key in ["up", "down", "left", "right"]:
-			self._moveFocus(key)
+			if not self.detailView:
+				self._moveFocus(key)
 
+		# when an overlayed view is shown
+		# => go back to main view
+		elif key in ["esc"]:
+			if self.detailView:
+				self.mainLoop.widget = self.mainFrame
+				self.detailView = False
 
 
 
@@ -1640,33 +1845,116 @@ class Console:
 		# open pop up with information
 		elif key in ["enter"]:
 
-			logging.error("enter")
-
-
-
-			# get current focused element group
+			# get current focused element
 			if self.currentFocused == FocusedElement.sensors:
 				currentElements = self.sensorsGrid
+
+				# TODO check what happens if no elements are in the group
+				currPos = None
+				if len(currentElements.contents) != 0:
+					currPos = currentElements.focus_position
+
+				# search for element for detailed view
+				currentElement = None
+				currentWidgetElement = currentElements.contents[currPos][0]
+				for temp in self.sensorUrwidObjects:
+					if currentWidgetElement == temp.get():
+						currentElement = temp
+						break
+				if currentElement is None:
+					logging.error("[%s] Not able to find sensor element "
+						% self.fileName
+						+ "for detailed view.")
+					return True
+
+				# get all alert levels the focused sensor belongs to
+				currentAlertLevels = list()
+				for alertLevel in self.alertLevels:
+					if alertLevel.level in currentElement.sensor.alertLevels:
+						currentAlertLevels.append(alertLevel)
+
+				tasta = SensorDetailedUrwid(currentElement.sensor,
+					currentElement.node, currentAlertLevels)
+
+
+
+
 			elif self.currentFocused == FocusedElement.alerts:
 				currentElements = self.alertsGrid
+
+				# TODO check what happens if no elements are in the group
+				currPos = None
+				if len(currentElements.contents) != 0:
+					currPos = currentElements.focus_position
+
+				# search for element for detailed view
+				currentElement = None
+				currentWidgetElement = currentElements.contents[currPos][0]
+				for temp in self.alertUrwidObjects:
+					if currentWidgetElement == temp.get():
+						currentElement = temp
+						break
+				if currentElement is None:
+					logging.error("[%s] Not able to find alert element "
+						% self.fileName
+						+ "for detailed view.")
+					return True
+
 			elif self.currentFocused == FocusedElement.managers:
 				currentElements = self.managersGrid
+
+				# TODO check what happens if no elements are in the group
+				currPos = None
+				if len(currentElements.contents) != 0:
+					currPos = currentElements.focus_position
+
+				# search for element for detailed view
+				currentElement = None
+				currentWidgetElement = currentElements.contents[currPos][0]
+				for temp in self.managerUrwidObjects:
+					if currentWidgetElement == temp.get():
+						currentElement = temp
+						break
+				if currentElement is None:
+					logging.error("[%s] Not able to find manager element "
+						% self.fileName
+						+ "for detailed view.")
+					return True
+
 			else:
 				currentElements = self.alertLevelsGrid
 
+				# TODO check what happens if no elements are in the group
+				currPos = None
+				if len(currentElements.contents) != 0:
+					currPos = currentElements.focus_position
+
+				# search for element for detailed view
+				currentElement = None
+				currentWidgetElement = currentElements.contents[currPos][0]
+				for temp in self.alertLevelUrwidObjects:
+					if currentWidgetElement == temp.get():
+						currentElement = temp
+						break
+				if currentElement is None:
+					logging.error("[%s] Not able to find alert level element "
+						% self.fileName
+						+ "for detailed view.")
+					return True
 
 
-			# TODO check what happens if no elements are in the group
-			currPos = None
-			if len(currentElements.contents) != 0:
-				currPos = currentElements.focus_position
-
-
-			logging.error(currPos)
 
 
 
 
+
+
+			# TODO
+			overlayView = urwid.Overlay(tasta.get(), self.mainFrame, align='center', width=('relative', 80), valign='middle', height=('relative', 80),
+				min_width=80, min_height=50)
+
+			self.mainLoop.widget = overlayView
+			self.detailView = True
 
 
 
@@ -1982,11 +2270,15 @@ class Console:
 			+ "2 - deactivate, "
 			+ "q - quit, "
 			+ "tab - next elements, "
-			+ "arrow keys - move cursor, "
+			+ "up/down/left/right - move cursor, "
 			+ "enter - select element")
 
 		# build frame for final rendering
-		frame = urwid.Frame(fillerBody, footer=footer, header=header)
+		self.mainFrame = urwid.Frame(fillerBody, footer=footer, header=header)
+
+
+
+
 
 		# color palette
 		palette = [
@@ -2026,7 +2318,7 @@ class Console:
 
 
 		# create urwid main loop for the rendering
-		self.mainLoop = urwid.MainLoop(frame, palette=palette,
+		self.mainLoop = urwid.MainLoop(self.mainFrame, palette=palette,
 			unhandled_input=self.handleKeypress)
 
 		# create a file descriptor callback to give other
