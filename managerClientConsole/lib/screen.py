@@ -593,7 +593,7 @@ class SensorDetailedUrwid:
 				"disconnected"))
 		elif node.connected == 1:
 			temp.append(urwid.AttrMap(urwid.Text("True"),
-				"connected"))
+				"neutral"))
 		else:
 			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
 				"redColor"))
@@ -771,6 +771,170 @@ class AlertUrwid:
 		self.alertUrwidMap.set_focus_map({None: "connectionfail_focus"})
 
 
+# this class is an urwid object for a detailed alert output
+class AlertDetailedUrwid:
+
+	def __init__(self, alert, node, alertLevels):
+
+		# TODO
+		# needs an update mechanism in the case the detailed view is
+		# shown and values change
+
+		self.node = node
+		self.alert = alert
+
+		content = list()
+
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Node"))
+		content.append(urwid.Divider("="))
+		self.nodePileWidget = self._createNodeWidgetList(node)
+		content.append(urwid.Pile(self.nodePileWidget))
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Alert"))
+		content.append(urwid.Divider("="))
+		self.alertPileWidget = self._createAlertWidgetList(alert)
+		content.append(urwid.Pile(self.alertPileWidget))
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Alert Levels"))
+		content.append(urwid.Divider("="))
+		self.alertLevelsPileWidget = \
+			self._createAlertLevelsWidgetList(alertLevels)
+		content.append(urwid.Pile(self.alertLevelsPileWidget))
+
+		# use ListBox here because it handles all the
+		# scrolling part automatically
+		detailedList = urwid.ListBox(content)
+		detailedFrame = urwid.Frame(detailedList,
+			footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+		self.detailedBox = urwid.LineBox(detailedFrame,
+			title="Alert: " + self.alert.description)
+
+
+	# this function creates the detailed output of all alert level objects
+	# in a list
+	def _createAlertLevelsWidgetList(self, alertLevels):
+
+		temp = list()
+		for alertLevel in alertLevels:
+
+			temp.extend(self._createAlertLevelWidgetList(alertLevel))
+
+		return temp
+
+
+	# this function creates the detailed output of a alert level object
+	# in a list
+	def _createAlertLevelWidgetList(self, alertLevel):
+
+		temp = list()
+
+		temp.append(urwid.Text("Alert Level:"))
+		temp.append(urwid.Text(str(alertLevel.level)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Name:"))
+		temp.append(urwid.Text(alertLevel.name))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Trigger Always:"))
+		if alertLevel.triggerAlways == 0:
+			temp.append(urwid.Text("No"))
+		elif alertLevel.triggerAlways == 1:
+			temp.append(urwid.Text("Yes"))
+		else:
+			temp.append(urwid.Text("Undefined"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Rules Activated:"))
+		if alertLevel.rulesActivated == 0:
+			temp.append(urwid.Text("No"))
+		elif alertLevel.rulesActivated == 1:
+			temp.append(urwid.Text("Yes"))
+		else:
+			temp.append(urwid.Text("Undefined"))
+
+		temp.append(urwid.Divider())
+		temp.append(urwid.Divider("-"))
+
+		return temp
+
+
+	# this function creates the detailed output of a alert object
+	# in a list
+	def _createAlertWidgetList(self, alert):
+
+		temp = list()
+
+		temp.append(urwid.Text("Alert ID:"))
+		temp.append(urwid.Text(str(alert.alertId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Remote Alert ID:"))
+		temp.append(urwid.Text(str(alert.remoteAlertId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Description:"))
+		temp.append(urwid.Text(alert.description))
+
+		return temp
+
+
+	# this function creates the detailed output of a node object
+	# in a list
+	def _createNodeWidgetList(self, node):
+
+		temp = list()
+
+		temp.append(urwid.Text("Node ID:"))
+		temp.append(urwid.Text(str(node.nodeId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Username:"))
+		temp.append(urwid.Text(node.username))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Hostname:"))
+		temp.append(urwid.Text(node.hostname))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Node Type:"))
+		temp.append(urwid.Text(node.nodeType))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Instance:"))
+		temp.append(urwid.Text(node.instance))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Version:"))
+		versionWidget = urwid.Text(str(node.version) + "-" + str(node.rev))
+		temp.append(versionWidget)
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Connected:"))
+		if node.connected == 0:
+			temp.append(urwid.AttrMap(urwid.Text("False"),
+				"disconnected"))
+		elif node.connected == 1:
+			temp.append(urwid.AttrMap(urwid.Text("True"),
+				"neutral"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+
+		return temp
+
+
+	# this function returns the final urwid widget that is used
+	# to render this object
+	def get(self):
+		return self.detailedBox
+
+
 # this class is an urwid object for a manager
 class ManagerUrwid:
 
@@ -849,6 +1013,109 @@ class ManagerUrwid:
 	def setConnectionFail(self):
 		self.managerUrwidMap.set_attr_map({None: "connectionfail"})
 		self.managerUrwidMap.set_focus_map({None: "connectionfail_focus"})
+
+
+# this class is an urwid object for a detailed manager output
+class ManagerDetailedUrwid:
+
+	def __init__(self, manager, node):
+
+		# TODO
+		# needs an update mechanism in the case the detailed view is
+		# shown and values change
+
+		self.node = node
+		self.manager = manager
+
+		content = list()
+
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Node"))
+		content.append(urwid.Divider("="))
+		self.nodePileWidget = self._createNodeWidgetList(node)
+		content.append(urwid.Pile(self.nodePileWidget))
+
+		content.append(urwid.Divider())
+		content.append(urwid.Divider("="))
+		content.append(urwid.Text("Manager"))
+		content.append(urwid.Divider("="))
+		self.managerPileWidget = self._createManagerWidgetList(manager)
+		content.append(urwid.Pile(self.managerPileWidget))
+
+		# use ListBox here because it handles all the
+		# scrolling part automatically
+		detailedList = urwid.ListBox(content)
+		detailedFrame = urwid.Frame(detailedList,
+			footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+		self.detailedBox = urwid.LineBox(detailedFrame,
+			title="Manager: " + self.manager.description)
+
+
+	# this function creates the detailed output of a alert object
+	# in a list
+	def _createManagerWidgetList(self, manager):
+
+		temp = list()
+
+		temp.append(urwid.Text("Manager ID:"))
+		temp.append(urwid.Text(str(manager.managerId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Description:"))
+		temp.append(urwid.Text(manager.description))
+
+		return temp
+
+
+	# this function creates the detailed output of a node object
+	# in a list
+	def _createNodeWidgetList(self, node):
+
+		temp = list()
+
+		temp.append(urwid.Text("Node ID:"))
+		temp.append(urwid.Text(str(node.nodeId)))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Username:"))
+		temp.append(urwid.Text(node.username))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Hostname:"))
+		temp.append(urwid.Text(node.hostname))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Node Type:"))
+		temp.append(urwid.Text(node.nodeType))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Instance:"))
+		temp.append(urwid.Text(node.instance))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Version:"))
+		versionWidget = urwid.Text(str(node.version) + "-" + str(node.rev))
+		temp.append(versionWidget)
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Connected:"))
+		if node.connected == 0:
+			temp.append(urwid.AttrMap(urwid.Text("False"),
+				"disconnected"))
+		elif node.connected == 1:
+			temp.append(urwid.AttrMap(urwid.Text("True"),
+				"neutral"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+
+		return temp
+
+
+	# this function returns the final urwid widget that is used
+	# to render this object
+	def get(self):
+		return self.detailedBox
 
 
 # this class is an urwid object for an alert level
@@ -1900,6 +2167,19 @@ class Console:
 						+ "for detailed view.")
 					return True
 
+				# get all alert levels the focused alert belongs to
+				currentAlertLevels = list()
+				for alertLevel in self.alertLevels:
+					if alertLevel.level in currentElement.alert.alertLevels:
+						currentAlertLevels.append(alertLevel)
+
+				tasta = AlertDetailedUrwid(currentElement.alert,
+					currentElement.node, currentAlertLevels)
+
+
+
+
+
 			elif self.currentFocused == FocusedElement.managers:
 				currentElements = self.managersGrid
 
@@ -1920,6 +2200,15 @@ class Console:
 						% self.fileName
 						+ "for detailed view.")
 					return True
+
+				tasta = ManagerDetailedUrwid(currentElement.manager,
+					currentElement.node)
+
+
+
+
+
+
 
 			else:
 				currentElements = self.alertLevelsGrid
