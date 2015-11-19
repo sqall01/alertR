@@ -1615,7 +1615,7 @@ class Console:
 			self.currentFocused = FocusedElement.alerts
 			self._focusAlerts()
 			self.alertsKeyBindings.set_text(
-				"Keys: b - previous page, n - next page")
+				"Keys: b - Previous page, n - Next page")
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text("Keys: None")
@@ -1625,7 +1625,7 @@ class Console:
 			self._focusManagers()
 			self.alertsKeyBindings.set_text("Keys: None")
 			self.managersKeyBindings.set_text(
-				"Keys: b - previous page, n - next page")
+				"Keys: b - Previous page, n - Next page")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text("Keys: None")
 
@@ -1635,7 +1635,7 @@ class Console:
 			self.alertsKeyBindings.set_text("Keys: None")
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text(
-				"Keys: b - previous page, n - next page")
+				"Keys: b - Previous page, n - Next page")
 			self.sensorsKeyBindings.set_text("Keys: None")
 
 		else:
@@ -1645,7 +1645,7 @@ class Console:
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text(
-				"Keys: b - previous page, n - next page")
+				"Keys: b - Previous page, n - Next page")
 
 
 	def _moveFocus(self, key):
