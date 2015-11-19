@@ -73,41 +73,6 @@ class GlobalData:
 		# this variable holds the object of the server communication
 		self.serverComm = None
 
-		# this option tells the screen thread if
-		# the "connected" information should be shown
-		# for a sensor
-		self.urwidSensorShowConnected = None
-
-		# this option tells the screen thread if
-		# the "alert delay" information should be shown
-		# for a sensor
-		self.urwidSensorShowAlertDelay = None
-
-		# this option tells the screen thread if
-		# the "last updated" information should be shown
-		# for a sensor
-		self.urwidSensorShowLastUpdated = None
-
-		# this option tells the screen thread if
-		# the "state" information should be shown
-		# for a sensor		
-		self.urwidSensorShowState = None
-
-		# this option tells the screen thread if
-		# the "alert levels" information should be shown
-		# for a sensor
-		self.urwidSensorShowAlertLevels = None
-
-		# this option tells the screen thread if
-		# the "alert levels" information should be shown
-		# for an alert
-		self.urwidAlertShowAlertLevels = None
-
-		# this option tells the screen thread if
-		# the "trigger always" information should be shown
-		# for an alert level
-		self.urwidAlertLevelShowTriggerAlways = None
-
 		# this is the time in seconds when the sensor should be
 		# displayed as timed out
 		self.connectionTimeout = 60

@@ -154,27 +154,6 @@ if __name__ == '__main__':
 			"description"])
 
 		# get display options for the console
-		globalData.urwidSensorShowConnected = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidSensorShowConnected"]).upper() == "TRUE")
-		globalData.urwidSensorShowAlertDelay = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidSensorShowAlertDelay"]).upper() == "TRUE")
-		globalData.urwidSensorShowLastUpdated = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidSensorShowLastUpdated"]).upper() == "TRUE")
-		globalData.urwidSensorShowState = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidSensorShowState"]).upper() == "TRUE")
-		globalData.urwidSensorShowAlertLevels = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidSensorShowAlertLevels"]).upper() == "TRUE")
-		globalData.urwidAlertShowAlertLevels = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidAlertShowAlertLevels"]).upper() == "TRUE")
-		globalData.urwidAlertLevelShowTriggerAlways = (str(
-			configRoot.find("manager").find("console").attrib[
-			"urwidAlertLevelShowTriggerAlways"]).upper() == "TRUE")
 		globalData.timeShowSensorAlert = int(
 			configRoot.find("manager").find("console").attrib[
 			"timeShowSensorAlert"])

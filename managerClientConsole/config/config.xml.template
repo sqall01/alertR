@@ -153,21 +153,6 @@
 
 		<!--
 			console specific settings
-			urwidSensorShowConnected - should the "connected" information
-				of a sensor be shown or not ("True" or "False")
-			urwidSensorShowAlertDelay - should the "alert delay" information
-				of a sensor be shown or not ("True" or "False")
-			urwidSensorShowLastUpdated - should the "last updated"
-				information of a sensor be shown or not ("True" or "False")
-			urwidSensorShowState - should the "state" information of a
-				sensor be shown or not ("True" or "False")
-			urwidSensorShowAlertLevels - should the "alert levels" information
-				of a sensor be shown or not ("True" or "False")
-			urwidAlertShowAlertLevels - should the "alert levels" information
-				of an alert be shown or not ("True" or "False")
-			urwidAlertLevelShowTriggerAlways - should the "trigger always"
-				information of an alert level be shown or not
-				("True" or "False")
 			timeShowSensorAlert - the time in seconds the received sensor
 				alerts should be displayed in a list before they are removed
 			maxCountShowSensorAlert - the maximum count of sensor
@@ -182,13 +167,6 @@
 				levels that should be displayed per page
 		-->
 		<console
-			urwidSensorShowConnected="False"
-			urwidSensorShowAlertDelay="False"
-			urwidSensorShowLastUpdated="True"
-			urwidSensorShowState="False"
-			urwidSensorShowAlertLevels="False"
-			urwidAlertShowAlertLevels="False"
-			urwidAlertLevelShowTriggerAlways="True"
 			timeShowSensorAlert="3600"
 			maxCountShowSensorAlert="15"
 			maxCountShowSensorsPerPage="7"

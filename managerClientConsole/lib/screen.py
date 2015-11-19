@@ -207,16 +207,7 @@ class StatusUrwid:
 # this class is an urwid object for a sensor
 class SensorUrwid:
 
-	def __init__(self, sensor, node, connectionTimeout,
-		showConnected, showAlertDelay,
-		showLastUpdated, showState, showAlertLevels):
-
-		# options which information should be displayed
-		self.showConnected = showConnected
-		self.showAlertDelay = showAlertDelay
-		self.showLastUpdated = showLastUpdated
-		self.showState = showState
-		self.showAlertLevels = showAlertLevels
+	def __init__(self, sensor, node, connectionTimeout):
 
 		# is needed to decide when a sensor has timed out
 		self.connectionTimeout = connectionTimeout
@@ -224,52 +215,6 @@ class SensorUrwid:
 		sensorPileList = list()
 		self.descriptionWidget = urwid.Text("Desc.: " + sensor.description)
 		sensorPileList.append(self.descriptionWidget)
-
-		# create text widget for the "connected" information if
-		# it should be displayed
-		if self.showConnected:
-			self.connectedWidget = urwid.Text("Connected: "
-				+ str(node.connected))
-			sensorPileList.append(self.connectedWidget)
-
-		# create text widget for the "alert delay" information if
-		# it should be displayed
-		if self.showAlertDelay:
-			self.alertDelayWidget = urwid.Text("Alert delay (sec): "
-				+ str(sensor.alertDelay))
-			sensorPileList.append(self.alertDelayWidget)
-
-		# create text widget for the "last updated" information if
-		# it should be displayed
-		if self.showLastUpdated:
-			self.lastUpdatedWidget = urwid.Text("Last updated: " 
-				+ time.strftime("%D %H:%M:%S",
-				time.localtime(sensor.lastStateUpdated)))
-			sensorPileList.append(self.lastUpdatedWidget)
-
-		# create text widget for the "state" information if
-		# it should be displayed
-		if self.showState:
-			self.stateWidget = urwid.Text("State: " + str(sensor.state))
-			sensorPileList.append(self.stateWidget)
-
-		# create text widget for the "alert levels" information if
-		# it should be displayed
-		if self.showAlertLevels:
-
-			# generate formatted string from alert levels
-			alertLevelsString = ""
-			first = True
-			for alertLevel in sensor.alertLevels:
-				if first:
-					first = False
-				else:
-					alertLevelsString += ", "
-				alertLevelsString += str(alertLevel)
-
-			self.alertLevelWidget = urwid.Text("Alert levels: "
-				+ alertLevelsString)
-			sensorPileList.append(self.alertLevelWidget)
 
 		sensorPile = urwid.Pile(sensorPileList)
 		sensorBox = urwid.LineBox(sensorPile, title="host: " + node.hostname)
@@ -325,11 +270,6 @@ class SensorUrwid:
 	# (and changes color arcordingly)
 	def updateConnected(self, connected):
 
-		# only change widget text if the information should be
-		# displayed
-		if self.showConnected:
-			self.connectedWidget.set_text("Connected: " + str(connected))
-
 		# change color according to connection state
 		# and consider the state of the sensor (1 = triggered)
 		if (connected == 0
@@ -350,26 +290,9 @@ class SensorUrwid:
 			self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
 
-	# this function updates the alert delay of the object
-	def updateAlertDelay(self, alertDelay):
-
-		# only change widget text if the information should be
-		# displayed
-		if self.showAlertDelay:
-			self.alertDelayWidget.set_text("Alert delay (sec): "
-				+ str(alertDelay))
-
-
 	# this function updates the last update status of the object
 	# (and changes color arcordingly)
 	def updateLastUpdated(self, lastStateUpdated):
-
-		# only change widget text if the information should be
-		# displayed
-		if self.showLastUpdated:
-			self.lastUpdatedWidget.set_text("Last updated: " 
-				+ time.strftime("%D %H:%M:%S",
-				time.localtime(lastStateUpdated)))
 
 		# check if sensor has timed out and change color accordingly
 		if (lastStateUpdated < (self.sensor.serverTime
@@ -382,11 +305,6 @@ class SensorUrwid:
 	# this function updates the state of the object
 	# (and changes color arcordingly)
 	def updateState(self, state):
-
-		# only change widget text if the information should be
-		# displayed
-		if self.showState:
-			self.stateWidget.set_text("State: " + str(state))
 
 		# check if the node is connected and change the color accordingly
 		if self.node.connected == 0:
@@ -409,27 +327,6 @@ class SensorUrwid:
 				self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
 
-	# this function updates the alert levels of the object
-	def updateAlertLevels(self, alertLevels):
-
-		# only change widget text if the information should be
-		# displayed
-		if self.showAlertLevels:
-
-			# generate formatted string from alert levels
-			alertLevelsString = ""
-			first = True
-			for alertLevel in self.sensor.alertLevels:
-				if first:
-					first = False
-				else:
-					alertLevelsString += ", "
-				alertLevelsString += str(alertLevel)
-
-			self.alertLevelWidget.set_text("Alert levels: "
-				+ alertLevelsString)
-
-
 	# this function updates all internal widgets and checks if
 	# the sensor/node still exists
 	def updateCompleteWidget(self):
@@ -443,10 +340,8 @@ class SensorUrwid:
 
 		self.updateDescription(self.sensor.description)
 		self.updateConnected(self.node.connected)
-		self.updateAlertDelay(self.sensor.alertDelay)
 		self.updateLastUpdated(self.sensor.lastStateUpdated)
 		self.updateState(self.sensor.state)
-		self.updateAlertLevels(self.sensor.alertLevels)
 
 		# return true if object was updated
 		return True
@@ -662,10 +557,7 @@ class SensorDetailedUrwid:
 # this class is an urwid object for an alert
 class AlertUrwid:
 
-	def __init__(self, alert, node, showAlertLevels):
-
-		# options which information should be displayed
-		self.showAlertLevels = showAlertLevels
+	def __init__(self, alert, node):
 
 		# store reference to alert object and node object
 		self.alert = alert
@@ -677,24 +569,6 @@ class AlertUrwid:
 		alertPileList = list()
 		self.descriptionWidget = urwid.Text("Desc.: " + self.alert.description)
 		alertPileList.append(self.descriptionWidget)
-
-		# create text widget for the "alert levels" information if
-		# it should be displayed
-		if self.showAlertLevels:
-
-			# generate formatted string from alert levels
-			alertLevelsString = ""
-			first = True
-			for alertLevel in alert.alertLevels:
-				if first:
-					first = False
-				else:
-					alertLevelsString += ", "
-				alertLevelsString += str(alertLevel)
-
-			self.alertLevelWidget = urwid.Text("Alert levels: "
-				+ alertLevelsString)
-			alertPileList.append(self.alertLevelWidget)
 
 		alertPile = urwid.Pile(alertPileList)
 		alertBox = urwid.LineBox(alertPile, title=node.hostname)
@@ -719,27 +593,6 @@ class AlertUrwid:
 	# this function updates the description of the object
 	def updateDescription(self, description):
 		self.descriptionWidget.set_text("Desc.: " + description)
-
-
-	# this function updates the alert levels of the object
-	def updateAlertLevels(self, alertLevels):
-
-		# only change widget text if the information should be
-		# displayed
-		if self.showAlertLevels:
-
-			# generate formatted string from alert levels
-			alertLevelsString = ""
-			first = True
-			for alertLevel in self.alert.alertLevels:
-				if first:
-					first = False
-				else:
-					alertLevelsString += ", "
-				alertLevelsString += str(alertLevel)
-
-			self.alertLevelWidget.set_text("Alert levels: "
-				+ alertLevelsString)
 
 
 	# this function updates the connected status of the object
@@ -767,7 +620,6 @@ class AlertUrwid:
 			return False
 
 		self.updateDescription(self.alert.description)
-		self.updateAlertLevels(self.alert.alertLevels)
 		self.updateConnected(self.node.connected)
 
 		# return true if object was updated
@@ -1143,7 +995,7 @@ class ManagerDetailedUrwid:
 # this class is an urwid object for an alert level
 class AlertLevelUrwid:
 
-	def __init__(self, alertLevel, showTriggerAlways):
+	def __init__(self, alertLevel):
 
 		# store reference to alert level object
 		self.alertLevel = alertLevel
@@ -1152,20 +1004,10 @@ class AlertLevelUrwid:
 		# this urwid alert level object
 		self.alertLevel.alertLevelUrwid = self
 
-		# options which information should be displayed
-		self.showTriggerAlways = showTriggerAlways
-
 		alertLevelPileList = list()
 		self.nameWidget = urwid.Text("Name: "
 			+ self.alertLevel.name)
 		alertLevelPileList.append(self.nameWidget)
-
-		# create text widget for the "trigger always" information if
-		# it should be displayed
-		if self.showTriggerAlways:
-			self.triggerAlwaysWidget = urwid.Text("Trigger always: "
-			+ ("yes" if self.alertLevel.triggerAlways == 1 else "no"))
-			alertLevelPileList.append(self.triggerAlwaysWidget)
 
 		alertLevelPile = urwid.Pile(alertLevelPileList)
 		alertLevelBox = urwid.LineBox(alertLevelPile, title="Level: %d" %
@@ -1187,15 +1029,6 @@ class AlertLevelUrwid:
 	# this function updates the description of the object
 	def updateName(self, name):
 		self.nameWidget.set_text("Name: " + name)
-
-
-	# this function updates the description of the object
-	def updateTriggerAlways(self, triggerAlways):
-
-		# only change widget text if the information should be displayed
-		if self.showTriggerAlways:
-			self.triggerAlwaysWidget.set_text("Trigger always: "
-				+ ("yes" if triggerAlways == 1 else "no"))
 
 
 	# this function changes the color of this urwid object to red
@@ -1234,7 +1067,6 @@ class AlertLevelUrwid:
 
 		self.turnGreen()
 		self.updateName(self.alertLevel.name)
-		self.updateTriggerAlways(self.alertLevel.triggerAlways)
 
 		# return true if object was updated
 		return True
@@ -1557,26 +1389,6 @@ class Console:
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
-
-		# options which information should be displayed
-		# by a sensor urwid object
-		self.urwidSensorShowConnected \
-			= self.globalData.urwidSensorShowConnected
-		self.urwidSensorShowAlertDelay \
-			= self.globalData.urwidSensorShowAlertDelay
-		self.urwidSensorShowLastUpdated \
-			= self.globalData.urwidSensorShowLastUpdated
-		self.urwidSensorShowState \
-			= self.globalData.urwidSensorShowState
-		self.urwidSensorShowAlertLevels \
-			= self.globalData.urwidSensorShowAlertLevels
-		self.urwidAlertLevelShowTriggerAlways \
-			= self.globalData.urwidAlertLevelShowTriggerAlways
-
-		# options which information should be displayed
-		# by an alert urwid object
-		self.urwidAlertShowAlertLevels \
-			= self.globalData.urwidAlertShowAlertLevels
 
 		# urwid grid object for sensor alerts
 		self.sensorAlertsPile = None
@@ -1911,92 +1723,6 @@ class Console:
 		self.consoleLock.release()
 
 
-	# internal function that shows the sensor urwid objects given
-	# by a page index
-	def _showSensorsAtPageIndex(self, pageIndex):
-
-		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects) 
-			/ self.maxCountShowSensorsPerPage)
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage) 
-			!= 0):
-			sensorPageCount += 1
-
-		# check if the index to show is within the page range
-		if pageIndex >= sensorPageCount:
-			pageIndex = 0
-		elif pageIndex < 0:
-			pageIndex = sensorPageCount - 1
-
-		logging.debug("[%s]: Update shown sensors with page index: %d."
-			% (self.fileName, pageIndex))
-
-		# get all sensor urwid objects that should be shown on the new page
-		del self.shownSensorUrwidObjects[:]
-		for i in range(self.maxCountShowSensorsPerPage):
-			tempItemIndex = i + (pageIndex * self.maxCountShowSensorsPerPage)
-			if tempItemIndex >= len(self.sensorUrwidObjects):
-				break
-			self.shownSensorUrwidObjects.append(
-				self.sensorUrwidObjects[tempItemIndex])
-
-		# delete all old shown sensor objects and replace them by the new ones
-		del self.sensorsGrid.contents[:]
-		for newShownSensor in self.shownSensorUrwidObjects:
-			self.sensorsGrid.contents.append((newShownSensor.get(),
-				self.sensorsGrid.options()))
-
-		# update sensors page footer
-		tempText = "Page %d / %d " % (pageIndex + 1, sensorPageCount)
-		self.sensorsFooter.set_text(tempText)
-
-
-	# internal function that shows the next page of sensor objects
-	def _showSensorsNextPage(self):
-
-		logging.debug("[%s]: Show next sensors page." % self.fileName)
-
-		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects) 
-			/ self.maxCountShowSensorsPerPage)
-		if sensorPageCount == 0:
-			return
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
-			!= 0):
-			sensorPageCount += 1
-
-		# calculate next page that should be shown
-		self.currentSensorPage += 1
-		if self.currentSensorPage >= sensorPageCount:
-			self.currentSensorPage = 0
-
-		# update shown sensors
-		self._showSensorsAtPageIndex(self.currentSensorPage)
-
-
-	# internal function that shows the previous page of sensor objects
-	def _showSensorsPreviousPage(self):
-
-		logging.debug("[%s]: Show previous sensors page." % self.fileName)
-
-		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects)
-			/ self.maxCountShowSensorsPerPage)
-		if sensorPageCount == 0:
-			return
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
-			!= 0):
-			sensorPageCount += 1
-
-		# calculate next page that should be shown
-		self.currentSensorPage -= 1
-		if self.currentSensorPage < 0:
-			self.currentSensorPage = sensorPageCount - 1
-
-		# update shown sensors
-		self._showSensorsAtPageIndex(self.currentSensorPage)
-
-
 	# internal function that shows the alert urwid objects given
 	# by a page index
 	def _showAlertsAtPageIndex(self, pageIndex):
@@ -2081,92 +1807,6 @@ class Console:
 
 		# update shown alerts
 		self._showAlertsAtPageIndex(self.currentAlertPage)
-
-
-	# internal function that shows the manager urwid objects given
-	# by a page index
-	def _showManagersAtPageIndex(self, pageIndex):
-
-		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
-			!= 0):
-			managerPageCount += 1
-
-		# check if the index to show is within the page range
-		if pageIndex >= managerPageCount:
-			pageIndex = 0
-		elif pageIndex < 0:
-			pageIndex = managerPageCount - 1
-
-		logging.debug("[%s]: Update shown managers with page index: %d."
-			% (self.fileName, pageIndex))
-
-		# get all manager urwid objects that should be shown on the new page
-		del self.shownManagerUrwidObjects[:]
-		for i in range(self.maxCountShowManagersPerPage):
-			tempItemIndex = i + (pageIndex * self.maxCountShowManagersPerPage)
-			if tempItemIndex >= len(self.managerUrwidObjects):
-				break
-			self.shownManagerUrwidObjects.append(
-				self.managerUrwidObjects[tempItemIndex])
-
-		# delete all old shown manager objects and replace them by the new ones
-		del self.managersGrid.contents[:]
-		for newShownManager in self.shownManagerUrwidObjects:
-			self.managersGrid.contents.append((newShownManager.get(),
-				self.managersGrid.options()))
-
-		# update managers page footer
-		tempText = "Page %d / %d " % (pageIndex + 1, managerPageCount)
-		self.managersFooter.set_text(tempText)
-
-
-	# internal function that shows the next page of manager objects
-	def _showManagersNextPage(self):
-
-		logging.debug("[%s]: Show next managers page." % self.fileName)
-
-		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
-		if managerPageCount == 0:
-			return
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
-			!= 0):
-			managerPageCount += 1
-
-		# calculate next page that should be shown
-		self.currentManagerPage += 1
-		if self.currentManagerPage >= managerPageCount:
-			self.currentManagerPage = 0
-
-		# update shown managers
-		self._showManagersAtPageIndex(self.currentManagerPage)
-
-
-	# internal function that shows the previous page of manager objects
-	def _showManagersPreviousPage(self):
-
-		logging.debug("[%s]: Show previous managers page." % self.fileName)
-
-		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
-		if managerPageCount == 0:
-			return
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
-			!= 0):
-			managerPageCount += 1
-
-		# calculate next page that should be shown
-		self.currentManagerPage -= 1
-		if self.currentManagerPage < 0:
-			self.currentManagerPage = managerPageCount - 1
-
-		# update shown managers
-		self._showManagersAtPageIndex(self.currentManagerPage)
 
 
 	# internal function that shows the alert level urwid objects given
@@ -2261,6 +1901,310 @@ class Console:
 		self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
 
+	# creates an overlayed view with the detailed about the focused object
+	def _showDetailedView(self):
+
+		# get current focused element
+		if self.currentFocused == FocusedElement.sensors:
+			currentElements = self.sensorsGrid
+
+			# TODO check what happens if no elements are in the group
+			currPos = None
+			if len(currentElements.contents) != 0:
+				currPos = currentElements.focus_position
+
+			# search for element for detailed view
+			currentElement = None
+			currentWidgetElement = currentElements.contents[currPos][0]
+			for temp in self.sensorUrwidObjects:
+				if currentWidgetElement == temp.get():
+					currentElement = temp
+					break
+			if currentElement is None:
+				logging.error("[%s] Not able to find sensor element "
+					% self.fileName
+					+ "for detailed view.")
+				return True
+
+			# get all alert levels the focused sensor belongs to
+			currentAlertLevels = list()
+			for alertLevel in self.alertLevels:
+				if alertLevel.level in currentElement.sensor.alertLevels:
+					currentAlertLevels.append(alertLevel)
+
+			detailedView = SensorDetailedUrwid(currentElement.sensor,
+				currentElement.node, currentAlertLevels)
+
+		elif self.currentFocused == FocusedElement.alerts:
+			currentElements = self.alertsGrid
+
+			# TODO check what happens if no elements are in the group
+			currPos = None
+			if len(currentElements.contents) != 0:
+				currPos = currentElements.focus_position
+
+			# search for element for detailed view
+			currentElement = None
+			currentWidgetElement = currentElements.contents[currPos][0]
+			for temp in self.alertUrwidObjects:
+				if currentWidgetElement == temp.get():
+					currentElement = temp
+					break
+			if currentElement is None:
+				logging.error("[%s] Not able to find alert element "
+					% self.fileName
+					+ "for detailed view.")
+				return True
+
+			# get all alert levels the focused alert belongs to
+			currentAlertLevels = list()
+			for alertLevel in self.alertLevels:
+				if alertLevel.level in currentElement.alert.alertLevels:
+					currentAlertLevels.append(alertLevel)
+
+			detailedView = AlertDetailedUrwid(currentElement.alert,
+				currentElement.node, currentAlertLevels)
+
+		elif self.currentFocused == FocusedElement.managers:
+			currentElements = self.managersGrid
+
+			# TODO check what happens if no elements are in the group
+			currPos = None
+			if len(currentElements.contents) != 0:
+				currPos = currentElements.focus_position
+
+			# search for element for detailed view
+			currentElement = None
+			currentWidgetElement = currentElements.contents[currPos][0]
+			for temp in self.managerUrwidObjects:
+				if currentWidgetElement == temp.get():
+					currentElement = temp
+					break
+			if currentElement is None:
+				logging.error("[%s] Not able to find manager element "
+					% self.fileName
+					+ "for detailed view.")
+				return True
+
+			detailedView = ManagerDetailedUrwid(currentElement.manager,
+				currentElement.node)
+
+		else:
+			currentElements = self.alertLevelsGrid
+
+			# TODO check what happens if no elements are in the group
+			currPos = None
+			if len(currentElements.contents) != 0:
+				currPos = currentElements.focus_position
+
+			# search for element for detailed view
+			currentElement = None
+			currentWidgetElement = currentElements.contents[currPos][0]
+			for temp in self.alertLevelUrwidObjects:
+				if currentWidgetElement == temp.get():
+					currentElement = temp
+					break
+			if currentElement is None:
+				logging.error("[%s] Not able to find alert level element "
+					% self.fileName
+					+ "for detailed view.")
+				return True
+
+			# get all sensors that belong to the focused alert level
+			currentSensors = list()
+			for sensor in self.sensors:
+				if currentElement.alertLevel.level in sensor.alertLevels:
+					currentSensors.append(sensor)
+
+			# get all alerts that belong to the focused alert level
+			currentAlerts = list()
+			for alert in self.alerts:
+				if currentElement.alertLevel.level in alert.alertLevels:
+					currentAlerts.append(alert)
+
+			detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel,
+				currentSensors, currentAlerts)
+
+		# show detailed view as an overlay
+		overlayView = urwid.Overlay(detailedView.get(), self.mainFrame,
+			align="center", width=("relative", 80), min_width=80,
+			valign="middle", height=("relative", 80), min_height=50)
+		self.mainLoop.widget = overlayView
+		self.detailView = True
+
+
+	# internal function that shows the manager urwid objects given
+	# by a page index
+	def _showManagersAtPageIndex(self, pageIndex):
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# check if the index to show is within the page range
+		if pageIndex >= managerPageCount:
+			pageIndex = 0
+		elif pageIndex < 0:
+			pageIndex = managerPageCount - 1
+
+		logging.debug("[%s]: Update shown managers with page index: %d."
+			% (self.fileName, pageIndex))
+
+		# get all manager urwid objects that should be shown on the new page
+		del self.shownManagerUrwidObjects[:]
+		for i in range(self.maxCountShowManagersPerPage):
+			tempItemIndex = i + (pageIndex * self.maxCountShowManagersPerPage)
+			if tempItemIndex >= len(self.managerUrwidObjects):
+				break
+			self.shownManagerUrwidObjects.append(
+				self.managerUrwidObjects[tempItemIndex])
+
+		# delete all old shown manager objects and replace them by the new ones
+		del self.managersGrid.contents[:]
+		for newShownManager in self.shownManagerUrwidObjects:
+			self.managersGrid.contents.append((newShownManager.get(),
+				self.managersGrid.options()))
+
+		# update managers page footer
+		tempText = "Page %d / %d " % (pageIndex + 1, managerPageCount)
+		self.managersFooter.set_text(tempText)
+
+
+	# internal function that shows the next page of manager objects
+	def _showManagersNextPage(self):
+
+		logging.debug("[%s]: Show next managers page." % self.fileName)
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if managerPageCount == 0:
+			return
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentManagerPage += 1
+		if self.currentManagerPage >= managerPageCount:
+			self.currentManagerPage = 0
+
+		# update shown managers
+		self._showManagersAtPageIndex(self.currentManagerPage)
+
+
+	# internal function that shows the previous page of manager objects
+	def _showManagersPreviousPage(self):
+
+		logging.debug("[%s]: Show previous managers page." % self.fileName)
+
+		# calculate how many pages the manager urwid objects have
+		managerPageCount = (len(self.managerUrwidObjects)
+			/ self.maxCountShowManagersPerPage)
+		if managerPageCount == 0:
+			return
+		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+			!= 0):
+			managerPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentManagerPage -= 1
+		if self.currentManagerPage < 0:
+			self.currentManagerPage = managerPageCount - 1
+
+		# update shown managers
+		self._showManagersAtPageIndex(self.currentManagerPage)
+
+
+	# internal function that shows the sensor urwid objects given
+	# by a page index
+	def _showSensorsAtPageIndex(self, pageIndex):
+
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects) 
+			/ self.maxCountShowSensorsPerPage)
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage) 
+			!= 0):
+			sensorPageCount += 1
+
+		# check if the index to show is within the page range
+		if pageIndex >= sensorPageCount:
+			pageIndex = 0
+		elif pageIndex < 0:
+			pageIndex = sensorPageCount - 1
+
+		logging.debug("[%s]: Update shown sensors with page index: %d."
+			% (self.fileName, pageIndex))
+
+		# get all sensor urwid objects that should be shown on the new page
+		del self.shownSensorUrwidObjects[:]
+		for i in range(self.maxCountShowSensorsPerPage):
+			tempItemIndex = i + (pageIndex * self.maxCountShowSensorsPerPage)
+			if tempItemIndex >= len(self.sensorUrwidObjects):
+				break
+			self.shownSensorUrwidObjects.append(
+				self.sensorUrwidObjects[tempItemIndex])
+
+		# delete all old shown sensor objects and replace them by the new ones
+		del self.sensorsGrid.contents[:]
+		for newShownSensor in self.shownSensorUrwidObjects:
+			self.sensorsGrid.contents.append((newShownSensor.get(),
+				self.sensorsGrid.options()))
+
+		# update sensors page footer
+		tempText = "Page %d / %d " % (pageIndex + 1, sensorPageCount)
+		self.sensorsFooter.set_text(tempText)
+
+
+	# internal function that shows the next page of sensor objects
+	def _showSensorsNextPage(self):
+
+		logging.debug("[%s]: Show next sensors page." % self.fileName)
+
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects) 
+			/ self.maxCountShowSensorsPerPage)
+		if sensorPageCount == 0:
+			return
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+			!= 0):
+			sensorPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentSensorPage += 1
+		if self.currentSensorPage >= sensorPageCount:
+			self.currentSensorPage = 0
+
+		# update shown sensors
+		self._showSensorsAtPageIndex(self.currentSensorPage)
+
+
+	# internal function that shows the previous page of sensor objects
+	def _showSensorsPreviousPage(self):
+
+		logging.debug("[%s]: Show previous sensors page." % self.fileName)
+
+		# calculate how many pages the sensor urwid objects have
+		sensorPageCount = (len(self.sensorUrwidObjects)
+			/ self.maxCountShowSensorsPerPage)
+		if sensorPageCount == 0:
+			return
+		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+			!= 0):
+			sensorPageCount += 1
+
+		# calculate next page that should be shown
+		self.currentSensorPage -= 1
+		if self.currentSensorPage < 0:
+			self.currentSensorPage = sensorPageCount - 1
+
+		# update shown sensors
+		self._showSensorsAtPageIndex(self.currentSensorPage)
+
+
 	# this function is called to update the screen
 	def updateScreen(self, status):
 
@@ -2311,11 +2255,6 @@ class Console:
 				updateProcess.optionValue = 0
 				updateProcess.start()
 
-		# check if key q/Q is pressed => shut down client
-		elif key in ["q", "Q"]:
-			if not self.detailView:
-				raise urwid.ExitMainLoop()
-
 		# check if key b/B is pressed => show previous page of focused elements
 		elif key in ["b", "B"]:
 			if not self.detailView:
@@ -2359,167 +2298,18 @@ class Console:
 
 		# when an overlayed view is shown
 		# => go back to main view
+		# when in main view
+		# => exit
 		elif key in ["esc"]:
 			if self.detailView:
 				self.mainLoop.widget = self.mainFrame
 				self.detailView = False
-
-
-
-
-
-		# TODO
-		# open pop up with information
-		elif key in ["enter"]:
-
-			# get current focused element
-			if self.currentFocused == FocusedElement.sensors:
-				currentElements = self.sensorsGrid
-
-				# TODO check what happens if no elements are in the group
-				currPos = None
-				if len(currentElements.contents) != 0:
-					currPos = currentElements.focus_position
-
-				# search for element for detailed view
-				currentElement = None
-				currentWidgetElement = currentElements.contents[currPos][0]
-				for temp in self.sensorUrwidObjects:
-					if currentWidgetElement == temp.get():
-						currentElement = temp
-						break
-				if currentElement is None:
-					logging.error("[%s] Not able to find sensor element "
-						% self.fileName
-						+ "for detailed view.")
-					return True
-
-				# get all alert levels the focused sensor belongs to
-				currentAlertLevels = list()
-				for alertLevel in self.alertLevels:
-					if alertLevel.level in currentElement.sensor.alertLevels:
-						currentAlertLevels.append(alertLevel)
-
-				tasta = SensorDetailedUrwid(currentElement.sensor,
-					currentElement.node, currentAlertLevels)
-
-
-
-
-			elif self.currentFocused == FocusedElement.alerts:
-				currentElements = self.alertsGrid
-
-				# TODO check what happens if no elements are in the group
-				currPos = None
-				if len(currentElements.contents) != 0:
-					currPos = currentElements.focus_position
-
-				# search for element for detailed view
-				currentElement = None
-				currentWidgetElement = currentElements.contents[currPos][0]
-				for temp in self.alertUrwidObjects:
-					if currentWidgetElement == temp.get():
-						currentElement = temp
-						break
-				if currentElement is None:
-					logging.error("[%s] Not able to find alert element "
-						% self.fileName
-						+ "for detailed view.")
-					return True
-
-				# get all alert levels the focused alert belongs to
-				currentAlertLevels = list()
-				for alertLevel in self.alertLevels:
-					if alertLevel.level in currentElement.alert.alertLevels:
-						currentAlertLevels.append(alertLevel)
-
-				tasta = AlertDetailedUrwid(currentElement.alert,
-					currentElement.node, currentAlertLevels)
-
-
-
-
-
-			elif self.currentFocused == FocusedElement.managers:
-				currentElements = self.managersGrid
-
-				# TODO check what happens if no elements are in the group
-				currPos = None
-				if len(currentElements.contents) != 0:
-					currPos = currentElements.focus_position
-
-				# search for element for detailed view
-				currentElement = None
-				currentWidgetElement = currentElements.contents[currPos][0]
-				for temp in self.managerUrwidObjects:
-					if currentWidgetElement == temp.get():
-						currentElement = temp
-						break
-				if currentElement is None:
-					logging.error("[%s] Not able to find manager element "
-						% self.fileName
-						+ "for detailed view.")
-					return True
-
-				tasta = ManagerDetailedUrwid(currentElement.manager,
-					currentElement.node)
-
-
-
-
-
-
-
 			else:
-				currentElements = self.alertLevelsGrid
+				raise urwid.ExitMainLoop()
 
-				# TODO check what happens if no elements are in the group
-				currPos = None
-				if len(currentElements.contents) != 0:
-					currPos = currentElements.focus_position
-
-				# search for element for detailed view
-				currentElement = None
-				currentWidgetElement = currentElements.contents[currPos][0]
-				for temp in self.alertLevelUrwidObjects:
-					if currentWidgetElement == temp.get():
-						currentElement = temp
-						break
-				if currentElement is None:
-					logging.error("[%s] Not able to find alert level element "
-						% self.fileName
-						+ "for detailed view.")
-					return True
-
-				# get all sensors that belong to the focused alert level
-				currentSensors = list()
-				for sensor in self.sensors:
-					if currentElement.alertLevel.level in sensor.alertLevels:
-						currentSensors.append(sensor)
-
-				# get all alerts that belong to the focused alert level
-				currentAlerts = list()
-				for alert in self.alerts:
-					if currentElement.alertLevel.level in alert.alertLevels:
-						currentAlerts.append(alert)
-
-				tasta = AlertLevelDetailedUrwid(currentElement.alertLevel,
-					currentSensors, currentAlerts)
-
-
-
-
-
-
-			# TODO
-			overlayView = urwid.Overlay(tasta.get(), self.mainFrame, align='center', width=('relative', 80), valign='middle', height=('relative', 80),
-				min_width=80, min_height=50)
-
-			self.mainLoop.widget = overlayView
-			self.detailView = True
-
-
-
+		# open overlayed view with information
+		elif key in ["enter"]:
+			self._showDetailedView()
 
 		return True
 
@@ -2548,11 +2338,7 @@ class Console:
 			# create new sensor urwid object
 			# (also links urwid object to sensor object)
 			sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
-				self.connectionTimeout, self.urwidSensorShowConnected,
-				self.urwidSensorShowAlertDelay,
-				self.urwidSensorShowLastUpdated,
-				self.urwidSensorShowState,
-				self.urwidSensorShowAlertLevels)
+				self.connectionTimeout)
 
 			# append the final sensor urwid object to the list
 			# of sensor objects
@@ -2681,8 +2467,7 @@ class Console:
 
 			# create new alert urwid object
 			# (also links urwid object to alert object)
-			alertUrwid = AlertUrwid(alert, nodeAlertBelongs,
-				self.urwidAlertShowAlertLevels)
+			alertUrwid = AlertUrwid(alert, nodeAlertBelongs)
 
 			# append the final alert urwid object to the list
 			# of alert objects
@@ -2731,8 +2516,7 @@ class Console:
 
 			# create new alert level urwid object
 			# (also links urwid object to alert level object)
-			alertLevelUrwid = AlertLevelUrwid(alertLevel,
-				self.urwidAlertLevelShowTriggerAlways)
+			alertLevelUrwid = AlertLevelUrwid(alertLevel)
 
 			# append the final alert level urwid object to the list
 			# of alert level objects
@@ -2824,23 +2608,18 @@ class Console:
 			self.rightDisplayPart])
 		fillerBody = urwid.Filler(self.finalBody, "top")
 
-
 		# generate header and footer
-		header = urwid.Text("alertR console manager", align="center")
+		header = urwid.Text("alertR Console Manager", align="center")
 		footer = urwid.Text("Keys: "
-			+ "1 - activate, "
-			+ "2 - deactivate, "
-			+ "q - quit, "
-			+ "tab - next elements, "
-			+ "up/down/left/right - move cursor, "
-			+ "enter - select element")
+			+ "1 - Activate, "
+			+ "2 - Deactivate, "
+			+ "ESC - Quit, "
+			+ "TAB - Next elements, "
+			+ "Up/Down/Left/Right - Move cursor, "
+			+ "Enter - Select element")
 
 		# build frame for final rendering
 		self.mainFrame = urwid.Frame(fillerBody, footer=footer, header=header)
-
-
-
-
 
 		# color palette
 		palette = [
@@ -2978,11 +2757,7 @@ class Console:
 					# create new sensor urwid object
 					# (also links urwid object to sensor object)
 					sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
-						self.connectionTimeout, self.urwidSensorShowConnected,
-						self.urwidSensorShowAlertDelay,
-						self.urwidSensorShowLastUpdated,
-						self.urwidSensorShowState,
-						self.urwidSensorShowAlertLevels)
+						self.connectionTimeout)
 
 					# append the final sensor urwid object to the list
 					# of sensor objects
@@ -3031,8 +2806,7 @@ class Console:
 
 					# create new alert urwid object
 					# (also links urwid object to alert object)
-					alertUrwid = AlertUrwid(alert, nodeAlertBelongs,
-						self.urwidAlertShowAlertLevels)
+					alertUrwid = AlertUrwid(alert, nodeAlertBelongs)
 
 					# append the final alert urwid object to the list
 					# of alert objects
@@ -3120,8 +2894,7 @@ class Console:
 				if alertLevel.alertLevelUrwid == None:
 					# create new alert level urwid object
 					# (also links urwid object to alert level object)
-					alertLevelUrwid = AlertLevelUrwid(alertLevel,
-						self.urwidAlertLevelShowTriggerAlways)
+					alertLevelUrwid = AlertLevelUrwid(alertLevel)
 
 					# append the final alert level urwid object to the list
 					# of alert level objects
