@@ -264,26 +264,33 @@ class Console:
 		# the main render loop for the interactive session
 		self.mainLoop = None
 
-		
-
-
-
-
-		# TODO
+		# the value that represents the currently focused element group
+		# (an enum class is used for it)
 		self.currentFocused = None
 
+		# the final body that contains the left and right part of the screen
 		self.finalBody = None
+
+		# the main frame around the final body
+		self.mainFrame = None
+
+		# left and right part of the screen
 		self.rightDisplayPart = None
 		self.leftDisplayPart = None
+
+		# the keybinding text below each element group
 		self.sensorsKeyBindings = None
 		self.managersKeyBindings = None
 		self.alertsKeyBindings = None
 		self.alertLevelsKeyBindings = None
+
+		# the boxes around the element groups
 		self.sensorsBox = None
 		self.alertsBox = None
 		self.managersBox = None
 		self.alertLevelsBox = None
-		self.mainFrame = None
+
+		# flag that signalizes if a detailed view of an object is shown or not
 		self.detailView = False
 
 
