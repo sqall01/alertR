@@ -420,6 +420,64 @@ class SensorDetailedUrwid:
 		return self.detailedBox
 
 
+	# this function updates all internal widgets
+	def updateCompleteWidget(self, alertLevels):
+
+		self.updateNodeDetails()
+		self.updateSensorDetails()
+		self.updateAlertLevelsDetails(alertLevels)
+
+
+	# this function updates the alert levels information shown
+	def updateAlertLevelsDetails(self, alertLevels):
+
+		# crate new sensor pile content
+		temp = self._createAlertLevelsWidgetList(alertLevels)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.alertLevelsPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.alertLevelsPileWidget.contents[:]
+		self.alertLevelsPileWidget.contents.extend(temp)
+
+
+	# this function updates the node information shown
+	def updateNodeDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createNodeWidgetList(self.node)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.nodePileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.nodePileWidget.contents[:]
+		self.nodePileWidget.contents.extend(temp)
+
+
+	# this function updates the sensor information shown
+	def updateSensorDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createSensorWidgetList(self.sensor)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.sensorPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.sensorPileWidget.contents[:]
+		self.sensorPileWidget.contents.extend(temp)
+
+
+
+
+ 
+
+
 # this class is an urwid object for an alert
 class AlertUrwid:
 

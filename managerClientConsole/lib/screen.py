@@ -291,7 +291,10 @@ class Console:
 		self.alertLevelsBox = None
 
 		# flag that signalizes if a detailed view of an object is shown or not
-		self.detailView = False
+		self.inDetailView = False
+
+		# the urwid object of the detailed view
+		self.detailedView = None
 
 
 	# set the focus to the sensors
@@ -526,6 +529,19 @@ class Console:
 		self.consoleLock.release()
 
 
+	# get a list of alert level objects that belong to the given
+	# object (object has to have attribute alertLevels)
+	def _getAlertLevelsOfObj(self, obj):
+
+		# get all alert levels the focused sensor belongs to
+		currentAlertLevels = list()
+		for alertLevel in self.alertLevels:
+			if alertLevel.level in obj.alertLevels:
+				currentAlertLevels.append(alertLevel)
+
+		return currentAlertLevels
+
+
 	# internal function that shows the alert urwid objects given
 	# by a page index
 	def _showAlertsAtPageIndex(self, pageIndex):
@@ -731,12 +747,10 @@ class Console:
 				return True
 
 			# get all alert levels the focused sensor belongs to
-			currentAlertLevels = list()
-			for alertLevel in self.alertLevels:
-				if alertLevel.level in currentElement.sensor.alertLevels:
-					currentAlertLevels.append(alertLevel)
+			currentAlertLevels = self._getAlertLevelsOfObj(
+				currentElement.sensor)
 
-			detailedView = SensorDetailedUrwid(currentElement.sensor,
+			self.detailedView = SensorDetailedUrwid(currentElement.sensor,
 				currentElement.node, currentAlertLevels)
 
 		elif self.currentFocused == FocusedElement.alerts:
@@ -762,12 +776,10 @@ class Console:
 				return True
 
 			# get all alert levels the focused alert belongs to
-			currentAlertLevels = list()
-			for alertLevel in self.alertLevels:
-				if alertLevel.level in currentElement.alert.alertLevels:
-					currentAlertLevels.append(alertLevel)
+			currentAlertLevels = self._getAlertLevelsOfObj(
+				currentElement.alert)
 
-			detailedView = AlertDetailedUrwid(currentElement.alert,
+			self.detailedView = AlertDetailedUrwid(currentElement.alert,
 				currentElement.node, currentAlertLevels)
 
 		elif self.currentFocused == FocusedElement.managers:
@@ -792,7 +804,7 @@ class Console:
 					+ "for detailed view.")
 				return True
 
-			detailedView = ManagerDetailedUrwid(currentElement.manager,
+			self.detailedView = ManagerDetailedUrwid(currentElement.manager,
 				currentElement.node)
 
 		else:
@@ -829,15 +841,16 @@ class Console:
 				if currentElement.alertLevel.level in alert.alertLevels:
 					currentAlerts.append(alert)
 
-			detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel,
+			self.detailedView = AlertLevelDetailedUrwid(
+				currentElement.alertLevel,
 				currentSensors, currentAlerts)
 
 		# show detailed view as an overlay
-		overlayView = urwid.Overlay(detailedView.get(), self.mainFrame,
+		overlayView = urwid.Overlay(self.detailedView.get(), self.mainFrame,
 			align="center", width=("relative", 80), min_width=80,
 			valign="middle", height=("relative", 80), min_height=50)
 		self.mainLoop.widget = overlayView
-		self.detailView = True
+		self.inDetailView = True
 
 
 	# internal function that shows the manager urwid objects given
@@ -1030,7 +1043,7 @@ class Console:
 
 		# check if key 1 is pressed => send alert system activation to server 
 		if key in ["1"]:
-			if not self.detailView:
+			if not self.inDetailView:
 				logging.info("[%s]: Activating alert system."
 					% self.fileName)
 
@@ -1047,7 +1060,7 @@ class Console:
 
 		# check if key 2 is pressed => send alert system deactivation to server
 		elif key in ["2"]:
-			if not self.detailView:
+			if not self.inDetailView:
 				logging.info("[%s]: Deactivating alert system."
 					% self.fileName)
 
@@ -1064,7 +1077,7 @@ class Console:
 
 		# check if key b/B is pressed => show previous page of focused elements
 		elif key in ["b", "B"]:
-			if not self.detailView:
+			if not self.inDetailView:
 				if self.currentFocused == FocusedElement.sensors:
 					self._showSensorsPreviousPage()
 
@@ -1079,7 +1092,7 @@ class Console:
 
 		# check if key n/N is pressed => show next page of focused elements
 		elif key in ["n", "N"]:
-			if not self.detailView:
+			if not self.inDetailView:
 				if self.currentFocused == FocusedElement.sensors:
 					self._showSensorsNextPage()
 
@@ -1095,12 +1108,12 @@ class Console:
 		# change focus to next element group
 		# order: (sensors, alerts, managers, alert levels)
 		elif key in ["tab"]:
-			if not self.detailView:
+			if not self.inDetailView:
 				self._switchFocusedElementGroup()
 
 		# move focus to next element in the element group
 		elif key in ["up", "down", "left", "right"]:
-			if not self.detailView:
+			if not self.inDetailView:
 				self._moveFocus(key)
 
 		# when an overlayed view is shown
@@ -1108,9 +1121,10 @@ class Console:
 		# when in main view
 		# => exit
 		elif key in ["esc"]:
-			if self.detailView:
+			if self.inDetailView:
 				self.mainLoop.widget = self.mainFrame
-				self.detailView = False
+				self.inDetailView = False
+				self.detailedView = None
 			else:
 				raise urwid.ExitMainLoop()
 
@@ -1529,6 +1543,24 @@ class Console:
 					# to delete all references to object
 					# => object will be deleted by garbage collector
 					self.sensorUrwidObjects.remove(sensorUrwidObject)
+
+					# TODO
+					# close detailed view here when sensor object
+					# does no longer exist
+
+				# if the detailed view is shown of a sensor
+				# => update the information shown for the corresponding sensor
+				else:
+					if (self.inDetailView
+						and self.currentFocused == FocusedElement.sensors
+						and self.detailedView.sensor 
+						== sensorUrwidObject.sensor):
+
+						objAlertLevels = self._getAlertLevelsOfObj(
+							sensorUrwidObject.sensor)
+
+						self.detailedView.updateCompleteWidget(
+							objAlertLevels)
 
 			# add all sensors that were newly added
 			for sensor in self.sensors:
