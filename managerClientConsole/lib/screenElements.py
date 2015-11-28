@@ -226,10 +226,6 @@ class SensorDetailedUrwid:
 	def __init__(self, sensor, node, alertLevels):
 
 		# TODO
-		# needs an update mechanism in the case the detailed view is
-		# shown and values change (for example the sensor is triggered)
-
-		# TODO
 		# needs also a list of sensor alerts that are triggered by this
 		# sensor recently
 
@@ -473,11 +469,6 @@ class SensorDetailedUrwid:
 		self.sensorPileWidget.contents.extend(temp)
 
 
-
-
- 
-
-
 # this class is an urwid object for an alert
 class AlertUrwid:
 
@@ -561,10 +552,6 @@ class AlertUrwid:
 class AlertDetailedUrwid:
 
 	def __init__(self, alert, node, alertLevels):
-
-		# TODO
-		# needs an update mechanism in the case the detailed view is
-		# shown and values change
 
 		self.node = node
 		self.alert = alert
@@ -731,6 +718,59 @@ class AlertDetailedUrwid:
 		return self.detailedBox
 
 
+	# this function updates all internal widgets
+	def updateCompleteWidget(self, alertLevels):
+
+		self.updateNodeDetails()
+		self.updateAlertDetails()
+		self.updateAlertLevelsDetails(alertLevels)
+
+
+	# this function updates the node information shown
+	def updateAlertDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createAlertWidgetList(self.alert)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.alertPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.alertPileWidget.contents[:]
+		self.alertPileWidget.contents.extend(temp)
+
+
+	# this function updates the alert levels information shown
+	def updateAlertLevelsDetails(self, alertLevels):
+
+		# crate new sensor pile content
+		temp = self._createAlertLevelsWidgetList(alertLevels)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.alertLevelsPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.alertLevelsPileWidget.contents[:]
+		self.alertLevelsPileWidget.contents.extend(temp)
+
+
+	# this function updates the node information shown
+	def updateNodeDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createNodeWidgetList(self.node)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.nodePileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.nodePileWidget.contents[:]
+		self.nodePileWidget.contents.extend(temp)
+
+
 # this class is an urwid object for a manager
 class ManagerUrwid:
 
@@ -815,10 +855,6 @@ class ManagerUrwid:
 class ManagerDetailedUrwid:
 
 	def __init__(self, manager, node):
-
-		# TODO
-		# needs an update mechanism in the case the detailed view is
-		# shown and values change
 
 		self.node = node
 		self.manager = manager
@@ -916,6 +952,43 @@ class ManagerDetailedUrwid:
 		return self.detailedBox
 
 
+	# this function updates all internal widgets
+	def updateCompleteWidget(self):
+
+		self.updateNodeDetails()
+		self.updateManagerDetails()
+
+
+	# this function updates the node information shown
+	def updateManagerDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createManagerWidgetList(self.manager)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.managerPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.managerPileWidget.contents[:]
+		self.managerPileWidget.contents.extend(temp)
+
+
+	# this function updates the node information shown
+	def updateNodeDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createNodeWidgetList(self.node)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.nodePileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.nodePileWidget.contents[:]
+		self.nodePileWidget.contents.extend(temp)
+
+
 # this class is an urwid object for an alert level
 class AlertLevelUrwid:
 
@@ -1007,10 +1080,6 @@ class AlertLevelUrwid:
 class AlertLevelDetailedUrwid:
 
 	def __init__(self, alertLevel, sensors, alerts):
-
-		# TODO
-		# needs an update mechanism in the case the detailed view is
-		# shown and values change
 
 		self.alertLevel = alertLevel
 
@@ -1239,6 +1308,59 @@ class AlertLevelDetailedUrwid:
 	# to render this object
 	def get(self):
 		return self.detailedBox
+
+
+	# this function updates all internal widgets
+	def updateCompleteWidget(self, sensors, alerts):
+
+		self.updateAlertLevelDetails()
+		self.updateSensorsDetails(sensors)
+		self.updateAlertsDetails(alerts)
+
+
+	# this function updates the alert level information shown
+	def updateAlertLevelDetails(self):
+
+		# crate new sensor pile content
+		temp = self._createAlertLevelWidgetList(self.alertLevel)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.alertLevelPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.alertLevelPileWidget.contents[:]
+		self.alertLevelPileWidget.contents.extend(temp)
+
+
+	# this function updates the node information shown
+	def updateAlertsDetails(self, alerts):
+
+		# crate new sensor pile content
+		temp = self._createAlertsWidgetList(alerts)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.alertsPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.alertsPileWidget.contents[:]
+		self.alertsPileWidget.contents.extend(temp)
+
+
+	# this function updates the sensor information shown
+	def updateSensorsDetails(self, sensors):
+
+		# crate new sensor pile content
+		temp = self._createSensorsWidgetList(sensors)
+		
+		# create a list of tuples for the pile widget
+		pileOptions = self.sensorsPileWidget.options()
+		temp = map(lambda x: (x, pileOptions), temp)
+
+		# empty pile widget contents and replace it with the new widgets
+		del self.sensorsPileWidget.contents[:]
+		self.sensorsPileWidget.contents.extend(temp)
 
 
 # this class is an urwid object for a sensor alert

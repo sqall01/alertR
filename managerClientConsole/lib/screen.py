@@ -417,6 +417,13 @@ class Console:
 			pass
 
 
+	# close the detailed view
+	def _closeDetailedView(self):
+		self.mainLoop.widget = self.mainFrame
+		self.inDetailView = False
+		self.detailedView = None
+
+
 	# switches focus to the next element group
 	def _switchFocusedElementGroup(self):
 
@@ -540,6 +547,32 @@ class Console:
 				currentAlertLevels.append(alertLevel)
 
 		return currentAlertLevels
+
+
+	# get a list of alert objects that belong to the given
+	# alert level
+	def _getAlertsOfAlertLevel(self, alertLevel):
+
+		# get all alerts that belong to the focused alert level
+		currentAlerts = list()
+		for alert in self.alerts:
+			if alertLevel.level in alert.alertLevels:
+				currentAlerts.append(alert)
+
+		return currentAlerts
+
+
+	# get a list of sensor objects that belong to the given
+	# alert level
+	def _getSensorsOfAlertLevel(self, alertLevel):
+
+		# get all sensors that belong to the focused alert level
+		currentSensors = list()
+		for sensor in self.sensors:
+			if alertLevel.level in sensor.alertLevels:
+				currentSensors.append(sensor)
+
+		return currentSensors
 
 
 	# internal function that shows the alert urwid objects given
@@ -830,16 +863,12 @@ class Console:
 				return True
 
 			# get all sensors that belong to the focused alert level
-			currentSensors = list()
-			for sensor in self.sensors:
-				if currentElement.alertLevel.level in sensor.alertLevels:
-					currentSensors.append(sensor)
+			currentSensors = self._getSensorsOfAlertLevel(
+				currentElement.alertLevel)
 
 			# get all alerts that belong to the focused alert level
-			currentAlerts = list()
-			for alert in self.alerts:
-				if currentElement.alertLevel.level in alert.alertLevels:
-					currentAlerts.append(alert)
+			currentAlerts = self._getAlertsOfAlertLevel(
+				currentElement.alertLevel)
 
 			self.detailedView = AlertLevelDetailedUrwid(
 				currentElement.alertLevel,
@@ -1122,9 +1151,7 @@ class Console:
 		# => exit
 		elif key in ["esc"]:
 			if self.inDetailView:
-				self.mainLoop.widget = self.mainFrame
-				self.inDetailView = False
-				self.detailedView = None
+				self._closeDetailedView()
 			else:
 				raise urwid.ExitMainLoop()
 
@@ -1612,6 +1639,24 @@ class Console:
 					# => object will be deleted by garbage collector
 					self.alertUrwidObjects.remove(alertUrwidObject)
 
+					# TODO
+					# close detailed view here when alert object
+					# does no longer exist
+
+				# if the detailed view is shown of an alert
+				# => update the information shown for the corresponding alert
+				else:
+					if (self.inDetailView
+						and self.currentFocused == FocusedElement.alerts
+						and self.detailedView.alert 
+						== alertUrwidObject.alert):
+
+						objAlertLevels = self._getAlertLevelsOfObj(
+							alertUrwidObject.alert)
+
+						self.detailedView.updateCompleteWidget(
+							objAlertLevels)
+
 			# add all alerts that were newly added
 			for alert in self.alerts:
 				# check if a new alert was added
@@ -1661,6 +1706,20 @@ class Console:
 					# to delete all references to object
 					# => object will be deleted by garbage collector
 					self.managerUrwidObjects.remove(managerUrwidObject)
+
+					# TODO
+					# close detailed view here when manager object
+					# does no longer exist
+
+				# if the detailed view is shown of a manager
+				# => update the information shown for the corresponding manager
+				else:
+					if (self.inDetailView
+						and self.currentFocused == FocusedElement.managers
+						and self.detailedView.manager 
+						== managerUrwidObject.manager):
+
+						self.detailedView.updateCompleteWidget()
 
 			# add all managers that were newly added
 			for manager in self.managers:
@@ -1713,6 +1772,30 @@ class Console:
 					# to delete all references to object
 					# => object will be deleted by garbage collector
 					self.alertLevelUrwidObjects.remove(alertLevelUrwidObject)
+
+					# TODO
+					# close detailed view here when alert level object
+					# does no longer exist
+
+				# if the detailed view is shown of a manager
+				# => update the information shown for the corresponding manager
+				else:
+					if (self.inDetailView
+						and self.currentFocused == FocusedElement.alertLevels
+						and self.detailedView.alertLevel 
+						== alertLevelUrwidObject.alertLevel):
+
+						# get all sensors that belong to the focused
+						# alert level
+						currentSensors = self._getSensorsOfAlertLevel(
+							alertLevelUrwidObject.alertLevel)
+
+						# get all alerts that belong to the focused alert level
+						currentAlerts = self._getAlertsOfAlertLevel(
+							alertLevelUrwidObject.alertLevel)
+
+						self.detailedView.updateCompleteWidget(currentSensors,
+							currentAlerts)
 
 			# add all alert levels that were newly added
 			for alertLevel in self.alertLevels:
