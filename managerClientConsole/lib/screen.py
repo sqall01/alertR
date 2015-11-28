@@ -1571,9 +1571,13 @@ class Console:
 					# => object will be deleted by garbage collector
 					self.sensorUrwidObjects.remove(sensorUrwidObject)
 
-					# TODO
-					# close detailed view here when sensor object
-					# does no longer exist
+					# if the detailed view is shown and this sensor
+					# was removed
+					# => close detailed view
+					if (self.inDetailView
+						and not self.detailedView.sensor in self.sensors):
+
+						self._closeDetailedView()
 
 				# if the detailed view is shown of a sensor
 				# => update the information shown for the corresponding sensor
@@ -1639,9 +1643,13 @@ class Console:
 					# => object will be deleted by garbage collector
 					self.alertUrwidObjects.remove(alertUrwidObject)
 
-					# TODO
-					# close detailed view here when alert object
-					# does no longer exist
+					# if the detailed view is shown and this alert
+					# was removed
+					# => close detailed view
+					if (self.inDetailView
+						and not self.detailedView.alert in self.alerts):
+
+						self._closeDetailedView()
 
 				# if the detailed view is shown of an alert
 				# => update the information shown for the corresponding alert
@@ -1707,9 +1715,13 @@ class Console:
 					# => object will be deleted by garbage collector
 					self.managerUrwidObjects.remove(managerUrwidObject)
 
-					# TODO
-					# close detailed view here when manager object
-					# does no longer exist
+					# if the detailed view is shown and this manager
+					# was removed
+					# => close detailed view
+					if (self.inDetailView
+						and not self.detailedView.manager in self.managers):
+
+						self._closeDetailedView()
 
 				# if the detailed view is shown of a manager
 				# => update the information shown for the corresponding manager
@@ -1773,9 +1785,14 @@ class Console:
 					# => object will be deleted by garbage collector
 					self.alertLevelUrwidObjects.remove(alertLevelUrwidObject)
 
-					# TODO
-					# close detailed view here when alert level object
-					# does no longer exist
+					# if the detailed view is shown and this alert level
+					# was removed
+					# => close detailed view
+					if (self.inDetailView
+						and not self.detailedView.alertLevel
+						in self.alertLevels):
+
+						self._closeDetailedView()
 
 				# if the detailed view is shown of a manager
 				# => update the information shown for the corresponding manager
