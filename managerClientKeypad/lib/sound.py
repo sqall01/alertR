@@ -14,6 +14,14 @@ import pyaudio
 import wave
 
 
+# enum class for audio options
+class AudioOptions:
+	activating = 0
+	activatingDelayed = 1
+	deactivating = 2
+
+
+# class that outputs all audio
 class AudioOutput:
 
 	def __init__(self):

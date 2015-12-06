@@ -14,4 +14,4 @@ from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
 from screen import ScreenUpdater, Console
 from update import UpdateChecker, Updater
 from globalData import GlobalData
-from sound import AudioOutput
+from sound import AudioOutput, AudioOptions
