@@ -15,6 +15,7 @@ from lib import ScreenUpdater
 from lib import Console
 from lib import UpdateChecker
 from lib import GlobalData
+from lib import AudioOutput
 import logging
 import time
 import socket
@@ -152,6 +153,13 @@ if __name__ == '__main__':
 		globalData.description = str(
 			configRoot.find("manager").find("general").attrib[
 			"description"])
+
+		# get audio settings
+		audioActivated = (str(
+				configRoot.find("manager").find("audio").attrib[
+				"enabled"]).upper() == "TRUE")
+		if audioActivated is True:
+			globalData.audioOutput = AudioOutput()
 
 		# get settings for the keypad
 		globalData.timeDelayedActivation = int(
