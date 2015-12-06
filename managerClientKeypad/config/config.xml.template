@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.300">
+<config version="0.301">
 
 	<!--
 		in this section general options are configured
@@ -150,6 +150,13 @@
 		-->
 		<general
 			description="test manager" />
+
+		<!--
+			audio specific settings
+			enabled - should the client output audio? ("True" or "False")
+		-->
+		<audio
+			enabled="True" />
 
 		<!--
 			keypad specific settings
