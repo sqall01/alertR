@@ -10,8 +10,7 @@
 import threading
 import logging
 import os
-import pyaudio
-import wave
+import subprocess
 
 
 # enum class for audio options
@@ -50,57 +49,25 @@ class AudioOutput:
 		self.soundLock.release()
 
 
-	# plays the given wave file
+	# plays the given wave file with the help of aplay
+	# (used pyaudio before, but could not suppress the console output)
 	def _playFile(self, fileLocation):
 
 		logging.debug("[%s]: Playing wave file '%s'."
 				% (self.fileName, fileLocation))
 
-		# open wave file
-		waveFile = None
-		try:
-			waveFile = wave.open(fileLocation, 'rb')
-		except Exception as e:
-			logging.exception("[%s]: Could not open wave file '%s'."
+		p = subprocess.Popen(["aplay", fileLocation], stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE)
+
+		exit_code = p.wait()
+		out, err = p.communicate()
+
+		if exit_code != 0:
+			logging.error("[%s]: Could not play wave file '%s'."
 				% (self.fileName, fileLocation))
-			return
 
-		# open player stream
-		player = None
-		stream = None
-
-		try:
-			player = pyaudio.PyAudio()
-			stream = player.open(
-				format=player.get_format_from_width(waveFile.getsampwidth()),
-				channels=waveFile.getnchannels(),
-				rate=waveFile.getframerate(),
-				output=True)
-		except Exception as e:
-			logging.exception("[%s]: Could not open player stream."
-				% self.fileName)
-			return
-
-		# write stream data
-		try:
-			data = waveFile.readframes(self.chunkSize)
-			while len(data) > 0:
-				stream.write(data)
-				data = waveFile.readframes(self.chunkSize)
-		except Exception as e:
-			logging.exception("[%s]: Not able to write stream data."
-				% self.fileName)
-			return
-
-		# stop and close player stream
-		try:
-			stream.stop_stream()
-			stream.close()
-			player.terminate()
-		except Exception as e:
-			logging.exception("[%s]: Not able to close player stream."
-				% self.fileName)
-			return
+			logging.error("[%s]: Error message: %s"
+				% (self.fileName, err))
 
 
 	def audioActivating(self):
