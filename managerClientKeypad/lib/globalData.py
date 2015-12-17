@@ -17,7 +17,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.300
+		self.version = 0.301
 
 		# revision of the used client
 		self.rev = 0
@@ -89,3 +89,6 @@ class GlobalData:
 		# activation of the alert system (this option is given to the user
 		# in the menu)
 		self.timeDelayedActivation = None
+
+		# the object that is used to output audio (if activated)
+		self.audioOutput = None
