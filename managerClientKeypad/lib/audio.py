@@ -68,6 +68,7 @@ class AudioOutput:
 		# open player stream
 		player = None
 		stream = None
+
 		try:
 			player = pyaudio.PyAudio()
 			stream = player.open(
