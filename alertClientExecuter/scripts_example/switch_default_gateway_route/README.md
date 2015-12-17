@@ -54,6 +54,11 @@ iface eth1 inet static
 
 ```
 
+NOTE: If you want to receive an IP address dynamically for both interfaces,
+please remember to disable the propagation of nameserver and gateway in the
+/etc/dhcp/dhclient.conf. Or otherwise the gateway/nameserver of your host
+will change constantly due to the made DHCP requests.
+
 
 Permission Configuration:
 ------
