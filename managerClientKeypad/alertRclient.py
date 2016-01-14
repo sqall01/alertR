@@ -267,4 +267,5 @@ if __name__ == '__main__':
 	# generate the console object and start it
 	# (does not return unless it is exited)
 	globalData.console = Console(globalData)
+	logging.info("[%s] Starting console." % fileName)
 	globalData.console.startConsole()
