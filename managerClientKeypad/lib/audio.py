@@ -18,6 +18,7 @@ class AudioOptions:
 	activating = 0
 	activatingDelayed = 1
 	deactivating = 2
+	warning = 3
 
 
 # class that outputs all audio
@@ -76,13 +77,19 @@ class AudioOutput:
 		self._releaseLock()
 
 
+	def audioActivatingDelayed(self):
+		self._acquireLock()
+		self._playFile(self.soundDirectory + "activating_delayed.wav")
+		self._releaseLock()
+
+
 	def audioDeactivating(self):
 		self._acquireLock()
 		self._playFile(self.soundDirectory + "deactivating.wav")
 		self._releaseLock()
 
 
-	def audioActivatingDelayed(self):
+	def audioWarning(self):
 		self._acquireLock()
-		self._playFile(self.soundDirectory + "activating_delayed.wav")
+		self._playFile(self.soundDirectory + "warning.wav")
 		self._releaseLock()

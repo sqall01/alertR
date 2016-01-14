@@ -15,3 +15,4 @@ from screen import ScreenUpdater, Console
 from update import UpdateChecker, Updater
 from globalData import GlobalData
 from audio import AudioOutput, AudioOptions
+from localObjects import SensorWarningState

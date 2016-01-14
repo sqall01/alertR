@@ -12,6 +12,8 @@ import logging
 import os
 import time
 import urwid
+from audio import AudioOptions
+from screenElements import PinUrwid, StatusUrwid, WarningUrwid
 
 
 # this class is used by the urwid console thread
@@ -27,6 +29,7 @@ class ScreenActionExecuter(threading.Thread):
 		# get global configured data
 		self.globalData = globalData
 		self.serverComm = self.globalData.serverComm
+		self.audioOutput = self.globalData.audioOutput
 
 		# this options are used when the thread should
 		# send a new option to the server
@@ -40,6 +43,11 @@ class ScreenActionExecuter(threading.Thread):
 		self.optionTypeDelayed = None
 		self.optionValueDelayed = None
 		self.optionDelayDelayed = None
+
+		# this options are used when the thread should
+		# output audio
+		self.outputAudio = False
+		self.audioType = None
 
 
 	def run(self):
@@ -77,6 +85,17 @@ class ScreenActionExecuter(threading.Thread):
 				logging.error("[%s]: Sending option " % self.fileName
 					+ "change delayed to the server failed.")
 				return
+
+		# check if audio should be outputted
+		elif self.outputAudio:
+			if self.audioType == AudioOptions.activating:
+				self.audioOutput.audioActivating()
+			elif self.audioType == AudioOptions.activatingDelayed:
+				self.audioOutput.audioActivatingDelayed()
+			elif self.audioType == AudioOptions.deactivating:
+				self.audioOutput.audioDeactivating()
+			elif self.audioType == AudioOptions.warning:
+				self.audioOutput.audioWarning()
 
 
 # this class handles the screen updates
@@ -126,9 +145,13 @@ class ScreenUpdater(threading.Thread):
 			# check if the screen is unlocked
 			# and the screen unlocked time has timed out
 			# => lock screen
-			if (self.console.screenUnlocked
+			if (not self.console.inPinView
 				and (int(time.time()) - self.console.screenUnlockedTime)
 				> self.unlockedScreenTimeout):
+
+				logging.info("[%s]: Timeout for unlocked screen."
+					% self.fileName)
+
 				if not self.console.updateScreen("lockscreen"):
 					logging.error("[%s]: Locking screen " % self.fileName
 						+ "failed.")
@@ -175,215 +198,6 @@ class ScreenUpdater(threading.Thread):
 		return
 
 
-# this class is an urwid object for a status
-class StatusUrwid:
-
-	def __init__(self, title, statusType, statusValue):
-
-		self.title = title
-		self.statusType = statusType
-		self.statusValue = statusValue
-
-		self.statusTextWidget = urwid.Text(self.statusType + ": "
-			+ str(self.statusValue))
-		statusBox = urwid.LineBox(self.statusTextWidget, title=self.title)
-		paddedStatusBox = urwid.Padding(statusBox, left=0, right=0)
-		self.statusUrwidMap = urwid.AttrMap(paddedStatusBox, "neutral")
-
-
-	# this function returns the final urwid widget that is used
-	# to render the box of a status
-	def get(self):
-		return self.statusUrwidMap
-
-
-	# this functipn updates the status type
-	def updateStatusType(self, statusType):
-		self.statusType = statusType
-		self.statusTextWidget.set_text(self.statusType + ": "
-			+ str(self.statusValue))
-
-
-	# this functipn updates the status value
-	def updateStatusValue(self, statusValue):
-		self.statusValue = statusValue
-		self.statusTextWidget.set_text(self.statusType + ": "
-			+ str(self.statusValue))
-
-
-	# this function changes the color of this urwid object to red
-	def turnRed(self):
-		self.statusUrwidMap.set_attr_map({None: "redColor"})
-
-
-	# this function changes the color of this urwid object to green
-	def turnGreen(self):
-		self.statusUrwidMap.set_attr_map({None: "greenColor"})
-
-
-	# this function changes the color of this urwid object to gray
-	def turnGray(self):
-		self.statusUrwidMap.set_attr_map({None: "grayColor"})
-
-
-	# this function changes the color of this urwid object to the
-	# neutral color scheme
-	def turnNeutral(self):
-		self.statusUrwidMap.set_attr_map({None: "neutral"})
-
-
-# this class is an urwid object for the pin field object
-class PinUrwid(urwid.Edit):
-
-	# get the instance of the console object
-	def registerConsoleInstance(self, console):
-		self.fileName = os.path.basename(__file__)
-		self.console = console
-
-
-	# this functions handles the key presses
-	def keypress(self, size, key):
-		if key != "enter":
-			return super(PinUrwid, self).keypress(size,key)
-
-		# get user input and clear pin field
-		inputPin = self.edit_text.strip()
-		self.set_edit_text("")
-
-		# check given pin
-		if not self.console.checkPin(inputPin):
-			return True
-
-		# set screen as unlocked and store time
-		# when screen was unlocked
-		self.console.screenUnlocked = True
-		self.console.screenUnlockedTime = int(time.time())
-
-		# remove pin field from the screen
-		for pileTuple in self.console.editPartScreen.contents:
-			if self.console.pinEdit == pileTuple[0]:
-				self.console.editPartScreen.contents.remove(pileTuple)
-				break
-
-		# show options menu
-		self.console.editPartScreen.contents.append((self.console.menuPile,
-			self.console.editPartScreen.options()))
-
-		return True
-
-
-# this class is an urwid object for the edit menu object
-class MenuUrwid(urwid.Edit):
-
-	# get the instance of the console object
-	def registerConsoleInstance(self, console):
-		self.fileName = os.path.basename(__file__)		
-		self.console = console
-		self.timeDelayedActivation = self.console.timeDelayedActivation
-
-
-	# this functions handles the key presses
-	def keypress(self, size, key):
-
-		# check if option 1 was chosen => activate alert system
-		if key == '1':
-
-			logging.info("[%s]: Activating alert system." % self.fileName)
-
-			# send option message to server via a thread to not block
-			# the urwid console thread
-			updateProcess = ScreenActionExecuter(self.console.globalData)
-			# set thread to daemon
-			# => threads terminates when main thread terminates	
-			updateProcess.daemon = True
-			updateProcess.sendOption = True
-			updateProcess.optionType = "alertSystemActive"
-			updateProcess.optionValue = 1
-			updateProcess.start()
-
-			# set screen as locked and reset the time
-			# when screen was unlocked
-			self.console.screenUnlocked = False
-			self.console.screenUnlockedTime = 0
-
-			# remove menu from the screen
-			for pileTuple in self.console.editPartScreen.contents:
-				if self.console.menuPile == pileTuple[0]:
-					self.console.editPartScreen.contents.remove(pileTuple)
-					break
-
-			# show pin field
-			self.console.editPartScreen.contents.append((self.console.pinEdit,
-				self.console.editPartScreen.options()))
-
-		# check if option 2 was chosen => deactivate alert system
-		elif key == '2':
-
-			logging.info("[%s]: Deactivating alert system." % self.fileName)
-
-			# send option message to server via a thread to not block
-			# the urwid console thread
-			updateProcess = ScreenActionExecuter(self.console.globalData)
-			# set thread to daemon
-			# => threads terminates when main thread terminates	
-			updateProcess.daemon = True
-			updateProcess.sendOption = True
-			updateProcess.optionType = "alertSystemActive"
-			updateProcess.optionValue = 0
-			updateProcess.start()
-
-			# set screen as locked and reset the time
-			# when screen was unlocked
-			self.console.screenUnlocked = False
-			self.console.screenUnlockedTime = 0
-
-			# remove menu from the screen
-			for pileTuple in self.console.editPartScreen.contents:
-				if self.console.menuPile == pileTuple[0]:
-					self.console.editPartScreen.contents.remove(pileTuple)
-					break
-
-			# show pin field
-			self.console.editPartScreen.contents.append((self.console.pinEdit,
-				self.console.editPartScreen.options()))
-
-		# check if option 3 was chosen
-		elif key == '3':
-
-			logging.info("[%s]: Activating alert system " % self.fileName
-				+ "in %d seconds." % self.timeDelayedActivation)
-
-			# send option message to server via a thread to not block
-			# the urwid console thread
-			updateProcess = ScreenActionExecuter(self.console.globalData)
-			# set thread to daemon
-			# => threads terminates when main thread terminates	
-			updateProcess.daemon = True
-			updateProcess.sendOptionDelayed = True
-			updateProcess.optionTypeDelayed = "alertSystemActive"
-			updateProcess.optionValueDelayed = 1
-			updateProcess.optionDelayDelayed = self.timeDelayedActivation
-			updateProcess.start()
-
-			# set screen as locked and reset the time
-			# when screen was unlocked
-			self.console.screenUnlocked = False
-			self.console.screenUnlockedTime = 0
-
-			# remove menu from the screen
-			for pileTuple in self.console.editPartScreen.contents:
-				if self.console.menuPile == pileTuple[0]:
-					self.console.editPartScreen.contents.remove(pileTuple)
-					break
-
-			# show pin field
-			self.console.editPartScreen.contents.append((self.console.pinEdit,
-				self.console.editPartScreen.options()))
-
-		else:
-			return True
-
-
 # this class handles the complete screen/console
 class Console:
 
@@ -401,6 +215,8 @@ class Console:
 		self.serverComm = self.globalData.serverComm
 		self.pins = self.globalData.pins
 		self.timeDelayedActivation = self.globalData.timeDelayedActivation
+		self.audioOutput = self.globalData.audioOutput
+		self.sensorWarningStates = self.globalData.sensorWarningStates
 
 		# lock that is being used so only one thread can update the screen
 		self.consoleLock = threading.BoundedSemaphore(1)
@@ -423,18 +239,280 @@ class Console:
 		# this is the urwid object of the whole edit part of the screen
 		self.editPartScreen = None
 
-		# this flag tells if the screen is locked or unlocked
-		self.screenUnlocked = False
-
 		# gives the time in seconds when the screen was unlocked
 		# (used to check if it was timed out)
 		self.screenUnlockedTime = 0
+
+		# the main render loop for the interactive session
+		self.mainLoop = None
+
+		# the final body that contains the left and right part of the screen
+		self.finalBody = None
+
+		# the main frame around the final body
+		self.mainFrame = None
+
+		# the urwid object of the warning view
+		self.warningView = None
+
+		# flag that signalizes if the pin view is shown or not
+		self.inPinView = True
+
+		# flag that signalizes if the menu view is shown or not
+		self.inMenuView = False
+
+		# flag that signalizes if the warning view is shown or not
+		self.inWarningView = False
+
+		# callback function of the action that is chosen during the menu view
+		# (is used to show warnings if some sensors are not in
+		# the correct state and after confirmation execute the chosen option)
+		self.callbackOptionToExecute = None
+
+		# list of sensors that are in the warning state and need user
+		# confirmation
+		self.sensorsToWarn = list()
 
 
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
 		self.consoleLock.acquire()
+
+
+	# internal function that clears the edit/menu part of the screen
+	def _clearEditPartScreen(self):
+
+		# remove views from the screen (if exists)
+		for pileTuple in self.editPartScreen.contents:
+			if self.menuPile == pileTuple[0]:
+				self.editPartScreen.contents.remove(pileTuple)
+				continue
+			elif self.pinEdit == pileTuple[0]:
+				self.editPartScreen.contents.remove(pileTuple)
+				continue
+			elif self.warningView.get() == pileTuple[0]:
+				self.editPartScreen.contents.remove(pileTuple)
+				continue
+
+
+	# internal function that creates a list of sensors that do not
+	# satisfy the configured sensor warning states
+	def _checkSensorStatesSatisfied(self):
+
+		# get a list of sensors that do not satisfy the warning states
+		statesNotSatisfied = list()
+		for sensorWarningState in self.sensorWarningStates:
+
+			# get the node corresponding to sensor warning state
+			currentNode = None
+			for node in self.nodes:
+				if node.username == sensorWarningState.username:
+					currentNode = node
+					break
+			# skip warning state if node is not found
+			if currentNode is None:
+				logging.warning("[%s]: Not able to find "
+					% self.fileName
+					+ "node for username '%s'."
+					% sensorWarningState.username)
+				continue
+
+			# get the sensor corresponding to sensor warning state
+			currentSensor = None
+			for sensor in self.sensors:
+				if (sensor.nodeId == currentNode.nodeId
+					and sensor.remoteSensorId
+					== sensorWarningState.remoteSensorId):
+					currentSensor = sensor
+					break
+			# skip warning state if sensor is not found
+			if currentSensor is None:
+				logging.warning("[%s]: Not able to find "
+					% self.fileName
+					+ "sensor with remote id '%d' for username '%s'."
+					% (sensorWarningState.remoteSensorId,
+					sensorWarningState.username))
+				continue
+
+			# check if the sensor is in the warning state
+			if currentSensor.state == sensorWarningState.warningState:
+				statesNotSatisfied.append(sensor)
+
+				logging.debug("[%s]: Sensor with remote id '%d' "
+					% (self.fileName, sensorWarningState.remoteSensorId)
+					+ "for username '%s' and description '%s' "
+					% (sensorWarningState.username, sensor.description)
+					+ "in warning state.")
+
+		return statesNotSatisfied
+
+
+	# internal function that executes option 1 of the menu
+	def _executeOption1(self):
+
+		logging.info("[%s]: Activating alert system." % self.fileName)
+
+		# check if output is activated
+		if not self.audioOutput is None:
+			# output audio via a thread to not block
+			# the urwid console thread
+			audioProcess = ScreenActionExecuter(self.globalData)
+			# set thread to daemon
+			# => threads terminates when main thread terminates	
+			audioProcess.daemon = True
+			audioProcess.outputAudio = True
+			audioProcess.audioType = AudioOptions.activating
+			audioProcess.start()
+
+		# send option message to server via a thread to not block
+		# the urwid console thread
+		updateProcess = ScreenActionExecuter(self.globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates	
+		updateProcess.daemon = True
+		updateProcess.sendOption = True
+		updateProcess.optionType = "alertSystemActive"
+		updateProcess.optionValue = 1
+		updateProcess.start()
+
+
+	# internal function that executes option 2 of the menu
+	def _executeOption2(self):
+
+		logging.info("[%s]: Deactivating alert system." % self.fileName)
+
+		# check if output is activated
+		if not self.audioOutput is None:
+			# output audio via a thread to not block
+			# the urwid console thread
+			audioProcess = ScreenActionExecuter(self.globalData)
+			# set thread to daemon
+			# => threads terminates when main thread terminates	
+			audioProcess.daemon = True
+			audioProcess.outputAudio = True
+			audioProcess.audioType = AudioOptions.deactivating
+			audioProcess.start()
+
+		# send option message to server via a thread to not block
+		# the urwid console thread
+		updateProcess = ScreenActionExecuter(self.globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates	
+		updateProcess.daemon = True
+		updateProcess.sendOption = True
+		updateProcess.optionType = "alertSystemActive"
+		updateProcess.optionValue = 0
+		updateProcess.start()
+
+
+	# internal function that executes option 3 of the menu
+	def _executeOption3(self):
+
+		logging.info("[%s]: Activating alert system " % self.fileName
+			+ "in %d seconds." % self.timeDelayedActivation)
+
+		# check if output is activated
+		if not self.audioOutput is None:
+			# output audio via a thread to not block
+			# the urwid console thread
+			audioProcess = ScreenActionExecuter(self.globalData)
+			# set thread to daemon
+			# => threads terminates when main thread terminates	
+			audioProcess.daemon = True
+			audioProcess.outputAudio = True
+			audioProcess.audioType = AudioOptions.activatingDelayed
+			audioProcess.start()
+
+		# send option message to server via a thread to not block
+		# the urwid console thread
+		updateProcess = ScreenActionExecuter(self.globalData)
+		# set thread to daemon
+		# => threads terminates when main thread terminates	
+		updateProcess.daemon = True
+		updateProcess.sendOptionDelayed = True
+		updateProcess.optionTypeDelayed = "alertSystemActive"
+		updateProcess.optionValueDelayed = 1
+		updateProcess.optionDelayDelayed = self.timeDelayedActivation
+		updateProcess.start()
+
+
+	# internal function that handles the keypress for the menu view
+	def _handleMenuKeypress(self, key):
+
+		# check if option 1 was chosen => activate alert system
+		if key == '1':
+
+			# get all sensors that do not satisfy the
+			# configured warning states 
+			self.sensorsToWarn = self._checkSensorStatesSatisfied()
+
+			# check if no sensor is in the warning state
+			# => execute chosen action
+			if not self.sensorsToWarn:
+				self._executeOption1()
+				self.showPinView()
+
+			# at least one sensor is in the warning state
+			# => ask for user confirmation
+			else:
+
+				# set the function to execute when all warnings are confirmed
+				self.callbackOptionToExecute = self._executeOption1
+
+				# let the user confirm all warning states
+				self._handleWarningStates()
+
+
+		# check if option 2 was chosen => deactivate alert system
+		elif key == '2':
+
+			self._executeOption2()
+			self.showPinView()
+
+
+		# check if option 3 was chosen
+		elif key == '3':
+
+			# get all sensors that do not satisfy the
+			# configured warning states 
+			self.sensorsToWarn = self._checkSensorStatesSatisfied()
+
+			# check if no sensor is in the warning state
+			# => execute chosen action
+			if not self.sensorsToWarn:
+				self._executeOption3()
+				self.showPinView()
+
+			# at least one sensor is in the warning state
+			# => ask for user confirmation
+			else:
+
+				# set the function to execute when all warnings are confirmed
+				self.callbackOptionToExecute = self._executeOption3
+
+				# let the user confirm all warning states
+				self._handleWarningStates()
+
+
+	# internal function that handles all sensors in warning states
+	def _handleWarningStates(self):
+
+		# check if a sensor that is in the warning state still exists
+		# => warn about sensor
+		if self.sensorsToWarn:
+
+			sensorToWarn = self.sensorsToWarn.pop()
+			self.warningView.setSensorData(sensorToWarn.description,
+				sensorToWarn.state)
+			self.showWarningView()
+
+		# if no sensor in a warning state remains
+		# => execute chosen action
+		else:
+
+			self.callbackOptionToExecute()
+			self.showPinView()
 
 
 	# internal function that releases the lock
@@ -450,106 +528,47 @@ class Console:
 		return False
 
 
-	# this function is called to update the screen
-	def updateScreen(self, status):
-
-		# write status to the callback file descriptor
-		if self.screenFd != None:
-
-			self._acquireLock()
-
-			os.write(self.screenFd, status)
-			return True
-		return False
-
-
 	# this function is called if a key/mouse input was made
 	def handleKeypress(self, key):
+
+		# check if we are in the pin field view
+		if self.inPinView:
+
+			# if pin field loses focus send key manually to it
+			# (seems to happen sometimes if it was not used for a long time)
+			if key in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+				"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+				"m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
+				"y", "z",
+				"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+				"M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X",
+				"Y", "Z",
+				"enter"]:
+
+				logging.debug("[%s]: Sending keypress '%s'"
+					% (key, self.fileName)
+					+ "manually to pin field.")
+
+				self.pinEdit.keypress((100,), key)
+
+		# check if we are in the menu view
+		elif self.inMenuView:
+
+			self._handleMenuKeypress(key)
+
+		# check if we are in the warning view
+		elif self.inWarningView:
+
+			# option 1 continues the chosen action
+			if key == "1":
+				self._handleWarningStates()
+
+			# option 2 aborts the chosen action
+			elif key == "2":
+				self.showPinView()
+
 		# => disable key/mouse input
 		return True
-
-
-	# this function initializes the urwid objects and displays
-	# them (it starts also the urwid main loop and will not
-	# return unless the client is terminated)
-	def startConsole(self):
-
-		# generate widget to show the status of the alert system
-		for option in self.options:
-			if option.type == "alertSystemActive":
-				if option.value == 0:
-					self.alertSystemActive = \
-						StatusUrwid("alert system status",
-							"Status", "Deactivated")
-					self.alertSystemActive.turnRed()
-				else:
-					self.alertSystemActive = \
-						StatusUrwid("alert system status",
-							"Status", "Activated")
-					self.alertSystemActive.turnGreen()
-		if self.alertSystemActive == None:
-			logging.error("[%s]: No alert system status option."
-				% self.fileName)
-			return
-
-		# generate widget to show the status of the connection
-		self.connectionStatus = StatusUrwid("connection status",
-			"Status", "Online")
-		self.connectionStatus.turnNeutral()
-
-		# generate pin field
-		self.pinEdit = PinUrwid("Enter PIN:\n", multiline=False, mask="*")
-		self.pinEdit.registerConsoleInstance(self)
-
-		# generate menu
-		option1 = urwid.Text("1. Activate alert system")
-		option2 = urwid.Text("2. Deactivate alert system")
-		option3 = urwid.Text("3. Activate alert system in %d seconds"
-			% self.timeDelayedActivation)
-		separator = urwid.Text("")
-		menuEdit = MenuUrwid("Choose option:\n", multiline=False)
-		menuEdit.registerConsoleInstance(self)
-		self.menuPile = urwid.Pile([option1, option2, option3, separator,
-			menuEdit])
-
-		# generate edit/menu part of the screen
-		self.editPartScreen = urwid.Pile([self.pinEdit])
-		boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="menu")
-
-		# generate final body object
-		finalBody = urwid.Pile([self.alertSystemActive.get(),
-			self.connectionStatus.get(), boxedEditPartScreen])
-		fillerBody = urwid.Filler(finalBody, "top")
-
-		# generate header
-		header = urwid.Text("alertR keypad manager", align="center")
-
-		# build frame for final rendering
-		frame = urwid.Frame(fillerBody, header=header)
-
-		# color palette
-		palette = [
-			('redColor', 'black', 'dark red'),
-			('greenColor', 'black', 'dark green'),
-			('grayColor', 'black', 'light gray'),
-            ('connected', 'black', 'dark green'),
-            ('disconnected', 'black', 'dark red'),
-            ('sensoralert', 'black', 'yellow'),
-            ('connectionfail', 'black', 'light gray'),
-            ('timedout', 'black', 'dark red'),
-            ('neutral', '', ''),
-        ]
-
-        # create urwid main loop for the rendering
-		loop = urwid.MainLoop(frame, palette=palette,
-			unhandled_input=self.handleKeypress)
-
-		# create a file descriptor callback to give other
-		# threads the ability to communicate with the urwid thread
-		self.screenFd = loop.watch_pipe(self.screenCallback)
-
-		# rut urwid loop
-		loop.run()
 
 
 	# this function will be called from the urwid main loop
@@ -607,21 +626,176 @@ class Console:
 
 			logging.debug("[%s]: Locking screen."  % self.fileName)
 
-			# set screen as locked and reset the time
-			# when screen was unlocked
-			self.screenUnlocked = False
-			self.screenUnlockedTime = 0
-
-			# remove menu from the screen
-			for pileTuple in self.editPartScreen.contents:
-				if self.menuPile == pileTuple[0]:
-					self.editPartScreen.contents.remove(pileTuple)
-					break
-
-			# show pin field
-			self.editPartScreen.contents.append((self.pinEdit,
-				self.editPartScreen.options()))
+			self.showPinView()
 
 		# return true so the file descriptor will NOT be closed
 		self._releaseLock()
 		return True
+
+
+	# show the menu view
+	def showMenuView(self):
+
+		self.inMenuView = True
+		self.inPinView = False
+		self.inWarningView = False
+
+		# remove views from the screen
+		self._clearEditPartScreen()
+
+		# show menu view
+		self.editPartScreen.contents.append((self.menuPile,
+			self.editPartScreen.options()))
+
+
+	# show the pin view
+	def showPinView(self):
+
+		self.inMenuView = False
+		self.inPinView = True
+		self.inWarningView = False
+
+		# reset unlock time
+		self.screenUnlockedTime = 0
+
+		# reset callback and warnings
+		self.callbackOptionToExecute = None
+		self.sensorsToWarn = list()
+
+		# remove views from the screen
+		self._clearEditPartScreen()
+
+		# show pin view
+		self.editPartScreen.contents.append((self.pinEdit,
+			self.editPartScreen.options()))
+
+
+	# show the warning view
+	def showWarningView(self):
+
+		self.inMenuView = False
+		self.inPinView = False
+		self.inWarningView = True
+
+		# check if output is activated
+		if not self.audioOutput is None:
+			# output audio via a thread to not block
+			# the urwid console thread
+			audioProcess = ScreenActionExecuter(self.globalData)
+			# set thread to daemon
+			# => threads terminates when main thread terminates	
+			audioProcess.daemon = True
+			audioProcess.outputAudio = True
+			audioProcess.audioType = AudioOptions.warning
+			audioProcess.start()
+
+		# remove views from the screen
+		self._clearEditPartScreen()
+
+		# show pin view
+		self.editPartScreen.contents.append((self.warningView.get(),
+			self.editPartScreen.options()))
+
+
+	# this function initializes the urwid objects and displays
+	# them (it starts also the urwid main loop and will not
+	# return unless the client is terminated)
+	def startConsole(self):
+
+		# generate widget to show the status of the alert system
+		for option in self.options:
+			if option.type == "alertSystemActive":
+				if option.value == 0:
+					self.alertSystemActive = \
+						StatusUrwid("alert system status",
+							"Status", "Deactivated")
+					self.alertSystemActive.turnRed()
+				else:
+					self.alertSystemActive = \
+						StatusUrwid("alert system status",
+							"Status", "Activated")
+					self.alertSystemActive.turnGreen()
+		if self.alertSystemActive == None:
+			logging.error("[%s]: No alert system status option."
+				% self.fileName)
+			return
+
+		# generate widget to show the status of the connection
+		self.connectionStatus = StatusUrwid("connection status",
+			"Status", "Online")
+		self.connectionStatus.turnNeutral()
+
+		# generate pin field
+		self.pinEdit = PinUrwid("Enter PIN:\n", multiline=False, mask="*")
+		self.pinEdit.registerConsoleInstance(self)
+
+		# generate menu
+		option1 = urwid.Text("1. Activate alert system")
+		option2 = urwid.Text("2. Deactivate alert system")
+		option3 = urwid.Text("3. Activate alert system in %d seconds"
+			% self.timeDelayedActivation)
+		separator = urwid.Text("")
+		instruction = urwid.Text("Please, choose an option.")
+		self.menuPile = urwid.Pile([option1, option2, option3, separator,
+			instruction])
+
+		# generate edit/menu part of the screen
+		self.editPartScreen = urwid.Pile([self.pinEdit])
+		boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="menu")
+
+		# initialize warning view urwid
+		self.warningView = WarningUrwid()
+
+		# generate final body object
+		self.finalBody = urwid.Pile([self.alertSystemActive.get(),
+			self.connectionStatus.get(), boxedEditPartScreen])
+		fillerBody = urwid.Filler(self.finalBody, "top")
+
+		# generate header
+		header = urwid.Text("alertR keypad manager", align="center")
+
+		# build frame for final rendering
+		self.mainFrame = urwid.Frame(fillerBody, header=header)
+
+		# color palette
+		palette = [
+			('lightRedColor', 'black', 'light red'),
+			('redColor', 'black', 'dark red'),
+			('greenColor', 'black', 'dark green'),
+			('grayColor', 'black', 'light gray'),
+            ('connected', 'black', 'dark green'),
+            ('disconnected', 'black', 'dark red'),
+            ('sensoralert', 'black', 'yellow'),
+            ('connectionfail', 'black', 'light gray'),
+            ('timedout', 'black', 'dark red'),
+            ('neutral', '', ''),
+        ]
+
+        # create urwid main loop for the rendering
+		self.mainLoop = urwid.MainLoop(self.mainFrame, palette=palette,
+			unhandled_input=self.handleKeypress)
+
+		# create a file descriptor callback to give other
+		# threads the ability to communicate with the urwid thread
+		self.screenFd = self.mainLoop.watch_pipe(self.screenCallback)
+
+		# set the correct view in which we are
+		self.inPinView = True
+		self.inMenuView = False
+		self.inWarningView = False
+
+		# run urwid loop
+		self.mainLoop.run()
+
+
+	# this function is called to update the screen
+	def updateScreen(self, status):
+
+		# write status to the callback file descriptor
+		if self.screenFd != None:
+
+			self._acquireLock()
+
+			os.write(self.screenFd, status)
+			return True
+		return False

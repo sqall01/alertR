@@ -16,6 +16,7 @@ from lib import Console
 from lib import UpdateChecker
 from lib import GlobalData
 from lib import AudioOutput
+from lib import SensorWarningState
 import logging
 import time
 import socket
@@ -169,6 +170,21 @@ if __name__ == '__main__':
 		# parse all pins
 		for item in configRoot.find("manager").find("keypad").iterfind("pin"):
 			globalData.pins.append(item.text)
+		if not globalData.pins:
+			raise ValueError("No PIN configured.")
+
+		# parse all sensor warning states
+		for item in configRoot.find("manager").find(
+			"sensorwarningstates").iterfind("sensor"):
+
+			temp = SensorWarningState()
+			temp.username = str(item.attrib["username"])
+			temp.remoteSensorId = int(item.attrib["remoteSensorId"])
+			if (str(item.attrib["warningState"]).upper() == "TRUE"):
+				temp.warningState = 1
+			else:
+				temp.warningState = 0
+			globalData.sensorWarningStates.append(temp)
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)

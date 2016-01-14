@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.301">
+<config version="0.302">
 
 	<!--
 		in this section general options are configured
@@ -175,6 +175,57 @@
 			<pin>2354</pin>
 
 		</keypad>
+
+		<!--
+			sensor warning states settings
+
+			Configure sensor states which result in a warning that the
+			user has to confirm before the alarm system can be activated
+			by this manager client. For example, if a window sensor indicates
+			that the window is open and this manager client should warn the
+			user that the window is open before it activates the system.
+		-->
+		<sensorwarningstates>
+
+			<!--
+				A sensor state that results in a warning by this client
+				if it is used to activate the alarm system (the number of
+				sensors is variable, add or remove as many as you need). 
+
+				username - the username of the sensor client that
+					handles this sensor
+				remoteSensorId - the sensor id of the sensor that is
+					configured on the client side
+				warningState - the state the sensor has to have in order
+					to get a warning
+					("True" or "False")
+					(True means "triggered" state; False means "normal" state)
+			-->
+			<sensor
+				username="windowsensor"
+				remoteSensorId="0"
+				warningState="True" />
+
+			<!--
+				A sensor state that results in a warning by this client
+				if it is used to activate the alarm system (the number of
+				sensors is variable, add or remove as many as you need). 
+
+				username - the username of the sensor client that
+					handles this sensor
+				remoteSensorId - the sensor id of the sensor that is
+					configured on the client side
+				warningState - the state the sensor has to have in order
+					to get a warning
+					("True" or "False")
+					(True means "triggered" state; False means "normal" state)
+			-->
+			<sensor
+				username="windowsensor"
+				remoteSensorId="1"
+				warningState="True" />
+
+		</sensorwarningstates>
 
 	</manager>
 

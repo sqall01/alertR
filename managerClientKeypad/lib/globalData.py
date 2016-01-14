@@ -17,7 +17,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.301
+		self.version = 0.302
 
 		# revision of the used client
 		self.rev = 0
@@ -92,3 +92,7 @@ class GlobalData:
 
 		# the object that is used to output audio (if activated)
 		self.audioOutput = None
+
+		# list of sensor states that cause a warning confirmation message
+		# before the alarm system is activated
+		self.sensorWarningStates = list()
