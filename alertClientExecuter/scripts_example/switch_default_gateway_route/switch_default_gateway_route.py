@@ -3,6 +3,12 @@
 import sys
 import os
 
+# list of resolv.conf files
+# for example because postfix under Debian systems is chroot'ed
+# it has an own resolv.conf file
+resolv_conf_files = ["/etc/resolv.conf",
+	"/var/spool/postfix/etc/resolv.conf"]
+
 # the ip address of the gateway you normally use
 normal_gateway = "10.42.42.1"
 
@@ -77,11 +83,13 @@ def add_gw(gw):
 
 
 # update resolv.conf
-def update_resolv_conf(resolv_conf):
+def update_resolv_conf(resolv_conf_files, resolv_conf_content):
 
-	# replace resolv.conf with the normally used content
-	with open("/etc/resolv.conf", 'w') as fp:
-		fp.write(resolv_conf)
+	# replace resolv.conf with the given content (if exists)
+	for resolv_conf_file in resolv_conf_files:
+		if os.path.isfile(resolv_conf_file):
+			with open(resolv_conf_file, 'w') as fp:
+				fp.write(resolv_conf_content)
 
 
 if len(sys.argv) != 2:
@@ -103,7 +111,7 @@ if sys.argv[1] == "normal":
 		sys.exit(1)
 
 	# replace resolv.conf with the normally used content
-	update_resolv_conf(normal_resolv_conf)
+	update_resolv_conf(resolv_conf_files, normal_resolv_conf)
 
 	print("Done.")
 
@@ -117,7 +125,7 @@ elif sys.argv[1] == "alternative":
 		sys.exit(1)
 
 	# replace resolv.conf with the alternatively used content
-	update_resolv_conf(alternative_resolv_conf)
+	update_resolv_conf(resolv_conf_files, alternative_resolv_conf)
 
 	print("Done.")
 
