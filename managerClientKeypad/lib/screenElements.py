@@ -91,7 +91,7 @@ class WarningUrwid:
 
 		warningBox = urwid.LineBox(warningPile, title="Warning")
 
-		self.warningMap = urwid.AttrMap(warningBox, "lightRedColor")
+		self.warningMap = urwid.AttrMap(warningBox, "redColor")
 
 
 	# inserts the description and state for the sensor

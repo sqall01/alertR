@@ -759,7 +759,6 @@ class Console:
 
 		# color palette
 		palette = [
-			('lightRedColor', 'black', 'light red'),
 			('redColor', 'black', 'dark red'),
 			('greenColor', 'black', 'dark green'),
 			('grayColor', 'black', 'light gray'),
