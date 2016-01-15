@@ -330,6 +330,20 @@ class Sqlite(_Storage):
 			return True
 
 
+	# internal function that generates a unique id for this server instance
+	def _generateUniqueId(self):
+
+		# generate unique id for this installation
+		uniqueString = socket.gethostname() \
+			+ struct.pack("d", time.time()) \
+			+ os.urandom(200)
+		sha256 = hashlib.sha256()
+		sha256.update(uniqueString)
+		uniqueID = sha256.hexdigest()
+
+		return uniqueID
+
+
 	# internal function that gets the id of a node when a username is given
 	def _getNodeId(self, username):
 
@@ -406,6 +420,24 @@ class Sqlite(_Storage):
 		return managerId
 
 
+	# internal function that gets the unique id from the database
+	#
+	# return unique id
+	# or None
+	def _getUniqueID(self):
+
+		uniqueID = None
+		try:
+			self.cursor.execute("SELECT value "
+				+ "FROM internals WHERE type=?", ("uniqueID", ))
+			uniqueID = self.cursor.fetchall()[0][0]
+		except Exception as e:
+			logging.exception("[%s]: Not able to get the unique id." 
+				% self.fileName)
+
+		return uniqueID
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -422,7 +454,7 @@ class Sqlite(_Storage):
 	# (should only be called if the database does not exist)
 	#
 	# no return value but raise exception if it fails
-	def _createStorage(self):
+	def _createStorage(self, uniqueID):
 
 		# create internals table
 		self.cursor.execute("CREATE TABLE internals ("
@@ -434,14 +466,6 @@ class Sqlite(_Storage):
 		self.cursor.execute("INSERT INTO internals ("
 			+ "type, "
 			+ "value) VALUES (?, ?)", ("version", self.version))
-
-		# generate unique id for this installation
-		uniqueString = socket.gethostname() \
-			+ struct.pack("d", time.time()) \
-			+ os.urandom(200)
-		sha256 = hashlib.sha256()
-		sha256.update(uniqueString)
-		uniqueID = sha256.hexdigest()
 
 		# insert unique id
 		self.cursor.execute("INSERT INTO internals ("
@@ -552,6 +576,11 @@ class Sqlite(_Storage):
 				% float(result[0][0])
 				+ "Updating database.")
 
+			# get old uniqueId to keep it
+			uniqueID = self._getUniqueID()
+			if uniqueID is None:
+				uniqueID = self._generateUniqueId()
+
 			# delete all tables from the database to clear the old version
 			self.cursor.execute("DROP TABLE IF EXISTS internals")
 			self.cursor.execute("DROP TABLE IF EXISTS options")
@@ -564,7 +593,7 @@ class Sqlite(_Storage):
 			self.cursor.execute("DROP TABLE IF EXISTS nodes")
 
 			# create new database
-			self._createStorage()
+			self._createStorage(uniqueID)
 
 			# commit all changes
 			self.conn.commit()
@@ -580,7 +609,9 @@ class Sqlite(_Storage):
 
 		self._acquireLock()
 
-		self._createStorage()
+		uniqueID = self._generateUniqueId()
+
+		self._createStorage(uniqueID)
 
 		self._releaseLock()
 
@@ -1600,14 +1631,7 @@ class Sqlite(_Storage):
 
 		self._acquireLock()
 
-		uniqueID = None
-		try:
-			self.cursor.execute("SELECT value "
-				+ "FROM internals WHERE type=?", ("uniqueID", ))
-			uniqueID = self.cursor.fetchall()[0][0]
-		except Exception as e:
-			logging.exception("[%s]: Not able to get the unique id." 
-				% self.fileName)
+		uniqueID = self._getUniqueID()
 
 		self._releaseLock()
 
@@ -2486,6 +2510,20 @@ class Mysql(_Storage):
 			return True
 
 
+	# internal function that generates a unique id for this server instance
+	def _generateUniqueId(self):
+
+		# generate unique id for this installation
+		uniqueString = socket.gethostname() \
+			+ struct.pack("d", time.time()) \
+			+ os.urandom(200)
+		sha256 = hashlib.sha256()
+		sha256.update(uniqueString)
+		uniqueID = sha256.hexdigest()
+
+		return uniqueID
+
+
 	# internal function that gets the id of a node when a username is given
 	def _getNodeId(self, username):
 
@@ -2562,6 +2600,35 @@ class Mysql(_Storage):
 		return managerId
 
 
+	# internal function that gets the unique id from the database
+	#
+	# return unique id
+	# or None
+	def _getUniqueID(self):
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		uniqueID = None
+		try:
+			self.cursor.execute("SELECT value "
+				+ "FROM internals WHERE type=%s", ("uniqueID", ))
+			uniqueID = self.cursor.fetchall()[0][0]
+		except Exception as e:
+			logging.exception("[%s]: Not able to get the unique id." 
+				% self.fileName)
+
+		return uniqueID
+
+
 	# internal function that acquires the lock
 	def _acquireLock(self):
 		logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -2578,7 +2645,7 @@ class Mysql(_Storage):
 	# (should only be called if the database does not exist)
 	#
 	# no return value but raise exception if it fails
-	def _createStorage(self):
+	def _createStorage(self, uniqueID):
 
 		# create internals table
 		self.cursor.execute("CREATE TABLE internals ("
@@ -2590,14 +2657,6 @@ class Mysql(_Storage):
 		self.cursor.execute("INSERT INTO internals ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("version", self.version))
-
-		# generate unique id for this installation
-		uniqueString = socket.gethostname() \
-			+ struct.pack("d", time.time()) \
-			+ os.urandom(200)
-		sha256 = hashlib.sha256()
-		sha256.update(uniqueString)
-		uniqueID = sha256.hexdigest()
 
 		# insert unique id
 		self.cursor.execute("INSERT INTO internals ("
@@ -2711,6 +2770,11 @@ class Mysql(_Storage):
 				% float(result[0][0])
 				+ "Updating database.")
 
+			# get old uniqueId to keep it
+			uniqueID = self._getUniqueID()
+			if uniqueID is None:
+				uniqueID = self._generateUniqueId()
+
 			# delete all tables from the database to clear the old version
 			self.cursor.execute("DROP TABLE IF EXISTS internals")
 			self.cursor.execute("DROP TABLE IF EXISTS options")
@@ -2723,7 +2787,7 @@ class Mysql(_Storage):
 			self.cursor.execute("DROP TABLE IF EXISTS nodes")
 
 			# create new database
-			self._createStorage()
+			self._createStorage(uniqueID)
 
 			# commit all changes
 			self.conn.commit()
@@ -2745,7 +2809,9 @@ class Mysql(_Storage):
 		# connect to the database
 		self._openConnection()
 
-		self._createStorage()
+		uniqueID = self._generateUniqueId()
+
+		self._createStorage(uniqueID)
 
 		# close connection to the database
 		self._closeConnection()
@@ -3966,25 +4032,7 @@ class Mysql(_Storage):
 
 		self._acquireLock()
 
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return None
-
-		uniqueID = None
-		try:
-			self.cursor.execute("SELECT value "
-				+ "FROM internals WHERE type=%s", ("uniqueID", ))
-			uniqueID = self.cursor.fetchall()[0][0]
-		except Exception as e:
-			logging.exception("[%s]: Not able to get the unique id." 
-				% self.fileName)
+		uniqueID = self._getUniqueID()
 
 		# close connection to the database
 		self._closeConnection()
@@ -3992,6 +4040,7 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		return uniqueID
+
 
 
 	# updates the states of the sensors of a node in the databse
