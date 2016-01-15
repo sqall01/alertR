@@ -829,7 +829,7 @@ if __name__ == '__main__':
 			"method"]).upper()
 		if userBackendMethod == "SQLITE":
 			globalData.storage = Sqlite(globalData.storageBackendSqliteFile,
-				globalData.version)
+				globalData)
 
 		elif userBackendMethod == "MYSQL":
 
@@ -846,7 +846,7 @@ if __name__ == '__main__':
 
 			globalData.storage = Mysql(backendServer, backendPort,
 				backendDatabase, backendUsername, backendPassword,
-				globalData.version)
+				globalData)
 
 		else:
 			raise ValueError("No valid storage backend method in config file.")

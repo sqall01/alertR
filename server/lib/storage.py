@@ -278,13 +278,16 @@ class _Storage():
 # class for using sqlite as storage backend
 class Sqlite(_Storage):
 
-	def __init__(self, storagePath, version):
+	def __init__(self, storagePath, globalData):
 
 		# import the needed package
 		import sqlite3
 
+		self.globalData = globalData
+
 		# version of server
-		self.version = version
+		self.version = self.globalData.version
+		self.rev = self.globalData.rev
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -494,6 +497,19 @@ class Sqlite(_Storage):
 			+ "connected INTEGER NOT NULL, "
 			+ "version REAL NOT NULL, "
 			+ "rev INTEGER NOT NULL)")
+
+		# create node entry for this server (use unique id as username)
+		self.cursor.execute("INSERT INTO nodes ("
+			+ "hostname, "
+			+ "username, "
+			+ "nodeType, "
+			+ "instance, "
+			+ "connected, "
+			+ "version, "
+			+ "rev) "
+			+ "VALUES (?, ?, ?, ?, ?, ?, ?)",
+			(socket.gethostname(), uniqueID, "server", "server", 1,
+			self.version, self.rev))
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -2408,13 +2424,16 @@ class Sqlite(_Storage):
 # class for using mysql as storage backend
 class Mysql(_Storage):
 
-	def __init__(self, host, port, database, username, password, version):
+	def __init__(self, host, port, database, username, password, globalData):
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
+		self.globalData = globalData
+
 		# version of server
-		self.version = version
+		self.version = self.globalData.version
+		self.rev = self.globalData.rev
 
 		# needed mysql parameters
 		self.host = host
@@ -2696,6 +2715,19 @@ class Mysql(_Storage):
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+		# create node entry for this server (use unique id as username)
+		self.cursor.execute("INSERT INTO nodes ("
+			+ "hostname, "
+			+ "username, "
+			+ "nodeType, "
+			+ "instance, "
+			+ "connected, "
+			+ "version, "
+			+ "rev) "
+			+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+			(socket.gethostname(), uniqueID, "server", "server", 1,
+			self.version, self.rev))
 
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
