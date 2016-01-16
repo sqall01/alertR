@@ -637,7 +637,7 @@ function checkOnline() {
 
 	// check if server time has not changed since timeout interval
 	var temp = new Date();
-	if(temp.getTime() > 
+	if(lastServerTimeUpdate && temp.getTime() > 
 		(lastServerTimeUpdate.getTime() + (timeoutInterval * 1000))) {
 		online = false;
 
@@ -2221,7 +2221,7 @@ function outputManagers() {
 		newTr.appendChild(newTd);
 		nodeTable.appendChild(newTr);
 
-		nodes.sort(compareManagersAsc);
+		managers.sort(compareManagersAsc);
 
 		// add manager information to the node
 		for(j = 0; j < managers.length; j++) {
