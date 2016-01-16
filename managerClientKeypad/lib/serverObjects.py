@@ -59,7 +59,6 @@ class Sensor:
 		self.description = None
 		self.lastStateUpdated = None
 		self.state = None
-		self.serverTime = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
@@ -157,6 +156,9 @@ class ServerEventHandler:
 		self.alerts = self.globalData.alerts
 		self.alertLevels = self.globalData.alertLevels
 		self.sensorAlerts = self.globalData.sensorAlerts
+
+		# keep track of the server time
+		self.serverTime = 0.0
 
 
 	# internal function that checks if all options are checked
@@ -293,6 +295,8 @@ class ServerEventHandler:
 	def receivedStatusUpdate(self, serverTime, options, nodes, sensors,
 		managers, alerts, alertLevels):
 
+		self.serverTime = serverTime
+
 		# mark all nodes as not checked
 		self._markAlertSystemObjectsAsNotChecked()
 
@@ -390,10 +394,6 @@ class ServerEventHandler:
 						return False
 
 					continue
-
-				# update received server time for all sensors (despite the
-				# corresponding id)
-				sensor.serverTime = serverTime
 
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
@@ -529,6 +529,7 @@ class ServerEventHandler:
 	def receivedSensorAlert(self, serverTime, rulesActivated, sensorId, state,
 		description, alertLevels, dataTransfer, data):
 
+		self.serverTime = serverTime
 		timeReceived = int(time.time())
 
 		# generate sensor alert object
@@ -551,7 +552,6 @@ class ServerEventHandler:
 				if sensor.sensorId == sensorId:
 					sensor.state = state
 					sensor.lastStateUpdated = serverTime
-					sensor.serverTime = serverTime
 					break
 
 		return True
@@ -559,6 +559,8 @@ class ServerEventHandler:
 
 	# is called when a state change event was received from the server
 	def receivedStateChange(self, serverTime, sensorId, state):
+
+		self.serverTime = serverTime
 
 		# search sensor in list of known sensors
 		# => if not known return failure
@@ -569,7 +571,6 @@ class ServerEventHandler:
 			if sensor.sensorId == sensorId:
 				sensor.state = state
 				sensor.lastStateUpdated = serverTime
-				sensor.serverTime = serverTime
 
 				found = True
 				break

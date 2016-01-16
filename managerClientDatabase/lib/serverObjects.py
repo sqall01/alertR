@@ -64,7 +64,6 @@ class Sensor:
 		self.description = None
 		self.lastStateUpdated = None
 		self.state = None
-		self.serverTime = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
@@ -437,10 +436,6 @@ class ServerEventHandler:
 
 					continue
 
-				# update received server time for all sensors (despite the
-				# corresponding id)
-				sensor.serverTime = serverTime
-
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
 					sensor.checked = True
@@ -756,7 +751,6 @@ class ServerEventHandler:
 				if sensor.sensorId == sensorId:
 					sensor.state = state
 					sensor.lastStateUpdated = serverTime
-					sensor.serverTime = serverTime
 					break
 
 		return True
@@ -803,7 +797,6 @@ class ServerEventHandler:
 			if sensor.sensorId == sensorId:
 				sensor.state = state
 				sensor.lastStateUpdated = serverTime
-				sensor.serverTime = serverTime
 
 				found = True
 				break
@@ -894,7 +887,7 @@ class ServerEventHandler:
 		# check if a sensor has timed out
 		# => create an event for it
 		for sensor in self.sensors:
-			if (sensor.lastStateUpdated < (sensor.serverTime
+			if (sensor.lastStateUpdated < (self.serverTime
 				- (2 * self.connectionTimeout))):
 
 				# create sensor time out event

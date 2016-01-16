@@ -73,10 +73,11 @@ class StatusUrwid:
 # this class is an urwid object for a sensor
 class SensorUrwid:
 
-	def __init__(self, sensor, node, connectionTimeout):
+	def __init__(self, sensor, node, connectionTimeout, serverEventHandler):
 
 		# is needed to decide when a sensor has timed out
 		self.connectionTimeout = connectionTimeout
+		self.serverEventHandler = serverEventHandler
 
 		sensorPileList = list()
 		self.descriptionWidget = urwid.Text("Desc.: " + sensor.description)
@@ -106,7 +107,7 @@ class SensorUrwid:
 
 		# check if sensor has timed out and change color accordingly
 		# and consider the state of the sensor (1 = triggered)
-		if (sensor.lastStateUpdated < (sensor.serverTime
+		if (sensor.lastStateUpdated < (self.serverEventHandler.serverTime
 			- (2 * self.connectionTimeout))
 			and sensor.state != 1):
 			self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox,
@@ -149,7 +150,7 @@ class SensorUrwid:
 
 		# check if sensor has timed out and change color accordingly
 		# and consider the state of the sensor (1 = triggered)
-		if (self.sensor.lastStateUpdated < (self.sensor.serverTime
+		if (self.sensor.lastStateUpdated < (self.serverEventHandler.serverTime
 			- (2 * self.connectionTimeout))
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "timedout"})
@@ -161,7 +162,7 @@ class SensorUrwid:
 	def updateLastUpdated(self, lastStateUpdated):
 
 		# check if sensor has timed out and change color accordingly
-		if (lastStateUpdated < (self.sensor.serverTime
+		if (lastStateUpdated < (self.serverEventHandler.serverTime
 			- (2 * self.connectionTimeout))
 			and self.sensor.state != 1):
 			self.sensorUrwidMap.set_attr_map({None: "timedout"})
@@ -184,7 +185,8 @@ class SensorUrwid:
 				self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 				# check if the sensor timed out and change 
 				# the color accordingly
-				if (self.sensor.lastStateUpdated < (self.sensor.serverTime
+				if (self.sensor.lastStateUpdated
+					< (self.serverEventHandler.serverTime
 					- (2 * self.connectionTimeout))):
 					self.sensorUrwidMap.set_attr_map({None: "timedout"})
 					self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})

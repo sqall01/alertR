@@ -750,7 +750,6 @@ class ServerCommunication:
 			sensor.description = description
 			sensor.lastStateUpdated = lastStateUpdated
 			sensor.state = state
-			sensor.serverTime = serverTime
 			sensors.append(sensor)
 
 		logging.debug("[%s]: Received manager count: %d." 
