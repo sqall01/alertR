@@ -1920,14 +1920,16 @@ function outputEvents() {
 				var oldInstance = events[i]["oldInstance"];
 				var oldVersion = events[i]["oldVersion"];
 				var oldRev = events[i]["oldRev"];
+				var oldUsername = events[i]["oldUsername"];
 				var newHostname = events[i]["newHostname"];
 				var newNodeType = events[i]["newNodeType"];
 				var newInstance = events[i]["newInstance"];
 				var newVersion = events[i]["newVersion"];
 				var newRev = events[i]["newRev"];
+				var newUsername = events[i]["newUsername"];
 				addEventChangeNode(eventsTable, oldHostname, oldNodeType,
-					oldInstance, oldVersion, oldRev, newHostname,
-					newNodeType, newInstance, newVersion, newRev);
+					oldInstance, oldVersion, oldRev, oldUsername, newHostname,
+					newNodeType, newInstance, newVersion, newRev, newUsername);
 				break;
 
 			case "changeOption":

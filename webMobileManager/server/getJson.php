@@ -624,11 +624,13 @@ if(isset($_GET["data"])
 									$oldInstance = $element["oldInstance"];
 									$oldVersion = $element["oldVersion"];
 									$oldRev = $element["oldRev"];
+									$oldUsername = $element["oldUsername"];
 									$newHostname = $element["newHostname"];
 									$newNodeType = $element["newNodeType"];
 									$newInstance = $element["newInstance"];
 									$newVersion = $element["newVersion"];
 									$newRev = $element["newRev"];
+									$newUsername = $element["newUsername"];
 									break;
 								}
 							}
@@ -640,11 +642,13 @@ if(isset($_GET["data"])
 								"oldInstance" => $oldInstance,
 								"oldVersion" => $oldVersion,
 								"oldRev" => $oldRev,
+								"oldUsername" => $oldUsername,
 								"newHostname" => $newHostname,
 								"newNodeType" => $newNodeType,
 								"newInstance" => $newInstance,
 								"newVersion" => $newVersion,
-								"newRev" => $newRev);
+								"newRev" => $newRev,
+								"newUsername" => $newUsername);
 							break;
 
 						case "changeOption":

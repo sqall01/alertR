@@ -171,8 +171,8 @@ function addEventChangeOption(eventsTable, optionType, oldValue, newValue) {
 
 
 function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
-	oldInstance, oldVersion, oldRev, newHostname, newNodeType, newInstance,
-	newVersion, newRev) {
+	oldInstance, oldVersion, oldRev, oldUsername, newHostname, newNodeType,
+	newInstance, newVersion, newRev, newUsername) {
 
 	// add old hostname to the event
 	newTr = document.createElement("tr");
@@ -375,6 +375,47 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 		newTd.className = "neutralTd";
 	}
 	newTd.textContent = newRev;
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+
+	// add old username to the event
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	newB = document.createElement("b");
+	newB.textContent = "Old Username:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	newTd.textContent = oldUsername;
+	newTd.className = "neutralTd";
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+
+	// add new username to the event
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	newB = document.createElement("b");
+	newB.textContent = "New Username:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	if(oldUsername != newUsername) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
+	newTd.textContent = newUsername;
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
