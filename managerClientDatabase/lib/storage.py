@@ -1415,8 +1415,8 @@ class Mysql(_Storage):
 	# updates the received server information
 	#
 	# return True or False
-	def updateServerInformation(self, options, nodes, sensors, alerts,
-		managers, alertLevels, sensorAlerts):
+	def updateServerInformation(self, serverTime, options, nodes, sensors,
+		alerts, managers, alertLevels, sensorAlerts):
 
 		self._acquireLock()
 
@@ -1432,27 +1432,19 @@ class Mysql(_Storage):
 			return False
 
 		# update server time
-		if sensors:
+		try:
+			self.cursor.execute("UPDATE internals SET "
+				+ "value = %s "
+				+ "WHERE type = %s",
+				(serverTime, "serverTime"))
 
-			# get newest server time for database
-			newestTime = 0.0
-			for sensor in sensors:
-				if sensor.serverTime > newestTime:
-					newestTime = sensor.serverTime
+		except Exception as e:
+			logging.exception("[%s]: Not able to update server time." 
+				% self.fileName)
 
-			try:
-				self.cursor.execute("UPDATE internals SET "
-					+ "value = %s "
-					+ "WHERE type = %s",
-					(newestTime, "serverTime"))
+			self._releaseLock()
 
-			except Exception as e:
-				logging.exception("[%s]: Not able to update server time." 
-					% self.fileName)
-
-				self._releaseLock()
-
-				return False
+			return False
 
 
 		# step one: delete all objects that do not exist anymore

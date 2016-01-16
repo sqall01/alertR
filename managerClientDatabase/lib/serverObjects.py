@@ -152,6 +152,9 @@ class ServerEventHandler:
 		self.events = self.globalData.events
 		self.connectionTimeout = self.globalData.connectionTimeout
 
+		# keep track of the server time
+		self.serverTime = 0.0
+
 
 	# internal function that checks if all options are checked
 	def _checkAllOptionsAreChecked(self):
@@ -251,9 +254,10 @@ class ServerEventHandler:
 
 
 	# is called when a status update event was received from the server
-	def receivedStatusUpdate(self, options, nodes, sensors, managers, alerts,
-		alertLevels):
+	def receivedStatusUpdate(self, serverTime, options, nodes, sensors,
+		managers, alerts, alertLevels):
 
+		self.serverTime = serverTime
 		timeReceived = int(time.time())
 
 		# mark all nodes as not checked
@@ -435,7 +439,7 @@ class ServerEventHandler:
 
 				# update received server time for all sensors (despite the
 				# corresponding id)
-				sensor.serverTime = recvSensor.serverTime
+				sensor.serverTime = serverTime
 
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
@@ -479,6 +483,7 @@ class ServerEventHandler:
 
 					found = True
 					break
+
 			# when not found => add sensor to list
 			if not found:
 				recvSensor.checked = True
@@ -690,6 +695,7 @@ class ServerEventHandler:
 	def receivedSensorAlert(self, serverTime, rulesActivated, sensorId, state,
 		description, alertLevels, dataTransfer, data):
 
+		self.serverTime = serverTime
 		timeReceived = int(time.time())
 
 		# when events are activated
@@ -758,6 +764,8 @@ class ServerEventHandler:
 
 	# is called when a state change event was received from the server
 	def receivedStateChange(self, serverTime, sensorId, state):
+
+		self.serverTime = serverTime
 
 		# when events are activated
 		# => create state change event
@@ -912,9 +920,9 @@ class ServerEventHandler:
 
 
 		# update the local server information
-		if not self.storage.updateServerInformation(self.options, self.nodes,
-			self.sensors, self.alerts, self.managers, self.alertLevels,
-			self.sensorAlerts):
+		if not self.storage.updateServerInformation(self.serverTime,
+			self.options, self.nodes, self.sensors, self.alerts,
+			self.managers, self.alertLevels, self.sensorAlerts):
 
 			logging.error("[%s]: Unable to update server information." 
 					% self.fileName)
