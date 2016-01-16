@@ -290,8 +290,8 @@ class ServerEventHandler:
 
 
 	# is called when a status update event was received from the server
-	def receivedStatusUpdate(self, options, nodes, sensors, managers, alerts,
-		alertLevels):
+	def receivedStatusUpdate(self, serverTime, options, nodes, sensors,
+		managers, alerts, alertLevels):
 
 		# mark all nodes as not checked
 		self._markAlertSystemObjectsAsNotChecked()
@@ -393,7 +393,7 @@ class ServerEventHandler:
 
 				# update received server time for all sensors (despite the
 				# corresponding id)
-				sensor.serverTime = recvSensor.serverTime
+				sensor.serverTime = serverTime
 
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:

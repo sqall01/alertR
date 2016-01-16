@@ -894,8 +894,8 @@ class ServerCommunication:
 
 
 		# handle received status update
-		if not self.serverEventHandler.receivedStatusUpdate(options, nodes,
-			sensors, managers, alerts, alertLevels):
+		if not self.serverEventHandler.receivedStatusUpdate(serverTime,
+			options, nodes, sensors, managers, alerts, alertLevels):
 
 			# send error message back
 			try:
