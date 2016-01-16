@@ -220,9 +220,7 @@ if(isset($_GET["data"])
 					$alertLevelEntry = array(
 						"alertLevel" => $row["alertLevel"],
 						"name" => $row["name"],
-						"triggerAlways" => $row["triggerAlways"],
-						"smtpActivated" => $row["smtpActivated"],
-						"toAddr" => $row["toAddr"]);
+						"triggerAlways" => $row["triggerAlways"]);
 					array_push($alertLevelsArray, $alertLevelEntry);
 				}
 				$alertSystemInformation["alertLevels"] = $alertLevelsArray;

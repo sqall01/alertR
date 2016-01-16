@@ -1225,8 +1225,6 @@ function outputAlertLevels() {
 		var alertLevel = alertLevels[i]["alertLevel"];
 		var name = alertLevels[i]["name"];
 		var triggerAlways = alertLevels[i]["triggerAlways"];
-		var smtpActivated = alertLevels[i]["smtpActivated"];
-		var toAddr = alertLevels[i]["toAddr"];
 
 
 		var boxDiv = document.createElement("div");
@@ -1282,29 +1280,6 @@ function outputAlertLevels() {
 		}
 		else {
 			newTd.textContent = "true";
-		}
-		newTd.className = "neutralTd";
-		newTr.appendChild(newTd);
-		alertLevelTable.appendChild(newTr);
-
-
-		// add email recipient to the alertLevel
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		var newB = document.createElement("b");
-		newB.textContent = "eMail Recipient:";
-		newTd.appendChild(newB);
-		newTd.className = "boxEntryTd";
-		newTr.appendChild(newTd);
-		alertLevelTable.appendChild(newTr);
-
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		if(smtpActivated == 0) {
-			newTd.textContent = "none";
-		}
-		else {
-			newTd.textContent = toAddr;
 		}
 		newTd.className = "neutralTd";
 		newTr.appendChild(newTd);
