@@ -2428,6 +2428,10 @@ class ConnectionWatchdog(threading.Thread):
 					+ "ids from database.")
 			else:
 
+				# get node id for this server instance
+				uniqueID = self.storage.getUniqueID()
+				serverNodeId = self.storage.getNodeId(uniqueID)
+
 				# check if node marked as connected got a connection
 				# to the server
 				for nodeIdTuple in nodeIds:
@@ -2443,6 +2447,10 @@ class ConnectionWatchdog(threading.Thread):
 						if serverSession.clientComm.nodeId == nodeId:
 							found = True
 							break
+
+					# ignore node id of this server instance
+					if nodeId == serverNodeId:
+						found = True
 
 					# if no server session was found with the node id
 					# => node is not connected to the server
