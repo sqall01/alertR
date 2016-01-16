@@ -289,6 +289,10 @@ class Sqlite(_Storage):
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 
+		# unique id of this server (is also the username of this server)
+		# (used for caching)
+		self.uniqueID = None
+
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
@@ -429,16 +433,19 @@ class Sqlite(_Storage):
 	# or None
 	def _getUniqueID(self):
 
-		uniqueID = None
+		# if unique id already cached => return it
+		if not self.uniqueID is None:
+			return self.uniqueID
+
 		try:
 			self.cursor.execute("SELECT value "
 				+ "FROM internals WHERE type=?", ("uniqueID", ))
-			uniqueID = self.cursor.fetchall()[0][0]
+			self.uniqueID = self.cursor.fetchall()[0][0]
 		except Exception as e:
 			logging.exception("[%s]: Not able to get the unique id." 
 				% self.fileName)
 
-		return uniqueID
+		return self.uniqueID
 
 
 	# internal function that acquires the lock
@@ -2435,6 +2442,10 @@ class Mysql(_Storage):
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 
+		# unique id of this server (is also the username of this server)
+		# (used for caching)
+		self.uniqueID = None
+
 		# needed mysql parameters
 		self.host = host
 		self.port = port
@@ -2625,6 +2636,10 @@ class Mysql(_Storage):
 	# or None
 	def _getUniqueID(self):
 
+		# if unique id already cached => return it
+		if not self.uniqueID is None:
+			return self.uniqueID
+
 		# connect to the database
 		try:
 			self._openConnection()
@@ -2636,16 +2651,15 @@ class Mysql(_Storage):
 
 			return None
 
-		uniqueID = None
 		try:
 			self.cursor.execute("SELECT value "
 				+ "FROM internals WHERE type=%s", ("uniqueID", ))
-			uniqueID = self.cursor.fetchall()[0][0]
+			self.uniqueID = self.cursor.fetchall()[0][0]
 		except Exception as e:
 			logging.exception("[%s]: Not able to get the unique id." 
 				% self.fileName)
 
-		return uniqueID
+		return self.uniqueID
 
 
 	# internal function that acquires the lock
