@@ -84,7 +84,7 @@ if not found:
 
 		message = "DHCP lease for an unknown client was detected.\n\n"
 		message += "IP: %s\n" % client_ip
-		message += "MAC: %s\n" % mac_address
+		message += "MAC: %s\n" % client_mac_address
 		if not nm is None:
 			message += "\nNmap scan results:\n"
 			for host in nm.all_hosts():
