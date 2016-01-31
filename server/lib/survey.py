@@ -86,8 +86,6 @@ class SurveyExecuter(threading.Thread):
 				% self.fileName
 				+ "the database.")
 			return False
-		serverTuple = (self.instance, self.version, self.rev)
-		surveyNodes.insert(0, serverTuple)
 		surveyData = dict()
 		surveyData["nodes"] = surveyNodes
 		
