@@ -1456,9 +1456,6 @@ class ClientCommunication:
 				"name": self.alertLevels[i].name,
 				"triggerAlways": (1 if self.alertLevels[i].triggerAlways
 				else 0),
-				"smtpActivated": (1 if self.alertLevels[i].smtpActivated
-				else 0),
-				"toAddr": self.alertLevels[i].toAddr,
 				"rulesActivated": self.alertLevels[i].rulesActivated}
 			alertLevels.append(tempDict)
 

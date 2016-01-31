@@ -895,16 +895,6 @@ if __name__ == '__main__':
 			alertLevel.triggerAlertNormal = (str(item.find("general").attrib[
 				"triggerAlertNormal"]).upper() == "TRUE")
 
-			alertLevel.smtpActivated = (str(item.find("smtp").attrib[
-				"emailAlert"]).upper() == "TRUE")
-
-			if ((not smtpActivated)
-				and alertLevel.smtpActivated):
-				raise ValueError("Alert level can not have email alert "
-					+ "activated when smtp is not activated.")
-
-			alertLevel.toAddr = str(item.find("smtp").attrib["toAddr"])
-
 			# check if rules are activated
 			# => parse rules
 			alertLevel.rulesActivated = (str(item.find("rules").attrib[

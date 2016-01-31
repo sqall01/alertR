@@ -207,14 +207,6 @@ class AlertLevel:
 
 	def __init__(self):
 
-		# this flag tells if the alert level has an email notification
-		# enabled
-		self.smtpActivated = None
-
-		# the email address the email notification should be sent to
-		# (if it is enabled)
-		self.toAddr = None
-
 		# this value indicates the alert level
 		self.level = None
 
@@ -256,7 +248,6 @@ class SensorAlertExecuter(threading.Thread):
 		self.globalData = globalData
 		self.serverSessions = self.globalData.serverSessions
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
-		self.smtpAlert = self.globalData.smtpAlert
 		self.storage = self.globalData.storage
 		self.alertLevels = self.globalData.alertLevels
 
@@ -1630,25 +1621,6 @@ class SensorAlertExecuter(threading.Thread):
 				# check if sensor alert has triggered
 				if (time.time() - timeReceived) > alertDelay:
 
-					# check if one of the triggered alert levels
-					# has email notification (smtpAlert) activated
-					# => send email alert (to all of the alert levels)
-					for triggeredAlertLevel in sensorAlertToHandle[1]:
-						if triggeredAlertLevel.smtpActivated:
-
-							# get hostname of the client that triggered the
-							# sensor alert
-							hostname = self.storage.getNodeHostnameById(nodeId)
-
-							# check if storage backend returned a valid
-							# hostname
-							if not hostname is None:
-
-								# send email alert to configured email address
-								self.smtpAlert.sendSensorAlert(hostname,
-									description, timeReceived,
-									triggeredAlertLevel.toAddr)
-
 					# generate integer list of alert levels that have triggered
 					# (needed for sensor alert message)
 					intListAlertLevel = list()
@@ -1714,15 +1686,6 @@ class SensorAlertExecuter(threading.Thread):
 
 					logging.info("[%s]: Alert level " % self.fileName
 						+ "'%d' rules have triggered." % alertLevel.level)
-
-					# check if the alert level that has triggered a sensor
-					# alert has email notification (smtpAlert) activated
-					# => send email alert
-					if alertLevel.smtpActivated:
-
-						# send email alert to configured email address
-						self.smtpAlert.sendSensorAlertRulesActivated(
-							alertLevel.name, time.time(), alertLevel.toAddr)
 
 					# send sensor alert to all manager and alert clients
 					for serverSession in self.serverSessions:

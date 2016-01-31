@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the server
 -->
-<config version="0.300">
+<config version="0.301">
 
 	<!--
 		in this section general options are configured
@@ -235,18 +235,6 @@
 				triggerAlertNormal="True" />
 
 			<!--
-				email alert settings for this alert level
-				emailAlert - should an email notification be generated and
-					sent if a sensor alert of this level is triggered
-					("True" or "False" and works only if smtp is activated)
-				toAddr - email address to which the email should be sent
-					(works only if smtp is activated)
-			-->
-			<smtp
-				emailAlert="True"
-				toAddr="youraddress@somehost.de" />
-
-			<!--
 				rule chain settings for this alert level
 				activated - sets if rules are activated for this alert level
 					("True or "False)
@@ -310,18 +298,6 @@
 				triggerAlways="False"
 				triggerAlertTriggered="True"
 				triggerAlertNormal="False"  />
-
-			<!--
-				email alert settings for this alert level
-				emailAlert - should an email notification be generated and
-					sent if a sensor alert of this level is triggered
-					("True" or "False" and works only if smtp is activated)
-				toAddr - email address to which the email should be sent
-					(works only if smtp is activated)
-			-->
-			<smtp
-				emailAlert="True"
-				toAddr="someotheraddress@somehost.de" />
 
 			<!--
 				rule chain settings for this alert level
@@ -389,18 +365,6 @@
 				triggerAlertNormal="False"  />
 
 			<!--
-				email alert settings for this alert level
-				emailAlert - should an email notification be generated and
-					sent if a sensor alert of this level is triggered
-					("True" or "False" and works only if smtp is activated)
-				toAddr - email address to which the email should be sent
-					(works only if smtp is activated)
-			-->
-			<smtp
-				emailAlert="True"
-				toAddr="youraddress@somehost.de" />
-
-			<!--
 				rule chain settings for this alert level
 				activated - sets if rules are activated for this alert level
 					("True or "False)
@@ -464,18 +428,6 @@
 				triggerAlways="True"
 				triggerAlertTriggered="True"
 				triggerAlertNormal="False"  />
-
-			<!--
-				email alert settings for this alert level
-				emailAlert - should an email notification be generated and
-					sent if a sensor alert of this level is triggered
-					("True" or "False" and works only if smtp is activated)
-				toAddr - email address to which the email should be sent
-					(works only if smtp is activated)
-			-->
-			<smtp
-				emailAlert="False"
-				toAddr="youraddress@somehost.de" />
 
 			<!--
 				rule chain settings for this alert level
