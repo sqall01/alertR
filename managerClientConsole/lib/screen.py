@@ -1180,9 +1180,11 @@ class Console:
 			if nodeSensorBelongs is None:
 				raise ValueError(
 					"Could not find a node the sensor belongs to.")
-			elif nodeSensorBelongs.nodeType != "sensor":
+			elif (nodeSensorBelongs.nodeType != "sensor"
+				and nodeSensorBelongs.nodeType != "server"):
 				raise ValueError(
-					'Node the sensor belongs to is not of type "sensor"')
+					'Node the sensor belongs to is not of type "sensor" '
+					+ 'or "server".')
 
 			# create new sensor urwid object
 			# (also links urwid object to sensor object)
@@ -1607,10 +1609,11 @@ class Console:
 					if nodeSensorBelongs is None:
 						raise ValueError(
 							"Could not find a node the sensor belongs to.")
-					elif nodeSensorBelongs.nodeType != "sensor":
+					elif (nodeSensorBelongs.nodeType != "sensor"
+						and nodeSensorBelongs.nodeType != "server"):
 						raise ValueError(
 							'Node the sensor belongs to is not of '
-							+ 'type "sensor"')							
+							+ 'type "sensor" or "server".')
 
 					# create new sensor urwid object
 					# (also links urwid object to sensor object)
