@@ -1489,7 +1489,7 @@ class Console:
 			('connectionfail', 'black', 'dark gray'),
 			('connectionfail_focus', 'black', 'light gray'),
 			('timedout', 'black', 'dark magenta'),
-			('timedout_normal', 'black', 'light magenta'),
+			('timedout_focus', 'black', 'light magenta'),
 			('neutral', '', ''),
 		]
 
