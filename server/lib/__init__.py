@@ -10,9 +10,9 @@
 from server import ServerSession, ConnectionWatchdog, ThreadedTCPServer, \
 	AsynchronousSender
 from storage import Sqlite, Mysql
-from alert import SensorAlertExecuter, AlertLevel, RuleStart, RuleElement, \
-	RuleBoolean, RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute, \
-	RuleSecond
+from alert import SensorAlertExecuter, AlertLevel
+from ruleObjects import RuleStart, RuleElement, RuleBoolean, RuleSensor, \
+	RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from userBackend import CSVBackend
 from smtp import SMTPAlert
 from manager import ManagerUpdateExecuter
