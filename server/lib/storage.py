@@ -1170,7 +1170,7 @@ class Sqlite(_Storage):
 			return False
 
 		# check if the sensors from the database
-		# do still exist in the node
+		# do still exist for the node
 		# => delete sensor if it does not
 		for dbSensor in result:
 
@@ -1436,7 +1436,7 @@ class Sqlite(_Storage):
 			return False
 
 		# check if the alerts from the database
-		# do still exist in the node
+		# do still exist for the node
 		# => delete alert if it does not
 		for dbAlert in result:
 
@@ -3475,7 +3475,7 @@ class Mysql(_Storage):
 			return False
 
 		# check if the sensors from the database
-		# do still exist in the node
+		# do still exist for the node
 		# => delete sensor if it does not
 		for dbSensor in result:
 
@@ -3785,7 +3785,7 @@ class Mysql(_Storage):
 			return False
 
 		# check if the alerts from the database
-		# do still exist in the node
+		# do still exist for the node
 		# => delete alert if it does not
 		for dbAlert in result:
 

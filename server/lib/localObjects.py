@@ -41,3 +41,28 @@ class AlertLevel:
 		# (the order in which the elements are stored in this list is the
 		# order in which the rules have to evaluate)
 		self.rules = list()
+
+
+# internal class represents an internal sensor of the alarm system server
+class _InternalSensor:
+
+	def __init__(self):
+		self.nodeId = None
+		self.sensorId = None
+		self.remoteSensorId = None
+		self.alertDelay = None
+		self.alertLevels = list()
+		self.description = None
+		self.lastStateUpdated = None
+		self.state = None
+
+
+# class that represents the internal sensor that
+# is responsible for sensor timeouts
+class TimeoutSensor(_InternalSensor):
+
+	def __init__(self):
+		_InternalSensor.__init__(self)
+
+		# TODO description
+		self.timeoutSensors = list()

@@ -87,3 +87,6 @@ class GlobalData:
 		# list and lock of/for the asynchronous option executer
 		self.asyncOptionExecutersLock = threading.BoundedSemaphore(1)
 		self.asyncOptionExecuters = list()
+
+		# list of the servers internal sensors
+		self.internalSensors = list()

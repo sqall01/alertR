@@ -11,9 +11,10 @@ import sys
 import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import SensorAlertExecuter, AlertLevel, RuleStart, RuleElement, \
-	RuleBoolean, RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute, \
-	RuleSecond
+from lib import AlertLevel, TimeoutSensor
+from lib import SensorAlertExecuter
+from lib import RuleStart, RuleElement, RuleBoolean, RuleSensor, RuleWeekday, \
+	RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from lib import CSVBackend
 from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
@@ -771,6 +772,7 @@ if __name__ == '__main__':
 				% globalData.version)
 
 		# parse smtp options if activated
+		logging.debug("[%s]: Parsing smtp configuration." % fileName)
 		smtpActivated = (str(
 			configRoot.find("smtp").find("general").attrib[
 			"activated"]).upper() == "TRUE")
@@ -787,6 +789,7 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 
 		# parse update options
+		logging.debug("[%s]: Parsing update configuration." % fileName)
 		updateActivated = (str(
 			configRoot.find("update").find("general").attrib[
 			"activated"]).upper() == "TRUE")
@@ -814,6 +817,7 @@ if __name__ == '__main__':
 					+ "notification activated when smtp is not activated.")
 
 		# configure user credentials backend
+		logging.debug("[%s]: Parsing user backend configuration." % fileName)
 		userBackendMethod = str(
 			configRoot.find("storage").find("userBackend").attrib[
 			"method"]).upper()
@@ -824,6 +828,8 @@ if __name__ == '__main__':
 			raise ValueError("No valid user backend method in config file.")
 
 		# configure storage backend (check which backend is configured)
+		logging.debug("[%s]: Parsing storage backend configuration."
+			% fileName)
 		userBackendMethod = str(
 			configRoot.find("storage").find("storageBackend").attrib[
 			"method"]).upper()
@@ -852,11 +858,13 @@ if __name__ == '__main__':
 			raise ValueError("No valid storage backend method in config file.")
 
 		# get survey configurations
+		logging.debug("[%s]: Parsing survey configuration." % fileName)
 		surveyActivated = (str(
 			configRoot.find("general").find("survey").attrib[
 			"participate"]).upper() == "TRUE")
 
 		# get server configurations
+		logging.debug("[%s]: Parsing server configuration." % fileName)
 		globalData.serverCertFile = str(configRoot.find("general").find(
 				"server").attrib["certFile"])
 		globalData.serverKeyFile = str(configRoot.find("general").find(
@@ -881,6 +889,7 @@ if __name__ == '__main__':
 				raise ValueError("Client CA file does not exist.")
 
 		# parse all alert levels
+		logging.debug("[%s]: Parsing alert levels configuration." % fileName)
 		for item in configRoot.find("alertLevels").iterfind("alertLevel"):
 
 			alertLevel = AlertLevel()
@@ -1283,9 +1292,64 @@ if __name__ == '__main__':
 				raise ValueError("An alert level for a sensor exists "
 					+ "in the database that is not configured.")
 
+		# parse internal server sensors
+		logging.debug("[%s]: Parsing internal sensors configuration."
+			% fileName)
+		internalSensorsCfg = configRoot.find("internalSensors")
+		serverUsername = globalData.storage.getUniqueID()
+		serverNodeId = globalData.storage.getNodeId(serverUsername)
+		dbSensors = list()
+
+		# parse timeout sensor (if activated)
+		item = internalSensorsCfg.find("sensorTimeout")
+		if (str(item.attrib["activated"]).upper() == "TRUE"):
+
+			sensor = TimeoutSensor()
+
+			sensor.nodeId = serverNodeId
+			sensor.alertDelay = 0
+			sensor.state = 0
+			sensor.lastStateUpdated = time.time()
+			sensor.description = "Internal: Sensor Timeout"
+
+			# timeout sensor has always this fix internal id
+			# (stored as remoteSensorId)
+			sensor.remoteSensorId = 0
+
+			sensor.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				sensor.alertLevels.append(int(alertLevelXml.text))
+
+			globalData.internalSensors.append(sensor)
+
+			# create sensor dictionary element for database interaction
+			temp = dict()
+			temp["clientSensorId"] = sensor.remoteSensorId
+			temp["alertDelay"] = sensor.alertDelay
+			temp["alertLevels"] = sensor.alertLevels
+			temp["description"] = sensor.description
+			dbSensors.append(temp)
+
+		# add internal sensors to database (updates/deletes also old
+		# sensor data in the database)
+		if not globalData.storage.addSensors(serverUsername, dbSensors):
+			raise ValueError("Not able to add internal sensors "
+				+ "to database.")
+
+		# get sensor id for each activated internal sensor from the database
+		for sensor in globalData.internalSensors:
+
+			sensor.sensorId = globalData.storage.getSensorId(sensor.nodeId,
+				sensor.remoteSensorId)
+			if sensor.sensorId is None:
+				raise ValueError("Not able to get sensor id for "
+					+ "internal sensor from database.")
+
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)
+
+	logging.debug("[%s]: Parsing configuration succeeded." % fileName)
 
 	random.seed()
 
