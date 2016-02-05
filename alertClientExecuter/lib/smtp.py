@@ -233,8 +233,9 @@ class SMTPAlert:
 		if configUpdate is True:
 			message += "\n" \
 				+ "NOTE: The update needs changes in the used configuration " \
-				+ "file. This means that you have to manually update your " \
-				+ "used configuration file before you can use this alertR " \
+				+ "file. This means that when you update this alertR " \
+				+ "instance, you have to manually update your " \
+				+ "used configuration file before you can start this alertR " \
 				+ "instance again." \
 				+ "\n"
 
