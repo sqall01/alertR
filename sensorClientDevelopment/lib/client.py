@@ -808,13 +808,15 @@ class ServerCommunication:
 						"clientSensorId": sensor.id,
 						"state": 1,
 						"dataTransfer": True,
-						"data": sensor.data}
+						"data": sensor.data,
+						"changeState": sensor.changeState}
 				else:
 					payload = {"type": "request",
 						"clientSensorId": sensor.id,
 						"state": 0,
 						"dataTransfer": True,
-						"data": sensor.data}
+						"data": sensor.data,
+						"changeState": sensor.changeState}
 
 			else:
 				# set state of sensor alert according to state of sensor
@@ -822,12 +824,14 @@ class ServerCommunication:
 					payload = {"type": "request",
 						"clientSensorId": sensor.id,
 						"state": 1,
-						"dataTransfer": False}
+						"dataTransfer": False,
+						"changeState": sensor.changeState}
 				else:
 					payload = {"type": "request",
 						"clientSensorId": sensor.id,
 						"state": 0,
-						"dataTransfer": False}
+						"dataTransfer": False,
+						"changeState": sensor.changeState}
 
 			message = {"clientTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}

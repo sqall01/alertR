@@ -31,6 +31,7 @@ class _PollingSensor:
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
+		self.changeState = None
 
 
 	# this function returns the current state of the sensor
@@ -75,6 +76,7 @@ class ExecuterSensor(_PollingSensor):
 
 
 	def initializeSensor(self):
+		self.changeState = True
 		self.timeExecute = 0.0
 
 

@@ -32,6 +32,7 @@ class _PollingSensor:
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
+		self.changeState = None
 
 
 	# this function returns the current state of the sensor
@@ -67,6 +68,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 
 	def initializeSensor(self):
+		self.changeState = True
 		self.state = 1 - self.triggerState
 		self.temporaryState = 1 - self.triggerState
 

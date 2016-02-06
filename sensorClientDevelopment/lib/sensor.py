@@ -31,6 +31,7 @@ class _PollingSensor:
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
+		self.changeState = None
 
 
 	# this function returns the current state of the sensor
@@ -60,6 +61,7 @@ class SensorDev(_PollingSensor):
 		self.consoleInputState = 1
 
 	def initializeSensor(self):
+		self.changeState = True
 		self.state = self.consoleInputState
 
 

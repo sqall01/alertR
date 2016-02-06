@@ -71,6 +71,7 @@ class _PollingSensor:
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
+		self.changeState = None
 
 
 	# this function returns the current state of the sensor
@@ -221,6 +222,7 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 
 	def initializeSensor(self):
+		self.changeState = True
 
 		# calculate quadrant around home quadrant
 		outerQuadrant = _Quadrant()

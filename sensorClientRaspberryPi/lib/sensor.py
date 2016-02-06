@@ -31,6 +31,7 @@ class _PollingSensor:
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
+		self.changeState = None
 
 
 	# this function returns the current state of the sensor
@@ -60,6 +61,8 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
 
 	def initializeSensor(self):
+		self.changeState = True
+
 		# configure gpio pin and get initial state
 		GPIO.setmode(GPIO.BOARD)
 		GPIO.setup(self.gpioPin, GPIO.IN)
@@ -150,6 +153,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
 
 	def initializeSensor(self):
+		self.changeState = True
 
 		# get the value for the setting if the gpio is pulled up or down
 		if self.pulledUpOrDown == 0:
