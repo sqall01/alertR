@@ -1176,6 +1176,7 @@ class ClientCommunication:
 		try:
 			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
 			state = int(incomingMessage["payload"]["state"])
+			changeState = bool(incomingMessage["payload"]["changeState"])
 
 			# get data of sensor alert if data transfer is activated
 			data = None
@@ -1220,7 +1221,7 @@ class ClientCommunication:
 
 		# add sensor alert to database
 		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId,
-			state, dataJson):
+			state, changeState, dataJson):
 			logging.error("[%s]: Not able to add sensor alert (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -2467,6 +2468,19 @@ class ConnectionWatchdog(threading.Thread):
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
 				int(time.time()) - (2 * self.connectionTimeout))
 
+
+
+
+
+			# TODO here timeout sensor trigger
+			# trigger sensor alert for each NEW sensor that has timed out
+			# (check with self.timeoutSensorIds if it is new)
+			# Put this in a separate function
+
+
+
+
+
 			# generate an alert for every timed out sensor
 			# (logging + email)
 			for sensorTimeoutTuple in sensorsTimeoutList:
@@ -2500,6 +2514,27 @@ class ConnectionWatchdog(threading.Thread):
 				# => add it
 				if not sensorId in self.timedOutSensors:
 					self.timedOutSensors.append(sensorId)
+
+
+
+
+
+
+			# TODO here timeout sensor normal
+			# check here if in the current list of sensor timeouts
+			# is one missing that is still in the self.timeoutSensorIds
+			# => set sensor to normal if it is empty
+			# => trigger sensor alert with normal state for each sensor
+			# that is not timed out anymore (but let timeout sensor
+			# still be triggered) <--- can get problems with client site 
+			# processing with this method, have to check
+			# Put this in a separate function
+
+
+
+
+
+
 
 			# check if a timed out sensor has reconnected and
 			# updated its state and generate a notification
@@ -2546,6 +2581,20 @@ class ConnectionWatchdog(threading.Thread):
 							logging.error("[%s]: Could not send " 
 								% self.fileName
 								+ "email notification for reconnected sensor.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	# sets the exit flag to shut down the thread
