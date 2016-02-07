@@ -26,11 +26,11 @@ class _Alert:
 		self.alertLevels = list()
 
 
-	def triggerAlert(self, asyncAlertExecInstance):
+	def triggerAlert(self, sensorAlert):
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	def stopAlert(self, asyncAlertExecInstance):
+	def stopAlert(self, sensorAlert):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -76,7 +76,7 @@ class XbmcAlert(_Alert):
 
 
 	# this function is called when this alert is triggered
-	def triggerAlert(self, asyncAlertExecInstance):
+	def triggerAlert(self, sensorAlert):
 
 		# only execute if the last triggered alert was more than
 		# the configured trigger delay ago
@@ -89,10 +89,10 @@ class XbmcAlert(_Alert):
 			# displayed
 			receivedMessage = None
 			if (self.displayReceivedMessage
-				and asyncAlertExecInstance.dataTransfer):
+				and sensorAlert.dataTransfer):
 
-				if ("message" in asyncAlertExecInstance.data):
-					receivedMessage = asyncAlertExecInstance.data["message"]
+				if ("message" in sensorAlert.data):
+					receivedMessage = sensorAlert.data["message"]
 
 			# connect to the xbmc json rpc service
 			try:
@@ -140,28 +140,28 @@ class XbmcAlert(_Alert):
 
 						# differentiate between a sensor alert triggered by
 						# a sensor going back in normal state or in alert state
-						if asyncAlertExecInstance.state == 1:
+						if sensorAlert.state == 1:
 							tempMessage = "\"" \
-								+ asyncAlertExecInstance.sensorDescription \
+								+ sensorAlert.description \
 								+ "\" triggered."
 						else:
 							tempMessage = "\"" \
-								+ asyncAlertExecInstance.sensorDescription \
+								+ sensorAlert.description \
 								+ "\" back to normal."
 
 					else:
 
 						# differentiate between a sensor alert triggered by
 						# a sensor going back in normal state or in alert state
-						if asyncAlertExecInstance.state == 1:
+						if sensorAlert.state == 1:
 							tempMessage = "\"" \
-								+ asyncAlertExecInstance.sensorDescription \
+								+ sensorAlert.description \
 								+ "\" triggered. Received message: \"" \
 								+ receivedMessage \
 								+ "\""
 						else:
 							tempMessage = "\"" \
-								+ asyncAlertExecInstance.sensorDescription \
+								+ sensorAlert.description \
 								+ "\" back to normal. Received message: \"" \
 								+ receivedMessage \
 								+ "\""
@@ -175,7 +175,7 @@ class XbmcAlert(_Alert):
 
 
 	# this function is called when the alert is stopped
-	def stopAlert(self, asyncAlertExecInstance):
+	def stopAlert(self, sensorAlert):
 		pass
 
 
@@ -199,19 +199,15 @@ class AsynchronousAlertExecuter(threading.Thread):
 
 		# this options are used to transfer data from the received
 		# sensor alert to the alert that is triggered
-		self.sensorDescription = None
-		self.dataTransfer = False # true or false
-		self.data = None # only evaluated if data transfer is true
-		self.state = None # (triggered = 1; back to normal = 0)
-		self.timeReceived = None # time sensor alert was received
+		self.sensorAlert = None
 
 
 	def run(self):
 
 		# check if an alert should be triggered
 		if self.triggerAlert:
-			self.alert.triggerAlert(self)
+			self.alert.triggerAlert(self.sensorAlert)
 
 		# check if an alert should be stopped
 		elif self.stopAlert:
-			self.alert.stopAlert(self)
+			self.alert.stopAlert(self.sensorAlert)

@@ -26,11 +26,11 @@ class _Alert:
 		self.alertLevels = list()
 
 
-	def triggerAlert(self, asyncAlertExecInstance):
+	def triggerAlert(self, sensorAlert):
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	def stopAlert(self, asyncAlertExecInstance):
+	def stopAlert(self, sensorAlert):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -73,7 +73,7 @@ class RaspberryPiGPIOAlert(_Alert):
 
 
 	# this function is called when this alert is triggered
-	def triggerAlert(self, asyncAlertExecInstance):
+	def triggerAlert(self, sensorAlert):
 
 		# only execute if not triggered
 		if not self.triggered:
@@ -86,7 +86,7 @@ class RaspberryPiGPIOAlert(_Alert):
 
 
 	# this function is called when the alert is stopped
-	def stopAlert(self, asyncAlertExecInstance):
+	def stopAlert(self, sensorAlert):
 
 		# only execute if the alert was triggered
 		if self.triggered:
@@ -118,19 +118,15 @@ class AsynchronousAlertExecuter(threading.Thread):
 
 		# this options are used to transfer data from the received
 		# sensor alert to the alert that is triggered
-		self.sensorDescription = None
-		self.dataTransfer = False # true or false
-		self.data = None # only evaluated if data transfer is true
-		self.state = None # (triggered = 1; back to normal = 0)
-		self.timeReceived = None # time sensor alert was received
+		self.sensorAlert = None
 
 
 	def run(self):
 
 		# check if an alert should be triggered
 		if self.triggerAlert:
-			self.alert.triggerAlert(self)
+			self.alert.triggerAlert(self.sensorAlert)
 
 		# check if an alert should be stopped
 		elif self.stopAlert:
-			self.alert.stopAlert(self)
+			self.alert.stopAlert(self.sensorAlert)

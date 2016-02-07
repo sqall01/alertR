@@ -17,6 +17,7 @@ import base64
 import random
 import json
 from alert import AsynchronousAlertExecuter
+from localObjects import SensorAlert
 BUFSIZE = 16384
 
 
@@ -491,11 +492,13 @@ class ServerCommunication:
 
 		logging.debug("[%s]: Received sensor alert." % self.fileName)
 		
+		sensorAlert = SensorAlert()
+
 		# extract sensor alert values
 		try:
-			alertLevels = incomingMessage["payload"]["alertLevels"]
+			sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
 			# check if alertLevels is a list
-			if not isinstance(alertLevels, list):
+			if not isinstance(sensorAlert.alertLevels, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -508,7 +511,8 @@ class ServerCommunication:
 				return False
 			# check if all elements of the alertLevels list 
 			# are of type int
-			if not all(isinstance(item, int) for item in alertLevels):
+			if not all(isinstance(item, int)
+				for item in sensorAlert.alertLevels):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -520,15 +524,19 @@ class ServerCommunication:
 
 				return False
 
-			state = int(incomingMessage["payload"]["state"])
-			description = str(incomingMessage["payload"]["description"])
-			timeReceived = int(time.time())
+			sensorAlert.state = int(incomingMessage["payload"]["state"])
+			sensorAlert.description = \
+				str(incomingMessage["payload"]["description"])
+			sensorAlert.timeReceived = int(time.time())
+			sensorAlert.changeState = \
+				bool(incomingMessage["payload"]["changeState"])
 
 			# parse received data (if data transfer is activated)
-			data = None
-			dataTransfer = bool(incomingMessage["payload"]["dataTransfer"])
-			if dataTransfer:
-				data = incomingMessage["payload"]["data"]
+			sensorAlert.data = None
+			sensorAlert.dataTransfer = \
+				bool(incomingMessage["payload"]["dataTransfer"])
+			if sensorAlert.dataTransfer:
+				sensorAlert.data = incomingMessage["payload"]["data"]
 
 				# check if data is of type dict
 				# => if not ignore it
@@ -537,8 +545,8 @@ class ServerCommunication:
 						% self.fileName
 						+ "not valid. Ignoring it.")
 
-					data = None
-					dataTransfer = False
+					sensorAlert.data = None
+					sensorAlert.dataTransfer = False
 
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
@@ -573,15 +581,11 @@ class ServerCommunication:
 
 		# trigger all alerts that have the same alert level
 		for alert in self.alerts:
-			for alertLevel in alertLevels:
+			for alertLevel in sensorAlert.alertLevels:
 				if alertLevel in alert.alertLevels:
 					# trigger alert in an own thread to not block this one
 					alertTriggerProcess = AsynchronousAlertExecuter(alert)
-					alertTriggerProcess.sensorDescription = description
-					alertTriggerProcess.state = state
-					alertTriggerProcess.dataTransfer = dataTransfer
-					alertTriggerProcess.data = data
-					alertTriggerProcess.timeReceived = timeReceived
+					alertTriggerProcess.sensorAlert = sensorAlert
 					# set thread to daemon
 					# => threads terminates when main thread terminates	
 					alertTriggerProcess.daemon = True

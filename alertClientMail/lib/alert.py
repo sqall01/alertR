@@ -26,11 +26,11 @@ class _Alert:
 		self.alertLevels = list()
 
 
-	def triggerAlert(self, asyncAlertExecInstance):
+	def triggerAlert(self, sensorAlert):
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	def stopAlert(self, asyncAlertExecInstance):
+	def stopAlert(self, sensorAlert):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -73,21 +73,21 @@ class MailAlert(_Alert):
 			self.bodyText = fp.read()
 
 
-	def triggerAlert(self, asyncAlertExecInstance):
+	def triggerAlert(self, sensorAlert):
 
 		# create a received message text
-		if (asyncAlertExecInstance.dataTransfer
-			and "message" in asyncAlertExecInstance.data):
-			receivedMessage = asyncAlertExecInstance.data["message"]
+		if (sensorAlert.dataTransfer
+			and "message" in sensorAlert.data):
+			receivedMessage = sensorAlert.data["message"]
 		else:
 			receivedMessage = "None"
 
-		sensorDescription = asyncAlertExecInstance.sensorDescription
+		sensorDescription = sensorAlert.description
 
 		# convert state to a text
-		if asyncAlertExecInstance.state == 0:
+		if sensorAlert.state == 0:
 			stateMessage = "Normal"
-		elif asyncAlertExecInstance.state == 1:
+		elif sensorAlert.state == 1:
 			stateMessage = "Triggered"
 		else:
 			stateMessage = "Undefined"
@@ -98,7 +98,7 @@ class MailAlert(_Alert):
 		tempMsg = tempMsg.replace("$SENSORDESC$", sensorDescription)
 		tempMsg = tempMsg.replace("$TIMERECEIVED$",
 			time.strftime("%d %b %Y %H:%M:%S",
-			time.localtime(asyncAlertExecInstance.timeReceived)))
+			time.localtime(sensorAlert.timeReceived)))
 
 		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
 			% (self.fromAddr, self.toAddr, self.subject)
@@ -117,7 +117,7 @@ class MailAlert(_Alert):
 				+ "triggered alert.")
 
 
-	def stopAlert(self, asyncAlertExecInstance):
+	def stopAlert(self, sensorAlert):
 		pass
 
 
@@ -141,19 +141,15 @@ class AsynchronousAlertExecuter(threading.Thread):
 
 		# this options are used to transfer data from the received
 		# sensor alert to the alert that is triggered
-		self.sensorDescription = None
-		self.dataTransfer = False # true or false
-		self.data = None # only evaluated if data transfer is true
-		self.state = None # (triggered = 1; back to normal = 0)
-		self.timeReceived = None # time sensor alert was received
+		self.sensorAlert = None
 
 
 	def run(self):
 
 		# check if an alert should be triggered
 		if self.triggerAlert:
-			self.alert.triggerAlert(self)
+			self.alert.triggerAlert(self.sensorAlert)
 
 		# check if an alert should be stopped
 		elif self.stopAlert:
-			self.alert.stopAlert(self)
+			self.alert.stopAlert(self.sensorAlert)
