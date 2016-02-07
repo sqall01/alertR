@@ -125,7 +125,7 @@ class _Storage():
 
 	# gets all alert levels for a specific sensor given by sensorId
 	#
-	# return list of tuples of (alertLevel)
+	# return list of alertLevel
 	# or None
 	def getSensorAlertLevels(self, sensorId):
 		raise NotImplemented("Function not implemented yet.")
@@ -1759,7 +1759,7 @@ class Sqlite(_Storage):
 
 	# gets all alert levels for a specific sensor given by sensorId
 	#
-	# return list of tuples of (alertLevel)
+	# return list of alertLevel
 	# or None
 	def getSensorAlertLevels(self, sensorId):
 
@@ -1783,8 +1783,8 @@ class Sqlite(_Storage):
 
 		self._releaseLock()
 
-		# return list of tuples of (alertLevel)
-		return result
+		# return list of alertLevel
+		return map(lambda x: x[0], result)
 
 
 	# gets all alert levels for a specific alert given by alertId
@@ -4259,7 +4259,7 @@ class Mysql(_Storage):
 
 	# gets all alert levels for a specific sensor given by sensorId
 	#
-	# return list of tuples of (alertLevel)
+	# return list of alertLevel
 	# or None
 	def getSensorAlertLevels(self, sensorId):
 
@@ -4300,8 +4300,8 @@ class Mysql(_Storage):
 
 		self._releaseLock()
 
-		# return list of tuples of (alertLevel)
-		return list(result)
+		# return list of alertLevel
+		return map(lambda x: x[0], result)
 
 
 	# gets all alert levels for a specific alert given by alertId

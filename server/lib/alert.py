@@ -13,6 +13,7 @@ import time
 import logging
 import json
 from server import AsynchronousSender
+from localObjects import SensorAlert
 
 
 # this class is woken up if a sensor alert is received
@@ -1183,15 +1184,309 @@ class SensorAlertExecuter(threading.Thread):
 		return False
 
 
+	# Internal function that pre-processes sensor alerts from the database.
+	# All triggered sensor alerts from the database are filtered and separated
+	# into "sensorAlertsToHandle" and "sensorAlertsToHandleWithRules".
+	# NOTE: this function updates the argument "sensorAlertsToHandle"
+	# and "sensorAlertsToHandleWithRules".
+	def _preprocessSensorAlerts(self, sensorAlertsToHandle,
+		sensorAlertsToHandleWithRules, sensorAlertList):
+
+		# get the flag if the system is active or not
+		isAlertSystemActive = self.storage.isAlertSystemActive()
+
+		# check if sensor alerts from the database
+		# have to be handled
+		for sensorAlert in sensorAlertList:
+
+			# delete sensor alert from the database
+			self.storage.deleteSensorAlert(sensorAlert.sensorAlertId)
+
+			# get all alert levels for this sensor (list of integers)
+			sensorAlertLevels = self.storage.getSensorAlertLevels(
+				sensorAlert.sensorId)
+
+			if sensorAlertLevels is None:
+				logging.error("[%s]: No alert levels " % self.fileName
+					+ "for sensor in database. Can not trigger alert.")
+				continue
+
+			# get all alert levels that are triggered
+			# because of this sensor alert (used as a pre filter)
+			triggeredAlertLevels = list()
+			for configuredAlertLevel in self.alertLevels:
+				for sensorAlertLevel in sensorAlertLevels:
+					if (configuredAlertLevel.level == sensorAlertLevel):
+						# check if alert system is active
+						# or alert level triggers always
+						if (isAlertSystemActive 
+							or configuredAlertLevel.triggerAlways):
+
+							# check if the configured alert level
+							# should trigger a sensor alert message
+							# when the sensor goes to state "triggered"
+							# => if not skip configured alert level
+							if (not
+								configuredAlertLevel.triggerAlertTriggered
+								and sensorAlert.state == 1):
+								continue
+
+							# check if the configured alert level
+							# should trigger a sensor alert message
+							# when the sensor goes to state "normal"
+							# => if not skip configured alert level
+							if (not configuredAlertLevel.triggerAlertNormal
+								and sensorAlert.state == 0):
+								continue
+
+							# split sensor alerts into alerts with rules
+							# (each alert level with a rule is handled
+							# as a single sensor alert and appended
+							# into a separate list)
+							if configuredAlertLevel.rulesActivated:
+
+								# check if an alert level with a rule
+								# is already triggered
+								# => add current sensor alert to it
+								found = False
+								for alertWithRule in \
+									sensorAlertsToHandleWithRules:
+
+									if (configuredAlertLevel ==
+										alertWithRule[1]):
+
+										alertWithRule[0].append(
+											sensorAlert)
+
+										found = True
+										break
+
+								# if no alert level with a rule was found
+								# => create a new sensor alert with rule
+								# to handle for it
+								if not found:
+									sensorAlertsToHandleWithRules.append(
+										[ [sensorAlert],
+										configuredAlertLevel] )
+
+							# create a list of sensor alerts to handle
+							# without rules activated
+							else:
+								triggeredAlertLevels.append(
+									configuredAlertLevel)
+
+			# check if an alert level to trigger was found
+			# if not => just ignore it
+			if not triggeredAlertLevels:
+				logging.info("[%s]: No alert level " % self.fileName
+					+ "to trigger was found.")	
+
+				# add sensorId of the sensor alert
+				# to the queue for state changes of the
+				# manager update executer
+				if self.managerUpdateExecuter != None:
+					managerStateTuple = (sensorAlert.sensorId,
+						sensorAlert.state)
+					self.managerUpdateExecuter.queueStateChange.append(
+						managerStateTuple)
+
+				continue
+
+			# update alert levels to trigger
+			else:
+
+				# add sensor alert with alert levels
+				# to the list of sensor alerts to handle
+				sensorAlertsToHandle.append( [sensorAlert,
+					triggeredAlertLevels] )
+
+
+	# Internal function that processes sensor alerts.
+	# NOTE: this function updates the argument "sensorAlertsToHandle".
+	def _processSensorAlerts(self, sensorAlertsToHandle):
+
+		# get the flag if the system is active or not
+		isAlertSystemActive = self.storage.isAlertSystemActive()
+
+		# check all sensor alerts to handle if they have to be triggered
+		for sensorAlertToHandle in list(sensorAlertsToHandle):
+			sensorAlert = sensorAlertToHandle[0]
+
+			# get all alert levels that are triggered
+			# because of this sensor alert
+			triggeredAlertLevels = list()
+			for configuredAlertLevel in self.alertLevels:
+				for sensorAlertLevel in sensorAlertToHandle[1]:
+					if (configuredAlertLevel.level == 
+						sensorAlertLevel.level):
+						# check if alert system is active
+						# or alert level triggers always
+						if (isAlertSystemActive 
+							or configuredAlertLevel.triggerAlways):
+							triggeredAlertLevels.append(
+								configuredAlertLevel)
+
+			# check if an alert level to trigger remains
+			# if not => just remove sensor alert to handle from the list
+			if not triggeredAlertLevels:
+				logging.info("[%s]: No alert level " % self.fileName
+					+ "to trigger remains.")	
+
+				sensorAlertsToHandle.remove(sensorAlertToHandle)
+
+				continue
+
+			# Update alert levels to trigger.
+			# If the sensor alert has a delay, we have to remove
+			# all alert levels that do not trigger anymore.
+			else:
+				sensorAlertToHandle[1] = triggeredAlertLevels
+
+			# check if sensor alert has triggered
+			if ((time.time() - sensorAlert.timeReceived)
+				> sensorAlert.alertDelay):
+
+				# generate integer list of alert levels that have triggered
+				# (needed for sensor alert message)
+				for triggeredAlertLevel in triggeredAlertLevels:
+					sensorAlert.alertLevels.append(triggeredAlertLevel.level)
+
+				# send sensor alert to all manager and alert clients
+				for serverSession in self.serverSessions:
+					# ignore sessions which do not exist yet
+					# and that are not managers
+					if serverSession.clientComm == None:
+						continue
+					if (serverSession.clientComm.nodeType != "manager"
+						and serverSession.clientComm.nodeType != "alert"):
+						continue
+					if not serverSession.clientComm.clientInitialized:
+						continue
+
+					# sending sensor alert to manager/alert node
+					# via a thread to not block the sensor alert executer
+					sensorAlertProcess = AsynchronousSender(
+						self.globalData, serverSession.clientComm)
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					sensorAlertProcess.daemon = True
+					sensorAlertProcess.sendSensorAlert = True
+					sensorAlertProcess.sensorAlert = sensorAlert
+
+					logging.debug("[%s]: Sending sensor " % self.fileName
+						+ "alert to manager/alert (%s:%d)."
+						% (serverSession.clientComm.clientAddress,
+						serverSession.clientComm.clientPort))
+					sensorAlertProcess.start()
+
+				# after sensor alert was triggered
+				# => remove sensor alert to handle
+				sensorAlertsToHandle.remove(sensorAlertToHandle)
+
+
+	# Internal function that processes sensor alerts that affect rules.
+	# NOTE: this function updates the argument "sensorAlertsToHandleWithRules".
+	def _processSensorAlertsRules(self, sensorAlertsToHandleWithRules):
+
+		# check all sensor alerts to handle with alert levels that have
+		# rules if they have to be triggered
+		for sensorAlertToHandle in list(sensorAlertsToHandleWithRules):
+
+			# Convert sensor alerts back to tuple list because
+			# rule engine works on tuple list
+			# (has to be done until rule engine is re-factored).
+			sensorAlertTupleList = list()
+			for sensorAlert in sensorAlertToHandle[0]:
+				temp = (sensorAlert.sensorAlertId, sensorAlert.sensorId,
+					sensorAlert.nodeId, sensorAlert.timeReceived,
+					sensorAlert.alertDelay, sensorAlert.state,
+					sensorAlert.description)
+				sensorAlertTupleList.append(temp)
+
+			alertLevel = sensorAlertToHandle[1]
+
+			# update the rule chain of the alert level with
+			# the received sensor alerts
+			self._updateRule(sensorAlertTupleList, alertLevel)
+
+			# check if the rule chain evaluates to triggered
+			# => trigger sensor alert for the alert level
+			if self._evaluateRules(alertLevel):
+
+				logging.info("[%s]: Alert level " % self.fileName
+					+ "'%d' rules have triggered." % alertLevel.level)
+
+				# create a temporary alert level for this triggered rule
+				ruleSensorAlert = SensorAlert()
+				ruleSensorAlert.rulesActivated = True
+				ruleSensorAlert.sensorId = -1
+				ruleSensorAlert.changeState = False
+				ruleSensorAlert.alertLevels.append(alertLevel.level)
+				ruleSensorAlert.state = 1
+				ruleSensorAlert.description = \
+					"Rule of Alert Level: '%s'" % alertLevel.name
+				ruleSensorAlert.dataTransfer = False
+				ruleSensorAlert.data = None
+
+				# send sensor alert to all manager and alert clients
+				for serverSession in self.serverSessions:
+					# ignore sessions which do not exist yet
+					# and that are not managers
+					if serverSession.clientComm == None:
+						continue
+					if (serverSession.clientComm.nodeType != "manager"
+						and serverSession.clientComm.nodeType != "alert"):
+						continue
+					if not serverSession.clientComm.clientInitialized:
+						continue
+
+					# sending sensor alert to manager/alert node
+					# via a thread to not block the sensor alert executer
+					sensorAlertProcess = AsynchronousSender(
+						self.globalData, serverSession.clientComm)
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					sensorAlertProcess.daemon = True
+					sensorAlertProcess.sendSensorAlert = True
+					sensorAlertProcess.sensorAlert = ruleSensorAlert
+
+					logging.debug("[%s]: Sending sensor " % self.fileName
+						+ "alert to manager/alert (%s:%d)."
+						% (serverSession.clientComm.clientAddress,
+						serverSession.clientComm.clientPort))
+					sensorAlertProcess.start()
+
+				# remove sensor alert to handle from list
+				# after it has triggered
+				sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
+
+			# if rule chain did not evaluate to triggered
+			# => check if it is likely that it can trigger during the
+			# next evaluation if not => remove the sensor alert to handle
+			else:
+				if not self._checkRulesCanTrigger(sensorAlertTupleList,
+					alertLevel):
+
+					logging.debug("[%s]: Alert level " % self.fileName
+						+ "'%d' rules can not trigger at the moment."
+						% alertLevel.level)
+
+					# remove sensor alert to handle from list
+					# when it can not trigger at the current state
+					sensorAlertsToHandleWithRules.remove(
+						sensorAlertToHandle)
+
+
 	# this function starts the endless loop of the alert executer thread
 	def run(self):
 
-		# create an empty list for sensor alerts
-		# that have to be handled
+		# Create an empty list for sensor alerts that have to be handled.
+		# Structure: [ list(sensorAlert, list(triggered alertLevels) ) ]
 		sensorAlertsToHandle = list()
 
-		# create an empty list for sensor alerts
-		# that have to be handled and which alert levels have rules
+		# Create an empty list for sensor alerts
+		# that have to be handled and which alert levels have rules.
+		# Structure: [ list(sensorAlerts), possible triggered alertLevel ]
 		sensorAlertsToHandleWithRules = list()
 
 		while 1:
@@ -1208,8 +1503,40 @@ class SensorAlertExecuter(threading.Thread):
 
 			# get a list of all sensor alerts from database
 			# list is a list of tuples (sensorAlertId, sensorId, nodeId,
-			# timeReceived, alertDelay, state, description, dataJson)
-			sensorAlertList = self.storage.getSensorAlerts()
+			# timeReceived, alertDelay, state, description, dataJson,
+			# changeState)
+			sensorAlertTuples = self.storage.getSensorAlerts()
+
+			# convert list of tuples into sensor alert objects
+			sensorAlertList = list()
+			for sensorAlertTuple in sensorAlertTuples:
+				temp = SensorAlert()
+				temp.rulesActivated = False
+				temp.sensorAlertId = sensorAlertTuple[0]
+				temp.sensorId = sensorAlertTuple[1]
+				temp.nodeId = sensorAlertTuple[2]
+				temp.timeReceived = sensorAlertTuple[3]
+				temp.alertDelay = sensorAlertTuple[4]
+				temp.state = sensorAlertTuple[5]
+				temp.description = sensorAlertTuple[6]
+				temp.changeState = sensorAlertTuple[8]
+
+				# get json data string and convert it
+				temp.dataTransfer = False
+				temp.data = None
+				dataJson = sensorAlertTuple[7]
+				if dataJson != "":
+					temp.dataTransfer = True
+					try:
+						temp.data = json.loads(dataJson)
+					except Exception as e:
+						logging.exception("[%s]: Data from " % self.fileName
+							+ "database not a valid json string. "
+							+ "Ignoring data.")
+
+						temp.dataTransfer = False
+
+				sensorAlertList.append(temp)
 
 			# check if no sensor alerts are to handle and exist in database
 			if (not sensorAlertsToHandle
@@ -1220,119 +1547,16 @@ class SensorAlertExecuter(threading.Thread):
 				self.sensorAlertEvent.clear()
 				continue
 
-			# get the flag if the system is active or not
-			isAlertSystemActive = self.storage.isAlertSystemActive()
-
-			# check if sensor alerts from the database
-			# have to be handled
-			for sensorAlert in sensorAlertList:
-				sensorAlertId = sensorAlert[0]
-				sensorId = sensorAlert[1]
-				state = sensorAlert[5]
-
-				# delete sensor alert from the database
-				self.storage.deleteSensorAlert(sensorAlertId)
-
-				# get all alert levels for this sensor
-				sensorAlertLevels = self.storage.getSensorAlertLevels(sensorId)
-				if sensorAlertLevels is None:
-					logging.error("[%s]: No alert levels " % self.fileName
-						+ "for sensor in database. Can not trigger alert.")
-					continue
-
-				# get all alert levels that are triggered
-				# because of this sensor alert (used as a pre filter)
-				triggeredAlertLevels = list()
-				for configuredAlertLevel in self.alertLevels:
-					for sensorAlertLevel in sensorAlertLevels:
-						if (configuredAlertLevel.level == 
-							sensorAlertLevel[0]):
-							# check if alert system is active
-							# or alert level triggers always
-							if (isAlertSystemActive 
-								or configuredAlertLevel.triggerAlways):
-
-								# check if the configured alert level
-								# should trigger a sensor alert message
-								# when the sensor goes to state "triggered"
-								# => if not skip configured alert level
-								if (not
-									configuredAlertLevel.triggerAlertTriggered
-									and state == 1):
-									continue
-
-								# check if the configured alert level
-								# should trigger a sensor alert message
-								# when the sensor goes to state "normal"
-								# => if not skip configured alert level
-								if (not configuredAlertLevel.triggerAlertNormal
-									and state == 0):
-									continue
-
-								# split sensor alerts into alerts with rules
-								# (each alert level with a rule is handled
-								# as a single sensor alert and appended
-								# into a separate list)
-								if configuredAlertLevel.rulesActivated:
-
-									# check if an alert level with a rule
-									# is already triggered
-									# => add current sensor alert to it
-									found = False
-									for alertWithRule in \
-										sensorAlertsToHandleWithRules:
-
-										if (configuredAlertLevel ==
-											alertWithRule[1]):
-
-											alertWithRule[0].append(
-												sensorAlert)
-
-											found = True
-											break
-
-									# if no alert level with a rule was found
-									# => create a new sensor alert with rule
-									# to handle for it
-									if not found:
-										sensorAlertsToHandleWithRules.append(
-											[ [sensorAlert],
-											configuredAlertLevel] )
-
-								# create a list of sensor alerts to handle
-								# without rules activated
-								else:
-									triggeredAlertLevels.append(
-										configuredAlertLevel)
-
-				# check if an alert level to trigger was found
-				# if not => just ignore it
-				if not triggeredAlertLevels:
-					logging.info("[%s]: No alert level " % self.fileName
-						+ "to trigger was found.")	
-
-					# add sensorId of the sensor alert
-					# to the queue for state changes of the
-					# manager update executer
-					if self.managerUpdateExecuter != None:
-						managerStateTuple = (sensorId, state)
-						self.managerUpdateExecuter.queueStateChange.append(
-							managerStateTuple)
-
-					continue
-
-				# update alert levels to trigger
-				else:
-
-					# add sensor alert with alert levels
-					# to the list of sensor alerts to handle
-					sensorAlertsToHandle.append( [sensorAlert,
-						triggeredAlertLevels] )
+			# Filter and separate sensor alerts from the database.
+			# NOTE: argument "sensorAlertsToHandle"
+			# and "sensorAlertsToHandleWithRules" is updated by this function.
+			self._preprocessSensorAlerts(sensorAlertsToHandle,
+				sensorAlertsToHandleWithRules, sensorAlertList)
 
 			# wake up manager update executer 
 			# => state change will be transmitted
 			# (because it is in the queue)
-			if self.managerUpdateExecuter != None:
+			if not self.managerUpdateExecuter is None:
 				self.managerUpdateExecuter.managerUpdateEvent.set()
 
 			# when no sensor alerts exist to handle => restart loop
@@ -1340,186 +1564,14 @@ class SensorAlertExecuter(threading.Thread):
 				and not sensorAlertsToHandleWithRules):
 				continue
 
-			# get the flag if the system is active or not
-			isAlertSystemActive = self.storage.isAlertSystemActive()
+			# Process sensor alerts that we have to handle.
+			# NOTE: argument "sensorAlertsToHandle" is updated by this function
+			self._processSensorAlerts(sensorAlertsToHandle)
 
-			# check all sensor alerts to handle if they have to be triggered
-			for sensorAlertToHandle in list(sensorAlertsToHandle):
-				sensorAlertId = sensorAlertToHandle[0][0]
-				sensorId = sensorAlertToHandle[0][1]
-				nodeId = sensorAlertToHandle[0][2]
-				timeReceived = sensorAlertToHandle[0][3]
-				alertDelay = sensorAlertToHandle[0][4]
-				state = self.storage.getSensorState(sensorId)
-				description = sensorAlertToHandle[0][6]
-
-				# get json data string and convert it
-				dataTransfer = False
-				data = None
-				dataJson = sensorAlertToHandle[0][7]
-				if dataJson != "":
-					dataTransfer = True
-					try:
-						data = json.loads(dataJson)
-					except Exception as e:
-						logging.exception("[%s]: Data from " % self.fileName
-							+ "database not a valid json string. "
-							+ "Ignoring data.")
-
-						dataTransfer = False
-
-				# get all alert levels that are triggered
-				# because of this sensor alert
-				triggeredAlertLevels = list()
-				for configuredAlertLevel in self.alertLevels:
-					for sensorAlertLevel in sensorAlertToHandle[1]:
-						if (configuredAlertLevel.level == 
-							sensorAlertLevel.level):
-							# check if alert system is active
-							# or alert level triggers always
-							if (isAlertSystemActive 
-								or configuredAlertLevel.triggerAlways):
-								triggeredAlertLevels.append(
-									configuredAlertLevel)
-
-				# check if an alert level to trigger remains
-				# if not => just remove sensor alert to handle from the list
-				if not triggeredAlertLevels:
-					logging.info("[%s]: No alert level " % self.fileName
-						+ "to trigger remains.")	
-
-					sensorAlertsToHandle.remove(sensorAlertToHandle)
-
-					continue
-
-				# update alert levels to trigger
-				else:
-					sensorAlertToHandle[1] = triggeredAlertLevels
-
-				# check if sensor alert has triggered
-				if (time.time() - timeReceived) > alertDelay:
-
-					# generate integer list of alert levels that have triggered
-					# (needed for sensor alert message)
-					intListAlertLevel = list()
-					for triggeredAlertLevel in triggeredAlertLevels:
-						intListAlertLevel.append(triggeredAlertLevel.level)
-
-					# send sensor alert to all manager and alert clients
-					for serverSession in self.serverSessions:
-						# ignore sessions which do not exist yet
-						# and that are not managers
-						if serverSession.clientComm == None:
-							continue
-						if (serverSession.clientComm.nodeType != "manager"
-							and serverSession.clientComm.nodeType != "alert"):
-							continue
-						if not serverSession.clientComm.clientInitialized:
-							continue
-
-						# sending sensor alert to manager/alert node
-						# via a thread to not block the sensor alert executer
-						sensorAlertProcess = AsynchronousSender(
-							self.globalData, serverSession.clientComm)
-						# set thread to daemon
-						# => threads terminates when main thread terminates	
-						sensorAlertProcess.daemon = True
-						sensorAlertProcess.sendSensorAlert = True
-						sensorAlertProcess.sensorAlertRulesActivated = False
-						sensorAlertProcess.sensorAlertSensorId = sensorId
-						sensorAlertProcess.sensorAlertState = state
-						sensorAlertProcess.sensorAlertAlertLevels = \
-							intListAlertLevel
-						sensorAlertProcess.sensorAlertSensorDescription = \
-							description
-						sensorAlertProcess.sensorAlertDataTransfer = \
-							dataTransfer
-						sensorAlertProcess.sensorAlertData = data
-
-						logging.debug("[%s]: Sending sensor " % self.fileName
-							+ "alert to manager/alert (%s:%d)."
-							% (serverSession.clientComm.clientAddress,
-							serverSession.clientComm.clientPort))
-						sensorAlertProcess.start()
-
-					# after sensor alert was triggered
-					# => remove sensor alert to handle
-					sensorAlertsToHandle.remove(sensorAlertToHandle)
-
-
-			# check all sensor alerts to handle with alert levels that have
-			# rules if they have to be triggered
-			for sensorAlertToHandle in list(sensorAlertsToHandleWithRules):
-
-				sensorAlertList = sensorAlertToHandle[0]
-				alertLevel = sensorAlertToHandle[1]
-
-				# update the rule chain of the alert level with
-				# the received sensor alerts
-				self._updateRule(sensorAlertList, alertLevel)
-
-				# check if the rule chain evaluates to triggered
-				# => trigger sensor alert for the alert level
-				if self._evaluateRules(alertLevel):
-
-					logging.info("[%s]: Alert level " % self.fileName
-						+ "'%d' rules have triggered." % alertLevel.level)
-
-					# send sensor alert to all manager and alert clients
-					for serverSession in self.serverSessions:
-						# ignore sessions which do not exist yet
-						# and that are not managers
-						if serverSession.clientComm == None:
-							continue
-						if (serverSession.clientComm.nodeType != "manager"
-							and serverSession.clientComm.nodeType != "alert"):
-							continue
-						if not serverSession.clientComm.clientInitialized:
-							continue
-
-						# sending sensor alert to manager/alert node
-						# via a thread to not block the sensor alert executer
-						sensorAlertProcess = AsynchronousSender(
-							self.globalData, serverSession.clientComm)
-						# set thread to daemon
-						# => threads terminates when main thread terminates	
-						sensorAlertProcess.daemon = True
-						sensorAlertProcess.sendSensorAlert = True
-						sensorAlertProcess.sensorAlertRulesActivated = True
-						sensorAlertProcess.sensorAlertAlertLevels = \
-							[alertLevel.level]
-
-						sensorAlertProcess.sensorAlertSensorDescription = \
-							"Rule of Alert Level: '%s'" % alertLevel.name
-
-						sensorAlertProcess.sensorAlertDataTransfer = False
-						sensorAlertProcess.sensorAlertData = None
-
-						logging.debug("[%s]: Sending sensor " % self.fileName
-							+ "alert to manager/alert (%s:%d)."
-							% (serverSession.clientComm.clientAddress,
-							serverSession.clientComm.clientPort))
-						sensorAlertProcess.start()
-
-					# remove sensor alert to handle from list
-					# after it has triggered
-					sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
-
-				# if rule chain did not evaluate to triggered
-				# => check if it is likely that it can trigger during the
-				# next evaluation if not => remove the sensor alert to handle
-				else:
-					if not self._checkRulesCanTrigger(sensorAlertList,
-						alertLevel):
-
-						logging.debug("[%s]: Alert level " % self.fileName
-							+ "'%d' rules can not trigger at the moment."
-							% alertLevel.level)
-
-						# remove sensor alert to handle from list
-						# when it can not trigger at the current state
-						sensorAlertsToHandleWithRules.remove(
-							sensorAlertToHandle)
+			# Process sensor alerts that affect rules.
+			# NOTE: argument "sensorAlertsToHandleWithRules" is updated
+			# by this function
+			self._processSensorAlertsRules(sensorAlertsToHandleWithRules)
 
 			time.sleep(0.5)
 

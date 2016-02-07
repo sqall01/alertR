@@ -1407,10 +1407,7 @@ class ClientCommunication:
 			sensorId = sensorsInformation[i][1]
 
 			# create list of alert levels of this sensor
-			dbAlertLevels = self.storage.getSensorAlertLevels(sensorId)
-			alertLevels = list()
-			for tempAlertLevel in dbAlertLevels:
-				alertLevels.append(tempAlertLevel[0])
+			alertLevels = self.storage.getSensorAlertLevels(sensorId)
 
 			tempDict = {"nodeId": sensorsInformation[i][0],
 				"sensorId": sensorId,
@@ -1753,8 +1750,7 @@ class ClientCommunication:
 
 
 	# function that sends a sensor alert to an alert/manager client
-	def sendSensorAlert(self, sensorId, state, alertLevels, description,
-		rulesActivated, dataTransfer, data):
+	def sendSensorAlert(self, sensorAlert):
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("sensoralert", acquireLock=True):
@@ -1766,33 +1762,33 @@ class ClientCommunication:
 		try:
 
 			# differentiate payload of message when rules are activated or not
-			if rulesActivated:
+			if sensorAlert.rulesActivated:
 				payload = {"type": "request",
-					"sensorId": -1,
-					"state": 1,
-					"alertLevels": alertLevels,
-					"description": description,
+					"sensorId": sensorAlert.sensorId,
+					"state": sensorAlert.state,
+					"alertLevels": sensorAlert.alertLevels,
+					"description": sensorAlert.description,
 					"rulesActivated": True,
-					"dataTransfer": False}
+					"dataTransfer": sensorAlert.dataTransfer}
 			else:
 
 				# differentiate payload of message when data transfer is
 				# activated or not
-				if dataTransfer:
+				if sensorAlert.dataTransfer:
 					payload = {"type": "request",
-						"sensorId": sensorId,
-						"state": state,
-						"alertLevels": alertLevels,
-						"description": description,
+						"sensorId": sensorAlert.sensorId,
+						"state": sensorAlert.state,
+						"alertLevels": sensorAlert.alertLevels,
+						"description": sensorAlert.description,
 						"rulesActivated": False,
 						"dataTransfer": True,
-						"data": data}
+						"data": sensorAlert.data}
 				else:
 					payload = {"type": "request",
-						"sensorId": sensorId,
-						"state": state,
-						"alertLevels": alertLevels,
-						"description": description,
+						"sensorId": sensorAlert.sensorId,
+						"state": sensorAlert.state,
+						"alertLevels": sensorAlert.alertLevels,
+						"description": sensorAlert.description,
 						"rulesActivated": False,
 						"dataTransfer": False}
 
@@ -2626,13 +2622,7 @@ class AsynchronousSender(threading.Thread):
 		# this options are used when the thread should
 		# send a sensor alert to the client
 		self.sendSensorAlert = False
-		self.sensorAlertRulesActivated = None
-		self.sensorAlertSensorId = None
-		self.sensorAlertState = None
-		self.sensorAlertAlertLevels = None
-		self.sensorAlertSensorDescription = None
-		self.sensorAlertDataTransfer = False
-		self.sensorAlertData = None
+		self.sensorAlert = None
 
 		# this options are used when the thread should
 		# send a state change to a manager client
@@ -2676,12 +2666,7 @@ class AsynchronousSender(threading.Thread):
 					self.clientComm.clientPort))
 				return
 
-			if not self.clientComm.sendSensorAlert(self.sensorAlertSensorId,
-				self.sensorAlertState, self.sensorAlertAlertLevels,
-				self.sensorAlertSensorDescription,
-				self.sensorAlertRulesActivated,
-				self.sensorAlertDataTransfer,
-				self.sensorAlertData):
+			if not self.clientComm.sendSensorAlert(self.sensorAlert):
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "alert to manager/alert failed (%s:%d)."
 					% (self.clientComm.clientAddress,

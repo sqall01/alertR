@@ -43,6 +43,25 @@ class AlertLevel:
 		self.rules = list()
 
 
+
+# this class represents a single sensor alert that was triggered
+class SensorAlert:
+
+	def __init__(self):
+		self.sensorAlertId = None
+		self.sensorId = None
+		self.nodeId = None
+		self.timeReceived = None
+		self.alertDelay = None
+		self.state = None
+		self.description = None
+		self.dataTransfer = None
+		self.data = None
+		self.changeState = None
+		self.alertLevels = list()
+		self.rulesActivated = None
+
+
 # internal class represents an internal sensor of the alarm system server
 class _InternalSensor:
 
