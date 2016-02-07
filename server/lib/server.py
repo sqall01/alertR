@@ -2423,10 +2423,6 @@ class ConnectionWatchdog(threading.Thread):
 					% time.strftime("%D %H:%M:%S",
 					time.localtime(lastStateUpdated)))
 
-
-			# TODO
-			print "RAISE SENSOR ALERT TRIGGERED %s" % description
-
 			# Check if sensor time out occurred for the first time
 			# and internal sensor is activated.
 			# => Trigger a sensor alert.
@@ -2516,12 +2512,8 @@ class ConnectionWatchdog(threading.Thread):
 				% time.strftime("%D %H:%M:%S",
 				time.localtime(lastStateUpdated)))
 
-
-
-			# TODO
-			print "RAISE SENSOR ALERT NORMAL %s" % description
-
-
+			# Check if internal sensor is activated.
+			# => Trigger a sensor alert.
 			if not self.timeoutSensor is None:
 
 				# If internal sensor is in state "triggered" and
@@ -2632,8 +2624,8 @@ class ConnectionWatchdog(threading.Thread):
 						self.managerUpdateExecuter.forceStatusUpdate = True
 						self.managerUpdateExecuter.managerUpdateEvent.set()
 
-			# get all sensors that have timed out
-			# list of tuples of (sensorId, nodeId,
+			# Get all sensors that have timed out.
+			# Data: list of tuples of (sensorId, nodeId,
 			# lastStateUpdated, description)
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
 				int(time.time()) - (2 * self.connectionTimeout))
@@ -2644,19 +2636,23 @@ class ConnectionWatchdog(threading.Thread):
 			# Process sensors that timed out but reconnected. 
 			self._processOldSensorTimeouts(sensorsTimeoutList)
 
+			# Update state of internal timeout sensor in order to avoid
+			# timeouts of this sensor.
+			if not self.timeoutSensor is None:
 
+				logging.debug("[%s]: Update sensor state "
+					% self.fileName
+					+ "for internal sensor timeout sensor.")
 
+				updateTuple = (self.timeoutSensor.remoteSensorId,
+					self.timeoutSensor.state)
+				if not self.storage.updateSensorState(
+					self.timeoutSensor.nodeId,
+					[updateTuple]):
 
-
-
-			# TODO
-			# regular update of last state of internal sensor to avoid
-			# time outs
-
-
-
-
-
+					logging.error("[%s]: Not able to update sensor state "
+						% self.fileName
+						+ "for internal sensor timeout sensor.")
 
 
 	# sets the exit flag to shut down the thread
