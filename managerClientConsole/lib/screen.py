@@ -1878,7 +1878,13 @@ class Console:
 				if not sensorAlert.rulesActivated:
 					for sensor in self.sensors:
 						if sensorAlert.sensorId == sensor.sensorId:
-							sensor.sensorUrwid.updateState(sensorAlert.state)
+
+							# Only update sensor state information if the flag
+							# was set in the received message.
+							if sensorAlert.changeState:
+								sensor.sensorUrwid.updateState(
+									sensorAlert.state)
+
 							sensor.sensorUrwid.updateLastUpdated(
 								sensorAlert.timeReceived)
 
@@ -1889,8 +1895,10 @@ class Console:
 							# for a "triggered" or "normal" state
 							if sensorAlert.state == 0:
 								description += " (normal)"
-							else:
+							elif sensorAlert.state == 1:
 								description += " (triggered)"
+							else:
+								description += " (undefined)"
 
 							break
 

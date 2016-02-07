@@ -935,20 +935,24 @@ class ServerCommunication:
 		logging.debug("[%s]: Received sensor alert." % self.fileName)
 
 		# extract sensor alert values
+		sensorAlert = SensorAlert()
+		sensorAlert.timeReceived = int(time.time())
 		try:
+
 			serverTime = int(incomingMessage["serverTime"])
 
-			rulesActivated = bool(incomingMessage["payload"]["rulesActivated"])
+			sensorAlert.rulesActivated = bool(
+				incomingMessage["payload"]["rulesActivated"])
 
 			# always -1 when no sensor is responsible for sensor alert
-			sensorId = int(incomingMessage["payload"]["sensorId"])
+			sensorAlert.sensorId = int(incomingMessage["payload"]["sensorId"])
 
 			# state of rule sensor alerts is always set to 1 
-			state = int(incomingMessage["payload"]["state"])
+			sensorAlert.state = int(incomingMessage["payload"]["state"])
 
-			alertLevels = incomingMessage["payload"]["alertLevels"]
+			sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
 			# check if alertLevels is a list
-			if not isinstance(alertLevels, list):
+			if not isinstance(sensorAlert.alertLevels, list):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -961,7 +965,8 @@ class ServerCommunication:
 				return False
 			# check if all elements of the alertLevels list 
 			# are of type int
-			if not all(isinstance(item, int) for item in alertLevels):
+			if not all(isinstance(item, int)
+				for item in sensorAlert.alertLevels):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -973,17 +978,18 @@ class ServerCommunication:
 
 				return False
 
-			description = str(incomingMessage["payload"]["description"])
+			sensorAlert.description = str(
+				incomingMessage["payload"]["description"])
 
 			# parse transfer data
-			dataTransfer = (str(incomingMessage["payload"][
-				"dataTransfer"]).upper() == "TRUE")
-			if dataTransfer is True:
-				data = incomingMessage["payload"]["data"]
+			sensorAlert.dataTransfer = bool(
+				incomingMessage["payload"]["dataTransfer"])
+			if sensorAlert.dataTransfer is True:
+				sensorAlert.data = incomingMessage["payload"]["data"]
 			else:
-				data = dict()
+				sensorAlert.data = dict()
 			# check if data is a dict
-			if not isinstance(data, dict):
+			if not isinstance(sensorAlert.data, dict):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
@@ -994,6 +1000,9 @@ class ServerCommunication:
 					pass
 
 				return False
+
+			sensorAlert.changeState = bool(
+				incomingMessage["payload"]["changeState"])
 
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
@@ -1028,8 +1037,7 @@ class ServerCommunication:
 
 		# handle received sensor alert
 		if self.serverEventHandler.receivedSensorAlert(serverTime,
-			rulesActivated, sensorId, state, description, alertLevels,
-			dataTransfer, data) is True:
+			sensorAlert):
 
 			return True
 

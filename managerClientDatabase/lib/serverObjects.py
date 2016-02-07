@@ -102,14 +102,34 @@ class Alert:
 class SensorAlert:
 
 	def __init__(self):
+
+		# Are rules for this sensor alert activated (true or false)?
 		self.rulesActivated = None
+
+		# If rulesActivated = true => always set to -1.
 		self.sensorId = None
+
+		# State of the sensor alert ("triggered" = 1; "normal" = 0).
+		# If rulesActivated = true => always set to 1.
 		self.state = None
+
+		# Description of the sensor that raised this sensor alert.
 		self.description = None
+
+		# Time this sensor alert was received.
 		self.timeReceived = None
+
+		# List of alert levels (Integer) that are triggered
+		# by this sensor alert.
 		self.alertLevels = list()
+
+		# The data of the sensor alert (if it has any).
+		# If rulesActivated = true => always set to false.
 		self.dataTransfer = None
 		self.data = None
+
+		# Does this sensor alert change the state of the sensor?
+		self.changeState = None
 
 
 # this class represents an alert level that is configured on the server
@@ -687,11 +707,11 @@ class ServerEventHandler:
 
 
 	# is called when a sensor alert event was received from the server
-	def receivedSensorAlert(self, serverTime, rulesActivated, sensorId, state,
-		description, alertLevels, dataTransfer, data):
+	def receivedSensorAlert(self, serverTime, sensorAlert):
 
 		self.serverTime = serverTime
 		timeReceived = int(time.time())
+		self.sensorAlerts.append(sensorAlert)
 
 		# when events are activated
 		# => create events
@@ -699,19 +719,19 @@ class ServerEventHandler:
 
 			# create sensor alert event
 			tempEvent = EventSensorAlert(timeReceived)
-			tempEvent.description = description
-			tempEvent.state = state
-			tempEvent.alertLevels = list(alertLevels)
+			tempEvent.description = sensorAlert.description
+			tempEvent.state = sensorAlert.state
+			tempEvent.alertLevels = list(sensorAlert.alertLevels)
 			self.events.append(tempEvent)
 
-			# when rules are not activated
-			# => create state change event
-			if not rulesActivated:
+			# When rules are not activated and change state flag is set.
+			# => Create state change event.
+			if not sensorAlert.rulesActivated and sensorAlert.changeState:
 				tempStateEvent = EventStateChange(timeReceived)
-				tempStateEvent.state = state
+				tempStateEvent.state = sensorAlert.state
 				triggeredSensor = None
 				for sensor in self.sensors:
-					if sensor.sensorId == sensorId:
+					if sensor.sensorId == sensorAlert.sensorId:
 						tempStateEvent.description = sensor.description
 						triggeredSensor = sensor
 						break
@@ -730,27 +750,19 @@ class ServerEventHandler:
 						% self.fileName
 						+ "sensor to sensor alert for state change event.")
 
-
-		# generate sensor alert object
-		sensorAlert = SensorAlert()
-		sensorAlert.rulesActivated = rulesActivated
-		sensorAlert.sensorId = sensorId
-		sensorAlert.description = description
-		sensorAlert.state = state
-		sensorAlert.timeReceived = timeReceived
-		sensorAlert.alertLevels = alertLevels
-		sensorAlert.dataTransfer = dataTransfer
-		sensorAlert.data = data
-		self.sensorAlerts.append(sensorAlert)
-
-		# if rules are not activated (and therefore the sensor alert was
-		# only triggered by one distinct sensor)
-		# => update information in sensor which triggered the alert
-		if not rulesActivated:
+		# If rules are not activated (and therefore the sensor alert was
+		# only triggered by one distinct sensor).
+		# => Update information in sensor which triggered the sensor alert.
+		if not sensorAlert.rulesActivated:
 			for sensor in self.sensors:
-				if sensor.sensorId == sensorId:
-					sensor.state = state
+				if sensor.sensorId == sensorAlert.sensorId:
 					sensor.lastStateUpdated = serverTime
+
+					# Only update sensor state information if the flag
+					# was set in the received message.
+					if sensorAlert.changeState:
+						sensor.state = sensorAlert.state
+					
 					break
 
 		return True
