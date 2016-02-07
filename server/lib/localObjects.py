@@ -44,21 +44,42 @@ class AlertLevel:
 
 
 
-# this class represents a single sensor alert that was triggered
+# This class represents a single sensor alert that was triggered.
 class SensorAlert:
 
 	def __init__(self):
 		self.sensorAlertId = None
-		self.sensorId = None
 		self.nodeId = None
-		self.timeReceived = None
-		self.alertDelay = None
-		self.state = None
+
+		# If rulesActivated = true => always set to -1.
+		self.sensorId = None
+
+		# Description of the sensor that raised this sensor alert.
 		self.description = None
+
+		# Time this sensor alert was received.
+		self.timeReceived = None
+
+		# The delay this sensor alert has before it can be triggered.
+		self.alertDelay = None
+
+		# State of the sensor alert ("triggered" = 1; "normal" = 0).
+		# If rulesActivated = true => always set to 1.
+		self.state = None
+
+		# The data of the sensor alert (if it has any).
+		# If rulesActivated = true => always set to false.
 		self.dataTransfer = None
 		self.data = None
+
+		# Does this sensor alert change the state of the sensor?
 		self.changeState = None
+
+		# List of alert levels (Integer) that are triggered
+		# by this sensor alert.
 		self.alertLevels = list()
+
+		# Are rules for this sensor alert activated (true or false)?
 		self.rulesActivated = None
 
 
