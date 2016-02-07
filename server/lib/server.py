@@ -1769,7 +1769,8 @@ class ClientCommunication:
 					"alertLevels": sensorAlert.alertLevels,
 					"description": sensorAlert.description,
 					"rulesActivated": True,
-					"dataTransfer": sensorAlert.dataTransfer}
+					"dataTransfer": sensorAlert.dataTransfer,
+					"changeState": sensorAlert.changeState}
 			else:
 
 				# differentiate payload of message when data transfer is
@@ -1782,7 +1783,8 @@ class ClientCommunication:
 						"description": sensorAlert.description,
 						"rulesActivated": False,
 						"dataTransfer": True,
-						"data": sensorAlert.data}
+						"data": sensorAlert.data,
+						"changeState": sensorAlert.changeState}
 				else:
 					payload = {"type": "request",
 						"sensorId": sensorAlert.sensorId,
@@ -1790,7 +1792,8 @@ class ClientCommunication:
 						"alertLevels": sensorAlert.alertLevels,
 						"description": sensorAlert.description,
 						"rulesActivated": False,
-						"dataTransfer": False}
+						"dataTransfer": False,
+						"changeState": sensorAlert.changeState}
 
 			message = {"serverTime": int(time.time()),
 				"message": "sensoralert", "payload": payload}

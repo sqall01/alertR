@@ -1519,7 +1519,7 @@ class SensorAlertExecuter(threading.Thread):
 				temp.alertDelay = sensorAlertTuple[4]
 				temp.state = sensorAlertTuple[5]
 				temp.description = sensorAlertTuple[6]
-				temp.changeState = sensorAlertTuple[8]
+				temp.changeState = (sensorAlertTuple[8] == 1)
 
 				# get json data string and convert it
 				temp.dataTransfer = False
