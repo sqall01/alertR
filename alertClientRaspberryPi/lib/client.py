@@ -540,7 +540,7 @@ class ServerCommunication:
 
 				# check if data is of type dict
 				# => if not ignore it
-				if not isinstance(data, dict):
+				if not isinstance(sensorAlert.data, dict):
 					logging.warning("[%s]: Received data in sensor alert "
 						% self.fileName
 						+ "not valid. Ignoring it.")
