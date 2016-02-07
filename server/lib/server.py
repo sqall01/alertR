@@ -17,6 +17,7 @@ import os
 import base64
 import random
 import json
+from localObjects import TimeoutSensor
 BUFSIZE = 16384
 
 
@@ -2383,8 +2384,178 @@ class ConnectionWatchdog(threading.Thread):
 		# set exit flag as false
 		self.exitFlag = False
 
-		# list of all timed out sensors
-		self.timedOutSensors = list()
+		# set up needed data structures for sensor timeouts
+		self.timeoutSensorIds = set()
+		self.timeoutSensor = None
+		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
+		for internalSensor in self.globalData.internalSensors:
+			if isinstance(internalSensor, TimeoutSensor):
+				# use set of timeout sensor if it is activated
+				self.timeoutSensorIds = internalSensor.timeoutSensorIds
+				self.timeoutSensor = internalSensor
+				break
+
+
+	# Internal function that processes new occurred sensor timeouts
+	# and raises alarm.
+	def _processNewSensorTimeouts(self, sensorsTimeoutList):
+
+		processSensorAlerts = False
+
+		# Generate an alert for every timed out sensor
+		# (logging + internal "sensor timeout" sensor).
+		for sensorTuple in sensorsTimeoutList:
+			sensorId = sensorTuple[0]
+			nodeId = sensorTuple[1]
+			hostname = self.storage.getNodeHostnameById(nodeId)
+			lastStateUpdated = sensorTuple[2]
+			description = sensorTuple[3]
+			if hostname is None:
+				logging.error("[%s]: Could not " % self.fileName
+					+ "get hostname for node from database.")
+				self.timeoutSensorIds.add(sensorId)
+				continue
+
+			logging.critical("[%s]: Sensor " % self.fileName
+					+ "with description '%s' from host '%s' timed out. "
+					% (description, hostname)
+					+ "Last state received at %s"
+					% time.strftime("%D %H:%M:%S",
+					time.localtime(lastStateUpdated)))
+
+
+			# TODO
+			print "RAISE SENSOR ALERT TRIGGERED %s" % description
+
+			# Check if sensor time out occurred for the first time
+			# and internal sensor is activated.
+			# => Trigger a sensor alert.
+			if (not sensorId in self.timeoutSensorIds
+				and not self.timeoutSensor is None):
+
+					# If internal sensor is in state "normal", change the
+					# state to "triggered" with the raised sensor alert.
+					changeState = False
+					if self.timeoutSensor.state == 0:
+
+						self.timeoutSensor.state = 1
+						changeState = True
+
+					# Create message for sensor alert.
+					message = "Sensor '%s' on host '%s' timed out." \
+						% (description, hostname)
+					dataJson = json.dumps({"message": message})
+
+					# Add sensor alert to database for processing.
+					if self.storage.addSensorAlert(
+						self.timeoutSensor.nodeId,
+						self.timeoutSensor.remoteSensorId,
+						1,
+						changeState,
+						dataJson):
+
+						processSensorAlerts = True
+
+					else:
+						logging.error("[%s]: Not able to add sensor alert "
+							% self.fileName
+							+ "for internal sensor timeout sensor.")
+
+			self.timeoutSensorIds.add(sensorId)
+
+		# Wake up sensor alert executer to process sensor alerts.
+		if processSensorAlerts:
+			self.sensorAlertExecuter.sensorAlertEvent.set()
+
+
+	# Internal function that processes old occurred sensor timeouts
+	# and raises alarm when they are no longer timed out.
+	def _processOldSensorTimeouts(self, sensorsTimeoutList):
+
+		processSensorAlerts = False
+
+		# check if a timed out sensor has reconnected and
+		# updated its state and generate a notification
+		for sensorId in set(self.timeoutSensorIds):
+
+			# Skip if an old timed out sensor is still timed out.
+			found = False
+			for sensorTimeoutTuple in sensorsTimeoutList:
+				timedOutSensorId = sensorTimeoutTuple[0]
+				if sensorId == timedOutSensorId:
+					found = True
+					break
+			if found:
+				continue
+
+			# Sensor is no longer timed out.
+			self.timeoutSensorIds.remove(sensorId)
+
+			# Get a tuple of (sensorId, nodeId,
+			# remoteSensorId, description, state,
+			# lastStateUpdated, alertDelay) for timed out sensor.
+			sensorTuple = self.storage.getSensorInformation(
+				sensorId)
+
+			# Check if the sensor could be found in the database.
+			if sensorTuple is None:
+				logging.error("[%s]: Could not get " % self.fileName
+					+ "sensor with id %d from database."
+					% sensorId)
+				continue
+
+			nodeId = sensorTuple[1]
+			hostname = self.storage.getNodeHostnameById(nodeId)
+			lastStateUpdated = sensorTuple[5]
+			description = sensorTuple[3]
+
+			logging.critical("[%s]: Sensor " % self.fileName
+				+ "with description '%s' from host '%s' has "
+				% (description, hostname)
+				+ "reconnected. Last state received at %s"
+				% time.strftime("%D %H:%M:%S",
+				time.localtime(lastStateUpdated)))
+
+
+
+			# TODO
+			print "RAISE SENSOR ALERT NORMAL %s" % description
+
+
+			if not self.timeoutSensor is None:
+
+				# If internal sensor is in state "triggered" and
+				# no sensor is timed out at the moment, change the
+				# state to "normal" with the raised sensor alert.
+				changeState = False
+				if (self.timeoutSensor.state == 1
+					and not self.timeoutSensorIds):
+
+					self.timeoutSensor.state = 0
+					changeState = True
+
+				# Create message for sensor alert.
+				message = "Sensor '%s' on host '%s' reconnected." \
+					% (description, hostname)
+				dataJson = json.dumps({"message": message})
+
+				if self.storage.addSensorAlert(
+					self.timeoutSensor.nodeId,
+					self.timeoutSensor.remoteSensorId,
+					0,
+					changeState,
+					dataJson):
+
+					processSensorAlerts = True
+
+				else:
+					logging.error("[%s]: Not able to add sensor alert "
+						% self.fileName
+						+ "for internal sensor timeout sensor.")
+
+		# Wake up sensor alert executer to process sensor alerts.
+		if processSensorAlerts:
+			self.sensorAlertExecuter.sensorAlertEvent.set()
 
 
 	def run(self):
@@ -2467,128 +2638,20 @@ class ConnectionWatchdog(threading.Thread):
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
 				int(time.time()) - (2 * self.connectionTimeout))
 
+			# Process occurred sensor time outs (and if they newly occurred).
+			self._processNewSensorTimeouts(sensorsTimeoutList)
 
-
-
-
-			# TODO here timeout sensor trigger
-			# trigger sensor alert for each NEW sensor that has timed out
-			# (check with self.timeoutSensorIds if it is new)
-			# Put this in a separate function
-
-
-
-
-
-			# generate an alert for every timed out sensor
-			# (logging + email)
-			for sensorTimeoutTuple in sensorsTimeoutList:
-				sensorId = sensorTimeoutTuple[0]
-				nodeId = sensorTimeoutTuple[1]
-				hostname = self.storage.getNodeHostnameById(nodeId)
-				lastStateUpdated = sensorTimeoutTuple[2]
-				description = sensorTimeoutTuple[3]
-				if hostname == None:
-					logging.error("[%s]: Could not " % self.fileName
-						+ "get hostname for node from database.")
-					continue
-
-				logging.critical("[%s]: Sensor " % self.fileName
-						+ "with description '%s' from host '%s' timed out. "
-						% (description, hostname)
-						+ "Last state received at %s"
-						% time.strftime("%D %H:%M:%S",
-						time.localtime(lastStateUpdated)))
-
-				# send email alert for timed out sensor if activated
-				# and sensor is not in list of timed out sensors
-				if ((not self.smtpAlert is None)
-					and (not sensorId in self.timedOutSensors)):
-					if not self.smtpAlert.sendSensorTimeoutAlert(hostname,
-						description, lastStateUpdated):
-						logging.error("[%s]: Could not send " % self.fileName
-							+ "email alert for sensor timeout.")
-
-				# if sensor is not in list of timed out sensors
-				# => add it
-				if not sensorId in self.timedOutSensors:
-					self.timedOutSensors.append(sensorId)
+			# Process sensors that timed out but reconnected. 
+			self._processOldSensorTimeouts(sensorsTimeoutList)
 
 
 
 
 
 
-			# TODO here timeout sensor normal
-			# check here if in the current list of sensor timeouts
-			# is one missing that is still in the self.timeoutSensorIds
-			# => set sensor to normal if it is empty
-			# => trigger sensor alert with normal state for each sensor
-			# that is not timed out anymore (but let timeout sensor
-			# still be triggered) <--- can get problems with client site 
-			# processing with this method, have to check
-			# Put this in a separate function
-
-
-
-
-
-
-
-			# check if a timed out sensor has reconnected and
-			# updated its state and generate a notification
-			for oldTimedOutSensorId in self.timedOutSensors:
-				found = False
-				for sensorTimeoutTuple in sensorsTimeoutList:
-					currentTimedOutSensorId = sensorTimeoutTuple[0]
-					if oldTimedOutSensorId == currentTimedOutSensorId:
-						found = True
-						break
-				if not found:
-					self.timedOutSensors.remove(oldTimedOutSensorId)
-
-					# get a tuple of (sensorId, nodeId,
-					# remoteSensorId, description, state,
-					# lastStateUpdated, alertDelay)
-					timedOutSensor = self.storage.getSensorInformation(
-						oldTimedOutSensorId)
-
-					# check if the sensor could be found in the database
-					if timedOutSensor is None:
-						logging.error("[%s]: Could not get " % self.fileName
-							+ "sensor with id %d from database."
-							% oldTimedOutSensorId)
-						continue
-
-					nodeId = timedOutSensor[1]
-					hostname = self.storage.getNodeHostnameById(nodeId)
-					lastStateUpdated = timedOutSensor[5]
-					description = timedOutSensor[3]
-
-					logging.info("[%s]: Sensor " % self.fileName
-						+ "with description '%s' from host '%s' has "
-						% (description, hostname)
-						+ "reconnected. Last state received at %s"
-						% time.strftime("%D %H:%M:%S",
-						time.localtime(lastStateUpdated)))
-
-					# send email notification that sensor
-					# has reconnected if activated
-					if not self.smtpAlert is None:
-						if not self.smtpAlert.sendSensorTimeoutAlertClear(
-							hostname, description, lastStateUpdated):
-							logging.error("[%s]: Could not send " 
-								% self.fileName
-								+ "email notification for reconnected sensor.")
-
-
-
-
-
-
-
-
-
+			# TODO
+			# regular update of last state of internal sensor to avoid
+			# time outs
 
 
 
