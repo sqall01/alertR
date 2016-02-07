@@ -104,5 +104,5 @@ class TimeoutSensor(_InternalSensor):
 	def __init__(self):
 		_InternalSensor.__init__(self)
 
-		# a set of ids of the sensors that are timed out
+		# A set of ids of the sensors that are timed out.
 		self.timeoutSensorIds = set()

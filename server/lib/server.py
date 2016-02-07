@@ -2380,13 +2380,15 @@ class ConnectionWatchdog(threading.Thread):
 
 		# get value for the configured timeout of a session
 		self.connectionTimeout = connectionTimeout
+		self.timeoutReminderTime = self.globalData.timeoutReminderTime
 
 		# set exit flag as false
 		self.exitFlag = False
 
-		# set up needed data structures for sensor timeouts
+		# Set up needed data structures for sensor timeouts.
 		self.timeoutSensorIds = set()
 		self.timeoutSensor = None
+		self.lastSensorTimeoutReminder = 0.0
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
 		for internalSensor in self.globalData.internalSensors:
 			if isinstance(internalSensor, TimeoutSensor):
@@ -2401,6 +2403,12 @@ class ConnectionWatchdog(threading.Thread):
 	def _processNewSensorTimeouts(self, sensorsTimeoutList):
 
 		processSensorAlerts = False
+
+		# Needed to check if a sensor timeout has occurred when there was
+		# no timeout before.
+		wasEmpty = True
+		if self.timeoutSensorIds:
+			wasEmpty = False
 
 		# Generate an alert for every timed out sensor
 		# (logging + internal "sensor timeout" sensor).
@@ -2463,6 +2471,11 @@ class ConnectionWatchdog(threading.Thread):
 		if processSensorAlerts:
 			self.sensorAlertExecuter.sensorAlertEvent.set()
 
+		# Start sensor timeout reminder timer when the sensor timeout list
+		# was empty before.
+		if wasEmpty and self.timeoutSensorIds:
+			self.lastSensorTimeoutReminder = time.time()
+
 
 	# Internal function that processes old occurred sensor timeouts
 	# and raises alarm when they are no longer timed out.
@@ -2502,8 +2515,8 @@ class ConnectionWatchdog(threading.Thread):
 
 			nodeId = sensorTuple[1]
 			hostname = self.storage.getNodeHostnameById(nodeId)
-			lastStateUpdated = sensorTuple[5]
 			description = sensorTuple[3]
+			lastStateUpdated = sensorTuple[5]
 
 			logging.critical("[%s]: Sensor " % self.fileName
 				+ "with description '%s' from host '%s' has "
@@ -2544,6 +2557,89 @@ class ConnectionWatchdog(threading.Thread):
 					logging.error("[%s]: Not able to add sensor alert "
 						% self.fileName
 						+ "for internal sensor timeout sensor.")
+
+		# Wake up sensor alert executer to process sensor alerts.
+		if processSensorAlerts:
+			self.sensorAlertExecuter.sensorAlertEvent.set()
+
+
+	# Internal function that checks if a reminder
+	# of a timeout has to be raised.
+	def _processTimeoutReminder(self):
+
+		processSensorAlerts = False
+
+		# Reset timeout reminder if necessary.
+		if (not self.timeoutSensorIds
+			and self.lastSensorTimeoutReminder != 0.0):
+			self.lastSensorTimeoutReminder = 0.0
+
+		# When sensors are still timed out check if a reminder
+		# has to be raised.
+		elif self.timeoutSensorIds:
+
+			# Check if a sensor timeout reminder has to be raised.
+			if ((time.time() - self.lastSensorTimeoutReminder)
+				>= self.timeoutReminderTime):
+
+				self.lastSensorTimeoutReminder = time.time()
+
+				# Raise sensor alert for internal sensor timeout sensor.
+				if not self.timeoutSensor is None:
+
+					# Create message for sensor alert.
+					message = "%d sensors still timed out:" \
+						% len(self.timeoutSensorIds)
+					for sensorId in self.timeoutSensorIds:
+
+						# Get a tuple of (sensorId, nodeId,
+						# remoteSensorId, description, state,
+						# lastStateUpdated, alertDelay) for timed out sensor.
+						sensorTuple = self.storage.getSensorInformation(
+							sensorId)
+
+						# Check if the sensor could be found in the database.
+						if sensorTuple is None:
+							logging.error("[%s]: Could not get "
+								% self.fileName
+								+ "sensor with id %d from database."
+								% sensorId)
+							continue
+
+						# Get sensor details.
+						nodeId = sensorTuple[1]
+						hostname = self.storage.getNodeHostnameById(nodeId)
+						description = sensorTuple[3]
+						lastStateUpdated = sensorTuple[5]
+						lastStateUpdateStr = time.strftime("%D %H:%M:%S",
+							time.localtime(lastStateUpdated))
+						if hostname is None:
+							logging.error("[%s]: Could not " % self.fileName
+								+ "get hostname for node from database.")
+							continue
+
+						message += " Host: '%s', " \
+							% hostname \
+							+ "Sensor: '%s', " \
+							% description \
+							+ "Last seen: %s;" \
+							% lastStateUpdateStr
+					dataJson = json.dumps({"message": message})
+
+					# Add sensor alert to database for processing.
+					if self.storage.addSensorAlert(
+						self.timeoutSensor.nodeId,
+						self.timeoutSensor.remoteSensorId,
+						1,
+						False,
+						dataJson):
+
+						processSensorAlerts = True
+
+					else:
+						logging.error("[%s]: Not able to add sensor alert "
+							% self.fileName
+							+ "for internal sensor timeout sensor.")
 
 		# Wake up sensor alert executer to process sensor alerts.
 		if processSensorAlerts:
@@ -2654,6 +2750,8 @@ class ConnectionWatchdog(threading.Thread):
 						% self.fileName
 						+ "for internal sensor timeout sensor.")
 
+			# Process reminder of timeouts. 
+			self._processTimeoutReminder()
 
 	# sets the exit flag to shut down the thread
 	def exit(self):

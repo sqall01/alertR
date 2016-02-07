@@ -47,6 +47,9 @@ class GlobalData:
 		# this is the time in seconds when the client times out
 		self.connectionTimeout = 60
 
+		# The time a reminder of timed out sensors is raised.
+		self.timeoutReminderTime = 1800.0
+
 		# this is the interval in seconds in which the managers
 		# are sent updates of the clients (at least)
 		self.managerUpdateInterval = 60.0
