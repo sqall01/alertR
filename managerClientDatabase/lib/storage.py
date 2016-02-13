@@ -146,9 +146,9 @@ class Mysql(_Storage):
 				self.cursor.execute("DROP TABLE IF EXISTS internals")
 				self.cursor.execute("DROP TABLE IF EXISTS options")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
-				self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 				self.cursor.execute(
 					"DROP TABLE IF EXISTS sensorAlertsAlertLevels")
+				self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 				self.cursor.execute("DROP TABLE IF EXISTS sensors")
 				self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
 				self.cursor.execute("DROP TABLE IF EXISTS alerts")
