@@ -2659,17 +2659,6 @@ class Mysql(_Storage):
 		if not self.uniqueID is None:
 			return self.uniqueID
 
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return None
-
 		try:
 			self.cursor.execute("SELECT value "
 				+ "FROM internals WHERE type=%s", ("uniqueID", ))
@@ -4097,6 +4086,17 @@ class Mysql(_Storage):
 	def getUniqueID(self):
 
 		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
 
 		uniqueID = self._getUniqueID()
 
