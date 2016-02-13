@@ -17,7 +17,7 @@ import os
 import base64
 import random
 import json
-from localObjects import TimeoutSensor
+from localObjects import SensorTimeoutSensor, NodeTimeoutSensor
 BUFSIZE = 16384
 
 
@@ -2391,7 +2391,7 @@ class ConnectionWatchdog(threading.Thread):
 		self.lastSensorTimeoutReminder = 0.0
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
 		for internalSensor in self.globalData.internalSensors:
-			if isinstance(internalSensor, TimeoutSensor):
+			if isinstance(internalSensor, SensorTimeoutSensor):
 				# use set of timeout sensor if it is activated
 				self.timeoutSensorIds = internalSensor.timeoutSensorIds
 				self.timeoutSensor = internalSensor

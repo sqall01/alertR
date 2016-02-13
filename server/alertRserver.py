@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import AlertLevel, TimeoutSensor
+from lib import AlertLevel, SensorTimeoutSensor, NodeTimeoutSensor
 from lib import SensorAlertExecuter
 from lib import RuleStart, RuleElement, RuleBoolean, RuleSensor, RuleWeekday, \
 	RuleMonthday, RuleHour, RuleMinute, RuleSecond
@@ -1301,11 +1301,11 @@ if __name__ == '__main__':
 		dbSensors = list()
 		dbInitialStateList = list()
 
-		# parse timeout sensor (if activated)
+		# Parse sensor timeout sensor (if activated).
 		item = internalSensorsCfg.find("sensorTimeout")
 		if (str(item.attrib["activated"]).upper() == "TRUE"):
 
-			sensor = TimeoutSensor()
+			sensor = SensorTimeoutSensor()
 
 			sensor.nodeId = serverNodeId
 			sensor.alertDelay = 0
@@ -1313,8 +1313,8 @@ if __name__ == '__main__':
 			sensor.lastStateUpdated = time.time()
 			sensor.description = "Internal: Sensor Timeout"
 
-			# timeout sensor has always this fix internal id
-			# (stored as remoteSensorId)
+			# Sensor timeout sensor has always this fix internal id
+			# (stored as remoteSensorId).
 			sensor.remoteSensorId = 0
 
 			sensor.alertLevels = list()
@@ -1323,7 +1323,7 @@ if __name__ == '__main__':
 
 			globalData.internalSensors.append(sensor)
 
-			# create sensor dictionary element for database interaction
+			# Create sensor dictionary element for database interaction.
 			temp = dict()
 			temp["clientSensorId"] = sensor.remoteSensorId
 			temp["alertDelay"] = sensor.alertDelay
@@ -1331,8 +1331,42 @@ if __name__ == '__main__':
 			temp["description"] = sensor.description
 			dbSensors.append(temp)
 
-			# add tuple to db state list to set initial states of the
-			# internal sensors
+			# Add tuple to db state list to set initial states of the
+			# internal sensors.
+			dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+
+		# Parse node timeout sensor (if activated).
+		item = internalSensorsCfg.find("nodeTimeout")
+		if (str(item.attrib["activated"]).upper() == "TRUE"):
+
+			sensor = NodeTimeoutSensor()
+
+			sensor.nodeId = serverNodeId
+			sensor.alertDelay = 0
+			sensor.state = 0
+			sensor.lastStateUpdated = time.time()
+			sensor.description = "Internal: Node Timeout"
+
+			# Node timeout sensor has always this fix internal id
+			# (stored as remoteSensorId).
+			sensor.remoteSensorId = 1
+
+			sensor.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				sensor.alertLevels.append(int(alertLevelXml.text))
+
+			globalData.internalSensors.append(sensor)
+
+			# Create sensor dictionary element for database interaction.
+			temp = dict()
+			temp["clientSensorId"] = sensor.remoteSensorId
+			temp["alertDelay"] = sensor.alertDelay
+			temp["alertLevels"] = sensor.alertLevels
+			temp["description"] = sensor.description
+			dbSensors.append(temp)
+
+			# Add tuple to db state list to set initial states of the
+			# internal sensors.
 			dbInitialStateList.append( (sensor.remoteSensorId, 0) )
 
 		# Add internal sensors to database (updates/deletes also old

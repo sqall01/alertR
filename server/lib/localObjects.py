@@ -83,7 +83,7 @@ class SensorAlert:
 		self.rulesActivated = None
 
 
-# internal class represents an internal sensor of the alarm system server
+# Internal class represents an internal sensor of the alarm system server.
 class _InternalSensor:
 
 	def __init__(self):
@@ -97,12 +97,23 @@ class _InternalSensor:
 		self.state = None
 
 
-# class that represents the internal sensor that
-# is responsible for sensor timeouts
-class TimeoutSensor(_InternalSensor):
+# Class that represents the internal sensor that
+# is responsible for sensor timeouts.
+class SensorTimeoutSensor(_InternalSensor):
 
 	def __init__(self):
 		_InternalSensor.__init__(self)
 
 		# A set of ids of the sensors that are timed out.
 		self.timeoutSensorIds = set()
+
+
+# Class that represents the internal sensor that
+# is responsible for node timeouts.
+class NodeTimeoutSensor(_InternalSensor):
+
+	def __init__(self):
+		_InternalSensor.__init__(self)
+
+		# A set of ids of the nodes that are timed out.
+		self.timeoutNodeIds = set()
