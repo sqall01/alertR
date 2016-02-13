@@ -1299,6 +1299,7 @@ if __name__ == '__main__':
 		serverUsername = globalData.storage.getUniqueID()
 		serverNodeId = globalData.storage.getNodeId(serverUsername)
 		dbSensors = list()
+		dbInitialStateList = list()
 
 		# parse timeout sensor (if activated)
 		item = internalSensorsCfg.find("sensorTimeout")
@@ -1330,8 +1331,12 @@ if __name__ == '__main__':
 			temp["description"] = sensor.description
 			dbSensors.append(temp)
 
-		# add internal sensors to database (updates/deletes also old
-		# sensor data in the database)
+			# add tuple to db state list to set initial states of the
+			# internal sensors
+			dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+
+		# Add internal sensors to database (updates/deletes also old
+		# sensor data in the database).
 		if not globalData.storage.addSensors(serverUsername, dbSensors):
 			raise ValueError("Not able to add internal sensors "
 				+ "to database.")
@@ -1344,6 +1349,9 @@ if __name__ == '__main__':
 			if sensor.sensorId is None:
 				raise ValueError("Not able to get sensor id for "
 					+ "internal sensor from database.")
+
+		# Set initial states of the internal sensors.
+		globalData.storage.updateSensorState(serverNodeId, dbInitialStateList)
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
