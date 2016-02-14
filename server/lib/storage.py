@@ -166,7 +166,7 @@ class _Storage():
 
 	# gets all nodes from the database that are connected to the server
 	#
-	# return list of tuples of (nodeId)
+	# return list of nodeIds
 	# or None
 	def getAllConnectedNodeIds(self):
 		raise NotImplemented("Function not implemented yet.")
@@ -2047,7 +2047,7 @@ class Sqlite(_Storage):
 
 	# gets all nodes from the database that are connected to the server
 	#
-	# return list of tuples of (nodeId)
+	# return list of nodeIds
 	# or None
 	def getAllConnectedNodeIds(self):
 
@@ -2072,8 +2072,8 @@ class Sqlite(_Storage):
 
 		self._releaseLock()
 
-		# return list of tuples of (nodeId)
-		return result
+		# return list of nodeIds
+		return map(lambda x: x[0], result)
 
 
 	# marks a node given by its id as NOT connected
@@ -4686,7 +4686,7 @@ class Mysql(_Storage):
 
 	# gets all nodes from the database that are connected to the server
 	#
-	# return list of tuples of (nodeId)
+	# return list of nodeIds
 	# or None
 	def getAllConnectedNodeIds(self):
 
@@ -4728,8 +4728,8 @@ class Mysql(_Storage):
 
 		self._releaseLock()
 
-		# return list of tuples of (nodeId)
-		return list(result)
+		# return list of nodeIds
+		return map(lambda x: x[0], result)
 
 
 	# marks a node given by its id as NOT connected

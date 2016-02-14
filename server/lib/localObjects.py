@@ -115,5 +115,10 @@ class NodeTimeoutSensor(_InternalSensor):
 	def __init__(self):
 		_InternalSensor.__init__(self)
 
-		# A set of ids of the nodes that are timed out.
-		self.timeoutNodeIds = set()
+		# An internal set of ids of the nodes that are timed out.
+		self._timeoutNodeIds = set()
+
+
+	# Returns a copy of the internal timed out node ids set.
+	def getTimeoutNodeIds(self):
+		return set(self._timeoutNodeIds)
