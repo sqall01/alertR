@@ -20,7 +20,7 @@ import json
 BUFSIZE = 16384
 
 
-# simple class of an ssl tcp client 
+# simple class of an ssl tcp client
 class Client:
 
 	def __init__(self, host, port, serverCAFile, clientCertFile,
@@ -40,12 +40,12 @@ class Client:
 		# check if a client certificate is required
 		if (self.clientCertFile is None
 			or self.clientKeyFile is None):
-			self.sslSocket = ssl.wrap_socket(self.socket, 
-				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED, 
+			self.sslSocket = ssl.wrap_socket(self.socket,
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
 				ssl_version=ssl.PROTOCOL_TLSv1)
 		else:
-			self.sslSocket = ssl.wrap_socket(self.socket, 
-				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED, 
+			self.sslSocket = ssl.wrap_socket(self.socket,
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
 				ssl_version=ssl.PROTOCOL_TLSv1,
 				certfile=self.clientCertFile, keyfile=self.clientKeyFile)
 
@@ -92,7 +92,7 @@ class ServerCommunication:
 		self.sensors = self.globalData.sensors
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
-		
+
 		# time the last message was received by the client
 		self.lastRecv = 0.0
 
@@ -131,7 +131,7 @@ class ServerCommunication:
 		self.client.close()
 
 
-	# this internal function that tries to initiate a transaction with 
+	# this internal function that tries to initiate a transaction with
 	# the server (and acquires a lock if it is told to do so)
 	def _initiateTransaction(self, messageType, acquireLock=False):
 
@@ -147,7 +147,7 @@ class ServerCommunication:
 			# transaction with the server
 			if self.transactionInitiation:
 
-				logging.debug("[%s]: Transaction initiation " % self.fileName
+				logging.warning("[%s]: Transaction initiation " % self.fileName
 					+ "already tried by another thread. Backing off.")
 
 				# check if locks should be handled or not
@@ -245,7 +245,7 @@ class ServerCommunication:
 
 				logging.debug("[%s]: Initiate transaction " % self.fileName
 					+ "succeeded.")
-				
+
 				# set transaction initiation flag as false so other
 				# threads can try to initiate a transaction with the server
 				self.transactionInitiation = False
@@ -256,7 +256,7 @@ class ServerCommunication:
 			# => release lock and backoff for a random time then retry again
 			else:
 
-				logging.debug("[%s]: Initiate transaction " % self.fileName
+				logging.warning("[%s]: Initiate transaction " % self.fileName
 					+ "failed. Backing off.")
 
 				# check if locks should be handled or not
@@ -277,7 +277,7 @@ class ServerCommunication:
 	# internal function to verify the server/client version and authenticate
 	def _verifyVersionAndAuthenticate(self):
 
-		logging.debug("[%s]: Sending user credentials and version." 
+		logging.debug("[%s]: Sending user credentials and version."
 			% self.fileName)
 
 		# send user credentials and version
@@ -326,7 +326,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -356,7 +356,7 @@ class ServerCommunication:
 			version = float(message["payload"]["version"])
 			rev = int(message["payload"]["rev"])
 
-			logging.debug("[%s]: Received server version: '%.3f-%d'." 
+			logging.debug("[%s]: Received server version: '%.3f-%d'."
 				% (self.fileName, version, rev))
 
 			# check if used protocol version is compatible
@@ -458,7 +458,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -489,7 +489,7 @@ class ServerCommunication:
 	# function that initializes the communication to the server
 	# for example checks the version and authenticates the client
 	def initializeCommunication(self):
-		
+
 		self._acquireLock()
 
 		# create client instance and connect to the server
@@ -499,13 +499,13 @@ class ServerCommunication:
 			self.client.connect()
 		except Exception as e:
 			self.client.close()
-			logging.exception("[%s]: Connecting to server failed." 
+			logging.exception("[%s]: Connecting to server failed."
 				% self.fileName)
 
 			self._releaseLock()
 
 			return False
-		
+
 		# first check version and authenticate
 		if not self._verifyVersionAndAuthenticate():
 			self.client.close()
@@ -519,17 +519,17 @@ class ServerCommunication:
 		# second register node
 		if not self._registerNode():
 			self.client.close()
-			logging.error("[%s]: Registration failed." 
-				% self.fileName)			
+			logging.error("[%s]: Registration failed."
+				% self.fileName)
 
-			self._releaseLock()	
+			self._releaseLock()
 
 			return False
 
 		self._releaseLock()
 
 		# set client as connected
-		self.isConnected = True	
+		self.isConnected = True
 
 		self.lastRecv = time.time()
 
@@ -582,8 +582,8 @@ class ServerCommunication:
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
-			logging.exception("[%s]: Sending ping to server failed." 
-				% self.fileName)			
+			logging.exception("[%s]: Sending ping to server failed."
+				% self.fileName)
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
@@ -625,7 +625,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -745,7 +745,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -777,7 +777,7 @@ class ServerCommunication:
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
 			self._releaseLock()
-			return False	
+			return False
 
 		self._releaseLock()
 
@@ -838,8 +838,8 @@ class ServerCommunication:
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
-			logging.exception("[%s]: Sending sensor alert message failed." 
-				% self.fileName)			
+			logging.exception("[%s]: Sending sensor alert message failed."
+				% self.fileName)
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
@@ -881,7 +881,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -953,8 +953,8 @@ class ServerCommunication:
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
-			logging.exception("[%s]: Sending state change message failed." 
-				% self.fileName)			
+			logging.exception("[%s]: Sending state change message failed."
+				% self.fileName)
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
@@ -996,7 +996,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -1068,14 +1068,14 @@ class ConnectionWatchdog(threading.Thread):
 	def run(self):
 
 		# check every 5 seconds if the client is still connected
-		# and the time of the last received data 
+		# and the time of the last received data
 		# from the server lies too far in the past
 		while 1:
 
 			# wait 5 seconds before checking time of last received data
 			for i in range(5):
 				if self.exitFlag:
-					logging.info("[%s]: Exiting ConnectionWatchdog." 
+					logging.info("[%s]: Exiting ConnectionWatchdog."
 						% self.fileName)
 					return
 				time.sleep(1)
@@ -1083,7 +1083,7 @@ class ConnectionWatchdog(threading.Thread):
 			# check if the client is still connected to the server
 			if not self.connection.isConnected:
 
-				logging.error("[%s]: Connection to server has died. " 
+				logging.error("[%s]: Connection to server has died. "
 					% self.fileName)
 
 				# reconnect to the server
@@ -1108,21 +1108,21 @@ class ConnectionWatchdog(threading.Thread):
 						break
 					self.connectionRetries +=1
 
-					logging.error("[%s]: Reconnecting failed. " 
+					logging.error("[%s]: Reconnecting failed. "
 						% self.fileName + "Retrying in 5 seconds.")
 					time.sleep(5)
 
 				continue
 
-			# check if the time of the data last received lies too far in the 
+			# check if the time of the data last received lies too far in the
 			# past => send ping to check connection
 			if (time.time() - self.connection.lastRecv) > self.pingInterval:
-				logging.debug("[%s]: Ping interval exceeded." 
+				logging.debug("[%s]: Ping interval exceeded."
 						% self.fileName)
 
 				# check if PING failed
 				if not self.connection.sendKeepalive():
-					logging.error("[%s]: Connection to server has died. " 
+					logging.error("[%s]: Connection to server has died. "
 						% self.fileName)
 
 					# reconnect to the server
@@ -1148,7 +1148,7 @@ class ConnectionWatchdog(threading.Thread):
 							break
 						self.connectionRetries +=1
 
-						logging.error("[%s]: Reconnecting failed. " 
+						logging.error("[%s]: Reconnecting failed. "
 							% self.fileName + "Retrying in 5 seconds.")
 						time.sleep(5)
 

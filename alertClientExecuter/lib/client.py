@@ -21,7 +21,7 @@ from localObjects import SensorAlert
 BUFSIZE = 16384
 
 
-# simple class of an ssl tcp client 
+# simple class of an ssl tcp client
 class Client:
 
 	def __init__(self, host, port, serverCAFile, clientCertFile,
@@ -41,12 +41,12 @@ class Client:
 		# check if a client certificate is required
 		if (self.clientCertFile is None
 			or self.clientKeyFile is None):
-			self.sslSocket = ssl.wrap_socket(self.socket, 
-				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED, 
+			self.sslSocket = ssl.wrap_socket(self.socket,
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
 				ssl_version=ssl.PROTOCOL_TLSv1)
 		else:
-			self.sslSocket = ssl.wrap_socket(self.socket, 
-				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED, 
+			self.sslSocket = ssl.wrap_socket(self.socket,
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
 				ssl_version=ssl.PROTOCOL_TLSv1,
 				certfile=self.clientCertFile, keyfile=self.clientKeyFile)
 
@@ -134,7 +134,7 @@ class ServerCommunication:
 		self.client.close()
 
 
-	# this internal function that tries to initiate a transaction with 
+	# this internal function that tries to initiate a transaction with
 	# the server (and acquires a lock if it is told to do so)
 	def _initiateTransaction(self, messageType, acquireLock=False):
 
@@ -150,7 +150,7 @@ class ServerCommunication:
 			# transaction with the server
 			if self.transactionInitiation:
 
-				logging.debug("[%s]: Transaction initiation " % self.fileName
+				logging.warning("[%s]: Transaction initiation " % self.fileName
 					+ "already tried by another thread. Backing off.")
 
 				# check if locks should be handled or not
@@ -248,7 +248,7 @@ class ServerCommunication:
 
 				logging.debug("[%s]: Initiate transaction " % self.fileName
 					+ "succeeded.")
-				
+
 				# set transaction initiation flag as false so other
 				# threads can try to initiate a transaction with the server
 				self.transactionInitiation = False
@@ -259,7 +259,7 @@ class ServerCommunication:
 			# => release lock and backoff for a random time then retry again
 			else:
 
-				logging.debug("[%s]: Initiate transaction " % self.fileName
+				logging.warning("[%s]: Initiate transaction " % self.fileName
 					+ "failed. Backing off.")
 
 				# check if locks should be handled or not
@@ -280,7 +280,7 @@ class ServerCommunication:
 	# internal function to verify the server/client version and authenticate
 	def _verifyVersionAndAuthenticate(self):
 
-		logging.debug("[%s]: Sending user credentials and version." 
+		logging.debug("[%s]: Sending user credentials and version."
 			% self.fileName)
 
 		# send user credentials and version
@@ -329,7 +329,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -359,7 +359,7 @@ class ServerCommunication:
 			version = float(message["payload"]["version"])
 			rev = int(message["payload"]["rev"])
 
-			logging.debug("[%s]: Received server version: '%.3f-%d'." 
+			logging.debug("[%s]: Received server version: '%.3f-%d'."
 				% (self.fileName, version, rev))
 
 			# check if used protocol version is compatible
@@ -459,7 +459,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -491,7 +491,7 @@ class ServerCommunication:
 	def _sensorAlertHandler(self, incomingMessage):
 
 		logging.debug("[%s]: Received sensor alert." % self.fileName)
-		
+
 		sensorAlert = SensorAlert()
 
 		# extract sensor alert values
@@ -509,7 +509,7 @@ class ServerCommunication:
 					pass
 
 				return False
-			# check if all elements of the alertLevels list 
+			# check if all elements of the alertLevels list
 			# are of type int
 			if not all(isinstance(item, int)
 				for item in sensorAlert.alertLevels):
@@ -587,7 +587,7 @@ class ServerCommunication:
 					alertTriggerProcess = AsynchronousAlertExecuter(alert)
 					alertTriggerProcess.sensorAlert = sensorAlert
 					# set thread to daemon
-					# => threads terminates when main thread terminates	
+					# => threads terminates when main thread terminates
 					alertTriggerProcess.daemon = True
 					alertTriggerProcess.triggerAlert = True
 					alertTriggerProcess.start()
@@ -600,7 +600,7 @@ class ServerCommunication:
 	def _sensorAlertsOffHandler(self, incomingMessage):
 
 		logging.debug("[%s]: Received sensor alerts off." % self.fileName)
-		
+
 		# sending sensor alerts off response
 		logging.debug("[%s]: Sending sensor alerts off " % self.fileName
 			+ "response message.")
@@ -622,7 +622,7 @@ class ServerCommunication:
 			# stop alert in an own thread to not block this one
 			alertStopProcess = AsynchronousAlertExecuter(alert)
 			# set thread to daemon
-			# => threads terminates when main thread terminates	
+			# => threads terminates when main thread terminates
 			alertStopProcess.daemon = True
 			alertStopProcess.stopAlert = True
 			alertStopProcess.start()
@@ -633,7 +633,7 @@ class ServerCommunication:
 	# function that initializes the communication to the server
 	# for example checks the version and authenticates the client
 	def initializeCommunication(self):
-		
+
 		self._acquireLock()
 
 		# create client instance and connect to the server
@@ -643,13 +643,13 @@ class ServerCommunication:
 			self.client.connect()
 		except Exception as e:
 			self.client.close()
-			logging.exception("[%s]: Connecting to server failed." 
+			logging.exception("[%s]: Connecting to server failed."
 				% self.fileName)
 
 			self._releaseLock()
 
 			return False
-		
+
 		# first check version and authenticate
 		if not self._verifyVersionAndAuthenticate():
 			self.client.close()
@@ -663,10 +663,10 @@ class ServerCommunication:
 		# second register node
 		if not self._registerNode():
 			self.client.close()
-			logging.error("[%s]: Registration failed." 
-				% self.fileName)			
+			logging.error("[%s]: Registration failed."
+				% self.fileName)
 
-			self._releaseLock()	
+			self._releaseLock()
 
 			return False
 
@@ -674,7 +674,7 @@ class ServerCommunication:
 		self.lastRecv = time.time()
 
 		# set client as connected
-		self.isConnected = True	
+		self.isConnected = True
 
 		self._releaseLock()
 
@@ -734,13 +734,13 @@ class ServerCommunication:
 					self.client.send(json.dumps(message))
 
 					# after initiating transaction receive
-					# actual command 
+					# actual command
 					data = self.client.recv(BUFSIZE)
 					data = data.strip()
 
 
 				# if no RTS was received
-				# => server does not stick to protocol 
+				# => server does not stick to protocol
 				# => terminate session
 				else:
 
@@ -754,7 +754,7 @@ class ServerCommunication:
 
 			except ssl.SSLError as e:
 
-				# catch receive timeouts 
+				# catch receive timeouts
 				err = e.args[0]
 				if err == "The read operation timed out":
 
@@ -838,12 +838,12 @@ class ServerCommunication:
 					# handle sensor alert
 					if not self._sensorAlertHandler(message):
 
-						logging.error("[%s]: Receiving sensor alert failed." 
+						logging.error("[%s]: Receiving sensor alert failed."
 							% self.fileName)
 
 						# clean up session before exiting
 						self._cleanUpSessionForClosing()
-						self._releaseLock()	
+						self._releaseLock()
 						return
 
 			# check if SENSORALERTSOFF was received
@@ -858,7 +858,7 @@ class ServerCommunication:
 
 						# clean up session before exiting
 						self._cleanUpSessionForClosing()
-						self._releaseLock()	
+						self._releaseLock()
 						return
 
 			# unknown command was received
@@ -928,8 +928,8 @@ class ServerCommunication:
 			self.client.send(json.dumps(message))
 
 		except Exception as e:
-			logging.exception("[%s]: Sending ping to server failed." 
-				% self.fileName)			
+			logging.exception("[%s]: Sending ping to server failed."
+				% self.fileName)
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
@@ -971,7 +971,7 @@ class ServerCommunication:
 
 			# check if the received type is the correct one
 			if str(message["payload"]["type"]).upper() != "RESPONSE":
-				logging.error("[%s]: response expected." 
+				logging.error("[%s]: response expected."
 					% self.fileName)
 
 				# send error message back
@@ -1044,14 +1044,14 @@ class ConnectionWatchdog(threading.Thread):
 	def run(self):
 
 		# check every 5 seconds if the client is still connected
-		# and the time of the last received data 
+		# and the time of the last received data
 		# from the server lies too far in the past
 		while 1:
 
 			# wait 5 seconds before checking time of last received data
 			for i in range(5):
 				if self.exitFlag:
-					logging.info("[%s]: Exiting ConnectionWatchdog." 
+					logging.info("[%s]: Exiting ConnectionWatchdog."
 						% self.fileName)
 					return
 				time.sleep(1)
@@ -1059,7 +1059,7 @@ class ConnectionWatchdog(threading.Thread):
 			# check if the client is still connected to the server
 			if not self.connection.isConnected:
 
-				logging.error("[%s]: Connection to server has died. " 
+				logging.error("[%s]: Connection to server has died. "
 					% self.fileName)
 
 				# reconnect to the server
@@ -1084,21 +1084,21 @@ class ConnectionWatchdog(threading.Thread):
 						break
 					self.connectionRetries +=1
 
-					logging.error("[%s]: Reconnecting failed. " 
+					logging.error("[%s]: Reconnecting failed. "
 						% self.fileName + "Retrying in 5 seconds.")
 					time.sleep(5)
 
 				continue
 
-			# check if the time of the data last received lies too far in the 
+			# check if the time of the data last received lies too far in the
 			# past => send ping to check connection
 			if (time.time() - self.connection.lastRecv) > self.pingInterval:
-				logging.debug("[%s]: Ping interval exceeded." 
+				logging.debug("[%s]: Ping interval exceeded."
 						% self.fileName)
 
 				# check if PING failed
 				if not self.connection.sendKeepalive():
-					logging.error("[%s]: Connection to server has died. " 
+					logging.error("[%s]: Connection to server has died. "
 						% self.fileName)
 
 					# reconnect to the server
@@ -1124,7 +1124,7 @@ class ConnectionWatchdog(threading.Thread):
 							break
 						self.connectionRetries +=1
 
-						logging.error("[%s]: Reconnecting failed. " 
+						logging.error("[%s]: Reconnecting failed. "
 							% self.fileName + "Retrying in 5 seconds.")
 						time.sleep(5)
 
@@ -1150,7 +1150,7 @@ class Receiver:
 
 		while 1:
 			if self.exitFlag:
-				return			
+				return
 
 			# only run the communication handler
 			self.connection.handleCommunication()
