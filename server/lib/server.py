@@ -2467,7 +2467,7 @@ class ConnectionWatchdog(threading.Thread):
 						changeState = True
 
 					# Create message for sensor alert.
-					message = "Node '%s' with username '%s' on host '%s " \
+					message = "Node '%s' with username '%s' on host '%s' " \
 						% (str(instance), str(username), str(hostname)) \
 						+ "timed out."
 					dataJson = json.dumps({"message": message})
@@ -2687,7 +2687,7 @@ class ConnectionWatchdog(threading.Thread):
 				if not self.sensorTimeoutSensor is None:
 
 					# Create message for sensor alert.
-					message = "%d sensors still timed out:" \
+					message = "%d sensor(s) still timed out:" \
 						% len(self.timeoutSensorIds)
 					for sensorId in self.timeoutSensorIds:
 
@@ -2723,6 +2723,7 @@ class ConnectionWatchdog(threading.Thread):
 							% description \
 							+ "Last seen: %s;" \
 							% lastStateUpdateStr
+
 					dataJson = json.dumps({"message": message})
 
 					# Add sensor alert to database for processing.
@@ -2739,22 +2740,6 @@ class ConnectionWatchdog(threading.Thread):
 						logging.error("[%s]: Not able to add sensor alert "
 							% self.fileName
 							+ "for internal sensor timeout sensor.")
-
-
-
-
-
-
-
-
-
-
-
-		# TODO
-		# process reminder for node timeouts
-		# IMPORTANT: code not tested yet
-
-
 
 		# Reset timeout reminder if necessary.
 		if (not self.timeoutNodeIds
@@ -2775,14 +2760,27 @@ class ConnectionWatchdog(threading.Thread):
 				if not self.nodeTimeoutSensor is None:
 
 					# Create message for sensor alert.
-					message = "%d nodes still timed out:" \
+					message = "%d node(s) still timed out:" \
 						% len(self.timeoutNodeIds)
 					for nodeId in self.timeoutNodeIds:
 
+						nodeTuple = self.storage.getNodeById(nodeId)
+						if nodeTuple is None:
+							logging.error("[%s]: Could not " % self.fileName
+								+ "get node with id %d from database."
+								% nodeId)
+							continue
 
-						# TODO get detailed information for message
-						message += " blah"
+						instance = nodeTuple[4]
+						username = nodeTuple[2]
+						hostname = nodeTuple[1]
 
+						message += " Node: '%s, " \
+							% str(instance) \
+							+ "Username: '%s', " \
+							% str(username) \
+							+ "Hostname: '%s';" \
+							% str(hostname)
 
 					dataJson = json.dumps({"message": message})
 
