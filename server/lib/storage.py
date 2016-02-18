@@ -198,6 +198,14 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# gets the node from the database when its id is given
+	#
+	# return a tuple of (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev) or None
+	def getNodeById(self, nodeId):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
@@ -2237,6 +2245,35 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		return hostname
+
+
+	# gets the node from the database when its id is given
+	#
+	# return a tuple of (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev) or None
+	def getNodeById(self, nodeId):
+
+		self._acquireLock()
+
+		try:
+			self.cursor.execute("SELECT * FROM nodes "
+				+ "WHERE id = ?", (nodeId, ))
+
+			result = self.cursor.fetchall()
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "node with id %d from database." % nodeId)
+
+			self._releaseLock()
+
+			return None
+
+		self._releaseLock()
+
+		# return a tuple of (nodeId, hostname, username, nodeType, instance,
+		# connected, version, rev) or None
+		return result[0]
 
 
 	# gets all information that the server has at the current moment
@@ -4981,6 +5018,52 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		return hostname
+
+
+	# gets the node from the database when its id is given
+	#
+	# return a tuple of (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev) or None
+	def getNodeById(self, nodeId):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		try:
+			self.cursor.execute("SELECT * FROM nodes "
+				+ "WHERE id = ?", (nodeId, ))
+
+			result = self.cursor.fetchall()
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "node with id %d from database." % nodeId)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return a tuple of (nodeId, hostname, username, nodeType, instance,
+		# connected, version, rev) or None
+		return result[0]
 
 
 	# gets all information that the server has at the current moment
