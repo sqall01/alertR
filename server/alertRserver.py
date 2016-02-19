@@ -9,7 +9,8 @@
 
 import sys
 import os
-from lib import ServerSession, ConnectionWatchdog, ThreadedTCPServer
+from lib import ConnectionWatchdog
+from lib import ServerSession, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import AlertLevel, SensorTimeoutSensor, NodeTimeoutSensor
 from lib import SensorAlertExecuter

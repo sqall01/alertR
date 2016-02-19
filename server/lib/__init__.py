@@ -7,8 +7,8 @@
 #
 # Licensed under the GNU Public License, version 2.
 
-from server import ServerSession, ConnectionWatchdog, ThreadedTCPServer, \
-	AsynchronousSender
+from connectionWatchdog import ConnectionWatchdog
+from server import ServerSession, ThreadedTCPServer, AsynchronousSender
 from storage import Sqlite, Mysql
 from alert import SensorAlertExecuter
 from localObjects import AlertLevel, SensorTimeoutSensor, NodeTimeoutSensor
