@@ -33,6 +33,7 @@ class Node:
 		self.version = None
 		self.rev = None
 		self.username = None
+		self.persistent = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)

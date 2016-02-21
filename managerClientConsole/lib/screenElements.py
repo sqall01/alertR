@@ -366,6 +366,20 @@ class SensorDetailedUrwid:
 		else:
 			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
 				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Persistent Connection:"))
+		if node.persistent == 0:
+			temp.append(urwid.Text("False"))
+		elif node.persistent == 1:
+			if node.connected == 0:
+				temp.append(urwid.AttrMap(urwid.Text("True"),
+					"disconnected"))
+			else:
+				temp.append(urwid.Text("True"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
 
 		return temp
 
@@ -710,6 +724,20 @@ class AlertDetailedUrwid:
 		else:
 			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
 				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Persistent Connection:"))
+		if node.persistent == 0:
+			temp.append(urwid.Text("False"))
+		elif node.persistent == 1:
+			if node.connected == 0:
+				temp.append(urwid.AttrMap(urwid.Text("True"),
+					"disconnected"))
+			else:
+				temp.append(urwid.Text("True"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
 
 		return temp
 
@@ -941,6 +969,20 @@ class ManagerDetailedUrwid:
 		elif node.connected == 1:
 			temp.append(urwid.AttrMap(urwid.Text("True"),
 				"neutral"))
+		else:
+			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
+				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Persistent Connection:"))
+		if node.persistent == 0:
+			temp.append(urwid.Text("False"))
+		elif node.persistent == 1:
+			if node.connected == 0:
+				temp.append(urwid.AttrMap(urwid.Text("True"),
+					"disconnected"))
+			else:
+				temp.append(urwid.Text("True"))
 		else:
 			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
 				"redColor"))
@@ -1196,51 +1238,6 @@ class AlertLevelDetailedUrwid:
 
 		temp.append(urwid.Text("Description:"))
 		temp.append(urwid.Text(alert.description))
-
-		return temp
-
-
-	# this function creates the detailed output of a node object
-	# in a list
-	def _createNodeWidgetList(self, node):
-
-		temp = list()
-
-		temp.append(urwid.Text("Node ID:"))
-		temp.append(urwid.Text(str(node.nodeId)))
-		temp.append(urwid.Divider())
-
-		temp.append(urwid.Text("Username:"))
-		temp.append(urwid.Text(node.username))
-		temp.append(urwid.Divider())
-
-		temp.append(urwid.Text("Hostname:"))
-		temp.append(urwid.Text(node.hostname))
-		temp.append(urwid.Divider())
-
-		temp.append(urwid.Text("Node Type:"))
-		temp.append(urwid.Text(node.nodeType))
-		temp.append(urwid.Divider())
-
-		temp.append(urwid.Text("Instance:"))
-		temp.append(urwid.Text(node.instance))
-		temp.append(urwid.Divider())
-
-		temp.append(urwid.Text("Version:"))
-		versionWidget = urwid.Text(str(node.version) + "-" + str(node.rev))
-		temp.append(versionWidget)
-		temp.append(urwid.Divider())
-
-		temp.append(urwid.Text("Connected:"))
-		if node.connected == 0:
-			temp.append(urwid.AttrMap(urwid.Text("False"),
-				"disconnected"))
-		elif node.connected == 1:
-			temp.append(urwid.AttrMap(urwid.Text("True"),
-				"neutral"))
-		else:
-			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-				"redColor"))
 
 		return temp
 

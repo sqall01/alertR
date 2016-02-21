@@ -649,6 +649,12 @@ class ServerCommunication:
 				version = float(nodesRaw[i]["version"])
 				rev = int(nodesRaw[i]["rev"])
 				username = str(nodesRaw[i]["username"])
+				persistent = int(nodesRaw[i]["persistent"])
+
+				# Sanity check of persistent flag.
+				if not (persistent == 1 or persistent == 0):
+					raise ValueError("Received persistent flag invalid.")
+
 			except Exception as e:
 				logging.exception("[%s]: Received node " % self.fileName
 				+ "invalid.")
@@ -665,8 +671,8 @@ class ServerCommunication:
 				return False
 
 			logging.debug("[%s]: Received node " % self.fileName
-				+ "information: %d:'%s':'%s':%d."
-				% (nodeId, hostname, nodeType, connected))
+				+ "information: %d:'%s':'%s':%d:%d."
+				% (nodeId, hostname, nodeType, connected, persistent))
 
 			node = Node()
 			node.nodeId = nodeId
@@ -677,6 +683,7 @@ class ServerCommunication:
 			node.version = version
 			node.rev = rev
 			node.username = username
+			node.persistent = persistent
 			nodes.append(node)
 
 		logging.debug("[%s]: Received sensor count: %d."

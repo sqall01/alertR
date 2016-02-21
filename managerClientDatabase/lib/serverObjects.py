@@ -41,6 +41,7 @@ class Node:
 		self.version = None
 		self.rev = None
 		self.username = None
+		self.persistent = None
 
 		# used by mobile manager only:
 		# newest known version
