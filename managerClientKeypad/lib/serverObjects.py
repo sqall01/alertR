@@ -389,6 +389,7 @@ class ServerEventHandler:
 					node.version = recvNode.version
 					node.rev = recvNode.rev
 					node.username = recvNode.username
+					node.persistent = recvNode.persistent
 					found = True
 					break
 			# when not found => add node to list
