@@ -39,7 +39,8 @@ class _Storage():
 	# values if it does exist
 	#
 	# return True or False
-	def addNode(self, username, hostname, nodeType, instance, version, rev):
+	def addNode(self, username, hostname, nodeType, instance, version, rev,
+		persistent):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -201,7 +202,7 @@ class _Storage():
 	# gets the node from the database when its id is given
 	#
 	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev) or None
+	# connected, version, rev, persistent) or None
 	def getNodeById(self, nodeId):
 		raise NotImplemented("Function not implemented yet.")
 
@@ -209,19 +210,14 @@ class _Storage():
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
-	# list[0] = optionCount
-	# list[1] = list(tuples of (type, value))
-	# list[2] = nodeCount
-	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-	# connected, version, rev, username))
-	# list[4] = sensorCount
-	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# description, lastStateUpdated, state, remoteSensorId))
-	# list[6] = managerCount
-	# list[7] = list(tuples of (nodeId, managerId, description))
-	# list[8] = alertCount
-	# list[9] = list(tuples of (nodeId, alertId, description,
-	# remoteAlertId))
+	# list[0] = list(tuples of (type, value))
+	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
+	# instance, connected, version, rev, persistent))
+	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
+	# description, state, lastStateUpdated, alertDelay))
+	# list[3] = list(tuples of (managerId, nodeId, description))
+	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
+	# description))
 	# or None
 	def getAlertSystemInformation(self):
 		raise NotImplemented("Function not implemented yet.")
@@ -512,7 +508,8 @@ class Sqlite(_Storage):
 			+ "instance TEXT NOT NULL, "
 			+ "connected INTEGER NOT NULL, "
 			+ "version REAL NOT NULL, "
-			+ "rev INTEGER NOT NULL)")
+			+ "rev INTEGER NOT NULL, "
+			+ "persistent INTEGER NOT NULL)")
 
 		# create node entry for this server (use unique id as username)
 		self.cursor.execute("INSERT INTO nodes ("
@@ -522,10 +519,11 @@ class Sqlite(_Storage):
 			+ "instance, "
 			+ "connected, "
 			+ "version, "
-			+ "rev) "
-			+ "VALUES (?, ?, ?, ?, ?, ?, ?)",
+			+ "rev, "
+			+ "persistent) "
+			+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 			(socket.gethostname(), uniqueID, "server", "server", 1,
-			self.version, self.rev))
+			self.version, self.rev, 1))
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -653,7 +651,8 @@ class Sqlite(_Storage):
 	# values if it does exist
 	#
 	# return True or False
-	def addNode(self, username, hostname, nodeType, instance, version, rev):
+	def addNode(self, username, hostname, nodeType, instance, version, rev,
+		persistent):
 
 		self._acquireLock()
 
@@ -675,8 +674,10 @@ class Sqlite(_Storage):
 					+ "instance, "
 					+ "connected, "
 					+ "version, "
-					+ "rev) VALUES (?, ?, ?, ?, ?, ?, ?)",
-					(hostname, username, nodeType, instance, 0, version, rev))
+					+ "rev, "
+					+ "persistent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+					(hostname, username, nodeType, instance, 0, version, rev,
+					persistent))
 			except Exception as e:
 				logging.exception("[%s]: Not able to add node."
 					% self.fileName)
@@ -685,7 +686,7 @@ class Sqlite(_Storage):
 
 				return False
 
-		# if a node with this node exists
+		# if a node with this username exists
 		# => check if everything is the same
 		else:
 
@@ -695,13 +696,14 @@ class Sqlite(_Storage):
 
 			nodeId = self._getNodeId(username)
 
-			# get hostname, nodeType, version and revision
+			# get hostname, nodeType, version, revision, persistent
 			try:
 				self.cursor.execute("SELECT hostname, "
 					+ "nodeType, "
 					+ "instance, "
 					+ "version, "
-					+ "rev "
+					+ "rev, "
+					+ "persistent "
 					+ "FROM nodes WHERE id = ? ",
 					(nodeId, ))
 				result = self.cursor.fetchall()
@@ -710,6 +712,7 @@ class Sqlite(_Storage):
 				dbInstance = result[0][2]
 				dbVersion = result[0][3]
 				dbRev = result[0][4]
+				dbPersistent = result[0][5]
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to get node information."
@@ -798,6 +801,27 @@ class Sqlite(_Storage):
 				except Exception as e:
 					logging.exception("[%s]: Not able to " % self.fileName
 						+ "update revision of node.")
+
+					self._releaseLock()
+
+					return False
+
+			# change persistent if it had changed
+			if dbPersistent != persistent:
+
+				logging.info("[%s]: Persistent flag of node has changed "
+					% self.fileName
+					+ "from '%d' to '%d'. Updating database."
+					% (dbPersistent, persistent))
+
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "persistent = ? "
+						+ "WHERE id = ?",
+						(persistent, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update persistent flag of node.")
 
 					self._releaseLock()
 
@@ -2250,7 +2274,7 @@ class Sqlite(_Storage):
 	# gets the node from the database when its id is given
 	#
 	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev) or None
+	# connected, version, rev, persistent) or None
 	def getNodeById(self, nodeId):
 
 		self._acquireLock()
@@ -2272,26 +2296,21 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a tuple of (nodeId, hostname, username, nodeType, instance,
-		# connected, version, rev) or None
+		# connected, version, rev, persistent) or None
 		return result[0]
 
 
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
-	# list[0] = optionCount
-	# list[1] = list(tuples of (type, value))
-	# list[2] = nodeCount
-	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-	# connected, version, rev, username))
-	# list[4] = sensorCount
-	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# description, lastStateUpdated, state, remoteSensorId))
-	# list[6] = managerCount
-	# list[7] = list(tuples of (nodeId, managerId, description))
-	# list[8] = alertCount
-	# list[9] = list(tuples of (nodeId, alertId, description,
-	# remoteAlertId))
+	# list[0] = list(tuples of (type, value))
+	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
+	# instance, connected, version, rev, persistent))
+	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
+	# description, state, lastStateUpdated, alertDelay))
+	# list[3] = list(tuples of (managerId, nodeId, description))
+	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
+	# description))
 	# or None
 	def getAlertSystemInformation(self):
 
@@ -2305,65 +2324,33 @@ class Sqlite(_Storage):
 				+ "FROM options")
 			result = self.cursor.fetchall()
 			optionsInformation = result
-			optionCount = len(optionsInformation)
 
 			# get all nodes information
-			self.cursor.execute("SELECT id, "
-				+ "hostname, "
-				+ "nodeType, "
-				+ "instance, "
-				+ "connected, "
-				+ "version, "
-				+ "rev, "
-				+ "username "
-				+ "FROM nodes")
+			self.cursor.execute("SELECT * FROM nodes")
 			result = self.cursor.fetchall()
 			nodesInformation = result
-			nodeCount = len(nodesInformation)
 
 			# get all sensors information
-			self.cursor.execute("SELECT nodeId, "
-				+ "id, "
-				+ "alertDelay, "
-				+ "description, "
-				+ "lastStateUpdated, "
-				+ "state, "
-				+ "remoteSensorId "
-				+ "FROM sensors")
+			self.cursor.execute("SELECT * FROM sensors")
 			result = self.cursor.fetchall()
 			sensorsInformation = result
-			sensorCount = len(sensorsInformation)
 
 			# get all managers information
-			self.cursor.execute("SELECT nodeId, "
-				+ "id, "
-				+ "description "
-				+ "FROM managers")
+			self.cursor.execute("SELECT * FROM managers")
 			result = self.cursor.fetchall()
-			managersInformation = result
-			managerCount = len(managersInformation)			
+			managersInformation = result		
 
 			# get all alerts information
-			self.cursor.execute("SELECT nodeId, "
-				+ "id, "
-				+ "description, "
-				+ "remoteAlertId "
-				+ "FROM alerts")
+			self.cursor.execute("SELECT * FROM alerts")
 			result = self.cursor.fetchall()
 			alertsInformation = result
-			alertCount = len(alertsInformation)
 
 			# generate a list with all nodes information
 			alertSystemInformation = list()
-			alertSystemInformation.append(optionCount)
 			alertSystemInformation.append(optionsInformation)
-			alertSystemInformation.append(nodeCount)
 			alertSystemInformation.append(nodesInformation)
-			alertSystemInformation.append(sensorCount)
 			alertSystemInformation.append(sensorsInformation)
-			alertSystemInformation.append(managerCount)
 			alertSystemInformation.append(managersInformation)
-			alertSystemInformation.append(alertCount)
 			alertSystemInformation.append(alertsInformation)
 
 		except Exception as e:
@@ -2378,19 +2365,15 @@ class Sqlite(_Storage):
 		self._releaseLock()
 
 		# return a list of
-		# list[0] = optionCount
-		# list[1] = list(tuples of (type, value))
-		# list[2] = nodeCount
-		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-		# connected, version, rev, username))
-		# list[4] = sensorCount
-		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# description, lastStateUpdated, state, remoteSensorId))
-		# list[6] = managerCount
-		# list[7] = list(tuples of (nodeId, managerId, description))
-		# list[8] = alertCount
-		# list[9] = list(tuples of (nodeId, alertId, description,
-		# remoteAlertId))
+		# list[0] = list(tuples of (type, value))
+		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
+		# instance, connected, version, rev, persistent))
+		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
+		# description, state, lastStateUpdated, alertDelay))
+		# list[3] = list(tuples of (managerId, nodeId, description))
+		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
+		# description))
+		# or None
 		return alertSystemInformation
 
 
@@ -2762,7 +2745,8 @@ class Mysql(_Storage):
 			+ "instance VARCHAR(255) NOT NULL, "
 			+ "connected INTEGER NOT NULL, "
 			+ "version DOUBLE NOT NULL, "
-			+ "rev INTEGER NOT NULL)")
+			+ "rev INTEGER NOT NULL, "
+			+ "persistent INTEGER NOT NULL)")
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -2783,10 +2767,11 @@ class Mysql(_Storage):
 			+ "instance, "
 			+ "connected, "
 			+ "version, "
-			+ "rev) "
-			+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+			+ "rev, "
+			+ "persistent) "
+			+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
 			(socket.gethostname(), uniqueID, "server", "server", 1,
-			self.version, self.rev))
+			self.version, self.rev, 1))
 
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
@@ -2915,7 +2900,8 @@ class Mysql(_Storage):
 	# values if it does exist
 	#
 	# return True or False
-	def addNode(self, username, hostname, nodeType, instance, version, rev):
+	def addNode(self, username, hostname, nodeType, instance, version, rev,
+		persistent):
 
 		self._acquireLock()
 
@@ -2948,8 +2934,10 @@ class Mysql(_Storage):
 					+ "instance, "
 					+ "connected, "
 					+ "version, "
-					+ "rev) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-					(hostname, username, nodeType, instance, 0, version, rev))
+					+ "rev, "
+					+ "persistent) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+					(hostname, username, nodeType, instance, 0, version, rev,
+					persistent))
 			except Exception as e:
 				logging.exception("[%s]: Not able to add node."
 					% self.fileName)
@@ -2961,7 +2949,7 @@ class Mysql(_Storage):
 
 				return False
 
-		# if a node with this node exists
+		# if a node with this username exists
 		# => check if everything is the same
 		else:
 
@@ -2971,13 +2959,14 @@ class Mysql(_Storage):
 
 			nodeId = self._getNodeId(username)
 
-			# get hostname, nodeType, version and revision
+			# get hostname, nodeType, version, revision, persistent
 			try:
 				self.cursor.execute("SELECT hostname, "
 					+ "nodeType, "
 					+ "instance, "
 					+ "version, "
-					+ "rev "
+					+ "rev, "
+					+ "persistent "
 					+ "FROM nodes WHERE id = %s ",
 					(nodeId, ))
 				result = self.cursor.fetchall()
@@ -2986,6 +2975,7 @@ class Mysql(_Storage):
 				dbInstance = result[0][2]
 				dbVersion = result[0][3]
 				dbRev = result[0][4]
+				dbPersistent = result[0][5]
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to get node information."
@@ -3080,6 +3070,27 @@ class Mysql(_Storage):
 				except Exception as e:
 					logging.exception("[%s]: Not able to " % self.fileName
 						+ "update revision of node.")
+
+					self._releaseLock()
+
+					return False
+
+			# change persistent if it had changed
+			if dbPersistent != persistent:
+
+				logging.info("[%s]: Persistent flag of node has changed "
+					% self.fileName
+					+ "from '%d' to '%d'. Updating database."
+					% (dbPersistent, persistent))
+
+				try:
+					self.cursor.execute("UPDATE nodes SET "
+						+ "persistent = %s "
+						+ "WHERE id = %s",
+						(persistent, nodeId))
+				except Exception as e:
+					logging.exception("[%s]: Not able to " % self.fileName
+						+ "update persistent flag of node.")
 
 					self._releaseLock()
 
@@ -5023,7 +5034,7 @@ class Mysql(_Storage):
 	# gets the node from the database when its id is given
 	#
 	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev) or None
+	# connected, version, rev, persistent) or None
 	def getNodeById(self, nodeId):
 
 		self._acquireLock()
@@ -5041,7 +5052,7 @@ class Mysql(_Storage):
 
 		try:
 			self.cursor.execute("SELECT * FROM nodes "
-				+ "WHERE id = ?", (nodeId, ))
+				+ "WHERE id = %s", (nodeId, ))
 
 			result = self.cursor.fetchall()
 		except Exception as e:
@@ -5062,26 +5073,21 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a tuple of (nodeId, hostname, username, nodeType, instance,
-		# connected, version, rev) or None
+		# connected, version, rev, persistent) or None
 		return result[0]
 
 
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
-	# list[0] = optionCount
-	# list[1] = list(tuples of (type, value))
-	# list[2] = nodeCount
-	# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-	# connected, version, rev, username))
-	# list[4] = sensorCount
-	# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-	# description, lastStateUpdated, state, remoteSensorId))
-	# list[6] = managerCount
-	# list[7] = list(tuples of (nodeId, managerId, description))
-	# list[8] = alertCount
-	# list[9] = list(tuples of (nodeId, alertId, description,
-	# remoteAlertId))
+	# list[0] = list(tuples of (type, value))
+	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
+	# instance, connected, version, rev, persistent))
+	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
+	# description, state, lastStateUpdated, alertDelay))
+	# list[3] = list(tuples of (managerId, nodeId, description))
+	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
+	# description))
 	# or None
 	def getAlertSystemInformation(self):
 
@@ -5106,65 +5112,33 @@ class Mysql(_Storage):
 				+ "FROM options")
 			result = self.cursor.fetchall()
 			optionsInformation = result
-			optionCount = len(optionsInformation)
 
 			# get all nodes information
-			self.cursor.execute("SELECT id, "
-				+ "hostname, "
-				+ "nodeType, "
-				+ "instance, "
-				+ "connected, "
-				+ "version, "
-				+ "rev, "
-				+ "username "
-				+ "FROM nodes")
+			self.cursor.execute("SELECT * FROM nodes")
 			result = self.cursor.fetchall()
 			nodesInformation = result
-			nodeCount = len(nodesInformation)
 
 			# get all sensors information
-			self.cursor.execute("SELECT nodeId, "
-				+ "id, "
-				+ "alertDelay, "
-				+ "description, "
-				+ "lastStateUpdated, "
-				+ "state, "
-				+ "remoteSensorId "
-				+ "FROM sensors")
+			self.cursor.execute("SELECT * FROM sensors")
 			result = self.cursor.fetchall()
 			sensorsInformation = result
-			sensorCount = len(sensorsInformation)
 
 			# get all managers information
-			self.cursor.execute("SELECT nodeId, "
-				+ "id, "
-				+ "description "
-				+ "FROM managers")
+			self.cursor.execute("SELECT * FROM managers")
 			result = self.cursor.fetchall()
-			managersInformation = result
-			managerCount = len(managersInformation)			
+			managersInformation = result		
 
 			# get all alerts information
-			self.cursor.execute("SELECT nodeId, "
-				+ "id, "
-				+ "description, "
-				+ "remoteAlertId "
-				+ "FROM alerts")
+			self.cursor.execute("SELECT * FROM alerts")
 			result = self.cursor.fetchall()
 			alertsInformation = result
-			alertCount = len(alertsInformation)
 
 			# generate a list with all nodes information
 			alertSystemInformation = list()
-			alertSystemInformation.append(optionCount)
 			alertSystemInformation.append(optionsInformation)
-			alertSystemInformation.append(nodeCount)
 			alertSystemInformation.append(nodesInformation)
-			alertSystemInformation.append(sensorCount)
 			alertSystemInformation.append(sensorsInformation)
-			alertSystemInformation.append(managerCount)
 			alertSystemInformation.append(managersInformation)
-			alertSystemInformation.append(alertCount)
 			alertSystemInformation.append(alertsInformation)
 
 		except Exception as e:
@@ -5185,19 +5159,15 @@ class Mysql(_Storage):
 		self._releaseLock()
 
 		# return a list of
-		# list[0] = optionCount
-		# list[1] = list(tuples of (type, value))
-		# list[2] = nodeCount
-		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-		# connected, version, rev, username))
-		# list[4] = sensorCount
-		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# description, lastStateUpdated, state, remoteSensorId))
-		# list[6] = managerCount
-		# list[7] = list(tuples of (nodeId, managerId, description))
-		# list[8] = alertCount
-		# list[9] = list(tuples of (nodeId, alertId, description,
-		# remoteAlertId))	
+		# list[0] = list(tuples of (type, value))
+		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
+		# instance, connected, version, rev, persistent))
+		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
+		# description, state, lastStateUpdated, alertDelay))
+		# list[3] = list(tuples of (managerId, nodeId, description))
+		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
+		# description))
+		# or None
 		return alertSystemInformation
 
 

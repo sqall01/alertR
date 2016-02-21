@@ -61,6 +61,9 @@ class ClientCommunication:
 		# hostname of the client
 		self.hostname = None
 
+		# Flag that indicates if this node is registered as persistent.
+		self.persistent = None
+
 		# version and revision of client
 		self.clientVersion = None
 		self.clientRev = None
@@ -554,6 +557,11 @@ class ClientCommunication:
 			self.hostname = str(message["payload"]["hostname"])
 			self.nodeType = str(message["payload"]["nodeType"])
 			self.instance = str(message["payload"]["instance"])
+			self.persistent = int(message["payload"]["persistent"])
+
+			# Sanity check of persistent flag.
+			if not (self.persistent == 1 or self.persistent == 0):
+				raise ValueError("Received persistent flag invalid.")
 
 		except Exception as e:
 
@@ -596,7 +604,8 @@ class ClientCommunication:
 
 		# add node to database
 		if not self.storage.addNode(self.username, self.hostname,
-			self.nodeType, self.instance, self.clientVersion, self.clientRev):
+			self.nodeType, self.instance, self.clientVersion, self.clientRev,
+			self.persistent):
 			logging.error("[%s]: Unable to add node to database."
 				% self.fileName)
 
@@ -1341,21 +1350,17 @@ class ClientCommunication:
 	def _sendManagerAllInformation(self):
 
 		# get a list from database of
-		# list[0] = optionCount
-		# list[1] = list(tuples of (type, value))
-		# list[2] = nodeCount
-		# list[3] = list(tuples of (nodeId, hostname, nodeType, instance,
-		# connected, version, rev, username))
-		# list[4] = sensorCount
-		# list[5] = list(tuples of (nodeId, sensorId, alertDelay,
-		# description, lastStateUpdated, state, remoteSensorId))
-		# list[6] = managerCount
-		# list[7] = list(tuples of (nodeId, managerId, description))
-		# list[8] = alertCount
-		# list[9] = list(tuples of (nodeId, alertId, description,
-		# remoteAlertId))
+		# list[0] = list(tuples of (type, value))
+		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
+		# instance, connected, version, rev, persistent))
+		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
+		# description, state, lastStateUpdated, alertDelay))
+		# list[3] = list(tuples of (managerId, nodeId, description))
+		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
+		# description))
+		# or None
 		alertSystemInformation = self.storage.getAlertSystemInformation()
-		if alertSystemInformation == None:
+		if alertSystemInformation is None:
 			logging.error("[%s]: Getting alert system " % self.fileName
 				+ "information from database failed (%s:%d)."
 				% (self.clientAddress, self.clientPort))
@@ -1370,69 +1375,66 @@ class ClientCommunication:
 				pass
 
 			return False
-		optionCount = alertSystemInformation[0]
-		optionsInformation = alertSystemInformation[1]
-		nodeCount = alertSystemInformation[2]
-		nodesInformation = alertSystemInformation[3]
-		sensorCount = alertSystemInformation[4]
-		sensorsInformation = alertSystemInformation[5]
-		managerCount = alertSystemInformation[6]
-		managersInformation = alertSystemInformation[7]
-		alertCount = alertSystemInformation[8]
-		alertsInformation = alertSystemInformation[9]
+		optionsInformation = alertSystemInformation[0]
+		nodesInformation = alertSystemInformation[1]
+		sensorsInformation = alertSystemInformation[2]
+		managersInformation = alertSystemInformation[3]
+		alertsInformation = alertSystemInformation[4]
 
 		# generating options list
 		options = list()
-		for i in range(optionCount):
+		for i in range(len(optionsInformation)):
 			tempDict = {"type": optionsInformation[i][0],
 				"value": optionsInformation[i][1]}
 			options.append(tempDict)
 
 		# generating nodes list
 		nodes = list()
-		for i in range(nodeCount):
+		for i in range(len(nodesInformation)):
 			tempDict = {"nodeId": nodesInformation[i][0],
 				"hostname": nodesInformation[i][1],
-				"nodeType": nodesInformation[i][2],
-				"instance": nodesInformation[i][3],
-				"connected": nodesInformation[i][4],
-				"version": nodesInformation[i][5],
-				"rev": nodesInformation[i][6],
-				"username": nodesInformation[i][7]}
+				"username": nodesInformation[i][2],
+				"nodeType": nodesInformation[i][3],
+				"instance": nodesInformation[i][4],
+				"connected": nodesInformation[i][5],
+				"version": nodesInformation[i][6],
+				"rev": nodesInformation[i][7],
+				"persistent": nodesInformation[i][8]}
 			nodes.append(tempDict)
 
 		# generating sensors list
 		sensors = list()
-		for i in range(sensorCount):
+		for i in range(len(sensorsInformation)):
 
-			sensorId = sensorsInformation[i][1]
+			sensorId = sensorsInformation[i][0]
 
 			# create list of alert levels of this sensor
 			alertLevels = self.storage.getSensorAlertLevels(sensorId)
 
-			tempDict = {"nodeId": sensorsInformation[i][0],
-				"sensorId": sensorId,
-				"alertDelay": sensorsInformation[i][2],
-				"alertLevels": alertLevels,
+			tempDict = {"sensorId": sensorId,
+				"nodeId": sensorsInformation[i][1],
+				"remoteSensorId": sensorsInformation[i][2],
 				"description": sensorsInformation[i][3],
-				"lastStateUpdated": sensorsInformation[i][4],
-				"state": sensorsInformation[i][5],
-				"remoteSensorId": sensorsInformation[i][6]}
+				"state": sensorsInformation[i][4],
+				"lastStateUpdated": sensorsInformation[i][5],
+				"alertDelay": sensorsInformation[i][6],
+				"alertLevels": alertLevels
+				}
 			sensors.append(tempDict)
 
 		# generating managers list
 		managers = list()
-		for i in range(managerCount):
-			tempDict = {"nodeId": managersInformation[i][0],
-				"managerId": managersInformation[i][1],
+		for i in range(len(managersInformation)):
+			tempDict = {"managerId": managersInformation[i][0],
+				"nodeId": managersInformation[i][1],
 				"description": managersInformation[i][2]}
 			managers.append(tempDict)
 
 		# generating alerts list
 		alerts = list()
-		for i in range(alertCount):
+		for i in range(len(alertsInformation)):
 
-			alertId = alertsInformation[i][1]
+			alertId = alertsInformation[i][0]
 
 			# create list of alert levels of this alert
 			dbAlertLevels = self.storage.getAlertAlertLevels(alertId)
@@ -1440,11 +1442,11 @@ class ClientCommunication:
 			for tempAlertLevel in dbAlertLevels:
 				alertLevels.append(tempAlertLevel[0])
 
-			tempDict = {"nodeId": alertsInformation[i][0],
-				"alertId": alertId,
-				"alertLevels": alertLevels,
-				"description": alertsInformation[i][2],
-				"remoteAlertId": alertsInformation[i][3]}
+			tempDict = {"alertId": alertId,
+				"nodeId": alertsInformation[i][1],
+				"remoteAlertId": alertsInformation[i][2],
+				"description": alertsInformation[i][3],
+				"alertLevels": alertLevels}
 			alerts.append(tempDict)
 
 		# generating alertLevels list
