@@ -491,20 +491,23 @@ class Mysql(_Storage):
 						+ "oldVersion, "
 						+ "oldRev, "
 						+ "oldUsername, "
+						+ "oldPersistent, "
 						+ "newHostname, "
 						+ "newNodeType, "
 						+ "newInstance, "
 						+ "newVersion, "
 						+ "newRev, "
-						+ "newUsername) "
+						+ "newUsername, "
+						+ "newPersistent) "
 						+ "VALUES "
 						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, "
-						+ "%s, %s, %s, %s)",
+						+ "%s, %s, %s, %s, %s, %s)",
 						(eventId, event.oldHostname, event.oldNodeType,
 						event.oldInstance, event.oldVersion,
-						event.oldRev, event.oldUsername, event.newHostname,
-						event.newNodeType, event.newInstance,
-						event.newVersion, event.newRev, event.newUsername))
+						event.oldRev, event.oldUsername, event.oldPersistent,
+						event.newHostname, event.newNodeType,
+						event.newInstance, event.newVersion, event.newRev,
+						event.newUsername, event.newPersistent))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add "
 						% self.fileName
@@ -552,9 +555,6 @@ class Mysql(_Storage):
 						(event.timeOccurred, "changeAlert"))
 
 					eventId = self.cursor.lastrowid
-
-					# TODO
-					print event.oldRemoteAlertId
 
 					self.cursor.execute("INSERT INTO eventsChangeAlert ("
 						+ "eventId, "
@@ -868,18 +868,7 @@ class Mysql(_Storage):
 
 
 		# create node objects from db
-		self.cursor.execute("SELECT "
-			+ "id, "
-			+ "hostname, "
-			+ "nodeType, "
-			+ "instance, "
-			+ "connected, "
-			+ "version, "
-			+ "rev, "
-			+ "newestVersion, "
-			+ "newestRev, "
-			+ "username "
-			+ "FROM nodes")
+		self.cursor.execute("SELECT * FROM nodes")
 		result = self.cursor.fetchall()
 
 		for nodeTuple in result:
@@ -894,6 +883,7 @@ class Mysql(_Storage):
 			tempNode.newestVersion = nodeTuple[7]
 			tempNode.newestRev = nodeTuple[8]
 			tempNode.username = nodeTuple[9]
+			tempNode.persistent = nodeTuple[10]
 
 			self.nodes.append(tempNode)
 			self.nodesCopy.append(tempNode)
@@ -1072,7 +1062,8 @@ class Mysql(_Storage):
 				+ "rev INTEGER NOT NULL, "
 				+ "newestVersion DOUBLE NOT NULL, "
 				+ "newestRev INTEGER NOT NULL, "
-				+ "username VARCHAR(255) NOT NULL)")
+				+ "username VARCHAR(255) NOT NULL, "
+				+ "persistent INTEGER NOT NULL)")
 
 		# create sensors table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
@@ -1314,12 +1305,14 @@ class Mysql(_Storage):
 				+ "oldVersion DOUBLE NOT NULL, "
 				+ "oldRev INTEGER NOT NULL, "
 				+ "oldUsername VARCHAR(255) NOT NULL, "
+				+ "oldPersistent INTEGER NOT NULL, "
 				+ "newHostname VARCHAR(255) NOT NULL, "
 				+ "newNodeType VARCHAR(255) NOT NULL, "
 				+ "newInstance VARCHAR(255) NOT NULL, "
 				+ "newVersion DOUBLE NOT NULL, "
 				+ "newRev INTEGER NOT NULL, "
 				+ "newUsername VARCHAR(255) NOT NULL, "
+				+ "newPersistent INTEGER NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsChangeSensor table if it does not exist
@@ -1672,12 +1665,13 @@ class Mysql(_Storage):
 						+ "rev = %s, "
 						+ "newestVersion = %s, "
 						+ "newestRev = %s, "
-						+ "username = %s "
+						+ "username = %s, "
+						+ "persistent = %s "
 						+ "WHERE id = %s",
 						(node.hostname, node.nodeType, node.instance,
 						node.connected, node.version, node.rev, 
 						node.newestVersion, node.newestRev, node.username,
-						node.nodeId))
+						node.persistent, node.nodeId))
 				except Exception as e:
 					logging.exception("[%s]: Not able to update node."
 						% self.fileName)
@@ -1832,11 +1826,14 @@ class Mysql(_Storage):
 						+ "rev, "
 						+ "newestVersion, "
 						+ "newestRev, "
-						+ "username) "
-						+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+						+ "username, "
+						+ "persistent) "
+						+ "VALUES "
+						+ "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
 						(node.nodeId, node.hostname, node.nodeType,
 						node.instance, node.connected, node.version, node.rev,
-						node.newestVersion, node.newestRev, node.username))
+						node.newestVersion, node.newestRev, node.username,
+						node.persistent))
 				except Exception as e:
 					logging.exception("[%s]: Not able to add node."
 						% self.fileName)

@@ -405,6 +405,12 @@ class ServerEventHandler:
 						changed = True
 						node.username = recvNode.username
 
+					tempEvent.oldPersistent = node.persistent
+					tempEvent.newPersistent = recvNode.persistent
+					if node.persistent != recvNode.persistent:
+						changed = True
+						node.persistent = recvNode.persistent
+
 					# add event to event queue if an information has changed
 					if changed:
 						self.events.append(tempEvent)

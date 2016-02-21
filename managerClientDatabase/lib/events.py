@@ -137,12 +137,14 @@ class EventChangeNode(Event):
 		self.oldVersion = None
 		self.oldRev = None
 		self.oldUsername = None
+		self.oldPersistent = None
 		self.newHostname = None
 		self.newNodeType = None
 		self.newInstance = None
 		self.newVersion = None
 		self.newRev = None
 		self.newUsername = None
+		self.newPersistent = None
 
 
 # class that represents a sensor has changed event
