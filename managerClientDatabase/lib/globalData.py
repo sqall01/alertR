@@ -99,3 +99,7 @@ class GlobalData:
 		# alert system for example a sensor alert, a state change
 		# of an sensor, an option change etc.)
 		self.events = collections.deque()
+
+		# Flag that indicates if this node is registered as persistent
+		# (0 or 1).
+		self.persistent = None

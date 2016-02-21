@@ -48,3 +48,7 @@ class GlobalData:
 
 		# this variable holds the object of the server communication
 		self.serverComm = None
+
+		# Flag that indicates if this node is registered as persistent
+		# (0 or 1).
+		self.persistent = None

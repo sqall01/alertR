@@ -92,6 +92,7 @@ class ServerCommunication:
 		self.sensors = self.globalData.sensors
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
+		self.persistent = self.globalData.persistent
 
 		# time the last message was received by the client
 		self.lastRecv = 0.0
@@ -419,6 +420,7 @@ class ServerCommunication:
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
 				"instance": self.instance,
+				"persistent": self.persistent,
 				"sensors": sensors}
 			message = {"clientTime": int(time.time()),
 				"message": "registration", "payload": payload}

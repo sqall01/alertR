@@ -1418,8 +1418,7 @@ class ClientCommunication:
 				"state": sensorsInformation[i][4],
 				"lastStateUpdated": sensorsInformation[i][5],
 				"alertDelay": sensorsInformation[i][6],
-				"alertLevels": alertLevels
-				}
+				"alertLevels": alertLevels}
 			sensors.append(tempDict)
 
 		# generating managers list

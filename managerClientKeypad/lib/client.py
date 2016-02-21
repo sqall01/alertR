@@ -93,6 +93,7 @@ class ServerCommunication:
 		self.nodeType = self.globalData.nodeType
 		self.instance = self.globalData.instance
 		self.description = self.globalData.description
+		self.persistent = self.globalData.persistent
 
 		# create the object that handles all incoming server events
 		self.serverEventHandler = ServerEventHandler(self.globalData)
@@ -418,6 +419,7 @@ class ServerCommunication:
 				"hostname": socket.gethostname(),
 				"nodeType": self.nodeType,
 				"instance": self.instance,
+				"persistent": self.persistent,
 				"manager": manager}
 			message = {"clientTime": int(time.time()),
 				"message": "registration", "payload": payload}

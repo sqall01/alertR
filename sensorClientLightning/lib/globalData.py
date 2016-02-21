@@ -47,3 +47,7 @@ class GlobalData:
 
 		# list of all sensors that are managed by this client
 		self.sensors = list()
+
+		# Flag that indicates if this node is registered as persistent
+		# (0 or 1).
+		self.persistent = None

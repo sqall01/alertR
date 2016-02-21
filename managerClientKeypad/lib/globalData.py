@@ -96,3 +96,7 @@ class GlobalData:
 		# list of sensor states that cause a warning confirmation message
 		# before the alarm system is activated
 		self.sensorWarningStates = list()
+
+		# Flag that indicates if this node is registered as persistent
+		# (0 or 1).
+		self.persistent = None

@@ -101,3 +101,7 @@ class GlobalData:
 		# this is an instance of the console object that handles
 		# the screen
 		self.console = None
+
+		# Flag that indicates if this node is registered as persistent
+		# (0 or 1).
+		self.persistent = None

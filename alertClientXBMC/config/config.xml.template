@@ -63,6 +63,17 @@
 			username="user"
 			password="pass" />
 
+		<!--
+			Connection settings.
+			persistent - Flag that indicates if this client is considered
+				to have a persistant connection to the server. This means
+				that if this client disconnects from the server, the server
+				will consider this as a fail state and will invoke an alarm.
+				("True" or "False")
+		-->
+		<connection
+			persistent="True" />
+
 	</general>
 
 

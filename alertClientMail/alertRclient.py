@@ -107,6 +107,15 @@ if __name__ == '__main__':
 		password = str(
 			configRoot.find("general").find("credentials").attrib["password"])
 
+		# Get connection settings.
+		temp = (str(
+			configRoot.find("general").find("connection").attrib[
+			"persistent"]).upper()	== "TRUE")
+		if temp:
+			globalData.persistent = 1
+		else:
+			globalData.persistent = 0
+
 		# parse smtp options if activated
 		smtpActivated = (str(
 			configRoot.find("smtp").find("general").attrib[
