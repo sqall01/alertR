@@ -89,7 +89,9 @@ if(isset($_GET["data"])
 						"version" => $row["version"],
 						"rev" => $row["rev"],
 						"newestVersion" => $row["newestVersion"],
-						"newestRev" => $row["newestRev"]);
+						"newestRev" => $row["newestRev"],
+						"username" => $row["username"],
+						"persistent" => $row["persistent"]);
 					array_push($nodesArray, $nodeEntry);
 				}
 				$alertSystemInformation["nodes"] = $nodesArray;
@@ -625,12 +627,14 @@ if(isset($_GET["data"])
 									$oldVersion = $element["oldVersion"];
 									$oldRev = $element["oldRev"];
 									$oldUsername = $element["oldUsername"];
+									$oldPersistent = $element["oldPersistent"];
 									$newHostname = $element["newHostname"];
 									$newNodeType = $element["newNodeType"];
 									$newInstance = $element["newInstance"];
 									$newVersion = $element["newVersion"];
 									$newRev = $element["newRev"];
 									$newUsername = $element["newUsername"];
+									$newPersistent = $element["newPersistent"];
 									break;
 								}
 							}
@@ -643,12 +647,14 @@ if(isset($_GET["data"])
 								"oldVersion" => $oldVersion,
 								"oldRev" => $oldRev,
 								"oldUsername" => $oldUsername,
+								"oldPersistent" => $oldPersistent,
 								"newHostname" => $newHostname,
 								"newNodeType" => $newNodeType,
 								"newInstance" => $newInstance,
 								"newVersion" => $newVersion,
 								"newRev" => $newRev,
-								"newUsername" => $newUsername);
+								"newUsername" => $newUsername,
+								"newPersistent" => $newPersistent);
 							break;
 
 						case "changeOption":

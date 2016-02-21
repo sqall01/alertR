@@ -1349,6 +1349,7 @@ function outputAlerts() {
 		var connected = nodes[i]["connected"];
 		var version = nodes[i]["version"];
 		var rev = nodes[i]["rev"];
+		var persistent = nodes[i]["persistent"];
 
 		// skip if node is not of type sensor
 		if(nodeType.toUpperCase() != "ALERT") {
@@ -1422,7 +1423,12 @@ function outputAlerts() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		if(connected == 0) {
-			newTd.className = "failTd";
+			if(persistent == 1) {
+				newTd.className = "failTd";
+			}
+			else {
+				newTd.className = "neutralTd";
+			}
 			newTd.textContent = "false";
 		}
 		else {
@@ -1921,15 +1927,18 @@ function outputEvents() {
 				var oldVersion = events[i]["oldVersion"];
 				var oldRev = events[i]["oldRev"];
 				var oldUsername = events[i]["oldUsername"];
+				var oldPersistent = events[i]["oldPersistent"];
 				var newHostname = events[i]["newHostname"];
 				var newNodeType = events[i]["newNodeType"];
 				var newInstance = events[i]["newInstance"];
 				var newVersion = events[i]["newVersion"];
 				var newRev = events[i]["newRev"];
 				var newUsername = events[i]["newUsername"];
+				var newPersistent = events[i]["newPersistent"];
 				addEventChangeNode(eventsTable, oldHostname, oldNodeType,
-					oldInstance, oldVersion, oldRev, oldUsername, newHostname,
-					newNodeType, newInstance, newVersion, newRev, newUsername);
+					oldInstance, oldVersion, oldRev, oldUsername,
+					oldPersistent, newHostname, newNodeType, newInstance,
+					newVersion, newRev, newUsername, newPersistent);
 				break;
 
 			case "changeOption":
@@ -2115,6 +2124,7 @@ function outputManagers() {
 		var connected = nodes[i]["connected"];
 		var version = nodes[i]["version"];
 		var rev = nodes[i]["rev"];
+		var persistent = nodes[i]["persistent"];
 
 		// skip if node is not of type manager
 		if(nodeType.toUpperCase() != "MANAGER") {
@@ -2188,7 +2198,12 @@ function outputManagers() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		if(connected == 0) {
-			newTd.className = "failTd";
+			if(persistent == 1) {
+				newTd.className = "failTd";
+			}
+			else {
+				newTd.className = "neutralTd";
+			}
 			newTd.textContent = "false";
 		}
 		else {
@@ -2329,6 +2344,7 @@ function outputNodes() {
 		var rev = nodes[i]["rev"];
 		var newestVersion = nodes[i]["newestVersion"];
 		var newestRev = nodes[i]["newestRev"];
+		var persistent = nodes[i]["persistent"];
 
 		var boxDiv = document.createElement("div");
 		boxDiv.className = "box";
@@ -2415,11 +2431,45 @@ function outputNodes() {
 		newTr = document.createElement("tr");
 		newTd = document.createElement("td");
 		if(connected == 0) {
-			newTd.className = "failTd";
+			if(persistent == 1) {
+				newTd.className = "failTd";
+			}
+			else {
+				newTd.className = "neutralTd";
+			}
 			newTd.textContent = "false";
 		}
 		else {
 			newTd.className = "neutralTd";
+			newTd.textContent = "true";
+		}
+		newTr.appendChild(newTd);
+		nodeTable.appendChild(newTr);
+
+
+		// add persistent to the node
+		newTr = document.createElement("tr");
+		newTd = document.createElement("td");
+		newB = document.createElement("b");
+		newB.textContent = "Persistent Connection:";
+		newTd.appendChild(newB);
+		newTd.className = "boxEntryTd";
+		newTr.appendChild(newTd);
+		nodeTable.appendChild(newTr);
+
+		newTr = document.createElement("tr");
+		newTd = document.createElement("td");
+		if(persistent == 0) {
+			newTd.className = "neutralTd";
+			newTd.textContent = "false";
+		}
+		else {
+			if(connected == 0) {
+				newTd.className = "failTd";
+			}
+			else {
+				newTd.className = "neutralTd";
+			}
 			newTd.textContent = "true";
 		}
 		newTr.appendChild(newTd);
@@ -2999,6 +3049,7 @@ function outputSensors() {
 		var connected = nodes[i]["connected"];
 		var version = nodes[i]["version"];
 		var rev = nodes[i]["rev"];
+		var persistent = nodes[i]["persistent"];
 
 		// skip if node is not of type sensor
 		if(nodeType.toUpperCase() != "SENSOR") {
@@ -3072,7 +3123,12 @@ function outputSensors() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		if(connected == 0) {
-			newTd.className = "failTd";
+			if(persistent == 1) {
+				newTd.className = "failTd";
+			}
+			else {
+				newTd.className = "neutralTd";
+			}
 			newTd.textContent = "false";
 		}
 		else {

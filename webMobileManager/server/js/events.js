@@ -171,8 +171,8 @@ function addEventChangeOption(eventsTable, optionType, oldValue, newValue) {
 
 
 function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
-	oldInstance, oldVersion, oldRev, oldUsername, newHostname, newNodeType,
-	newInstance, newVersion, newRev, newUsername) {
+	oldInstance, oldVersion, oldRev, oldUsername, oldPersistent, newHostname,
+	newNodeType, newInstance, newVersion, newRev, newUsername, newPersistent) {
 
 	// add old hostname to the event
 	newTr = document.createElement("tr");
@@ -416,6 +416,47 @@ function addEventChangeNode(eventsTable, oldHostname, oldNodeType,
 		newTd.className = "neutralTd";
 	}
 	newTd.textContent = newUsername;
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+
+	// add old persistent to the event
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	newB = document.createElement("b");
+	newB.textContent = "Old Persistent Flag:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	newTd.textContent = oldPersistent;
+	newTd.className = "neutralTd";
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+
+	// add new persistent to the event
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	newB = document.createElement("b");
+	newB.textContent = "New Persistent Flag:";
+	newTd.appendChild(newB);
+	newTd.className = "boxEntryTd";
+	newTr.appendChild(newTd);
+	eventsTable.appendChild(newTr);
+
+	newTr = document.createElement("tr");
+	newTd = document.createElement("td");
+	if(oldPersistent != newPersistent) {
+		newTd.className = "triggeredTd";
+	}
+	else {
+		newTd.className = "neutralTd";
+	}
+	newTd.textContent = newPersistent;
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
