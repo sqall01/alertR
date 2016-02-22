@@ -48,6 +48,19 @@ class Node:
 		self.alertUrwid = None
 
 
+	# This function copies all attributes of the given node to this object.
+	def deepCopy(self, node):
+		self.nodeId = node.nodeId
+		self.hostname = node.hostname
+		self.nodeType = node.nodeType
+		self.instance = node.instance
+		self.connected = node.connected
+		self.version = node.version
+		self.rev = node.rev
+		self.username = node.username
+		self.persistent = node.persistent
+
+
 # this class represents a sensor client of the alert system
 class Sensor:
 
@@ -70,6 +83,18 @@ class Sensor:
 		self.sensorUrwid = None
 
 
+	# This function copies all attributes of the given sensor to this object.
+	def deepCopy(self, sensor):
+		self.nodeId = sensor.nodeId
+		self.sensorId = sensor.sensorId
+		self.remoteSensorId = sensor.remoteSensorId
+		self.alertDelay = sensor.alertDelay
+		self.alertLevels = list(sensor.alertLevels)
+		self.description = sensor.description
+		self.lastStateUpdated = sensor.lastStateUpdated
+		self.state = sensor.state
+
+
 # this class represents a manager client of the alert system
 class Manager:
 
@@ -85,6 +110,13 @@ class Manager:
 		# used for urwid only:
 		# reference to the manager urwid object
 		self.managerUrwid = None
+
+
+	# This function copies all attributes of the given manager to this object.
+	def deepCopy(self, manager):
+		self.nodeId = manager.nodeId
+		self.managerId = manager.managerId
+		self.description = manager.description
 
 
 # this class represents an alert client of the alert system
@@ -104,6 +136,15 @@ class Alert:
 		# used for urwid only:
 		# reference to the alert urwid object
 		self.alertUrwid = None
+
+
+	# This function copies all attributes of the given alert to this object.
+	def deepCopy(self, alert):
+		self.nodeId = alert.nodeId
+		self.alertId = alert.alertId
+		self.remoteAlertId = alert.remoteAlertId
+		self.alertLevels = list(alert.alertLevels)
+		self.description = alert.description
 
 
 # this class represents a triggered sensor alert of the alert system
@@ -382,14 +423,7 @@ class ServerEventHandler:
 				# when found => mark node as checked and update information
 				if node.nodeId == recvNode.nodeId:
 					node.checked = True
-					node.hostname = recvNode.hostname
-					node.nodeType = recvNode.nodeType
-					node.instance = recvNode.instance
-					node.connected = recvNode.connected
-					node.version = recvNode.version
-					node.rev = recvNode.rev
-					node.username = recvNode.username
-					node.persistent = recvNode.persistent
+					node.deepCopy(recvNode)
 					found = True
 					break
 			# when not found => add node to list
@@ -420,17 +454,14 @@ class ServerEventHandler:
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
 					sensor.checked = True
+					tempLastStateUpdated = sensor.lastStateUpdated
+					tempState = sensor.state
+					sensor.deepCopy(recvSensor)
 
-					sensor.nodeId = recvSensor.nodeId
-					sensor.remoteSensorId = recvSensor.remoteSensorId
-					sensor.alertDelay = recvSensor.alertDelay
-					sensor.alertLevels = recvSensor.alertLevels
-					sensor.description = recvSensor.description
-
-					# only update state if it is older than received one
-					if recvSensor.lastStateUpdated > sensor.lastStateUpdated:
-						sensor.lastStateUpdated = recvSensor.lastStateUpdated
-						sensor.state = recvSensor.state
+					# Revert change to the state if the old state was newer.
+					if sensor.lastStateUpdated < tempLastStateUpdated:
+						sensor.lastStateUpdated = tempLastStateUpdated
+						sensor.state = tempState
 
 					found = True
 					break
@@ -462,8 +493,7 @@ class ServerEventHandler:
 				# when found => mark manager as checked and update information
 				if manager.managerId == recvManager.managerId:
 					manager.checked = True
-					manager.nodeId = recvManager.nodeId
-					manager.description = recvManager.description
+					manager.deepCopy(recvManager)
 					found = True
 					break
 			# when not found => add manager to list
@@ -493,13 +523,9 @@ class ServerEventHandler:
 				# when found => mark alert as checked and update information
 				if alert.alertId == recvAlert.alertId:
 					alert.checked = True
-					alert.nodeId = recvAlert.nodeId
-					alert.remoteAlertId = recvAlert.remoteAlertId
-					alert.alertLevels = recvAlert.alertLevels
-					alert.description = recvAlert.description
+					alert.deepCopy(recvAlert)
 					found = True
 					break
-
 			# when not found => add alert to list
 			if not found:
 				recvAlert.checked = True

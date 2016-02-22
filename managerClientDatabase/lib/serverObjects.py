@@ -53,6 +53,19 @@ class Node:
 		self.checked = False
 
 
+	# This function copies all attributes of the given node to this object.
+	def deepCopy(self, node):
+		self.nodeId = node.nodeId
+		self.hostname = node.hostname
+		self.nodeType = node.nodeType
+		self.instance = node.instance
+		self.connected = node.connected
+		self.version = node.version
+		self.rev = node.rev
+		self.username = node.username
+		self.persistent = node.persistent
+
+
 # this class represents a sensor client of the alert system
 class Sensor:
 
@@ -71,6 +84,18 @@ class Sensor:
 		self.checked = False
 
 
+	# This function copies all attributes of the given sensor to this object.
+	def deepCopy(self, sensor):
+		self.nodeId = sensor.nodeId
+		self.sensorId = sensor.sensorId
+		self.remoteSensorId = sensor.remoteSensorId
+		self.alertDelay = sensor.alertDelay
+		self.alertLevels = list(sensor.alertLevels)
+		self.description = sensor.description
+		self.lastStateUpdated = sensor.lastStateUpdated
+		self.state = sensor.state
+
+
 # this class represents a manager client of the alert system
 class Manager:
 
@@ -82,6 +107,13 @@ class Manager:
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
+
+
+	# This function copies all attributes of the given manager to this object.
+	def deepCopy(self, manager):
+		self.nodeId = manager.nodeId
+		self.managerId = manager.managerId
+		self.description = manager.description
 
 
 # this class represents an alert client of the alert system
@@ -97,6 +129,15 @@ class Alert:
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
 		self.checked = False
+
+
+	# This function copies all attributes of the given alert to this object.
+	def deepCopy(self, alert):
+		self.nodeId = alert.nodeId
+		self.alertId = alert.alertId
+		self.remoteAlertId = alert.remoteAlertId
+		self.alertLevels = list(alert.alertLevels)
+		self.description = alert.description
 
 
 # this class represents a triggered sensor alert of the alert system
@@ -373,43 +414,36 @@ class ServerEventHandler:
 					tempEvent.newHostname = recvNode.hostname
 					if node.hostname != recvNode.hostname:
 						changed = True
-						node.hostname = recvNode.hostname
 
 					tempEvent.oldNodeType = node.nodeType
 					tempEvent.newNodeType = recvNode.nodeType
 					if node.nodeType != recvNode.nodeType:
 						changed = True
-						node.nodeType = recvNode.nodeType
 
 					tempEvent.oldInstance = node.instance
 					tempEvent.newInstance = recvNode.instance
 					if node.instance != recvNode.instance:
 						changed = True
-						node.instance = recvNode.instance
 
 					tempEvent.oldVersion = node.version
 					tempEvent.newVersion = recvNode.version
 					if node.version != recvNode.version:
 						changed = True
-						node.version = recvNode.version
 
 					tempEvent.oldRev = node.rev
 					tempEvent.newRev = recvNode.rev
 					if node.rev != recvNode.rev:
 						changed = True
-						node.rev = recvNode.rev
 
 					tempEvent.oldUsername = node.username
 					tempEvent.newUsername = recvNode.username
 					if node.username != recvNode.username:
 						changed = True
-						node.username = recvNode.username
 
 					tempEvent.oldPersistent = node.persistent
 					tempEvent.newPersistent = recvNode.persistent
 					if node.persistent != recvNode.persistent:
 						changed = True
-						node.persistent = recvNode.persistent
 
 					# add event to event queue if an information has changed
 					if changed:
@@ -426,8 +460,7 @@ class ServerEventHandler:
 						tempEvent.connected = recvNode.connected
 						self.events.append(tempEvent)
 
-						node.connected = recvNode.connected
-
+					node.deepCopy(recvNode)
 					found = True
 					break
 			# when not found => add node to list
@@ -466,9 +499,8 @@ class ServerEventHandler:
 				# when found => mark sensor as checked and update information
 				if sensor.sensorId == recvSensor.sensorId:
 					sensor.checked = True
-
-					sensor.nodeId = recvSensor.nodeId
-					sensor.alertLevels = recvSensor.alertLevels
+					tempLastStateUpdated = sensor.lastStateUpdated
+					tempState = sensor.state
 
 					# create change sensor event (only add it if an information
 					# has changed)
@@ -480,28 +512,27 @@ class ServerEventHandler:
 					tempEvent.newAlertDelay = recvSensor.alertDelay
 					if sensor.alertDelay != recvSensor.alertDelay:
 						changed = True
-						sensor.alertDelay = recvSensor.alertDelay
 
 					tempEvent.oldDescription = sensor.description
 					tempEvent.newDescription = recvSensor.description
 					if sensor.description != recvSensor.description:
 						changed = True
-						sensor.description = recvSensor.description
 
 					tempEvent.oldRemoteSensorId = sensor.remoteSensorId
 					tempEvent.newRemoteSensorId = recvSensor.remoteSensorId
 					if sensor.remoteSensorId != recvSensor.remoteSensorId:
 						changed = True
-						sensor.remoteSensorId = recvSensor.remoteSensorId
 
 					# add event to event queue if an information has changed
 					if changed:
 						self.events.append(tempEvent)
 
-					# only update state if it is older than received one
-					if recvSensor.lastStateUpdated > sensor.lastStateUpdated:
-						sensor.lastStateUpdated = recvSensor.lastStateUpdated
-						sensor.state = recvSensor.state
+					sensor.deepCopy(recvSensor)
+
+					# Revert change to the state if the old state was newer.
+					if sensor.lastStateUpdated < tempLastStateUpdated:
+						sensor.lastStateUpdated = tempLastStateUpdated
+						sensor.state = tempState
 
 					found = True
 					break
@@ -554,8 +585,6 @@ class ServerEventHandler:
 				if manager.managerId == recvManager.managerId:
 					manager.checked = True
 
-					manager.nodeId = recvManager.nodeId
-
 					# create change manager event
 					# (only add it if an information has changed)
 					changed = False
@@ -566,12 +595,12 @@ class ServerEventHandler:
 					tempEvent.newDescription = recvManager.description
 					if manager.description != recvManager.description:
 						changed = True
-						manager.description = recvManager.description
 
 					# add event to event queue if an information has changed
 					if changed:
 						self.events.append(tempEvent)
 
+					manager.deepCopy(recvManager)
 					found = True
 					break
 			# when not found => add manager to list
@@ -620,9 +649,6 @@ class ServerEventHandler:
 				if alert.alertId == recvAlert.alertId:
 					alert.checked = True
 
-					alert.nodeId = recvAlert.nodeId
-					alert.alertLevels = recvAlert.alertLevels
-
 					# create change alert event (only add it if an information
 					# has changed)
 					changed = False
@@ -633,18 +659,17 @@ class ServerEventHandler:
 					tempEvent.newDescription = recvAlert.description
 					if alert.description != recvAlert.description:
 						changed = True
-						alert.description = recvAlert.description
 
 					tempEvent.oldRemoteAlertId = alert.remoteAlertId
 					tempEvent.newRemoteAlertId = recvAlert.remoteAlertId
 					if alert.remoteAlertId != recvAlert.remoteAlertId:
 						changed = True
-						alert.remoteAlertId = recvAlert.remoteAlertId
 
 					# add event to event queue if an information has changed
 					if changed:
 						self.events.append(tempEvent)
 
+					alert.deepCopy(recvAlert)
 					found = True
 					break
 
