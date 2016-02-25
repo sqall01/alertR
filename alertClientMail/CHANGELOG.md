@@ -2,4 +2,4 @@
 
 Features:
 
-* initial commit of this instance
+* Initial commit of this instance.

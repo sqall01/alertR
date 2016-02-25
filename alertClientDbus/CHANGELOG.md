@@ -2,6 +2,6 @@
 
 Features:
 
-* sensor alert messages distinguish now between state "triggered" and "normal"
-* displays if a sensor alert was raised for state "triggered" or "normal"
-* authentication message now contains version and revision
+* Sensor alert messages distinguish now between state "triggered" and "normal".
+* Displays if a sensor alert was raised for state "triggered" or "normal".
+* Authentication message now contains version and revision.

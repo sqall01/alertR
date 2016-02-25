@@ -2,8 +2,8 @@
 
 Features:
 
-* sensor alert messages distinguish now between state "triggered" and "normal"
-* sends a message ("timeout") added to the sensor alert when executed script times out
-* added option to trigger a sensor alert when sensor goes back from the "triggered" state to the "normal" state
-* authentication message now contains version and revision
-* renamed "alertR Sensor Client CTF Watchdog" to "alertR Sensor Client Executer" and updated code to allow a variable number of arguments for the scripts
+* Sensor alert messages distinguish now between state "triggered" and "normal".
+* Sends a message ("timeout") added to the sensor alert when executed script times out.
+* Added option to trigger a sensor alert when sensor goes back from the "triggered" state to the "normal" state.
+* Authentication message now contains version and revision.
+* Renamed "alertR Sensor Client CTF Watchdog" to "alertR Sensor Client Executer" and updated code to allow a variable number of arguments for the scripts.
