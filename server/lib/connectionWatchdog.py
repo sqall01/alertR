@@ -519,7 +519,7 @@ class ConnectionWatchdog(threading.Thread):
 					% nodeId)
 				logging.error("[%s]: Node with id %d "
 					% (self.fileName, nodeId)
-					+ "timed out (not able to verify persistence).")
+					+ "timed out (not able to determine persistence).")
 
 				self._releaseNodeTimeoutLock()
 				return
