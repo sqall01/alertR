@@ -146,7 +146,8 @@ class ConnectionWatchdog(threading.Thread):
 		for sensorTuple in sensorsTimeoutList:
 			sensorId = sensorTuple[0]
 			nodeId = sensorTuple[1]
-			hostname = self.storage.getNodeHostnameById(nodeId)
+			nodeTuple = self.storage.getNodeById(nodeId)
+			hostname = nodeTuple[1]
 			lastStateUpdated = sensorTuple[2]
 			description = sensorTuple[3]
 			if hostname is None:
@@ -245,7 +246,8 @@ class ConnectionWatchdog(threading.Thread):
 				continue
 
 			nodeId = sensorTuple[1]
-			hostname = self.storage.getNodeHostnameById(nodeId)
+			nodeTuple = self.storage.getNodeById(nodeId)
+			hostname = nodeTuple[1]
 			description = sensorTuple[3]
 			lastStateUpdated = sensorTuple[5]
 
@@ -344,7 +346,8 @@ class ConnectionWatchdog(threading.Thread):
 
 						# Get sensor details.
 						nodeId = sensorTuple[1]
-						hostname = self.storage.getNodeHostnameById(nodeId)
+						nodeTuple = self.storage.getNodeById(nodeId)
+						hostname = nodeTuple[1]
 						description = sensorTuple[3]
 						lastStateUpdated = sensorTuple[5]
 						lastStateUpdateStr = time.strftime("%D %H:%M:%S",

@@ -192,13 +192,6 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# gets the hostname of a node from the database when its id is given
-	#
-	# return hostname or None
-	def getNodeHostnameById(self, nodeId):
-		raise NotImplemented("Function not implemented yet.")
-
-
 	# gets the node from the database when its id is given
 	#
 	# return a tuple of (nodeId, hostname, username, nodeType, instance,
@@ -2242,33 +2235,6 @@ class Sqlite(_Storage):
 		# return a tuple of (sensorId, nodeId,
 		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 		return result[0]
-
-
-	# gets the hostname of a node from the database when its id is given
-	#
-	# return hostname or None
-	def getNodeHostnameById(self, nodeId):
-
-		self._acquireLock()
-
-		try:
-			self.cursor.execute("SELECT hostname FROM nodes "
-				+ "WHERE id = ?", (nodeId, ))
-
-			result = self.cursor.fetchall()
-			hostname = result[0][0]
-		except Exception as e:
-
-			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "hostname for node from database.")
-
-			self._releaseLock()
-
-			return None
-
-		self._releaseLock()
-
-		return hostname
 
 
 	# gets the node from the database when its id is given
@@ -4985,50 +4951,6 @@ class Mysql(_Storage):
 		# return a tuple of (sensorId, nodeId,
 		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
 		return result[0]
-
-
-	# gets the hostname of a node from the database when its id is given
-	#
-	# return hostname or None
-	def getNodeHostnameById(self, nodeId):
-
-		self._acquireLock()
-
-		# connect to the database
-		try:
-			self._openConnection()
-		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock()
-
-			return None
-
-		try:
-			self.cursor.execute("SELECT hostname FROM nodes "
-				+ "WHERE id = %s", (nodeId, ))
-
-			result = self.cursor.fetchall()
-			hostname = result[0][0]
-		except Exception as e:
-
-			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "hostname for node from database.")
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock()
-
-			return None
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock()
-
-		return hostname
 
 
 	# gets the node from the database when its id is given
