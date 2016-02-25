@@ -593,8 +593,8 @@ class ConnectionWatchdog(threading.Thread):
 
 		processSensorAlerts = False
 
-		# Only process node timeout if we do know about it.
-		if not nodeId in self.timeoutNodeIds:
+		# Only process node timeout if we know about it.
+		if nodeId in self.timeoutNodeIds:
 
 			self.timeoutNodeIds.remove(nodeId)
 
