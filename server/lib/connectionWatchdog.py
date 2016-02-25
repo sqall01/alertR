@@ -500,6 +500,7 @@ class ConnectionWatchdog(threading.Thread):
 
 
 	# Public function that sets a node as "timed out" by its id.
+	# This function also takes into account if the node is set as "persistent".
 	def addNodeTimeout(self, nodeId):
 
 		self._acquireNodeTimeoutLock()
@@ -623,10 +624,12 @@ class ConnectionWatchdog(threading.Thread):
 
 			if not self.nodeTimeoutSensor is None:
 
-				# If internal sensor is in state "triggered", change the
+				# If internal sensor is in state "triggered" and there is no
+				# timed out node left, change the
 				# state to "normal" with the raised sensor alert.
 				changeState = False
-				if self.nodeTimeoutSensor.state == 1:
+				if (self.nodeTimeoutSensor.state == 1
+					and not self.timeoutNodeIds):
 
 					self.nodeTimeoutSensor.state = 0
 					changeState = True

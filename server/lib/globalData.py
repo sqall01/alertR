@@ -91,5 +91,8 @@ class GlobalData:
 		self.asyncOptionExecutersLock = threading.BoundedSemaphore(1)
 		self.asyncOptionExecuters = list()
 
-		# list of the servers internal sensors
+		# List of the server's internal sensors.
 		self.internalSensors = list()
+
+		# Instance of the connection watchdog object.
+		self.connectionWatchdog = None

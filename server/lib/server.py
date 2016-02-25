@@ -42,6 +42,7 @@ class ClientCommunication:
 		self.asyncOptionExecutersLock \
 			= self.globalData.asyncOptionExecutersLock
 		self.serverSessions = self.globalData.serverSessions
+		self.connectionWatchdog = self.globalData.connectionWatchdog
 
 		# time the last message was received by the server
 		self.lastRecv = 0.0
@@ -62,7 +63,7 @@ class ClientCommunication:
 		self.hostname = None
 
 		# Flag that indicates if this node is registered as persistent.
-		self.persistent = None
+		self.persistent = 0
 
 		# version and revision of client
 		self.clientVersion = None
@@ -1958,7 +1959,12 @@ class ClientCommunication:
 			self.managerUpdateExecuter.forceStatusUpdate = True
 			self.managerUpdateExecuter.managerUpdateEvent.set()
 
-		# set flag that the initialization process of the client is finished
+		# If client has registered itself and is set as "persistent",
+		# notify the connection watchdog about the reconnect.
+		if (self.persistent == 1):
+			self.connectionWatchdog.removeNodeTimeout(self.nodeId)
+
+		# Set flag that the initialization process of the client is finished.
 		self.clientInitialized = True
 
 		# handle commands
@@ -2269,7 +2275,7 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		self.clientAddress = clientAddress[0]
 		self.clientPort = clientAddress[1]
 
-		# get reference to global data object
+		# Get reference to global data object.
 		self.globalData = server.globalData
 
 		# get server certificate/key file
@@ -2282,6 +2288,10 @@ class ServerSession(SocketServer.BaseRequestHandler):
 
 		# add own server session to the global list of server sessions
 		self.globalData.serverSessions.append(self)
+
+		# Get reference to the connection watchdog object
+		# to inform it about disconnects.
+		self.connectionWatchdog = self.globalData.connectionWatchdog
 
 		SocketServer.BaseRequestHandler.__init__(self, request,
 			clientAddress, server)
@@ -2344,6 +2354,12 @@ class ServerSession(SocketServer.BaseRequestHandler):
 
 		logging.info("[%s]: Client disconnected (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
+
+		# If client was registered and set as "persistent",
+		# notify the connection watchdog about the disconnect.
+		if (not self.clientComm.nodeId is None
+			and self.clientComm.persistent == 1):
+			self.connectionWatchdog.addNodeTimeout(self.clientComm.nodeId)
 
 
 	def closeConnection(self):

@@ -1432,11 +1432,12 @@ if __name__ == '__main__':
 
 	# start a watchdog thread that controls all server sessions
 	logging.info("[%s] Starting watchdog thread." % fileName)
-	watchdog = ConnectionWatchdog(globalData, globalData.connectionTimeout)
+	globalData.connectionWatchdog = ConnectionWatchdog(globalData,
+		globalData.connectionTimeout)
 	# set thread to daemon
 	# => threads terminates when main thread terminates	
-	watchdog.daemon = True
-	watchdog.start()
+	globalData.connectionWatchdog.daemon = True
+	globalData.connectionWatchdog.start()
 
 	# only start update checker if it is activated
 	if updateActivated is True:
