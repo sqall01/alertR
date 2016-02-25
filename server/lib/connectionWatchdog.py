@@ -512,8 +512,6 @@ class ConnectionWatchdog(threading.Thread):
 		# Only process node timeout if we do not already know about it.
 		if not nodeId in self.timeoutNodeIds:
 
-			self.timeoutNodeIds.add(nodeId)
-
 			nodeTuple = self.storage.getNodeById(nodeId)
 			if nodeTuple is None:
 				logging.error("[%s]: Could not " % self.fileName
@@ -521,7 +519,16 @@ class ConnectionWatchdog(threading.Thread):
 					% nodeId)
 				logging.error("[%s]: Node with id %d "
 					% (self.fileName, nodeId)
-					+ "timed out.")
+					+ "timed out (not able to verify persistence).")
+
+				self._releaseNodeTimeoutLock()
+				return
+
+			# Check if client is not persistent and therefore
+			# allowed to timeout or disconnect.
+			# => Ignore timeout/disconnect.
+			persistent = nodeTuple[8]
+			if persistent == 0:
 
 				self._releaseNodeTimeoutLock()
 				return
@@ -529,6 +536,8 @@ class ConnectionWatchdog(threading.Thread):
 			instance = nodeTuple[4]
 			username = nodeTuple[2]
 			hostname = nodeTuple[1]
+
+			self.timeoutNodeIds.add(nodeId)
 
 			logging.error("[%s]: Node '%s' with username '%s' on host '%s' "
 				% (self.fileName, instance, username, hostname)
