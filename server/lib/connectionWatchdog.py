@@ -39,6 +39,9 @@ class ConnectionWatchdog(threading.Thread):
 		# set exit flag as false
 		self.exitFlag = False
 
+		# The node id of this server instance in the database.
+		self.serverNodeId = None
+
 		# Set up needed data structures for sensor timeouts.
 		self.timeoutSensorIds = set()
 		self.sensorTimeoutSensor = None
@@ -76,7 +79,8 @@ class ConnectionWatchdog(threading.Thread):
 		self.nodeTimeoutLock.release()
 
 
-	# TODO description
+	# Internal function that processes new occurred node timeouts
+	# and raises alarm.
 	def _processNewNodeTimeouts(self):
 
 		# Check all server sessions if the connection timed out.
@@ -104,6 +108,25 @@ class ConnectionWatchdog(threading.Thread):
 					continue
 
 				self.addNodeTimeout(nodeId)
+
+
+	# Internal function that processes old occurred node timeouts
+	# and raises alarm when they are no longer timed out.
+	def _processOldNodeTimeouts(self):
+
+		# Check all server sessions if a timed out connection reconnected.
+		for serverSession in self.serverSessions:
+
+			# Check if client communication object exists.
+			if serverSession.clientComm == None:
+				continue
+
+			nodeId = serverSession.clientComm.nodeId
+			if (nodeId is None
+				or not nodeId in self.timeoutNodeIds):
+				continue
+
+			self.removeNodeTimeout(nodeId)
 
 
 	# Internal function that processes new occurred sensor timeouts
@@ -420,7 +443,7 @@ class ConnectionWatchdog(threading.Thread):
 	# Internal function that synchronizes actual connected nodes and
 	# as connected marked nodes in the database (can happen if
 	# for example the server was restarted).
-	def _syncDbAndConnections(self, serverNodeId):
+	def _syncDbAndConnections(self):
 
 		sendManagerUpdates = False
 
@@ -438,7 +461,7 @@ class ConnectionWatchdog(threading.Thread):
 				found = False
 
 				# Skip node id of this server instance.
-				if nodeId == serverNodeId:
+				if nodeId == self.serverNodeId:
 					continue
 
 				# Skip node ids that have a active connection
@@ -637,7 +660,7 @@ class ConnectionWatchdog(threading.Thread):
 	def run(self):
 
 		uniqueID = self.storage.getUniqueID()
-		serverNodeId = self.storage.getNodeId(uniqueID)
+		self.serverNodeId = self.storage.getNodeId(uniqueID)
 
 		while 1:
 			# wait 5 seconds before checking time of last received data
@@ -653,10 +676,13 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Synchronize view on connected nodes (actual connected nodes
 			# and database)
-			self._syncDbAndConnections(serverNodeId)
+			self._syncDbAndConnections()
 
 			# Check all server sessions if the connection timed out.
 			self._processNewNodeTimeouts()
+
+			# Process nodes that timed out but reconnected.
+			self._processOldNodeTimeouts()
 
 			# Create update tuple for internal node timeout sensor.
 			if not self.nodeTimeoutSensor is None:
@@ -690,7 +716,7 @@ class ConnectionWatchdog(threading.Thread):
 					% self.fileName
 					+ "for internal timeout sensors.")
 
-				if not self.storage.updateSensorState(serverNodeId,
+				if not self.storage.updateSensorState(self.serverNodeId,
 					updateStateList):
 
 					logging.error("[%s]: Not able to update sensor state "
