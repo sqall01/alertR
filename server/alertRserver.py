@@ -1461,6 +1461,10 @@ if __name__ == '__main__':
 
 	logging.info("[%s] Server started." % fileName)
 
+	# Wait until the connection watchdog is initialized.
+	while not globalData.connectionWatchdog.isInitialized():
+		time.sleep(0.5)
+
 	# handle requests in an infinity loop
 	while True:
 		server.handle_request()

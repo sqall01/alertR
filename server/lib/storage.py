@@ -173,6 +173,15 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# Gets all nodes from the database that are registered as persistent
+	# to the server.
+	#
+	# return list of nodeIds
+	# or None
+	def getAllPersistentNodeIds(self):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# gets the information of all sensors which last state updates
 	# are older than the given time
 	#
@@ -2088,7 +2097,39 @@ class Sqlite(_Storage):
 		except Exception as e:
 
 			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "all node ids.")
+				+ "all connected node ids.")
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		self._releaseLock()
+
+		# return list of nodeIds
+		return map(lambda x: x[0], result)
+
+
+	# Gets all nodes from the database that are registered as persistent
+	# to the server.
+	#
+	# return list of nodeIds
+	# or None
+	def getAllPersistentNodeIds(self):
+
+		self._acquireLock()
+
+		# get all persistent node ids from database
+		try:
+			self.cursor.execute("SELECT id "
+				+ "FROM nodes "
+				+ "WHERE persistent = ?", (1, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "all persistent node ids.")
 
 			self._releaseLock()
 
@@ -4727,7 +4768,56 @@ class Mysql(_Storage):
 		except Exception as e:
 
 			logging.exception("[%s]: Not able to get " % self.fileName
-				+ "all node ids.")
+				+ "all connected node ids.")
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock()
+
+			# return None if action failed
+			return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock()
+
+		# return list of nodeIds
+		return map(lambda x: x[0], result)
+
+
+	# Gets all nodes from the database that are registered as persistent
+	# to the server.
+	#
+	# return list of nodeIds
+	# or None
+	def getAllPersistentNodeIds(self):
+
+		self._acquireLock()
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logging.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock()
+
+			return None
+
+		# get all persistent node ids from database
+		try:
+			self.cursor.execute("SELECT id "
+				+ "FROM nodes "
+				+ "WHERE persistent = %s", (1, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logging.exception("[%s]: Not able to get " % self.fileName
+				+ "all persistent node ids.")
 
 			# close connection to the database
 			self._closeConnection()

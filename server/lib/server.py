@@ -1959,10 +1959,11 @@ class ClientCommunication:
 			self.managerUpdateExecuter.forceStatusUpdate = True
 			self.managerUpdateExecuter.managerUpdateEvent.set()
 
-		# If client has registered itself and is set as "persistent",
+		# If client has registered itself,
 		# notify the connection watchdog about the reconnect.
-		if (self.persistent == 1):
-			self.connectionWatchdog.removeNodeTimeout(self.nodeId)
+		# NOTE: We do not care if the client is set as "persistent"
+		# because it could changed its configuration since the last time seen.
+		self.connectionWatchdog.removeNodeTimeout(self.nodeId)
 
 		# Set flag that the initialization process of the client is finished.
 		self.clientInitialized = True
@@ -2359,7 +2360,7 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		# notify the connection watchdog about the disconnect.
 		if (not self.clientComm.nodeId is None
 			and self.clientComm.persistent == 1):
-			self.connectionWatchdog.addNodeTimeout(self.clientComm.nodeId)
+			self.connectionWatchdog.addNodePreTimeout(self.clientComm.nodeId)
 
 
 	def closeConnection(self):

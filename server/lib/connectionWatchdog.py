@@ -39,6 +39,9 @@ class ConnectionWatchdog(threading.Thread):
 		# set exit flag as false
 		self.exitFlag = False
 
+		# Flag that indicates if the connection watchdog is initialized.
+		self._isInitialized = False
+
 		# The node id of this server instance in the database.
 		self.serverNodeId = None
 
@@ -48,10 +51,12 @@ class ConnectionWatchdog(threading.Thread):
 		self.lastSensorTimeoutReminder = 0.0
 
 		# Set up needed data structures for node timeouts.
-		self.timeoutNodeIds = set()
+		self._timeoutNodeIds = set()
+		self._preTimeoutNodeIds = set()
 		self.nodeTimeoutSensor = None
-		self.lastNodeTimeoutReminder = 0.0
-		self.nodeTimeoutLock = threading.BoundedSemaphore(1)
+		self._lastNodeTimeoutReminder = 0.0
+		self.gracePeriodTimeout = self.globalData.gracePeriodTimeout
+		self._nodeTimeoutLock = threading.BoundedSemaphore(1)
 
 		# Get activated internal sensors.
 		for internalSensor in self.globalData.internalSensors:
@@ -61,7 +66,7 @@ class ConnectionWatchdog(threading.Thread):
 				self.sensorTimeoutSensor = internalSensor
 			elif isinstance(internalSensor, NodeTimeoutSensor):
 				# Use set of node timeout sensor if it is activated.
-				self.timeoutNodeIds = internalSensor._timeoutNodeIds
+				self._timeoutNodeIds = internalSensor._timeoutNodeIds
 				self.nodeTimeoutSensor = internalSensor
 
 
@@ -69,19 +74,35 @@ class ConnectionWatchdog(threading.Thread):
 	def _acquireNodeTimeoutLock(self):
 		logging.debug("[%s]: Acquire node timeout sensor lock."
 			% self.fileName)
-		self.nodeTimeoutLock.acquire()
+		self._nodeTimeoutLock.acquire()
 
 
 	# Internal function that releases the node timeout sensor lock.
 	def _releaseNodeTimeoutLock(self):
 		logging.debug("[%s]: Release node timeout sensor lock."
 			% self.fileName)
-		self.nodeTimeoutLock.release()
+		self._nodeTimeoutLock.release()
 
 
 	# Internal function that processes new occurred node timeouts
 	# and raises alarm.
 	def _processNewNodeTimeouts(self):
+
+		# Get all nodes that are longer in the pre-timeout set
+		# then the allowed grace period. 
+		newTimeouts = set()
+		currentTime = int(time.time())
+		self._acquireNodeTimeoutLock()
+		for preTuple in set(self._preTimeoutNodeIds):
+			if (currentTime - preTuple[1]) > self.gracePeriodTimeout:
+				newTimeouts.add(preTuple[0])
+				self._preTimeoutNodeIds.remove(preTuple)
+		self._releaseNodeTimeoutLock()
+
+		# Add all nodes to the timeout list that are longer timed-out
+		# then the allowed grace period.
+		for nodeId in newTimeouts:
+			self.addNodeTimeout(nodeId)
 
 		# Check all server sessions if the connection timed out.
 		for serverSession in self.serverSessions:
@@ -104,7 +125,7 @@ class ConnectionWatchdog(threading.Thread):
 
 				nodeId = serverSession.clientComm.nodeId
 				if (nodeId is None
-					or nodeId in self.timeoutNodeIds):
+					or nodeId in self._timeoutNodeIds):
 					continue
 
 				self.addNodeTimeout(nodeId)
@@ -123,7 +144,7 @@ class ConnectionWatchdog(threading.Thread):
 
 			nodeId = serverSession.clientComm.nodeId
 			if (nodeId is None
-				or not nodeId in self.timeoutNodeIds):
+				or not nodeId in self._timeoutNodeIds):
 				continue
 
 			self.removeNodeTimeout(nodeId)
@@ -382,27 +403,27 @@ class ConnectionWatchdog(threading.Thread):
 							+ "for internal sensor timeout sensor.")
 
 		# Reset timeout reminder if necessary.
-		if (not self.timeoutNodeIds
-			and self.lastNodeTimeoutReminder != 0.0):
-			self.lastNodeTimeoutReminder = 0.0
+		if (not self._timeoutNodeIds
+			and self._lastNodeTimeoutReminder != 0.0):
+			self._lastNodeTimeoutReminder = 0.0
 
 		# When nodes are still timed out check if a reminder
 		# has to be raised.
-		elif self.timeoutNodeIds:
+		elif self._timeoutNodeIds:
 
 			# Check if a node timeout reminder has to be raised.
-			if ((time.time() - self.lastNodeTimeoutReminder)
+			if ((time.time() - self._lastNodeTimeoutReminder)
 				>= self.timeoutReminderTime):
 
-				self.lastNodeTimeoutReminder = time.time()
+				self._lastNodeTimeoutReminder = time.time()
 
 				# Raise sensor alert for internal node timeout sensor.
 				if not self.nodeTimeoutSensor is None:
 
 					# Create message for sensor alert.
 					message = "%d node(s) still timed out:" \
-						% len(self.timeoutNodeIds)
-					for nodeId in self.timeoutNodeIds:
+						% len(self._timeoutNodeIds)
+					for nodeId in self._timeoutNodeIds:
 
 						nodeTuple = self.storage.getNodeById(nodeId)
 						if nodeTuple is None:
@@ -444,16 +465,16 @@ class ConnectionWatchdog(threading.Thread):
 
 
 	# Internal function that synchronizes actual connected nodes and
-	# as connected marked nodes in the database (can happen if
-	# for example the server was restarted).
+	# as connected marked nodes in the database (if for some internal
+	# error reason they are out of sync).
 	def _syncDbAndConnections(self):
 
 		sendManagerUpdates = False
 
 		# Get all node ids from database that are connected.
-		# Returns a list of nodeIds.
+		# Returns a list of node ids.
 		nodeIds = self.storage.getAllConnectedNodeIds()
-		if nodeIds == None:
+		if nodeIds is None:
 			logging.error("[%s]: Could not get node " % self.fileName
 				+ "ids from database.")
 		else:
@@ -467,12 +488,14 @@ class ConnectionWatchdog(threading.Thread):
 				if nodeId == self.serverNodeId:
 					continue
 
-				# Skip node ids that have a active connection
+				# Skip node ids that have an active connection
 				# to this server.
 				for serverSession in self.serverSessions:
 
-					# Check if client communication object exists.
-					if serverSession.clientComm == None:
+					# Check if client communication object exists and
+					# client is initialized.
+					if (serverSession.clientComm is None
+						or not serverSession.clientComm.clientInitialized):
 						continue
 
 					if serverSession.clientComm.nodeId == nodeId:
@@ -492,6 +515,27 @@ class ConnectionWatchdog(threading.Thread):
 
 				sendManagerUpdates = True
 
+			# Check if all connections to the server are marked as connected
+			# in the database.
+			for serverSession in self.serverSessions:
+
+				# Check if client communication object exists and
+				# client is initialized.
+				if (serverSession.clientComm is None
+					or not serverSession.clientComm.clientInitialized):
+					continue
+
+				if not serverSession.clientComm.nodeId in nodeIds:
+
+					# If server session was found but not marked as connected
+					# in database => mark node as connected in database.
+					logging.debug("[%s]: Marking node " % self.fileName
+						+ "'%d' as connected." % nodeId)
+
+					if not self.storage.markNodeAsConnected(nodeId):
+						logging.error("[%s]: Could not " % self.fileName
+							+ "mark node as connected in database.")
+
 		# Wake up manager update executer and force to send an update to
 		# all managers.
 		if sendManagerUpdates:
@@ -505,16 +549,23 @@ class ConnectionWatchdog(threading.Thread):
 
 		self._acquireNodeTimeoutLock()
 
+		# Remove node id from the pre-timeout set if it exists
+		# because it is now an official timeout.
+		for preTuple in set(self._preTimeoutNodeIds):
+			if nodeId == preTuple[0]:
+				self._preTimeoutNodeIds.remove(preTuple)
+				break
+
 		processSensorAlerts = False
 
 		# Needed to check if a node timeout has occurred when there was
 		# no timeout before.
 		wasEmpty = True
-		if self.timeoutNodeIds:
+		if self._timeoutNodeIds:
 			wasEmpty = False
 
 		# Only process node timeout if we do not already know about it.
-		if not nodeId in self.timeoutNodeIds:
+		if not nodeId in self._timeoutNodeIds:
 
 			nodeTuple = self.storage.getNodeById(nodeId)
 			if nodeTuple is None:
@@ -541,7 +592,7 @@ class ConnectionWatchdog(threading.Thread):
 			username = nodeTuple[2]
 			hostname = nodeTuple[1]
 
-			self.timeoutNodeIds.add(nodeId)
+			self._timeoutNodeIds.add(nodeId)
 
 			logging.error("[%s]: Node '%s' with username '%s' on host '%s' "
 				% (self.fileName, instance, username, hostname)
@@ -584,23 +635,101 @@ class ConnectionWatchdog(threading.Thread):
 
 		# Start node timeout reminder timer when the sensor timeout list
 		# was empty before.
-		if wasEmpty and self.timeoutNodeIds:
-			self.lastNodeTimeoutReminder = time.time()
+		if wasEmpty and self._timeoutNodeIds:
+			self._lastNodeTimeoutReminder = time.time()
 
 		self._releaseNodeTimeoutLock()
 
 
+	# Public function that sets a node on the pre-timeout list.
+	# The pre-timeout list exists to cope with short disconnects because of
+	# network transmission errors that are almost instantly resolved by
+	# a reconnect of the client.
+	# This function also takes into account if the node is set as "persistent".
+	def addNodePreTimeout(self, nodeId):
+
+		self._acquireNodeTimeoutLock()
+
+		# Ignore node if it is already timed out.
+		if nodeId in self._timeoutNodeIds:
+			self._releaseNodeTimeoutLock()
+			return
+
+		# Check if node already in pre-timeout set => ignore it.
+		found = False
+		for preTuple in self._preTimeoutNodeIds:
+			if nodeId == preTuple[0]:
+				found = True
+				break
+		if found:
+			self._releaseNodeTimeoutLock()
+			return
+
+		nodeTuple = self.storage.getNodeById(nodeId)
+		if nodeTuple is None:
+			logging.error("[%s]: Could not " % self.fileName
+				+ "get node with id %d from database."
+				% nodeId)
+			logging.error("[%s]: Node with id %d "
+				% (self.fileName, nodeId)
+				+ "pre-timed out (not able to determine persistence).")
+
+			self._releaseNodeTimeoutLock()
+			return
+
+		# Check if client is not persistent and therefore
+		# allowed to timeout or disconnect.
+		# => Ignore timeout/disconnect.
+		persistent = nodeTuple[8]
+		if persistent == 0:
+			self._releaseNodeTimeoutLock()
+			return
+
+		instance = nodeTuple[4]
+		username = nodeTuple[2]
+		hostname = nodeTuple[1]
+		logging.debug("[%s]: Adding node '%s' with username '%s' "
+			% (self.fileName, instance, username)
+			+ "on host '%s' to pre-timeout set."
+			% hostname)
+
+		# Add node id with time that timeout occurred into pre-timeout set.
+		self._preTimeoutNodeIds.add( (nodeId, int(time.time())) )
+
+		self._releaseNodeTimeoutLock()
+
+
+	# Returns if the connection watchdog is initialized.
+	def isInitialized(self):
+		return self._isInitialized
+
+
 	# Public function that clears a node from "timed out" by its id.
+	# It also removes the node from the pre-timeout set.
 	def removeNodeTimeout(self, nodeId):
 
 		self._acquireNodeTimeoutLock()
 
+		# Remove node id from the pre-timeout set if it exists.
+		# If it exists it is also not in the timeout set.
+		for preTuple in set(self._preTimeoutNodeIds):
+			if nodeId == preTuple[0]:
+
+				logging.debug("[%s]: Removing node with id %d "
+					% (self.fileName, nodeId)
+					+ "from pre-timeout set.")
+
+				self._preTimeoutNodeIds.remove(preTuple)
+
+				self._releaseNodeTimeoutLock()
+				return
+
 		processSensorAlerts = False
 
 		# Only process node timeout if we know about it.
-		if nodeId in self.timeoutNodeIds:
+		if nodeId in self._timeoutNodeIds:
 
-			self.timeoutNodeIds.remove(nodeId)
+			self._timeoutNodeIds.remove(nodeId)
 
 			nodeTuple = self.storage.getNodeById(nodeId)
 			if nodeTuple is None:
@@ -629,7 +758,7 @@ class ConnectionWatchdog(threading.Thread):
 				# state to "normal" with the raised sensor alert.
 				changeState = False
 				if (self.nodeTimeoutSensor.state == 1
-					and not self.timeoutNodeIds):
+					and not self._timeoutNodeIds):
 
 					self.nodeTimeoutSensor.state = 0
 					changeState = True
@@ -655,19 +784,14 @@ class ConnectionWatchdog(threading.Thread):
 						% self.fileName
 						+ "for internal node timeout sensor.")
 
-		else:
-			logging.error("[%s]: Node with id %d "
-				% (self.fileName, nodeId)
-				+ "reconnected. Did not know about its timeout.")
-
 		# Wake up sensor alert executer to process sensor alerts.
 		if processSensorAlerts:
 			self.sensorAlertExecuter.sensorAlertEvent.set()
 
 		# Reset node timeout reminder timer when the sensor timeout list
 		# is empty.
-		if not self.timeoutNodeIds:
-			self.lastNodeTimeoutReminder = 0.0
+		if not self._timeoutNodeIds:
+			self._lastNodeTimeoutReminder = 0.0
 
 		self._releaseNodeTimeoutLock()
 
@@ -676,6 +800,26 @@ class ConnectionWatchdog(threading.Thread):
 
 		uniqueID = self.storage.getUniqueID()
 		self.serverNodeId = self.storage.getNodeId(uniqueID)
+
+		# Since we just started no node is connected to this server instance,
+		# therefore mark all nodes as disconnected.
+		connectedNodes = self.storage.getAllConnectedNodeIds()
+		for nodeId in connectedNodes:
+			if nodeId == self.serverNodeId:
+				continue
+			self.storage.markNodeAsNotConnected(nodeId)
+
+		# Add all persistent nodes to the pre-timeout set in order to give
+		# them time to reconnect to the server.
+		persistentNodes = self.storage.getAllPersistentNodeIds()
+		for nodeId in persistentNodes:
+			if nodeId == self.serverNodeId:
+				continue
+			self.addNodePreTimeout(nodeId)
+
+		# Set connection watchdog as initialized so that the server can
+		# start and accept connections.
+		self._isInitialized = True
 
 		while 1:
 			# wait 5 seconds before checking time of last received data
