@@ -18,7 +18,7 @@ import os
 import base64
 import random
 import json
-BUFSIZE = 16384
+BUFSIZE = 4096
 
 
 # simple class of an ssl tcp client
@@ -141,10 +141,11 @@ class ServerCommunication:
 
 	# this internal function that tries to initiate a transaction with
 	# the server (and acquires a lock if it is told to do so)
-	def _initiateTransaction(self, messageType, acquireLock=False):
+	def _initiateTransaction(self, messageType, messageSize,
+		acquireLock=False):
 
-		# try to get the exclusive state to be allowed to iniate a transaction
-		# with the server
+		# try to get the exclusive state to be allowed to initiate a
+		# transaction with the server
 		while True:
 
 			# check if locks should be handled or not
@@ -169,7 +170,7 @@ class ServerCommunication:
 				continue
 
 			# if transaction flag is not set
-			# => start to initate transaction with server
+			# => start to initiate transaction with server
 			else:
 
 				logging.debug("[%s]: Got exclusive " % self.fileName
@@ -177,11 +178,11 @@ class ServerCommunication:
 
 				# set transaction initiation flag to true
 				# to signal other threads that a transaction is already
-				# tried to initate
+				# tried to initiate
 				self.transactionInitiation = True
 				break
 
-		# now we are in a exclusive state to iniate a transaction with
+		# now we are in a exclusive state to initiate a transaction with
 		# the server
 		while True:
 
@@ -193,9 +194,12 @@ class ServerCommunication:
 			logging.debug("[%s]: Sending RTS %d message."
 				% (self.fileName, transactionId))
 			try:
-				payload = {"type": "rts", "id": transactionId}
+				payload = {"type": "rts",
+					"id": transactionId}
 				message = {"clientTime": int(time.time()),
-					"message": messageType, "payload": payload}
+					"size": messageSize,
+					"message": messageType,
+					"payload": payload}
 				self.client.send(json.dumps(message))
 			except Exception as e:
 				logging.exception("[%s]: Sending RTS " % self.fileName
@@ -215,8 +219,7 @@ class ServerCommunication:
 			logging.debug("[%s]: Receiving CTS." % self.fileName)
 
 			try:
-
-				data = self.client.recv(BUFSIZE).strip()
+				data = self.client.recv(BUFSIZE)
 				message = json.loads(data)
 
 				# check if an error was received
@@ -282,23 +285,72 @@ class ServerCommunication:
 		return True
 
 
-	# internal function to verify the server/client version and authenticate
-	def _verifyVersionAndAuthenticate(self):
+	# Internal function that builds the client authentication message.
+	def _buildAuthenticationMessage(self, regMessageSize):
 
-		logging.debug("[%s]: Sending user credentials and version."
-			% self.fileName)
+		payload = {"type": "request",
+			"version": self.version,
+			"rev": self.rev,
+			"username": self.username,
+			"password": self.password}
+		message = {"clientTime": int(time.time()),
+			"size": regMessageSize,
+			"message": "initialization",
+			"payload": payload}
+		return json.dumps(message)
+
+	# Internal function that builds the option message.
+	def _buildOptionMessage(self, optionType, optionValue, optionDelay):
+
+		payload = {"type": "request",
+			"optionType": optionType,
+			"value": float(optionValue),
+			"timeDelay": optionDelay}
+		message = {"clientTime": int(time.time()),
+			"message": "option",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# Internal function that builds the ping message.
+	def _buildPingMessage(self):
+
+		payload = {"type": "request"}
+		message = {"clientTime": int(time.time()),
+			"message": "ping",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# Internal function that builds the client registration message.
+	def _buildRegistrationMessage(self):
+
+		# build manager dict for the message
+		manager = dict()
+		manager["description"] = self.description
+
+		payload = {"type": "request",
+			"hostname": socket.gethostname(),
+			"nodeType": self.nodeType,
+			"instance": self.instance,
+			"persistent": self.persistent,
+			"manager": manager}
+		message = {"clientTime": int(time.time()),
+			"message": "initialization",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# internal function to verify the server/client version and authenticate
+	def _verifyVersionAndAuthenticate(self, regMessageSize):
+
+		authMessage = self._buildAuthenticationMessage(regMessageSize)
 
 		# send user credentials and version
 		try:
-
-			payload = {"type": "request",
-				"version": self.version,
-				"rev": self.rev,
-				"username": self.username,
-				"password": self.password}
-			message = {"clientTime": int(time.time()),
-				"message": "authentication", "payload": payload}
-			self.client.send(json.dumps(message))
+			logging.debug("[%s]: Sending user credentials and version."
+				% self.fileName)
+			self.client.send(authMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending user credentials " % self.fileName
@@ -307,8 +359,7 @@ class ServerCommunication:
 
 		# get authentication response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -316,7 +367,7 @@ class ServerCommunication:
 					% (self.fileName, message["error"]))
 				return False
 
-			if str(message["message"]).upper() != "AUTHENTICATION":
+			if str(message["message"]).upper() != "initialization".upper():
 				logging.error("[%s]: Wrong authentication message: "
 					% self.fileName
 					+ "'%s'." % message["message"])
@@ -325,7 +376,7 @@ class ServerCommunication:
 				try:
 					message = {"clientTime": int(time.time()),
 						"message": message["message"],
-						"error": "authentication message expected"}
+						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
 					pass
@@ -406,24 +457,13 @@ class ServerCommunication:
 
 
 	# internal function to register the node
-	def _registerNode(self):
+	def _registerNode(self, regMessage):
 
-		# build manager dict for the message
-		manager = dict()
-		manager["description"] = self.description
-
-		# send registration message
+		# Send registration message.
 		try:
-
-			payload = {"type": "request",
-				"hostname": socket.gethostname(),
-				"nodeType": self.nodeType,
-				"instance": self.instance,
-				"persistent": self.persistent,
-				"manager": manager}
-			message = {"clientTime": int(time.time()),
-				"message": "registration", "payload": payload}
-			self.client.send(json.dumps(message))
+			logging.debug("[%s]: Sending registration message."
+				% self.fileName)
+			self.client.send(regMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending registration " % self.fileName
@@ -432,8 +472,7 @@ class ServerCommunication:
 
 		# get registration response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -441,7 +480,7 @@ class ServerCommunication:
 					% (self.fileName, message["error"]))
 				return False
 
-			if str(message["message"]).upper() != "REGISTRATION":
+			if str(message["message"]).upper() != "initialization".upper():
 				logging.error("[%s]: Wrong registration message: "
 					% self.fileName
 					+ "'%s'." % message["message"])
@@ -450,7 +489,7 @@ class ServerCommunication:
 				try:
 					message = {"clientTime": int(time.time()),
 						"message": message["message"],
-						"error": "registration message expected"}
+						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
 					pass
@@ -1123,8 +1162,11 @@ class ServerCommunication:
 
 			return False
 
-		# first check version and authenticate
-		if not self._verifyVersionAndAuthenticate():
+		# Build registration message.
+		regMessage = self._buildRegistrationMessage()
+
+		# First check version and authenticate.
+		if not self._verifyVersionAndAuthenticate(len(regMessage)):
 			self.client.close()
 			logging.error("[%s]: Version verification and " % self.fileName
 				+ "authentication failed.")
@@ -1133,8 +1175,8 @@ class ServerCommunication:
 
 			return False
 
-		# second register node
-		if not self._registerNode():
+		# Second register node.
+		if not self._registerNode(regMessage):
 			self.client.close()
 			logging.error("[%s]: Registration failed."
 				% self.fileName)
@@ -1148,7 +1190,7 @@ class ServerCommunication:
 			logging.debug("[%s]: Receiving initial status update."
 				% self.fileName)
 
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1162,6 +1204,7 @@ class ServerCommunication:
 			# => acknowledge it
 			if str(message["payload"]["type"]).upper() == "RTS":
 				receivedTransactionId = int(message["payload"]["id"])
+				messageSize = int(message["size"])
 
 				# received RTS (request to send) message
 				logging.debug("[%s]: Received RTS %s message."
@@ -1177,10 +1220,24 @@ class ServerCommunication:
 					"payload": payload}
 				self.client.send(json.dumps(message))
 
-				# after initiating transaction receive
-				# actual command
-				data = self.client.recv(BUFSIZE)
-				data = data.strip()
+				# After initiating transaction receive actual command.
+				data = ""
+				lastSize = 0
+				while len(data) < messageSize:
+					data += self.client.recv(BUFSIZE)
+
+					# Check if the size of the received data has changed.
+					# If not we detected a possible dead lock.
+					if lastSize != len(data):
+						lastSize = len(data)
+					else:
+						logging.error("[%s]: Possible dead lock "
+							% self.fileName
+							+ "detected while receiving data. Closing "
+							+ "connection to server.")
+
+						self._releaseLock()
+						return False
 
 			# if no RTS was received
 			# => server does not stick to protocol
@@ -1262,12 +1319,12 @@ class ServerCommunication:
 			self._releaseLock()
 			return False
 
-		self._releaseLock()
-
 		self.lastRecv = time.time()
 
 		# set client as connected
 		self.isConnected = True
+
+		self._releaseLock()
 
 		# handle connection initialized event
 		self.serverEventHandler.handleEvent()
@@ -1281,10 +1338,11 @@ class ServerCommunication:
 		self._acquireLock()
 
 		# handle commands in an infinity loop
-		while 1:
+		while True:
+
+			messageSize = 0
 
 			try:
-
 				# try to receive data for 0.5 seconds and then
 				# timeout to give other threads the possibility
 				# to send acquire the lock and send data to the server
@@ -1312,6 +1370,7 @@ class ServerCommunication:
 				# => acknowledge it
 				if str(message["payload"]["type"]).upper() == "RTS":
 					receivedTransactionId = int(message["payload"]["id"])
+					messageSize = int(message["size"])
 
 					# received RTS (request to send) message
 					logging.debug("[%s]: Received RTS %s message."
@@ -1327,10 +1386,26 @@ class ServerCommunication:
 						"payload": payload}
 					self.client.send(json.dumps(message))
 
-					# after initiating transaction receive
-					# actual command
-					data = self.client.recv(BUFSIZE)
-					data = data.strip()
+					# After initiating transaction receive actual command
+					data = ""
+					lastSize = 0
+					while len(data) < messageSize:
+						data += self.client.recv(BUFSIZE)
+
+						# Check if the size of the received data has changed.
+						# If not we detected a possible dead lock.
+						if lastSize != len(data):
+							lastSize = len(data)
+						else:
+							logging.error("[%s]: Possible dead lock "
+								% self.fileName
+								+ "detected while receiving data. Closing "
+								+ "connection to server.")
+
+							# clean up session before exiting
+							self._cleanUpSessionForClosing()
+							self._releaseLock()
+							return
 
 				# if no RTS was received
 				# => server does not stick to protocol
@@ -1496,21 +1571,18 @@ class ServerCommunication:
 	# to activate the alert system or deactivate it
 	def sendOption(self, optionType, optionValue, optionDelay=0):
 
+		optionMessage = self._buildOptionMessage(optionType,
+			optionValue, optionDelay)
+
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction("option", acquireLock=True):
+		if not self._initiateTransaction("option",
+			len(optionMessage), acquireLock=True):
 			return False
 
-		# send option request
+		# Send option request.
 		try:
 			logging.debug("[%s]: Sending option message." % self.fileName)
-
-			payload = {"type": "request",
-				"optionType": optionType,
-				"value": float(optionValue),
-				"timeDelay": optionDelay}
-			message = {"clientTime": int(time.time()),
-				"message": "option", "payload": payload}
-			self.client.send(json.dumps(message))
+			self.client.send(optionMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending option message failed."
@@ -1523,8 +1595,7 @@ class ServerCommunication:
 
 		# get option response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1627,21 +1698,20 @@ class ServerCommunication:
 	# is still alive
 	def sendKeepalive(self):
 
+		pingMessage = self._buildPingMessage()
+
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction("ping", acquireLock=True):
+		if not self._initiateTransaction("ping",
+			len(pingMessage), acquireLock=True):
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
 			return False
 
-		# send ping request
+		# Send ping request.
 		try:
 			logging.debug("[%s]: Sending ping message." % self.fileName)
-
-			payload = {"type": "request"}
-			message = {"clientTime": int(time.time()),
-				"message": "ping", "payload": payload}
-			self.client.send(json.dumps(message))
+			self.client.send(pingMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending ping to server failed."
@@ -1654,8 +1724,7 @@ class ServerCommunication:
 
 		# get ping response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -1761,7 +1830,7 @@ class ConnectionWatchdog(threading.Thread):
 
 		# check every 5 seconds if the time of the last received data
 		# from the server lies too far in the past
-		while 1:
+		while True:
 
 			# wait 5 seconds before checking time of last received data
 			for i in range(5):
@@ -1778,7 +1847,7 @@ class ConnectionWatchdog(threading.Thread):
 					% self.fileName)
 
 				# reconnect to the server
-				while 1:
+				while True:
 
 					# check if 5 unsuccessful attempts are made to connect
 					# to the server and if smtp alert is activated
@@ -1817,7 +1886,7 @@ class ConnectionWatchdog(threading.Thread):
 						% self.fileName)
 
 					# reconnect to the server
-					while 1:
+					while True:
 
 						# check if 5 unsuccessful attempts are made to connect
 						# to the server and if smtp alert is activated
@@ -1864,7 +1933,7 @@ class Receiver(threading.Thread):
 
 	def run(self):
 
-		while 1:
+		while True:
 			if self.exitFlag:
 				return
 

@@ -17,7 +17,7 @@ import base64
 import xml.etree.cElementTree
 import random
 import json
-BUFSIZE = 16384
+BUFSIZE = 4096
 
 
 # simple class of an ssl tcp client
@@ -134,10 +134,11 @@ class ServerCommunication:
 
 	# this internal function that tries to initiate a transaction with
 	# the server (and acquires a lock if it is told to do so)
-	def _initiateTransaction(self, messageType, acquireLock=False):
+	def _initiateTransaction(self, messageType, messageSize,
+		acquireLock=False):
 
-		# try to get the exclusive state to be allowed to iniate a transaction
-		# with the server
+		# try to get the exclusive state to be allowed to initiate a
+		# transaction with the server
 		while True:
 
 			# check if locks should be handled or not
@@ -162,7 +163,7 @@ class ServerCommunication:
 				continue
 
 			# if transaction flag is not set
-			# => start to initate transaction with server
+			# => start to initiate transaction with server
 			else:
 
 				logging.debug("[%s]: Got exclusive " % self.fileName
@@ -170,11 +171,11 @@ class ServerCommunication:
 
 				# set transaction initiation flag to true
 				# to signal other threads that a transaction is already
-				# tried to initate
+				# tried to initiate
 				self.transactionInitiation = True
 				break
 
-		# now we are in a exclusive state to iniate a transaction with
+		# now we are in a exclusive state to initiate a transaction with
 		# the server
 		while True:
 
@@ -186,9 +187,12 @@ class ServerCommunication:
 			logging.debug("[%s]: Sending RTS %d message."
 				% (self.fileName, transactionId))
 			try:
-				payload = {"type": "rts", "id": transactionId}
+				payload = {"type": "rts",
+					"id": transactionId}
 				message = {"clientTime": int(time.time()),
-					"message": messageType, "payload": payload}
+					"size": messageSize,
+					"message": messageType,
+					"payload": payload}
 				self.client.send(json.dumps(message))
 			except Exception as e:
 				logging.exception("[%s]: Sending RTS " % self.fileName
@@ -208,8 +212,7 @@ class ServerCommunication:
 			logging.debug("[%s]: Receiving CTS." % self.fileName)
 
 			try:
-
-				data = self.client.recv(BUFSIZE).strip()
+				data = self.client.recv(BUFSIZE)
 				message = json.loads(data)
 
 				# check if an error was received
@@ -275,23 +278,162 @@ class ServerCommunication:
 		return True
 
 
-	# internal function to verify the server/client version and authenticate
-	def _verifyVersionAndAuthenticate(self):
+	# Internal function that builds the client authentication message.
+	def _buildAuthenticationMessage(self, regMessageSize):
 
-		logging.debug("[%s]: Sending user credentials and version."
-			% self.fileName)
+		payload = {"type": "request",
+			"version": self.version,
+			"rev": self.rev,
+			"username": self.username,
+			"password": self.password}
+		message = {"clientTime": int(time.time()),
+			"size": regMessageSize,
+			"message": "initialization",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# Internal function that builds the ping message.
+	def _buildPingMessage(self):
+
+		payload = {"type": "request"}
+		message = {"clientTime": int(time.time()),
+			"message": "ping",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# Internal function that builds the client registration message.
+	def _buildRegistrationMessage(self):
+
+		# build sensors list for the message
+		sensors = list()
+		for sensor in self.sensors:
+			tempSensor = dict()
+			tempSensor["clientSensorId"] = sensor.id
+			tempSensor["alertDelay"] = sensor.alertDelay
+			tempSensor["alertLevels"] = sensor.alertLevels
+			tempSensor["description"] = sensor.description
+			sensors.append(tempSensor)
+
+		logging.debug("[%s]: Sending registration message." % self.fileName)
+
+		# send registration message
+		payload = {"type": "request",
+			"hostname": socket.gethostname(),
+			"nodeType": self.nodeType,
+			"instance": self.instance,
+			"persistent": self.persistent,
+			"sensors": sensors}
+		message = {"clientTime": int(time.time()),
+			"message": "initialization",
+			"payload": payload}
+
+		return json.dumps(message)
+
+
+	# Internal function that builds the sensor alert message.
+	def _buildSensorAlertMessage(self, sensor):
+
+		# Check if data should be transfered with this sensor alert
+		# => create payload of message accordingly.
+		if sensor.dataTransfer:
+			# Set state of sensor alert according to state of sensor.
+			if sensor.triggerState == sensor.state:
+				payload = {"type": "request",
+					"clientSensorId": sensor.id,
+					"state": 1,
+					"dataTransfer": True,
+					"data": sensor.data,
+					"changeState": sensor.changeState}
+			else:
+				payload = {"type": "request",
+					"clientSensorId": sensor.id,
+					"state": 0,
+					"dataTransfer": True,
+					"data": sensor.data,
+					"changeState": sensor.changeState}
+
+		else:
+			# Set state of sensor alert according to state of sensor.
+			if sensor.triggerState == sensor.state:
+				payload = {"type": "request",
+					"clientSensorId": sensor.id,
+					"state": 1,
+					"dataTransfer": False,
+					"changeState": sensor.changeState}
+			else:
+				payload = {"type": "request",
+					"clientSensorId": sensor.id,
+					"state": 0,
+					"dataTransfer": False,
+					"changeState": sensor.changeState}
+
+		message = {"clientTime": int(time.time()),
+			"message": "sensoralert",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# Internal function that builds the sensor state message.
+	def _buildSensorsStateMessage(self):
+
+		# build sensors list for the message
+		sensors = list()
+		for sensor in self.sensors:
+			tempSensor = dict()
+			tempSensor["clientSensorId"] = sensor.id
+
+			# convert the internal trigger state to the state
+			# convention of the alert system (1 = trigger, 0 = normal)
+			if sensor.triggerState == sensor.state:
+				tempSensor["state"] = 1
+			else:
+				tempSensor["state"] = 0
+
+			sensors.append(tempSensor)
+
+		payload = {"type": "request", "sensors": sensors}
+		message = {"clientTime": int(time.time()),
+			"message": "status",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# Internal function that builds the state change message.
+	def _buildStateChangeMessage(self, sensor):
+
+		# Convert the internal trigger state to the state
+		# convention of the alert system (1 = trigger, 0 = normal).
+		if sensor.triggerState == sensor.state:
+			state = 1
+		else:
+			state = 0
+
+		logging.debug("[%s]: Building state change message for sensor "
+			% self.fileName
+			+ "with id %d and message state %d."
+			% (sensor.id, state))
+
+		payload = {"type": "request",
+			"clientSensorId": sensor.id,
+			"state": state}
+		message = {"clientTime": int(time.time()),
+			"message": "statechange",
+			"payload": payload}
+		return json.dumps(message)
+
+
+	# internal function to verify the server/client version and authenticate
+	def _verifyVersionAndAuthenticate(self, regMessageSize):
+
+		authMessage = self._buildAuthenticationMessage(regMessageSize)
 
 		# send user credentials and version
 		try:
-
-			payload = {"type": "request",
-				"version": self.version,
-				"rev": self.rev,
-				"username": self.username,
-				"password": self.password}
-			message = {"clientTime": int(time.time()),
-				"message": "authentication", "payload": payload}
-			self.client.send(json.dumps(message))
+			logging.debug("[%s]: Sending user credentials and version."
+				% self.fileName)
+			self.client.send(authMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending user credentials " % self.fileName
@@ -300,8 +442,7 @@ class ServerCommunication:
 
 		# get authentication response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -309,7 +450,7 @@ class ServerCommunication:
 					% (self.fileName, message["error"]))
 				return False
 
-			if str(message["message"]).upper() != "AUTHENTICATION":
+			if str(message["message"]).upper() != "initialization".upper():
 				logging.error("[%s]: Wrong authentication message: "
 					% self.fileName
 					+ "'%s'." % message["message"])
@@ -318,7 +459,7 @@ class ServerCommunication:
 				try:
 					message = {"clientTime": int(time.time()),
 						"message": message["message"],
-						"error": "authentication message expected"}
+						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
 					pass
@@ -348,7 +489,7 @@ class ServerCommunication:
 				return False
 
 		except Exception as e:
-			logging.exception("[%s]: Receiving authentication response failed."
+			logging.exception("[%s]: Receiving initialization response failed."
 				% self.fileName)
 			return False
 
@@ -398,33 +539,14 @@ class ServerCommunication:
 		return True
 
 
-	# internal function to register the node
-	def _registerNode(self):
+	# Internal function to register the node.
+	def _registerNode(self, regMessage):
 
-		# build sensors list for the message
-		sensors = list()
-		for sensor in self.sensors:
-			tempSensor = dict()
-			tempSensor["clientSensorId"] = sensor.id
-			tempSensor["alertDelay"] = sensor.alertDelay
-			tempSensor["alertLevels"] = sensor.alertLevels
-			tempSensor["description"] = sensor.description
-			sensors.append(tempSensor)
-
-		logging.debug("[%s]: Sending registration message." % self.fileName)
-
-		# send registration message
+		# Send registration message.
 		try:
-
-			payload = {"type": "request",
-				"hostname": socket.gethostname(),
-				"nodeType": self.nodeType,
-				"instance": self.instance,
-				"persistent": self.persistent,
-				"sensors": sensors}
-			message = {"clientTime": int(time.time()),
-				"message": "registration", "payload": payload}
-			self.client.send(json.dumps(message))
+			logging.debug("[%s]: Sending registration message."
+				% self.fileName)
+			self.client.send(regMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending registration " % self.fileName
@@ -433,8 +555,7 @@ class ServerCommunication:
 
 		# get registration response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -442,7 +563,7 @@ class ServerCommunication:
 					% (self.fileName, message["error"]))
 				return False
 
-			if str(message["message"]).upper() != "REGISTRATION":
+			if str(message["message"]).upper() != "initialization".upper():
 				logging.error("[%s]: Wrong registration message: "
 					% self.fileName
 					+ "'%s'." % message["message"])
@@ -451,7 +572,7 @@ class ServerCommunication:
 				try:
 					message = {"clientTime": int(time.time()),
 						"message": message["message"],
-						"error": "registration message expected"}
+						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
 				except Exception as e:
 					pass
@@ -508,8 +629,11 @@ class ServerCommunication:
 
 			return False
 
-		# first check version and authenticate
-		if not self._verifyVersionAndAuthenticate():
+		# Build registration message.
+		regMessage = self._buildRegistrationMessage()
+
+		# First check version and authenticate.
+		if not self._verifyVersionAndAuthenticate(len(regMessage)):
 			self.client.close()
 			logging.error("[%s]: Version verification and " % self.fileName
 				+ "authentication failed.")
@@ -518,8 +642,8 @@ class ServerCommunication:
 
 			return False
 
-		# second register node
-		if not self._registerNode():
+		# Second register node.
+		if not self._registerNode(regMessage):
 			self.client.close()
 			logging.error("[%s]: Registration failed."
 				% self.fileName)
@@ -528,12 +652,13 @@ class ServerCommunication:
 
 			return False
 
-		self._releaseLock()
+		# update the time the last data was received by the server
+		self.lastRecv = time.time()
 
 		# set client as connected
 		self.isConnected = True
 
-		self.lastRecv = time.time()
+		self._releaseLock()
 
 		return True
 
@@ -567,21 +692,20 @@ class ServerCommunication:
 	# is still alive
 	def sendKeepalive(self):
 
+		pingMessage = self._buildPingMessage()
+
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction("ping", acquireLock=True):
+		if not self._initiateTransaction("ping", len(pingMessage),
+			acquireLock=True):
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
 			return False
 
-		# send ping request
+		# Send ping request.
 		try:
 			logging.debug("[%s]: Sending ping message." % self.fileName)
-
-			payload = {"type": "request"}
-			message = {"clientTime": int(time.time()),
-				"message": "ping", "payload": payload}
-			self.client.send(json.dumps(message))
+			self.client.send(pingMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending ping to server failed."
@@ -594,8 +718,7 @@ class ServerCommunication:
 
 		# get ping response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -672,38 +795,21 @@ class ServerCommunication:
 	# this function sends the current sensor states to the server
 	def sendSensorsState(self):
 
+		sensorStateMessage = self._buildSensorsStateMessage()
+
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction("status", acquireLock=True):
+		if not self._initiateTransaction("status", len(sensorStateMessage),
+			acquireLock=True):
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
 
 			return False
 
-		# build sensors list for the message
-		sensors = list()
-		for sensor in self.sensors:
-			tempSensor = dict()
-			tempSensor["clientSensorId"] = sensor.id
-
-			# convert the internal trigger state to the state
-			# convention of the alert system (1 = trigger, 0 = normal)
-			if sensor.triggerState == sensor.state:
-				tempSensor["state"] = 1
-			else:
-				tempSensor["state"] = 0
-
-			sensors.append(tempSensor)
-
-		logging.debug("[%s]: Sending status." % self.fileName)
-
-		# send sensor states
+		# Send sensor states.
 		try:
-
-			payload = {"type": "request", "sensors": sensors}
-			message = {"clientTime": int(time.time()),
-				"message": "status", "payload": payload}
-			self.client.send(json.dumps(message))
+			logging.debug("[%s]: Sending status." % self.fileName)
+			self.client.send(sensorStateMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending status failed." % self.fileName)
@@ -714,8 +820,7 @@ class ServerCommunication:
 
 		# get status response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -789,8 +894,11 @@ class ServerCommunication:
 	# this function sends a sensor alert to the server
 	def sendSensorAlert(self, sensor):
 
+		sensorAlertMessage = self._buildSensorAlertMessage(sensor)
+
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction("sensoralert", acquireLock=True):
+		if not self._initiateTransaction("sensoralert",
+			len(sensorAlertMessage), acquireLock=True):
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
@@ -800,44 +908,7 @@ class ServerCommunication:
 		try:
 			logging.debug("[%s]: Sending sensor alert message."
 				% self.fileName)
-
-			# check if data should be transfered with this sensor alert
-			# => create payload of message accordingly
-			if sensor.dataTransfer:
-				# set state of sensor alert according to state of sensor
-				if sensor.triggerState == sensor.state:
-					payload = {"type": "request",
-						"clientSensorId": sensor.id,
-						"state": 1,
-						"dataTransfer": True,
-						"data": sensor.data,
-						"changeState": sensor.changeState}
-				else:
-					payload = {"type": "request",
-						"clientSensorId": sensor.id,
-						"state": 0,
-						"dataTransfer": True,
-						"data": sensor.data,
-						"changeState": sensor.changeState}
-
-			else:
-				# set state of sensor alert according to state of sensor
-				if sensor.triggerState == sensor.state:
-					payload = {"type": "request",
-						"clientSensorId": sensor.id,
-						"state": 1,
-						"dataTransfer": False,
-						"changeState": sensor.changeState}
-				else:
-					payload = {"type": "request",
-						"clientSensorId": sensor.id,
-						"state": 0,
-						"dataTransfer": False,
-						"changeState": sensor.changeState}
-
-			message = {"clientTime": int(time.time()),
-				"message": "sensoralert", "payload": payload}
-			self.client.send(json.dumps(message))
+			self.client.send(sensorAlertMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending sensor alert message failed."
@@ -850,8 +921,7 @@ class ServerCommunication:
 
 		# get sensor alert response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
@@ -928,8 +998,11 @@ class ServerCommunication:
 	# this function sends a changed state of a sensor to the server
 	def sendStateChange(self, sensor):
 
+		stateChangeMessage = self._buildStateChangeMessage(sensor)
+
 		# initiate transaction with server and acquire lock
-		if not self._initiateTransaction("statechange", acquireLock=True):
+		if not self._initiateTransaction("statechange",
+			len(stateChangeMessage), acquireLock=True):
 
 			# clean up session before exiting
 			self._cleanUpSessionForClosing()
@@ -937,22 +1010,9 @@ class ServerCommunication:
 
 		# send state change message
 		try:
-			# convert the internal trigger state to the state
-			# convention of the alert system (1 = trigger, 0 = normal)
-			if sensor.triggerState == sensor.state:
-				state = 1
-			else:
-				state = 0
-
-			logging.debug("[%s]: Sending state change message (%d:%d)."
-				% (self.fileName, sensor.id, state))
-
-			payload = {"type": "request",
-				"clientSensorId": sensor.id,
-				"state": state}
-			message = {"clientTime": int(time.time()),
-				"message": "statechange", "payload": payload}
-			self.client.send(json.dumps(message))
+			logging.debug("[%s]: Sending state change message."
+				% self.fileName)
+			self.client.send(stateChangeMessage)
 
 		except Exception as e:
 			logging.exception("[%s]: Sending state change message failed."
@@ -965,8 +1025,7 @@ class ServerCommunication:
 
 		# get state change response from server
 		try:
-
-			data = self.client.recv(BUFSIZE).strip()
+			data = self.client.recv(BUFSIZE)
 			message = json.loads(data)
 			# check if an error was received
 			if "error" in message.keys():
