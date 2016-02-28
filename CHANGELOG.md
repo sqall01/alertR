@@ -12,3 +12,10 @@ Features:
 * Renamed "alertR Manger Client Mobile" to "alertR Manager Client Database" and updated code to log events, check instance versions against only repository and redefined UNIX socket protocol.
 * Moved "alertR Mobile Manager" (web page and android app) to "alertR Web Mobile Manager" and completely rewrote web page (new design, displays sensor alert information, displays log event information, displays when a new alertR version is available, ...) - needs "alertR Manager Client Database" to work.
 * AlertR server can now participate in a survey.
+
+
+## 0.400
+
+Features:
+
+* Protocol header of RTS message got size field to enable variable message sizes.
