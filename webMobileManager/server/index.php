@@ -107,7 +107,7 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 			}
 		?>" >
 
-		<div class="elementShown" id="loader">
+		<div class="elementShown" id="loader" align="center">
 			<table border="0" width="300">
 				<tr>
 					<td align="center">
@@ -118,7 +118,7 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 			</table>
 		</div>
 
-		<div class="elementHidden" id="content">
+		<div class="elementHidden" id="content" align="center">
 			<table border="0" width="300" id="contentTable">
 				<tbody id="contentTableBody">
 				</tbody>
