@@ -17,3 +17,4 @@ Features:
 * Username, remoteSensorId and remoteAlertId transmitted to manager clients.
 * Sensor alert messages transfer information if it should change the state of the sensor.
 * Server has internal sensors that cat trigger on internal events (like a sensor timeout, client timeout).
+* Changed logging system to have separated log files for each client connection.
