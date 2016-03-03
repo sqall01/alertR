@@ -162,7 +162,7 @@ class _Storage():
 	# return list of tuples of (alertLevel)
 	# or None
 	def getAllSensorsAlertLevels(self):
-		raise NotImplemented("Function not implemented yet.")	
+		raise NotImplemented("Function not implemented yet.")
 
 
 	# gets all nodes from the database that are connected to the server
@@ -291,6 +291,7 @@ class Sqlite(_Storage):
 		import sqlite3
 
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 
 		# version of server
 		self.version = self.globalData.version
@@ -312,8 +313,8 @@ class Sqlite(_Storage):
 		# check if database exists
 		# if not create one
 		if os.path.exists(self.storagePath) == False:
-			
-			logging.info("[%s]: No database found. Creating '%s'."
+
+			self.logger.info("[%s]: No database found. Creating '%s'."
 			% (self.fileName, self.storagePath))
 
 			self.conn = sqlite3.connect(self.storagePath,
@@ -373,8 +374,8 @@ class Sqlite(_Storage):
 			raise ValueError("Node id was not found.")
 
 
-	# internal function that gets the sensor id of a sensor when the id 
-	# of a node is given and the remote sensor id that is used 
+	# internal function that gets the sensor id of a sensor when the id
+	# of a node is given and the remote sensor id that is used
 	# by the node internally
 	#
 	# return sensorId or raised Exception
@@ -394,8 +395,8 @@ class Sqlite(_Storage):
 		return sensorId
 
 
-	# internal function that gets the alert id of an alert when the id 
-	# of a node is given and the remote alert id that is used 
+	# internal function that gets the alert id of an alert when the id
+	# of a node is given and the remote alert id that is used
 	# by the node internally
 	#
 	# return alertId or raised Exception
@@ -415,7 +416,7 @@ class Sqlite(_Storage):
 		return alertId
 
 
-	# internal function that gets the manager id of a manager when the id 
+	# internal function that gets the manager id of a manager when the id
 	# of a node is given
 	#
 	# return managerId or raised Exception
@@ -449,7 +450,7 @@ class Sqlite(_Storage):
 				+ "FROM internals WHERE type=?", ("uniqueID", ))
 			self.uniqueID = self.cursor.fetchall()[0][0]
 		except Exception as e:
-			logging.exception("[%s]: Not able to get the unique id." 
+			self.logger.exception("[%s]: Not able to get the unique id."
 				% self.fileName)
 
 		return self.uniqueID
@@ -457,13 +458,13 @@ class Sqlite(_Storage):
 
 	# internal function that acquires the lock
 	def _acquireLock(self):
-		logging.debug("[%s]: Acquire lock." % self.fileName)
+		self.logger.debug("[%s]: Acquire lock." % self.fileName)
 		self.dbLock.acquire()
 
 
 	# internal function that releases the lock
 	def _releaseLock(self):
-		logging.debug("[%s]: Release lock." % self.fileName)
+		self.logger.debug("[%s]: Release lock." % self.fileName)
 		self.dbLock.release()
 
 
@@ -577,7 +578,7 @@ class Sqlite(_Storage):
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "description TEXT NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")		
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# commit all changes
 		self.conn.commit()
@@ -601,7 +602,7 @@ class Sqlite(_Storage):
 		# => delete old database schema
 		if float(result[0][0]) != self.version:
 
-			logging.info("[%s]: Server version "
+			self.logger.info("[%s]: Server version "
 				% self.fileName
 				+ "'%.3f' not compatible "
 				% self.version
@@ -662,7 +663,7 @@ class Sqlite(_Storage):
 		# => if not add node
 		if not self._usernameInDb(username):
 
-			logging.info("[%s]: Node with username '%s' does not exist "
+			self.logger.info("[%s]: Node with username '%s' does not exist "
 				% (self.fileName, username)
 				+ "in database. Adding it.")
 
@@ -681,7 +682,7 @@ class Sqlite(_Storage):
 					(hostname, username, nodeType, instance, 0, version, rev,
 					persistent))
 			except Exception as e:
-				logging.exception("[%s]: Not able to add node."
+				self.logger.exception("[%s]: Not able to add node."
 					% self.fileName)
 
 				self._releaseLock()
@@ -692,7 +693,7 @@ class Sqlite(_Storage):
 		# => check if everything is the same
 		else:
 
-			logging.info("[%s]: Node with username '%s' already exists "
+			self.logger.info("[%s]: Node with username '%s' already exists "
 				% (self.fileName, username)
 				+ "in database.")
 
@@ -717,7 +718,7 @@ class Sqlite(_Storage):
 				dbPersistent = result[0][5]
 
 			except Exception as e:
-				logging.exception("[%s]: Not able to get node information."
+				self.logger.exception("[%s]: Not able to get node information."
 					% self.fileName)
 
 				self._releaseLock()
@@ -727,7 +728,7 @@ class Sqlite(_Storage):
 			# change hostname if it had changed
 			if dbHostname != hostname:
 
-				logging.info("[%s]: Hostname of node has changed "
+				self.logger.info("[%s]: Hostname of node has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbHostname, hostname))
@@ -738,7 +739,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(hostname, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update hostname of node.")
 
 					self._releaseLock()
@@ -748,7 +749,7 @@ class Sqlite(_Storage):
 			# change instance if it had changed
 			if dbInstance != instance:
 
-				logging.info("[%s]: Instance of node has changed "
+				self.logger.info("[%s]: Instance of node has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbInstance, instance))
@@ -759,7 +760,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(instance, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update instance of node.")
 
 					self._releaseLock()
@@ -769,7 +770,7 @@ class Sqlite(_Storage):
 			# change version if it had changed
 			if dbVersion != version:
 
-				logging.info("[%s]: Version of node has changed "
+				self.logger.info("[%s]: Version of node has changed "
 					% self.fileName
 					+ "from '%.3f' to '%.3f'. Updating database."
 					% (dbVersion, version))
@@ -780,7 +781,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(version, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update version of node.")
 
 					self._releaseLock()
@@ -790,7 +791,7 @@ class Sqlite(_Storage):
 			# change revision if it had changed
 			if dbRev != rev:
 
-				logging.info("[%s]: Revision of node has changed "
+				self.logger.info("[%s]: Revision of node has changed "
 					% self.fileName
 					+ "from '%d' to '%d'. Updating database."
 					% (dbRev, rev))
@@ -801,7 +802,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(rev, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update revision of node.")
 
 					self._releaseLock()
@@ -811,7 +812,7 @@ class Sqlite(_Storage):
 			# change persistent if it had changed
 			if dbPersistent != persistent:
 
-				logging.info("[%s]: Persistent flag of node has changed "
+				self.logger.info("[%s]: Persistent flag of node has changed "
 					% self.fileName
 					+ "from '%d' to '%d'. Updating database."
 					% (dbPersistent, persistent))
@@ -822,7 +823,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(persistent, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update persistent flag of node.")
 
 					self._releaseLock()
@@ -834,7 +835,7 @@ class Sqlite(_Storage):
 			# and change node type
 			if dbNodeType != nodeType:
 
-				logging.info("[%s]: Type of node has changed "
+				self.logger.info("[%s]: Type of node has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbNodeType, nodeType))
@@ -864,7 +865,8 @@ class Sqlite(_Storage):
 								(sensorIdResult[0], ))
 
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "delete sensors of the node.")
 
 						self._releaseLock()
@@ -896,7 +898,8 @@ class Sqlite(_Storage):
 								(alertIdResult[0], ))
 
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "delete alerts of the node.")
 
 						self._releaseLock()
@@ -906,14 +909,15 @@ class Sqlite(_Storage):
 				# if old node had type "manager"
 				# => delete all manager information
 				elif dbNodeType == "manager":
-					
+
 					try:
 						self.cursor.execute("DELETE FROM managers "
 							+ "WHERE nodeId = ?",
 							(nodeId, ))
 
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "delete manager information of the node.")
 
 						self._releaseLock()
@@ -923,7 +927,8 @@ class Sqlite(_Storage):
 				# node type in database not known
 				else:
 
-					logging.error("[%s]: Unknown node type " % self.fileName
+					self.logger.error("[%s]: Unknown node type "
+						% self.fileName
 						+ "when deleting old sensors/alerts/manager "
 						+ "information.")
 
@@ -938,7 +943,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(nodeType, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update type of node.")
 
 					self._releaseLock()
@@ -959,13 +964,14 @@ class Sqlite(_Storage):
 	# return True or False
 	def addSensors(self, username, sensors):
 
-		self._acquireLock()	
+		self._acquireLock()
 
 		# get the id of the node
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." % self.fileName)
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -985,9 +991,9 @@ class Sqlite(_Storage):
 			# => add it
 			if len(result) == 0:
 
-				logging.info("[%s]: Sensor with client id '%d' does not exist "
+				self.logger.info("[%s]: Sensor with client id '%d' does not "
 					% (self.fileName, int(sensor["clientSensorId"]))
-					+ "in database. Adding it.")
+					+ "exist in database. Adding it.")
 
 				# add sensor to database
 				try:
@@ -1002,7 +1008,7 @@ class Sqlite(_Storage):
 						str(sensor["description"]), 0, 0,
 						int(sensor["alertDelay"])))
 				except Exception as e:
-					logging.exception("[%s]: Not able to add sensor."
+					self.logger.exception("[%s]: Not able to add sensor."
 						% self.fileName)
 
 					self._releaseLock()
@@ -1014,7 +1020,7 @@ class Sqlite(_Storage):
 					sensorId = self._getSensorId(nodeId,
 						int(sensor["clientSensorId"]))
 				except Exception as e:
-					logging.exception("[%s]: Not able to get sensorId." 
+					self.logger.exception("[%s]: Not able to get sensorId."
 						% self.fileName)
 
 					self._releaseLock()
@@ -1023,13 +1029,13 @@ class Sqlite(_Storage):
 
 				# add sensor alert levels to database
 				try:
-					for alertLevel in sensor["alertLevels"]:			
+					for alertLevel in sensor["alertLevels"]:
 						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
 							+ "sensorId, "
 							+ "alertLevel) VALUES (?, ?)",
 							(sensorId, alertLevel))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "add sensor alert levels.")
 
 					self._releaseLock()
@@ -1040,9 +1046,9 @@ class Sqlite(_Storage):
 			# => check if everything is the same
 			else:
 
-				logging.info("[%s]: Sensor with client id '%d' already exists "
+				self.logger.info("[%s]: Sensor with client id '%d' already "
 					% (self.fileName, int(sensor["clientSensorId"]))
-					+ "in database.")
+					+ "exists in database.")
 
 				# get sensorId, description and alertDelay
 				try:
@@ -1059,7 +1065,7 @@ class Sqlite(_Storage):
 					dbAlertDelay = result[0][1]
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get sensor information.")
 
 					self._releaseLock()
@@ -1069,7 +1075,7 @@ class Sqlite(_Storage):
 				# change description if it had changed
 				if dbDescription != str(sensor["description"]):
 
-					logging.info("[%s]: Description of sensor has changed "
+					self.logger.info("[%s]: Description of sensor has changed "
 						% self.fileName
 						+ "from '%s' to '%s'. Updating database."
 						% (dbDescription, str(sensor["description"])))
@@ -1080,7 +1086,8 @@ class Sqlite(_Storage):
 							+ "WHERE id = ?",
 							(str(sensor["description"]), sensorId))
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "update description of sensor.")
 
 						self._releaseLock()
@@ -1090,7 +1097,7 @@ class Sqlite(_Storage):
 				# change alert delay if it had changed
 				if dbAlertDelay != int(sensor["alertDelay"]):
 
-					logging.info("[%s]: Alert delay of sensor has changed "
+					self.logger.info("[%s]: Alert delay of sensor has changed "
 						% self.fileName
 						+ "from '%d' to '%d'. Updating database."
 						% (dbAlertDelay, int(sensor["alertDelay"])))
@@ -1101,7 +1108,8 @@ class Sqlite(_Storage):
 							+ "WHERE id = ?",
 							(int(sensor["alertDelay"]), sensorId))
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "update alert delay of sensor.")
 
 						self._releaseLock()
@@ -1110,7 +1118,7 @@ class Sqlite(_Storage):
 
 				# get sensor alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM sensorsAlertLevels "
@@ -1118,7 +1126,7 @@ class Sqlite(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get alert levels of the sensor.")
 
 					self._releaseLock()
@@ -1139,9 +1147,9 @@ class Sqlite(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' of sensor does not "
+					self.logger.info("[%s]: Alert level '%d' of sensor does "
 						% (self.fileName, alertLevel)
-						+ "exist in database. Adding it.")
+						+ "not exist in database. Adding it.")
 
 					# add sensor alert level to database
 					self.cursor.execute("INSERT INTO sensorsAlertLevels ("
@@ -1151,7 +1159,7 @@ class Sqlite(_Storage):
 
 				# get updated sensor alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM sensorsAlertLevels "
@@ -1159,7 +1167,7 @@ class Sqlite(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get updated alert levels of the sensor.")
 
 					self._releaseLock()
@@ -1180,7 +1188,7 @@ class Sqlite(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' in database does "
+					self.logger.info("[%s]: Alert level '%d' in database does "
 						% (self.fileName, dbAlertLevel[1])
 						+ "not exist anymore for sensor. Deleting it.")
 
@@ -1190,7 +1198,7 @@ class Sqlite(_Storage):
 
 		# get updated sensors from database
 		try:
-					
+
 			self.cursor.execute("SELECT id, "
 				+ "remoteSensorId "
 				+ "FROM sensors "
@@ -1198,7 +1206,7 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
+			self.logger.exception("[%s]: Not able to " % self.fileName
 				+ "get updated sensors from database.")
 
 			self._releaseLock()
@@ -1218,9 +1226,9 @@ class Sqlite(_Storage):
 			if found:
 				continue
 
-			logging.info("[%s]: Sensor with client id '%d' in database does "
+			self.logger.info("[%s]: Sensor with client id '%d' in database "
 				% (self.fileName, dbSensor[1])
-				+ "not exist anymore for the node. Deleting it.")
+				+ "does not exist anymore for the node. Deleting it.")
 
 			try:
 				self.cursor.execute("DELETE FROM sensorsAlertLevels "
@@ -1231,7 +1239,7 @@ class Sqlite(_Storage):
 					+ "WHERE id = ?",
 					(dbSensor[0], ))
 			except Exception as e:
-				logging.exception("[%s]: Not able to delete sensor." 
+				self.logger.exception("[%s]: Not able to delete sensor."
 					% self.fileName)
 
 				self._releaseLock()
@@ -1252,13 +1260,14 @@ class Sqlite(_Storage):
 	# return True or False
 	def addAlerts(self, username, alerts):
 
-		self._acquireLock()	
+		self._acquireLock()
 
 		# get the id of the node
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." % self.fileName)
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -1278,9 +1287,9 @@ class Sqlite(_Storage):
 			# => add it
 			if len(result) == 0:
 
-				logging.info("[%s]: Alert with client id '%d' does not exist "
+				self.logger.info("[%s]: Alert with client id '%d' does not "
 					% (self.fileName, int(alert["clientAlertId"]))
-					+ "in database. Adding it.")
+					+ "exist in database. Adding it.")
 
 				# add alert to database
 				try:
@@ -1291,7 +1300,7 @@ class Sqlite(_Storage):
 						int(alert["clientAlertId"]),
 						str(alert["description"])))
 				except Exception as e:
-					logging.exception("[%s]: Not able to add alert."
+					self.logger.exception("[%s]: Not able to add alert."
 						% self.fileName)
 
 					self._releaseLock()
@@ -1303,7 +1312,7 @@ class Sqlite(_Storage):
 					alertId = self._getAlertId(nodeId,
 						int(alert["clientAlertId"]))
 				except Exception as e:
-					logging.exception("[%s]: Not able to get alertId." 
+					self.logger.exception("[%s]: Not able to get alertId."
 						% self.fileName)
 
 					self._releaseLock()
@@ -1312,13 +1321,13 @@ class Sqlite(_Storage):
 
 				# add alert alert levels to database
 				try:
-					for alertLevel in alert["alertLevels"]:			
+					for alertLevel in alert["alertLevels"]:
 						self.cursor.execute("INSERT INTO alertsAlertLevels ("
 							+ "alertId, "
 							+ "alertLevel) VALUES (?, ?)",
 							(alertId, alertLevel))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "add alert alert levels.")
 
 					self._releaseLock()
@@ -1329,9 +1338,9 @@ class Sqlite(_Storage):
 			# => check if everything is the same
 			else:
 
-				logging.info("[%s]: Alert with client id '%d' already exists "
+				self.logger.info("[%s]: Alert with client id '%d' already "
 					% (self.fileName, int(alert["clientAlertId"]))
-					+ "in database.")
+					+ "exists in database.")
 
 				# get alertId and description
 				try:
@@ -1346,7 +1355,7 @@ class Sqlite(_Storage):
 					dbDescription = result[0][0]
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get alert information.")
 
 					self._releaseLock()
@@ -1356,7 +1365,7 @@ class Sqlite(_Storage):
 				# change description if it had changed
 				if dbDescription != str(alert["description"]):
 
-					logging.info("[%s]: Description of alert has changed "
+					self.logger.info("[%s]: Description of alert has changed "
 						% self.fileName
 						+ "from '%s' to '%s'. Updating database."
 						% (dbDescription, str(alert["description"])))
@@ -1367,7 +1376,8 @@ class Sqlite(_Storage):
 							+ "WHERE id = ?",
 							(str(alert["description"]), alertId))
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "update description of alert.")
 
 						self._releaseLock()
@@ -1376,7 +1386,7 @@ class Sqlite(_Storage):
 
 				# get alert alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM alertsAlertLevels "
@@ -1384,7 +1394,7 @@ class Sqlite(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get alert levels of the alert.")
 
 					self._releaseLock()
@@ -1405,9 +1415,9 @@ class Sqlite(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' of alert does not "
+					self.logger.info("[%s]: Alert level '%d' of alert does "
 						% (self.fileName, alertLevel)
-						+ "exist in database. Adding it.")
+						+ "not exist in database. Adding it.")
 
 					# add alert alert level to database
 					self.cursor.execute("INSERT INTO alertsAlertLevels ("
@@ -1417,7 +1427,7 @@ class Sqlite(_Storage):
 
 				# get updated alert alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM alertsAlertLevels "
@@ -1425,7 +1435,7 @@ class Sqlite(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get updated alert levels of the alert.")
 
 					self._releaseLock()
@@ -1446,7 +1456,7 @@ class Sqlite(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' in database does "
+					self.logger.info("[%s]: Alert level '%d' in database does "
 						% (self.fileName, dbAlertLevel[1])
 						+ "not exist anymore for alert. Deleting it.")
 
@@ -1456,7 +1466,7 @@ class Sqlite(_Storage):
 
 		# get updated alerts from database
 		try:
-					
+
 			self.cursor.execute("SELECT id, "
 				+ "remoteAlertId "
 				+ "FROM alerts "
@@ -1464,7 +1474,7 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
+			self.logger.exception("[%s]: Not able to " % self.fileName
 				+ "get updated alerts from database.")
 
 			self._releaseLock()
@@ -1484,9 +1494,9 @@ class Sqlite(_Storage):
 			if found:
 				continue
 
-			logging.info("[%s]: Alert with client id '%d' in database does "
+			self.logger.info("[%s]: Alert with client id '%d' in database "
 				% (self.fileName, dbAlert[1])
-				+ "not exist anymore for the node. Deleting it.")
+				+ "does not exist anymore for the node. Deleting it.")
 
 			try:
 				self.cursor.execute("DELETE FROM alertsAlertLevels "
@@ -1497,7 +1507,7 @@ class Sqlite(_Storage):
 					+ "WHERE id = ?",
 					(dbAlert[0], ))
 			except Exception as e:
-				logging.exception("[%s]: Not able to delete alert." 
+				self.logger.exception("[%s]: Not able to delete alert."
 					% self.fileName)
 
 				self._releaseLock()
@@ -1518,13 +1528,14 @@ class Sqlite(_Storage):
 	# return True or False
 	def addManager(self, username, manager):
 
-		self._acquireLock()	
+		self._acquireLock()
 
 		# get the id of the node
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." % self.fileName)
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -1541,7 +1552,7 @@ class Sqlite(_Storage):
 		# => add it
 		if len(result) == 0:
 
-			logging.info("[%s]: Manager does not exist "
+			self.logger.info("[%s]: Manager does not exist "
 				% self.fileName
 				+ "in database. Adding it.")
 
@@ -1552,7 +1563,7 @@ class Sqlite(_Storage):
 					+ "description) VALUES (?, ?)", (nodeId,
 					str(manager["description"])))
 			except Exception as e:
-				logging.exception("[%s]: Not able to add manager."
+				self.logger.exception("[%s]: Not able to add manager."
 					% self.fileName)
 
 				self._releaseLock()
@@ -1563,7 +1574,7 @@ class Sqlite(_Storage):
 		# => check if everything is the same
 		else:
 
-			logging.info("[%s]: Manager already exists "
+			self.logger.info("[%s]: Manager already exists "
 				% self.fileName
 				+ "in database.")
 
@@ -1579,7 +1590,7 @@ class Sqlite(_Storage):
 				dbDescription = result[0][0]
 
 			except Exception as e:
-				logging.exception("[%s]: Not able to " % self.fileName
+				self.logger.exception("[%s]: Not able to " % self.fileName
 					+ "get manager information.")
 
 				self._releaseLock()
@@ -1589,7 +1600,7 @@ class Sqlite(_Storage):
 			# change description if it had changed
 			if dbDescription != str(manager["description"]):
 
-				logging.info("[%s]: Description of manager has changed "
+				self.logger.info("[%s]: Description of manager has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbDescription, str(manager["description"])))
@@ -1600,7 +1611,7 @@ class Sqlite(_Storage):
 						+ "WHERE id = ?",
 						(str(manager["description"]), managerId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update description of manager.")
 
 					self._releaseLock()
@@ -1627,9 +1638,9 @@ class Sqlite(_Storage):
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." 
-				% self.fileName)			
-	
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
+
 		self._releaseLock()
 
 		return nodeId
@@ -1650,8 +1661,8 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 			sensorCount = len(result)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get sensor count." 
-				% self.fileName)	
+			self.logger.exception("[%s]: Not able to get sensor count."
+				% self.fileName)
 
 		self._releaseLock()
 
@@ -1675,7 +1686,7 @@ class Sqlite(_Storage):
 				+ "FROM nodes")
 			surveyData = self.cursor.fetchall()
 		except Exception as e:
-			logging.exception("[%s]: Not able to get survey data." 
+			self.logger.exception("[%s]: Not able to get survey data."
 				% self.fileName)
 
 		self._releaseLock()
@@ -1702,7 +1713,7 @@ class Sqlite(_Storage):
 	#
 	# return True or False
 	def updateSensorState(self, nodeId, stateList):
-		
+
 		self._acquireLock()
 
 		# stateList is a list of tuples of (remoteSensorId, state)
@@ -1716,8 +1727,9 @@ class Sqlite(_Storage):
 					+ "AND remoteSensorId = ?", (nodeId, stateTuple[0]))
 				result = self.cursor.fetchall()
 				if len(result) != 1:
-					logging.error("[%s]: Sensor does not exist in database."
-						% self.fileName)
+					self.logger.error("[%s]: Sensor does not exist in "
+						% self.fileName
+						+ "database.")
 
 					self._releaseLock()
 
@@ -1730,7 +1742,7 @@ class Sqlite(_Storage):
 					+ "AND remoteSensorId = ?",
 					(stateTuple[1], int(time.time()), nodeId, stateTuple[0]))
 			except Exception as e:
-				logging.exception("[%s]: Not able to update sensor state."
+				self.logger.exception("[%s]: Not able to update sensor state."
 					% self.fileName)
 
 				self._releaseLock()
@@ -1756,8 +1768,9 @@ class Sqlite(_Storage):
 		try:
 			sensorId = self._getSensorId(nodeId, remoteSensorId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get sensorId from database."
-				% self.fileName)
+			self.logger.exception("[%s]: Not able to get sensorId from "
+				% self.fileName
+				+ "database.")
 
 			self._releaseLock()
 
@@ -1779,8 +1792,9 @@ class Sqlite(_Storage):
 		try:
 			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get alertId from database."
-				% self.fileName)
+			self.logger.exception("[%s]: Not able to get alertId from "
+				% self.fileName
+				+ "database.")
 
 			self._releaseLock()
 
@@ -1788,7 +1802,7 @@ class Sqlite(_Storage):
 
 		self._releaseLock()
 
-		return alertId		
+		return alertId
 
 
 	# gets all alert levels for a specific sensor given by sensorId
@@ -1807,7 +1821,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for sensor with id %d." % sensorId)
 
 			self._releaseLock()
@@ -1837,7 +1851,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for alert with id %d." % alertId)
 
 			self._releaseLock()
@@ -1869,7 +1883,7 @@ class Sqlite(_Storage):
 				+ "AND remoteSensorId = ?", (nodeId, remoteSensorId))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
-				logging.error("[%s]: Sensor does not exist in database."
+				self.logger.error("[%s]: Sensor does not exist in database."
 					% self.fileName)
 
 				self._releaseLock()
@@ -1910,7 +1924,7 @@ class Sqlite(_Storage):
 				dbChangeState))
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor alert."
+			self.logger.exception("[%s]: Not able to add sensor alert."
 				% self.fileName)
 
 			self._releaseLock()
@@ -1935,7 +1949,7 @@ class Sqlite(_Storage):
 		self._acquireLock()
 
 		try:
-			
+
 			self.cursor.execute("SELECT sensorAlerts.id, "
 				+ "sensors.id, "
 				+ "sensors.nodeId, "
@@ -1952,8 +1966,8 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to get sensor alerts."
-				% self.fileName)			
+			self.logger.exception("[%s]: Not able to get sensor alerts."
+				% self.fileName)
 
 			self._releaseLock()
 
@@ -1977,7 +1991,7 @@ class Sqlite(_Storage):
 			self.cursor.execute("DELETE FROM sensorAlerts WHERE id = ?",
 					(sensorAlertId, ))
 		except Exception as e:
-			logging.exception("[%s]: Not able to delete sensor alert." 
+			self.logger.exception("[%s]: Not able to delete sensor alert."
 				% self.fileName)
 
 			self._releaseLock()
@@ -2006,7 +2020,7 @@ class Sqlite(_Storage):
 			alertSystemActive = result[0][0]
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to check " % self.fileName
+			self.logger.exception("[%s]: Not able to check " % self.fileName
 				+ "if alert system is active.")
 
 			self._releaseLock()
@@ -2036,7 +2050,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all alert levels for alert clients.")
 
 			self._releaseLock()
@@ -2065,7 +2079,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all alert levels for sensors.")
 
 			self._releaseLock()
@@ -2096,7 +2110,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all connected node ids.")
 
 			self._releaseLock()
@@ -2128,7 +2142,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all persistent node ids.")
 
 			self._releaseLock()
@@ -2151,10 +2165,10 @@ class Sqlite(_Storage):
 
 		try:
 			self.cursor.execute("UPDATE nodes SET "
-				+ "connected = ? WHERE id = ?", (0, nodeId))			
+				+ "connected = ? WHERE id = ?", (0, nodeId))
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to mark " % self.fileName
+			self.logger.exception("[%s]: Not able to mark " % self.fileName
 				+ "node '%d' as not connected." % nodeId)
 
 			self._releaseLock()
@@ -2178,10 +2192,10 @@ class Sqlite(_Storage):
 
 		try:
 			self.cursor.execute("UPDATE nodes SET "
-				+ "connected = ? WHERE id = ?", (1, nodeId))			
+				+ "connected = ? WHERE id = ?", (1, nodeId))
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to mark " % self.fileName
+			self.logger.exception("[%s]: Not able to mark " % self.fileName
 				+ "node '%d' as connected." % nodeId)
 
 			self._releaseLock()
@@ -2217,7 +2231,7 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "nodes from database which sensors were not updated.")
 
 			self._releaseLock()
@@ -2254,7 +2268,7 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "sensor information from sensor id.")
 
 			self._releaseLock()
@@ -2264,7 +2278,8 @@ class Sqlite(_Storage):
 		# check if it is the only result
 		if len(result) != 1:
 
-			logging.error("[%s]: Sensor id is not unique in " % self.fileName
+			self.logger.error("[%s]: Sensor id is not unique in "
+				% self.fileName
 				+ "database.")
 
 			self._releaseLock()
@@ -2293,7 +2308,7 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "node with id %d from database." % nodeId)
 
 			self._releaseLock()
@@ -2345,7 +2360,7 @@ class Sqlite(_Storage):
 			# get all managers information
 			self.cursor.execute("SELECT * FROM managers")
 			result = self.cursor.fetchall()
-			managersInformation = result		
+			managersInformation = result
 
 			# get all alerts information
 			self.cursor.execute("SELECT * FROM alerts")
@@ -2362,7 +2377,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all nodes information from database.")
 
 			self._releaseLock()
@@ -2398,7 +2413,8 @@ class Sqlite(_Storage):
 				+ "WHERE type = ?", (optionType, ))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
-				logging.error("[%s]: Option was not found." % self.fileName)
+				self.logger.error("[%s]: Option was not found."
+					% self.fileName)
 				self._releaseLock()
 
 				return False
@@ -2410,7 +2426,8 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to update " % self.fileName
+			self.logger.exception("[%s]: Not able to update "
+				% self.fileName
 				+ "option in database.")
 
 			self._releaseLock()
@@ -2439,7 +2456,8 @@ class Sqlite(_Storage):
 				+ "WHERE id = ?", (sensorId, ))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
-				logging.error("[%s]: Sensor was not found." % self.fileName)
+				self.logger.error("[%s]: Sensor was not found."
+					% self.fileName)
 
 				self._releaseLock()
 
@@ -2449,7 +2467,7 @@ class Sqlite(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "sensor state from database.")
 
 			self._releaseLock()
@@ -2483,6 +2501,7 @@ class Mysql(_Storage):
 		self.fileName = os.path.basename(__file__)
 
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 
 		# version of server
 		self.version = self.globalData.version
@@ -2511,7 +2530,7 @@ class Mysql(_Storage):
 		# check if alert system tables exist already
 		# if not => create them
 		self.cursor.execute("SHOW TABLES LIKE 'internals'")
-		internalsResult = self.cursor.fetchall()		
+		internalsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'options'")
 		optionsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'nodes'")
@@ -2519,7 +2538,7 @@ class Mysql(_Storage):
 		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
 		sensorsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
-		sensorsAlertLevelsResult = self.cursor.fetchall()		
+		sensorsAlertLevelsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
 		sensorAlertsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'alerts'")
@@ -2615,8 +2634,8 @@ class Mysql(_Storage):
 			raise ValueError("Node id was not found.")
 
 
-	# internal function that gets the sensor id of a sensor when the id 
-	# of a node is given and the remote sensor id that is used 
+	# internal function that gets the sensor id of a sensor when the id
+	# of a node is given and the remote sensor id that is used
 	# by the node internally
 	#
 	# return sensorId or raised Exception
@@ -2636,8 +2655,8 @@ class Mysql(_Storage):
 		return sensorId
 
 
-	# internal function that gets the alert id of an alert when the id 
-	# of a node is given and the remote alert id that is used 
+	# internal function that gets the alert id of an alert when the id
+	# of a node is given and the remote alert id that is used
 	# by the node internally
 	#
 	# return alertId or raised Exception
@@ -2657,7 +2676,7 @@ class Mysql(_Storage):
 		return alertId
 
 
-	# internal function that gets the manager id of a manager when the id 
+	# internal function that gets the manager id of a manager when the id
 	# of a node is given
 	#
 	# return managerId or raised Exception
@@ -2691,7 +2710,7 @@ class Mysql(_Storage):
 				+ "FROM internals WHERE type=%s", ("uniqueID", ))
 			self.uniqueID = self.cursor.fetchall()[0][0]
 		except Exception as e:
-			logging.exception("[%s]: Not able to get the unique id." 
+			self.logger.exception("[%s]: Not able to get the unique id."
 				% self.fileName)
 
 		return self.uniqueID
@@ -2699,13 +2718,13 @@ class Mysql(_Storage):
 
 	# internal function that acquires the lock
 	def _acquireLock(self):
-		logging.debug("[%s]: Acquire lock." % self.fileName)
+		self.logger.debug("[%s]: Acquire lock." % self.fileName)
 		self.dbLock.acquire()
 
 
 	# internal function that releases the lock
 	def _releaseLock(self):
-		logging.debug("[%s]: Release lock." % self.fileName)
+		self.logger.debug("[%s]: Release lock." % self.fileName)
 		self.dbLock.release()
 
 
@@ -2819,7 +2838,7 @@ class Mysql(_Storage):
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "nodeId INTEGER NOT NULL, "
 			+ "description VARCHAR(255) NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")		
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# commit all changes
 		self.conn.commit()
@@ -2846,7 +2865,7 @@ class Mysql(_Storage):
 		# => delete old database schema
 		if float(result[0][0]) != self.version:
 
-			logging.info("[%s]: Server version "
+			self.logger.info("[%s]: Server version "
 				% self.fileName
 				+ "'%.3f' not compatible "
 				% self.version
@@ -2916,7 +2935,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -2927,7 +2946,7 @@ class Mysql(_Storage):
 		# => if not add node
 		if not self._usernameInDb(username):
 
-			logging.info("[%s]: Node with username '%s' does not exist "
+			self.logger.info("[%s]: Node with username '%s' does not exist "
 				% (self.fileName, username)
 				+ "in database. Adding it.")
 
@@ -2946,7 +2965,7 @@ class Mysql(_Storage):
 					(hostname, username, nodeType, instance, 0, version, rev,
 					persistent))
 			except Exception as e:
-				logging.exception("[%s]: Not able to add node."
+				self.logger.exception("[%s]: Not able to add node."
 					% self.fileName)
 
 				# close connection to the database
@@ -2960,7 +2979,7 @@ class Mysql(_Storage):
 		# => check if everything is the same
 		else:
 
-			logging.info("[%s]: Node with username '%s' already exists "
+			self.logger.info("[%s]: Node with username '%s' already exists "
 				% (self.fileName, username)
 				+ "in database.")
 
@@ -2985,7 +3004,7 @@ class Mysql(_Storage):
 				dbPersistent = result[0][5]
 
 			except Exception as e:
-				logging.exception("[%s]: Not able to get node information."
+				self.logger.exception("[%s]: Not able to get node information."
 					% self.fileName)
 
 				# close connection to the database
@@ -2998,7 +3017,7 @@ class Mysql(_Storage):
 			# change hostname if it had changed
 			if dbHostname != hostname:
 
-				logging.info("[%s]: Hostname of node has changed "
+				self.logger.info("[%s]: Hostname of node has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbHostname, hostname))
@@ -3009,7 +3028,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(hostname, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update hostname of node.")
 
 					# close connection to the database
@@ -3022,7 +3041,7 @@ class Mysql(_Storage):
 			# change instance if it had changed
 			if dbInstance != instance:
 
-				logging.info("[%s]: Instance of node has changed "
+				self.logger.info("[%s]: Instance of node has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbInstance, instance))
@@ -3033,7 +3052,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(instance, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update instance of node.")
 
 					self._releaseLock()
@@ -3043,7 +3062,7 @@ class Mysql(_Storage):
 			# change version if it had changed
 			if dbVersion != version:
 
-				logging.info("[%s]: Version of node has changed "
+				self.logger.info("[%s]: Version of node has changed "
 					% self.fileName
 					+ "from '%.3f' to '%.3f'. Updating database."
 					% (dbVersion, version))
@@ -3054,7 +3073,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(version, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update version of node.")
 
 					self._releaseLock()
@@ -3064,7 +3083,7 @@ class Mysql(_Storage):
 			# change revision if it had changed
 			if dbRev != rev:
 
-				logging.info("[%s]: Revision of node has changed "
+				self.logger.info("[%s]: Revision of node has changed "
 					% self.fileName
 					+ "from '%d' to '%d'. Updating database."
 					% (dbRev, rev))
@@ -3075,7 +3094,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(rev, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update revision of node.")
 
 					self._releaseLock()
@@ -3085,7 +3104,7 @@ class Mysql(_Storage):
 			# change persistent if it had changed
 			if dbPersistent != persistent:
 
-				logging.info("[%s]: Persistent flag of node has changed "
+				self.logger.info("[%s]: Persistent flag of node has changed "
 					% self.fileName
 					+ "from '%d' to '%d'. Updating database."
 					% (dbPersistent, persistent))
@@ -3096,7 +3115,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(persistent, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update persistent flag of node.")
 
 					self._releaseLock()
@@ -3108,7 +3127,7 @@ class Mysql(_Storage):
 			# and change node type
 			if dbNodeType != nodeType:
 
-				logging.info("[%s]: Type of node has changed "
+				self.logger.info("[%s]: Type of node has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbNodeType, nodeType))
@@ -3138,7 +3157,8 @@ class Mysql(_Storage):
 								(sensorIdResult[0], ))
 
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "delete sensors of the node.")
 
 						# close connection to the database
@@ -3173,7 +3193,8 @@ class Mysql(_Storage):
 								(alertIdResult[0], ))
 
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "delete alerts of the node.")
 
 						# close connection to the database
@@ -3186,14 +3207,15 @@ class Mysql(_Storage):
 				# if old node had type "manager"
 				# => delete all manager information
 				elif dbNodeType == "manager":
-					
+
 					try:
 						self.cursor.execute("DELETE FROM managers "
 							+ "WHERE nodeId = %s",
 							(nodeId, ))
 
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "delete manager information of the node.")
 
 						# close connection to the database
@@ -3206,7 +3228,8 @@ class Mysql(_Storage):
 				# node type in database not known
 				else:
 
-					logging.error("[%s]: Unknown node type " % self.fileName
+					self.logger.error("[%s]: Unknown node type "
+						% self.fileName
 						+ "when deleting old sensors/alerts/manager "
 						+ "information.")
 
@@ -3224,7 +3247,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(nodeType, nodeId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update type of node.")
 
 					# close connection to the database
@@ -3251,13 +3274,13 @@ class Mysql(_Storage):
 	# return True or False
 	def addSensors(self, username, sensors):
 
-		self._acquireLock()	
+		self._acquireLock()
 
 		# connect to the database
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -3268,7 +3291,8 @@ class Mysql(_Storage):
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." % self.fileName)
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
@@ -3291,9 +3315,9 @@ class Mysql(_Storage):
 			# => add it
 			if len(result) == 0:
 
-				logging.info("[%s]: Sensor with client id '%d' does not exist "
+				self.logger.info("[%s]: Sensor with client id '%d' does not "
 					% (self.fileName, int(sensor["clientSensorId"]))
-					+ "in database. Adding it.")
+					+ "exist in database. Adding it.")
 
 				# add sensor to database
 				try:
@@ -3308,7 +3332,7 @@ class Mysql(_Storage):
 						str(sensor["description"]), 0, 0,
 						int(sensor["alertDelay"])))
 				except Exception as e:
-					logging.exception("[%s]: Not able to add sensor."
+					self.logger.exception("[%s]: Not able to add sensor."
 						% self.fileName)
 
 					# close connection to the database
@@ -3323,7 +3347,7 @@ class Mysql(_Storage):
 					sensorId = self._getSensorId(nodeId,
 						int(sensor["clientSensorId"]))
 				except Exception as e:
-					logging.exception("[%s]: Not able to get sensorId." 
+					self.logger.exception("[%s]: Not able to get sensorId."
 						% self.fileName)
 
 					# close connection to the database
@@ -3335,13 +3359,13 @@ class Mysql(_Storage):
 
 				# add sensor alert levels to database
 				try:
-					for alertLevel in sensor["alertLevels"]:			
+					for alertLevel in sensor["alertLevels"]:
 						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
 							+ "sensorId, "
 							+ "alertLevel) VALUES (%s, %s)",
 							(sensorId, alertLevel))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "add sensor alert levels.")
 
 					# close connection to the database
@@ -3355,9 +3379,9 @@ class Mysql(_Storage):
 			# => check if everything is the same
 			else:
 
-				logging.info("[%s]: Sensor with client id '%d' already exists "
+				self.logger.info("[%s]: Sensor with client id '%d' already "
 					% (self.fileName, int(sensor["clientSensorId"]))
-					+ "in database.")
+					+ "exists in database.")
 
 				# get sensorId, description and alertDelay
 				try:
@@ -3374,7 +3398,7 @@ class Mysql(_Storage):
 					dbAlertDelay = result[0][1]
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get sensor information.")
 
 					# close connection to the database
@@ -3387,7 +3411,7 @@ class Mysql(_Storage):
 				# change description if it had changed
 				if dbDescription != str(sensor["description"]):
 
-					logging.info("[%s]: Description of sensor has changed "
+					self.logger.info("[%s]: Description of sensor has changed "
 						% self.fileName
 						+ "from '%s' to '%s'. Updating database."
 						% (dbDescription, str(sensor["description"])))
@@ -3398,7 +3422,8 @@ class Mysql(_Storage):
 							+ "WHERE id = %s",
 							(str(sensor["description"]), sensorId))
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "update description of sensor.")
 
 						# close connection to the database
@@ -3411,7 +3436,7 @@ class Mysql(_Storage):
 				# change alert delay if it had changed
 				if dbAlertDelay != int(sensor["alertDelay"]):
 
-					logging.info("[%s]: Alert delay of sensor has changed "
+					self.logger.info("[%s]: Alert delay of sensor has changed "
 						% self.fileName
 						+ "from '%d' to '%d'. Updating database."
 						% (dbAlertDelay, int(sensor["alertDelay"])))
@@ -3422,7 +3447,8 @@ class Mysql(_Storage):
 							+ "WHERE id = %s",
 							(int(sensor["alertDelay"]), sensorId))
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "update alert delay of sensor.")
 
 						# close connection to the database
@@ -3434,7 +3460,7 @@ class Mysql(_Storage):
 
 				# get sensor alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM sensorsAlertLevels "
@@ -3442,7 +3468,7 @@ class Mysql(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get alert levels of the sensor.")
 
 					# close connection to the database
@@ -3466,9 +3492,9 @@ class Mysql(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' of sensor does not "
+					self.logger.info("[%s]: Alert level '%d' of sensor does "
 						% (self.fileName, alertLevel)
-						+ "exist in database. Adding it.")
+						+ "not exist in database. Adding it.")
 
 					# add sensor alert level to database
 					self.cursor.execute("INSERT INTO sensorsAlertLevels ("
@@ -3478,7 +3504,7 @@ class Mysql(_Storage):
 
 				# get updated sensor alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM sensorsAlertLevels "
@@ -3486,7 +3512,7 @@ class Mysql(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get updated alert levels of the sensor.")
 
 					# close connection to the database
@@ -3510,7 +3536,7 @@ class Mysql(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' in database does "
+					self.logger.info("[%s]: Alert level '%d' in database does "
 						% (self.fileName, dbAlertLevel[1])
 						+ "not exist anymore for sensor. Deleting it.")
 
@@ -3520,7 +3546,7 @@ class Mysql(_Storage):
 
 		# get updated sensors from database
 		try:
-					
+
 			self.cursor.execute("SELECT id, "
 				+ "remoteSensorId "
 				+ "FROM sensors "
@@ -3528,7 +3554,7 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
+			self.logger.exception("[%s]: Not able to " % self.fileName
 				+ "get updated sensors from database.")
 
 			# close connection to the database
@@ -3551,9 +3577,9 @@ class Mysql(_Storage):
 			if found:
 				continue
 
-			logging.info("[%s]: Sensor with client id '%d' in database does "
+			self.logger.info("[%s]: Sensor with client id '%d' in database "
 				% (self.fileName, dbSensor[1])
-				+ "not exist anymore for the node. Deleting it.")
+				+ "does not exist anymore for the node. Deleting it.")
 
 			try:
 				self.cursor.execute("DELETE FROM sensorsAlertLevels "
@@ -3564,7 +3590,7 @@ class Mysql(_Storage):
 					+ "WHERE id = %s",
 					(dbSensor[0], ))
 			except Exception as e:
-				logging.exception("[%s]: Not able to delete sensor." 
+				self.logger.exception("[%s]: Not able to delete sensor."
 					% self.fileName)
 
 				# close connection to the database
@@ -3591,13 +3617,13 @@ class Mysql(_Storage):
 	# return True or False
 	def addAlerts(self, username, alerts):
 
-		self._acquireLock()	
+		self._acquireLock()
 
 		# connect to the database
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -3608,7 +3634,8 @@ class Mysql(_Storage):
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." % self.fileName)
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
@@ -3631,9 +3658,9 @@ class Mysql(_Storage):
 			# => add it
 			if len(result) == 0:
 
-				logging.info("[%s]: Alert with client id '%d' does not exist "
+				self.logger.info("[%s]: Alert with client id '%d' does not "
 					% (self.fileName, int(alert["clientAlertId"]))
-					+ "in database. Adding it.")
+					+ "exist in database. Adding it.")
 
 				# add alert to database
 				try:
@@ -3644,7 +3671,7 @@ class Mysql(_Storage):
 						int(alert["clientAlertId"]),
 						str(alert["description"])))
 				except Exception as e:
-					logging.exception("[%s]: Not able to add alert."
+					self.logger.exception("[%s]: Not able to add alert."
 						% self.fileName)
 
 					# close connection to the database
@@ -3659,7 +3686,7 @@ class Mysql(_Storage):
 					alertId = self._getAlertId(nodeId,
 						int(alert["clientAlertId"]))
 				except Exception as e:
-					logging.exception("[%s]: Not able to get alertId." 
+					self.logger.exception("[%s]: Not able to get alertId."
 						% self.fileName)
 
 					# close connection to the database
@@ -3671,13 +3698,13 @@ class Mysql(_Storage):
 
 				# add alert alert levels to database
 				try:
-					for alertLevel in alert["alertLevels"]:			
+					for alertLevel in alert["alertLevels"]:
 						self.cursor.execute("INSERT INTO alertsAlertLevels ("
 							+ "alertId, "
 							+ "alertLevel) VALUES (%s, %s)",
 							(alertId, alertLevel))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "add alert alert levels.")
 
 					# close connection to the database
@@ -3691,9 +3718,9 @@ class Mysql(_Storage):
 			# => check if everything is the same
 			else:
 
-				logging.info("[%s]: Alert with client id '%d' already exists "
+				self.logger.info("[%s]: Alert with client id '%d' already "
 					% (self.fileName, int(alert["clientAlertId"]))
-					+ "in database.")
+					+ "exists in database.")
 
 				# get alertId and description
 				try:
@@ -3708,7 +3735,7 @@ class Mysql(_Storage):
 					dbDescription = result[0][0]
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get alert information.")
 
 					# close connection to the database
@@ -3721,7 +3748,7 @@ class Mysql(_Storage):
 				# change description if it had changed
 				if dbDescription != str(alert["description"]):
 
-					logging.info("[%s]: Description of alert has changed "
+					self.logger.info("[%s]: Description of alert has changed "
 						% self.fileName
 						+ "from '%s' to '%s'. Updating database."
 						% (dbDescription, str(alert["description"])))
@@ -3732,7 +3759,8 @@ class Mysql(_Storage):
 							+ "WHERE id = %s",
 							(str(alert["description"]), alertId))
 					except Exception as e:
-						logging.exception("[%s]: Not able to " % self.fileName
+						self.logger.exception("[%s]: Not able to "
+							% self.fileName
 							+ "update description of alert.")
 
 						# close connection to the database
@@ -3744,7 +3772,7 @@ class Mysql(_Storage):
 
 				# get alert alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM alertsAlertLevels "
@@ -3752,7 +3780,8 @@ class Mysql(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to "
+						% self.fileName
 						+ "get alert levels of the alert.")
 
 					# close connection to the database
@@ -3776,9 +3805,9 @@ class Mysql(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' of alert does not "
+					self.logger.info("[%s]: Alert level '%d' of alert does "
 						% (self.fileName, alertLevel)
-						+ "exist in database. Adding it.")
+						+ "not exist in database. Adding it.")
 
 					# add alert alert level to database
 					self.cursor.execute("INSERT INTO alertsAlertLevels ("
@@ -3788,7 +3817,7 @@ class Mysql(_Storage):
 
 				# get updated alert alert levels from database
 				try:
-					
+
 					self.cursor.execute("SELECT id, "
 						+ "alertLevel "
 						+ "FROM alertsAlertLevels "
@@ -3796,7 +3825,7 @@ class Mysql(_Storage):
 					result = self.cursor.fetchall()
 
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "get updated alert levels of the alert.")
 
 					# close connection to the database
@@ -3820,7 +3849,7 @@ class Mysql(_Storage):
 					if found:
 						continue
 
-					logging.info("[%s]: Alert level '%d' in database does "
+					self.logger.info("[%s]: Alert level '%d' in database does "
 						% (self.fileName, dbAlertLevel[1])
 						+ "not exist anymore for alert. Deleting it.")
 
@@ -3830,7 +3859,7 @@ class Mysql(_Storage):
 
 		# get updated alerts from database
 		try:
-					
+
 			self.cursor.execute("SELECT id, "
 				+ "remoteAlertId "
 				+ "FROM alerts "
@@ -3838,7 +3867,7 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to " % self.fileName
+			self.logger.exception("[%s]: Not able to " % self.fileName
 				+ "get updated alerts from database.")
 
 			# close connection to the database
@@ -3861,9 +3890,9 @@ class Mysql(_Storage):
 			if found:
 				continue
 
-			logging.info("[%s]: Alert with client id '%d' in database does "
+			self.logger.info("[%s]: Alert with client id '%d' in "
 				% (self.fileName, dbAlert[1])
-				+ "not exist anymore for the node. Deleting it.")
+				+ "database does not exist anymore for the node. Deleting it.")
 
 			try:
 				self.cursor.execute("DELETE FROM alertsAlertLevels "
@@ -3874,7 +3903,7 @@ class Mysql(_Storage):
 					+ "WHERE id = %s",
 					(dbAlert[0], ))
 			except Exception as e:
-				logging.exception("[%s]: Not able to delete alert." 
+				self.logger.exception("[%s]: Not able to delete alert."
 					% self.fileName)
 
 				# close connection to the database
@@ -3901,13 +3930,13 @@ class Mysql(_Storage):
 	# return True or False
 	def addManager(self, username, manager):
 
-		self._acquireLock()	
+		self._acquireLock()
 
 		# connect to the database
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -3918,7 +3947,8 @@ class Mysql(_Storage):
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." % self.fileName)
+			self.logger.exception("[%s]: Not able to get node id."
+				% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
@@ -3938,7 +3968,7 @@ class Mysql(_Storage):
 		# => add it
 		if len(result) == 0:
 
-			logging.info("[%s]: Manager does not exist "
+			self.logger.info("[%s]: Manager does not exist "
 				% self.fileName
 				+ "in database. Adding it.")
 
@@ -3949,7 +3979,7 @@ class Mysql(_Storage):
 					+ "description) VALUES (%s, %s)", (nodeId,
 					str(manager["description"])))
 			except Exception as e:
-				logging.exception("[%s]: Not able to add manager."
+				self.logger.exception("[%s]: Not able to add manager."
 					% self.fileName)
 
 				# close connection to the database
@@ -3963,7 +3993,7 @@ class Mysql(_Storage):
 		# => check if everything is the same
 		else:
 
-			logging.info("[%s]: Manager already exists "
+			self.logger.info("[%s]: Manager already exists "
 				% self.fileName
 				+ "in database.")
 
@@ -3979,7 +4009,7 @@ class Mysql(_Storage):
 				dbDescription = result[0][0]
 
 			except Exception as e:
-				logging.exception("[%s]: Not able to " % self.fileName
+				self.logger.exception("[%s]: Not able to " % self.fileName
 					+ "get manager information.")
 
 				# close connection to the database
@@ -3992,7 +4022,7 @@ class Mysql(_Storage):
 			# change description if it had changed
 			if dbDescription != str(manager["description"]):
 
-				logging.info("[%s]: Description of manager has changed "
+				self.logger.info("[%s]: Description of manager has changed "
 					% self.fileName
 					+ "from '%s' to '%s'. Updating database."
 					% (dbDescription, str(manager["description"])))
@@ -4003,7 +4033,7 @@ class Mysql(_Storage):
 						+ "WHERE id = %s",
 						(str(manager["description"]), managerId))
 				except Exception as e:
-					logging.exception("[%s]: Not able to " % self.fileName
+					self.logger.exception("[%s]: Not able to " % self.fileName
 						+ "update description of manager.")
 
 					# close connection to the database
@@ -4036,7 +4066,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4047,7 +4077,7 @@ class Mysql(_Storage):
 		try:
 			nodeId = self._getNodeId(username)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get node id." 
+			self.logger.exception("[%s]: Not able to get node id."
 				% self.fileName)
 
 		# close connection to the database
@@ -4068,7 +4098,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4084,7 +4114,7 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 			sensorCount = len(result)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get sensor count." 
+			self.logger.exception("[%s]: Not able to get sensor count."
 				% self.fileName)
 
 		# close connection to the database
@@ -4107,7 +4137,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4123,7 +4153,7 @@ class Mysql(_Storage):
 				+ "FROM nodes")
 			surveyData = self.cursor.fetchall()
 		except Exception as e:
-			logging.exception("[%s]: Not able to get survey data." 
+			self.logger.exception("[%s]: Not able to get survey data."
 				% self.fileName)
 
 		# close connection to the database
@@ -4146,7 +4176,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4169,14 +4199,14 @@ class Mysql(_Storage):
 	#
 	# return True or False
 	def updateSensorState(self, nodeId, stateList):
-		
+
 		self._acquireLock()
 
 		# connect to the database
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4194,8 +4224,9 @@ class Mysql(_Storage):
 					+ "AND remoteSensorId = %s", (nodeId, stateTuple[0]))
 				result = self.cursor.fetchall()
 				if len(result) != 1:
-					logging.error("[%s]: Sensor does not exist in database."
-						% self.fileName)
+					self.logger.error("[%s]: Sensor does not exist in "
+						% self.fileName
+						+ "database.")
 
 					# close connection to the database
 					self._closeConnection()
@@ -4211,7 +4242,7 @@ class Mysql(_Storage):
 					+ "AND remoteSensorId = %s",
 					(stateTuple[1], int(time.time()), nodeId, stateTuple[0]))
 			except Exception as e:
-				logging.exception("[%s]: Not able to update sensor state."
+				self.logger.exception("[%s]: Not able to update sensor state."
 					% self.fileName)
 
 				# close connection to the database
@@ -4244,7 +4275,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4254,8 +4285,9 @@ class Mysql(_Storage):
 		try:
 			sensorId = self._getSensorId(nodeId, remoteSensorId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get sensorId from database."
-				% self.fileName)
+			self.logger.exception("[%s]: Not able to get sensorId from "
+				% self.fileName
+				+ "database.")
 
 			# close connection to the database
 			self._closeConnection()
@@ -4284,7 +4316,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4294,8 +4326,9 @@ class Mysql(_Storage):
 		try:
 			alertId = self._getAlertId(nodeId, remoteAlertId)
 		except Exception as e:
-			logging.exception("[%s]: Not able to get alertId from database."
-				% self.fileName)
+			self.logger.exception("[%s]: Not able to get alertId from "
+				% self.fileName
+				+ "database.")
 
 			# close connection to the database
 			self._closeConnection()
@@ -4324,7 +4357,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4339,7 +4372,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for sensor with id %d." % sensorId)
 
 			# close connection to the database
@@ -4371,7 +4404,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4386,7 +4419,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "alert levels for alert with id %d." % alertId)
 
 			# close connection to the database
@@ -4419,7 +4452,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4435,7 +4468,7 @@ class Mysql(_Storage):
 				+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
-				logging.error("[%s]: Sensor does not exist in database."
+				self.logger.error("[%s]: Sensor does not exist in database."
 					% self.fileName)
 
 				# close connection to the database
@@ -4448,7 +4481,7 @@ class Mysql(_Storage):
 
 			# update state of sensor in the database
 			# (if state is affected by sensor alert)
-			if changeState:			
+			if changeState:
 				self.cursor.execute("UPDATE sensors SET "
 					+ "state = %s, "
 					+ "lastStateUpdated = %s "
@@ -4479,7 +4512,7 @@ class Mysql(_Storage):
 				dbChangeState))
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to add sensor alert."
+			self.logger.exception("[%s]: Not able to add sensor alert."
 				% self.fileName)
 
 			# close connection to the database
@@ -4513,7 +4546,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4521,7 +4554,7 @@ class Mysql(_Storage):
 			return None
 
 		try:
-			
+
 			self.cursor.execute("SELECT sensorAlerts.id, "
 				+ "sensors.id, "
 				+ "sensors.nodeId, "
@@ -4538,8 +4571,8 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to get sensor alerts."
-				% self.fileName)			
+			self.logger.exception("[%s]: Not able to get sensor alerts."
+				% self.fileName)
 
 			# close connection to the database
 			self._closeConnection()
@@ -4569,7 +4602,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4580,7 +4613,7 @@ class Mysql(_Storage):
 			self.cursor.execute("DELETE FROM sensorAlerts WHERE id = %s",
 					(sensorAlertId, ))
 		except Exception as e:
-			logging.exception("[%s]: Not able to delete sensor alert." 
+			self.logger.exception("[%s]: Not able to delete sensor alert."
 				% self.fileName)
 
 			# close connection to the database
@@ -4612,7 +4645,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4626,7 +4659,7 @@ class Mysql(_Storage):
 			alertSystemActive = result[0][0]
 
 		except Exception as e:
-			logging.exception("[%s]: Not able to check " % self.fileName
+			self.logger.exception("[%s]: Not able to check " % self.fileName
 				+ "if alert system is active.")
 
 			# close connection to the database
@@ -4659,7 +4692,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4673,7 +4706,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all alert levels for alert clients.")
 
 			# close connection to the database
@@ -4705,7 +4738,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4719,7 +4752,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all alert levels for sensors.")
 
 			# close connection to the database
@@ -4751,7 +4784,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4767,7 +4800,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all connected node ids.")
 
 			# close connection to the database
@@ -4800,7 +4833,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4816,7 +4849,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all persistent node ids.")
 
 			# close connection to the database
@@ -4847,7 +4880,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4856,10 +4889,10 @@ class Mysql(_Storage):
 
 		try:
 			self.cursor.execute("UPDATE nodes SET "
-				+ "connected = %s WHERE id = %s", (0, nodeId))			
+				+ "connected = %s WHERE id = %s", (0, nodeId))
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to mark " % self.fileName
+			self.logger.exception("[%s]: Not able to mark " % self.fileName
 				+ "node '%d' as not connected." % nodeId)
 
 			# close connection to the database
@@ -4891,7 +4924,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4900,10 +4933,10 @@ class Mysql(_Storage):
 
 		try:
 			self.cursor.execute("UPDATE nodes SET "
-				+ "connected = %s WHERE id = %s", (1, nodeId))			
+				+ "connected = %s WHERE id = %s", (1, nodeId))
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to mark " % self.fileName
+			self.logger.exception("[%s]: Not able to mark " % self.fileName
 				+ "node '%d' as connected." % nodeId)
 
 			# close connection to the database
@@ -4938,7 +4971,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -4956,7 +4989,7 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "nodes from database which sensors were not updated.")
 
 			# close connection to the database
@@ -4989,7 +5022,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -5010,7 +5043,7 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "sensor information from sensor id.")
 
 			# close connection to the database
@@ -5023,7 +5056,8 @@ class Mysql(_Storage):
 		# check if it is the only result
 		if len(result) != 1:
 
-			logging.error("[%s]: Sensor id is not unique in " % self.fileName
+			self.logger.error("[%s]: Sensor id is not unique in "
+				% self.fileName
 				+ "database.")
 
 			# close connection to the database
@@ -5055,7 +5089,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -5069,7 +5103,7 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "node with id %d from database." % nodeId)
 
 			# close connection to the database
@@ -5109,7 +5143,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -5138,7 +5172,7 @@ class Mysql(_Storage):
 			# get all managers information
 			self.cursor.execute("SELECT * FROM managers")
 			result = self.cursor.fetchall()
-			managersInformation = result		
+			managersInformation = result
 
 			# get all alerts information
 			self.cursor.execute("SELECT * FROM alerts")
@@ -5155,7 +5189,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get " % self.fileName
 				+ "all nodes information from database.")
 
 			# close connection to the database
@@ -5194,7 +5228,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -5208,7 +5242,8 @@ class Mysql(_Storage):
 				+ "WHERE type=%s", (optionType, ))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
-				logging.error("[%s]: Option was not found." % self.fileName)
+				self.logger.error("[%s]: Option was not found."
+					% self.fileName)
 
 				# close connection to the database
 				self._closeConnection()
@@ -5224,7 +5259,7 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to update " % self.fileName
+			self.logger.exception("[%s]: Not able to update " % self.fileName
 				+ "option in database.")
 
 			# close connection to the database
@@ -5256,7 +5291,7 @@ class Mysql(_Storage):
 		try:
 			self._openConnection()
 		except Exception as e:
-			logging.exception("[%s]: Not able to connect to database."
+			self.logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
 
 			self._releaseLock()
@@ -5270,7 +5305,8 @@ class Mysql(_Storage):
 				+ "WHERE id=%s", (sensorId, ))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
-				logging.error("[%s]: Sensor was not found." % self.fileName)
+				self.logger.error("[%s]: Sensor was not found."
+					% self.fileName)
 
 				# close connection to the database
 				self._closeConnection()
@@ -5283,7 +5319,8 @@ class Mysql(_Storage):
 
 		except Exception as e:
 
-			logging.exception("[%s]: Not able to get " % self.fileName
+			self.logger.exception("[%s]: Not able to get "
+				% self.fileName
 				+ "sensor state from database.")
 
 			# close connection to the database

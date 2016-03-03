@@ -24,6 +24,7 @@ class ManagerUpdateExecuter(threading.Thread):
 
 		# get global configured data
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 		self.serverSessions = self.globalData.serverSessions
 		self.managerUpdateInterval = self.globalData.managerUpdateInterval
 		self.storage = self.globalData.storage
@@ -54,7 +55,7 @@ class ManagerUpdateExecuter(threading.Thread):
 
 	def run(self):
 
-		while 1:
+		while True:
 
 			# check if thread should terminate
 			if self.exitFlag:
@@ -102,7 +103,7 @@ class ManagerUpdateExecuter(threading.Thread):
 					statusUpdateProcess = AsynchronousSender(self.globalData,
 						serverSession.clientComm)
 					# set thread to daemon
-					# => threads terminates when main thread terminates	
+					# => threads terminates when main thread terminates
 					statusUpdateProcess.daemon = True
 					statusUpdateProcess.sendManagerUpdate = True
 					statusUpdateProcess.start()
@@ -134,7 +135,7 @@ class ManagerUpdateExecuter(threading.Thread):
 					stateChangeProcess = AsynchronousSender(self.globalData,
 						serverSession.clientComm)
 					# set thread to daemon
-					# => threads terminates when main thread terminates	
+					# => threads terminates when main thread terminates
 					stateChangeProcess.daemon = True
 					stateChangeProcess.sendManagerStateChange = True
 					stateChangeProcess.sendManagerStateChangeSensorId \

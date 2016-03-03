@@ -31,7 +31,7 @@ import xml.etree.ElementTree
 
 # function is used to parse a rule of an alert level recursively
 def parseRuleRecursively(currentRoot, currentRule):
-	
+
 	if currentRoot.tag == "not":
 
 		# get possible elemts
@@ -732,29 +732,39 @@ if __name__ == '__main__':
 		configRoot = xml.etree.ElementTree.parse(
 			globalData.configFile).getroot()
 
-		logfile = str(configRoot.find("general").find("log").attrib["file"])
+		globalData.logdir = str(configRoot.find("general").find(
+			"log").attrib["dir"])
 
 		# parse chosen log level
 		tempLoglevel = str(
 			configRoot.find("general").find("log").attrib["level"])
 		tempLoglevel = tempLoglevel.upper()
 		if tempLoglevel == "DEBUG":
-			loglevel = logging.DEBUG
+			globalData.loglevel = logging.DEBUG
 		elif tempLoglevel == "INFO":
-			loglevel = logging.INFO
+			globalData.loglevel = logging.INFO
 		elif tempLoglevel == "WARNING":
-			loglevel = logging.WARNING
+			globalData.loglevel = logging.WARNING
 		elif tempLoglevel == "ERROR":
-			loglevel = logging.ERROR
+			globalData.loglevel = logging.ERROR
 		elif tempLoglevel == "CRITICAL":
-			loglevel = logging.CRITICAL
+			globalData.loglevel = logging.CRITICAL
 		else:
 			raise ValueError("No valid log level in config file.")
 
 		# initialize logging
-		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
-			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
-			level=loglevel)
+		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+			datefmt='%m/%d/%Y %H:%M:%S',
+			filename=globalData.logdir + "/all.log",
+			level=globalData.loglevel)
+
+		globalData.logger = logging.getLogger("server")
+		fh = logging.FileHandler(globalData.logdir + "/server.log")
+		fh.setLevel(globalData.loglevel)
+		format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',
+			'%m/%d/%Y %H:%M:%S')
+		fh.setFormatter(format)
+		globalData.logger.addHandler(fh)
 
 	except Exception as e:
 		print "Config could not be parsed."
@@ -773,7 +783,7 @@ if __name__ == '__main__':
 				% globalData.version)
 
 		# parse smtp options if activated
-		logging.debug("[%s]: Parsing smtp configuration." % fileName)
+		globalData.logger.debug("[%s]: Parsing smtp configuration." % fileName)
 		smtpActivated = (str(
 			configRoot.find("smtp").find("general").attrib[
 			"activated"]).upper() == "TRUE")
@@ -786,11 +796,12 @@ if __name__ == '__main__':
 				configRoot.find("smtp").find("general").attrib["fromAddr"])
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
-			globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort,
+			globalData.smtpAlert = SMTPAlert(globalData, smtpServer, smtpPort,
 			smtpFromAddr, smtpToAddr)
 
 		# parse update options
-		logging.debug("[%s]: Parsing update configuration." % fileName)
+		globalData.logger.debug("[%s]: Parsing update configuration."
+			% fileName)
 		updateActivated = (str(
 			configRoot.find("update").find("general").attrib[
 			"activated"]).upper() == "TRUE")
@@ -818,18 +829,20 @@ if __name__ == '__main__':
 					+ "notification activated when smtp is not activated.")
 
 		# configure user credentials backend
-		logging.debug("[%s]: Parsing user backend configuration." % fileName)
+		globalData.logger.debug("[%s]: Parsing user backend configuration."
+			% fileName)
 		userBackendMethod = str(
 			configRoot.find("storage").find("userBackend").attrib[
 			"method"]).upper()
 		if userBackendMethod == "CSV":
-			globalData.userBackend = CSVBackend(globalData.userBackendCsvFile)
+			globalData.userBackend = CSVBackend(globalData,
+				globalData.userBackendCsvFile)
 
 		else:
 			raise ValueError("No valid user backend method in config file.")
 
 		# configure storage backend (check which backend is configured)
-		logging.debug("[%s]: Parsing storage backend configuration."
+		globalData.logger.debug("[%s]: Parsing storage backend configuration."
 			% fileName)
 		userBackendMethod = str(
 			configRoot.find("storage").find("storageBackend").attrib[
@@ -859,13 +872,15 @@ if __name__ == '__main__':
 			raise ValueError("No valid storage backend method in config file.")
 
 		# get survey configurations
-		logging.debug("[%s]: Parsing survey configuration." % fileName)
+		globalData.logger.debug("[%s]: Parsing survey configuration."
+			% fileName)
 		surveyActivated = (str(
 			configRoot.find("general").find("survey").attrib[
 			"participate"]).upper() == "TRUE")
 
 		# get server configurations
-		logging.debug("[%s]: Parsing server configuration." % fileName)
+		globalData.logger.debug("[%s]: Parsing server configuration."
+			% fileName)
 		globalData.serverCertFile = str(configRoot.find("general").find(
 				"server").attrib["certFile"])
 		globalData.serverKeyFile = str(configRoot.find("general").find(
@@ -875,7 +890,7 @@ if __name__ == '__main__':
 		if (os.path.exists(globalData.serverCertFile) is False
 			or os.path.exists(globalData.serverKeyFile) is False):
 			raise ValueError("Server certificate or key does not exist.")
-		
+
 		# get client configurations
 		globalData.useClientCertificates = (str(
 			configRoot.find("general").find("client").attrib[
@@ -890,7 +905,8 @@ if __name__ == '__main__':
 				raise ValueError("Client CA file does not exist.")
 
 		# parse all alert levels
-		logging.debug("[%s]: Parsing alert levels configuration." % fileName)
+		globalData.logger.debug("[%s]: Parsing alert levels configuration."
+			% fileName)
 		for item in configRoot.find("alertLevels").iterfind("alertLevel"):
 
 			alertLevel = AlertLevel()
@@ -1241,11 +1257,13 @@ if __name__ == '__main__':
 				alertLevel.rules.sort(key=lambda x: x.order)
 
 				# check if parsed rules should be logged
-				if (loglevel == logging.INFO
-					or loglevel == logging.DEBUG):
+				if (globalData.loglevel == logging.INFO
+					or globalData.loglevel == logging.DEBUG):
 
-					logging.info("[%s]: Parsed rules for alert level %d."
-						% (fileName, alertLevel.level))
+					globalData.logger.info("[%s]: Parsed rules for alert "
+						% fileName
+						+ "level %d."
+						% alertLevel.level)
 
 					for ruleElement in alertLevel.rules:
 						logRule(ruleElement, 0, fileName)
@@ -1279,7 +1297,7 @@ if __name__ == '__main__':
 		# database are configured in the configuration file
 		alertLevelsInDb = globalData.storage.getAllSensorsAlertLevels()
 		if alertLevelsInDb == None:
-			raise ValueError("Could not get sensor alert " 
+			raise ValueError("Could not get sensor alert "
 				+ "levels from database.")
 		for alertLevelInDb in alertLevelsInDb:
 			found = False
@@ -1294,7 +1312,7 @@ if __name__ == '__main__':
 					+ "in the database that is not configured.")
 
 		# parse internal server sensors
-		logging.debug("[%s]: Parsing internal sensors configuration."
+		globalData.logger.debug("[%s]: Parsing internal sensors configuration."
 			% fileName)
 		internalSensorsCfg = configRoot.find("internalSensors")
 		serverUsername = globalData.storage.getUniqueID()
@@ -1389,26 +1407,29 @@ if __name__ == '__main__':
 		globalData.storage.updateSensorState(serverNodeId, dbInitialStateList)
 
 	except Exception as e:
-		logging.exception("[%s]: Could not parse config." % fileName)
+		globalData.logger.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)
 
-	logging.debug("[%s]: Parsing configuration succeeded." % fileName)
+	globalData.logger.debug("[%s]: Parsing configuration succeeded."
+		% fileName)
 
 	random.seed()
 
 	# start the thread that handles all sensor alerts
-	logging.info("[%s] Starting sensor alert manage thread." % fileName)
+	globalData.logger.info("[%s] Starting sensor alert manage thread."
+		% fileName)
 	globalData.sensorAlertExecuter = SensorAlertExecuter(globalData)
 	# set thread to daemon
-	# => threads terminates when main thread terminates	
+	# => threads terminates when main thread terminates
 	globalData.sensorAlertExecuter.daemon = True
 	globalData.sensorAlertExecuter.start()
 
-	logging.info("[%s] Starting manager client manage thread." % fileName)
+	globalData.logger.info("[%s] Starting manager client manage thread."
+		% fileName)
 	# start the thread that handles the manager updates
 	globalData.managerUpdateExecuter = ManagerUpdateExecuter(globalData)
 	# set thread to daemon
-	# => threads terminates when main thread terminates	
+	# => threads terminates when main thread terminates
 	globalData.managerUpdateExecuter.daemon = True
 	globalData.managerUpdateExecuter.start()
 
@@ -1423,25 +1444,25 @@ if __name__ == '__main__':
 			+ "Try again in 5 seconds.")
 			time.sleep(5)
 
-	logging.info("[%s] Starting server thread." % fileName)
+	globalData.logger.info("[%s] Starting server thread." % fileName)
 	serverThread = threading.Thread(target=server.serve_forever)
 	# set thread to daemon
-	# => threads terminates when main thread terminates	
+	# => threads terminates when main thread terminates
 	serverThread.daemon =True
 	serverThread.start()
 
 	# start a watchdog thread that controls all server sessions
-	logging.info("[%s] Starting watchdog thread." % fileName)
+	globalData.logger.info("[%s] Starting watchdog thread." % fileName)
 	globalData.connectionWatchdog = ConnectionWatchdog(globalData,
 		globalData.connectionTimeout)
 	# set thread to daemon
-	# => threads terminates when main thread terminates	
+	# => threads terminates when main thread terminates
 	globalData.connectionWatchdog.daemon = True
 	globalData.connectionWatchdog.start()
 
 	# only start update checker if it is activated
 	if updateActivated is True:
-		logging.info("[%s] Starting update check thread." % fileName)
+		globalData.logger.info("[%s] Starting update check thread." % fileName)
 		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
 			updateCaFile, updateInterval, updateEmailNotification, globalData)
 		# set thread to daemon
@@ -1451,7 +1472,8 @@ if __name__ == '__main__':
 
 	# only start survey executer if user wants to participate
 	if surveyActivated:
-		logging.info("[%s] Starting survey executer thread." % fileName)
+		globalData.logger.info("[%s] Starting survey executer thread."
+			% fileName)
 		surveyExecuter = SurveyExecuter(updateActivated, updateServer,
 			updateLocation, globalData)
 		# set thread to daemon
@@ -1459,7 +1481,7 @@ if __name__ == '__main__':
 		surveyExecuter.daemon = True
 		surveyExecuter.start()
 
-	logging.info("[%s] Server started." % fileName)
+	globalData.logger.info("[%s] Server started." % fileName)
 
 	# Wait until the connection watchdog is initialized.
 	while not globalData.connectionWatchdog.isInitialized():

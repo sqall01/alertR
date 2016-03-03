@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the server
 -->
-<config version="0.301">
+<config version="0.302">
 
 	<!--
 		in this section general options are configured
@@ -14,11 +14,11 @@
 
 		<!--
 			the settings for the logfile
-			file - absolute path to the logfile
+			dir - absolute path to the directory for the logfiles
 			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
 		-->
 		<log
-			file="/absolute/path/to/logfile.log"
+			dir="/absolute/path/to/logfile.log"
 			level="INFO" />
 
 		<!--
@@ -53,10 +53,10 @@
 			settings for the alertR survey
 			participate - Since alertR has an install and update script which
 				uses Github as repository, no actual data about the usage of
-				alertR exists. In order to get a better understanding of the 
-				used alertR instances and the versions that are used, alertR 
-				has a voluntary survey. If you participate, alertR will send 
-				once a week the version, revision, instances and configured 
+				alertR exists. In order to get a better understanding of the
+				used alertR instances and the versions that are used, alertR
+				has a voluntary survey. If you participate, alertR will send
+				once a week the version, revision, instances and configured
 				update repository that is used by your installation to the
 				survey server.
 				("True" or "False")
@@ -476,7 +476,7 @@
 				<rule
 					order="0"
 					maxTimeAfterPrev="0.0"
-					minTimeAfterPrev="0.0" 
+					minTimeAfterPrev="0.0"
 					counterActivated="False"
 					counterLimit="0"
 					counterWaitTime="0" >
@@ -499,7 +499,7 @@
 							handles this sensor
 						remoteSensorId - the sensor id of the sensor that is
 							configured on the client side
-						-->	
+						-->
 						<sensor
 							timeTriggeredFor="5.0"
 							username="sensordev"
@@ -515,7 +515,7 @@
 							handles this sensor
 						remoteSensorId - the sensor id of the sensor that is
 							configured on the client side
-						-->	
+						-->
 						<sensor
 							timeTriggeredFor="5.0"
 							username="sensordev"
@@ -559,7 +559,7 @@
 				<rule
 					order="1"
 					maxTimeAfterPrev="5.0"
-					minTimeAfterPrev="0.0" 
+					minTimeAfterPrev="0.0"
 					counterActivated="False"
 					counterLimit="0"
 					counterWaitTime="0" >
@@ -666,7 +666,7 @@
 				<rule
 					order="2"
 					maxTimeAfterPrev="5.0"
-					minTimeAfterPrev="0.0" 
+					minTimeAfterPrev="0.0"
 					counterActivated="False"
 					counterLimit="0"
 					counterWaitTime="0" >
@@ -757,7 +757,7 @@
 				<rule
 					order="3"
 					maxTimeAfterPrev="5.0"
-					minTimeAfterPrev="0.0" 
+					minTimeAfterPrev="0.0"
 					counterActivated="True"
 					counterLimit="1"
 					counterWaitTime="82800" >

@@ -21,10 +21,10 @@ import logging
 # HTTPSConnection like class that verifies server certificates
 class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 	# needs socket and ssl lib
-	def __init__(self, host, port=None, servercert_file=None, 
-		key_file=None, cert_file=None, strict=None, 
+	def __init__(self, host, port=None, servercert_file=None,
+		key_file=None, cert_file=None, strict=None,
 		timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-		httplib.HTTPSConnection.__init__(self, host, port, key_file, 
+		httplib.HTTPSConnection.__init__(self, host, port, key_file,
 			cert_file, strict, timeout)
 		self.servercert_file = servercert_file
 
@@ -39,7 +39,7 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 
 		# the only thing that has to be changed in the original function from
 		# httplib (tell ssl.wrap_socket to verify server certificate)
-		self.sock = ssl.wrap_socket(sock, self.key_file, 
+		self.sock = ssl.wrap_socket(sock, self.key_file,
 			self.cert_file, cert_reqs=ssl.CERT_REQUIRED,
 			ca_certs=self.servercert_file, server_side=False)
 
@@ -56,6 +56,7 @@ class SurveyExecuter(threading.Thread):
 
 		# get global configured data
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 		self.storage = self.globalData.storage
 		self.instance = self.globalData.instance
 		self.version = self.globalData.version
@@ -75,20 +76,20 @@ class SurveyExecuter(threading.Thread):
 	# gather and send survey data
 	def sendSurveyData(self):
 
-		logging.info("[%s]: Starting to send survey data."
+		self.logger.info("[%s]: Starting to send survey data."
 				% self.fileName)
 
 		# gather survey data
 		surveyNodes = self.storage.getSurveyData()
 		if surveyNodes is None:
 
-			logging.error("[%s]: Did not get any survey data from "
+			self.logger.error("[%s]: Did not get any survey data from "
 				% self.fileName
 				+ "the database.")
 			return False
 		surveyData = dict()
 		surveyData["nodes"] = surveyNodes
-		
+
 		surveyUpdate = dict()
 		surveyUpdate["activated"] = self.updateActivated
 		surveyUpdate["server"] = self.updateServer
@@ -101,8 +102,8 @@ class SurveyExecuter(threading.Thread):
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 		try:
 
-			headers = {"Connection": "keep-alive", 
-				"Content-type": "application/x-www-form-urlencoded", 
+			headers = {"Connection": "keep-alive",
+				"Content-type": "application/x-www-form-urlencoded",
 				"Accept": "text/plain"}
 			data = urllib.urlencode({
 				'data': json.dumps(surveyData)})
@@ -120,12 +121,12 @@ class SurveyExecuter(threading.Thread):
 				raise ValueError("Server responded with error: %s." % data)
 
 		except Exception as e:
-			logging.exception("[%s]: Sending survey data failed."
+			self.logger.exception("[%s]: Sending survey data failed."
 				% self.fileName)
 
 			return False
 
-		logging.info("[%s]: Survey data successfully sent."
+		self.logger.info("[%s]: Survey data successfully sent."
 				% self.fileName)
 
 		return True

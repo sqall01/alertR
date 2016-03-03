@@ -23,6 +23,7 @@ class ConnectionWatchdog(threading.Thread):
 
 		# get global configured data
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 		self.serverSessions = self.globalData.serverSessions
 		self.storage = self.globalData.storage
 		self.smtpAlert = self.globalData.smtpAlert
@@ -72,14 +73,14 @@ class ConnectionWatchdog(threading.Thread):
 
 	# Internal function that acquires the node timeout sensor lock.
 	def _acquireNodeTimeoutLock(self):
-		logging.debug("[%s]: Acquire node timeout sensor lock."
+		self.logger.debug("[%s]: Acquire node timeout sensor lock."
 			% self.fileName)
 		self._nodeTimeoutLock.acquire()
 
 
 	# Internal function that releases the node timeout sensor lock.
 	def _releaseNodeTimeoutLock(self):
-		logging.debug("[%s]: Release node timeout sensor lock."
+		self.logger.debug("[%s]: Release node timeout sensor lock."
 			% self.fileName)
 		self._nodeTimeoutLock.release()
 
@@ -89,7 +90,7 @@ class ConnectionWatchdog(threading.Thread):
 	def _processNewNodeTimeouts(self):
 
 		# Get all nodes that are longer in the pre-timeout set
-		# then the allowed grace period. 
+		# then the allowed grace period.
 		newTimeouts = set()
 		currentTime = int(time.time())
 		self._acquireNodeTimeoutLock()
@@ -116,7 +117,7 @@ class ConnectionWatchdog(threading.Thread):
 			if ((time.time() - serverSession.clientComm.lastRecv)
 				>= self.connectionTimeout):
 
-				logging.error("[%s]: Connection to " % self.fileName
+				self.logger.error("[%s]: Connection to " % self.fileName
 					+ "client timed out. Closing connection (%s:%d)."
 					% (serverSession.clientAddress,
 					serverSession.clientPort))
@@ -163,7 +164,7 @@ class ConnectionWatchdog(threading.Thread):
 			wasEmpty = False
 
 		# Generate an alert for every timed out sensor
-		# (logging + internal "sensor timeout" sensor).
+		# (self.logger + internal "sensor timeout" sensor).
 		for sensorTuple in sensorsTimeoutList:
 			sensorId = sensorTuple[0]
 			nodeId = sensorTuple[1]
@@ -172,12 +173,12 @@ class ConnectionWatchdog(threading.Thread):
 			lastStateUpdated = sensorTuple[2]
 			description = sensorTuple[3]
 			if hostname is None:
-				logging.error("[%s]: Could not " % self.fileName
+				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get hostname for node from database.")
 				self.timeoutSensorIds.add(sensorId)
 				continue
 
-			logging.critical("[%s]: Sensor " % self.fileName
+			self.logger.critical("[%s]: Sensor " % self.fileName
 					+ "with description '%s' from host '%s' timed out. "
 					% (description, hostname)
 					+ "Last state received at %s"
@@ -214,7 +215,7 @@ class ConnectionWatchdog(threading.Thread):
 						processSensorAlerts = True
 
 					else:
-						logging.error("[%s]: Not able to add sensor alert "
+						self.logger.error("[%s]: Not able to add sensor alert "
 							% self.fileName
 							+ "for internal sensor timeout sensor.")
 
@@ -261,7 +262,7 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Check if the sensor could be found in the database.
 			if sensorTuple is None:
-				logging.error("[%s]: Could not get " % self.fileName
+				self.logger.error("[%s]: Could not get " % self.fileName
 					+ "sensor with id %d from database."
 					% sensorId)
 				continue
@@ -272,7 +273,7 @@ class ConnectionWatchdog(threading.Thread):
 			description = sensorTuple[3]
 			lastStateUpdated = sensorTuple[5]
 
-			logging.critical("[%s]: Sensor " % self.fileName
+			self.logger.critical("[%s]: Sensor " % self.fileName
 				+ "with description '%s' from host '%s' has "
 				% (description, hostname)
 				+ "reconnected. Last state received at %s"
@@ -308,7 +309,7 @@ class ConnectionWatchdog(threading.Thread):
 					processSensorAlerts = True
 
 				else:
-					logging.error("[%s]: Not able to add sensor alert "
+					self.logger.error("[%s]: Not able to add sensor alert "
 						% self.fileName
 						+ "for internal sensor timeout sensor.")
 
@@ -359,7 +360,7 @@ class ConnectionWatchdog(threading.Thread):
 
 						# Check if the sensor could be found in the database.
 						if sensorTuple is None:
-							logging.error("[%s]: Could not get "
+							self.logger.error("[%s]: Could not get "
 								% self.fileName
 								+ "sensor with id %d from database."
 								% sensorId)
@@ -374,7 +375,7 @@ class ConnectionWatchdog(threading.Thread):
 						lastStateUpdateStr = time.strftime("%D %H:%M:%S",
 							time.localtime(lastStateUpdated))
 						if hostname is None:
-							logging.error("[%s]: Could not " % self.fileName
+							self.logger.error("[%s]: Could not " % self.fileName
 								+ "get hostname for node from database.")
 							continue
 
@@ -398,7 +399,7 @@ class ConnectionWatchdog(threading.Thread):
 						processSensorAlerts = True
 
 					else:
-						logging.error("[%s]: Not able to add sensor alert "
+						self.logger.error("[%s]: Not able to add sensor alert "
 							% self.fileName
 							+ "for internal sensor timeout sensor.")
 
@@ -427,7 +428,7 @@ class ConnectionWatchdog(threading.Thread):
 
 						nodeTuple = self.storage.getNodeById(nodeId)
 						if nodeTuple is None:
-							logging.error("[%s]: Could not " % self.fileName
+							self.logger.error("[%s]: Could not " % self.fileName
 								+ "get node with id %d from database."
 								% nodeId)
 							continue
@@ -455,7 +456,7 @@ class ConnectionWatchdog(threading.Thread):
 						processSensorAlerts = True
 
 					else:
-						logging.error("[%s]: Not able to add sensor alert "
+						self.logger.error("[%s]: Not able to add sensor alert "
 							% self.fileName
 							+ "for internal node timeout sensor.")
 
@@ -475,7 +476,7 @@ class ConnectionWatchdog(threading.Thread):
 		# Returns a list of node ids.
 		nodeIds = self.storage.getAllConnectedNodeIds()
 		if nodeIds is None:
-			logging.error("[%s]: Could not get node " % self.fileName
+			self.logger.error("[%s]: Could not get node " % self.fileName
 				+ "ids from database.")
 		else:
 
@@ -506,11 +507,11 @@ class ConnectionWatchdog(threading.Thread):
 
 				# If no server session was found with the node id
 				# => node is not connected to the server.
-				logging.debug("[%s]: Marking node " % self.fileName
+				self.logger.debug("[%s]: Marking node " % self.fileName
 					+ "'%d' as not connected." % nodeId)
 
 				if not self.storage.markNodeAsNotConnected(nodeId):
-					logging.error("[%s]: Could not " % self.fileName
+					self.logger.error("[%s]: Could not " % self.fileName
 						+ "mark node as not connected in database.")
 
 				sendManagerUpdates = True
@@ -529,11 +530,11 @@ class ConnectionWatchdog(threading.Thread):
 
 					# If server session was found but not marked as connected
 					# in database => mark node as connected in database.
-					logging.debug("[%s]: Marking node " % self.fileName
+					self.logger.debug("[%s]: Marking node " % self.fileName
 						+ "'%d' as connected." % nodeId)
 
 					if not self.storage.markNodeAsConnected(nodeId):
-						logging.error("[%s]: Could not " % self.fileName
+						self.logger.error("[%s]: Could not " % self.fileName
 							+ "mark node as connected in database.")
 
 		# Wake up manager update executer and force to send an update to
@@ -569,10 +570,10 @@ class ConnectionWatchdog(threading.Thread):
 
 			nodeTuple = self.storage.getNodeById(nodeId)
 			if nodeTuple is None:
-				logging.error("[%s]: Could not " % self.fileName
+				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get node with id %d from database."
 					% nodeId)
-				logging.error("[%s]: Node with id %d "
+				self.logger.error("[%s]: Node with id %d "
 					% (self.fileName, nodeId)
 					+ "timed out (not able to determine persistence).")
 
@@ -594,7 +595,7 @@ class ConnectionWatchdog(threading.Thread):
 
 			self._timeoutNodeIds.add(nodeId)
 
-			logging.error("[%s]: Node '%s' with username '%s' on host '%s' "
+			self.logger.error("[%s]: Node '%s' with username '%s' on host '%s' "
 				% (self.fileName, instance, username, hostname)
 				+ "timed out.")
 
@@ -625,7 +626,7 @@ class ConnectionWatchdog(threading.Thread):
 					processSensorAlerts = True
 
 				else:
-					logging.error("[%s]: Not able to add sensor alert "
+					self.logger.error("[%s]: Not able to add sensor alert "
 						% self.fileName
 						+ "for internal node timeout sensor.")
 
@@ -667,10 +668,10 @@ class ConnectionWatchdog(threading.Thread):
 
 		nodeTuple = self.storage.getNodeById(nodeId)
 		if nodeTuple is None:
-			logging.error("[%s]: Could not " % self.fileName
+			self.logger.error("[%s]: Could not " % self.fileName
 				+ "get node with id %d from database."
 				% nodeId)
-			logging.error("[%s]: Node with id %d "
+			self.logger.error("[%s]: Node with id %d "
 				% (self.fileName, nodeId)
 				+ "pre-timed out (not able to determine persistence).")
 
@@ -688,7 +689,7 @@ class ConnectionWatchdog(threading.Thread):
 		instance = nodeTuple[4]
 		username = nodeTuple[2]
 		hostname = nodeTuple[1]
-		logging.debug("[%s]: Adding node '%s' with username '%s' "
+		self.logger.debug("[%s]: Adding node '%s' with username '%s' "
 			% (self.fileName, instance, username)
 			+ "on host '%s' to pre-timeout set."
 			% hostname)
@@ -715,7 +716,7 @@ class ConnectionWatchdog(threading.Thread):
 		for preTuple in set(self._preTimeoutNodeIds):
 			if nodeId == preTuple[0]:
 
-				logging.debug("[%s]: Removing node with id %d "
+				self.logger.debug("[%s]: Removing node with id %d "
 					% (self.fileName, nodeId)
 					+ "from pre-timeout set.")
 
@@ -733,10 +734,10 @@ class ConnectionWatchdog(threading.Thread):
 
 			nodeTuple = self.storage.getNodeById(nodeId)
 			if nodeTuple is None:
-				logging.error("[%s]: Could not " % self.fileName
+				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get node with id %d from database."
 					% nodeId)
-				logging.error("[%s]: Node with id %d "
+				self.logger.error("[%s]: Node with id %d "
 					% (self.fileName, nodeId)
 					+ "reconnected.")
 
@@ -747,7 +748,7 @@ class ConnectionWatchdog(threading.Thread):
 			username = nodeTuple[2]
 			hostname = nodeTuple[1]
 
-			logging.error("[%s]: Node '%s' with username '%s' on host '%s' "
+			self.logger.error("[%s]: Node '%s' with username '%s' on host '%s' "
 				% (self.fileName, instance, username, hostname)
 				+ "reconnected.")
 
@@ -780,7 +781,7 @@ class ConnectionWatchdog(threading.Thread):
 					processSensorAlerts = True
 
 				else:
-					logging.error("[%s]: Not able to add sensor alert "
+					self.logger.error("[%s]: Not able to add sensor alert "
 						% self.fileName
 						+ "for internal node timeout sensor.")
 
@@ -825,7 +826,7 @@ class ConnectionWatchdog(threading.Thread):
 			# wait 5 seconds before checking time of last received data
 			for i in range(5):
 				if self.exitFlag:
-					logging.info("[%s]: Exiting ConnectionWatchdog."
+					self.logger.info("[%s]: Exiting ConnectionWatchdog."
 						% self.fileName)
 					return
 				time.sleep(1)
@@ -871,14 +872,14 @@ class ConnectionWatchdog(threading.Thread):
 			# timeouts of these sensor.
 			if updateStateList:
 
-				logging.debug("[%s]: Update sensor state "
+				self.logger.debug("[%s]: Update sensor state "
 					% self.fileName
 					+ "for internal timeout sensors.")
 
 				if not self.storage.updateSensorState(self.serverNodeId,
 					updateStateList):
 
-					logging.error("[%s]: Not able to update sensor state "
+					self.logger.error("[%s]: Not able to update sensor state "
 						% self.fileName
 						+ "for internal timeout sensors.")
 

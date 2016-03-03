@@ -32,10 +32,10 @@ class _FileUpdateType:
 # HTTPSConnection like class that verifies server certificates
 class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 	# needs socket and ssl lib
-	def __init__(self, host, port=None, servercert_file=None, 
-		key_file=None, cert_file=None, strict=None, 
+	def __init__(self, host, port=None, servercert_file=None,
+		key_file=None, cert_file=None, strict=None,
 		timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-		httplib.HTTPSConnection.__init__(self, host, port, key_file, 
+		httplib.HTTPSConnection.__init__(self, host, port, key_file,
 			cert_file, strict, timeout)
 		self.servercert_file = servercert_file
 
@@ -50,8 +50,8 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 
 		# the only thing that has to be changed in the original function from
 		# httplib (tell ssl.wrap_socket to verify server certificate)
-		self.sock = ssl.wrap_socket(sock, self.key_file, 
-			self.cert_file, cert_reqs=ssl.CERT_REQUIRED, 
+		self.sock = ssl.wrap_socket(sock, self.key_file,
+			self.cert_file, cert_reqs=ssl.CERT_REQUIRED,
 			ca_certs=self.servercert_file)
 
 
@@ -68,6 +68,7 @@ class UpdateChecker(threading.Thread):
 
 		# get global configured data
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 		self.smtpAlert = self.globalData.smtpAlert
@@ -98,7 +99,7 @@ class UpdateChecker(threading.Thread):
 			# => log and notify user
 			if updateFailCount >= 10:
 
-				logging.error("[%s]: Update checking failed for %d "
+				self.logger.error("[%s]: Update checking failed for %d "
 					% (self.fileName, updateFailCount)
 					+ "times in a row.")
 
@@ -106,7 +107,7 @@ class UpdateChecker(threading.Thread):
 					self.smtpAlert.sendUpdateCheckFailureAlert(
 						updateFailCount, self.globalData.name)
 
-			logging.info("[%s]: Checking for a new version." % self.fileName)
+			self.logger.info("[%s]: Checking for a new version." % self.fileName)
 
 			if self.updater.getNewestVersionInformation() is False:
 				updateFailCount += 1
@@ -115,7 +116,7 @@ class UpdateChecker(threading.Thread):
 			# check if updates failed at least 10 times in a row before
 			# => problems are now resolved => log and notify user
 			if updateFailCount >= 10:
-				logging.info("[%s]: Update problems resolved."
+				self.logger.info("[%s]: Update problems resolved."
 					% self.fileName)
 
 				if self.emailNotification is True:
@@ -131,7 +132,7 @@ class UpdateChecker(threading.Thread):
 				(self.updater.newestRev > self.newestRev
 				and self.updater.newestVersion == self.newestVersion)):
 
-				logging.warning("[%s]: New version %.3f-%d available "
+				self.logger.warning("[%s]: New version %.3f-%d available "
 					% (self.fileName, self.updater.newestVersion,
 					self.updater.newestRev)
 					+ "(current version: %.3f-%d)."
@@ -148,7 +149,7 @@ class UpdateChecker(threading.Thread):
 
 			else:
 
-				logging.info("[%s]: No new version available."
+				self.logger.info("[%s]: No new version available."
 					% self.fileName)
 
 
@@ -165,6 +166,7 @@ class Updater:
 
 		# get global configured data
 		self.globalData = globalData
+		self.logger = self.globalData.logger
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 		self.smtpAlert = self.globalData.smtpAlert
@@ -193,13 +195,13 @@ class Updater:
 
 	# internal function that acquires the lock
 	def _acquireLock(self):
-		logging.debug("[%s]: Acquire lock." % self.fileName)
+		self.logger.debug("[%s]: Acquire lock." % self.fileName)
 		self.updaterLock.acquire()
 
 
 	# internal function that releases the lock
 	def _releaseLock(self):
-		logging.debug("[%s]: Release lock." % self.fileName)
+		self.logger.debug("[%s]: Release lock." % self.fileName)
 		self.updaterLock.release()
 
 
@@ -215,7 +217,7 @@ class Updater:
 		if ((time.time() - self.lastChecked) > 60
 			or self.newestFiles is None):
 			if self._getNewestVersionInformation() is False:
-				logging.error("[%s]: Not able to get version "
+				self.logger.error("[%s]: Not able to get version "
 					% self.fileName
 					+ "information for checking files.")
 				return None
@@ -239,7 +241,7 @@ class Updater:
 				# => if not ignore it
 				if sha256Hash == self.newestFiles[clientFile]:
 
-					logging.debug("[%s]: Not changed: '%s'"
+					self.logger.debug("[%s]: Not changed: '%s'"
 						% (self.fileName, clientFile))
 
 					continue
@@ -247,7 +249,7 @@ class Updater:
 				# => if it has changed add it to the list of files to update
 				else:
 
-					logging.debug("[%s]: New version: '%s'"
+					self.logger.debug("[%s]: New version: '%s'"
 						% (self.fileName, clientFile))
 
 					filesToUpdate[clientFile] = _FileUpdateType.MODIFY
@@ -256,13 +258,13 @@ class Updater:
 			# => if the file does not exist, just add it
 			else:
 
-				logging.debug("[%s]: New file: '%s'"
+				self.logger.debug("[%s]: New file: '%s'"
 					% (self.fileName, clientFile))
 
 				filesToUpdate[clientFile] = _FileUpdateType.NEW
 				counterNew += 1
 
-		logging.info("[%s]: Files to modify: %d; New files: %d"
+		self.logger.info("[%s]: Files to modify: %d; New files: %d"
 			% (self.fileName, counterUpdate, counterNew))
 
 		return filesToUpdate
@@ -283,18 +285,18 @@ class Updater:
 				# check if the file is not writable
 				# => cancel update
 				if not os.access(self.instanceLocation + clientFile, os.W_OK):
-					logging.error("[%s]: File '%s' is not writable."
+					self.logger.error("[%s]: File '%s' is not writable."
 						% (self.fileName, clientFile))
 					return False
 
-				logging.debug("[%s]: File '%s' is writable."
+				self.logger.debug("[%s]: File '%s' is writable."
 						% (self.fileName, clientFile))
 
 
 			# check if the file is new and has to be created
 			elif filesToUpdate[clientFile] == _FileUpdateType.NEW:
 
-				logging.debug("[%s]: Checking write permissions for new "
+				self.logger.debug("[%s]: Checking write permissions for new "
 					% self.fileName
 					+ "file: '%s'"
 					% clientFile)
@@ -306,12 +308,12 @@ class Updater:
 				# => check root directory of the instance for write permissions
 				if len(folderStructure) == 1:
 					if not os.access(self.instanceLocation, os.W_OK):
-						logging.error("[%s]: Folder './' is not "
+						self.logger.error("[%s]: Folder './' is not "
 							% self.fileName
 							+ "writable.")
 						return False
 
-					logging.debug("[%s]: Folder './' is writable."
+					self.logger.debug("[%s]: Folder './' is writable."
 						% self.fileName)
 
 				# if new file is not located in the root directory
@@ -330,12 +332,12 @@ class Updater:
 							# => cancel update
 							if not os.access(self.instanceLocation + tempPart
 								+ "/" + filePart, os.W_OK):
-								logging.error("[%s]: Folder '.%s/%s' is not "
+								self.logger.error("[%s]: Folder '.%s/%s' is not "
 									% (self.fileName, tempPart, filePart)
 									+ "writable.")
 								return False
 
-							logging.debug("[%s]: Folder '.%s/%s' is writable."
+							self.logger.debug("[%s]: Folder '.%s/%s' is writable."
 								% (self.fileName, tempPart, filePart))
 
 							tempPart += "/"
@@ -370,7 +372,7 @@ class Updater:
 					if not os.path.exists(targetDirectory + tempPart + "/"
 						+ folderStructure[i]):
 
-						logging.debug("[%s]: Creating directory '%s/%s/%s'."
+						self.logger.debug("[%s]: Creating directory '%s/%s/%s'."
 							% (self.fileName, targetDirectory, tempPart,
 							folderStructure[i]))
 
@@ -389,7 +391,7 @@ class Updater:
 
 					# only log if sub directory already exists
 					else:
-						logging.debug("[%s]: Directory '%s/%s/%s' already "
+						self.logger.debug("[%s]: Directory '%s/%s/%s' already "
 							% (self.fileName, targetDirectory, tempPart,
 							folderStructure[i])
 							+ "exists.")
@@ -401,7 +403,7 @@ class Updater:
 
 			except Exception as e:
 
-				logging.exception("[%s]: Creating directory structure for "
+				self.logger.exception("[%s]: Creating directory structure for "
 					% self.fileName
 					+ "'%s' failed."
 					% fileLocation)
@@ -417,7 +419,7 @@ class Updater:
 	# return None or the handle to the temporary file
 	def _downloadFile(self, fileLocation, fileHash):
 
-		logging.info("[%s]: Downloading file: '%s'"
+		self.logger.info("[%s]: Downloading file: '%s'"
 			% (self.fileName, fileLocation))
 
 		# create temporary file
@@ -426,7 +428,7 @@ class Updater:
 
 		except Exception as e:
 
-			logging.exception("[%s]: Creating temporary file failed."
+			self.logger.exception("[%s]: Creating temporary file failed."
 				% self.fileName)
 
 			return None
@@ -478,7 +480,7 @@ class Updater:
 						if chunkCount > maxChunks:
 							showStatus = False
 
-							logging.warning("[%s]: Concent information of "
+							self.logger.warning("[%s]: Concent information of "
 									% self.fileName
 									+ "received header flawed. Stopping "
 									+ "to show download status.")
@@ -491,7 +493,7 @@ class Updater:
 							if (percentage / 10) > printedPercentage:
 								printedPercentage = percentage / 10
 
-								logging.info("[%s]: Download: %d%%"
+								self.logger.info("[%s]: Download: %d%%"
 									% (self.fileName, printedPercentage * 10))
 
 			else:
@@ -499,7 +501,7 @@ class Updater:
 					% response.status)
 
 		except Exception as e:
-			logging.exception("[%s]: Downloading file '%s' from the "
+			self.logger.exception("[%s]: Downloading file '%s' from the "
 				% (self.fileName, fileLocation)
 				+ "server failed.")
 
@@ -514,19 +516,19 @@ class Updater:
 		# check if downloaded file has the correct hash
 		if sha256Hash != fileHash:
 
-			logging.error("[%s]: Temporary file does not have the "
+			self.logger.error("[%s]: Temporary file does not have the "
 				% self.fileName
 				+ "correct hash.")
 
-			logging.debug("[%s]: Temporary file: %s"
+			self.logger.debug("[%s]: Temporary file: %s"
 				% (self.fileName, sha256Hash))
 
-			logging.debug("[%s]: Repository: %s"
+			self.logger.debug("[%s]: Repository: %s"
 				% (self.fileName, fileHash))
 
 			return None
 
-		logging.info("[%s]: Successfully downloaded file: '%s'"
+		self.logger.info("[%s]: Successfully downloaded file: '%s'"
 			% (self.fileName, fileLocation))
 
 		return fileHandle
@@ -568,7 +570,7 @@ class Updater:
 					% response.status)
 
 		except Exception as e:
-			logging.exception("[%s]: Getting repository information failed."
+			self.logger.exception("[%s]: Getting repository information failed."
 				% self.fileName)
 
 			return False
@@ -591,7 +593,7 @@ class Updater:
 				jsonData["instances"][self.instance]["location"])
 
 		except Exception as e:
-			logging.exception("[%s]: Parsing repository information failed."
+			self.logger.exception("[%s]: Parsing repository information failed."
 				% self.fileName)
 
 			return False
@@ -614,7 +616,7 @@ class Updater:
 					% response.status)
 
 		except Exception as e:
-			logging.exception("[%s]: Getting version information failed."
+			self.logger.exception("[%s]: Getting version information failed."
 				% self.fileName)
 
 			return False
@@ -633,12 +635,12 @@ class Updater:
 				raise ValueError("Key 'files' is not of type dict.")
 
 		except Exception as e:
-			logging.exception("[%s]: Parsing version information failed."
+			self.logger.exception("[%s]: Parsing version information failed."
 				% self.fileName)
 
 			return False
 
-		logging.debug("[%s]: Newest version information: %.3f-%d."
+		self.logger.debug("[%s]: Newest version information: %.3f-%d."
 			% (self.fileName, version, rev))
 
 		# check if the version on the server is newer than the used one
@@ -680,7 +682,7 @@ class Updater:
 		filesToUpdate = self._checkFilesToUpdate()
 
 		if filesToUpdate is None:
-			logging.error("[%s] Checking files for update failed."
+			self.logger.error("[%s] Checking files for update failed."
 				% self.fileName)
 
 			self._releaseLock()
@@ -689,7 +691,7 @@ class Updater:
 
 		if len(filesToUpdate) == 0:
 
-			logging.info("[%s] No files have to be updated."
+			self.logger.info("[%s] No files have to be updated."
 				% self.fileName)
 
 			self._releaseLock()
@@ -699,7 +701,7 @@ class Updater:
 		# check file permissions of the files that have to be updated
 		if self._checkFilePermissions(filesToUpdate) is False:
 
-			logging.info("[%s] Checking file permissions failed."
+			self.logger.info("[%s] Checking file permissions failed."
 				% self.fileName)
 
 			self._releaseLock()
@@ -721,7 +723,7 @@ class Updater:
 					self.newestFiles[fileToUpdate])
 				if downloadedFileHandle is None:
 
-					logging.error("[%s]: Downloading files from the "
+					self.logger.error("[%s]: Downloading files from the "
 						% self.fileName
 						+ "repository failed. Aborting update process.")
 
@@ -754,7 +756,7 @@ class Updater:
 			# copy file to correct location
 			try:
 
-				logging.debug("[%s]: Copying file '%s' to alertR instance "
+				self.logger.debug("[%s]: Copying file '%s' to alertR instance "
 					% (self.fileName, fileToUpdate)
 					+ "directory.")
 
@@ -763,7 +765,7 @@ class Updater:
 				dest.close()
 
 			except Exception as e:
-				logging.exception("[%s]: Copying file '%s' failed."
+				self.logger.exception("[%s]: Copying file '%s' failed."
 				% (self.fileName, fileToUpdate))
 
 				self._releaseLock()
@@ -775,7 +777,7 @@ class Updater:
 			sha256Hash = self._sha256File(f)
 			f.close()
 			if sha256Hash != self.newestFiles[fileToUpdate]:
-				logging.error("[%s]: Hash of file '%s' is not correct "
+				self.logger.error("[%s]: Hash of file '%s' is not correct "
 				% (self.fileName, fileToUpdate)
 				+ "after copying.")
 
@@ -787,7 +789,7 @@ class Updater:
 			if (fileToUpdate == "alertRclient.py"
 				or fileToUpdate == "alertRserver.py"):
 
-				logging.debug("[%s]: Changing permissions of '%s'."
+				self.logger.debug("[%s]: Changing permissions of '%s'."
 					% (self.fileName, fileToUpdate))
 
 				try:
@@ -796,7 +798,7 @@ class Updater:
 
 				except Exception as e:
 
-					logging.exception("[%s]: Changing permissions of '%s' "
+					self.logger.exception("[%s]: Changing permissions of '%s' "
 						% (self.fileName, fileToUpdate)
 						+ "failed.")
 
@@ -804,7 +806,7 @@ class Updater:
 
 					return False
 
-		
+
 		# close all temporary file handles
 		# => temporary file is automatically deleted
 		for fileHandle in downloadedFileHandles.keys():

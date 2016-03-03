@@ -11,14 +11,14 @@ import os
 import threading
 
 
-# this class is a global configuration class that holds 
+# this class is a global configuration class that holds
 # values that are needed all over the client
 class GlobalData:
 
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.301
+		self.version = 0.302
 
 		# revision of the used server
 		self.rev = 0
@@ -47,7 +47,7 @@ class GlobalData:
 		# this is the time in seconds when the client times out
 		self.connectionTimeout = 60
 
-		# This is the time a "persistent" client does not count as 
+		# This is the time a "persistent" client does not count as
 		# timed out if it disconnects from the server.
 		self.gracePeriodTimeout = 20
 
@@ -100,3 +100,7 @@ class GlobalData:
 
 		# Instance of the connection watchdog object.
 		self.connectionWatchdog = None
+
+		self.logger = None
+		self.logdir = None
+		self.loglevel = None

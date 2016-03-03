@@ -17,9 +17,9 @@ import time
 # this class handles the eMail alerts that are sent via smtp
 class SMTPAlert:
 
-	def __init__(self, host, port, fromAddr, toAddr):
+	def __init__(self, globalData, host, port, fromAddr, toAddr):
 
-		if (host != "127.0.0.1" 
+		if (host != "127.0.0.1"
 			or port != 25):
 			raise NotImplementedError('Only host "127.0.0.1" and '
 				+ 'port "25" is implemented')
@@ -28,6 +28,9 @@ class SMTPAlert:
 		self.port = port
 		self.fromAddr = fromAddr
 		self.fileName = os.path.basename(__file__)
+
+		self.globalData = globalData
+		self.logger = self.globalData.logger
 
 		# this is the general email address problems are sent to
 		# (this does not include sensor alerts => these email addresses
@@ -57,15 +60,15 @@ class SMTPAlert:
 			% (self.fromAddr, self.toAddr, subject)
 
 		# sending eMail alert to configured smtp server
-		logging.info("[%s]: Sending eMail alert to %s." 
+		self.logger.info("[%s]: Sending eMail alert to %s."
 			% (self.fileName, self.toAddr))
 		try:
 			smtpServer = smtplib.SMTP(self.host, self.port)
-			smtpServer.sendmail(self.fromAddr, self.toAddr, 
+			smtpServer.sendmail(self.fromAddr, self.toAddr,
 				emailHeader + message)
 			smtpServer.quit()
 		except Exception as e:
-			logging.exception("[%s]: Unable to send eMail alert. " 
+			self.logger.exception("[%s]: Unable to send eMail alert. "
 				% self.fileName)
 			return False
 
@@ -128,15 +131,15 @@ class SMTPAlert:
 			% (self.fromAddr, self.toAddr, subject)
 
 		# sending eMail alert to configured smtp server
-		logging.info("[%s]: Sending eMail alert to %s." 
+		self.logger.info("[%s]: Sending eMail alert to %s."
 			% (self.fileName, self.toAddr))
 		try:
 			smtpServer = smtplib.SMTP(self.host, self.port)
-			smtpServer.sendmail(self.fromAddr, self.toAddr, 
+			smtpServer.sendmail(self.fromAddr, self.toAddr,
 				emailHeader + message)
 			smtpServer.quit()
 		except Exception as e:
-			logging.exception("[%s]: Unable to send eMail alert. " 
+			self.logger.exception("[%s]: Unable to send eMail alert. "
 				% self.fileName)
 			return False
 

@@ -14,7 +14,7 @@ import os
 
 # internal abstract class for new user backends
 class _userBackend():
-	
+
 	# this function checks if the user credentials are valid
 	#
 	# return True or False
@@ -34,7 +34,10 @@ class _userBackend():
 # in the form of "username, password" per line
 class CSVBackend(_userBackend):
 
-	def __init__(self, csvLocation):
+	def __init__(self, globalData, csvLocation):
+
+		self.globalData = globalData
+		self.logger = self.globalData.logger
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -60,7 +63,7 @@ class CSVBackend(_userBackend):
 				if any(map(lambda x : x[0] == username,
 					self.userCredentials)):
 
-					logging.error("[%s]: Username '%s' already exists "
+					self.logger.error("[%s]: Username '%s' already exists "
 						% (self.fileName, logString)
 						+ "in CSV file.")
 
