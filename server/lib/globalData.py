@@ -101,6 +101,7 @@ class GlobalData:
 		# Instance of the connection watchdog object.
 		self.connectionWatchdog = None
 
+		# Information concerning logging instances.
 		self.logger = None
 		self.logdir = None
 		self.loglevel = None

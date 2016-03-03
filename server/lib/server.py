@@ -114,7 +114,7 @@ class ClientCommunication:
 		self.clientInitialized = False
 
 		# mark node as not connected
-		self.storage.markNodeAsNotConnected(self.nodeId)
+		self.storage.markNodeAsNotConnected(self.nodeId, logger=self.logger)
 
 		# wake up manager update executer
 		self.managerUpdateExecuter.forceStatusUpdate = True
@@ -359,7 +359,8 @@ class ClientCommunication:
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
 		# or None
-		alertSystemInformation = self.storage.getAlertSystemInformation()
+		alertSystemInformation = self.storage.getAlertSystemInformation(
+			logger=self.logger)
 		if alertSystemInformation is None:
 			self.logger.error("[%s]: Getting alert system " % self.fileName
 				+ "information from database failed (%s:%d)."
@@ -409,7 +410,8 @@ class ClientCommunication:
 			sensorId = sensorsInformation[i][0]
 
 			# create list of alert levels of this sensor
-			alertLevels = self.storage.getSensorAlertLevels(sensorId)
+			alertLevels = self.storage.getSensorAlertLevels(sensorId,
+				logger=self.logger)
 
 			tempDict = {"sensorId": sensorId,
 				"nodeId": sensorsInformation[i][1],
@@ -436,7 +438,8 @@ class ClientCommunication:
 			alertId = alertsInformation[i][0]
 
 			# create list of alert levels of this alert
-			dbAlertLevels = self.storage.getAlertAlertLevels(alertId)
+			dbAlertLevels = self.storage.getAlertAlertLevels(alertId,
+				logger=self.logger)
 			alertLevels = list()
 			for tempAlertLevel in dbAlertLevels:
 				alertLevels.append(tempAlertLevel[0])
@@ -498,8 +501,30 @@ class ClientCommunication:
 		return True
 
 
-	# internal function to verify the server/client version
-	# and authenticate the client
+	# Internal function to initialize an own logger instance for this
+	# connection.
+	def _initializeLogger(self):
+
+		self.logger = logging.getLogger("client_" + self.username)
+		fh = logging.FileHandler(self.globalData.logdir
+			+ "/client_"
+			+ self.username
+			+ ".log")
+		fh.setLevel(self.globalData.loglevel)
+		format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',
+			'%m/%d/%Y %H:%M:%S')
+		fh.setFormatter(format)
+		self.logger.addHandler(fh)
+
+		# Set the logger instance also for the server session.
+		for serverSession in self.serverSessions:
+			if serverSession.clientComm == self:
+				serverSession.setLogger(self.logger)
+				break
+
+
+	# Internal function to verify the server/client version
+	# and authenticate the client.
 	def _verifyVersionAndAuthenticate(self):
 
 		# get version and credentials from client
@@ -873,7 +898,7 @@ class ClientCommunication:
 		# add node to database
 		if not self.storage.addNode(self.username, self.hostname,
 			self.nodeType, self.instance, self.clientVersion, self.clientRev,
-			self.persistent):
+			self.persistent, logger=self.logger):
 			self.logger.error("[%s]: Unable to add node to database."
 				% self.fileName)
 
@@ -1016,7 +1041,8 @@ class ClientCommunication:
 						return False
 
 			# add sensors to database
-			if not self.storage.addSensors(self.username, sensors):
+			if not self.storage.addSensors(self.username, sensors,
+				logger=self.logger):
 				self.logger.error("[%s]: Unable to add " % self.fileName
 					+ "sensors to database (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -1157,7 +1183,8 @@ class ClientCommunication:
 					self.clientAddress, self.clientPort))
 
 			# add alerts to database
-			if not self.storage.addAlerts(self.username, alerts):
+			if not self.storage.addAlerts(self.username, alerts,
+				logger=self.logger):
 				self.logger.error("[%s]: Unable to add " % self.fileName
 					+ "alerts to database (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -1231,7 +1258,8 @@ class ClientCommunication:
 					% (self.fileName, self.clientAddress, self.clientPort))
 
 			# add manager to database
-			if not self.storage.addManager(self.username, manager):
+			if not self.storage.addManager(self.username, manager,
+				logger=self.logger):
 				self.logger.error("[%s]: Unable to add " % self.fileName
 					+ "manager to database (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -1420,7 +1448,8 @@ class ClientCommunication:
 			% (self.fileName, self.clientAddress, self.clientPort))
 
 		# update the sensor state in the database
-		if not self.storage.updateSensorState(self.nodeId, stateList):
+		if not self.storage.updateSensorState(self.nodeId, stateList,
+			logger=self.logger):
 			self.logger.error("[%s]: Not able to update sensor state (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -1504,7 +1533,7 @@ class ClientCommunication:
 
 		# add sensor alert to database
 		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId,
-			state, changeState, dataJson):
+			state, changeState, dataJson, logger=self.logger):
 			self.logger.error("[%s]: Not able to add sensor alert (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -1566,7 +1595,8 @@ class ClientCommunication:
 		stateTuple = (remoteSensorId, state)
 		stateList = list()
 		stateList.append(stateTuple)
-		if not self.storage.updateSensorState(self.nodeId, stateList):
+		if not self.storage.updateSensorState(self.nodeId, stateList,
+			logger=self.logger):
 			self.logger.error("[%s]: Not able to change sensor state (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -1583,7 +1613,8 @@ class ClientCommunication:
 
 		# get sensorId from database => append to state change queue
 		# => wake up manager update executer
-		sensorId = self.storage.getSensorId(self.nodeId, remoteSensorId)
+		sensorId = self.storage.getSensorId(self.nodeId, remoteSensorId,
+			logger=self.logger)
 		if sensorId is None:
 			self.logger.error("[%s]: Not able to get sensorId (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
@@ -2029,12 +2060,19 @@ class ClientCommunication:
 			self._releaseLock()
 			return
 
+		# Now that the communication is initialized, we can switch to our
+		# own logger instance for the client.
+		self._initializeLogger()
+		self.logger.info("[%s]: Communication initialized (%s:%d)."
+			% (self.fileName, self.clientAddress, self.clientPort))
+
 		# change the time of the last received message
 		# (for the watchdog so it can see that the connection is still alive)
 		self.lastRecv = time.time()
 
 		# get the node id from the database for this connection
-		self.nodeId = self.storage.getNodeId(self.username)
+		self.nodeId = self.storage.getNodeId(self.username,
+			logger=self.logger)
 		if self.nodeId is None:
 			self.logger.error("[%s]: Getting node id failed (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
@@ -2045,7 +2083,8 @@ class ClientCommunication:
 		# get the sensor count from the database for this connection
 		# if the nodeType is "sensor"
 		if self.nodeType == "sensor":
-			self.sensorCount = self.storage.getSensorCount(self.nodeId)
+			self.sensorCount = self.storage.getSensorCount(self.nodeId,
+				logger=self.logger)
 			if self.sensorCount == 0:
 				self.logger.error("[%s]: Getting sensor count failed (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
@@ -2054,7 +2093,8 @@ class ClientCommunication:
 				return
 
 		# mark node as connected in the database
-		if not self.storage.markNodeAsConnected(self.nodeId):
+		if not self.storage.markNodeAsConnected(self.nodeId,
+			logger=self.logger):
 			self.logger.error("[%s]: Not able to mark node as "
 				% self.fileName
 				+ "connected (%s:%d)."
@@ -2326,7 +2366,7 @@ class ClientCommunication:
 			elif (command == "SENSORALERT"
 				and self.nodeType == "sensor"):
 
-				self.logger.debug("[%s]: Received sensor alert "
+				self.logger.info("[%s]: Received sensor alert "
 					% self.fileName
 					+ "message (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -2348,7 +2388,7 @@ class ClientCommunication:
 			elif (command == "STATECHANGE"
 				and self.nodeType == "sensor"):
 
-				self.logger.debug("[%s]: Received state change "
+				self.logger.info("[%s]: Received state change "
 					% self.fileName
 					+ "message (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -2369,7 +2409,7 @@ class ClientCommunication:
 			elif (command == "STATUS"
 				and self.nodeType == "sensor"):
 
-				self.logger.debug("[%s]: Received status message (%s:%d)."
+				self.logger.info("[%s]: Received status message (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 
 				if not self._statusHandler(message):
@@ -2387,7 +2427,7 @@ class ClientCommunication:
 			elif (command == "OPTION"
 				and self.nodeType == "manager"):
 
-				self.logger.debug("[%s]: Received option message (%s:%d)."
+				self.logger.info("[%s]: Received option message (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 
 				if not self._optionHandler(message):
@@ -2557,6 +2597,11 @@ class ServerSession(SocketServer.BaseRequestHandler):
 			self.globalData.serverSessions.remove(self)
 		except:
 			pass
+
+
+	# Overwrites the used logger instance.
+	def setLogger(self, logger):
+		self.logger = logger
 
 
 # this class is used to send messages to the client
