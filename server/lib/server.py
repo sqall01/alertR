@@ -1334,6 +1334,11 @@ class ClientCommunication:
 
 			return False
 
+		self.logger.info("[%s]: Option change for type %s "
+			% (self.fileName, optionType)
+			+ "to value %.3f in %d seconds."
+			% (optionValue, optionDelay))
+
 		# check if this option should already be changed by another
 		# thread => set flag to abort the change of this thread
 		# (acquire and release lock to make the list operations thread safe)
@@ -1531,6 +1536,11 @@ class ClientCommunication:
 
 			return False
 
+		self.logger.info("[%s]: Sensor alert for remote sensor id %d "
+			% (self.fileName, remoteSensorId)
+			+ "and state %d."
+			% state)
+
 		# add sensor alert to database
 		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId,
 			state, changeState, dataJson, logger=self.logger):
@@ -1590,6 +1600,11 @@ class ClientCommunication:
 				pass
 
 			return False
+
+		self.logger.info("[%s]: State change for remote sensor id %d "
+			% (self.fileName, remoteSensorId)
+			+ "and state %d."
+			% state)
 
 		# update sensor state
 		stateTuple = (remoteSensorId, state)
@@ -2409,7 +2424,7 @@ class ClientCommunication:
 			elif (command == "STATUS"
 				and self.nodeType == "sensor"):
 
-				self.logger.info("[%s]: Received status message (%s:%d)."
+				self.logger.debug("[%s]: Received status message (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 
 				if not self._statusHandler(message):
