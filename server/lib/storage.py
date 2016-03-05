@@ -14,6 +14,7 @@ import time
 import socket
 import struct
 import hashlib
+from localObjects import SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -195,7 +196,8 @@ class _Storage():
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
+	# dataType)
 	# or None
 	def getSensorInformation(self, sensorId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -216,7 +218,7 @@ class _Storage():
 	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
 	# instance, connected, version, rev, persistent))
 	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-	# description, state, lastStateUpdated, alertDelay))
+	# description, state, lastStateUpdated, alertDelay, dataType))
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
@@ -551,6 +553,7 @@ class Sqlite(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "lastStateUpdated INTEGER NOT NULL, "
 			+ "alertDelay INTEGER NOT NULL, "
+			+ "dataType INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create sensorsAlertLevels table
@@ -558,6 +561,20 @@ class Sqlite(_Storage):
 			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "sensorId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorsDataInt table.
+		self.cursor.execute("CREATE TABLE sensorsDataInt ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "data INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorsDataFloat table.
+		self.cursor.execute("CREATE TABLE sensorsDataFloat ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "data REAL NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create sensorAlerts table
@@ -596,6 +613,54 @@ class Sqlite(_Storage):
 
 		# commit all changes
 		self.conn.commit()
+
+
+	# Internal function that inserts sensor data according to its type.
+	#
+	# Returns true if everything worked fine.
+	def _insertSensorData(self, sensorId, dataType, data, logger=None):
+
+		# Depending on the data type of the sensor add it to the
+		# corresponding table.
+		if dataType == SensorDataType.NONE:
+			return True
+
+		elif dataType == SensorDataType.INT:
+			try:
+				self.cursor.execute("INSERT INTO sensorsDataInt ("
+					+ "sensorId, "
+					+ "data) VALUES (?, ?)",
+					(sensorId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensor's integer data.")
+
+				return False
+
+		elif dataType == SensorDataType.FLOAT:
+			try:
+				self.cursor.execute("INSERT INTO sensorsDataFloat ("
+					+ "sensorId, "
+					+ "data) VALUES (?, ?)",
+					(sensorId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensor's floating point data.")
+
+				return False
+
+		else:
+			logger.error("[%s]: Data type not known. Not able to "
+				% self.fileName
+				+ "add sensor.")
+
+			return False
+
+		return True
 
 
 	# checks the version of the server and the version in the database
@@ -638,6 +703,8 @@ class Sqlite(_Storage):
 			self.cursor.execute("DROP TABLE IF EXISTS options")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
 			self.cursor.execute("DROP TABLE IF EXISTS sensors")
 			self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
 			self.cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -877,12 +944,22 @@ class Sqlite(_Storage):
 							+ "WHERE nodeId = ? ", (nodeId, ))
 						result = self.cursor.fetchall()
 
-						# delete all sensor alert levels and sensors of
-						# this node
+						# Delete all sensor alert levels, data and sensors of
+						# this node.
 						for sensorIdResult in result:
 
 							self.cursor.execute("DELETE FROM "
 								+ "sensorsAlertLevels "
+								+ "WHERE sensorId = ?",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataInt "
+								+ "WHERE sensorId = ?",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataFloat "
 								+ "WHERE sensorId = ?",
 								(sensorIdResult[0], ))
 
@@ -1010,6 +1087,13 @@ class Sqlite(_Storage):
 		# add/update all sensors
 		for sensor in sensors:
 
+			# Extract sensor data (field does not exist
+			# if data type is "none").
+			if sensor["dataType"] == SensorDataType.NONE:
+				sensorData = None
+			else:
+				sensorData = sensor["data"]
+
 			# check if a sensor with the same remote id for this node
 			# already exists in the database
 			self.cursor.execute("SELECT id FROM sensors "
@@ -1019,7 +1103,7 @@ class Sqlite(_Storage):
 
 			# if the sensor does not exist
 			# => add it
-			if len(result) == 0:
+			if not result:
 
 				logger.info("[%s]: Sensor with client id '%d' does not "
 					% (self.fileName, int(sensor["clientSensorId"]))
@@ -1033,10 +1117,15 @@ class Sqlite(_Storage):
 						+ "description, "
 						+ "state, "
 						+ "lastStateUpdated, "
-						+ "alertDelay) VALUES (?, ?, ?, ?, ?, ?)",
-						(nodeId, int(sensor["clientSensorId"]),
-						str(sensor["description"]), 0, 0,
-						int(sensor["alertDelay"])))
+						+ "alertDelay, "
+						+ "dataType) VALUES (?, ?, ?, ?, ?, ?, ?)",
+						(nodeId,
+						int(sensor["clientSensorId"]),
+						str(sensor["description"]),
+						0,
+						0,
+						int(sensor["alertDelay"]),
+						sensor["dataType"]))
 				except Exception as e:
 					logger.exception("[%s]: Not able to add sensor."
 						% self.fileName)
@@ -1063,10 +1152,25 @@ class Sqlite(_Storage):
 						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
 							+ "sensorId, "
 							+ "alertLevel) VALUES (?, ?)",
-							(sensorId, alertLevel))
+							(sensorId,
+							alertLevel))
 				except Exception as e:
-					logger.exception("[%s]: Not able to " % self.fileName
-						+ "add sensor alert levels.")
+					logger.exception("[%s]: Not able to "
+						% self.fileName
+						+ "add sensor's alert levels.")
+
+					self._releaseLock(logger)
+
+					return False
+
+				# Depending on the data type of the sensor add it to the
+				# corresponding table.
+				if not self._insertSensorData(sensorId,
+					sensor["dataType"], sensorData, logger):
+
+					logger.error("[%s]: Not able to add data for newly "
+						% self.fileName
+						+ "added sensor.")
 
 					self._releaseLock(logger)
 
@@ -1080,19 +1184,21 @@ class Sqlite(_Storage):
 					% (self.fileName, int(sensor["clientSensorId"]))
 					+ "exists in database.")
 
-				# get sensorId, description and alertDelay
+				# get sensorId, description, alertDelay and dataType
 				try:
 					sensorId = self._getSensorId(nodeId,
 						int(sensor["clientSensorId"]))
 
 					self.cursor.execute("SELECT description, "
-						+ "alertDelay "
+						+ "alertDelay, "
+						+ "dataType "
 						+ "FROM sensors "
 						+ "WHERE id = ?",
 						(sensorId, ))
 					result = self.cursor.fetchall()
 					dbDescription = result[0][0]
 					dbAlertDelay = result[0][1]
+					dbDataType = result[0][2]
 
 				except Exception as e:
 					logger.exception("[%s]: Not able to " % self.fileName
@@ -1141,6 +1247,63 @@ class Sqlite(_Storage):
 						logger.exception("[%s]: Not able to "
 							% self.fileName
 							+ "update alert delay of sensor.")
+
+						self._releaseLock(logger)
+
+						return False
+
+				# Change data type if it had changed (and remove
+				# old data).
+				if dbDataType != sensor["dataType"]:
+
+					logger.info("[%s]: Data type of sensor has changed "
+						% self.fileName
+						+ "from '%d' to '%d'. Updating database."
+						% (dbDataType, sensor["dataType"]))
+
+					# Remove old data entry of sensor.
+					try:
+						self.cursor.execute("DELETE FROM "
+							+ "sensorsDataInt "
+							+ "WHERE sensorId = ?",
+							(sensorId, ))
+
+						self.cursor.execute("DELETE FROM "
+							+ "sensorsDataFloat "
+							+ "WHERE sensorId = ?",
+							(sensorId, ))
+					except Exception as e:
+						logger.exception("[%s]: Not able to "
+							% self.fileName
+							+ "remove old data entry of sensor.")
+
+						self._releaseLock(logger)
+
+						return False
+
+					# Update data type.
+					try:
+						self.cursor.execute("UPDATE sensors SET "
+							+ "dataType = ? "
+							+ "WHERE id = ?",
+							(int(sensor["dataType"]), sensorId))
+					except Exception as e:
+						logger.exception("[%s]: Not able to "
+							% self.fileName
+							+ "update data type of sensor.")
+
+						self._releaseLock(logger)
+
+						return False
+
+					# Depending on the data type of the sensor add it to the
+					# corresponding table.
+					if not self._insertSensorData(sensorId,
+						sensor["dataType"], sensorData, logger):
+
+						logger.error("[%s]: Not able to add data for "
+							% self.fileName
+							+ "changed sensor.")
 
 						self._releaseLock(logger)
 
@@ -2366,7 +2529,8 @@ class Sqlite(_Storage):
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
+	# dataType)
 	# or None
 	def getSensorInformation(self, sensorId, logger=None):
 
@@ -2383,7 +2547,8 @@ class Sqlite(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay "
+				+ "alertDelay, "
+				+ "dataType "
 				+ "FROM sensors "
 				+ "WHERE id = ?", (sensorId, ))
 
@@ -2411,7 +2576,8 @@ class Sqlite(_Storage):
 		self._releaseLock(logger)
 
 		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
+		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
+		# dataType)
 		return result[0]
 
 
@@ -2455,7 +2621,7 @@ class Sqlite(_Storage):
 	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
 	# instance, connected, version, rev, persistent))
 	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-	# description, state, lastStateUpdated, alertDelay))
+	# description, state, lastStateUpdated, alertDelay, dataType))
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
@@ -2521,7 +2687,7 @@ class Sqlite(_Storage):
 		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
 		# instance, connected, version, rev, persistent))
 		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-		# description, state, lastStateUpdated, alertDelay))
+		# description, state, lastStateUpdated, alertDelay, dataType))
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
@@ -2930,17 +3096,6 @@ class Mysql(_Storage):
 			+ "rev INTEGER NOT NULL, "
 			+ "persistent INTEGER NOT NULL)")
 
-		# create sensors table
-		self.cursor.execute("CREATE TABLE sensors ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "nodeId INTEGER NOT NULL, "
-			+ "remoteSensorId INTEGER NOT NULL, "
-			+ "description VARCHAR(255) NOT NULL, "
-			+ "state INTEGER NOT NULL, "
-			+ "lastStateUpdated INTEGER NOT NULL, "
-			+ "alertDelay INTEGER NOT NULL, "
-			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
 		# create node entry for this server (use unique id as username)
 		self.cursor.execute("INSERT INTO nodes ("
 			+ "hostname, "
@@ -2955,11 +3110,37 @@ class Mysql(_Storage):
 			(socket.gethostname(), uniqueID, "server", "server", 1,
 			self.version, self.rev, 1))
 
+		# create sensors table
+		self.cursor.execute("CREATE TABLE sensors ("
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+			+ "nodeId INTEGER NOT NULL, "
+			+ "remoteSensorId INTEGER NOT NULL, "
+			+ "description VARCHAR(255) NOT NULL, "
+			+ "state INTEGER NOT NULL, "
+			+ "lastStateUpdated INTEGER NOT NULL, "
+			+ "alertDelay INTEGER NOT NULL, "
+			+ "dataType INTEGER NOT NULL, "
+			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
 			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorsDataInt table.
+		self.cursor.execute("CREATE TABLE sensorsDataInt ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "data INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorsDataFloat table.
+		self.cursor.execute("CREATE TABLE sensorsDataFloat ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "data DOUBLE NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create sensorAlerts table
@@ -2998,6 +3179,54 @@ class Mysql(_Storage):
 
 		# commit all changes
 		self.conn.commit()
+
+
+	# Internal function that inserts sensor data according to its type.
+	#
+	# Returns true if everything worked fine.
+	def _insertSensorData(self, sensorId, dataType, data, logger=None):
+
+		# Depending on the data type of the sensor add it to the
+		# corresponding table.
+		if dataType == SensorDataType.NONE:
+			return True
+
+		elif dataType == SensorDataType.INT:
+			try:
+				self.cursor.execute("INSERT INTO sensorsDataInt ("
+					+ "sensorId, "
+					+ "data) VALUES (%s, %s)",
+					(sensorId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensor's integer data.")
+
+				return False
+
+		elif dataType == SensorDataType.FLOAT:
+			try:
+				self.cursor.execute("INSERT INTO sensorsDataFloat ("
+					+ "sensorId, "
+					+ "data) VALUES (%s, %s)",
+					(sensorId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensor's floating point data.")
+
+				return False
+
+		else:
+			logger.error("[%s]: Data type not known. Not able to "
+				% self.fileName
+				+ "add sensor.")
+
+			return False
+
+		return True
 
 
 	# checks the version of the server and the version in the database
@@ -3043,6 +3272,8 @@ class Mysql(_Storage):
 			self.cursor.execute("DROP TABLE IF EXISTS options")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
 			self.cursor.execute("DROP TABLE IF EXISTS sensors")
 			self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
 			self.cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -3311,12 +3542,22 @@ class Mysql(_Storage):
 							+ "WHERE nodeId = %s ", (nodeId, ))
 						result = self.cursor.fetchall()
 
-						# delete all sensor alert levels and sensors of
-						# this node
+						# Delete all sensor alert levels, data and sensors of
+						# this node.
 						for sensorIdResult in result:
 
 							self.cursor.execute("DELETE FROM "
 								+ "sensorsAlertLevels "
+								+ "WHERE sensorId = %s",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataInt "
+								+ "WHERE sensorId = %s",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataFloat "
 								+ "WHERE sensorId = %s",
 								(sensorIdResult[0], ))
 
@@ -3476,6 +3717,13 @@ class Mysql(_Storage):
 		# add/update all sensors
 		for sensor in sensors:
 
+			# Extract sensor data (field does not exist
+			# if data type is "none").
+			if sensor["dataType"] == SensorDataType.NONE:
+				sensorData = None
+			else:
+				sensorData = sensor["data"]
+
 			# check if a sensor with the same remote id for this node
 			# already exists in the database
 			self.cursor.execute("SELECT id FROM sensors "
@@ -3485,7 +3733,7 @@ class Mysql(_Storage):
 
 			# if the sensor does not exist
 			# => add it
-			if len(result) == 0:
+			if not result:
 
 				logger.info("[%s]: Sensor with client id '%d' does not "
 					% (self.fileName, int(sensor["clientSensorId"]))
@@ -3499,10 +3747,15 @@ class Mysql(_Storage):
 						+ "description, "
 						+ "state, "
 						+ "lastStateUpdated, "
-						+ "alertDelay) VALUES (%s, %s, %s, %s, %s, %s)",
-						(nodeId, int(sensor["clientSensorId"]),
-						str(sensor["description"]), 0, 0,
-						int(sensor["alertDelay"])))
+						+ "alertDelay, "
+						+ "dataType) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+						(nodeId,
+						int(sensor["clientSensorId"]),
+						str(sensor["description"]),
+						0,
+						0,
+						int(sensor["alertDelay"]),
+						sensor["dataType"]))
 				except Exception as e:
 					logger.exception("[%s]: Not able to add sensor."
 						% self.fileName)
@@ -3535,10 +3788,27 @@ class Mysql(_Storage):
 						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
 							+ "sensorId, "
 							+ "alertLevel) VALUES (%s, %s)",
-							(sensorId, alertLevel))
+							(sensorId,
+							alertLevel))
 				except Exception as e:
 					logger.exception("[%s]: Not able to " % self.fileName
-						+ "add sensor alert levels.")
+						+ "add sensor's alert levels.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock(logger)
+
+					return False
+
+				# Depending on the data type of the sensor add it to the
+				# corresponding table.
+				if not self._insertSensorData(sensorId,
+					sensor["dataType"], sensorData, logger):
+
+					logger.error("[%s]: Not able to add data for newly "
+						% self.fileName
+						+ "added sensor.")
 
 					# close connection to the database
 					self._closeConnection()
@@ -3555,19 +3825,21 @@ class Mysql(_Storage):
 					% (self.fileName, int(sensor["clientSensorId"]))
 					+ "exists in database.")
 
-				# get sensorId, description and alertDelay
+				# get sensorId, description, alertDelay and dataType
 				try:
 					sensorId = self._getSensorId(nodeId,
 						int(sensor["clientSensorId"]))
 
 					self.cursor.execute("SELECT description, "
-						+ "alertDelay "
+						+ "alertDelay, "
+						+ "dataType "
 						+ "FROM sensors "
 						+ "WHERE id = %s",
 						(sensorId, ))
 					result = self.cursor.fetchall()
 					dbDescription = result[0][0]
 					dbAlertDelay = result[0][1]
+					dbDataType = result[0][2]
 
 				except Exception as e:
 					logger.exception("[%s]: Not able to " % self.fileName
@@ -3622,6 +3894,72 @@ class Mysql(_Storage):
 						logger.exception("[%s]: Not able to "
 							% self.fileName
 							+ "update alert delay of sensor.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock(logger)
+
+						return False
+
+				# Change data type if it had changed (and remove
+				# old data).
+				if dbDataType != sensor["dataType"]:
+
+					logger.info("[%s]: Data type of sensor has changed "
+						% self.fileName
+						+ "from '%d' to '%d'. Updating database."
+						% (dbDataType, sensor["dataType"]))
+
+					# Remove old data entry of sensor.
+					try:
+						self.cursor.execute("DELETE FROM "
+							+ "sensorsDataInt "
+							+ "WHERE sensorId = %s",
+							(sensorId, ))
+
+						self.cursor.execute("DELETE FROM "
+							+ "sensorsDataFloat "
+							+ "WHERE sensorId = %s",
+							(sensorId, ))
+					except Exception as e:
+						logger.exception("[%s]: Not able to "
+							% self.fileName
+							+ "remove old data entry of sensor.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock(logger)
+
+						return False
+
+					# Update data type.
+					try:
+						self.cursor.execute("UPDATE sensors SET "
+							+ "dataType = %s "
+							+ "WHERE id = %s",
+							(int(sensor["dataType"]), sensorId))
+					except Exception as e:
+						logger.exception("[%s]: Not able to "
+							% self.fileName
+							+ "update data type of sensor.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock(logger)
+
+						return False
+
+					# Depending on the data type of the sensor add it to the
+					# corresponding table.
+					if not self._insertSensorData(sensorId,
+						sensor["dataType"], sensorData, logger):
+
+						logger.error("[%s]: Not able to add data for "
+							% self.fileName
+							+ "changed sensor.")
 
 						# close connection to the database
 						self._closeConnection()
@@ -5272,7 +5610,8 @@ class Mysql(_Storage):
 	# gets all information of a sensor by its given id
 	#
 	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay)
+	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
+	# dataType)
 	# or None
 	def getSensorInformation(self, sensorId, logger=None):
 
@@ -5300,7 +5639,8 @@ class Mysql(_Storage):
 				+ "description, "
 				+ "state, "
 				+ "lastStateUpdated, "
-				+ "alertDelay "
+				+ "alertDelay, "
+				+ "dataType "
 				+ "FROM sensors "
 				+ "WHERE id = %s", (sensorId, ))
 
@@ -5337,7 +5677,8 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay)
+		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
+		# dataType)
 		return result[0]
 
 
@@ -5398,7 +5739,7 @@ class Mysql(_Storage):
 	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
 	# instance, connected, version, rev, persistent))
 	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-	# description, state, lastStateUpdated, alertDelay))
+	# description, state, lastStateUpdated, alertDelay, dataType))
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
@@ -5481,7 +5822,7 @@ class Mysql(_Storage):
 		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
 		# instance, connected, version, rev, persistent))
 		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-		# description, state, lastStateUpdated, alertDelay))
+		# description, state, lastStateUpdated, alertDelay, dataType))
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))

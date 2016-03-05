@@ -8,6 +8,12 @@
 # Licensed under the GNU Public License, version 2.
 
 
+class SensorDataType:
+	NONE = 0
+	INT = 1
+	FLOAT = 2
+
+
 # this class represents a single alert level that is configured
 class AlertLevel:
 

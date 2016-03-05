@@ -256,7 +256,7 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Get a tuple of (sensorId, nodeId,
 			# remoteSensorId, description, state,
-			# lastStateUpdated, alertDelay) for timed out sensor.
+			# lastStateUpdated, alertDelay, dataType) for timed out sensor.
 			sensorTuple = self.storage.getSensorInformation(
 				sensorId)
 
@@ -354,7 +354,8 @@ class ConnectionWatchdog(threading.Thread):
 
 						# Get a tuple of (sensorId, nodeId,
 						# remoteSensorId, description, state,
-						# lastStateUpdated, alertDelay) for timed out sensor.
+						# lastStateUpdated, alertDelay, dataType)
+						# for timed out sensor.
 						sensorTuple = self.storage.getSensorInformation(
 							sensorId)
 

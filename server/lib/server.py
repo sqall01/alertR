@@ -17,6 +17,7 @@ import os
 import base64
 import random
 import json
+from localObjects import SensorDataType
 
 BUFSIZE = 4096
 
@@ -354,7 +355,7 @@ class ClientCommunication:
 		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
 		# instance, connected, version, rev, persistent))
 		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-		# description, state, lastStateUpdated, alertDelay))
+		# description, state, lastStateUpdated, alertDelay, dataType))
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
@@ -1039,6 +1040,22 @@ class ClientCommunication:
 							pass
 
 						return False
+
+
+
+
+			# TODO
+			# in order to work at the moment just add data manually
+			for sensor in sensors:
+				sensor["dataType"] = SensorDataType.NONE
+
+
+
+
+
+
+
+
 
 			# add sensors to database
 			if not self.storage.addSensors(self.username, sensors,

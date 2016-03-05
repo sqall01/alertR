@@ -12,7 +12,8 @@ import os
 from lib import ConnectionWatchdog
 from lib import ServerSession, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import AlertLevel, SensorTimeoutSensor, NodeTimeoutSensor
+from lib import SensorDataType, AlertLevel, SensorTimeoutSensor, \
+	NodeTimeoutSensor
 from lib import SensorAlertExecuter
 from lib import RuleStart, RuleElement, RuleBoolean, RuleSensor, RuleWeekday, \
 	RuleMonthday, RuleHour, RuleMinute, RuleSecond
@@ -1348,6 +1349,7 @@ if __name__ == '__main__':
 			temp["alertDelay"] = sensor.alertDelay
 			temp["alertLevels"] = sensor.alertLevels
 			temp["description"] = sensor.description
+			temp["dataType"] = SensorDataType.NONE
 			dbSensors.append(temp)
 
 			# Add tuple to db state list to set initial states of the
@@ -1382,6 +1384,7 @@ if __name__ == '__main__':
 			temp["alertDelay"] = sensor.alertDelay
 			temp["alertLevels"] = sensor.alertLevels
 			temp["description"] = sensor.description
+			temp["dataType"] = SensorDataType.NONE
 			dbSensors.append(temp)
 
 			# Add tuple to db state list to set initial states of the
