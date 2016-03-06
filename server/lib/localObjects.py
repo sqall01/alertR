@@ -8,6 +8,7 @@
 # Licensed under the GNU Public License, version 2.
 
 
+# This enum class gives the different data types of a sensor.
 class SensorDataType:
 	NONE = 0
 	INT = 1

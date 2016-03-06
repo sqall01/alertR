@@ -12,8 +12,9 @@ import random
 import os
 import logging
 import json
-from client import AsynchronousSender
 import threading
+from client import AsynchronousSender
+from localObjects import SensorDataType
 
 
 # internal class that holds the important attributes
@@ -32,6 +33,8 @@ class _PollingSensor:
 		self.triggerState = None
 		self.dataTransfer = False
 		self.data = None
+		self.sensorDataType = None
+		self.sensorData = None
 		self.changeState = None
 
 
@@ -56,6 +59,9 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 		_PollingSensor.__init__(self)
+
+		# Set sensor to not hold any data.
+		self.sensorDataType = SensorDataType.NONE
 
 		# used for logging
 		self.fileName = os.path.basename(__file__)
@@ -184,11 +190,18 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 # this class polls the sensor states and triggers alerts and state changes
 class SensorExecuter:
 
-	def __init__(self, connection, globalData):
+	def __init__(self, globalData):
 		self.fileName = os.path.basename(__file__)
-		self.connection = connection
-		self.sensors = globalData.sensors
 		self.globalData = globalData
+		self.connection = self.globalData.serverComm
+		self.sensors = self.globalData.sensors
+
+		# Flag indicates if the thread is initialized.
+		self._isInitialized = False
+
+
+	def isInitialized(self):
+		return self._isInitialized
 
 
 	def execute(self):
@@ -201,11 +214,18 @@ class SensorExecuter:
 		# to the server
 		lastFullStateSent = 0
 
-		while(1):
+		# Get reference to server communication object.
+		while self.connection is None:
+			time.sleep(0.5)
+			self.connection = self.globalData.serverComm
+
+		self._isInitialized = True
+
+		while True:
 
 			# check if the client is connected to the server
 			# => wait and continue loop until client is connected
-			if not self.connection.isConnected:
+			if not self.connection.isConnected():
 				time.sleep(0.5)
 				continue
 

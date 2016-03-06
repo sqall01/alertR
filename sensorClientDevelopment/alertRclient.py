@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import SensorDev, SensorExecuter
+from lib import SensorDataType, SensorDev, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
 import logging
@@ -172,6 +172,15 @@ if __name__ == '__main__':
 			for alertLevelXml in item.iterfind("alertLevel"):
 				sensor.alertLevels.append(int(alertLevelXml.text))
 
+			# Development sensor specific options.
+			sensor.sensorDataType = int(item.find("dev").attrib[
+				"dataType"])
+			if (sensor.sensorDataType != SensorDataType.NONE
+				and sensor.sensorDataType != SensorDataType.INT
+				and sensor.sensorDataType != SensorDataType.FLOAT):
+				raise ValueError("Illegal data type for sensor %d."
+					% sensor.id)
+
 			# check if description is empty
 			if len(sensor.description) == 0:
 				raise ValueError("Description of sensor %d is empty."
@@ -210,16 +219,20 @@ if __name__ == '__main__':
 		level=loglevel)
 
 	# check if sensors were found => if not exit
-	if globalData.sensors == list():
+	if not globalData.sensors:
 		logging.critical("[%s]: No sensors configured. " % fileName)
 		sys.exit(1)
+
+	# Initialize sensors before starting worker threads.
+	for sensor in globalData.sensors:
+		sensor.initializeSensor()
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
-	while 1:
+	while True:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
 		# => send eMail alert		
@@ -259,20 +272,36 @@ if __name__ == '__main__':
 		updateChecker.daemon = True
 		updateChecker.start()
 
-	# set up sensor executer and execute it
-	sensorExecuter = SensorExecuter(globalData.serverComm, globalData)
+	# Set up sensor executer and execute it.
+	sensorExecuter = SensorExecuter(globalData)
 	sensorExecuter.daemon = True
 	sensorExecuter.start()
+
+	# Wait until thread is initialized.
+	while not sensorExecuter.isInitialized():
+		time.sleep(0.1)
 
 	# read keyboard input and toggle the sensors accordingly
 	while True:
 
 		print "--------"
 		for sensor in globalData.sensors:
+			dataString = ""
+			if sensor.sensorDataType == SensorDataType.NONE:
+				dataString = "Current Data: NONE"
+			elif sensor.sensorDataType == SensorDataType.INT:
+				dataString = "Current Data: (INT) %d" % sensor.sensorData
+				dataString += " -> Next Data: %d" % sensor.nextData
+			elif sensor.sensorDataType == SensorDataType.FLOAT:
+				dataString = "Current Data: (FLOAT) %.3f" % sensor.sensorData
+				dataString += " -> Next Data: %.3f" % sensor.nextData
+
 			if sensor.consoleInputState == sensor.triggerState:
-				print ("Sensor Id: %d - Triggered" % sensor.id)
+				print("Sensor Id: %d - Triggered (%s)"
+					% (sensor.id, dataString))
 			else:
-				print ("Sensor Id: %d - Not Triggered" % sensor.id)
+				print("Sensor Id: %d - Not Triggered (%s)"
+					% (sensor.id, dataString))
 
 		try:
 			localSensorId = int(

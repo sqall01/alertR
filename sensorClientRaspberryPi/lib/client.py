@@ -17,6 +17,7 @@ import base64
 import xml.etree.cElementTree
 import random
 import json
+from localObjects import SensorDataType
 BUFSIZE = 4096
 
 
@@ -104,7 +105,7 @@ class ServerCommunication:
 		self.fileName = os.path.basename(__file__)
 
 		# flag that states if the client is connected
-		self.isConnected = False
+		self._isConnected = False
 
 		# flag that states if the client is already trying to initiate a
 		# transaction with the server
@@ -127,7 +128,7 @@ class ServerCommunication:
 	# lock and exiting/closing the session
 	def _cleanUpSessionForClosing(self):
 		# set client as disconnected
-		self.isConnected = False
+		self._isConnected = False
 
 		self.client.close()
 
@@ -314,6 +315,12 @@ class ServerCommunication:
 			tempSensor["alertDelay"] = sensor.alertDelay
 			tempSensor["alertLevels"] = sensor.alertLevels
 			tempSensor["description"] = sensor.description
+
+			# Only add data field if sensor data type is not "none".
+			tempSensor["dataType"] = sensor.sensorDataType
+			if sensor.sensorDataType != SensorDataType.NONE:
+				tempSensor["data"] = sensor.sensorData
+			
 			sensors.append(tempSensor)
 
 		logging.debug("[%s]: Sending registration message." % self.fileName)
@@ -391,6 +398,11 @@ class ServerCommunication:
 			else:
 				tempSensor["state"] = 0
 
+			# Only add data field if sensor data type is not "none".
+			tempSensor["dataType"] = sensor.sensorDataType
+			if sensor.sensorDataType != SensorDataType.NONE:
+				tempSensor["data"] = sensor.sensorData
+
 			sensors.append(tempSensor)
 
 		payload = {"type": "request", "sensors": sensors}
@@ -417,7 +429,13 @@ class ServerCommunication:
 
 		payload = {"type": "request",
 			"clientSensorId": sensor.id,
-			"state": state}
+			"state": state,
+			"dataType": sensor.sensorDataType}
+
+		# Only add data field if sensor data type is not "none".
+		if sensor.sensorDataType != SensorDataType.NONE:
+			payload["data"] = sensor.sensorData
+
 		message = {"clientTime": int(time.time()),
 			"message": "statechange",
 			"payload": payload}
@@ -656,11 +674,15 @@ class ServerCommunication:
 		self.lastRecv = time.time()
 
 		# set client as connected
-		self.isConnected = True
+		self._isConnected = True
 
 		self._releaseLock()
 
 		return True
+
+
+	def isConnected(self):
+		return self._isConnected
 
 
 	# this function reconnects the client to the server
@@ -691,6 +713,13 @@ class ServerCommunication:
 	# to keep the connection alive and to check if the connection
 	# is still alive
 	def sendKeepalive(self):
+
+		# Check if client is connected to server.
+		if not self._isConnected:
+			logging.error("[%s]: Not able to send ping. "
+				+ "Client is not connected to the server."
+				% self.fileName)
+			return False
 
 		pingMessage = self._buildPingMessage()
 
@@ -795,6 +824,13 @@ class ServerCommunication:
 	# this function sends the current sensor states to the server
 	def sendSensorsState(self):
 
+		# Check if client is connected to server.
+		if not self._isConnected:
+			logging.error("[%s]: Not able to send status update. "
+				+ "Client is not connected to the server."
+				% self.fileName)
+			return False
+
 		sensorStateMessage = self._buildSensorsStateMessage()
 
 		# initiate transaction with server and acquire lock
@@ -893,6 +929,13 @@ class ServerCommunication:
 
 	# this function sends a sensor alert to the server
 	def sendSensorAlert(self, sensor):
+
+		# Check if client is connected to server.
+		if not self._isConnected:
+			logging.error("[%s]: Not able to send sensor alert. "
+				+ "Client is not connected to the server."
+				% self.fileName)
+			return False
 
 		sensorAlertMessage = self._buildSensorAlertMessage(sensor)
 
@@ -997,6 +1040,13 @@ class ServerCommunication:
 
 	# this function sends a changed state of a sensor to the server
 	def sendStateChange(self, sensor):
+
+		# Check if client is connected to server.
+		if not self._isConnected:
+			logging.error("[%s]: Not able to send state change. "
+				+ "Client is not connected to the server."
+				% self.fileName)
+			return False
 
 		stateChangeMessage = self._buildStateChangeMessage(sensor)
 
@@ -1142,13 +1192,13 @@ class ConnectionWatchdog(threading.Thread):
 				time.sleep(1)
 
 			# check if the client is still connected to the server
-			if not self.connection.isConnected:
+			if not self.connection.isConnected():
 
 				logging.error("[%s]: Connection to server has died. "
 					% self.fileName)
 
 				# reconnect to the server
-				while 1:
+				while True:
 
 					# check if 5 unsuccessful attempts are made to connect
 					# to the server and if smtp alert is activated
@@ -1187,7 +1237,7 @@ class ConnectionWatchdog(threading.Thread):
 						% self.fileName)
 
 					# reconnect to the server
-					while 1:
+					while True:
 
 						# check if 5 unsuccessful attempts are made to connect
 						# to the server and if smtp alert is activated

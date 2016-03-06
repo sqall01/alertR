@@ -196,6 +196,14 @@
 			<alertLevel>0</alertLevel>
 			<alertLevel>3</alertLevel>
 
+			<!--
+				The special configuration for the development sensors.
+				dataType - Gives the data type of this sensor
+				(0 = none, 1 = int, 2 = float).
+			-->
+			<dev
+				dataType="0" />
+
 		</sensor>
 
 		<!--
@@ -248,6 +256,14 @@
 				(a sensor must have one but can have multiple alert levels)
 			-->
 			<alertLevel>0</alertLevel>
+
+			<!--
+				The special configuration for the development sensors.
+				dataType - Gives the data type of this sensor
+				(0 = none, 1 = int, 2 = float).
+			-->
+			<dev
+				dataType="0" />
 
 		</sensor>
 

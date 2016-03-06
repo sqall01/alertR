@@ -962,6 +962,50 @@ class ClientCommunication:
 				try:
 					sensorId = int(sensors[i]["clientSensorId"])
 					alertDelay = int(sensors[i]["alertDelay"])
+					sensorDataType = int(sensors[i]["dataType"])
+
+					# Sanity check of sensor data type.
+					if (sensorDataType != SensorDataType.NONE
+						and sensorDataType != SensorDataType.INT
+						and sensorDataType != SensorDataType.FLOAT):
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "sensor data type not known"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
+
+					# Sanity check of sensor data field.
+					if sensorDataType == SensorDataType.NONE:
+						sensors[i]["data"] = None
+					elif sensorDataType == SensorDataType.INT:
+						if not isinstance(sensors[i]["data"], int):
+							# send error message back
+							try:
+								message = {"serverTime": int(time.time()),
+									"message": message["message"],
+									"error": "sensor data not of type int"}
+								self.sslSocket.send(json.dumps(message))
+							except Exception as e:
+								pass
+
+							return False
+					elif sensorDataType == SensorDataType.FLOAT:
+						if not isinstance(sensors[i]["data"], float):
+							# send error message back
+							try:
+								message = {"serverTime": int(time.time()),
+									"message": message["message"],
+									"error": "sensor data not of type float"}
+								self.sslSocket.send(json.dumps(message))
+							except Exception as e:
+								pass
+
+							return False
 
 					alertLevels = sensors[i]["alertLevels"]
 					# check if alertLevels is a list
@@ -1040,22 +1084,6 @@ class ClientCommunication:
 							pass
 
 						return False
-
-
-
-
-			# TODO
-			# in order to work at the moment just add data manually
-			for sensor in sensors:
-				sensor["dataType"] = SensorDataType.NONE
-
-
-
-
-
-
-
-
 
 			# add sensors to database
 			if not self.storage.addSensors(self.username, sensors,

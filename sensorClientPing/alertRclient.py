@@ -220,16 +220,20 @@ if __name__ == '__main__':
 		level=loglevel)
 
 	# check if sensors were found => if not exit
-	if globalData.sensors == list():
+	if not globalData.sensors:
 		logging.critical("[%s]: No sensors configured. " % fileName)
 		sys.exit(1)
+
+	# Initialize sensors before starting worker threads.
+	for sensor in globalData.sensors:
+		sensor.initializeSensor()
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
-	while 1:
+	while True:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
 		# => send eMail alert		
@@ -272,5 +276,5 @@ if __name__ == '__main__':
 	# set up sensor executer and execute it
 	# (note: we will not return from the executer unless the client
 	# is terminated)
-	sensorExecuter = SensorExecuter(globalData.serverComm, globalData)
+	sensorExecuter = SensorExecuter(globalData)
 	sensorExecuter.execute()
