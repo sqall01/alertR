@@ -964,22 +964,7 @@ class ClientCommunication:
 					alertDelay = int(sensors[i]["alertDelay"])
 					sensorDataType = int(sensors[i]["dataType"])
 
-					# Sanity check of sensor data type.
-					if (sensorDataType != SensorDataType.NONE
-						and sensorDataType != SensorDataType.INT
-						and sensorDataType != SensorDataType.FLOAT):
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "sensor data type not known"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					# Sanity check of sensor data field.
+					# Sanity check of sensor data field and data type.
 					if sensorDataType == SensorDataType.NONE:
 						sensors[i]["data"] = None
 					elif sensorDataType == SensorDataType.INT:
@@ -1006,6 +991,17 @@ class ClientCommunication:
 								pass
 
 							return False
+					else:
+						# send error message back
+						try:
+							message = {"serverTime": int(time.time()),
+								"message": message["message"],
+								"error": "sensor data type not known"}
+							self.sslSocket.send(json.dumps(message))
+						except Exception as e:
+							pass
+
+						return False
 
 					alertLevels = sensors[i]["alertLevels"]
 					# check if alertLevels is a list
@@ -1629,6 +1625,51 @@ class ClientCommunication:
 		try:
 			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
 			state = int(incomingMessage["payload"]["state"])
+
+			sensorDataType = int(incomingMessage["payload"]["dataType"])
+			sensorData = None
+
+			# Sanity check of sensor data field and data type.
+			if sensorDataType == SensorDataType.NONE:
+				sensorData = None
+			elif sensorDataType == SensorDataType.INT:
+				sensorData = incomingMessage["payload"]["data"]
+				if not isinstance(sensorData, int):
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
+							"error": "sensor data not of type int"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+			elif sensorDataType == SensorDataType.FLOAT:
+				sensorData = incomingMessage["payload"]["data"]
+				if not isinstance(sensorData, float):
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
+							"error": "sensor data not of type float"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+			else:
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "sensor data type not known"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
 		except Exception as e:
 			self.logger.exception("[%s]: Received state change "
 				% self.fileName
@@ -1646,10 +1687,21 @@ class ClientCommunication:
 
 			return False
 
-		self.logger.info("[%s]: State change for remote sensor id %d "
-			% (self.fileName, remoteSensorId)
-			+ "and state %d."
-			% state)
+		if sensorDataType == SensorDataType.NONE:
+			self.logger.info("[%s]: State change for remote sensor id %d "
+				% (self.fileName, remoteSensorId)
+				+ "and state %d."
+				% state)
+		elif sensorDataType == SensorDataType.INT:
+			self.logger.info("[%s]: State change for remote sensor id %d "
+				% (self.fileName, remoteSensorId)
+				+ "and state %d and data %d."
+				% (state, sensorData))
+		elif sensorDataType == SensorDataType.FLOAT:
+			self.logger.info("[%s]: State change for remote sensor id %d "
+				% (self.fileName, remoteSensorId)
+				+ "and state %d and data %.3f."
+				% (state, sensorData))
 
 		# update sensor state
 		stateTuple = (remoteSensorId, state)
@@ -1670,6 +1722,16 @@ class ClientCommunication:
 				pass
 
 			return False
+
+
+
+
+		# TODO
+		# -> update state in database
+		# -> write it like updateSensorState to use a list of tuples (this can then be reused by status update)
+
+
+
 
 		# get sensorId from database => append to state change queue
 		# => wake up manager update executer
