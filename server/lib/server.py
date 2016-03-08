@@ -1705,8 +1705,7 @@ class ClientCommunication:
 
 		# update sensor state
 		stateTuple = (remoteSensorId, state)
-		stateList = list()
-		stateList.append(stateTuple)
+		stateList = [stateTuple]
 		if not self.storage.updateSensorState(self.nodeId, stateList,
 			logger=self.logger):
 			self.logger.error("[%s]: Not able to change sensor state (%s:%d)."
@@ -1723,15 +1722,28 @@ class ClientCommunication:
 
 			return False
 
+		# Update sensor data if it holds data.
+		if sensorDataType != SensorDataType.NONE:
+			dataTuple = (remoteSensorId, sensorData)
+			dataList = [dataTuple]
 
+			if not self.storage.updateSensorData(self.nodeId, dataList,
+				logger=self.logger):
+				self.logger.error("[%s]: Not able to change sensor data "
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
 
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "not able to change sensor data in database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
 
-		# TODO
-		# -> update state in database
-		# -> write it like updateSensorState to use a list of tuples (this can then be reused by status update)
-
-
-
+				return False
 
 		# get sensorId from database => append to state change queue
 		# => wake up manager update executer

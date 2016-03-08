@@ -269,11 +269,19 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# updates the states of the sensors of a node in the databse
+	# updates the states of the sensors of a node in the database
 	# (given in a tuple of (remoteSensorId, state))
 	#
 	# return True or False
 	def updateSensorState(self, nodeId, stateList, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# updates the data of the sensors of a node in the database
+	# (given in a tuple of (remoteSensorId, data))
+	#
+	# return True or False
+	def updateSensorData(self, nodeId, dataList, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -1925,7 +1933,7 @@ class Sqlite(_Storage):
 		return uniqueID
 
 
-	# updates the states of the sensors of a node in the databse
+	# updates the states of the sensors of a node in the database
 	# (given in a tuple of (remoteSensorId, state))
 	#
 	# return True or False
@@ -1964,6 +1972,76 @@ class Sqlite(_Storage):
 					(stateTuple[1], int(time.time()), nodeId, stateTuple[0]))
 			except Exception as e:
 				logger.exception("[%s]: Not able to update sensor state."
+					% self.fileName)
+
+				self._releaseLock(logger)
+
+				return False
+
+		# commit all changes
+		self.conn.commit()
+
+		self._releaseLock(logger)
+
+		return True
+
+
+	# updates the data of the sensors of a node in the database
+	# (given in a tuple of (remoteSensorId, data))
+	#
+	# return True or False
+	def updateSensorData(self, nodeId, dataList, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# dataList is a list of tuples of (remoteSensorId, data)
+		for dataTuple in dataList:
+
+			try:
+
+				# Check if the sensor does exist in the database and get its
+				# data type.
+				self.cursor.execute("SELECT id, dataType FROM sensors "
+					+ "WHERE nodeId = ? "
+					+ "AND remoteSensorId = ?", (nodeId, dataTuple[0]))
+				result = self.cursor.fetchall()
+				if len(result) != 1:
+					logger.error("[%s]: Sensor does not exist in "
+						% self.fileName
+						+ "database.")
+
+					self._releaseLock(logger)
+
+					return False
+
+				sensorId = result[0][0]
+				dataType = result[0][1]
+
+				if dataType == SensorDataType.NONE:
+					logger.exception("[%s]: Sensor with remote id %d holds "
+						% (self.fileName, dataTuple[0])
+						+ "no data. Ignoring it.")
+
+				elif dataType == SensorDataType.INT:
+					self.cursor.execute("UPDATE SensorsDataInt SET "
+						+ "data = ? "
+						+ "WHERE sensorId = ?",
+						(dataTuple[1],
+						sensorId))
+
+				elif dataType == SensorDataType.FLOAT:
+					self.cursor.execute("UPDATE SensorsDataFloat SET "
+						+ "data = ? "
+						+ "WHERE sensorId = ?",
+						(dataTuple[1],
+						sensorId))
+
+			except Exception as e:
+				logger.exception("[%s]: Not able to update sensor data."
 					% self.fileName)
 
 				self._releaseLock(logger)
@@ -4728,7 +4806,7 @@ class Mysql(_Storage):
 
 
 
-	# updates the states of the sensors of a node in the databse
+	# updates the states of the sensors of a node in the database
 	# (given in a tuple of (remoteSensorId, state))
 	#
 	# return True or False
@@ -4781,6 +4859,96 @@ class Mysql(_Storage):
 					(stateTuple[1], int(time.time()), nodeId, stateTuple[0]))
 			except Exception as e:
 				logger.exception("[%s]: Not able to update sensor state."
+					% self.fileName)
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return False
+
+		# commit all changes
+		self.conn.commit()
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		return True
+
+
+	# updates the data of the sensors of a node in the database
+	# (given in a tuple of (remoteSensorId, data))
+	#
+	# return True or False
+	def updateSensorData(self, nodeId, dataList, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return False
+
+		# dataList is a list of tuples of (remoteSensorId, data)
+		for dataTuple in dataList:
+
+			try:
+
+				# Check if the sensor does exist in the database and get its
+				# data type.
+				self.cursor.execute("SELECT id, dataType FROM sensors "
+					+ "WHERE nodeId = %s "
+					+ "AND remoteSensorId = %s", (nodeId, dataTuple[0]))
+				result = self.cursor.fetchall()
+				if len(result) != 1:
+					logger.error("[%s]: Sensor does not exist in "
+						% self.fileName
+						+ "database.")
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock(logger)
+
+					return False
+
+				sensorId = result[0][0]
+				dataType = result[0][1]
+
+				if dataType == SensorDataType.NONE:
+					logger.exception("[%s]: Sensor with remote id %d holds "
+						% (self.fileName, dataTuple[0])
+						+ "no data. Ignoring it.")
+
+				elif dataType == SensorDataType.INT:
+					self.cursor.execute("UPDATE SensorsDataInt SET "
+						+ "data = %s "
+						+ "WHERE sensorId = %s",
+						(dataTuple[1],
+						sensorId))
+
+				elif dataType == SensorDataType.FLOAT:
+					self.cursor.execute("UPDATE SensorsDataFloat SET "
+						+ "data = %s "
+						+ "WHERE sensorId = %s",
+						(dataTuple[1],
+						sensorId))
+
+			except Exception as e:
+				logger.exception("[%s]: Not able to update sensor data."
 					% self.fileName)
 
 				# close connection to the database
