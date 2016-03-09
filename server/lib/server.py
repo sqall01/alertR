@@ -1467,15 +1467,16 @@ class ClientCommunication:
 
 			return False
 
-		# extract sensor data
-		# generate a list of tuples with (remoteSensorId, state)
+		# Extract sensor states.
+		# Generate a list of tuples with (remoteSensorId, state).
 		stateList = list()
 		try:
 			for i in range(self.sensorCount):
 				stateList.append((int(sensors[i]["clientSensorId"]),
 					int(sensors[i]["state"])))
 		except Exception as e:
-			self.logger.exception("[%s]: Received sensor " % self.fileName
+			self.logger.exception("[%s]: Received sensor state "
+				% self.fileName
 				+ "invalid (%s:%d)."
 				% (self.clientAddress, self.clientPort))
 
@@ -1483,7 +1484,7 @@ class ClientCommunication:
 			try:
 				message = {"serverTime": int(time.time()),
 					"message": incomingMessage["message"],
-					"error": "received sensor invalid"}
+					"error": "received sensor state invalid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
 				pass
@@ -1509,6 +1510,63 @@ class ClientCommunication:
 				pass
 
 			return False
+
+		# Extract sensor data.
+		# Generate a list of tuples with (remoteSensorId, sensorData).
+		dataList = list()
+		try:
+			for i in range(self.sensorCount):
+				if int(sensors[i]["dataType"]) == SensorDataType.NONE:
+					continue
+				elif int(sensors[i]["dataType"]) == SensorDataType.INT:
+					dataList.append( (int(sensors[i]["clientSensorId"]),
+						int(sensors[i]["data"])) )
+				elif int(sensors[i]["dataType"]) == SensorDataType.FLOAT:
+					dataList.append( (int(sensors[i]["clientSensorId"]),
+						float(sensors[i]["data"])) )
+				else:
+					raise ValueError("Unknown data type.")
+
+		except Exception as e:
+			self.logger.exception("[%s]: Received sensor data "
+				% self.fileName
+				+ "invalid (%s:%d)."
+				% (self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "received sensor data invalid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		# Update the sensor data in the database.
+		if dataList:
+
+			self.logger.debug("[%s]: Received new sensor data (%s:%d)."
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+			if not self.storage.updateSensorData(self.nodeId, dataList,
+				logger=self.logger):
+				self.logger.error("[%s]: Not able to update sensor data "
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "not able to update sensor data in database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
 
 		# send status response
 		try:
