@@ -16,25 +16,64 @@ from client import AsynchronousSender
 from localObjects import SensorDataType
 
 
-# internal class that holds the important attributes
-# for a sensor to work with (this class must be inherited from the
-# used sensor class)
+# Internal class that holds the important attributes
+# for a sensor to work (this class must be inherited from the
+# used sensor class).
 class _PollingSensor:
 
 	def __init__(self):
+
+		# Id of this sensor on this client. Will be handled as
+		# "remoteSensorId" by the server.
 		self.id = None
+
+		# Description of this sensor.
 		self.description = None
+
+		# Delay in seconds this sensor has before a sensor alert is
+		# issued by the server.
 		self.alertDelay = None
+
+		# Local state of the sensor (either 1 or 0). This state is translated
+		# (with the help of "triggerState") into 1 = "triggered" / 0 = "normal"
+		# when it is send to the server.
 		self.state = None
-		self.alertLevels = list()
-		self.triggerAlert = None
-		self.triggerAlertNormal = None
+
+		# State the sensor counts as triggered (either 1 or 0).
 		self.triggerState = None
+
+		# A list of alert levels this sensor belongs to.
+		self.alertLevels = list()
+
+		# Flag that indicates if this sensor should trigger a sensor alert
+		# for the state "triggered" (true or false).
+		self.triggerAlert = None
+
+		# Flag that indicates if this sensor should trigger a sensor alert
+		# for the state "normal" (true or false).
+		self.triggerAlertNormal = None
+
+		# The type of data the sensor holds (i.e., none at all, integer, ...).
+		# Type is given by the enum class "SensorDataType".
+		self.sensorDataType = None
+
+		# The actual data the sensor holds.
+		self.sensorData = None
+
+		# Flag that indicates if a sensor alert that is send to the server
+		# should also change the state of the sensor accordingly. This flag
+		# can be useful if the sensor watches multiple entities. For example,
+		# a timeout sensor could watch multiple hosts and has the state
+		# "triggered" when at least one host has timed out. When one host
+		# connects back and still at least one host is timed out,
+		# the sensor can still issue a sensor alert for the "normal"
+		# state of the host that connected back, but the sensor
+		# can still has the state "triggered".
+		self.changeState = None
+
+		# Optional data that can be transfered when a sensor alert is issued.
 		self.dataTransfer = False
 		self.data = None
-		self.sensorDataType = None
-		self.sensorData = None
-		self.changeState = None
 
 
 	# this function returns the current state of the sensor
