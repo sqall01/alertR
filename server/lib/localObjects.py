@@ -15,6 +15,21 @@ class SensorDataType:
 	FLOAT = 2
 
 
+class Sensor:
+
+	def __init__(self):
+		self.sensorId = None
+		self.nodeId = None
+		self.remoteSensorId = None
+		self.description = None
+		self.state = None
+		self.alertLevels = list()
+		self.lastStateUpdated = None
+		self.alertDelay = None
+		self.dataType = None
+		self.data = None
+
+
 # this class represents a single alert level that is configured
 class AlertLevel:
 

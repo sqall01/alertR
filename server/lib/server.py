@@ -17,7 +17,7 @@ import os
 import base64
 import random
 import json
-from localObjects import SensorDataType
+from localObjects import SensorDataType, Sensor
 
 BUFSIZE = 4096
 
@@ -88,9 +88,13 @@ class ClientCommunication:
 		# time the server is waiting on receives until a time out occurs
 		self.serverReceiveTimeout = self.globalData.serverReceiveTimeout
 
-		# flag that states if the server is already trying to initiate a
-		# transaction with the client
+		# Flag that states if the server is already trying to initiate a
+		# transaction with the client.
 		self.transactionInitiation = False
+
+		# List of all sensors this client manages (is only used if the client
+		# is of type "sensor").
+		self.sensors = list()
 
 
 	# internal function that acquires the lock
@@ -914,6 +918,24 @@ class ClientCommunication:
 
 			return False
 
+		# Get the node id from the database for this client.
+		self.nodeId = self.storage.getNodeId(self.username,
+			logger=self.logger)
+		if self.nodeId is None:
+			self.logger.error("[%s]: Getting node id failed (%s:%d)."
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "unable to get node id from database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
 		# check if the type of the node got sensors
 		# => add sensor data to the database
 		if self.nodeType == "sensor":
@@ -1081,10 +1103,25 @@ class ClientCommunication:
 
 						return False
 
+				# Create sensor object for the currently received sensor.
+				# NOTE: sensor id is not known yet.
+				tempSensor = Sensor()
+				tempSensor.nodeId = self.nodeId
+				tempSensor.remoteSensorId = sensorId
+				tempSensor.description = description
+				tempSensor.state = 0
+				tempSensor.alertLevels = alertLevels
+				tempSensor.lastStateUpdated = 0
+				tempSensor.alertDelay = alertDelay
+				tempSensor.dataType = sensorDataType
+				tempSensor.data = sensors[i]["data"]
+				self.sensors.append(tempSensor)
+
 			# add sensors to database
 			if not self.storage.addSensors(self.username, sensors,
 				logger=self.logger):
-				self.logger.error("[%s]: Unable to add " % self.fileName
+				self.logger.error("[%s]: Unable to add "
+					% self.fileName
 					+ "sensors to database (%s:%d)."
 					% (self.clientAddress, self.clientPort))
 
@@ -1098,6 +1135,30 @@ class ClientCommunication:
 					pass
 
 				return False
+
+			# Get sensor id for each registered sensor object.
+			for sensor in self.sensors:
+
+				sensor.sensorId = self.storage.getSensorId(self.nodeId,
+					sensor.remoteSensorId, logger=self.logger)
+
+				if sensor.sensorId is None:
+					self.logger.error("[%s]: Unable to get "
+						% self.fileName
+						+ "sensor id for remote sensor %d (%s:%d)."
+						% (sensor.remoteSensorId, self.clientAddress,
+						self.clientPort))
+
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
+							"error": "unable to get sensor id from database"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
 
 		# check if the type of the node is alert
 		# => register alerts
@@ -1472,8 +1533,38 @@ class ClientCommunication:
 		stateList = list()
 		try:
 			for i in range(self.sensorCount):
-				stateList.append((int(sensors[i]["clientSensorId"]),
-					int(sensors[i]["state"])))
+				remoteSensorId = int(sensors[i]["clientSensorId"])
+
+				# Check if client sensor is known.
+				sensor = None
+				for currentSensor in self.sensors:
+					if currentSensor.remoteSensorId == remoteSensorId:
+						sensor = currentSensor
+						break
+				if sensor is None:
+
+					self.logger.error("[%s]: Unknown client sensor id %d "
+						% (self.fileName, remoteSensorId)
+						+ "(%s:%d)."
+						% (self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
+							"error": "unknown client sensor id"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
+				# Update sensor object.
+				sensor.state = int(sensors[i]["state"])
+				sensor.lastStateUpdated = int(time.time())
+
+				stateList.append( (remoteSensorId, sensor.state) )
+
 		except Exception as e:
 			self.logger.exception("[%s]: Received sensor state "
 				% self.fileName
@@ -1516,16 +1607,48 @@ class ClientCommunication:
 		dataList = list()
 		try:
 			for i in range(self.sensorCount):
-				if int(sensors[i]["dataType"]) == SensorDataType.NONE:
+				remoteSensorId = int(sensors[i]["clientSensorId"])
+
+				# Check if client sensor is known.
+				# NOTE: omit check if remote sensor id is valid because we
+				# know it is, we checked it earlier.
+				sensor = None
+				for currentSensor in self.sensors:
+					if currentSensor.remoteSensorId == remoteSensorId:
+						sensor = currentSensor
+						break
+
+				sensorDataType = int(sensors[i]["dataType"])
+
+				# Check if received message contains the correct data type.
+				if sensor.dataType != sensorDataType:
+
+					self.logger.error("[%s]: Received sensor data type for "
+						% self.fileName
+						+ "remote sensor %d invalid (%s:%d)."
+						% (remoteSensorId, self.clientAddress,
+						self.clientPort))
+
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": message["message"],
+							"error": "received sensor data type wrong"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return False
+
+				# Extract received data.
+				if sensorDataType == SensorDataType.NONE:
 					continue
-				elif int(sensors[i]["dataType"]) == SensorDataType.INT:
-					dataList.append( (int(sensors[i]["clientSensorId"]),
-						int(sensors[i]["data"])) )
-				elif int(sensors[i]["dataType"]) == SensorDataType.FLOAT:
-					dataList.append( (int(sensors[i]["clientSensorId"]),
-						float(sensors[i]["data"])) )
-				else:
-					raise ValueError("Unknown data type.")
+				elif sensorDataType == SensorDataType.INT:
+					sensor.data = int(sensors[i]["data"])
+				elif sensorDataType == SensorDataType.FLOAT:
+					sensor.data = float(sensors[i]["data"])
+
+				dataList.append( (remoteSensorId, sensor.data) )
 
 		except Exception as e:
 			self.logger.exception("[%s]: Received sensor data "
@@ -1679,13 +1802,55 @@ class ClientCommunication:
 	# (updates them in the database and wakes up the manager update executer)
 	def _stateChangeHandler(self, incomingMessage):
 
-		# extract state change values
+		# Extract state change values.
 		try:
 			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
 			state = int(incomingMessage["payload"]["state"])
-
 			sensorDataType = int(incomingMessage["payload"]["dataType"])
 			sensorData = None
+
+			# Check if client sensor is known.
+			sensor = None
+			for currentSensor in self.sensors:
+				if currentSensor.remoteSensorId == remoteSensorId:
+					sensor = currentSensor
+					break
+			if sensor is None:
+
+				self.logger.error("[%s]: Unknown client sensor id %d "
+					% (self.fileName, remoteSensorId)
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "unknown client sensor id"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# Check if received message contains the correct data type.
+			if sensorDataType != sensor.dataType:
+
+				self.logger.error("[%s]: Received sensor data type for remote "
+					% self.fileName
+					+ "sensor %d invalid (%s:%d)."
+					% (remoteSensorId, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "received sensor data type wrong"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
 
 			# Sanity check of sensor data field and data type.
 			if sensorDataType == SensorDataType.NONE:
@@ -1716,17 +1881,11 @@ class ClientCommunication:
 						pass
 
 					return False
-			else:
-				# send error message back
-				try:
-					message = {"serverTime": int(time.time()),
-						"message": message["message"],
-						"error": "sensor data type not known"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
 
-				return False
+			# Update sensor object.
+			sensor.state = state
+			sensor.lastStateUpdated = int(time.time())
+			sensor.data = sensorData
 
 		except Exception as e:
 			self.logger.exception("[%s]: Received state change "
@@ -2261,16 +2420,6 @@ class ClientCommunication:
 		# change the time of the last received message
 		# (for the watchdog so it can see that the connection is still alive)
 		self.lastRecv = time.time()
-
-		# get the node id from the database for this connection
-		self.nodeId = self.storage.getNodeId(self.username,
-			logger=self.logger)
-		if self.nodeId is None:
-			self.logger.error("[%s]: Getting node id failed (%s:%d)."
-					% (self.fileName, self.clientAddress, self.clientPort))
-
-			self._releaseLock()
-			return
 
 		# get the sensor count from the database for this connection
 		# if the nodeType is "sensor"
