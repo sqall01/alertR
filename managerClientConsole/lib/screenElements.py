@@ -84,8 +84,14 @@ class SensorUrwid:
 		self.descriptionWidget = urwid.Text("Desc.: " + sensor.description)
 		sensorPileList.append(self.descriptionWidget)
 
-		sensorPile = urwid.Pile(sensorPileList)
-		sensorBox = urwid.LineBox(sensorPile, title="host: " + node.hostname)
+		self.dataWidget = urwid.Text("")
+		if sensor.dataType != SensorDataType.NONE:
+			self.dataWidget.set_text("Data: " + str(sensor.data))
+			sensorPileList.append(self.dataWidget)
+
+		self.sensorPile = urwid.Pile(sensorPileList)
+		sensorBox = urwid.LineBox(self.sensorPile,
+			title="host: " + node.hostname)
 		paddedSensorBox = urwid.Padding(sensorBox, left=1, right=1)
 
 		# check if node is connected and set the color accordingly
@@ -121,6 +127,10 @@ class SensorUrwid:
 
 		# store reference in sensor object to this urwid sensor object
 		self.sensor.sensorUrwid = self
+
+		# Store the current data type of the sensor. This is used to check
+		# if the data type has changed and the urwid object has to be adjusted.
+		self.lastDataType = self.sensor.dataType
 
 
 	# this function returns the final urwid widget that is used
@@ -196,6 +206,30 @@ class SensorUrwid:
 				self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
 
+	# this function updates the data of the object
+	def updateData(self, data, dataType):
+		self.dataWidget.set_text("Data: " + str(data))
+
+		# If the data type has changed and the new data type is "none",
+		# remove the data widget.
+		if (self.lastDataType != dataType
+			and dataType == SensorDataType.NONE):
+			for pileTuple in self.sensorPile.contents:
+				if self.dataWidget == pileTuple[0]:
+					self.sensorPile.contents.remove(pileTuple)
+					break
+
+		# If the data type has changed and the new data type is not "none",
+		# add the data widget.
+		elif (self.lastDataType != dataType
+			and dataType != SensorDataType.NONE):
+			self.sensorPile.contents.append( (self.dataWidget,
+				self.sensorPile.options()) )
+
+		# Needed to check if the data type has changed.
+		self.lastDataType = dataType
+
+
 	# this function updates all internal widgets and checks if
 	# the sensor/node still exists
 	def updateCompleteWidget(self):
@@ -211,6 +245,7 @@ class SensorUrwid:
 		self.updateConnected(self.node.connected)
 		self.updateLastUpdated(self.sensor.lastStateUpdated)
 		self.updateState(self.sensor.state)
+		self.updateData(self.sensor.data, self.sensor.dataType)
 
 		# return true if object was updated
 		return True
