@@ -932,11 +932,14 @@ class ClientCommunication:
 
 
 	# Internal function that builds the state change message.
-	def _buildStateChangeMessage(self, sensorId, state):
+	def _buildStateChangeMessage(self, sensorId, state, dataType, data):
 
 		payload = {"type": "request",
 			"sensorId": sensorId,
-			"state": state}
+			"state": state,
+			"dataType": dataType}
+		if dataType != SensorDataType.NONE:
+			payload["data"] = data
 		message = {"serverTime": int(time.time()),
 			"message": "statechange",
 			"payload": payload}
@@ -2328,6 +2331,7 @@ class ClientCommunication:
 	def _stateChangeHandler(self, incomingMessage):
 
 		# Extract state change values.
+		sensor = None
 		try:
 			if not self._checkMsgClientSensorId(
 				incomingMessage["payload"]["clientSensorId"]):
@@ -2345,12 +2349,14 @@ class ClientCommunication:
 				self.logger.error("[%s]: Received dataType invalid (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
 				return False
-			if not self._checkMsgSensorData(
-				incomingMessage["payload"]["data"],
-				incomingMessage["payload"]["dataType"]):
-				self.logger.error("[%s]: Received data invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
-				return False
+			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
+				if not self._checkMsgSensorData(
+					incomingMessage["payload"]["data"],
+					incomingMessage["payload"]["dataType"]):
+					self.logger.error("[%s]: Received data invalid (%s:%d)."
+							% (self.fileName, self.clientAddress,
+							self.clientPort))
+					return False
 
 			remoteSensorId = incomingMessage["payload"]["clientSensorId"]
 			state = incomingMessage["payload"]["state"]
@@ -2360,7 +2366,6 @@ class ClientCommunication:
 				sensorData = incomingMessage["payload"]["data"]
 
 			# Check if client sensor is known.
-			sensor = None
 			for currentSensor in self.sensors:
 				if currentSensor.remoteSensorId == remoteSensorId:
 					sensor = currentSensor
@@ -2514,7 +2519,10 @@ class ClientCommunication:
 			return False
 
 		# add state change to queue and wake up manager update executer
-		managerStateTuple = (sensorId, state)
+		managerStateTuple = (sensor.sensorId,
+			sensor.state,
+			sensor.dataType,
+			sensor.data)
 		self.managerUpdateExecuter.queueStateChange.append(managerStateTuple)
 		self.managerUpdateExecuter.managerUpdateEvent.set()
 
@@ -2766,9 +2774,10 @@ class ClientCommunication:
 
 
 	# function that sends a state change to a manager client
-	def sendManagerStateChange(self, sensorId, state):
+	def sendManagerStateChange(self, sensorId, state, dataType, data):
 
-		stateChangeMessage = self._buildStateChangeMessage(sensorId, state)
+		stateChangeMessage = self._buildStateChangeMessage(sensorId,
+			state, dataType, data)
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("statechange",
@@ -3496,6 +3505,8 @@ class AsynchronousSender(threading.Thread):
 		self.sendManagerStateChange = False
 		self.sendManagerStateChangeSensorId = None
 		self.sendManagerStateChangeState = None
+		self.sendManagerStateChangeDataType = None
+		self.sendManagerStateChangeData = None
 
 		# this option is used when the thread should
 		# send a sensor alert off to the client
@@ -3552,7 +3563,9 @@ class AsynchronousSender(threading.Thread):
 			# sending state change to manager
 			if not self.clientComm.sendManagerStateChange(
 				self.sendManagerStateChangeSensorId,
-				self.sendManagerStateChangeState):
+				self.sendManagerStateChangeState,
+				self.sendManagerStateChangeDataType,
+				self.sendManagerStateChangeData):
 				self.logger.error("[%s]: Sending state " % self.fileName
 					+ "change to manager failed (%s:%d)."
 					% (self.clientComm.clientAddress,

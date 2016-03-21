@@ -1288,17 +1288,30 @@ class SensorAlertExecuter(threading.Thread):
 			# check if an alert level to trigger was found
 			# if not => just ignore it
 			if not triggeredAlertLevels:
-				self.logger.info("[%s]: No alert level " % self.fileName
+				self.logger.info("[%s]: No alert level "
+					% self.fileName
 					+ "to trigger was found.")
 
 				# add sensorId of the sensor alert
 				# to the queue for state changes of the
 				# manager update executer
 				if self.managerUpdateExecuter != None:
-					managerStateTuple = (sensorAlert.sensorId,
-						sensorAlert.state)
-					self.managerUpdateExecuter.queueStateChange.append(
-						managerStateTuple)
+
+					# Returns a tuple of (dataType, data) or None.
+					sensorDataTuple = self.storage.getSensorData(
+						sensorAlert.sensorId)
+
+					if sensorDataTuple:
+						managerStateTuple = (sensorAlert.sensorId,
+							sensorAlert.state,
+							sensorDataTuple[0],
+							sensorDataTuple[1])
+						self.managerUpdateExecuter.queueStateChange.append(
+							managerStateTuple)
+					else:
+						self.logger.error("[%s]: Unable to get sensor data "
+							% self.fileName
+							+ "from database. Skipping manager notification.")
 
 				continue
 

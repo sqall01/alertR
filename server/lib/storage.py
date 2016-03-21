@@ -234,6 +234,13 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# Gets the data of a sensor given by id.
+	#
+	# return a tuple of (dataType, data) or None
+	def getSensorData(self, sensorId, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# change a option in the database
 	#
 	# return True or False
@@ -2619,14 +2626,7 @@ class Sqlite(_Storage):
 		self._acquireLock(logger)
 
 		try:
-			self.cursor.execute("SELECT id, "
-				+ "nodeId, "
-				+ "remoteSensorId, "
-				+ "description, "
-				+ "state, "
-				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "dataType "
+			self.cursor.execute("SELECT * "
 				+ "FROM sensors "
 				+ "WHERE id = ?", (sensorId, ))
 
@@ -2859,6 +2859,107 @@ class Sqlite(_Storage):
 		self._releaseLock(logger)
 
 		return state
+
+
+	# Gets the data of a sensor given by id.
+	#
+	# return a tuple of (dataType, data) or None
+	def getSensorData(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		try:
+			# Get data type from database.
+			self.cursor.execute("SELECT dataType "
+				+ "FROM sensors "
+				+ "WHERE id = ?", (sensorId, ))
+			result = self.cursor.fetchall()
+			if len(result) != 1:
+				logger.error("[%s]: Sensor was not found."
+					% self.fileName)
+
+				self._releaseLock(logger)
+
+				return None
+
+			dataType = result[0][0]
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get "
+				% self.fileName
+				+ "sensor data type from database.")
+
+			self._releaseLock(logger)
+
+			return None
+
+		data = None
+		if dataType == SensorDataType.NONE:
+			data = ( dataType, None )
+
+		elif dataType == SensorDataType.INT:
+			try:
+				# Get data type from database.
+				self.cursor.execute("SELECT data "
+					+ "FROM SensorsDataInt "
+					+ "WHERE sensorId = ?", (sensorId, ))
+				result = self.cursor.fetchall()
+				if len(result) != 1:
+					logger.error("[%s]: Sensor data was not found."
+						% self.fileName)
+
+					self._releaseLock(logger)
+
+					return None
+
+				data = ( dataType, result[0][0] )
+
+			except Exception as e:
+
+				logger.exception("[%s]: Not able to get "
+					% self.fileName
+					+ "sensor data from database.")
+
+				self._releaseLock(logger)
+
+				return None
+
+		elif dataType == SensorDataType.FLOAT:
+			try:
+				# Get data type from database.
+				self.cursor.execute("SELECT data "
+					+ "FROM sensorsDataFloat "
+					+ "WHERE sensorId = ?", (sensorId, ))
+				result = self.cursor.fetchall()
+				if len(result) != 1:
+					logger.error("[%s]: Sensor data was not found."
+						% self.fileName)
+
+					self._releaseLock(logger)
+
+					return None
+
+				data = ( dataType, result[0][0] )
+
+			except Exception as e:
+
+				logger.exception("[%s]: Not able to get "
+					% self.fileName
+					+ "sensor data from database.")
+
+				self._releaseLock(logger)
+
+				return None
+
+		self._releaseLock(logger)
+
+		# return a tuple of (dataType, data) or None
+		return data
 
 
 	# closes db for usage
@@ -5801,14 +5902,7 @@ class Mysql(_Storage):
 			return None
 
 		try:
-			self.cursor.execute("SELECT id, "
-				+ "nodeId, "
-				+ "remoteSensorId, "
-				+ "description, "
-				+ "state, "
-				+ "lastStateUpdated, "
-				+ "alertDelay, "
-				+ "dataType "
+			self.cursor.execute("SELECT * "
 				+ "FROM sensors "
 				+ "WHERE id = %s", (sensorId, ))
 
@@ -6024,7 +6118,7 @@ class Mysql(_Storage):
 			# check if option does exist
 			self.cursor.execute("SELECT id "
 				+ "FROM options "
-				+ "WHERE type=%s", (optionType, ))
+				+ "WHERE type = %s", (optionType, ))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
 				logger.error("[%s]: Option was not found."
@@ -6091,7 +6185,7 @@ class Mysql(_Storage):
 			# get sensor state from database
 			self.cursor.execute("SELECT state "
 				+ "FROM sensors "
-				+ "WHERE id=%s", (sensorId, ))
+				+ "WHERE id = %s", (sensorId, ))
 			result = self.cursor.fetchall()
 			if len(result) != 1:
 				logger.error("[%s]: Sensor was not found."
@@ -6125,6 +6219,139 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		return state
+
+
+	# Gets the data of a sensor given by id.
+	#
+	# return a tuple of (dataType, data) or None
+	def getSensorData(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return None
+
+		try:
+			# Get data type from database.
+			self.cursor.execute("SELECT dataType "
+				+ "FROM sensors "
+				+ "WHERE id = %s", (sensorId, ))
+			result = self.cursor.fetchall()
+			if len(result) != 1:
+				logger.error("[%s]: Sensor was not found."
+					% self.fileName)
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return None
+
+			dataType = result[0][0]
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get "
+				% self.fileName
+				+ "sensor data type from database.")
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock(logger)
+
+			return None
+
+		data = None
+		if dataType == SensorDataType.NONE:
+			data = ( dataType, None )
+
+		elif dataType == SensorDataType.INT:
+			try:
+				# Get data type from database.
+				self.cursor.execute("SELECT data "
+					+ "FROM SensorsDataInt "
+					+ "WHERE sensorId = %s", (sensorId, ))
+				result = self.cursor.fetchall()
+				if len(result) != 1:
+					logger.error("[%s]: Sensor data was not found."
+						% self.fileName)
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock(logger)
+
+					return None
+
+				data = ( dataType, result[0][0] )
+
+			except Exception as e:
+
+				logger.exception("[%s]: Not able to get "
+					% self.fileName
+					+ "sensor data from database.")
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return None
+
+		elif dataType == SensorDataType.FLOAT:
+			try:
+				# Get data type from database.
+				self.cursor.execute("SELECT data "
+					+ "FROM sensorsDataFloat "
+					+ "WHERE sensorId = %s", (sensorId, ))
+				result = self.cursor.fetchall()
+				if len(result) != 1:
+					logger.error("[%s]: Sensor data was not found."
+						% self.fileName)
+
+					# close connection to the database
+					self._closeConnection()
+
+					self._releaseLock(logger)
+
+					return None
+
+				data = ( dataType, result[0][0] )
+
+			except Exception as e:
+
+				logger.exception("[%s]: Not able to get "
+					% self.fileName
+					+ "sensor data from database.")
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return None
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		# return a tuple of (dataType, data) or None
+		return data
 
 
 	# closes db for usage
