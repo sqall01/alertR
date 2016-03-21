@@ -11,6 +11,7 @@ import logging
 import os
 import time
 import urwid
+from localObjects import SensorDataType
 
 
 # this class is an urwid object for a status
@@ -416,6 +417,24 @@ class SensorDetailedUrwid:
 		else:
 			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
 				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Data Type:"))
+		if sensor.dataType == SensorDataType.NONE:
+			temp.append(urwid.Text("None"))
+		elif sensor.dataType == SensorDataType.INT:
+			temp.append(urwid.Text("Integer"))
+		elif sensor.dataType == SensorDataType.FLOAT:
+			temp.append(urwid.Text("Floating Point"))
+		else:
+			temp.append(urwid.Text("Unknown"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Data:"))
+		if sensor.dataType == SensorDataType.NONE:
+			temp.append(urwid.Text("None"))
+		else:
+			temp.append(urwid.Text(str(sensor.data)))
 		temp.append(urwid.Divider())
 
 		temp.append(urwid.Text("Last Updated (Server Time):"))
@@ -1293,6 +1312,24 @@ class AlertLevelDetailedUrwid:
 		else:
 			temp.append(urwid.AttrMap(urwid.Text("Undefined"),
 				"redColor"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Data Type:"))
+		if sensor.dataType == SensorDataType.NONE:
+			temp.append(urwid.Text("None"))
+		elif sensor.dataType == SensorDataType.INT:
+			temp.append(urwid.Text("Integer"))
+		elif sensor.dataType == SensorDataType.FLOAT:
+			temp.append(urwid.Text("Floating Point"))
+		else:
+			temp.append(urwid.Text("Unknown"))
+		temp.append(urwid.Divider())
+
+		temp.append(urwid.Text("Data:"))
+		if sensor.dataType == SensorDataType.NONE:
+			temp.append(urwid.Text("None"))
+		else:
+			temp.append(urwid.Text(str(sensor.data)))
 		temp.append(urwid.Divider())
 
 		temp.append(urwid.Text("Last Updated (Server Time):"))
