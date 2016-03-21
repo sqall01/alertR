@@ -100,7 +100,7 @@ class SensorDev(_PollingSensor):
 		# used for logging
 		self.fileName = os.path.basename(__file__)
 
-		self.consoleInputState = 1
+		self.consoleInputState = 0
 
 		# Field in which the next send data is added.
 		self.nextData = None
@@ -189,7 +189,7 @@ class SensorExecuter(threading.Thread):
 			# poll all sensors and check their states
 			for sensor in self.sensors:
 
-				oldState = sensor.getState()				
+				oldState = sensor.getState()
 				sensor.updateState()
 				currentState = sensor.getState()
 
@@ -211,7 +211,7 @@ class SensorExecuter(threading.Thread):
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensor = sensor
@@ -227,7 +227,7 @@ class SensorExecuter(threading.Thread):
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
@@ -249,7 +249,7 @@ class SensorExecuter(threading.Thread):
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensor = sensor
@@ -266,12 +266,12 @@ class SensorExecuter(threading.Thread):
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
 						asyncSenderProcess.start()
-				
+
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
 			if (time.time() - lastFullStateSent) > 60:
@@ -282,12 +282,12 @@ class SensorExecuter(threading.Thread):
 				asyncSenderProcess = AsynchronousSender(
 					self.connection, self.globalData)
 				# set thread to daemon
-				# => threads terminates when main thread terminates	
+				# => threads terminates when main thread terminates
 				asyncSenderProcess.daemon = True
 				asyncSenderProcess.sendSensorsState = True
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
 				lastFullStateSent = time.time()
-				
+
 			time.sleep(0.5)

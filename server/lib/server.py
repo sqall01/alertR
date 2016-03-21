@@ -1657,8 +1657,6 @@ class ClientCommunication:
 				tempSensor.data = sensorData
 				self.sensors.append(tempSensor)
 
-				print state
-
 			# add sensors to database
 			if not self.storage.addSensors(self.username, sensors,
 				logger=self.logger):
