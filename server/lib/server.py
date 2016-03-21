@@ -2869,9 +2869,6 @@ class ClientCommunication:
 		if not alertSystemStateMessage:
 			return False
 
-
-		print alertSystemStateMessage
-
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("status",
 			len(alertSystemStateMessage), acquireLock=True):
