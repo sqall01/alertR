@@ -1106,7 +1106,7 @@ class Sqlite(_Storage):
 			# already exists in the database
 			self.cursor.execute("SELECT id FROM sensors "
 				+ "WHERE nodeId = ? AND remoteSensorId = ?",
-				(nodeId, int(sensor["clientSensorId"])))
+				(nodeId, sensor["clientSensorId"]))
 			result = self.cursor.fetchall()
 
 			# if the sensor does not exist
@@ -1128,11 +1128,11 @@ class Sqlite(_Storage):
 						+ "alertDelay, "
 						+ "dataType) VALUES (?, ?, ?, ?, ?, ?, ?)",
 						(nodeId,
-						int(sensor["clientSensorId"]),
-						str(sensor["description"]),
-						0,
-						0,
-						int(sensor["alertDelay"]),
+						sensor["clientSensorId"],
+						sensor["description"],
+						sensor["state"],
+						int(time.time()),
+						sensor["alertDelay"],
 						sensor["dataType"]))
 				except Exception as e:
 					logger.exception("[%s]: Not able to add sensor."
@@ -3814,7 +3814,7 @@ class Mysql(_Storage):
 			if not result:
 
 				logger.info("[%s]: Sensor with client id '%d' does not "
-					% (self.fileName, int(sensor["clientSensorId"]))
+					% (self.fileName, sensor["clientSensorId"])
 					+ "exist in database. Adding it.")
 
 				# add sensor to database
@@ -3828,11 +3828,11 @@ class Mysql(_Storage):
 						+ "alertDelay, "
 						+ "dataType) VALUES (%s, %s, %s, %s, %s, %s, %s)",
 						(nodeId,
-						int(sensor["clientSensorId"]),
-						str(sensor["description"]),
-						0,
-						0,
-						int(sensor["alertDelay"]),
+						sensor["clientSensorId"],
+						sensor["description"],
+						sensor["state"],
+						int(time.time()),
+						sensor["alertDelay"],
 						sensor["dataType"]))
 				except Exception as e:
 					logger.exception("[%s]: Not able to add sensor."
