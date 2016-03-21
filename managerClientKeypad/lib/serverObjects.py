@@ -73,6 +73,8 @@ class Sensor:
 		self.description = None
 		self.lastStateUpdated = None
 		self.state = None
+		self.dataType = None
+		self.data = None
 
 		# flag that marks this object as checked
 		# (is used to verify if this object is still connected to the server)
@@ -93,6 +95,8 @@ class Sensor:
 		self.description = sensor.description
 		self.lastStateUpdated = sensor.lastStateUpdated
 		self.state = sensor.state
+		self.dataType = sensor.dataType
+		self.data = sensor.data
 
 
 # this class represents a manager client of the alert system
@@ -599,7 +603,8 @@ class ServerEventHandler:
 
 
 	# is called when a state change event was received from the server
-	def receivedStateChange(self, serverTime, sensorId, state):
+	def receivedStateChange(self, serverTime, sensorId, state, dataType,
+		sensorData):
 
 		self.serverTime = serverTime
 
@@ -612,6 +617,13 @@ class ServerEventHandler:
 			if sensor.sensorId == sensorId:
 				sensor.state = state
 				sensor.lastStateUpdated = serverTime
+
+				if dataType == sensor.dataType:
+					sensor.data = sensorData
+				else:
+					logging.error("[%s]: Sensor data type different. "
+						% self.fileName
+						+ "Skipping data assignment.")
 
 				found = True
 				break

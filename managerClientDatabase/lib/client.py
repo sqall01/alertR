@@ -18,6 +18,7 @@ import os
 import base64
 import random
 import json
+from localObjects import SensorDataType
 BUFSIZE = 4096
 
 
@@ -735,8 +736,14 @@ class ServerCommunication:
 				nodeId = int(sensorsRaw[i]["nodeId"])
 				sensorId = int(sensorsRaw[i]["sensorId"])
 				remoteSensorId = int(sensorsRaw[i]["remoteSensorId"])
-
 				alertDelay = int(sensorsRaw[i]["alertDelay"])
+				dataType = int(sensorsRaw[i]["dataType"])
+
+				sensorData = None
+				if dataType == SensorDataType.INT:
+					sensorData = int(sensorsRaw[i]["data"])
+				elif dataType == SensorDataType.FLOAT:
+					sensorData = float(sensorsRaw[i]["data"])
 
 				sensorAlertLevels = sensorsRaw[i]["alertLevels"]
 				# check if alertLevels is a list
@@ -798,6 +805,9 @@ class ServerCommunication:
 			sensor.description = description
 			sensor.lastStateUpdated = lastStateUpdated
 			sensor.state = state
+			sensor.dataType = dataType
+			sensor.data = sensorData
+
 			sensors.append(sensor)
 
 		logging.debug("[%s]: Received manager count: %d."
@@ -1102,6 +1112,14 @@ class ServerCommunication:
 			serverTime = int(incomingMessage["serverTime"])
 			sensorId = int(incomingMessage["payload"]["sensorId"])
 			state = int(incomingMessage["payload"]["state"])
+			dataType = int(incomingMessage["payload"]["dataType"])
+
+			sensorData = None
+			if dataType == SensorDataType.INT:
+				sensorData = int(incomingMessage["payload"]["data"])
+			elif dataType == SensorDataType.FLOAT:
+				sensorData = float(incomingMessage["payload"]["data"])
+
 		except Exception as e:
 			logging.exception("[%s]: Received state change " % self.fileName
 				+ "invalid.")
@@ -1135,7 +1153,7 @@ class ServerCommunication:
 
 		# handle received state change
 		if self.serverEventHandler.receivedStateChange(serverTime, sensorId,
-			state) is True:
+			state, dataType, sensorData):
 
 			return True
 

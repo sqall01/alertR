@@ -7,18 +7,8 @@
 #
 # Licensed under the GNU Public License, version 2.
 
-
 # This enum class gives the different data types of a sensor.
 class SensorDataType:
 	NONE = 0
 	INT = 1
 	FLOAT = 2
-
-
-# this class represents 
-class SensorWarningState:
-
-	def __init__(self):
-		self.username = None
-		self.remoteSensorId = None
-		self.warningState = None
