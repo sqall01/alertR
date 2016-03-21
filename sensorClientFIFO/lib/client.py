@@ -315,12 +315,13 @@ class ServerCommunication:
 			tempSensor["alertDelay"] = sensor.alertDelay
 			tempSensor["alertLevels"] = sensor.alertLevels
 			tempSensor["description"] = sensor.description
+			tempSensor["state"] = sensor.state
 
 			# Only add data field if sensor data type is not "none".
 			tempSensor["dataType"] = sensor.sensorDataType
 			if sensor.sensorDataType != SensorDataType.NONE:
 				tempSensor["data"] = sensor.sensorData
-			
+
 			sensors.append(tempSensor)
 
 		logging.debug("[%s]: Sending registration message." % self.fileName)

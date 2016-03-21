@@ -189,7 +189,7 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 		self._currentHullMessage = ""
 
 
-	# internal function that checks if the lightning occurred 
+	# internal function that checks if the lightning occurred
 	# inside the quadrant
 	def _checkCoordInQuadrant(self, quadrant, lat, lon):
 
@@ -268,6 +268,7 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 	def initializeSensor(self):
 		self.changeState = True
+		self.state = 1 - self.triggerState
 
 		# calculate quadrant around home quadrant
 		outerQuadrant = _Quadrant()
@@ -456,7 +457,7 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 			# set sensor as triggered
 			self.state = self.triggerState
-			
+
 			self.dataTransfer = True
 			self.data = {"message": self._currentHullMessage}
 
@@ -556,8 +557,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			if self._checkCoordInQuadrant(self.innerHull.innerQuadrant,
 				stroke["lat"], stroke["lon"]):
 
-				logging.debug("[%s]: Sensor '%s': " 
-					% (self.fileName, self.description) 
+				logging.debug("[%s]: Sensor '%s': "
+					% (self.fileName, self.description)
 					+ "Stroke hit home quadrant.")
 
 				# check if last occured lightning in home quadrant
@@ -625,8 +626,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			elif self._checkCoordInQuadrant(self.innerHull.outerQuadrant,
 				stroke["lat"], stroke["lon"]):
 
-				logging.debug("[%s]: Sensor '%s': " 
-					% (self.fileName, self.description) 
+				logging.debug("[%s]: Sensor '%s': "
+					% (self.fileName, self.description)
 					+ "Stroke hit inner hull.")
 
 				# check if sw quadrant was hit
@@ -934,8 +935,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			elif self._checkCoordInQuadrant(self.outerHull.outerQuadrant,
 				stroke["lat"], stroke["lon"]):
 
-				logging.debug("[%s]: Sensor '%s': " 
-					% (self.fileName, self.description) 
+				logging.debug("[%s]: Sensor '%s': "
+					% (self.fileName, self.description)
 					+ "Stroke hit outer hull.")
 
 				# check if sw quadrant was hit
@@ -1141,7 +1142,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensor = sensor
@@ -1157,7 +1158,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
@@ -1179,7 +1180,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensor = sensor
@@ -1196,12 +1197,12 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
 						asyncSenderProcess.start()
-				
+
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
 			if (time.time() - lastFullStateSent) > 60:
@@ -1212,12 +1213,12 @@ class SensorExecuter:
 				asyncSenderProcess = AsynchronousSender(
 					self.connection, self.globalData)
 				# set thread to daemon
-				# => threads terminates when main thread terminates	
+				# => threads terminates when main thread terminates
 				asyncSenderProcess.daemon = True
 				asyncSenderProcess.sendSensorsState = True
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
 				lastFullStateSent = time.time()
-				
+
 			time.sleep(0.5)

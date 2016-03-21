@@ -126,6 +126,7 @@ class PingWatchdogSensor(_PollingSensor):
 	def initializeSensor(self):
 		self.changeState = True
 		self.timeExecute = 0.0
+		self.state = 1 - self.triggerState
 
 
 	def getState(self):
@@ -241,7 +242,7 @@ class SensorExecuter:
 			# poll all sensors and check their states
 			for sensor in self.sensors:
 
-				oldState = sensor.getState()				
+				oldState = sensor.getState()
 				sensor.updateState()
 				currentState = sensor.getState()
 
@@ -263,7 +264,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensor = sensor
@@ -279,7 +280,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
@@ -301,7 +302,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensor = sensor
@@ -318,12 +319,12 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
 						asyncSenderProcess.start()
-				
+
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
 			if (time.time() - lastFullStateSent) > 60:
@@ -334,12 +335,12 @@ class SensorExecuter:
 				asyncSenderProcess = AsynchronousSender(
 					self.connection, self.globalData)
 				# set thread to daemon
-				# => threads terminates when main thread terminates	
+				# => threads terminates when main thread terminates
 				asyncSenderProcess.daemon = True
 				asyncSenderProcess.sendSensorsState = True
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
 				lastFullStateSent = time.time()
-				
+
 			time.sleep(0.5)

@@ -546,6 +546,13 @@ class ClientCommunication:
 				isCorrect = False
 				break
 
+			if not "state" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgState(sensor["state"]):
+				isCorrect = False
+				break
+
 		if not isCorrect:
 			# send error message back
 			try:
@@ -1578,10 +1585,12 @@ class ClientCommunication:
 					sensorDataType = sensors[i]["dataType"]
 					alertLevels = sensors[i]["alertLevels"]
 					description = sensors[i]["description"]
+					state = sensors[i]["state"]
 
-					# Set data field if data type is "none".
-					if sensorDataType == SensorDataType.NONE:
-						sensors[i]["data"] = None
+					# Get data of sensor according to data type.
+					sensorData = None
+					if sensorDataType != SensorDataType.NONE:
+						sensorData = sensors[i]["data"]
 
 				except Exception as e:
 					self.logger.exception("[%s]: Sensor data "
@@ -1640,13 +1649,15 @@ class ClientCommunication:
 				tempSensor.nodeId = self.nodeId
 				tempSensor.remoteSensorId = sensorId
 				tempSensor.description = description
-				tempSensor.state = 0
+				tempSensor.state = state
 				tempSensor.alertLevels = alertLevels
-				tempSensor.lastStateUpdated = 0
+				tempSensor.lastStateUpdated = int(time.time())
 				tempSensor.alertDelay = alertDelay
 				tempSensor.dataType = sensorDataType
-				tempSensor.data = sensors[i]["data"]
+				tempSensor.data = sensorData
 				self.sensors.append(tempSensor)
+
+				print state
 
 			# add sensors to database
 			if not self.storage.addSensors(self.username, sensors,
