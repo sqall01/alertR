@@ -111,6 +111,591 @@ class ClientCommunication:
 		self.connectionLock.release()
 
 
+	# Internal function to check sanity of the alertDelay.
+	def _checkMsgAlertDelay(self, alertDelay):
+
+		isCorrect = True
+		if not isinstance(alertDelay, int):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "alertDelay not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the alertLevels.
+	def _checkMsgAlertLevels(self, alertLevels):
+
+		isCorrect = True
+		if not isinstance(alertLevels, list):
+			isCorrect = False
+		elif not all(isinstance(item, int) for item in alertLevels):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "alertLevels not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the changeState.
+	def _checkMsgChangeState(self, changeState):
+
+		isCorrect = True
+		if not isinstance(changeState, bool):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "changeState not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the clientAlertId.
+	def _checkMsgClientAlertId(self, clientAlertId):
+
+		isCorrect = True
+		if not isinstance(clientAlertId, int):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "clientAlertId not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the clientSensorId.
+	def _checkMsgClientSensorId(self, clientSensorId):
+
+		isCorrect = True
+		if not isinstance(clientSensorId, int):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "clientSensorId not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the description.
+	def _checkMsgDescription(self, description):
+
+		isCorrect = True
+		if not (isinstance(description, str)
+			or isinstance(description, unicode)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "description not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the hostname.
+	def _checkMsgHostname(self, hostname):
+
+		isCorrect = True
+		if not (isinstance(hostname, str)
+			or isinstance(hostname, unicode)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "hostname not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the instance.
+	def _checkMsgInstance(self, instance):
+
+		isCorrect = True
+		if not (isinstance(instance, str)
+			or isinstance(instance, unicode)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "instance not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the nodeType.
+	def _checkMsgNodeType(self, nodeType):
+
+		isCorrect = True
+		if not (isinstance(nodeType, str)
+			or isinstance(nodeType, unicode)):
+			isCorrect = False
+
+		nodeTypes = set(["alert", "manager", "sensor"])
+		if not nodeType in nodeTypes:
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "nodeType not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the optionType.
+	def _checkMsgOptionType(self, optionType):
+
+		isCorrect = True
+		if not (isinstance(optionType, str)
+			or isinstance(optionType, unicode)):
+			isCorrect = False
+
+		if optionType != "alertSystemActive":
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "optionType not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the option timeDelay.
+	def _checkMsgOptionTimeDelay(self, timeDelay):
+
+		isCorrect = True
+		if not isinstance(timeDelay, int):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "timeDelay not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the option value.
+	def _checkMsgOptionValue(self, value):
+
+		isCorrect = True
+		if not isinstance(value, float):
+			isCorrect = False
+
+		if not (value >= 0.0 and value <= 1.0):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "value not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the persistence.
+	def _checkMsgPersistent(self, persistent):
+
+		isCorrect = True
+		if not isinstance(persistent, int):
+			isCorrect = False
+
+		if not (persistent == 0 or persistent == 1):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "persistent not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the registration alerts list.
+	def _checkMsgRegAlertsList(self, alerts):
+
+		isCorrect = True
+		if not isinstance(alerts, list):
+			isCorrect = False
+
+		# Check each alert if correct.
+		for alert in alerts:
+
+			if not "alertLevels" in alert.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgAlertLevels(alert["alertLevels"]):
+				isCorrect = False
+				break
+
+			if not "clientAlertId" in alert.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgClientAlertId(alert["clientAlertId"]):
+				isCorrect = False
+				break
+
+			if not "description" in alert.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgDescription(alert["description"]):
+				isCorrect = False
+				break
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "alerts list not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the registration manager dictionary.
+	def _checkMsgRegManagerDict(self, manager):
+
+		isCorrect = True
+		if not isinstance(manager, dict):
+			isCorrect = False
+		else:
+
+			if not "description" in manager.keys():
+				isCorrect = False
+			elif not self._checkMsgDescription(manager["description"]):
+				isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "manager dictionary not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the registration sensors list.
+	def _checkMsgRegSensorsList(self, sensors):
+
+		isCorrect = True
+		if not isinstance(sensors, list):
+			isCorrect = False
+
+		# Check each sensor if correct.
+		for sensor in sensors:
+
+			if not "alertDelay" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgAlertDelay(sensor["alertDelay"]):
+				isCorrect = False
+				break
+
+			if not "alertLevels" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgAlertLevels(sensor["alertLevels"]):
+				isCorrect = False
+				break
+
+			if not "clientSensorId" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgClientSensorId(sensor["clientSensorId"]):
+				isCorrect = False
+				break
+
+			if not "dataType" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgSensorDataType(sensor["dataType"]):
+				isCorrect = False
+				break
+
+			sensorDataType = sensor["dataType"]
+			if sensorDataType != SensorDataType.NONE:
+				if not "data" in sensor.keys():
+					isCorrect = False
+					break
+				elif not self._checkMsgSensorData(sensor["data"],
+					sensorDataType):
+					isCorrect = False
+					break
+
+			if not "description" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgDescription(sensor["description"]):
+				isCorrect = False
+				break
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "sensors list not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the sensor data.
+	def _checkMsgSensorData(self, data, dataType):
+
+		isCorrect = True
+		if (dataType == SensorDataType.NONE
+			and not data is None):
+			isCorrect = False
+		elif (dataType == SensorDataType.INT
+			and not isinstance(data, int)):
+			isCorrect = False
+		elif (dataType == SensorDataType.FLOAT
+			and not isinstance(data, float)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "data not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the sensor data type.
+	def _checkMsgSensorDataType(self, dataType):
+
+		isCorrect = True
+		if not isinstance(dataType, int):
+			isCorrect = False
+		elif not (SensorDataType.NONE == dataType
+			or SensorDataType.INT == dataType
+			or SensorDataType.FLOAT == dataType):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "dataType not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the status sensors list.
+	def _checkMsgStatusSensorsList(self, sensors):
+
+		isCorrect = True
+		if not isinstance(sensors, list):
+			isCorrect = False
+
+		# Check each sensor if correct.
+		for sensor in sensors:
+
+			if not "clientSensorId" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgClientSensorId(sensor["clientSensorId"]):
+				isCorrect = False
+				break
+
+			if not "dataType" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgSensorDataType(sensor["dataType"]):
+				isCorrect = False
+				break
+
+			sensorDataType = sensor["dataType"]
+			if sensorDataType != SensorDataType.NONE:
+				if not "data" in sensor.keys():
+					isCorrect = False
+					break
+				elif not self._checkMsgSensorData(sensor["data"],
+					sensorDataType):
+					isCorrect = False
+					break
+
+			if not "state" in sensor.keys():
+				isCorrect = False
+				break
+			elif not self._checkMsgState(sensor["state"]):
+				isCorrect = False
+				break
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "sensors list not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the state.
+	def _checkMsgState(self, state):
+
+		isCorrect = True
+		if not isinstance(state, int):
+			isCorrect = False
+		elif (state != 0 and state != 1):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "state not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
 	# this internal function cleans up the session before releasing the
 	# lock and exiting/closing the session
 	def _cleanUpSessionForClosing(self):
@@ -850,14 +1435,27 @@ class ClientCommunication:
 
 		# extract general client configuration from message
 		try:
-			self.hostname = str(message["payload"]["hostname"])
-			self.nodeType = str(message["payload"]["nodeType"])
-			self.instance = str(message["payload"]["instance"])
-			self.persistent = int(message["payload"]["persistent"])
+			if not self._checkMsgHostname(message["payload"]["hostname"]):
+				self.logger.error("[%s]: Received hostname invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgNodeType(message["payload"]["nodeType"]):
+				self.logger.error("[%s]: Received nodeType invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgInstance(message["payload"]["instance"]):
+				self.logger.error("[%s]: Received instance invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgPersistent(message["payload"]["persistent"]):
+				self.logger.error("[%s]: Received persistent invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
 
-			# Sanity check of persistent flag.
-			if not (self.persistent == 1 or self.persistent == 0):
-				raise ValueError("Received persistent flag invalid.")
+			self.hostname = message["payload"]["hostname"]
+			self.nodeType = message["payload"]["nodeType"]
+			self.instance = message["payload"]["instance"]
+			self.persistent = message["payload"]["persistent"]
 
 		except Exception as e:
 
@@ -942,20 +1540,13 @@ class ClientCommunication:
 
 			# extract sensors from message
 			try:
-				sensors = message["payload"]["sensors"]
-
-				# check if sensors is of type list
-				if not isinstance(sensors, list):
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "sensors not of type list"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
+				if not self._checkMsgRegSensorsList(
+					message["payload"]["sensors"]):
+					self.logger.error("[%s]: Received sensors invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
+
+				sensors = message["payload"]["sensors"]
 
 			except Exception as e:
 				self.logger.exception("[%s]: No sensors in message (%s:%d)."
@@ -982,79 +1573,19 @@ class ClientCommunication:
 
 				# extract sensor data
 				try:
-					sensorId = int(sensors[i]["clientSensorId"])
-					alertDelay = int(sensors[i]["alertDelay"])
-					sensorDataType = int(sensors[i]["dataType"])
+					sensorId = sensors[i]["clientSensorId"]
+					alertDelay = sensors[i]["alertDelay"]
+					sensorDataType = sensors[i]["dataType"]
+					alertLevels = sensors[i]["alertLevels"]
+					description = sensors[i]["description"]
 
-					# Sanity check of sensor data field and data type.
+					# Set data field if data type is "none".
 					if sensorDataType == SensorDataType.NONE:
 						sensors[i]["data"] = None
-					elif sensorDataType == SensorDataType.INT:
-						if not isinstance(sensors[i]["data"], int):
-							# send error message back
-							try:
-								message = {"serverTime": int(time.time()),
-									"message": message["message"],
-									"error": "sensor data not of type int"}
-								self.sslSocket.send(json.dumps(message))
-							except Exception as e:
-								pass
 
-							return False
-					elif sensorDataType == SensorDataType.FLOAT:
-						if not isinstance(sensors[i]["data"], float):
-							# send error message back
-							try:
-								message = {"serverTime": int(time.time()),
-									"message": message["message"],
-									"error": "sensor data not of type float"}
-								self.sslSocket.send(json.dumps(message))
-							except Exception as e:
-								pass
-
-							return False
-					else:
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "sensor data type not known"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					alertLevels = sensors[i]["alertLevels"]
-					# check if alertLevels is a list
-					if not isinstance(alertLevels, list):
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "alertLevels not of type list"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-					# check if all elements of the alertLevels list
-					# are of type int
-					if not all(isinstance(item, int) for item in alertLevels):
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "alertLevels items not of type int"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-
-					description = str(sensors[i]["description"])
 				except Exception as e:
-					self.logger.exception("[%s]: Sensor data " % self.fileName
+					self.logger.exception("[%s]: Sensor data "
+						% self.fileName
 						+ "invalid (%s:%d)." % (self.clientAddress,
 						self.clientPort))
 
@@ -1166,20 +1697,12 @@ class ClientCommunication:
 
 			# extract alerts from message
 			try:
-				alerts = message["payload"]["alerts"]
-
-				# check if alerts is of type list
-				if not isinstance(alerts, list):
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "alerts not of type list"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
+				if not self._checkMsgRegAlertsList(message["payload"]["alerts"]):
+					self.logger.error("[%s]: Received alerts invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
+
+				alerts = message["payload"]["alerts"]
 
 			except Exception as e:
 				self.logger.exception("[%s]: No alerts "
@@ -1208,35 +1731,9 @@ class ClientCommunication:
 
 				# extract sensor data
 				try:
-					alertId = int(alerts[i]["clientAlertId"])
-					description = str(alerts[i]["description"])
+					alertId = alerts[i]["clientAlertId"]
+					description = alerts[i]["description"]
 					alertLevels = alerts[i]["alertLevels"]
-
-					# check if alertLevels is a list
-					if not isinstance(alertLevels, list):
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "alertLevels not of type list"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
-					# check if all elements of the alertLevels list
-					# are of type int
-					if not all(isinstance(item, int) for item in alertLevels):
-						# send error message back
-						try:
-							message = {"serverTime": int(time.time()),
-								"message": message["message"],
-								"error": "alertLevels items not of type int"}
-							self.sslSocket.send(json.dumps(message))
-						except Exception as e:
-							pass
-
-						return False
 
 					# check if alert level is configured on server
 					found = False
@@ -1307,20 +1804,13 @@ class ClientCommunication:
 
 			# extract manager from message
 			try:
-				manager = message["payload"]["manager"]
-
-				# check if manager is of type dict
-				if not isinstance(manager, dict):
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "manager not of type dict"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
+				if not self._checkMsgRegManagerDict(
+					message["payload"]["manager"]):
+					self.logger.error("[%s]: Received manager invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
+
+				manager = message["payload"]["manager"]
 
 			except Exception as e:
 				self.logger.exception("[%s]: No manager in message (%s:%d)."
@@ -1339,7 +1829,7 @@ class ClientCommunication:
 
 			# extraction manager data
 			try:
-				description = str(manager["description"])
+				description = manager["description"]
 			except Exception as e:
 				self.logger.exception("[%s]: Manager data " % self.fileName
 					+ "invalid (%s:%d)." % (self.clientAddress,
@@ -1377,7 +1867,7 @@ class ClientCommunication:
 
 				return False
 
-		# if nodetype is not sensor, alert or manager => not known
+		# if nodeType is not known
 		else:
 			self.logger.error("[%s]: Node type not known '%s'."
 				% (self.fileName, self.nodeType))
@@ -1417,9 +1907,25 @@ class ClientCommunication:
 
 		# extract option type and value from message
 		try:
-			optionType = str(incomingMessage["payload"]["optionType"])
-			optionValue = float(incomingMessage["payload"]["value"])
-			optionDelay = int(incomingMessage["payload"]["timeDelay"])
+			if not self._checkMsgOptionType(
+				incomingMessage["payload"]["optionType"]):
+				self.logger.error("[%s]: Received optionType invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgOptionValue(
+				incomingMessage["payload"]["value"]):
+				self.logger.error("[%s]: Received value invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgOptionTimeDelay(
+				incomingMessage["payload"]["timeDelay"]):
+				self.logger.error("[%s]: Received timeDelay invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+
+			optionType = incomingMessage["payload"]["optionType"]
+			optionValue = incomingMessage["payload"]["value"]
+			optionDelay = incomingMessage["payload"]["timeDelay"]
 		except Exception as e:
 			self.logger.exception("[%s]: Received option " % self.fileName
 				+ "invalid (%s:%d)."
@@ -1480,20 +1986,13 @@ class ClientCommunication:
 
 		# extract sensors from message
 		try:
-			sensors = incomingMessage["payload"]["sensors"]
-
-			# check if sensors are of type list
-			if not isinstance(sensors, list):
-				# send error message back
-				try:
-					message = {"serverTime": int(time.time()),
-						"message": message["message"],
-						"error": "sensors not of type list"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
-
+			if not self._checkMsgStatusSensorsList(
+				incomingMessage["payload"]["sensors"]):
+				self.logger.error("[%s]: Received sensors invalid (%s:%d)."
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
+
+			sensors = incomingMessage["payload"]["sensors"]
 
 		except Exception as e:
 			self.logger.exception("[%s]: Received status " % self.fileName
@@ -1533,7 +2032,7 @@ class ClientCommunication:
 		stateList = list()
 		try:
 			for i in range(self.sensorCount):
-				remoteSensorId = int(sensors[i]["clientSensorId"])
+				remoteSensorId = sensors[i]["clientSensorId"]
 
 				# Check if client sensor is known.
 				sensor = None
@@ -1560,7 +2059,7 @@ class ClientCommunication:
 					return False
 
 				# Update sensor object.
-				sensor.state = int(sensors[i]["state"])
+				sensor.state = sensors[i]["state"]
 				sensor.lastStateUpdated = int(time.time())
 
 				stateList.append( (remoteSensorId, sensor.state) )
@@ -1607,7 +2106,7 @@ class ClientCommunication:
 		dataList = list()
 		try:
 			for i in range(self.sensorCount):
-				remoteSensorId = int(sensors[i]["clientSensorId"])
+				remoteSensorId = sensors[i]["clientSensorId"]
 
 				# Check if client sensor is known.
 				# NOTE: omit check if remote sensor id is valid because we
@@ -1618,7 +2117,7 @@ class ClientCommunication:
 						sensor = currentSensor
 						break
 
-				sensorDataType = int(sensors[i]["dataType"])
+				sensorDataType = sensors[i]["dataType"]
 
 				# Check if received message contains the correct data type.
 				if sensor.dataType != sensorDataType:
@@ -1644,9 +2143,9 @@ class ClientCommunication:
 				if sensorDataType == SensorDataType.NONE:
 					continue
 				elif sensorDataType == SensorDataType.INT:
-					sensor.data = int(sensors[i]["data"])
+					sensor.data = sensors[i]["data"]
 				elif sensorDataType == SensorDataType.FLOAT:
-					sensor.data = float(sensors[i]["data"])
+					sensor.data = sensors[i]["data"]
 
 				dataList.append( (remoteSensorId, sensor.data) )
 
@@ -1712,9 +2211,26 @@ class ClientCommunication:
 
 		# extract sensor alert values
 		try:
-			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
-			state = int(incomingMessage["payload"]["state"])
-			changeState = bool(incomingMessage["payload"]["changeState"])
+			if not self._checkMsgClientSensorId(
+				incomingMessage["payload"]["clientSensorId"]):
+				self.logger.error("[%s]: Received clientSensorId invalid "
+						% self.fileName
+						+ "(%s:%d)."
+						% (self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgState(incomingMessage["payload"]["state"]):
+				self.logger.error("[%s]: Received state invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgChangeState(
+				incomingMessage["payload"]["changeState"]):
+				self.logger.error("[%s]: Received changeState invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+
+			remoteSensorId = incomingMessage["payload"]["clientSensorId"]
+			state = incomingMessage["payload"]["state"]
+			changeState = incomingMessage["payload"]["changeState"]
 
 			# get data of sensor alert if data transfer is activated
 			data = None
@@ -1804,10 +2320,35 @@ class ClientCommunication:
 
 		# Extract state change values.
 		try:
-			remoteSensorId = int(incomingMessage["payload"]["clientSensorId"])
-			state = int(incomingMessage["payload"]["state"])
-			sensorDataType = int(incomingMessage["payload"]["dataType"])
+			if not self._checkMsgClientSensorId(
+				incomingMessage["payload"]["clientSensorId"]):
+				self.logger.error("[%s]: Received clientSensorId invalid "
+						% self.fileName
+						+ "(%s:%d)."
+						% (self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgState(incomingMessage["payload"]["state"]):
+				self.logger.error("[%s]: Received state invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgSensorDataType(
+				incomingMessage["payload"]["dataType"]):
+				self.logger.error("[%s]: Received dataType invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgSensorData(
+				incomingMessage["payload"]["data"],
+				incomingMessage["payload"]["dataType"]):
+				self.logger.error("[%s]: Received data invalid (%s:%d)."
+						% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+
+			remoteSensorId = incomingMessage["payload"]["clientSensorId"]
+			state = incomingMessage["payload"]["state"]
+			sensorDataType = incomingMessage["payload"]["dataType"]
 			sensorData = None
+			if sensorDataType != SensorDataType.NONE:
+				sensorData = incomingMessage["payload"]["data"]
 
 			# Check if client sensor is known.
 			sensor = None
@@ -1851,36 +2392,6 @@ class ClientCommunication:
 					pass
 
 				return False
-
-			# Sanity check of sensor data field and data type.
-			if sensorDataType == SensorDataType.NONE:
-				sensorData = None
-			elif sensorDataType == SensorDataType.INT:
-				sensorData = incomingMessage["payload"]["data"]
-				if not isinstance(sensorData, int):
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "sensor data not of type int"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
-			elif sensorDataType == SensorDataType.FLOAT:
-				sensorData = incomingMessage["payload"]["data"]
-				if not isinstance(sensorData, float):
-					# send error message back
-					try:
-						message = {"serverTime": int(time.time()),
-							"message": message["message"],
-							"error": "sensor data not of type float"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return False
 
 			# Update sensor object.
 			sensor.state = state
