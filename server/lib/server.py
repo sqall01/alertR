@@ -958,11 +958,14 @@ class ClientCommunication:
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
+		# list[5] = list(tuples of (id, sensorId, sensorDataInt))
+		# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
 		# or None
 		alertSystemInformation = self.storage.getAlertSystemInformation(
 			logger=self.logger)
 		if alertSystemInformation is None:
-			self.logger.error("[%s]: Getting alert system " % self.fileName
+			self.logger.error("[%s]: Getting alert system "
+				% self.fileName
 				+ "information from database failed (%s:%d)."
 				% (self.clientAddress, self.clientPort))
 
@@ -981,6 +984,8 @@ class ClientCommunication:
 		sensorsInformation = alertSystemInformation[2]
 		managersInformation = alertSystemInformation[3]
 		alertsInformation = alertSystemInformation[4]
+		sensorsDataInt = alertSystemInformation[5]
+		sensorsDataFloat = alertSystemInformation[6]
 
 		# generating options list
 		options = list()
@@ -1020,7 +1025,58 @@ class ClientCommunication:
 				"state": sensorsInformation[i][4],
 				"lastStateUpdated": sensorsInformation[i][5],
 				"alertDelay": sensorsInformation[i][6],
-				"alertLevels": alertLevels}
+				"alertLevels": alertLevels,
+				"dataType": sensorsInformation[i][7]}
+
+			# Add sensor data corresponding to type to the dictionary.
+			if sensorsInformation[i][7] == SensorDataType.INT:
+				found = False
+				for sensorDataTuple in sensorsDataInt:
+					if sensorId == sensorDataTuple[1]:
+						tempDict["data"] = sensorDataTuple[2]
+						found = True
+						break
+				if not found:
+					self.logger.error("[%s]: Not able to find data for sensor "
+						% self.fileName
+						+ "with id %d in database (%s:%d)."
+						% (sensorId, self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": "status",
+							"error": "not able to find data for sensor"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return None
+
+			elif sensorsInformation[i][7] == SensorDataType.FLOAT:
+				found = False
+				for sensorDataTuple in sensorsDataFloat:
+					if sensorId == sensorDataTuple[1]:
+						tempDict["data"] = sensorDataTuple[2]
+						found = True
+						break
+				if not found:
+					self.logger.error("[%s]: Not able to find data for sensor "
+						% self.fileName
+						+ "with id %d in database (%s:%d)."
+						% (sensorId, self.clientAddress, self.clientPort))
+
+					# send error message back
+					try:
+						message = {"serverTime": int(time.time()),
+							"message": "status",
+							"error": "not able to find data for sensor"}
+						self.sslSocket.send(json.dumps(message))
+					except Exception as e:
+						pass
+
+					return None
+
 			sensors.append(tempDict)
 
 		# generating managers list
@@ -2812,6 +2868,9 @@ class ClientCommunication:
 		alertSystemStateMessage = self._buildAlertSystemStateMessage()
 		if not alertSystemStateMessage:
 			return False
+
+
+		print alertSystemStateMessage
 
 		# initiate transaction with client and acquire lock
 		if not self._initiateTransaction("status",

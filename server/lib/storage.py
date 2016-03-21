@@ -222,6 +222,8 @@ class _Storage():
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
+	# list[5] = list(tuples of (id, sensorId, sensorDataInt))
+	# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -2703,6 +2705,8 @@ class Sqlite(_Storage):
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
+	# list[5] = list(tuples of (id, sensorId, sensorDataInt))
+	# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 
@@ -2741,6 +2745,16 @@ class Sqlite(_Storage):
 			result = self.cursor.fetchall()
 			alertsInformation = result
 
+			# get all sensors data int information
+			self.cursor.execute("SELECT * FROM sensorsDataInt")
+			result = self.cursor.fetchall()
+			sensorsDataIntInformation = result
+
+			# get all sensors data float information
+			self.cursor.execute("SELECT * FROM sensorsDataFloat")
+			result = self.cursor.fetchall()
+			sensorsDataFloatInformation = result
+
 			# generate a list with all nodes information
 			alertSystemInformation = list()
 			alertSystemInformation.append(optionsInformation)
@@ -2748,6 +2762,8 @@ class Sqlite(_Storage):
 			alertSystemInformation.append(sensorsInformation)
 			alertSystemInformation.append(managersInformation)
 			alertSystemInformation.append(alertsInformation)
+			alertSystemInformation.append(sensorsDataIntInformation)
+			alertSystemInformation.append(sensorsDataFloatInformation)
 
 		except Exception as e:
 
@@ -2769,6 +2785,8 @@ class Sqlite(_Storage):
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
+		# list[5] = list(tuples of (id, sensorId, sensorDataInt))
+		# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
 		# or None
 		return alertSystemInformation
 
@@ -6005,6 +6023,8 @@ class Mysql(_Storage):
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
+	# list[5] = list(tuples of (id, sensorId, sensorDataInt))
+	# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 
@@ -6054,6 +6074,16 @@ class Mysql(_Storage):
 			result = self.cursor.fetchall()
 			alertsInformation = result
 
+			# get all sensors data int information
+			self.cursor.execute("SELECT * FROM sensorsDataInt")
+			result = self.cursor.fetchall()
+			sensorsDataIntInformation = result
+
+			# get all sensors data float information
+			self.cursor.execute("SELECT * FROM sensorsDataFloat")
+			result = self.cursor.fetchall()
+			sensorsDataFloatInformation = result
+
 			# generate a list with all nodes information
 			alertSystemInformation = list()
 			alertSystemInformation.append(optionsInformation)
@@ -6061,6 +6091,8 @@ class Mysql(_Storage):
 			alertSystemInformation.append(sensorsInformation)
 			alertSystemInformation.append(managersInformation)
 			alertSystemInformation.append(alertsInformation)
+			alertSystemInformation.append(sensorsDataIntInformation)
+			alertSystemInformation.append(sensorsDataFloatInformation)
 
 		except Exception as e:
 
@@ -6088,6 +6120,8 @@ class Mysql(_Storage):
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
+		# list[5] = list(tuples of (id, sensorId, sensorDataInt))
+		# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
 		# or None
 		return alertSystemInformation
 
