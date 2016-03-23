@@ -1883,9 +1883,9 @@ class Mysql(_Storage):
 		for sensorAlert in sensorAlerts:
 			# try to convert received data to json
 			try:
-				dataJson = json.dumps(sensorAlert.data)
+				dataJson = json.dumps(sensorAlert.optionalData)
 			except Exception as e:
-				logging.exception("[%s]: Not able to convert data "
+				logging.exception("[%s]: Not able to convert optional data "
 					% self.fileName
 					+ " of sensor alert to json.")
 				continue

@@ -81,10 +81,10 @@ class DbusAlert(_Alert):
 			# displayed
 			receivedMessage = None
 			if (self.displayReceivedMessage
-				and sensorAlert.dataTransfer):
+				and sensorAlert.hasOptionalData):
 
-				if ("message" in sensorAlert.data):
-					receivedMessage = sensorAlert.data["message"]
+				if ("message" in sensorAlert.optionalData):
+					receivedMessage = sensorAlert.optionalData["message"]
 
 			icon = "dialog-information"
 			title = ("alertR (%s)"

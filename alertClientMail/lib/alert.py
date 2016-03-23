@@ -76,9 +76,9 @@ class MailAlert(_Alert):
 	def triggerAlert(self, sensorAlert):
 
 		# create a received message text
-		if (sensorAlert.dataTransfer
-			and "message" in sensorAlert.data):
-			receivedMessage = sensorAlert.data["message"]
+		if (sensorAlert.hasOptionalData
+			and "message" in sensorAlert.optionalData):
+			receivedMessage = sensorAlert.optionalData["message"]
 		else:
 			receivedMessage = "None"
 

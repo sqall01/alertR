@@ -561,21 +561,22 @@ class ServerCommunication:
 				bool(incomingMessage["payload"]["changeState"])
 
 			# parse received data (if data transfer is activated)
-			sensorAlert.data = None
-			sensorAlert.dataTransfer = \
-				bool(incomingMessage["payload"]["dataTransfer"])
-			if sensorAlert.dataTransfer:
-				sensorAlert.data = incomingMessage["payload"]["data"]
+			sensorAlert.optionalData = None
+			sensorAlert.hasOptionalData = \
+				bool(incomingMessage["payload"]["hasOptionalData"])
+			if sensorAlert.hasOptionalData:
+				sensorAlert.optionalData = incomingMessage[
+					"payload"]["optionalData"]
 
 				# check if data is of type dict
 				# => if not ignore it
-				if not isinstance(sensorAlert.data, dict):
+				if not isinstance(sensorAlert.optionalData, dict):
 					logging.warning("[%s]: Received data in sensor alert "
 						% self.fileName
 						+ "not valid. Ignoring it.")
 
-					sensorAlert.data = None
-					sensorAlert.dataTransfer = False
+					sensorAlert.optionalData = None
+					sensorAlert.hasOptionalData = False
 
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName

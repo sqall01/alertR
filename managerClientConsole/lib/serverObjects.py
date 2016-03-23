@@ -176,10 +176,10 @@ class SensorAlert:
 		# by this sensor alert.
 		self.alertLevels = list()
 
-		# The data of the sensor alert (if it has any).
+		# The optional data of the sensor alert (if it has any).
 		# If rulesActivated = true => always set to false.
-		self.dataTransfer = None
-		self.data = None
+		self.hasOptionalData = None
+		self.optionalData = None
 
 		# Does this sensor alert change the state of the sensor?
 		self.changeState = None

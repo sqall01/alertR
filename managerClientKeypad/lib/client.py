@@ -1040,14 +1040,15 @@ class ServerCommunication:
 				incomingMessage["payload"]["description"])
 
 			# parse transfer data
-			sensorAlert.dataTransfer = bool(
-				incomingMessage["payload"]["dataTransfer"])
-			if sensorAlert.dataTransfer is True:
-				sensorAlert.data = incomingMessage["payload"]["data"]
+			sensorAlert.hasOptionalData = bool(
+				incomingMessage["payload"]["hasOptionalData"])
+			if sensorAlert.hasOptionalData is True:
+				sensorAlert.optionalData = incomingMessage[
+					"payload"]["optionalData"]
 			else:
-				sensorAlert.data = dict()
+				sensorAlert.optionalData = dict()
 			# check if data is a dict
-			if not isinstance(sensorAlert.data, dict):
+			if not isinstance(sensorAlert.optionalData, dict):
 				# send error message back
 				try:
 					message = {"clientTime": int(time.time()),
