@@ -1448,8 +1448,8 @@ class SensorAlertExecuter(threading.Thread):
 				ruleSensorAlert.state = 1
 				ruleSensorAlert.description = \
 					"Rule of Alert Level: '%s'" % alertLevel.name
-				ruleSensorAlert.dataTransfer = False
-				ruleSensorAlert.data = None
+				ruleSensorAlert.hasOptionalData = False
+				ruleSensorAlert.optionalData = None
 
 				# send sensor alert to all manager and alert clients
 				for serverSession in self.serverSessions:
@@ -1545,20 +1545,20 @@ class SensorAlertExecuter(threading.Thread):
 				temp.changeState = (sensorAlertTuple[8] == 1)
 
 				# get json data string and convert it
-				temp.dataTransfer = False
-				temp.data = None
+				temp.hasOptionalData = False
+				temp.optionalData = None
 				dataJson = sensorAlertTuple[7]
 				if dataJson != "":
-					temp.dataTransfer = True
+					temp.hasOptionalData = True
 					try:
-						temp.data = json.loads(dataJson)
+						temp.optionalData = json.loads(dataJson)
 					except Exception as e:
-						self.logger.exception("[%s]: Data from "
+						self.logger.exception("[%s]: Optional data from "
 							% self.fileName
 							+ "database not a valid json string. "
 							+ "Ignoring data.")
 
-						temp.dataTransfer = False
+						temp.hasOptionalData = False
 
 				sensorAlertList.append(temp)
 

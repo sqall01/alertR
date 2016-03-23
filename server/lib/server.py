@@ -888,21 +888,21 @@ class ClientCommunication:
 				"alertLevels": sensorAlert.alertLevels,
 				"description": sensorAlert.description,
 				"rulesActivated": True,
-				"dataTransfer": sensorAlert.dataTransfer,
+				"hasOptionalData": sensorAlert.hasOptionalData,
 				"changeState": sensorAlert.changeState}
 		else:
 
 			# Differentiate payload of message when data transfer is
 			# activated or not.
-			if sensorAlert.dataTransfer:
+			if sensorAlert.hasOptionalData:
 				payload = {"type": "request",
 					"sensorId": sensorAlert.sensorId,
 					"state": sensorAlert.state,
 					"alertLevels": sensorAlert.alertLevels,
 					"description": sensorAlert.description,
 					"rulesActivated": False,
-					"dataTransfer": True,
-					"data": sensorAlert.data,
+					"hasOptionalData": True,
+					"optionalData": sensorAlert.optionalData,
 					"changeState": sensorAlert.changeState}
 			else:
 				payload = {"type": "request",
@@ -911,7 +911,7 @@ class ClientCommunication:
 					"alertLevels": sensorAlert.alertLevels,
 					"description": sensorAlert.description,
 					"rulesActivated": False,
-					"dataTransfer": False,
+					"hasOptionalData": False,
 					"changeState": sensorAlert.changeState}
 
 		message = {"serverTime": int(time.time()),
@@ -2300,19 +2300,20 @@ class ClientCommunication:
 			state = incomingMessage["payload"]["state"]
 			changeState = incomingMessage["payload"]["changeState"]
 
-			# get data of sensor alert if data transfer is activated
-			data = None
-			dataTransfer = bool(incomingMessage["payload"]["dataTransfer"])
-			if dataTransfer:
-				data = incomingMessage["payload"]["data"]
+			# get optional data of sensor alert if data transfer is activated
+			optionalData = None
+			hasOptionalData = bool(
+				incomingMessage["payload"]["hasOptionalData"])
+			if hasOptionalData:
+				optionalData = incomingMessage["payload"]["optionalData"]
 
 				# check if data is of type dict
-				if not isinstance(data, dict):
+				if not isinstance(optionalData, dict):
 					# send error message back
 					try:
 						message = {"serverTime": int(time.time()),
 							"message": message["message"],
-							"error": "data not of type dict"}
+							"error": "optionalData not of type dict"}
 						self.sslSocket.send(json.dumps(message))
 					except Exception as e:
 						pass
@@ -2320,10 +2321,10 @@ class ClientCommunication:
 					return False
 
 			# convert received data to a json string
-			if data is None:
+			if optionalData is None:
 				dataJson = ""
 			else:
-				dataJson = json.dumps(data)
+				dataJson = json.dumps(optionalData)
 
 		except Exception as e:
 			self.logger.exception("[%s]: Received sensor alert "
