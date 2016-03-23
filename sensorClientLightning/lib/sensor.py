@@ -112,8 +112,8 @@ class _PollingSensor:
 		self.changeState = None
 
 		# Optional data that can be transfered when a sensor alert is issued.
-		self.dataTransfer = False
-		self.data = None
+		self.hasOptionalData = False
+		self.optionalData = None
 
 
 	# this function returns the current state of the sensor
@@ -443,8 +443,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			# set sensor as triggered
 			self.state = self.triggerState
 
-			self.dataTransfer = True
-			self.data = {"message": self._currentHomeMessage}
+			self.hasOptionalData = True
+			self.optionalData = {"message": self._currentHomeMessage}
 
 			return
 
@@ -458,8 +458,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			# set sensor as triggered
 			self.state = self.triggerState
 
-			self.dataTransfer = True
-			self.data = {"message": self._currentHullMessage}
+			self.hasOptionalData = True
+			self.optionalData = {"message": self._currentHullMessage}
 
 			return
 
@@ -475,8 +475,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			self.state = 1 - self.triggerState
 
 			# clear data transfer
-			self.dataTransfer = False
-			self.data = None
+			self.hasOptionalData = False
+			self.optionalData = None
 
 			# check if last time the home quadrant was hit
 			# is YOUNGER than the configured lightning time
@@ -501,8 +501,8 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 			self.state = 1 - self.triggerState
 
 			# clear data transfer
-			self.dataTransfer = False
-			self.data = None
+			self.hasOptionalData = False
+			self.optionalData = None
 
 			# check if last time the hull was hit
 			# is YOUNGER than the configured lightning time

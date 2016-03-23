@@ -72,8 +72,8 @@ class _PollingSensor:
 		self.changeState = None
 
 		# Optional data that can be transfered when a sensor alert is issued.
-		self.dataTransfer = False
-		self.data = None
+		self.hasOptionalData = False
+		self.optionalData = None
 
 
 	# this function returns the current state of the sensor

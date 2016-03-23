@@ -73,8 +73,8 @@ class _PollingSensor:
 		self.changeState = None
 
 		# Optional data that can be transfered when a sensor alert is issued.
-		self.dataTransfer = False
-		self.data = None
+		self.hasOptionalData = False
+		self.optionalData = None
 
 
 	# this function returns the current state of the sensor
@@ -183,25 +183,25 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 				# => if it is parse it
 				if str(message["message"]).upper() == "STATECHANGE":
 
-					self.dataTransfer = bool(
-						message["payload"]["dataTransfer"])
+					self.hasOptionalData = bool(
+						message["payload"]["hasOptionalData"])
 
 					# check if data should be transfered with the sensor alert
 					# => if it should parse it
-					if self.dataTransfer:
+					if self.hasOptionalData:
 
-						self.data = message["payload"]["data"]
+						self.optionalData = message["payload"]["optionalData"]
 
 						# check if data is of type dict
-						if not isinstance(self.data, dict):
-							logging.warning("[%s]: Received data "
+						if not isinstance(self.optionalData, dict):
+							logging.warning("[%s]: Received optional data "
 								% self.fileName
 								+ "from FIFO file of sensor with id '%d' "
 								% self.id
 								+ "invalid. Ignoring data to transfer.")
 							
-							self.dataTransfer = False
-							self.data = None
+							self.hasOptionalData = False
+							self.optionalData = None
 
 					# set the new state as temporary
 					tempInputState = int(message["payload"]["state"])

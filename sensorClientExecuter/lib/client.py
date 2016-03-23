@@ -345,21 +345,21 @@ class ServerCommunication:
 
 		# Check if data should be transfered with this sensor alert
 		# => create payload of message accordingly.
-		if sensor.dataTransfer:
+		if sensor.hasOptionalData:
 			# Set state of sensor alert according to state of sensor.
 			if sensor.triggerState == sensor.state:
 				payload = {"type": "request",
 					"clientSensorId": sensor.id,
 					"state": 1,
-					"dataTransfer": True,
-					"data": sensor.data,
+					"hasOptionalData": True,
+					"optionalData": sensor.optionalData,
 					"changeState": sensor.changeState}
 			else:
 				payload = {"type": "request",
 					"clientSensorId": sensor.id,
 					"state": 0,
-					"dataTransfer": True,
-					"data": sensor.data,
+					"hasOptionalData": True,
+					"optionalData": sensor.optionalData,
 					"changeState": sensor.changeState}
 
 		else:
@@ -368,13 +368,13 @@ class ServerCommunication:
 				payload = {"type": "request",
 					"clientSensorId": sensor.id,
 					"state": 1,
-					"dataTransfer": False,
+					"hasOptionalData": False,
 					"changeState": sensor.changeState}
 			else:
 				payload = {"type": "request",
 					"clientSensorId": sensor.id,
 					"state": 0,
-					"dataTransfer": False,
+					"hasOptionalData": False,
 					"changeState": sensor.changeState}
 
 		message = {"clientTime": int(time.time()),

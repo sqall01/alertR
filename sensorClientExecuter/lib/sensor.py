@@ -72,8 +72,8 @@ class _PollingSensor:
 		self.changeState = None
 
 		# Optional data that can be transfered when a sensor alert is issued.
-		self.dataTransfer = False
-		self.data = None
+		self.hasOptionalData = False
+		self.optionalData = None
 
 
 	# this function returns the current state of the sensor
@@ -155,8 +155,8 @@ class ExecuterSensor(_PollingSensor):
 				if (int(time.time()) - self.timeExecute) > self.timeout:
 
 					self.state = 1
-					self.dataTransfer = True
-					self.data = {"message": "Timeout"}
+					self.hasOptionalData = True
+					self.optionalData = {"message": "Timeout"}
 
 					logging.error("[%s]: Process " % self.fileName
 							+ "'%s' has timed out." % self.description)
@@ -185,8 +185,8 @@ class ExecuterSensor(_PollingSensor):
 			# process has finished
 			else:
 
-				self.dataTransfer = False
-				self.data = None
+				self.hasOptionalData = False
+				self.optionalData = None
 
 				# check if the process has exited with code 0
 				# => everything works fine

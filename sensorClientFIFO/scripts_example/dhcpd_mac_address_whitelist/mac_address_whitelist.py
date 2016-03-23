@@ -116,15 +116,23 @@ if not found:
 
 		if SCAN_VIA_NMAP:
 
-			fifo_message = '{"message": "statechange", "payload": ' \
-				+ '{"state": 1, "dataTransfer": true, "data": {"message": ' \
+			fifo_message = '{"message": "statechange", ' \
+				+ '"payload": {' \
+				+ '"state": 1, ' \
+				+ '"hasOptionalData": true, ' \
+				+ '"optionalData": {' \
+				+ '"message": ' \
 				+ '"Unknown client with IP: %s and MAC: %s and Ports: %s' \
 				% (client_ip, client_mac_address, nmap_result_string) \
 				+ '."}}}'
 
 		else:
-			fifo_message = '{"message": "statechange", "payload": ' \
-				+ '{"state": 1, "dataTransfer": true, "data": {"message": ' \
+			fifo_message = '{"message": "statechange", ' \
+				+ '"payload": {' \
+				+ '"state": 1, ' \
+				+ '"hasOptionalData": true, ' \
+				+ '"optionalData": {' \
+				+ '"message": ' \
 				+ '"Unknown client with IP: %s and MAC: %s."}}}' \
 				% (client_ip, client_mac_address)
 
@@ -135,7 +143,7 @@ if not found:
 	with open(FIFO_FILE, 'w') as fifo_file:
 
 		fifo_message = '{"message": "statechange", "payload": {"state": 0, ' \
-			+ '"dataTransfer": false}}'
+			+ '"hasOptionalData": false}}'
 		fifo_file.write(fifo_message)
 
 	time.sleep(1)
