@@ -60,6 +60,16 @@ class _PollingSensor:
 		# The actual data the sensor holds.
 		self.sensorData = None
 
+		# Flag indicates if this sensor alert also holds
+		# the data the sensor has. For example, the data send
+		# with this alarm message could be the data that triggered
+		# the alarm, but not necessarily the data the sensor
+		# currently holds. Therefore, this flag indicates
+		# if the data contained by this message is also the
+		# current data of the sensor and can be used for example
+		# to update the data the sensor has.
+		self.hasCurrentData = None
+
 		# Flag that indicates if a sensor alert that is send to the server
 		# should also change the state of the sensor accordingly. This flag
 		# can be useful if the sensor watches multiple entities. For example,
@@ -106,6 +116,7 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
 
 	def initializeSensor(self):
+		self.hasCurrentData = False
 		self.changeState = True
 
 		# configure gpio pin and get initial state
@@ -201,6 +212,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
 
 	def initializeSensor(self):
+		self.hasCurrentData = False
 		self.changeState = True
 
 		# get the value for the setting if the gpio is pulled up or down

@@ -343,7 +343,7 @@ class ServerCommunication:
 	# Internal function that builds the sensor alert message.
 	def _buildSensorAlertMessage(self, sensor):
 
-		# Check if data should be transfered with this sensor alert
+		# Check if optional data should be transfered with this sensor alert
 		# => create payload of message accordingly.
 		if sensor.hasOptionalData:
 			# Set state of sensor alert according to state of sensor.
@@ -353,14 +353,20 @@ class ServerCommunication:
 					"state": 1,
 					"hasOptionalData": True,
 					"optionalData": sensor.optionalData,
-					"changeState": sensor.changeState}
+					"changeState": sensor.changeState,
+					"hasCurrentData": sensor.hasCurrentData,
+					"dataType": sensor.sensorDataType
+					}
 			else:
 				payload = {"type": "request",
 					"clientSensorId": sensor.id,
 					"state": 0,
 					"hasOptionalData": True,
 					"optionalData": sensor.optionalData,
-					"changeState": sensor.changeState}
+					"changeState": sensor.changeState,
+					"hasCurrentData": sensor.hasCurrentData,
+					"dataType": sensor.sensorDataType
+					}
 
 		else:
 			# Set state of sensor alert according to state of sensor.
@@ -369,13 +375,23 @@ class ServerCommunication:
 					"clientSensorId": sensor.id,
 					"state": 1,
 					"hasOptionalData": False,
-					"changeState": sensor.changeState}
+					"changeState": sensor.changeState,
+					"hasCurrentData": sensor.hasCurrentData,
+					"dataType": sensor.sensorDataType
+					}
 			else:
 				payload = {"type": "request",
 					"clientSensorId": sensor.id,
 					"state": 0,
 					"hasOptionalData": False,
-					"changeState": sensor.changeState}
+					"changeState": sensor.changeState,
+					"hasCurrentData": sensor.hasCurrentData,
+					"dataType": sensor.sensorDataType
+					}
+
+		# Only add data field if sensor data type is not "none".
+		if sensor.sensorDataType != SensorDataType.NONE:
+			payload["data"] = sensor.sensorData
 
 		message = {"clientTime": int(time.time()),
 			"message": "sensoralert",

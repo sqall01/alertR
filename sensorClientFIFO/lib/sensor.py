@@ -61,6 +61,16 @@ class _PollingSensor:
 		# The actual data the sensor holds.
 		self.sensorData = None
 
+		# Flag indicates if this sensor alert also holds
+		# the data the sensor has. For example, the data send
+		# with this alarm message could be the data that triggered
+		# the alarm, but not necessarily the data the sensor
+		# currently holds. Therefore, this flag indicates
+		# if the data contained by this message is also the
+		# current data of the sensor and can be used for example
+		# to update the data the sensor has.
+		self.hasCurrentData = None
+
 		# Flag that indicates if a sensor alert that is send to the server
 		# should also change the state of the sensor accordingly. This flag
 		# can be useful if the sensor watches multiple entities. For example,
@@ -114,6 +124,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 	def initializeSensor(self):
 		self.changeState = True
+		self.hasCurrentData = False
 		self.state = 1 - self.triggerState
 		self.temporaryState = 1 - self.triggerState
 
