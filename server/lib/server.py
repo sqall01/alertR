@@ -246,6 +246,28 @@ class ClientCommunication:
 		return True
 
 
+	# Internal function to check sanity of the hasLatestData.
+	def _checkMsgHasLatestData(self, hasLatestData):
+
+		isCorrect = True
+		if not isinstance(hasLatestData, bool):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": message["message"],
+					"error": "hasLatestData not valid"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
 	# Internal function to check sanity of the hostname.
 	def _checkMsgHostname(self, hostname):
 
@@ -1503,19 +1525,19 @@ class ClientCommunication:
 		try:
 			if not self._checkMsgHostname(message["payload"]["hostname"]):
 				self.logger.error("[%s]: Received hostname invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgNodeType(message["payload"]["nodeType"]):
 				self.logger.error("[%s]: Received nodeType invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgInstance(message["payload"]["instance"]):
 				self.logger.error("[%s]: Received instance invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgPersistent(message["payload"]["persistent"]):
 				self.logger.error("[%s]: Received persistent invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 
 			self.hostname = message["payload"]["hostname"]
@@ -1765,7 +1787,8 @@ class ClientCommunication:
 
 			# extract alerts from message
 			try:
-				if not self._checkMsgRegAlertsList(message["payload"]["alerts"]):
+				if not self._checkMsgRegAlertsList(
+					message["payload"]["alerts"]):
 					self.logger.error("[%s]: Received alerts invalid (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
@@ -1978,17 +2001,17 @@ class ClientCommunication:
 			if not self._checkMsgOptionType(
 				incomingMessage["payload"]["optionType"]):
 				self.logger.error("[%s]: Received optionType invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgOptionValue(
 				incomingMessage["payload"]["value"]):
 				self.logger.error("[%s]: Received value invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgOptionTimeDelay(
 				incomingMessage["payload"]["timeDelay"]):
 				self.logger.error("[%s]: Received timeDelay invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 
 			optionType = incomingMessage["payload"]["optionType"]
@@ -2278,29 +2301,98 @@ class ClientCommunication:
 	def _sensorAlertHandler(self, incomingMessage):
 
 		# extract sensor alert values
+		sensor = None
 		try:
 			if not self._checkMsgClientSensorId(
 				incomingMessage["payload"]["clientSensorId"]):
 				self.logger.error("[%s]: Received clientSensorId invalid "
-						% self.fileName
-						+ "(%s:%d)."
-						% (self.clientAddress, self.clientPort))
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgState(incomingMessage["payload"]["state"]):
 				self.logger.error("[%s]: Received state invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgChangeState(
 				incomingMessage["payload"]["changeState"]):
 				self.logger.error("[%s]: Received changeState invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
+			if not self._checkMsgHasLatestData(
+				incomingMessage["payload"]["hasLatestData"]):
+				self.logger.error("[%s]: Received hasLatestData invalid "
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
+				return False
+			if not self._checkMsgSensorDataType(
+				incomingMessage["payload"]["dataType"]):
+				self.logger.error("[%s]: Received dataType invalid (%s:%d)."
+					% (self.fileName, self.clientAddress, self.clientPort))
+				return False
+			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
+				if not self._checkMsgSensorData(
+					incomingMessage["payload"]["data"],
+					incomingMessage["payload"]["dataType"]):
+					self.logger.error("[%s]: Received data invalid (%s:%d)."
+						% (self.fileName, self.clientAddress,
+						self.clientPort))
+					return False
 
 			remoteSensorId = incomingMessage["payload"]["clientSensorId"]
 			state = incomingMessage["payload"]["state"]
 			changeState = incomingMessage["payload"]["changeState"]
+			hasLatestData = incomingMessage["payload"]["hasLatestData"]
 
-			# get optional data of sensor alert if data transfer is activated
+			sensorDataType = incomingMessage["payload"]["dataType"]
+			sensorData = None
+			if sensorDataType != SensorDataType.NONE:
+				sensorData = incomingMessage["payload"]["data"]
+
+			# Check if client sensor is known.
+			for currentSensor in self.sensors:
+				if currentSensor.remoteSensorId == remoteSensorId:
+					sensor = currentSensor
+					break
+			if sensor is None:
+
+				self.logger.error("[%s]: Unknown client sensor id %d "
+					% (self.fileName, remoteSensorId)
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "unknown client sensor id"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# Check if received message contains the correct data type.
+			if sensorDataType != sensor.dataType:
+
+				self.logger.error("[%s]: Received sensor data type for remote "
+					% self.fileName
+					+ "sensor %d invalid (%s:%d)."
+					% (remoteSensorId, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": message["message"],
+						"error": "received sensor data type wrong"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+			# Get optional data of sensor alert if it is activated.
 			optionalData = None
 			hasOptionalData = bool(
 				incomingMessage["payload"]["hasOptionalData"])
@@ -2348,9 +2440,73 @@ class ClientCommunication:
 			+ "and state %d."
 			% state)
 
+		# Update state of the sensor if sensor alert updates the state.
+		if changeState:
+			sensor.state = state
+
+			if not self.storage.updateSensorState(self.nodeId,
+				[ (remoteSensorId, state) ], logger=self.logger):
+
+				self.logger.error("[%s]: Not able to update sensor state "
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "not able to update sensor state in database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+		# Update data of the sensor if sensor alert carries latest
+		# sensor data.
+		if hasLatestData:
+			sensor.data = sensorData
+
+			if not self.storage.updateSensorData(self.nodeId,
+				[ (remoteSensorId, sensorData) ], logger=self.logger):
+
+				self.logger.error("[%s]: Not able to update sensor data "
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					message = {"serverTime": int(time.time()),
+						"message": incomingMessage["message"],
+						"error": "not able to update sensor data in database"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return False
+
+		if not self.storage.updateSensorTime(sensor.sensorId,
+			logger=self.logger):
+			self.logger.error("[%s]: Not able to update sensor time (%s:%d)."
+				% (self.fileName, self.clientAddress, self.clientPort))
+
+			# send error message back
+			try:
+				message = {"serverTime": int(time.time()),
+					"message": incomingMessage["message"],
+					"error": "not able to update sensor time in database"}
+				self.sslSocket.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
 		# add sensor alert to database
-		if not self.storage.addSensorAlert(self.nodeId, remoteSensorId,
-			state, changeState, dataJson, logger=self.logger):
+		if not self.storage.addSensorAlert(self.nodeId, sensor.sensorId,
+			state, dataJson, changeState, hasLatestData, sensorDataType,
+			None, logger=self.logger):
 			self.logger.error("[%s]: Not able to add sensor alert (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -2393,26 +2549,26 @@ class ClientCommunication:
 			if not self._checkMsgClientSensorId(
 				incomingMessage["payload"]["clientSensorId"]):
 				self.logger.error("[%s]: Received clientSensorId invalid "
-						% self.fileName
-						+ "(%s:%d)."
-						% (self.clientAddress, self.clientPort))
+					% self.fileName
+					+ "(%s:%d)."
+					% (self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgState(incomingMessage["payload"]["state"]):
 				self.logger.error("[%s]: Received state invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgSensorDataType(
 				incomingMessage["payload"]["dataType"]):
 				self.logger.error("[%s]: Received dataType invalid (%s:%d)."
-						% (self.fileName, self.clientAddress, self.clientPort))
+					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
 				if not self._checkMsgSensorData(
 					incomingMessage["payload"]["data"],
 					incomingMessage["payload"]["dataType"]):
 					self.logger.error("[%s]: Received data invalid (%s:%d)."
-							% (self.fileName, self.clientAddress,
-							self.clientPort))
+						% (self.fileName, self.clientAddress,
+						self.clientPort))
 					return False
 
 			remoteSensorId = incomingMessage["payload"]["clientSensorId"]

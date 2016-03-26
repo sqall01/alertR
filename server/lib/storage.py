@@ -73,8 +73,8 @@ class _Storage():
 	# the id of the sensor that is used internally by the node and the state
 	#
 	# return True or False
-	def addSensorAlert(self, nodeId, remoteSensorId, state, changeState,
-		dataJson, logger=None):
+	def addSensorAlert(self, nodeId, sensorId, state, dataJson, changeState,
+		hasLatestData, dataType, sensorData, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -291,6 +291,13 @@ class _Storage():
 	#
 	# return True or False
 	def updateSensorData(self, nodeId, dataList, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# Updates the time the sensor send an update given by sensorId.
+	#
+	# return True or False
+	def updateSensorTime(self, sensorId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -602,9 +609,25 @@ class Sqlite(_Storage):
 			+ "state INTEGER NOT NULL, "
 			+ "timeReceived INTEGER NOT NULL, "
 			+ "dataJson TEXT NOT NULL,"
-			+ "changeState INTEGER NOT NULL,"
+			+ "changeState INTEGER NOT NULL, "
+			+ "hasLatestData INTEGER NOT NULL, "
+			+ "dataType INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorAlertsDataInt table.
+		self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "data INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+		# Create sensorAlertsDataFloat table.
+		self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "data REAL NOT NULL, "
+			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# create alerts table
 		self.cursor.execute("CREATE TABLE alerts ("
@@ -680,6 +703,55 @@ class Sqlite(_Storage):
 		return True
 
 
+	# Internal function that inserts sensor alert data according to its type.
+	#
+	# Returns true if everything worked fine.
+	def _insertSensorAlertData(self, sensorAlertId, dataType, data,
+		logger=None):
+
+		# Depending on the data type of the sensor alert add it to the
+		# corresponding table.
+		if dataType == SensorDataType.NONE:
+			return True
+
+		elif dataType == SensorDataType.INT:
+			try:
+				self.cursor.execute("INSERT INTO sensorAlertsDataInt ("
+					+ "sensorAlertId, "
+					+ "data) VALUES (?, ?)",
+					(sensorAlertId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensorAlert's integer data.")
+
+				return False
+
+		elif dataType == SensorDataType.FLOAT:
+			try:
+				self.cursor.execute("INSERT INTO sensorAlertsDataFloat ("
+					+ "sensorAlertId, "
+					+ "data) VALUES (?, ?)",
+					(sensorAlertId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensorAlert's floating point data.")
+
+				return False
+
+		else:
+			logger.error("[%s]: Data type not known. Not able to "
+				% self.fileName
+				+ "add sensorAlert.")
+
+			return False
+
+		return True
+
+
 	# checks the version of the server and the version in the database
 	# and clears every compatibility issue
 	#
@@ -718,6 +790,8 @@ class Sqlite(_Storage):
 			# delete all tables from the database to clear the old version
 			self.cursor.execute("DROP TABLE IF EXISTS internals")
 			self.cursor.execute("DROP TABLE IF EXISTS options")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
@@ -1152,16 +1226,7 @@ class Sqlite(_Storage):
 					return False
 
 				# get sensorId of current added sensor
-				try:
-					sensorId = self._getSensorId(nodeId,
-						int(sensor["clientSensorId"]))
-				except Exception as e:
-					logger.exception("[%s]: Not able to get sensorId."
-						% self.fileName)
-
-					self._releaseLock(logger)
-
-					return False
+				sensorId = self.cursor.lastrowid
 
 				# add sensor alert levels to database
 				try:
@@ -2065,6 +2130,41 @@ class Sqlite(_Storage):
 		return True
 
 
+
+	# Updates the time the sensor send an update given by sensorId.
+	#
+	# return True or False
+	def updateSensorTime(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# Update time of sensor in the database.
+		try:
+			self.cursor.execute("UPDATE sensors SET "
+				+ "lastStateUpdated = ? "
+				+ "WHERE id = ?",
+				(int(time.time()), sensorId))
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to update sensor time."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return False
+
+		# commit all changes
+		self.conn.commit()
+
+		self._releaseLock(logger)
+
+		return True
+
+
 	# gets the sensor id of a sensor when the id of a node is given
 	# and the remote sensor id that is used by the node internally
 	#
@@ -2193,8 +2293,8 @@ class Sqlite(_Storage):
 	# the id of the sensor that is used internally by the node and the state
 	#
 	# return True or False
-	def addSensorAlert(self, nodeId, remoteSensorId, state, changeState,
-		dataJson, logger=None):
+	def addSensorAlert(self, nodeId, sensorId, state, dataJson, changeState,
+		hasLatestData, dataType, sensorData, logger=None):
 
 		# Set logger instance to use.
 		if not logger:
@@ -2202,54 +2302,41 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
+		# add sensor alert to database
 		try:
-
-			# check if the sensor does exist in the database
-			# and get its sensorId
-			self.cursor.execute("SELECT id FROM sensors "
-				+ "WHERE nodeId = ? "
-				+ "AND remoteSensorId = ?", (nodeId, remoteSensorId))
-			result = self.cursor.fetchall()
-			if len(result) != 1:
-				logger.error("[%s]: Sensor does not exist in database."
-					% self.fileName)
-
-				self._releaseLock(logger)
-
-				return False
-			sensorId = result[0][0]
-
-			# update state of sensor in the database
-			# (if state is affected by sensor alert)
-			if changeState:
-				self.cursor.execute("UPDATE sensors SET "
-					+ "state = ?, "
-					+ "lastStateUpdated = ? "
-					+ "WHERE nodeId = ? "
-					+ "AND remoteSensorId = ?",
-					(state, int(time.time()), nodeId, remoteSensorId))
-			# update only the last state update value
-			else:
-				self.cursor.execute("UPDATE sensors SET "
-					+ "lastStateUpdated = ? "
-					+ "WHERE nodeId = ? "
-					+ "AND remoteSensorId = ?",
-					(int(time.time()), nodeId, remoteSensorId))
-
-			# add sensor alert to database
 			if changeState:
 				dbChangeState = 1
 			else:
 				dbChangeState = 0
+			if hasLatestData:
+				dbHasLatestData = 1
+			else:
+				dbHasLatestData = 0
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
 				+ "state, "
 				+ "timeReceived, "
 				+ "dataJson, "
-				+ "changeState) VALUES (?, ?, ?, ?, ?, ?)",
+				+ "changeState, "
+				+ "hasLatestData, "
+				+ "dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 				(nodeId, sensorId, state, int(time.time()), dataJson,
-				dbChangeState))
+				dbChangeState, dbHasLatestData, dataType))
+
+			# Get sensorAlertId of current added sensor alert.
+			sensorAlertId = self.cursor.lastrowid
+
+			if not self._insertSensorAlertData(sensorAlertId,
+				dataType, sensorData, logger):
+
+				logger.error("[%s]: Not able to add data for newly "
+					% self.fileName
+					+ "added sensor alert.")
+
+				self._releaseLock(logger)
+
+				return False
 
 		except Exception as e:
 			logger.exception("[%s]: Not able to add sensor alert."
@@ -2324,8 +2411,17 @@ class Sqlite(_Storage):
 		self._acquireLock(logger)
 
 		try:
-			self.cursor.execute("DELETE FROM sensorAlerts WHERE id = ?",
-					(sensorAlertId, ))
+			self.cursor.execute("DELETE FROM sensorAlertsDataInt "
+				+ "WHERE sensorAlertId = ?",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
+				+ "WHERE sensorAlertId = ?",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlerts "
+				+ "WHERE id = ?",
+				(sensorAlertId, ))
 		except Exception as e:
 			logger.exception("[%s]: Not able to delete sensor alert."
 				% self.fileName)
@@ -3042,10 +3138,18 @@ class Mysql(_Storage):
 		nodesResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
 		sensorsResult = self.cursor.fetchall()
+		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataInt'")
+		sensorsDataIntResult = self.cursor.fetchall()
+		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataFloat'")
+		sensorsDataFloatResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
 		sensorsAlertLevelsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
 		sensorAlertsResult = self.cursor.fetchall()
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataInt'")
+		sensorAlertsDataIntResult = self.cursor.fetchall()
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataFloat'")
+		sensorAlertsDataFloatResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'alerts'")
 		alertsResult = self.cursor.fetchall()
 		self.cursor.execute("SHOW TABLES LIKE 'alertsAlertLevels'")
@@ -3058,15 +3162,19 @@ class Mysql(_Storage):
 
 		# if one table does not exist
 		# => create all tables
-		if (len(internalsResult) == 0
-			or len(optionsResult) == 0
-			or len(nodesResult) == 0
-			or len(sensorsResult) == 0
-			or len(sensorsAlertLevelsResult) == 0
-			or len(sensorAlertsResult) == 0
-			or len(alertsResult) == 0
-			or len(alertsAlertLevelsResult) == 0
-			or len(managersResult) == 0):
+		if (not internalsResult
+			or not optionsResult
+			or not nodesResult
+			or not sensorsResult
+			or not sensorsDataIntResult
+			or not sensorsDataFloatResult
+			or not sensorsAlertLevelsResult
+			or not sensorAlertsResult
+			or not sensorAlertsDataIntResult
+			or not sensorAlertsDataFloatResult
+			or not alertsResult
+			or not alertsAlertLevelsResult
+			or not managersResult):
 			self.createStorage()
 
 		# check if the versions are compatible
@@ -3349,8 +3457,24 @@ class Mysql(_Storage):
 			+ "timeReceived INTEGER NOT NULL, "
 			+ "dataJson TEXT NOT NULL,"
 			+ "changeState INTEGER NOT NULL,"
+			+ "hasLatestData INTEGER NOT NULL, "
+			+ "dataType INTEGER NOT NULL, "
 			+ "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorAlertsDataInt table.
+		self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "data INTEGER NOT NULL, "
+			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+		# Create sensorAlertsDataFloat table.
+		self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
+			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "data DOUBLE NOT NULL, "
+			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# create alerts table
 		self.cursor.execute("CREATE TABLE alerts ("
@@ -3426,6 +3550,55 @@ class Mysql(_Storage):
 		return True
 
 
+	# Internal function that inserts sensor data according to its type.
+	#
+	# Returns true if everything worked fine.
+	def _insertSensorAlertData(self, sensorAlertId, dataType, data,
+		logger=None):
+
+		# Depending on the data type of the sensor alert add it to the
+		# corresponding table.
+		if dataType == SensorDataType.NONE:
+			return True
+
+		elif dataType == SensorDataType.INT:
+			try:
+				self.cursor.execute("INSERT INTO sensorAlertsDataInt ("
+					+ "sensorAlertId, "
+					+ "data) VALUES (%s, %s)",
+					(sensorAlertId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensorAlert's integer data.")
+
+				return False
+
+		elif dataType == SensorDataType.FLOAT:
+			try:
+				self.cursor.execute("INSERT INTO sensorAlertsDataFloat ("
+					+ "sensorAlertId, "
+					+ "data) VALUES (%s, %s)",
+					(sensorAlertId,
+					data))
+			except Exception as e:
+				logger.exception("[%s]: Not able to "
+					% self.fileName
+					+ "add sensorAlert's floating point data.")
+
+				return False
+
+		else:
+			logger.error("[%s]: Data type not known. Not able to "
+				% self.fileName
+				+ "add sensorAlert.")
+
+			return False
+
+		return True
+
+
 	# checks the version of the server and the version in the database
 	# and clears every compatibility issue
 	#
@@ -3467,6 +3640,8 @@ class Mysql(_Storage):
 			# delete all tables from the database to clear the old version
 			self.cursor.execute("DROP TABLE IF EXISTS internals")
 			self.cursor.execute("DROP TABLE IF EXISTS options")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
 			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
@@ -3965,19 +4140,7 @@ class Mysql(_Storage):
 					return False
 
 				# get sensorId of current added sensor
-				try:
-					sensorId = self._getSensorId(nodeId,
-						int(sensor["clientSensorId"]))
-				except Exception as e:
-					logger.exception("[%s]: Not able to get sensorId."
-						% self.fileName)
-
-					# close connection to the database
-					self._closeConnection()
-
-					self._releaseLock(logger)
-
-					return False
+				sensorId = self.cursor.lastrowid
 
 				# add sensor alert levels to database
 				try:
@@ -5088,6 +5251,57 @@ class Mysql(_Storage):
 		return True
 
 
+	# Updates the time the sensor send an update given by sensorId.
+	#
+	# return True or False
+	def updateSensorTime(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection()
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return False
+
+		# Update time of sensor in the database.
+		try:
+			self.cursor.execute("UPDATE sensors SET "
+				+ "lastStateUpdated = %s "
+				+ "WHERE id = %s",
+				(int(time.time()), sensorId))
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to update sensor time."
+				% self.fileName)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock(logger)
+
+			return False
+
+		# commit all changes
+		self.conn.commit()
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		return True
+
+
 	# gets the sensor id of a sensor when the id of a node is given
 	# and the remote sensor id that is used by the node internally
 	#
@@ -5284,8 +5498,8 @@ class Mysql(_Storage):
 	# the id of the sensor that is used internally by the node and the state
 	#
 	# return True or False
-	def addSensorAlert(self, nodeId, remoteSensorId, state, changeState,
-		dataJson, logger=None):
+	def addSensorAlert(self, nodeId, sensorId, state, dataJson, changeState,
+		hasLatestData, dataType, sensorData, logger=None):
 
 		# Set logger instance to use.
 		if not logger:
@@ -5304,17 +5518,37 @@ class Mysql(_Storage):
 
 			return False
 
+		# add sensor alert to database
 		try:
+			if changeState:
+				dbChangeState = 1
+			else:
+				dbChangeState = 0
+			if hasLatestData:
+				dbHasLatestData = 1
+			else:
+				dbHasLatestData = 0
+			self.cursor.execute("INSERT INTO sensorAlerts ("
+				+ "nodeId, "
+				+ "sensorId, "
+				+ "state, "
+				+ "timeReceived, "
+				+ "dataJson, "
+				+ "changeState, "
+				+ "hasLatestData, "
+				+ "dataType) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+				(nodeId, sensorId, state, int(time.time()), dataJson,
+				dbChangeState, dbHasLatestData, dataType))
 
-			# check if the sensor does exist in the database
-			# and get its sensorId
-			self.cursor.execute("SELECT id FROM sensors "
-				+ "WHERE nodeId = %s "
-				+ "AND remoteSensorId = %s", (nodeId, remoteSensorId))
-			result = self.cursor.fetchall()
-			if len(result) != 1:
-				logger.error("[%s]: Sensor does not exist in database."
-					% self.fileName)
+			# Get sensorAlertId of current added sensor alert.
+			sensorAlertId = self.cursor.lastrowid
+
+			if not self._insertSensorAlertData(sensorAlertId,
+				dataType, sensorData, logger):
+
+				logger.error("[%s]: Not able to add data for newly "
+					% self.fileName
+					+ "added sensor alert.")
 
 				# close connection to the database
 				self._closeConnection()
@@ -5322,39 +5556,6 @@ class Mysql(_Storage):
 				self._releaseLock(logger)
 
 				return False
-			sensorId = result[0][0]
-
-			# update state of sensor in the database
-			# (if state is affected by sensor alert)
-			if changeState:
-				self.cursor.execute("UPDATE sensors SET "
-					+ "state = %s, "
-					+ "lastStateUpdated = %s "
-					+ "WHERE nodeId = %s "
-					+ "AND remoteSensorId = %s",
-					(state, int(time.time()), nodeId, remoteSensorId))
-			# update only the last state update value
-			else:
-				self.cursor.execute("UPDATE sensors SET "
-					+ "lastStateUpdated = %s "
-					+ "WHERE nodeId = %s "
-					+ "AND remoteSensorId = %s",
-					(int(time.time()), nodeId, remoteSensorId))
-
-			# add sensor alert to database
-			if changeState:
-				dbChangeState = 1
-			else:
-				dbChangeState = 0
-			self.cursor.execute("INSERT INTO sensorAlerts ("
-				+ "nodeId, "
-				+ "sensorId, "
-				+ "state, "
-				+ "timeReceived, "
-				+ "dataJson, "
-				+ "changeState) VALUES (%s, %s, %s, %s, %s, %s)",
-				(nodeId, sensorId, state, int(time.time()), dataJson,
-				dbChangeState))
 
 		except Exception as e:
 			logger.exception("[%s]: Not able to add sensor alert."
@@ -5463,8 +5664,17 @@ class Mysql(_Storage):
 			return False
 
 		try:
-			self.cursor.execute("DELETE FROM sensorAlerts WHERE id = %s",
-					(sensorAlertId, ))
+			self.cursor.execute("DELETE FROM sensorAlertsDataInt "
+				+ "WHERE sensorAlertId = %s",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
+				+ "WHERE sensorAlertId = %s",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlerts "
+				+ "WHERE id = %s",
+				(sensorAlertId, ))
 		except Exception as e:
 			logger.exception("[%s]: Not able to delete sensor alert."
 				% self.fileName)

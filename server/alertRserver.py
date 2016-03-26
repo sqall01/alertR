@@ -1349,6 +1349,7 @@ if __name__ == '__main__':
 			temp["alertDelay"] = sensor.alertDelay
 			temp["alertLevels"] = sensor.alertLevels
 			temp["description"] = sensor.description
+			temp["state"] = 0
 			temp["dataType"] = SensorDataType.NONE
 			dbSensors.append(temp)
 
@@ -1384,6 +1385,7 @@ if __name__ == '__main__':
 			temp["alertDelay"] = sensor.alertDelay
 			temp["alertLevels"] = sensor.alertLevels
 			temp["description"] = sensor.description
+			temp["state"] = 0
 			temp["dataType"] = SensorDataType.NONE
 			dbSensors.append(temp)
 
