@@ -354,7 +354,7 @@ class ServerCommunication:
 					"hasOptionalData": True,
 					"optionalData": sensor.optionalData,
 					"changeState": sensor.changeState,
-					"hasCurrentData": sensor.hasCurrentData,
+					"hasLatestData": sensor.hasLatestData,
 					"dataType": sensor.sensorDataType
 					}
 			else:
@@ -364,7 +364,7 @@ class ServerCommunication:
 					"hasOptionalData": True,
 					"optionalData": sensor.optionalData,
 					"changeState": sensor.changeState,
-					"hasCurrentData": sensor.hasCurrentData,
+					"hasLatestData": sensor.hasLatestData,
 					"dataType": sensor.sensorDataType
 					}
 
@@ -376,7 +376,7 @@ class ServerCommunication:
 					"state": 1,
 					"hasOptionalData": False,
 					"changeState": sensor.changeState,
-					"hasCurrentData": sensor.hasCurrentData,
+					"hasLatestData": sensor.hasLatestData,
 					"dataType": sensor.sensorDataType
 					}
 			else:
@@ -385,7 +385,7 @@ class ServerCommunication:
 					"state": 0,
 					"hasOptionalData": False,
 					"changeState": sensor.changeState,
-					"hasCurrentData": sensor.hasCurrentData,
+					"hasLatestData": sensor.hasLatestData,
 					"dataType": sensor.sensorDataType
 					}
 

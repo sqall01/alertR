@@ -108,7 +108,7 @@ class _PollingSensor:
 		# if the data contained by this message is also the
 		# current data of the sensor and can be used for example
 		# to update the data the sensor has.
-		self.hasCurrentData = None
+		self.hasLatestData = None
 
 		# Flag that indicates if a sensor alert that is send to the server
 		# should also change the state of the sensor accordingly. This flag
@@ -278,7 +278,7 @@ class LightningmapSensor(_PollingSensor, threading.Thread):
 
 	def initializeSensor(self):
 		self.changeState = True
-		self.hasCurrentData = False
+		self.hasLatestData = False
 		self.state = 1 - self.triggerState
 
 		# calculate quadrant around home quadrant
