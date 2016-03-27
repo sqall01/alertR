@@ -13,7 +13,7 @@ import time
 import logging
 import json
 from server import AsynchronousSender
-from localObjects import SensorAlert
+from localObjects import SensorAlert, SensorDataType
 
 
 # this class is woken up if a sensor alert is received
@@ -1416,7 +1416,7 @@ class SensorAlertExecuter(threading.Thread):
 		for sensorAlertToHandle in list(sensorAlertsToHandleWithRules):
 
 			# Convert sensor alerts back to tuple list because
-			# rule engine works on tuple list
+			# the rule engine works on a tuple list
 			# (has to be done until rule engine is re-factored).
 			sensorAlertTupleList = list()
 			for sensorAlert in sensorAlertToHandle[0]:
@@ -1439,7 +1439,7 @@ class SensorAlertExecuter(threading.Thread):
 				self.logger.info("[%s]: Alert level " % self.fileName
 					+ "'%d' rules have triggered." % alertLevel.level)
 
-				# create a temporary alert level for this triggered rule
+				# Create a temporary alert level for this triggered rule.
 				ruleSensorAlert = SensorAlert()
 				ruleSensorAlert.rulesActivated = True
 				ruleSensorAlert.sensorId = -1
@@ -1450,6 +1450,9 @@ class SensorAlertExecuter(threading.Thread):
 					"Rule of Alert Level: '%s'" % alertLevel.name
 				ruleSensorAlert.hasOptionalData = False
 				ruleSensorAlert.optionalData = None
+				ruleSensorAlert.hasLatestData = False
+				ruleSensorAlert.dataType = SensorDataType.NONE
+				ruleSensorAlert.sensorData = None
 
 				# send sensor alert to all manager and alert clients
 				for serverSession in self.serverSessions:
@@ -1527,7 +1530,7 @@ class SensorAlertExecuter(threading.Thread):
 			# get a list of all sensor alerts from database
 			# list is a list of tuples (sensorAlertId, sensorId, nodeId,
 			# timeReceived, alertDelay, state, description, dataJson,
-			# changeState)
+			# changeState, hasLatestData, dataType, sensorData)
 			sensorAlertTuples = self.storage.getSensorAlerts()
 
 			# convert list of tuples into sensor alert objects
@@ -1543,6 +1546,9 @@ class SensorAlertExecuter(threading.Thread):
 				temp.state = sensorAlertTuple[5]
 				temp.description = sensorAlertTuple[6]
 				temp.changeState = (sensorAlertTuple[8] == 1)
+				temp.hasLatestData = (sensorAlertTuple[9] == 1)
+				temp.dataType = sensorAlertTuple[10]
+				temp.sensorData = sensorAlertTuple[11]
 
 				# get json data string and convert it
 				temp.hasOptionalData = False

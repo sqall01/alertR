@@ -104,6 +104,13 @@ class SensorAlert:
 		# Are rules for this sensor alert activated (true or false)?
 		self.rulesActivated = None
 
+		# Does this sensor alert hold the latest data of the sensor?
+		self.hasLatestData = None
+
+		# The sensor data type and data that is connected to this sensor alert.
+		self.dataType = None
+		self.sensorData = None
+
 
 # Internal class represents an internal sensor of the alarm system server.
 class _InternalSensor:

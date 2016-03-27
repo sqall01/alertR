@@ -177,6 +177,13 @@ class SensorAlert:
 		# Does this sensor alert change the state of the sensor?
 		self.changeState = None
 
+		# Does this sensor alert hold the latest data of the sensor?
+		self.hasLatestData = None
+
+		# The sensor data type and data that is connected to this sensor alert.
+		self.dataType = None
+		self.sensorData = None
+
 
 # this class represents an alert level that is configured on the server
 class AlertLevel:
@@ -790,6 +797,7 @@ class ServerEventHandler:
 		# only triggered by one distinct sensor).
 		# => Update information in sensor which triggered the sensor alert.
 		if not sensorAlert.rulesActivated:
+			found = False
 			for sensor in self.sensors:
 				if sensor.sensorId == sensorAlert.sensorId:
 					sensor.lastStateUpdated = serverTime
@@ -799,7 +807,23 @@ class ServerEventHandler:
 					if sensorAlert.changeState:
 						sensor.state = sensorAlert.state
 					
+					# Only update sensor data information if the flag
+					# was set in the received message.
+					if sensorAlert.hasLatestData:
+						if sensorAlert.dataType == sensor.dataType:
+							sensor.data = sensorAlert.sensorData
+						else:
+							logging.error("[%s]: Sensor data type different. "
+								% self.fileName
+								+ "Skipping data assignment.")
+
+					found = True
 					break
+			if not found:
+				logging.error("[%s]: Sensor of sensor alert " % self.fileName
+					+ "not known.")
+
+				return False
 
 		return True
 

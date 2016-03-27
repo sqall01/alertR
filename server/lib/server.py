@@ -911,7 +911,11 @@ class ClientCommunication:
 				"description": sensorAlert.description,
 				"rulesActivated": True,
 				"hasOptionalData": sensorAlert.hasOptionalData,
-				"changeState": sensorAlert.changeState}
+				"changeState": sensorAlert.changeState,
+				"hasLatestData": sensorAlert.hasLatestData,
+				"dataType": sensorAlert.dataType,
+				"data": sensorAlert.sensorData
+				}
 		else:
 
 			# Differentiate payload of message when data transfer is
@@ -925,7 +929,11 @@ class ClientCommunication:
 					"rulesActivated": False,
 					"hasOptionalData": True,
 					"optionalData": sensorAlert.optionalData,
-					"changeState": sensorAlert.changeState}
+					"changeState": sensorAlert.changeState,
+					"hasLatestData": sensorAlert.hasLatestData,
+					"dataType": sensorAlert.dataType,
+					"data": sensorAlert.sensorData
+					}
 			else:
 				payload = {"type": "request",
 					"sensorId": sensorAlert.sensorId,
@@ -934,7 +942,11 @@ class ClientCommunication:
 					"description": sensorAlert.description,
 					"rulesActivated": False,
 					"hasOptionalData": False,
-					"changeState": sensorAlert.changeState}
+					"changeState": sensorAlert.changeState,
+					"hasLatestData": sensorAlert.hasLatestData,
+					"dataType": sensorAlert.dataType,
+					"data": sensorAlert.sensorData
+					}
 
 		message = {"serverTime": int(time.time()),
 			"message": "sensoralert",
@@ -2506,7 +2518,7 @@ class ClientCommunication:
 		# add sensor alert to database
 		if not self.storage.addSensorAlert(self.nodeId, sensor.sensorId,
 			state, dataJson, changeState, hasLatestData, sensorDataType,
-			None, logger=self.logger):
+			sensorData, logger=self.logger):
 			self.logger.error("[%s]: Not able to add sensor alert (%s:%d)."
 				% (self.fileName, self.clientAddress, self.clientPort))
 
@@ -3732,15 +3744,16 @@ class AsynchronousSender(threading.Thread):
 		if self.sendManagerUpdate:
 			if self.clientComm.nodeType != "manager":
 				self.logger.error("[%s]: Sending status " % self.fileName
-						+ "update to manager failed. Client is not a "
-						+ "'manager' node (%s:%d)."
-						% (self.clientComm.clientAddress,
+					+ "update to manager failed. Client is not a "
+					+ "'manager' node (%s:%d)."
+					% (self.clientComm.clientAddress,
 					self.clientComm.clientPort))
 				return
 
 			# sending status update to manager
 			if not self.clientComm.sendManagerUpdate():
-				self.logger.error("[%s]: Sending status " % self.fileName
+				self.logger.error("[%s]: Sending status "
+					% self.fileName
 					+ "update to manager failed (%s:%d)."
 					% (self.clientComm.clientAddress,
 					self.clientComm.clientPort))
@@ -3750,10 +3763,11 @@ class AsynchronousSender(threading.Thread):
 		elif self.sendSensorAlert:
 			if (self.clientComm.nodeType != "manager"
 				and self.clientComm.nodeType != "alert"):
-				self.logger.error("[%s]: Sending sensor " % self.fileName
-						+ "alert failed. Client is not a "
-						+ "'manager'/'alert' node (%s:%d)."
-						% (self.clientComm.clientAddress,
+				self.logger.error("[%s]: Sending sensor "
+					% self.fileName
+					+ "alert failed. Client is not a "
+					+ "'manager'/'alert' node (%s:%d)."
+					% (self.clientComm.clientAddress,
 					self.clientComm.clientPort))
 				return
 
@@ -3767,9 +3781,9 @@ class AsynchronousSender(threading.Thread):
 		elif self.sendManagerStateChange:
 			if self.clientComm.nodeType != "manager":
 				self.logger.error("[%s]: Sending state " % self.fileName
-						+ "change to manager failed. Client is not a "
-						+ "'manager' node (%s:%d)."
-						% (self.clientComm.clientAddress,
+					+ "change to manager failed. Client is not a "
+					+ "'manager' node (%s:%d)."
+					% (self.clientComm.clientAddress,
 					self.clientComm.clientPort))
 				return
 
@@ -3789,9 +3803,9 @@ class AsynchronousSender(threading.Thread):
 		elif self.sendAlertSensorAlertsOff:
 			if self.clientComm.nodeType != "alert":
 				self.logger.error("[%s]: Sending sensor " % self.fileName
-						+ "alert off to alert failed. Client is not a "
-						+ "'alert' node (%s:%d)."
-						% (self.clientComm.clientAddress,
+					+ "alert off to alert failed. Client is not a "
+					+ "'alert' node (%s:%d)."
+					% (self.clientComm.clientAddress,
 					self.clientComm.clientPort))
 				return
 
