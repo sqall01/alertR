@@ -97,8 +97,19 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	# this function initializes the sensor
+	# This function initializes the sensor.
+	#
+	# Returns True or False depending on the success of the initialization.
 	def initializeSensor(self):
+		raise NotImplementedError("Function not implemented yet.")
+
+
+	# This function decides if an update for this sensor should be sent
+	# to the server. It is checked regularly and can be used to force an update
+	# of the state and data of this sensor to be sent to the server.
+	#
+	# Returns True or False according on whether an update should be sent.
+	def forceSendState(self):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -128,6 +139,8 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 		self.state = 1 - self.triggerState
 		self.temporaryState = 1 - self.triggerState
 
+		return True
+
 
 	def getState(self):
 		return self.state
@@ -135,6 +148,10 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 	def updateState(self):
 		self.state = self.temporaryState
+
+
+	def forceSendState(self):
+		return False
 
 
 	def run(self):
@@ -364,7 +381,21 @@ class SensorExecuter:
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
 						asyncSenderProcess.start()
-				
+
+			# Poll all sensors if they want to force an update that should
+			# be send to the server.
+			for sensor in self.sensors:
+
+				if sensor.forceSendState():
+					asyncSenderProcess = AsynchronousSender(
+						self.connection, self.globalData)
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					asyncSenderProcess.daemon = True
+					asyncSenderProcess.sendStateChange = True
+					asyncSenderProcess.sendStateChangeSensor = sensor
+					asyncSenderProcess.start()
+
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
 			if (time.time() - lastFullStateSent) > 60:

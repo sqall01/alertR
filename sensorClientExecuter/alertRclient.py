@@ -222,12 +222,15 @@ if __name__ == '__main__':
 
 	# check if sensors were found => if not exit
 	if not globalData.sensors:
-		logging.critical("[%s]: No sensors configured. " % fileName)
+		logging.critical("[%s]: No sensors configured." % fileName)
 		sys.exit(1)
 
 	# Initialize sensors before starting worker threads.
 	for sensor in globalData.sensors:
-		sensor.initializeSensor()
+		if not sensor.initializeSensor():
+			logging.critical("[%s]: No able to initialize sensor."
+				% fileName)
+			sys.exit(1)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
