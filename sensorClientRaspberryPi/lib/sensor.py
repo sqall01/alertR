@@ -12,6 +12,7 @@ import time
 import random
 import os
 import logging
+import re
 from client import AsynchronousSender
 from localObjects import SensorDataType
 
@@ -96,8 +97,19 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-	# this function initializes the sensor
+	# This function initializes the sensor.
+	#
+	# Returns True or False depending on the success of the initialization.
 	def initializeSensor(self):
+		raise NotImplementedError("Function not implemented yet.")
+
+
+	# This function decides if an update for this sensor should be sent
+	# to the server. It is checked regularly and can be used to force an update
+	# of the state and data of this sensor to be sent to the server.
+	#
+	# Returns True or False according on whether an update should be sent.
+	def forceSendState(self):
 		raise NotImplementedError("Function not implemented yet.")
 
 
@@ -132,6 +144,10 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 	def updateState(self):
 		# read current state of the gpio
 		self.state = GPIO.input(self.gpioPin)
+
+
+	def forceSendState(self):
+		return False
 
 
 # class that uses edge detection to check a gpio pin of the raspberry pi
@@ -258,6 +274,107 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 		self.state = self._internalState
 
 
+	def forceSendState(self):
+		return False
+
+
+# Class that reads one DS18b20 sensor connected to the Raspberry Pi.
+class RaspberryPiDS18b20Sensor(_PollingSensor):
+
+	def __init__(self):
+		_PollingSensor.__init__(self)
+
+		# Used for logging.
+		self.fileName = os.path.basename(__file__)
+
+		# Set sensor to hold float data.
+		self.sensorDataType = SensorDataType.FLOAT
+
+		# The file of the sensor that should be parsed.
+		self.sensorFile = None
+
+		# The name of the sensor that should be parsed.
+		self.sensorName = None
+
+		# The interval in seconds in which an update of the current held data
+		# should be sent to the server.
+		self.interval = None
+
+		# The time the last update of the data was sent to the server.
+		self.lastUpdate = None
+
+
+	# Internal function that reads the data of the sensor and returns it
+	# as a float number or None, if it fails.
+	def _getData(self):
+
+		try:
+			with open(self.sensorFile, 'r') as fp:
+
+				# File content looks like this:
+				# 2d 00 4b 46 ff ff 04 10 b3 : crc=b3 YES
+				# 2d 00 4b 46 ff ff 04 10 b3 t=22500
+				fp.readline()
+				line = fp.readline()
+
+				reMatch = re.match("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", line)
+				if reMatch:
+					return float(reMatch.group(2)) / 1000
+
+				else:
+					logging.error("[%s]: Could not parse sensor file."
+						% self.fileName)
+
+		except Exception as e:
+			logging.exception("[%s]: Could not read sensor file."
+				% self.fileName)
+
+		return None
+
+
+	def initializeSensor(self):
+		self.hasLatestData = True
+		self.changeState = True
+
+		self.state = 1 - self.triggerState
+
+		self.sensorFile = "/sys/bus/w1/devices/" \
+			+ self.sensorName \
+			+ "/w1_slave"
+
+		self.sensorData = self._getData()
+		if not self.sensorData:
+			return False
+
+		self.lastUpdate = int(time.time())
+
+		return True
+
+
+	def getState(self):
+		return self.state
+
+
+	def updateState(self):
+
+		# Update temperature data of sensor.
+		temp = self._getData()
+		if not temp:
+			logging.error("[%s]: Could not get data from sensor file."
+				% self.fileName)
+		self.sensorData = temp
+
+		logging.debug("[%s]: Current temperature of sensor '%s': %.3f."
+			% (self.fileName, self.description, self.sensorData))
+
+
+	def forceSendState(self):
+		if (int(time.time()) - self.lastUpdate) > self.interval:
+			self.lastUpdate = int(time.time())
+			return True
+		return False
+
+
 # this class polls the sensor states and triggers alerts and state changes
 class SensorExecuter:
 
@@ -381,7 +498,21 @@ class SensorExecuter:
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeSensor = sensor
 						asyncSenderProcess.start()
-				
+			
+			# Poll all sensors if they want to force an update that should
+			# be send to the server.
+			for sensor in self.sensors:
+
+				if sensor.forceSendState():
+					asyncSenderProcess = AsynchronousSender(
+						self.connection, self.globalData)
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					asyncSenderProcess.daemon = True
+					asyncSenderProcess.sendStateChange = True
+					asyncSenderProcess.sendStateChangeSensor = sensor
+					asyncSenderProcess.start()
+
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
 			if (time.time() - lastFullStateSent) > 60:

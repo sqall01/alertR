@@ -10,6 +10,6 @@
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import RaspberryPiGPIOPollingSensor, \
-	RaspberryPiGPIOInterruptSensor, SensorExecuter
+	RaspberryPiGPIOInterruptSensor, RaspberryPiDS18b20Sensor, SensorExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData

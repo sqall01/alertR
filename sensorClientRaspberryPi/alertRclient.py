@@ -12,7 +12,7 @@ import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
 from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
-	SensorExecuter
+	RaspberryPiDS18b20Sensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
 import logging
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
 			sensorType = str(item.find("gpio").attrib["type"]).upper()
 
-			if sensorType == "POLLING":
+			if sensorType == "polling".upper():
 
 				sensor = RaspberryPiGPIOPollingSensor()
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 				# raspberry pi gpio specific settings
 				sensor.gpioPin = int(item.find("gpio").attrib["gpioPin"])
 
-			elif sensorType == "INTERRUPT":
+			elif sensorType == "interrupt".upper():
 
 				sensor = RaspberryPiGPIOInterruptSensor()
 
@@ -217,6 +217,46 @@ if __name__ == '__main__':
 				# check if the edge detection is correct
 				if (sensor.edge != 0 and sensor.edge != 1):
 					raise ValueError("Value of edge detection not valid.")
+
+
+
+
+
+			# TODO
+			elif "ds18b20".upper():
+
+				sensor = RaspberryPiDS18b20Sensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# ds18b20 specific settings
+				sensor.sensorName = str(item.find("gpio").attrib["sensorName"])
+				sensor.interval = int(item.find("gpio").attrib["interval"])
+
+
+				# TODO
+				# still missing options like
+				# "sensor alert if temperature over x"
+
+
+
+
+
 
 			else:
 				raise ValueError("Type of sensor '%s' not valid."
@@ -261,12 +301,15 @@ if __name__ == '__main__':
 
 	# check if sensors were found => if not exit
 	if not globalData.sensors:
-		logging.critical("[%s]: No sensors configured. " % fileName)
+		logging.critical("[%s]: No sensors configured." % fileName)
 		sys.exit(1)
 
 	# Initialize sensors before starting worker threads.
 	for sensor in globalData.sensors:
-		sensor.initializeSensor()
+		if not sensor.initializeSensor():
+			logging.critical("[%s]: No able to initialize sensor."
+				% fileName)
+			sys.exit(1)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
