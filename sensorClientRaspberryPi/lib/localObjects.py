@@ -12,3 +12,11 @@ class SensorDataType:
 	NONE = 0
 	INT = 1
 	FLOAT = 2
+
+
+# This enum class gives the different orderings used to check if the data of a
+# sensor exceeds a threshold.
+class Ordering:
+	LT = 0
+	EQ = 1
+	GT = 2

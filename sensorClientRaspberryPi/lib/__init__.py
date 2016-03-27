@@ -13,3 +13,4 @@ from sensor import RaspberryPiGPIOPollingSensor, \
 	RaspberryPiGPIOInterruptSensor, RaspberryPiDS18b20Sensor, SensorExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData
+from localObjects import Ordering

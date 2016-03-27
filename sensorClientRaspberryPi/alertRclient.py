@@ -15,6 +15,7 @@ from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
 	RaspberryPiDS18b20Sensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
+from lib import Ordering
 import logging
 import time
 import socket
@@ -218,11 +219,6 @@ if __name__ == '__main__':
 				if (sensor.edge != 0 and sensor.edge != 1):
 					raise ValueError("Value of edge detection not valid.")
 
-
-
-
-
-			# TODO
 			elif "ds18b20".upper():
 
 				sensor = RaspberryPiDS18b20Sensor()
@@ -247,20 +243,24 @@ if __name__ == '__main__':
 				# ds18b20 specific settings
 				sensor.sensorName = str(item.find("gpio").attrib["sensorName"])
 				sensor.interval = int(item.find("gpio").attrib["interval"])
-
-
-				# TODO
-				# still missing options like
-				# "sensor alert if temperature over x"
-
-
-
-
-
+				sensor.hasThreshold = (str(item.find("gpio").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = float(item.find("gpio").attrib["threshold"])
+				orderingStr = str(
+					item.find("gpio").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
 
 			else:
 				raise ValueError("Type of sensor '%s' not valid."
-					% section)
+					% sensorType)
 
 			# check if description is empty
 			if len(sensor.description) == 0:

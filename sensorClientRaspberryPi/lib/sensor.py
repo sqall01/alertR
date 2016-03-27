@@ -14,7 +14,7 @@ import os
 import logging
 import re
 from client import AsynchronousSender
-from localObjects import SensorDataType
+from localObjects import SensorDataType, Ordering
 
 
 # Internal class that holds the important attributes
@@ -303,6 +303,17 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 		# The time the last update of the data was sent to the server.
 		self.lastUpdate = None
 
+		# This flag indicates if this sensor has a threshold that should be
+		# checked and raise a sensor alert if it is reached.
+		self.hasThreshold = None
+
+		# The threshold that should raise a sensor alert if it is reached.
+		self.threshold = None
+
+		# Says how the threshold should be checked
+		# (lower than, equal, greater than).
+		self.ordering = None
+
 
 	# Internal function that reads the data of the sensor and returns it
 	# as a float number or None, if it fails.
@@ -366,6 +377,73 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 		logging.debug("[%s]: Current temperature of sensor '%s': %.3f."
 			% (self.fileName, self.description, self.sensorData))
+
+		# Only check if threshold is reached if it is activated.
+		if self.hasThreshold:
+
+			# Sensor is currently triggered.
+			# Check if it is "normal" again.
+			if self.state == self.triggerState:
+				if self.ordering == Ordering.LT:
+					if self.sensorData >= self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (back to normal).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData != self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is unequal to threshold (back to normal).")
+
+				elif self.ordering == Ordering.GT:
+					if self.sensorData <= self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (back to normal).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
+
+			# Sensor is currently not triggered.
+			# Check if it has to be triggered.
+			else:
+				if self.ordering == Ordering.LT:
+					if self.sensorData < self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (triggered).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData == self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is equal to threshold (triggered).")
+
+				elif self.ordering == Ordering.GT:
+					if self.sensorData > self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (triggered).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
 
 
 	def forceSendState(self):

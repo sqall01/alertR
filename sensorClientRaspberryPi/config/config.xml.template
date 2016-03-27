@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.300">
+<config version="0.301">
 
 	<!--
 		in this section general options are configured
@@ -198,32 +198,30 @@
 
 			<!--
 				Raspberry Pi gpio specific settings for the sensor
-				type - sets the type of the sensor, either an interrupt driven
-					sensor which uses edge detection or a polling sensor
-					which just polls the state of the gpio pin
-					only valid options: interrupt, polling
+				type - Sets the type of the sensor, either an interrupt driven
+					sensor which uses edge detection, or a polling sensor
+					which just polls the state of the gpio pin,
+					or a ds18b20 temperature sensor.
+					Only valid options: interrupt, polling, ds18b20.
+					This example: interrupt
 				gpioPin - raspberry pi gpio pin that is used by this sensor
 					NOTE: python uses the actual
 					pin number and not the gpio number
 				edge - sets the edge detection that is used by the sensor
 					edge = 0 => falling edge
 					edge = 1 => rising edge
-					(only processed if interrupt is used)
 				pulledUpOrDown - sets the setting of the gpio if it is pulled
 					up or down
 					it is needed to lower a false positive detection rate
 					pulledUpOrDown = 0 => pulled down
 					pulledUpOrDown = 1 => pulled up
-					(only processed if interrupt is used)
 				delayBetweenTriggers - sets the delay in seconds that is
 					waited until a sensor can trigger again
 					this is used to solve problems with the edge detection
 					when the signal is bouncing after the taster/switch has
 					been triggered
-					(only processed if interrupt is used)
 				timeSensorTriggered - sets the time in seconds how long a
 					sensor should be seen as triggered by the alert system
-					(only processed if interrupt is used)
 				edgeCountBeforeTrigger - the count of interrupts that has to
 					occur before an alert is triggered this is used to relax
 					the edge detection a little bit for example an interrupt
@@ -242,7 +240,6 @@
 					alert is executed
 					(this can be tested with the interrupt helper script from
 					the repository)
-					(only processed if interrupt is used)
 			-->
 			<gpio
 				type="interrupt"
@@ -309,60 +306,118 @@
 
 			<!--
 				Raspberry Pi gpio specific settings for the sensor
-				type - sets the type of the sensor, either an interrupt driven
-					sensor which uses edge detection or a polling sensor
-					which just polls the state of the gpio pin
-					only valid options: interrupt, polling
+				type - Sets the type of the sensor, either an interrupt driven
+					sensor which uses edge detection, or a polling sensor
+					which just polls the state of the gpio pin,
+					or a ds18b20 temperature sensor.
+					Only valid options: interrupt, polling, ds18b20.
+					This example: polling
 				gpioPin - raspberry pi gpio pin that is used by this sensor
 					NOTE: python uses the actual
 					pin number and not the gpio number
-				edge - sets the edge detection that is used by the sensor
-					edge = 0 => falling edge
-					edge = 1 => rising edge
-					(only processed if interrupt is used)
-				pulledUpOrDown - sets the setting of the gpio if it is pulled
-					up or down
-					it is needed to lower a false positive detection rate
-					pulledUpOrDown = 0 => pulled down
-					pulledUpOrDown = 1 => pulled up
-					(only processed if interrupt is used)
-				delayBetweenTriggers - sets the delay in seconds that is
-					waited until a sensor can trigger again
-					this is used to solve problems with the edge detection
-					when the signal is bouncing after the taster/switch has
-					been triggered
-					(only processed if interrupt is used)
-				timeSensorTriggered - sets the time in seconds how long a
-					sensor should be seen as triggered by the alert system
-					(only processed if interrupt is used)
-				edgeCountBeforeTrigger - the count of interrupts that has to
-					occur before an alert is triggered this is used to relax
-					the edge detection a little bit for example an interrupt
-					is triggered when an falling/rising edge is detected, if
-					your wiring is not good enough isolated
-					it can happen that electro magnetic radiation (because of
-					a starting vacuum cleaner for example) causes a
-					falling/rising edge
-					this option abuses the bouncing of the wiring, this means
-					that the radiation for example only triggers one
-					rising/falling edge and your normal wiring could cause
-					like four detected edges when it is triggered because of
-					the signal bouncing so you could use this circumstance to
-					determine correct triggers from false triggers by setting
-					a threshold of edges that have to be reached before an
-					alert is executed
-					(this can be tested with the interrupt helper script from
-					the repository)
-					(only processed if interrupt is used)
 			-->
 			<gpio
 				type="polling"
-				gpioPin="24"
-				edge="0"
-				pulledUpOrDown="1"
-				delayBetweenTriggers="10"
-				timeSensorTriggered="5"
-				edgeCountBeforeTrigger="0" />
+				gpioPin="24" />
+
+		</sensor>
+
+
+		<!--
+			a single sensor is configured in a "sensor" element
+			if you need additional sensors just add a new one
+		-->
+		<sensor>
+
+			<!--
+				the general configuration of a sensor
+				id - local id of this sensor (has to be unique on this client)
+				description - description of this sensor
+				alertDelay - delay after which (when the alert system is still
+					active) the alert should trigger (this is processed
+					by the server and the value here is only used to register
+					with it at the server)
+				triggerAlert - this flag indicates if this sensor should
+					trigger an alert for example it could be just used to
+					signal the state to the server and not trigger
+					any alert (regardless of if the alert system is
+					active or not)
+					("True" or "False")
+				triggerAlertNormal - this flag indicates if this sensor should
+					trigger an alert when it goes back to a normal state (and
+					not only if a triggered state is reached and the flag
+					"triggerAlert" is set). If this flag is not set, this
+					client sends only a state change to the server to inform
+					it about the new state.
+					("True" or "False")
+				triggerState - on which internal state the alert should
+					trigger (either 0 or 1) for example some sensors
+					trigger with an internal state of 1 and some with an
+					internal state of 0 in order to decide if the sensor has
+					triggered this have to be set to the correct value
+					regardless on which internal state the sensor will trigger
+					the alert system uses for its communication:
+					state = 0 => not triggered
+					state = 1 => triggered
+			-->
+			<general
+				id="2"
+				description="temperature bedroom"
+				alertDelay="0"
+				triggerAlert="True"
+				triggerAlertNormal="True"
+				triggerState="1" />
+
+			<!--
+				the alert level that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels)
+			-->
+			<alertLevel>0</alertLevel>
+
+			<!--
+				Raspberry Pi gpio specific settings for the sensor
+				type - Sets the type of the sensor, either an interrupt driven
+					sensor which uses edge detection, or a polling sensor
+					which just polls the state of the gpio pin,
+					or a ds18b20 temperature sensor.
+					Only valid options: interrupt, polling, ds18b20.
+					This example: ds18b20
+				sensorName - The name of the ds18b20 sensor that should be
+					parsed. Normally, the name looks like this
+					"10-0008020b7c5d". On a Raspberry Pi, the sensor names
+					can be found in the directory "/sys/bus/w1/devices/".
+				interval - Gives the interval in seconds in which the data
+					of the sensor should be sent to the server.
+					NOTE: Sending the data to often (i.e., every second)
+					will increase the latency of your alarm system because
+					of collisions in the network communication.
+				hasThreshold - This flag indicates if the temperature sensor
+					has a threshold which should not be reached. If it is
+					deactivated, then the sensor is only used to send
+					temperature data to the server.
+					("True" or "False")
+				threshold - Float number which gives the threshold of the
+					sensor that should not be reached and therefore triggers
+					a sensor alert if it is reached and if it is back to
+					normal (if activated in the "general" section
+					of this sensor).
+				ordering - The order that should be used to check the
+					threshold value.
+					Valid options are: LT, EQ, GT.
+					LT: lower than - triggers a sensor alert if the temperature
+					is lower than the threshold.
+					EQ: equal - triggers a sensor alert if the temperature
+					is equal to the threshold.
+					GT: greater than - triggers a sensor alert if the
+					temperature is greater than the threshold.
+			-->
+			<gpio
+				type="ds18b20"
+				sensorName="10-0008020b7c5d"
+				interval="30"
+				hasThreshold="True"
+				threshold="15.0"
+				ordering="LT" />
 
 		</sensor>
 
