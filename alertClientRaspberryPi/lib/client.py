@@ -17,7 +17,7 @@ import base64
 import random
 import json
 from alert import AsynchronousAlertExecuter
-from localObjects import SensorAlert
+from localObjects import SensorAlert, SensorDataType
 BUFSIZE = 4096
 
 
@@ -577,6 +577,21 @@ class ServerCommunication:
 
 					sensorAlert.optionalData = None
 					sensorAlert.hasOptionalData = False
+
+			sensorAlert.changeState = bool(
+				incomingMessage["payload"]["changeState"])
+			sensorAlert.hasLatestData = bool(
+				incomingMessage["payload"]["hasLatestData"])
+			sensorAlert.dataType = int(
+				incomingMessage["payload"]["dataType"])
+
+			sensorAlert.sensorData = None
+			if sensorAlert.dataType == SensorDataType.INT:
+				sensorAlert.sensorData = int(
+					incomingMessage["payload"]["data"])
+			elif sensorAlert.dataType == SensorDataType.FLOAT:
+				sensorAlert.sensorData = float(
+					incomingMessage["payload"]["data"])
 
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName

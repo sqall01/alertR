@@ -8,6 +8,13 @@
 # Licensed under the GNU Public License, version 2.
 
 
+# This enum class gives the different data types of a sensor.
+class SensorDataType:
+	NONE = 0
+	INT = 1
+	FLOAT = 2
+
+
 # This class represents a single sensor alert that was triggered.
 class SensorAlert:
 
@@ -39,3 +46,10 @@ class SensorAlert:
 
 		# Are rules for this sensor alert activated (true or false)?
 		self.rulesActivated = None
+
+		# Does this sensor alert hold the latest data of the sensor?
+		self.hasLatestData = None
+
+		# The sensor data type and data that is connected to this sensor alert.
+		self.dataType = None
+		self.sensorData = None
