@@ -634,28 +634,27 @@ class ServerEventHandler:
 
 		# search sensor in list of known sensors
 		# => if not known return failure
-		found = False
-		for sensor in self.sensors:
-
-			# when found => mark sensor as checked and update information
-			if sensor.sensorId == sensorId:
-				sensor.state = state
-				sensor.lastStateUpdated = serverTime
-
-				if dataType == sensor.dataType:
-					sensor.data = sensorData
-				else:
-					logging.error("[%s]: Sensor data type different. "
-						% self.fileName
-						+ "Skipping data assignment.")
-
-				found = True
+		sensor = None
+		for tempSensor in self.sensors:
+			if tempSensor.sensorId == sensorId:
+				sensor = tempSensor
 				break
-		if not found:
+		if not sensor:
 			logging.error("[%s]: Sensor for state change " % self.fileName
 				+ "not known.")
 
 			return False
+
+		# Change sensor state.
+		sensor.state = state
+		sensor.lastStateUpdated = serverTime
+
+		if dataType == sensor.dataType:
+			sensor.data = sensorData
+		else:
+			logging.error("[%s]: Sensor data type different. "
+				% self.fileName
+				+ "Skipping data assignment.")
 
 		return True
 
