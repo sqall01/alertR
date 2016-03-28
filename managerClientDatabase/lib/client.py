@@ -1591,7 +1591,7 @@ class ServerCommunication:
 				self._releaseLock()
 				return
 
-			# handle handle incoming message event
+			# handle incoming message event
 			self.serverEventHandler.handleEvent()
 
 			self.lastRecv = time.time()
