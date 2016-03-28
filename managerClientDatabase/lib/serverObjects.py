@@ -834,57 +834,48 @@ class ServerEventHandler:
 
 		self.serverTime = serverTime
 
+		# search sensor in list of known sensors
+		# => if not known return failure
+		sensor = None
+		for tempSensor in self.sensors:
+			if tempSensor.sensorId == sensorId:
+				sensor = tempSensor
+				break
+		if not sensor:
+			logging.error("[%s]: Sensor for state change " % self.fileName
+				+ "not known.")
+
+			return False
+
 		# when events are activated
 		# => create state change event
 		if self.eventsLifeSpan != 0:
 			tempStateEvent = EventStateChange(int(time.time()))
 			tempStateEvent.state = state
-			triggeredSensor = None
-			for sensor in self.sensors:
-				if sensor.sensorId == sensorId:
-					tempStateEvent.description = sensor.description
-					triggeredSensor = sensor
+			tempStateEvent.description = sensor.description
+			tempStateEvent.dataType = dataType
+			tempStateEvent.sensorData = sensorData
+
+			for node in self.nodes:
+				if node.nodeId == sensor.nodeId:
+					tempStateEvent.hostname = node.hostname
+					self.events.append(tempStateEvent)
 					break
-			if not triggeredSensor is None:
-				for node in self.nodes:
-					if node.nodeId == sensor.nodeId:
-						tempStateEvent.hostname = node.hostname
-						self.events.append(tempStateEvent)
-						break
-				if tempStateEvent.hostname is None:
-					logging.error("[%s]: Unable to find corresponding " 
-						% self.fileName
-						+ "node to sensor for state change event.")
-			else:
+			if not tempStateEvent.hostname:
 				logging.error("[%s]: Unable to find corresponding " 
 					% self.fileName
-					+ "sensor to sensor alert for state change event.")
+					+ "node to sensor for state change event.")
 
+		# Change sensor state.
+		sensor.state = state
+		sensor.lastStateUpdated = serverTime
 
-		# search sensor in list of known sensors
-		# => if not known return failure
-		found = False
-		for sensor in self.sensors:
-
-			# when found => mark sensor as checked and update information
-			if sensor.sensorId == sensorId:
-				sensor.state = state
-				sensor.lastStateUpdated = serverTime
-
-				if dataType == sensor.dataType:
-					sensor.data = sensorData
-				else:
-					logging.error("[%s]: Sensor data type different. "
-						% self.fileName
-						+ "Skipping data assignment.")
-
-				found = True
-				break
-		if not found:
-			logging.error("[%s]: Sensor for state change " % self.fileName
-				+ "not known.")
-
-			return False
+		if dataType == sensor.dataType:
+			sensor.data = sensorData
+		else:
+			logging.error("[%s]: Sensor data type different. "
+				% self.fileName
+				+ "Skipping data assignment.")
 
 		return True
 
