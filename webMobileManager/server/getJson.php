@@ -10,6 +10,15 @@
 // include config data
 require_once("./config/config.php");
 
+
+// This enum class gives the different data types of a sensor.
+abstract class SensorDataType {
+    const NONE_TYPE = 0;
+    const INT_TYPE = 1;
+    const FLOAT_TYPE = 2;
+}
+
+
 // check if ssl is used (or disabled via config)
 if($configWebSSL) {
 	if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != 'on') {
@@ -123,12 +132,39 @@ if(isset($_GET["data"])
 						}
 					}
 
+					// Get the data of the sensor.
+					$data = "";
+					switch($row["dataType"]) {
+
+						case SensorDataType::INT_TYPE:
+							$resultData = mysql_query("SELECT data FROM "
+								. "sensorsDataInt WHERE sensorId = "
+								. intval($row["id"]));
+							$dataRow = mysql_fetch_assoc($resultData);
+							$data = $dataRow["data"];
+							break;
+
+						case SensorDataType::FLOAT_TYPE:
+							$resultData = mysql_query("SELECT data FROM "
+								. "sensorsDataFloat WHERE sensorId = "
+								. intval($row["id"]));
+							$dataRow = mysql_fetch_assoc($resultData);
+							$data = $dataRow["data"];
+							break;
+
+						case SensorDataType::NONE_TYPE:
+						default:
+							break;
+					}
+
 					$sensorEntry = array("id" => $row["id"],
 						"nodeId" => $row["nodeId"],
 						"description" => $row["description"],
 						"lastStateUpdated" => $row["lastStateUpdated"],
 						"state" => $row["state"],
-						"alertLevels" => $alertLevelArray);
+						"alertLevels" => $alertLevelArray,
+						"dataType" => $row["dataType"],
+						"data" => $data);
 					array_push($sensorsArray, $sensorEntry);
 				}
 				$alertSystemInformation["sensors"] = $sensorsArray;
