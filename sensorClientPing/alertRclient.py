@@ -227,7 +227,7 @@ if __name__ == '__main__':
 	# Initialize sensors before starting worker threads.
 	for sensor in globalData.sensors:
 		if not sensor.initializeSensor():
-			logging.critical("[%s]: No able to initialize sensor."
+			logging.critical("[%s]: Not able to initialize sensor."
 				% fileName)
 			sys.exit(1)
 
