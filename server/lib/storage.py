@@ -656,6 +656,31 @@ class Sqlite(_Storage):
 		self.conn.commit()
 
 
+	# Internal function that deletes the database
+	# (should only be called if parts of the database do exist)
+	#
+	# no return value but raise exception if it fails
+	def _deleteStorage(self):
+
+		# Delete all tables from the database to clear the old version.
+		self.cursor.execute("DROP TABLE IF EXISTS internals")
+		self.cursor.execute("DROP TABLE IF EXISTS options")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
+		self.cursor.execute("DROP TABLE IF EXISTS sensors")
+		self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+		self.cursor.execute("DROP TABLE IF EXISTS alerts")
+		self.cursor.execute("DROP TABLE IF EXISTS managers")
+		self.cursor.execute("DROP TABLE IF EXISTS nodes")
+
+		# commit all changes
+		self.conn.commit()
+
+
 	# Internal function that inserts sensor data according to its type.
 	#
 	# Returns true if everything worked fine.
@@ -788,20 +813,7 @@ class Sqlite(_Storage):
 			if uniqueID is None:
 				uniqueID = self._generateUniqueId()
 
-			# delete all tables from the database to clear the old version
-			self.cursor.execute("DROP TABLE IF EXISTS internals")
-			self.cursor.execute("DROP TABLE IF EXISTS options")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
-			self.cursor.execute("DROP TABLE IF EXISTS sensors")
-			self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
-			self.cursor.execute("DROP TABLE IF EXISTS alerts")
-			self.cursor.execute("DROP TABLE IF EXISTS managers")
-			self.cursor.execute("DROP TABLE IF EXISTS nodes")
+			self._deleteStorage()
 
 			# create new database
 			self._createStorage(uniqueID)
@@ -3229,6 +3241,7 @@ class Mysql(_Storage):
 			or not alertsResult
 			or not alertsAlertLevelsResult
 			or not managersResult):
+			self._deleteStorage()
 			self.createStorage()
 
 		# check if the versions are compatible
@@ -3556,6 +3569,30 @@ class Mysql(_Storage):
 		self.conn.commit()
 
 
+	# Internal function that deletes the database
+	# (should only be called if parts of the database do exist)
+	#
+	# no return value but raise exception if it fails
+	def _deleteStorage(self):
+
+		# Delete all tables from the database to clear the old version.
+		self.cursor.execute("DROP TABLE IF EXISTS internals")
+		self.cursor.execute("DROP TABLE IF EXISTS options")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+		self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
+		self.cursor.execute("DROP TABLE IF EXISTS sensors")
+		self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+		self.cursor.execute("DROP TABLE IF EXISTS alerts")
+		self.cursor.execute("DROP TABLE IF EXISTS managers")
+		self.cursor.execute("DROP TABLE IF EXISTS nodes")
+
+		# commit all changes
+		self.conn.commit()
+
 	# Internal function that inserts sensor data according to its type.
 	#
 	# Returns true if everything worked fine.
@@ -3691,20 +3728,7 @@ class Mysql(_Storage):
 			if uniqueID is None:
 				uniqueID = self._generateUniqueId()
 
-			# delete all tables from the database to clear the old version
-			self.cursor.execute("DROP TABLE IF EXISTS internals")
-			self.cursor.execute("DROP TABLE IF EXISTS options")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
-			self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
-			self.cursor.execute("DROP TABLE IF EXISTS sensors")
-			self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
-			self.cursor.execute("DROP TABLE IF EXISTS alerts")
-			self.cursor.execute("DROP TABLE IF EXISTS managers")
-			self.cursor.execute("DROP TABLE IF EXISTS nodes")
+			self._deleteStorage()
 
 			# create new database
 			self._createStorage(uniqueID)
