@@ -91,6 +91,7 @@ if __name__ == '__main__':
 		# initialize logging
 		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
 			datefmt='%m/%d/%Y %H:%M:%S', level=loglevel)
+		globalData.logger = logging.getLogger("server")
 
 	except Exception as e:
 		print "Config could not be parsed."
