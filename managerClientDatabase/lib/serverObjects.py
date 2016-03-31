@@ -853,8 +853,6 @@ class ServerEventHandler:
 			tempStateEvent = EventStateChange(int(time.time()))
 			tempStateEvent.state = state
 			tempStateEvent.description = sensor.description
-			tempStateEvent.dataType = dataType
-			tempStateEvent.sensorData = sensorData
 
 			for node in self.nodes:
 				if node.nodeId == sensor.nodeId:

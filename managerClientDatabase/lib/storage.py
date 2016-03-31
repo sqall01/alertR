@@ -21,6 +21,7 @@ from events import EventChangeAlert, EventChangeManager
 from events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
 from events import EventDeleteManager
 from serverObjects import Option, Node, Sensor, Alert, Manager, AlertLevel
+from localObjects import SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -149,6 +150,8 @@ class Mysql(_Storage):
 				self.cursor.execute(
 					"DROP TABLE IF EXISTS sensorAlertsAlertLevels")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+				self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+				self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
 				self.cursor.execute("DROP TABLE IF EXISTS sensors")
 				self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
 				self.cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -695,6 +698,30 @@ class Mysql(_Storage):
 		return True
 
 
+	# Internal function that adds the data of the sensor to the database.
+	# Does not catch exceptions.
+	#
+	# No return value.
+	def _addSensorDataToDb(self, sensor):
+
+		if sensor.dataType == SensorDataType.NONE:
+			pass
+
+		elif sensor.dataType == SensorDataType.INT:
+			self.cursor.execute("INSERT INTO sensorsDataInt ("
+				+ "sensorId, "
+				+ "data) "
+				+ "VALUES (%s, %s)",
+				(sensor.sensorId, sensor.data))
+
+		elif sensor.dataType == SensorDataType.FLOAT:
+			self.cursor.execute("INSERT INTO sensorsDataFloat ("
+				+ "sensorId, "
+				+ "data) "
+				+ "VALUES (%s, %s)",
+				(sensor.sensorId, sensor.data))
+
+
 	# internal function that closes the connection to the mysql server
 	def _closeConnection(self):
 		self.cursor.close()
@@ -834,6 +861,22 @@ class Mysql(_Storage):
 		return True
 
 
+
+	# Internal function that removes the data of the sensor in the database.
+	# Does not catch exceptions.
+	#
+	# No return value.
+	def _removeSensorDataFromDb(self, sensor):
+
+		self.cursor.execute("DELETE FROM sensorsDataInt "
+			+ "WHERE sensorId = %s",
+			(sensor.sensorId, ))
+
+		self.cursor.execute("DELETE FROM sensorsDataFloat "
+			+ "WHERE sensorId = %s",
+			(sensor.sensorId, ))
+
+
 	# creates objects from the data in the database 
 	# (should only be called during the initial connection to the database)
 	#
@@ -888,7 +931,6 @@ class Mysql(_Storage):
 			self.nodes.append(tempNode)
 			self.nodesCopy.append(tempNode)
 
-
 		# create sensor objects from db
 		self.cursor.execute("SELECT "
 			+ "id, "
@@ -897,7 +939,8 @@ class Mysql(_Storage):
 			+ "description, "
 			+ "state, "
 			+ "lastStateUpdated, "
-			+ "alertDelay "
+			+ "alertDelay, "
+			+ "dataType "
 			+ "FROM sensors")
 		result = self.cursor.fetchall()
 
@@ -910,19 +953,39 @@ class Mysql(_Storage):
 			tempSensor.state = sensorTuple[4]
 			tempSensor.lastStateUpdated = sensorTuple[5]
 			tempSensor.alertDelay = sensorTuple[6]
+			tempSensor.dataType = sensorTuple[7]
 			tempSensor.serverTime = serverTime
 
 			self.cursor.execute("SELECT "
 				+ "alertLevel "
 				+ "FROM sensorsAlertLevels "
 				+ "WHERE sensorId = %s", (tempSensor.sensorId, ))
-			alertLevelresult = self.cursor.fetchall()
-			for alertLevelTuple in alertLevelresult:
+			alertLevelResult = self.cursor.fetchall()
+			for alertLevelTuple in alertLevelResult:
 				tempSensor.alertLevels.append(alertLevelTuple[0])
+
+			# Get sensor data from database.
+			if tempSensor.dataType == SensorDataType.NONE:
+				tempSensor.data = None
+
+			elif tempSensor.dataType == SensorDataType.INT:
+				self.cursor.execute("SELECT "
+					+ "data "
+					+ "FROM sensorsDataInt "
+					+ "WHERE sensorId = %s", (tempSensor.sensorId, ))
+				dataResult = self.cursor.fetchall()
+				tempSensor.data = dataResult[0][0]
+
+			elif tempSensor.dataType == SensorDataType.FLOAT:
+				self.cursor.execute("SELECT "
+					+ "data "
+					+ "FROM sensorsDataFloat "
+					+ "WHERE sensorId = %s", (tempSensor.sensorId, ))
+				dataResult = self.cursor.fetchall()
+				tempSensor.data = dataResult[0][0]
 
 			self.sensors.append(tempSensor)
 			self.sensorsCopy.append(tempSensor)
-
 
 		# create alert objects from db
 		self.cursor.execute("SELECT "
@@ -944,8 +1007,8 @@ class Mysql(_Storage):
 				+ "alertLevel "
 				+ "FROM alertsAlertLevels "
 				+ "WHERE alertId = %s", (tempAlert.alertId, ))
-			alertLevelresult = self.cursor.fetchall()
-			for alertLevelTuple in alertLevelresult:
+			alertLevelResult = self.cursor.fetchall()
+			for alertLevelTuple in alertLevelResult:
 				tempAlert.alertLevels.append(alertLevelTuple[0])
 
 			self.alerts.append(tempAlert)
@@ -968,7 +1031,6 @@ class Mysql(_Storage):
 
 			self.managers.append(tempManager)
 			self.managersCopy.append(tempManager)
-
 
 		# create alert levels objects from db
 		self.cursor.execute("SELECT "
@@ -1077,6 +1139,7 @@ class Mysql(_Storage):
 				+ "state INTEGER NOT NULL, "
 				+ "lastStateUpdated INTEGER NOT NULL, "
 				+ "alertDelay INTEGER NOT NULL, "
+				+ "dataType INTEGER NOT NULL, "
 				+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
 		# create sensorAlerts table if it does not exist
@@ -1090,6 +1153,26 @@ class Mysql(_Storage):
 				+ "description TEXT NOT NULL,"
 				+ "timeReceived INTEGER NOT NULL, "
 				+ "dataJson TEXT NOT NULL)")
+
+		# Create sensorsDataInt table if it does not exist.
+		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataInt'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorsDataInt ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "sensorId INTEGER NOT NULL UNIQUE, "
+				+ "data INTEGER NOT NULL, "
+				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# Create sensorsDataFloat table if it does not exist.
+		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataFloat'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorsDataFloat ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "sensorId INTEGER NOT NULL UNIQUE, "
+				+ "data REAL NOT NULL, "
+				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create sensorAlertsAlertLevels table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsAlertLevels'")
@@ -1519,6 +1602,9 @@ class Mysql(_Storage):
 							+ "WHERE id = %s",
 							(idTuple[0], ))
 
+					# Delete all sensor data from database.
+					self._removeSensorDataFromDb(sensor)
+
 					self.cursor.execute("DELETE FROM sensors "
 						+ "WHERE id = %s",
 						(sensor.sensorId, ))
@@ -1690,13 +1776,18 @@ class Mysql(_Storage):
 						+ "remoteSensorId = %s, "
 						+ "description = %s, "
 						+ "state = %s ,"
-						+ "lastStateUpdated = %s ,"
-						+ "alertDelay = %s "
+						+ "lastStateUpdated = %s, "
+						+ "alertDelay = %s, "
+						+ "dataType = %s "
 						+ "WHERE id = %s",
 						(sensor.nodeId, sensor.remoteSensorId,
 						sensor.description, sensor.state,
 						sensor.lastStateUpdated, sensor.alertDelay,
-						sensor.sensorId))
+						sensor.dataType, sensor.sensorId))
+
+					# TODO
+					# delete data and add it again is not the best way
+					# (index will grow steadily)
 
 					self.cursor.execute("DELETE FROM sensorsAlertLevels "
 						+ "WHERE sensorId = %s",
@@ -1708,6 +1799,16 @@ class Mysql(_Storage):
 							+ "alertLevel) "
 							+ "VALUES (%s, %s)",
 							(sensor.sensorId, sensorAlertLevel))
+
+					# TODO
+					# delete data and add it again is not the best way
+					# (index will grow steadily)
+
+					# Delete all sensor data from database.
+					self._removeSensorDataFromDb(sensor)
+
+					# Add sensor data to database.
+					self._addSensorDataToDb(sensor)
 
 				except Exception as e:
 					logging.exception("[%s]: Not able to update sensor."
@@ -1856,12 +1957,13 @@ class Mysql(_Storage):
 						+ "description, "
 						+ "state, "
 						+ "lastStateUpdated, "
-						+ "alertDelay) "
-						+ "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+						+ "alertDelay, "
+						+ "dataType) "
+						+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
 						(sensor.sensorId, sensor.nodeId,
 						sensor.remoteSensorId, sensor.description,
 						sensor.state, sensor.lastStateUpdated,
-						sensor.alertDelay))
+						sensor.alertDelay, sensor.dataType))
 
 					for sensorAlertLevel in sensor.alertLevels:
 						self.cursor.execute("INSERT INTO sensorsAlertLevels ("
@@ -1869,6 +1971,9 @@ class Mysql(_Storage):
 							+ "alertLevel) "
 							+ "VALUES (%s, %s)",
 							(sensor.sensorId, sensorAlertLevel))
+
+					# Add sensor data to database.
+					self._addSensorDataToDb(sensor)
 
 				except Exception as e:
 					logging.exception("[%s]: Not able to add sensor."

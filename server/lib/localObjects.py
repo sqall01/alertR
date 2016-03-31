@@ -15,6 +15,7 @@ class SensorDataType:
 	FLOAT = 2
 
 
+# This class represents a single sensor of a client.
 class Sensor:
 
 	def __init__(self):
@@ -30,7 +31,7 @@ class Sensor:
 		self.data = None
 
 
-# this class represents a single alert level that is configured
+# This class represents a single alert level that is configured.
 class AlertLevel:
 
 	def __init__(self):
@@ -63,7 +64,6 @@ class AlertLevel:
 		# (the order in which the elements are stored in this list is the
 		# order in which the rules have to evaluate)
 		self.rules = list()
-
 
 
 # This class represents a single sensor alert that was triggered.
@@ -124,6 +124,8 @@ class _InternalSensor:
 		self.description = None
 		self.lastStateUpdated = None
 		self.state = None
+		self.dataType = None
+		self.data = None
 
 
 # Class that represents the internal sensor that
@@ -132,6 +134,8 @@ class SensorTimeoutSensor(_InternalSensor):
 
 	def __init__(self):
 		_InternalSensor.__init__(self)
+
+		self.dataType = SensorDataType.NONE
 
 		# A set of ids of the sensors that are timed out.
 		self.timeoutSensorIds = set()
@@ -143,6 +147,8 @@ class NodeTimeoutSensor(_InternalSensor):
 
 	def __init__(self):
 		_InternalSensor.__init__(self)
+
+		self.dataType = SensorDataType.NONE
 
 		# An internal set of ids of the nodes that are timed out.
 		self._timeoutNodeIds = set()

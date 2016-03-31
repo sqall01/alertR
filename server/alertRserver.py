@@ -1350,7 +1350,7 @@ if __name__ == '__main__':
 			temp["alertLevels"] = sensor.alertLevels
 			temp["description"] = sensor.description
 			temp["state"] = 0
-			temp["dataType"] = SensorDataType.NONE
+			temp["dataType"] = sensor.dataType
 			dbSensors.append(temp)
 
 			# Add tuple to db state list to set initial states of the
@@ -1386,7 +1386,7 @@ if __name__ == '__main__':
 			temp["alertLevels"] = sensor.alertLevels
 			temp["description"] = sensor.description
 			temp["state"] = 0
-			temp["dataType"] = SensorDataType.NONE
+			temp["dataType"] = sensor.dataType
 			dbSensors.append(temp)
 
 			# Add tuple to db state list to set initial states of the

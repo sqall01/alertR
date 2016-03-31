@@ -18,6 +18,13 @@ for(var i = 0; i < eventTypes.length; i++) {
 	eventTypesFilter[eventTypes[i]] = true;
 }
 
+// This enum gives the different data types of a sensor.
+var SensorDataType = {
+	NONE: 0,
+	INT: 1,
+	FLOAT: 2
+}
+
 // global objects filled with server responses
 var alertLevels = null;
 var alerts = null;
@@ -2651,6 +2658,8 @@ function outputOverview() {
 		var description = sensors[i]["description"];
 		var lastStateUpdated = sensors[i]["lastStateUpdated"];
 		var state = sensors[i]["state"];
+		var dataType = sensors[i]["dataType"];
+		var sensorData = sensors[i]["data"];
 		var connected = 0;
 
 		// get connected information from corresponding node
@@ -2664,6 +2673,10 @@ function outputOverview() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		newTd.appendChild(document.createTextNode(description));
+		if(dataType != SensorDataType.NONE) {
+			newTd.appendChild(document.createElement("br"));
+			newTd.appendChild(document.createTextNode("Data: " + sensorData));
+		}
 
 		if(connected == 0) {
 			newTd.className = "failTd";
@@ -3157,6 +3170,8 @@ function outputSensors() {
 			var lastStateUpdated = relatedSensors[j]["lastStateUpdated"];
 			var state = relatedSensors[j]["state"];
 			var relatedAlertLevels = relatedSensors[j]["alertLevels"];
+			var dataType = relatedSensors[j]["dataType"];
+			var sensorData = relatedSensors[j]["data"];
 
 
 			// create row for sensor output
@@ -3204,6 +3219,26 @@ function outputSensors() {
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorTable.appendChild(newTr);
+
+
+			// Add data to sensor.
+			if(dataType != SensorDataType.NONE) {
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				var newB = document.createElement("b");
+				newB.textContent = "Data:";
+				newTd.appendChild(newB);
+				newTd.className = "boxEntryTd";
+				newTr.appendChild(newTd);
+				sensorTable.appendChild(newTr);
+
+				var newTr = document.createElement("tr");
+				var newTd = document.createElement("td");
+				newTd.textContent = sensorData;
+				newTd.className = "neutralTd";
+				newTr.appendChild(newTd);
+				sensorTable.appendChild(newTr);
+			}
 
 
 			// add state to sensor
