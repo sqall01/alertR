@@ -3515,14 +3515,14 @@ class Mysql(_Storage):
 
 		# Create sensorsDataInt table.
 		self.cursor.execute("CREATE TABLE sensorsDataInt ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorId INTEGER NOT NULL UNIQUE, "
 			+ "data INTEGER NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# Create sensorsDataFloat table.
 		self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorId INTEGER NOT NULL UNIQUE, "
 			+ "data DOUBLE NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
@@ -3543,14 +3543,14 @@ class Mysql(_Storage):
 
 		# Create sensorAlertsDataInt table.
 		self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
 			+ "data INTEGER NOT NULL, "
 			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# Create sensorAlertsDataFloat table.
 		self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
 			+ "data DOUBLE NOT NULL, "
 			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
