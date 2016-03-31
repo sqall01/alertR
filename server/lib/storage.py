@@ -3241,8 +3241,20 @@ class Mysql(_Storage):
 			or not alertsResult
 			or not alertsAlertLevelsResult
 			or not managersResult):
+
+			self._openConnection()
+			uniqueID = self._getUniqueID()
 			self._deleteStorage()
-			self.createStorage()
+			self._closeConnection()
+
+			# If we already have a uniqueID, create storage with the same
+			# uniqueID.
+			if uniqueID:
+				self._openConnection()
+				self._createStorage(uniqueID)
+				self._closeConnection()
+			else:
+				self.createStorage()
 
 		# check if the versions are compatible
 		else:
