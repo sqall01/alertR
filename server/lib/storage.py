@@ -2114,14 +2114,14 @@ class Sqlite(_Storage):
 						+ "no data. Ignoring it.")
 
 				elif dataType == SensorDataType.INT:
-					self.cursor.execute("UPDATE SensorsDataInt SET "
+					self.cursor.execute("UPDATE sensorsDataInt SET "
 						+ "data = ? "
 						+ "WHERE sensorId = ?",
 						(dataTuple[1],
 						sensorId))
 
 				elif dataType == SensorDataType.FLOAT:
-					self.cursor.execute("UPDATE SensorsDataFloat SET "
+					self.cursor.execute("UPDATE sensorsDataFloat SET "
 						+ "data = ? "
 						+ "WHERE sensorId = ?",
 						(dataTuple[1],
@@ -3086,7 +3086,7 @@ class Sqlite(_Storage):
 			try:
 				# Get data type from database.
 				self.cursor.execute("SELECT data "
-					+ "FROM SensorsDataInt "
+					+ "FROM sensorsDataInt "
 					+ "WHERE sensorId = ?", (sensorId, ))
 				result = self.cursor.fetchall()
 				if len(result) != 1:
@@ -5306,14 +5306,14 @@ class Mysql(_Storage):
 						+ "no data. Ignoring it.")
 
 				elif dataType == SensorDataType.INT:
-					self.cursor.execute("UPDATE SensorsDataInt SET "
+					self.cursor.execute("UPDATE sensorsDataInt SET "
 						+ "data = %s "
 						+ "WHERE sensorId = %s",
 						(dataTuple[1],
 						sensorId))
 
 				elif dataType == SensorDataType.FLOAT:
-					self.cursor.execute("UPDATE SensorsDataFloat SET "
+					self.cursor.execute("UPDATE sensorsDataFloat SET "
 						+ "data = %s "
 						+ "WHERE sensorId = %s",
 						(dataTuple[1],
@@ -6679,7 +6679,7 @@ class Mysql(_Storage):
 			try:
 				# Get data type from database.
 				self.cursor.execute("SELECT data "
-					+ "FROM SensorsDataInt "
+					+ "FROM sensorsDataInt "
 					+ "WHERE sensorId = %s", (sensorId, ))
 				result = self.cursor.fetchall()
 				if len(result) != 1:
