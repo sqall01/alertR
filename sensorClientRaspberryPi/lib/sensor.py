@@ -136,6 +136,8 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 		GPIO.setup(self.gpioPin, GPIO.IN)
 		self.state = GPIO.input(self.gpioPin)
 
+		return True
+
 
 	def getState(self):
 		return self.state
@@ -237,7 +239,10 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 		elif self.pulledUpOrDown == 1:
 			pulledUpOrDown = GPIO.PUD_UP
 		else:
-			raise ValueError("Value for pulled up or down setting not known.")
+			logging.critical("[%s]: Value for pulled up or down "
+				+ "setting not known."
+				% self.FileName)
+			return False
 
 		# configure gpio pin and get initial state
 		GPIO.setmode(GPIO.BOARD)
@@ -255,7 +260,11 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 			GPIO.add_event_detect(self.gpioPin, GPIO.RISING,
 			callback=self._interruptCallback)
 		else:
-			raise ValueError("Value for edge detection not known.")
+			logging.critical("[%s]: Value for edge detection not known."
+				% self.FileName)
+			return False
+
+		return True
 
 
 	def getState(self):
