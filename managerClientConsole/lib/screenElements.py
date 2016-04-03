@@ -91,7 +91,7 @@ class SensorUrwid:
 
 		self.sensorPile = urwid.Pile(sensorPileList)
 		sensorBox = urwid.LineBox(self.sensorPile,
-			title="host: " + node.hostname)
+			title="Host: " + node.hostname)
 		paddedSensorBox = urwid.Padding(sensorBox, left=1, right=1)
 
 		# check if node is connected and set the color accordingly
@@ -556,7 +556,8 @@ class AlertUrwid:
 		alertPileList.append(self.descriptionWidget)
 
 		alertPile = urwid.Pile(alertPileList)
-		alertBox = urwid.LineBox(alertPile, title=node.hostname)
+		alertBox = urwid.LineBox(alertPile,
+			title="Host: " + node.hostname)
 		paddedAlertBox = urwid.Padding(alertBox, left=1, right=1)
 
 		# check if node is connected and set the color accordingly
@@ -873,7 +874,8 @@ class ManagerUrwid:
 		managerPileList.append(self.descriptionWidget)
 
 		managerPile = urwid.Pile(managerPileList)
-		managerBox = urwid.LineBox(managerPile, title=node.hostname)
+		managerBox = urwid.LineBox(managerPile,
+			title="Host: " + node.hostname)
 		paddedManagerBox = urwid.Padding(managerBox, left=1, right=1)
 
 		# check if node is connected and set the color accordingly
