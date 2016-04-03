@@ -432,7 +432,7 @@ class Console:
 			self.currentFocused = FocusedElement.alerts
 			self._focusAlerts()
 			self.alertsKeyBindings.set_text(
-				"Keys: b - Previous page, n - Next page")
+				"Keys: b - Previous Page, n - Next Page")
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text("Keys: None")
@@ -442,7 +442,7 @@ class Console:
 			self._focusManagers()
 			self.alertsKeyBindings.set_text("Keys: None")
 			self.managersKeyBindings.set_text(
-				"Keys: b - Previous page, n - Next page")
+				"Keys: b - Previous Page, n - Next Page")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text("Keys: None")
 
@@ -452,7 +452,7 @@ class Console:
 			self.alertsKeyBindings.set_text("Keys: None")
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text(
-				"Keys: b - Previous page, n - Next page")
+				"Keys: b - Previous Page, n - Next Page")
 			self.sensorsKeyBindings.set_text("Keys: None")
 
 		else:
@@ -462,7 +462,7 @@ class Console:
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text(
-				"Keys: b - Previous page, n - Next page")
+				"Keys: b - Previous Page, n - Next Page")
 
 
 	# this function moves the focus to the next element depending
@@ -1227,12 +1227,12 @@ class Console:
 		tempText = "Page 1 / %d " % sensorPageCount 
 		self.sensorsFooter = urwid.Text(tempText, align='center')
 		self.sensorsKeyBindings = urwid.Text(
-			"Keys: b - previous page, n - next page", align='center')
+			"Keys: b - Previous Page, n - Next Page", align='center')
 
 		# build box around the sensor grid with title
 		self.sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
 			urwid.Divider(), self.sensorsFooter, self.sensorsKeyBindings]),
-			title="sensors")
+			title="Sensors")
 
 		# generate all manager urwid objects
 		for manager in self.managers:
@@ -1295,7 +1295,7 @@ class Console:
 		# build box around the manager grid with title
 		self.managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
 			urwid.Divider(), self.managersFooter, self.managersKeyBindings]),
-			title="manager clients")
+			title="Manager Clients")
 
 		self.leftDisplayPart = urwid.Pile([self.sensorsBox, self.managersBox])
 
@@ -1360,7 +1360,7 @@ class Console:
 		# build box around the alert grid with title
 		self.alertsBox = urwid.LineBox(urwid.Pile([self.alertsGrid,
 			urwid.Divider(), self.alertsFooter, self.alertsKeyBindings]),
-			title="alert clients")
+			title="Alert Clients")
 
 		# generate all alert level urwid objects
 		for alertLevel in self.alertLevels:
@@ -1410,7 +1410,7 @@ class Console:
 		self.alertLevelsBox = urwid.LineBox(urwid.Pile([self.alertLevelsGrid,
 			urwid.Divider(), self.alertLevelsFooter,
 			self.alertLevelsKeyBindings]),
-			title="alert levels")
+			title="Alert Levels")
 
 		# create empty sensor alerts pile
 		emptySensorAlerts = list()
@@ -1421,7 +1421,7 @@ class Console:
 
 		# build box around the sensor alerts grid with title
 		sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile,
-			title="list of triggered alerts")
+			title="List of Triggered Sensor Alerts")
 
 		# generate widget to show the status of the alert system
 		for option in self.options:
@@ -1465,9 +1465,9 @@ class Console:
 			+ "1 - Activate, "
 			+ "2 - Deactivate, "
 			+ "ESC - Quit, "
-			+ "TAB - Next elements, "
-			+ "Up/Down/Left/Right - Move cursor, "
-			+ "Enter - Select element")
+			+ "TAB - Next Elements, "
+			+ "Up/Down/Left/Right - Move Cursor, "
+			+ "Enter - Select Element")
 
 		# build frame for final rendering
 		self.mainFrame = urwid.Frame(fillerBody, footer=footer, header=header)
