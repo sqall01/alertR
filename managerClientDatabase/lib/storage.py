@@ -1177,9 +1177,9 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE sensorAlertsAlertLevels ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 				+ "sensorAlertId INTEGER NOT NULL, "
 				+ "alertLevel INTEGER NOT NULL, "
+				+ "PRIMARY KEY(sensorAlertId, alertLevel), "
 				+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# create sensorsAlertLevels table if it does not exist
