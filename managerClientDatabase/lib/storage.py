@@ -1159,8 +1159,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE sensorsDataInt ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "sensorId INTEGER NOT NULL UNIQUE, "
+				+ "sensorId INTEGER PRIMARY KEY NOT NULL UNIQUE, "
 				+ "data INTEGER NOT NULL, "
 				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -1169,8 +1168,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "sensorId INTEGER NOT NULL UNIQUE, "
+				+ "sensorId INTEGER PRIMARY KEY NOT NULL UNIQUE, "
 				+ "data REAL NOT NULL, "
 				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -1189,9 +1187,9 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 				+ "sensorId INTEGER NOT NULL, "
 				+ "alertLevel INTEGER NOT NULL, "
+				+ "PRIMARY KEY(sensorId, alertLevel), "
 				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# create alerts table if it does not exist
@@ -1785,10 +1783,6 @@ class Mysql(_Storage):
 						sensor.lastStateUpdated, sensor.alertDelay,
 						sensor.dataType, sensor.sensorId))
 
-					# TODO
-					# delete data and add it again is not the best way
-					# (index will grow steadily)
-
 					self.cursor.execute("DELETE FROM sensorsAlertLevels "
 						+ "WHERE sensorId = %s",
 						(sensor.sensorId, ))
@@ -1799,10 +1793,6 @@ class Mysql(_Storage):
 							+ "alertLevel) "
 							+ "VALUES (%s, %s)",
 							(sensor.sensorId, sensorAlertLevel))
-
-					# TODO
-					# delete data and add it again is not the best way
-					# (index will grow steadily)
 
 					# Delete all sensor data from database.
 					self._removeSensorDataFromDb(sensor)
