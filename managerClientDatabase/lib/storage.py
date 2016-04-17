@@ -1159,7 +1159,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE sensorsDataInt ("
-				+ "sensorId INTEGER PRIMARY KEY NOT NULL UNIQUE, "
+				+ "sensorId INTEGER PRIMARY KEY NOT NULL, "
 				+ "data INTEGER NOT NULL, "
 				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -1168,7 +1168,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-				+ "sensorId INTEGER PRIMARY KEY NOT NULL UNIQUE, "
+				+ "sensorId INTEGER PRIMARY KEY NOT NULL, "
 				+ "data REAL NOT NULL, "
 				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -1208,9 +1208,9 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE alertsAlertLevels ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 				+ "alertId INTEGER NOT NULL, "
 				+ "alertLevel INTEGER NOT NULL, "
+				+ "PRIMARY KEY(alertId, alertLevel), "
 				+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
 		# create managers table if it does not exist
@@ -1246,8 +1246,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsSensorAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
@@ -1257,8 +1256,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsStateChange ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
@@ -1269,8 +1267,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsConnectedChange ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "nodeType TEXT NOT NULL, "
 				+ "instance TEXT NOT NULL, "
@@ -1282,8 +1279,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
@@ -1294,8 +1290,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsNewVersion ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "usedVersion DOUBLE NOT NULL, "
 				+ "usedRev INTEGER NOT NULL, "
 				+ "newVersion DOUBLE NOT NULL, "
@@ -1309,8 +1304,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsNewOption ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "type VARCHAR(255) NOT NULL, "
 				+ "value DOUBLE NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
@@ -1320,8 +1314,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsNewNode ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "nodeType TEXT NOT NULL, "
 				+ "instance TEXT NOT NULL, "
@@ -1332,8 +1325,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsNewSensor ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
@@ -1344,8 +1336,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsNewAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
@@ -1355,8 +1346,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsNewManager ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
@@ -1366,8 +1356,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsChangeOption ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "type VARCHAR(255) NOT NULL, "
 				+ "oldValue DOUBLE NOT NULL, "
 				+ "newValue DOUBLE NOT NULL, "
@@ -1378,8 +1367,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsChangeNode ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "oldHostname VARCHAR(255) NOT NULL, "
 				+ "oldNodeType VARCHAR(255) NOT NULL, "
 				+ "oldInstance VARCHAR(255) NOT NULL, "
@@ -1401,8 +1389,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsChangeSensor ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "oldAlertDelay INTEGER NOT NULL, "
 				+ "oldDescription VARCHAR(255) NOT NULL, "
 				+ "oldRemoteSensorId INTEGER NOT NULL, "
@@ -1416,8 +1403,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsChangeAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "oldDescription VARCHAR(255) NOT NULL, "
 				+ "oldRemoteAlertId INTEGER NOT NULL, "
 				+ "newDescription VARCHAR(255) NOT NULL, "
@@ -1429,8 +1415,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsChangeManager ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "oldDescription VARCHAR(255) NOT NULL, "
 				+ "newDescription VARCHAR(255) NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
@@ -1440,8 +1425,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsDeleteNode ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "hostname TEXT NOT NULL, "
 				+ "nodeType TEXT NOT NULL, "
 				+ "instance TEXT NOT NULL, "
@@ -1452,8 +1436,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
@@ -1462,8 +1445,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
@@ -1472,8 +1454,7 @@ class Mysql(_Storage):
 		result = self.cursor.fetchall()
 		if len(result) == 0:
 			self.cursor.execute("CREATE TABLE eventsDeleteManager ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "eventId INTEGER NOT NULL, "
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
