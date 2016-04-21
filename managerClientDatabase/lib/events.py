@@ -23,6 +23,8 @@ class EventSensorAlert(Event):
 		self.description = None
 		self.state = None
 		self.alertLevels = list()
+		self.dataType = None
+		self.sensorData = None
 
 
 # class that represents a state change event
@@ -33,6 +35,8 @@ class EventStateChange(Event):
 		self.hostname = None
 		self.description = None
 		self.state = None
+		self.dataType = None
+		self.data = None
 
 
 # class that represents a node changed its connection state event

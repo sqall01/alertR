@@ -21,7 +21,7 @@ class GlobalData:
 		self.version = 0.300
 
 		# revision of the used client
-		self.rev = 1
+		self.rev = 2
 
 		# name of this client
 		self.name = "alertR Manger Client Database"

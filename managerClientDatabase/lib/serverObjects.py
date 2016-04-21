@@ -10,6 +10,7 @@
 import os
 import logging
 import time
+from localObjects import SensorDataType
 from events import EventSensorAlert, EventNewVersion
 from events import EventStateChange, EventConnectedChange, EventSensorTimeOut
 from events import EventNewOption, EventNewNode, EventNewSensor
@@ -764,6 +765,9 @@ class ServerEventHandler:
 			tempEvent = EventSensorAlert(timeReceived)
 			tempEvent.description = sensorAlert.description
 			tempEvent.state = sensorAlert.state
+			tempEvent.dataType = sensorAlert.dataType
+			tempEvent.sensorData = sensorAlert.sensorData
+
 			tempEvent.alertLevels = list(sensorAlert.alertLevels)
 			self.events.append(tempEvent)
 
@@ -772,6 +776,15 @@ class ServerEventHandler:
 			if not sensorAlert.rulesActivated and sensorAlert.changeState:
 				tempStateEvent = EventStateChange(timeReceived)
 				tempStateEvent.state = sensorAlert.state
+
+				# Only store data for this state change event if the sensor
+				# alert carries the latest data of the sensor.
+				if sensorAlert.hasLatestData:
+					tempStateEvent.dataType = sensorAlert.dataType
+					tempStateEvent.data = sensorAlert.sensorData
+				else:
+					tempStateEvent.dataType = SensorDataType.NONE
+
 				triggeredSensor = None
 				for sensor in self.sensors:
 					if sensor.sensorId == sensorAlert.sensorId:
@@ -853,6 +866,8 @@ class ServerEventHandler:
 			tempStateEvent = EventStateChange(int(time.time()))
 			tempStateEvent.state = state
 			tempStateEvent.description = sensor.description
+			tempStateEvent.dataType = sensor.dataType
+			tempStateEvent.data = sensor.data
 
 			for node in self.nodes:
 				if node.nodeId == sensor.nodeId:

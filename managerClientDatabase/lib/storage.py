@@ -143,6 +143,8 @@ class Mysql(_Storage):
 				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
 				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
 				self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsDataInt")
+				self.cursor.execute("DROP TABLE IF EXISTS eventsDataFloat")
 				self.cursor.execute("DROP TABLE IF EXISTS events")
 				self.cursor.execute("DROP TABLE IF EXISTS internals")
 				self.cursor.execute("DROP TABLE IF EXISTS options")
@@ -221,6 +223,21 @@ class Mysql(_Storage):
 						+ "state) "
 						+ "VALUES (%s, %s, %s)",
 						(eventId, event.description, event.state))
+
+					# Only store data if sensor alert event carries it.
+					if event.dataType == SensorDataType.INT:
+						self.cursor.execute("INSERT INTO eventsDataInt ("
+							+ "eventId, "
+							+ "data) "
+							+ "VALUES (%s, %s)",
+							(eventId, event.sensorData))
+					elif event.dataType == SensorDataType.FLOAT:
+						self.cursor.execute("INSERT INTO eventsDataFloat ("
+							+ "eventId, "
+							+ "data) "
+							+ "VALUES (%s, %s)",
+							(eventId, event.sensorData))
+
 				except Exception as e:
 					logging.exception("[%s]: Not able to add "
 						% self.fileName
@@ -275,6 +292,21 @@ class Mysql(_Storage):
 						+ "VALUES (%s, %s, %s, %s)",
 						(eventId, event.hostname, event.description,
 						event.state))
+
+					# Only store data if state change event carries it.
+					if event.dataType == SensorDataType.INT:
+						self.cursor.execute("INSERT INTO eventsDataInt ("
+							+ "eventId, "
+							+ "data) "
+							+ "VALUES (%s, %s)",
+							(eventId, event.data))
+					elif event.dataType == SensorDataType.FLOAT:
+						self.cursor.execute("INSERT INTO eventsDataFloat ("
+							+ "eventId, "
+							+ "data) "
+							+ "VALUES (%s, %s)",
+							(eventId, event.data))
+
 				except Exception as e:
 					logging.exception("[%s]: Not able to add "
 						% self.fileName
@@ -773,12 +805,24 @@ class Mysql(_Storage):
 					self.cursor.execute("DELETE FROM eventsSensorAlert "
 						+ "WHERE eventId = %s",
 						(eventId, ))
+					self.cursor.execute("DELETE FROM eventsDataInt "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+					self.cursor.execute("DELETE FROM eventsDataFloat "
+						+ "WHERE eventId = %s",
+						(eventId, ))
 				elif eventType.upper() == "newVersion".upper():
 					self.cursor.execute("DELETE FROM eventsNewVersion "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				elif eventType.upper() == "stateChange".upper():
 					self.cursor.execute("DELETE FROM eventsStateChange "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+					self.cursor.execute("DELETE FROM eventsDataInt "
+						+ "WHERE eventId = %s",
+						(eventId, ))
+					self.cursor.execute("DELETE FROM eventsDataFloat "
 						+ "WHERE eventId = %s",
 						(eventId, ))
 				elif eventType.upper() == "connectedChange".upper():
@@ -1456,6 +1500,24 @@ class Mysql(_Storage):
 			self.cursor.execute("CREATE TABLE eventsDeleteManager ("
 				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "description TEXT NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# Create eventsDataInt table if it does not exist.
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDataInt'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDataInt ("
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
+				+ "data INTEGER NOT NULL, "
+				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
+
+		# Create eventsDataFloat table if it does not exist.
+		self.cursor.execute("SHOW TABLES LIKE 'eventsDataFloat'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE eventsDataFloat ("
+				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
+				+ "data REAL NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# commit all changes
