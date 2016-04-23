@@ -151,6 +151,10 @@ class Mysql(_Storage):
 				self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
 				self.cursor.execute(
 					"DROP TABLE IF EXISTS sensorAlertsAlertLevels")
+				self.cursor.execute(
+					"DROP TABLE IF EXISTS sensorAlertsDataInt")
+				self.cursor.execute(
+					"DROP TABLE IF EXISTS sensorAlertsDataFloat")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
 				self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
@@ -1186,18 +1190,6 @@ class Mysql(_Storage):
 				+ "dataType INTEGER NOT NULL, "
 				+ "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
-		# create sensorAlerts table if it does not exist
-		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
-		result = self.cursor.fetchall()
-		if len(result) == 0:
-			self.cursor.execute("CREATE TABLE sensorAlerts ("
-				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-				+ "sensorId INTEGER NOT NULL, "
-				+ "state INTEGER NOT NULL, "
-				+ "description TEXT NOT NULL,"
-				+ "timeReceived INTEGER NOT NULL, "
-				+ "dataJson TEXT NOT NULL)")
-
 		# Create sensorsDataInt table if it does not exist.
 		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataInt'")
 		result = self.cursor.fetchall()
@@ -1215,6 +1207,36 @@ class Mysql(_Storage):
 				+ "sensorId INTEGER PRIMARY KEY NOT NULL, "
 				+ "data REAL NOT NULL, "
 				+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+		# create sensorAlerts table if it does not exist
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorAlerts ("
+				+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+				+ "sensorId INTEGER NOT NULL, "
+				+ "state INTEGER NOT NULL, "
+				+ "description TEXT NOT NULL,"
+				+ "timeReceived INTEGER NOT NULL, "
+				+ "dataJson TEXT NOT NULL)")
+
+		# Create sensorAlertsDataInt table if it does not exist.
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataInt'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
+				+ "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
+				+ "data INTEGER NOT NULL, "
+				+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+		# Create sensorAlertsDataFloat table if it does not exist.
+		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataFloat'")
+		result = self.cursor.fetchall()
+		if len(result) == 0:
+			self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
+				+ "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
+				+ "data REAL NOT NULL, "
+				+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# create sensorAlertsAlertLevels table if it does not exist
 		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsAlertLevels'")
@@ -1605,6 +1627,12 @@ class Mysql(_Storage):
 				self.cursor.execute("DELETE FROM sensorAlertsAlertLevels "
 					+ "WHERE sensorAlertId = %s",
 					(idTuple[0], ))
+				self.cursor.execute("DELETE FROM sensorAlertsDataInt "
+					+ "WHERE sensorAlertId = %s",
+					(idTuple[0], ))
+				self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
+					+ "WHERE sensorAlertId = %s",
+					(idTuple[0], ))
 				self.cursor.execute("DELETE FROM sensorAlerts "
 					+ "WHERE id = %s",
 					(idTuple[0], ))
@@ -1637,6 +1665,14 @@ class Mysql(_Storage):
 					for idTuple in result:
 						self.cursor.execute("DELETE FROM "
 							+ "sensorAlertsAlertLevels "
+							+ "WHERE sensorAlertId = %s",
+							(idTuple[0], ))
+						self.cursor.execute("DELETE FROM "
+							+ "sensorAlertsDataInt "
+							+ "WHERE sensorAlertId = %s",
+							(idTuple[0], ))
+						self.cursor.execute("DELETE FROM "
+							+ "sensorAlertsDataFloat "
 							+ "WHERE sensorAlertId = %s",
 							(idTuple[0], ))
 						self.cursor.execute("DELETE FROM sensorAlerts "
@@ -2047,6 +2083,20 @@ class Mysql(_Storage):
 						+ "alertLevel) "
 						+ "VALUES (%s, %s)",
 						(sensorAlertId, alertLevel))
+
+				# Only store data if sensor alert carries it.
+				if sensorAlert.dataType == SensorDataType.INT:
+					self.cursor.execute("INSERT INTO sensorAlertsDataInt ("
+						+ "sensorAlertId, "
+						+ "data) "
+						+ "VALUES (%s, %s)",
+						(sensorAlertId, sensorAlert.sensorData))
+				elif sensorAlert.dataType == SensorDataType.FLOAT:
+					self.cursor.execute("INSERT INTO sensorAlertsDataFloat ("
+						+ "sensorAlertId, "
+						+ "data) "
+						+ "VALUES (%s, %s)",
+						(sensorAlertId, sensorAlert.sensorData))
 
 			except Exception as e:
 				logging.exception("[%s]: Not able to add sensor alert."
