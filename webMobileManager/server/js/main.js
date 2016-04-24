@@ -2044,7 +2044,10 @@ function outputEvents() {
 			case "sensorAlert":
 				var description = events[i]["description"];
 				var state = events[i]["state"];
-				addEventSensorAlert(eventsTable, description, state);
+				var dataType = events[i]["dataType"];
+				var sensorData = events[i]["data"];
+				addEventSensorAlert(eventsTable, description, state,
+					dataType, sensorData);
 				break;
 
 			case "sensorTimeOut":
@@ -2059,8 +2062,10 @@ function outputEvents() {
 				var hostname = events[i]["hostname"];
 				var description = events[i]["description"];
 				var state = events[i]["state"];
+				var dataType = events[i]["dataType"];
+				var sensorData = events[i]["data"];
 				addEventStateChange(eventsTable, hostname, description,
-					state)
+					state, dataType, sensorData)
 				break;
 
 			default:
@@ -2871,7 +2876,7 @@ function outputSensorAlerts() {
 		var sensorAlertId = sensorAlerts[i]["id"];
 		var sensorId = sensorAlerts[i]["sensorId"];
 		var timeReceived = sensorAlerts[i]["timeReceived"];
-		var jsonData = sensorAlerts[i]["data"];
+		var jsonData = sensorAlerts[i]["optionalData"];
 		var state = sensorAlerts[i]["state"];
 		var description = sensorAlerts[i]["description"];
 		var data = JSON.parse(jsonData);

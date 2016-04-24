@@ -1094,7 +1094,8 @@ function addEventNewVersion(eventsTable, usedVersion, usedRev, newVersion,
 }
 
 
-function addEventSensorAlert(eventsTable, description, state) {
+function addEventSensorAlert(eventsTable, description, state, dataType,
+	sensorData) {
 
 	// add description to the event
 	newTr = document.createElement("tr");
@@ -1113,10 +1114,11 @@ function addEventSensorAlert(eventsTable, description, state) {
 	newTr.appendChild(newTd);
 	eventsTable.appendChild(newTr);
 
-
-	// add state to the output
+	// Add state to the output.
 	event_AddStateOutput(eventsTable, state);
 
+	// Add data to the output.
+	event_AddDataOutput(eventsTable, dataType, sensorData);
 }
 
 
@@ -1164,7 +1166,8 @@ function addEventSensorTimeOut(eventsTable, hostname, description, state) {
 }
 
 
-function addEventStateChange(eventsTable, hostname, description, state) {
+function addEventStateChange(eventsTable, hostname, description, state,
+	dataType, sensorData) {
 
 	// add hostname to the event
 	newTr = document.createElement("tr");
@@ -1205,6 +1208,32 @@ function addEventStateChange(eventsTable, hostname, description, state) {
 	// add state to the output
 	event_AddStateOutput(eventsTable, state);
 
+	// Add data to the output.
+	event_AddDataOutput(eventsTable, dataType, sensorData);
+
+}
+
+
+function event_AddDataOutput(eventsTable, dataType, sensorData) {
+
+	// Add data to the event if it exists.
+	if(dataType != SensorDataType.NONE) {
+		newTr = document.createElement("tr");
+		newTd = document.createElement("td");
+		newB = document.createElement("b");
+		newB.textContent = "Data:";
+		newTd.appendChild(newB);
+		newTd.className = "boxEntryTd";
+		newTr.appendChild(newTd);
+		eventsTable.appendChild(newTr);
+
+		newTr = document.createElement("tr");
+		newTd = document.createElement("td");
+		newTd.textContent = sensorData;
+		newTd.className = "neutralTd";
+		newTr.appendChild(newTd);
+		eventsTable.appendChild(newTr);
+	}
 }
 
 

@@ -221,6 +221,7 @@ if(isset($_GET["data"])
 			// generate sensor alerts array
 			case "SENSORALERTS":
 				$resultSensorAlerts = null;
+				$sensorAlertsAlertLevelsArray = null;
 				// check if a range is given => get range of sensor alerts
 				if(isset($_GET["sensorAlertsRangeStart"])
 					&& isset($_GET["sensorAlertsNumber"])
@@ -237,14 +238,73 @@ if(isset($_GET["data"])
 					$resultSensorAlerts = mysql_query(
 						"SELECT * FROM sensorAlerts ORDER BY id DESC");
 				}
+
+				// Get alert levels of the sensor alerts.
+				$resultSensorAlertsAlertLevels = mysql_query(
+					"SELECT * FROM sensorAlertsAlertLevels");
+				$sensorAlertsAlertLevelsArray = array();
+				while($row = mysql_fetch_assoc(
+					$resultSensorAlertsAlertLevels)) {
+
+					$sensorAlertsAlertLevelEntry = array(
+						"sensorAlertId" => $row["sensorAlertId"],
+						"alertLevel" => $row["alertLevel"]);
+					array_push($sensorAlertsAlertLevelsArray,
+						$sensorAlertsAlertLevelEntry);
+				}
+
 				$sensorAlertsArray = array();
 				while($row = mysql_fetch_assoc($resultSensorAlerts)) {
+
+					// Get alert levels of sensor alert.
+					$alertLevelArray = array();
+					for($i = 0;
+						$i < count($sensorAlertsAlertLevelsArray);
+						$i++) {
+
+						if($row["id"] === $sensorAlertsAlertLevelsArray[$i][
+							"sensorAlertId"]) {
+							array_push($alertLevelArray,
+								$sensorAlertsAlertLevelsArray[$i][
+								"alertLevel"]);
+						}
+					}
+
+					// Get the data of the sensor alert.
+					$data = "";
+					switch($row["dataType"]) {
+
+						case SensorDataType::INT_TYPE:
+							$resultData = mysql_query("SELECT data FROM "
+								. "sensorAlertsDataInt WHERE sensorAlertId = "
+								. intval($row["id"]));
+							$dataRow = mysql_fetch_assoc($resultData);
+							$data = $dataRow["data"];
+							break;
+
+						case SensorDataType::FLOAT_TYPE:
+							$resultData = mysql_query("SELECT data FROM "
+								. "sensorAlertsDataFloat WHERE "
+								. "sensorAlertId = "
+								. intval($row["id"]));
+							$dataRow = mysql_fetch_assoc($resultData);
+							$data = $dataRow["data"];
+							break;
+
+						case SensorDataType::NONE_TYPE:
+						default:
+							break;
+					}
+
 					$sensorAlertEntry = array("id" => $row["id"],
 						"sensorId" => $row["sensorId"],
 						"state" => $row["state"],
 						"description" => $row["description"],
 						"timeReceived" => $row["timeReceived"],
-						"data" => $row["dataJson"]);
+						"alertLevels" => $alertLevelArray,
+						"optionalData" => $row["dataJson"],
+						"dataType" => $row["dataType"],
+						"data" => $data);
 					array_push($sensorAlertsArray, $sensorAlertEntry);
 				}
 				$alertSystemInformation["sensorAlerts"] = $sensorAlertsArray;
@@ -279,76 +339,86 @@ if(isset($_GET["data"])
 						. "LIMIT " . $rangeStart . "," . $number);
 
 					$resultEventsChangeAlert = mysql_query(
-						"SELECT * FROM eventsChangeAlert ORDER BY id DESC");
+						"SELECT * FROM eventsChangeAlert "
+						. "ORDER BY eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsChangeAlert)) {
 						array_push($eventsChangeAlertArray, $row);
-						
 					}
 
 					$resultEventsChangeManager = mysql_query(
-						"SELECT * FROM eventsChangeManager ORDER BY id DESC");
+						"SELECT * FROM eventsChangeManager "
+						. "ORDER BY eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeManagerArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsChangeManager)) {
 						array_push($eventsChangeManagerArray, $row);
-						
 					}
 
 					$resultEventsChangeNode = mysql_query(
-						"SELECT * FROM eventsChangeNode ORDER BY id DESC");
+						"SELECT * FROM eventsChangeNode ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeNodeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsChangeNode)) {
 						array_push($eventsChangeNodeArray, $row);
-						
 					}
 
 					$resultEventsChangeOption = mysql_query(
-						"SELECT * FROM eventsChangeOption ORDER BY id DESC");
+						"SELECT * FROM eventsChangeOption ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeOptionArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsChangeOption)) {
 						array_push($eventsChangeOptionArray, $row);
-						
 					}
 
 					$resultEventsChangeSensor = mysql_query(
-						"SELECT * FROM eventsChangeSensor ORDER BY id DESC");
+						"SELECT * FROM eventsChangeSensor ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeSensorArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsChangeSensor)) {
 						array_push($eventsChangeSensorArray, $row);
-						
 					}
 
 					$resultEventsConnectedChange = mysql_query(
-						"SELECT * FROM eventsConnectedChange ORDER BY id DESC");
+						"SELECT * FROM eventsConnectedChange ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsConnectedChangeArray = array();
 					while($row =
 						mysql_fetch_assoc($resultEventsConnectedChange)) {
 						array_push($eventsConnectedChangeArray, $row);
-						
 					}
 
 					$resultEventsDeleteAlert = mysql_query(
-						"SELECT * FROM eventsDeleteAlert ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteAlert ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsDeleteAlert)) {
 						array_push($eventsDeleteAlertArray, $row);
-						
 					}
 
 					$resultEventsDeleteManager = mysql_query(
-						"SELECT * FROM eventsDeleteManager ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteManager ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteManagerArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsDeleteManager)) {
 						array_push($eventsDeleteManagerArray, $row);
-						
 					}
 
 					$resultEventsDeleteNode = mysql_query(
-						"SELECT * FROM eventsDeleteNode ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteNode ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteNodeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsDeleteNode)) {
 						array_push($eventsDeleteNodeArray, $row);
@@ -356,86 +426,115 @@ if(isset($_GET["data"])
 					}
 
 					$resultEventsDeleteSensor = mysql_query(
-						"SELECT * FROM eventsDeleteSensor ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteSensor ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteSensorArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsDeleteSensor)) {
 						array_push($eventsDeleteSensorArray, $row);
-						
 					}
 
 					$resultEventsNewAlert = mysql_query(
-						"SELECT * FROM eventsNewAlert ORDER BY id DESC");
+						"SELECT * FROM eventsNewAlert ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewAlert)) {
 						array_push($eventsNewAlertArray, $row);
-						
 					}
 
 					$resultEventsNewManager = mysql_query(
-						"SELECT * FROM eventsNewManager ORDER BY id DESC");
+						"SELECT * FROM eventsNewManager ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewManagerArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewManager)) {
 						array_push($eventsNewManagerArray, $row);
-						
 					}
 
 					$resultEventsNewNode = mysql_query(
-						"SELECT * FROM eventsNewNode ORDER BY id DESC");
+						"SELECT * FROM eventsNewNode ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewNodeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewNode)) {
 						array_push($eventsNewNodeArray, $row);
-						
 					}
 
 					$resultEventsNewOption = mysql_query(
-						"SELECT * FROM eventsNewOption ORDER BY id DESC");
+						"SELECT * FROM eventsNewOption ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewOptionArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewOption)) {
 						array_push($eventsNewOptionArray, $row);
-						
 					}
 
 					$resultEventsNewSensor = mysql_query(
-						"SELECT * FROM eventsNewSensor ORDER BY id DESC");
+						"SELECT * FROM eventsNewSensor ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewSensorArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewSensor)) {
 						array_push($eventsNewSensorArray, $row);
-						
 					}
 
 					$resultEventsNewVersion = mysql_query(
-						"SELECT * FROM eventsNewVersion ORDER BY id DESC");
+						"SELECT * FROM eventsNewVersion ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewVersionArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewVersion)) {
 						array_push($eventsNewVersionArray, $row);
-						
 					}
 
 					$resultEventsSensorAlert = mysql_query(
-						"SELECT * FROM eventsSensorAlert ORDER BY id DESC");
+						"SELECT * FROM eventsSensorAlert ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsSensorAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsSensorAlert)) {
 						array_push($eventsSensorAlertArray, $row);
-						
 					}
 
 					$resultEventsSensorTimeOut = mysql_query(
-						"SELECT * FROM eventsSensorTimeOut ORDER BY id DESC");
+						"SELECT * FROM eventsSensorTimeOut ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsSensorTimeOutArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsSensorTimeOut)) {
 						array_push($eventsSensorTimeOutArray, $row);
-						
 					}
 
 					$resultEventsStateChange = mysql_query(
-						"SELECT * FROM eventsStateChange ORDER BY id DESC");
+						"SELECT * FROM eventsStateChange ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsStateChangeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsStateChange)) {
 						array_push($eventsStateChangeArray, $row);
-						
 					}
+
+					$resultEventsDataInt = mysql_query(
+						"SELECT * FROM eventsDataInt ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
+					$eventsDataIntArray = array();
+					while($row = mysql_fetch_assoc($resultEventsDataInt)) {
+						array_push($eventsDataIntArray, $row);
+					}
+
+					$resultEventsDataFloat = mysql_query(
+						"SELECT * FROM eventsDataFloat ORDER BY "
+						. "eventId DESC "
+						. "LIMIT " . $rangeStart . "," . $number);
+					$eventsDataFloatArray = array();
+					while($row = mysql_fetch_assoc($resultEventsDataFloat)) {
+						array_push($eventsDataFloatArray, $row);
+					}
+
 				}
 				// no range is given => get all events
 				else {
@@ -443,163 +542,179 @@ if(isset($_GET["data"])
 						"SELECT * FROM events ORDER BY id DESC");
 
 					$resultEventsChangeAlert = mysql_query(
-						"SELECT * FROM eventsChangeAlert ORDER BY id DESC");
+						"SELECT * FROM eventsChangeAlert ORDER BY "
+						. "eventId DESC");
 					$eventsChangeAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsChangeAlert)) {
 						array_push($eventsChangeAlertArray, $row);
-						
 					}
 
 					$resultEventsChangeManager = mysql_query(
-						"SELECT * FROM eventsChangeManager ORDER BY id DESC");
+						"SELECT * FROM eventsChangeManager ORDER BY "
+						. "eventId DESC");
 					$eventsChangeManagerArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsChangeManager)) {
 						array_push($eventsChangeManagerArray, $row);
-						
 					}
 
 					$resultEventsChangeNode = mysql_query(
-						"SELECT * FROM eventsChangeNode ORDER BY id DESC");
+						"SELECT * FROM eventsChangeNode ORDER BY "
+						. "eventId DESC");
 					$eventsChangeNodeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsChangeNode)) {
 						array_push($eventsChangeNodeArray, $row);
-						
 					}
 
 					$resultEventsChangeOption = mysql_query(
-						"SELECT * FROM eventsChangeOption ORDER BY id DESC");
+						"SELECT * FROM eventsChangeOption ORDER BY "
+						. "eventId DESC");
 					$eventsChangeOptionArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsChangeOption)) {
 						array_push($eventsChangeOptionArray, $row);
-						
 					}
 
 					$resultEventsChangeSensor = mysql_query(
-						"SELECT * FROM eventsChangeSensor ORDER BY id DESC");
+						"SELECT * FROM eventsChangeSensor ORDER BY "
+						. "eventId DESC");
 					$eventsChangeSensorArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsChangeSensor)) {
 						array_push($eventsChangeSensorArray, $row);
-						
 					}
 
 					$resultEventsConnectedChange = mysql_query(
-						"SELECT * FROM eventsConnectedChange ORDER BY id "
+						"SELECT * FROM eventsConnectedChange ORDER BY "
+						. "eventId "
 						. "DESC");
 					$eventsConnectedChangeArray = array();
 					while($row =
 						mysql_fetch_assoc($resultEventsConnectedChange)) {
 						array_push($eventsConnectedChangeArray, $row);
-						
 					}
 
 					$resultEventsDeleteAlert = mysql_query(
-						"SELECT * FROM eventsDeleteAlert ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteAlert ORDER BY "
+						. "eventId DESC");
 					$eventsDeleteAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsDeleteAlert)) {
 						array_push($eventsDeleteAlertArray, $row);
-						
 					}
 
 					$resultEventsDeleteManager = mysql_query(
-						"SELECT * FROM eventsDeleteManager ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteManager ORDER BY "
+						. "eventId DESC");
 					$eventsDeleteManagerArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsDeleteManager)) {
 						array_push($eventsDeleteManagerArray, $row);
-						
 					}
 
 					$resultEventsDeleteNode = mysql_query(
-						"SELECT * FROM eventsDeleteNode ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteNode ORDER BY "
+						. "eventId DESC");
 					$eventsDeleteNodeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsDeleteNode)) {
 						array_push($eventsDeleteNodeArray, $row);
-						
 					}
 
 					$resultEventsDeleteSensor = mysql_query(
-						"SELECT * FROM eventsDeleteSensor ORDER BY id DESC");
+						"SELECT * FROM eventsDeleteSensor ORDER BY "
+						. "eventId DESC");
 					$eventsDeleteSensorArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsDeleteSensor)) {
 						array_push($eventsDeleteSensorArray, $row);
-						
 					}
 
 					$resultEventsNewAlert = mysql_query(
-						"SELECT * FROM eventsNewAlert ORDER BY id DESC");
+						"SELECT * FROM eventsNewAlert ORDER BY "
+						. "eventId DESC");
 					$eventsNewAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewAlert)) {
 						array_push($eventsNewAlertArray, $row);
-						
 					}
 
 					$resultEventsNewManager = mysql_query(
-						"SELECT * FROM eventsNewManager ORDER BY id DESC");
+						"SELECT * FROM eventsNewManager ORDER BY "
+						. "eventId DESC");
 					$eventsNewManagerArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewManager)) {
 						array_push($eventsNewManagerArray, $row);
-						
 					}
 
 					$resultEventsNewNode = mysql_query(
-						"SELECT * FROM eventsNewNode ORDER BY id DESC");
+						"SELECT * FROM eventsNewNode ORDER BY "
+						. "eventId DESC");
 					$eventsNewNodeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewNode)) {
 						array_push($eventsNewNodeArray, $row);
-						
 					}
 
 					$resultEventsNewOption = mysql_query(
-						"SELECT * FROM eventsNewOption ORDER BY id DESC");
+						"SELECT * FROM eventsNewOption ORDER BY "
+						. "eventId DESC");
 					$eventsNewOptionArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewOption)) {
 						array_push($eventsNewOptionArray, $row);
-						
 					}
 
 					$resultEventsNewSensor = mysql_query(
-						"SELECT * FROM eventsNewSensor ORDER BY id DESC");
+						"SELECT * FROM eventsNewSensor ORDER BY "
+						. "eventId DESC");
 					$eventsNewSensorArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewSensor)) {
 						array_push($eventsNewSensorArray, $row);
-						
 					}
 
 					$resultEventsNewVersion = mysql_query(
-						"SELECT * FROM eventsNewVersion ORDER BY id DESC");
+						"SELECT * FROM eventsNewVersion ORDER BY "
+						. "eventId DESC");
 					$eventsNewVersionArray = array();
 					while($row = mysql_fetch_assoc($resultEventsNewVersion)) {
 						array_push($eventsNewVersionArray, $row);
-						
 					}
 
 					$resultEventsSensorAlert = mysql_query(
-						"SELECT * FROM eventsSensorAlert ORDER BY id DESC");
+						"SELECT * FROM eventsSensorAlert ORDER BY "
+						. "eventId DESC");
 					$eventsSensorAlertArray = array();
 					while($row = mysql_fetch_assoc($resultEventsSensorAlert)) {
 						array_push($eventsSensorAlertArray, $row);
-						
 					}
 
 					$resultEventsSensorTimeOut = mysql_query(
-						"SELECT * FROM eventsSensorTimeOut ORDER BY id DESC");
+						"SELECT * FROM eventsSensorTimeOut ORDER BY "
+						. "eventId DESC");
 					$eventsSensorTimeOutArray = array();
 					while(
 						$row = mysql_fetch_assoc($resultEventsSensorTimeOut)) {
 						array_push($eventsSensorTimeOutArray, $row);
-						
 					}
 
 					$resultEventsStateChange = mysql_query(
-						"SELECT * FROM eventsStateChange ORDER BY id DESC");
+						"SELECT * FROM eventsStateChange ORDER BY "
+						. "eventId DESC");
 					$eventsStateChangeArray = array();
 					while($row = mysql_fetch_assoc($resultEventsStateChange)) {
 						array_push($eventsStateChangeArray, $row);
-						
+					}
+
+					$resultEventsDataInt = mysql_query(
+						"SELECT * FROM eventsDataInt ORDER BY "
+						. "eventId DESC");
+					$eventsDataIntArray = array();
+					while($row = mysql_fetch_assoc($resultEventsDataInt)) {
+						array_push($eventsDataIntArray, $row);
+					}
+
+					$resultEventsDataFloat = mysql_query(
+						"SELECT * FROM eventsDataFloat ORDER BY "
+						. "eventId DESC");
+					$eventsDataFloatArray = array();
+					while($row = mysql_fetch_assoc($resultEventsDataFloat)) {
+						array_push($eventsDataFloatArray, $row);
 					}
 				}
 
@@ -946,18 +1061,61 @@ if(isset($_GET["data"])
 						case "sensorAlert":
 							$description = null;
 							$state = null;
+							$dataType = null;
+							$data = "";
+
+							// Get details of event.
 							foreach($eventsSensorAlertArray as $element) {
 								if($element["eventId"] === $row["id"]) {
 									$description = $element["description"];
 									$state = $element["state"];
+									$dataType = $element["dataType"];
 									break;
 								}
 							}
+
+							// Get data of event.
+							switch($dataType) {
+								case SensorDataType::INT_TYPE:
+									foreach($eventsDataIntArray
+										as $element) {
+
+										if($element["eventId"]
+											=== $row["id"]) {
+
+											$data = $element["data"];
+											break;
+										}
+
+									}
+									break;
+
+								case SensorDataType::FLOAT_TYPE:
+									foreach($eventsDataFloatArray
+										as $element) {
+
+										if($element["eventId"]
+											=== $row["id"]) {
+
+											$data = $element["data"];
+											break;
+										}
+
+									}
+									break;
+
+								case SensorDataType::NONE_TYPE:
+								default:
+									break;
+							}
+
 							$eventEntry = array("id" => $row["id"],
 								"timeOccurred" => $row["timeOccurred"],
 								"type" => $row["type"],
 								"description" => $description,
-								"state" => $state);
+								"state" => $state,
+								"dataType" => $dataType,
+								"data" => $data);
 							break;
 
 						case "sensorTimeOut":
@@ -984,20 +1142,63 @@ if(isset($_GET["data"])
 							$hostname = null;
 							$description = null;
 							$state = null;
+							$dataType = null;
+							$data = "";
+
+							// Get details of event.
 							foreach($eventsStateChangeArray as $element) {
 								if($element["eventId"] === $row["id"]) {
 									$hostname = $element["hostname"];
 									$description = $element["description"];
 									$state = $element["state"];
+									$dataType = $element["dataType"];
 									break;
 								}
 							}
+
+							// Get data of event.
+							switch($dataType) {
+								case SensorDataType::INT_TYPE:
+									foreach($eventsDataIntArray
+										as $element) {
+
+										if($element["eventId"]
+											=== $row["id"]) {
+
+											$data = $element["data"];
+											break;
+										}
+
+									}
+									break;
+
+								case SensorDataType::FLOAT_TYPE:
+									foreach($eventsDataFloatArray
+										as $element) {
+
+										if($element["eventId"]
+											=== $row["id"]) {
+
+											$data = $element["data"];
+											break;
+										}
+
+									}
+									break;
+
+								case SensorDataType::NONE_TYPE:
+								default:
+									break;
+							}
+
 							$eventEntry = array("id" => $row["id"],
 								"timeOccurred" => $row["timeOccurred"],
 								"type" => $row["type"],
 								"hostname" => $hostname,
 								"description" => $description,
-								"state" => $state);
+								"state" => $state,
+								"dataType" => $dataType,
+								"data" => $data);
 							break;
 
 						default:
@@ -1011,7 +1212,6 @@ if(isset($_GET["data"])
 			default:
 				break;
 		}
-
 	}
 
 	// output array as a json object
