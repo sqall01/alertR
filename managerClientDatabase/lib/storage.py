@@ -224,9 +224,11 @@ class Mysql(_Storage):
 					self.cursor.execute("INSERT INTO eventsSensorAlert ("
 						+ "eventId, "
 						+ "description, "
-						+ "state) "
-						+ "VALUES (%s, %s, %s)",
-						(eventId, event.description, event.state))
+						+ "state, "
+						+ "dataType) "
+						+ "VALUES (%s, %s, %s, %s)",
+						(eventId, event.description, event.state,
+						event.dataType))
 
 					# Only store data if sensor alert event carries it.
 					if event.dataType == SensorDataType.INT:
@@ -292,10 +294,11 @@ class Mysql(_Storage):
 						+ "eventId, "
 						+ "hostname, "
 						+ "description, "
-						+ "state) "
-						+ "VALUES (%s, %s, %s, %s)",
+						+ "state, "
+						+ "dataType) "
+						+ "VALUES (%s, %s, %s, %s, %s)",
 						(eventId, event.hostname, event.description,
-						event.state))
+						event.state, event.dataType))
 
 					# Only store data if state change event carries it.
 					if event.dataType == SensorDataType.INT:
@@ -1218,7 +1221,8 @@ class Mysql(_Storage):
 				+ "state INTEGER NOT NULL, "
 				+ "description TEXT NOT NULL,"
 				+ "timeReceived INTEGER NOT NULL, "
-				+ "dataJson TEXT NOT NULL)")
+				+ "dataJson TEXT NOT NULL, "
+				+ "dataType INTEGER NOT NULL)")
 
 		# Create sensorAlertsDataInt table if it does not exist.
 		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataInt'")
@@ -1315,6 +1319,7 @@ class Mysql(_Storage):
 				+ "eventId INTEGER PRIMARY KEY NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
+				+ "dataType INTEGER NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsStateChange table if it does not exist
@@ -1326,6 +1331,7 @@ class Mysql(_Storage):
 				+ "hostname TEXT NOT NULL, "
 				+ "description TEXT NOT NULL, "
 				+ "state INTEGER NOT NULL, "
+				+ "dataType INTEGER NOT NULL, "
 				+ "FOREIGN KEY(eventId) REFERENCES events(id))")
 
 		# create eventsConnectedChange table if it does not exist
@@ -2070,11 +2076,12 @@ class Mysql(_Storage):
 					+ "state, "
 					+ "description, "
 					+ "timeReceived, "
-					+ "dataJson) "
-					+ "VALUES (%s, %s, %s, %s, %s)",
+					+ "dataJson, "
+					+ "dataType) "
+					+ "VALUES (%s, %s, %s, %s, %s, %s)",
 					(sensorAlert.sensorId, sensorAlert.state,
 					sensorAlert.description, sensorAlert.timeReceived,
-					dataJson))
+					dataJson, sensorAlert.dataType))
 				sensorAlertId = self.cursor.lastrowid
 
 				for alertLevel in sensorAlert.alertLevels:
