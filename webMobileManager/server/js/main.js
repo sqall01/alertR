@@ -2879,7 +2879,9 @@ function outputSensorAlerts() {
 		var jsonData = sensorAlerts[i]["optionalData"];
 		var state = sensorAlerts[i]["state"];
 		var description = sensorAlerts[i]["description"];
-		var data = JSON.parse(jsonData);
+		var optionalData = JSON.parse(jsonData);
+		var dataType = sensorAlerts[i]["dataType"];
+		var sensorData = sensorAlerts[i]["data"];
 
 
 		var boxDiv = document.createElement("div");
@@ -2957,6 +2959,26 @@ function outputSensorAlerts() {
 		sensorAlertTable.appendChild(newTr);
 
 
+		// Add data if sensor alert carries any.
+		if(dataType != SensorDataType.NONE) {
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newB = document.createElement("b");
+			newB.textContent = "Data:";
+			newTd.appendChild(newB);
+			newTd.className = "boxEntryTd";
+			newTr.appendChild(newTd);
+			sensorAlertTable.appendChild(newTr);
+
+			newTr = document.createElement("tr");
+			newTd = document.createElement("td");
+			newTd.textContent = sensorData;
+			newTd.className = "neutralTd";
+			newTr.appendChild(newTd);
+			sensorAlertTable.appendChild(newTr);
+		}
+
+
 		// add time received to the sensor alert
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
@@ -2981,7 +3003,7 @@ function outputSensorAlerts() {
 
 
 		// check if a message was sent along with the sensor alert
-		if(data.hasOwnProperty("message")) {
+		if(optionalData.hasOwnProperty("message")) {
 
 			// add received message to the sensor alert
 			var newTr = document.createElement("tr");
@@ -2995,7 +3017,7 @@ function outputSensorAlerts() {
 
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
-			newTd.textContent = data["message"];
+			newTd.textContent = optionalData["message"];
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorAlertTable.appendChild(newTr);
