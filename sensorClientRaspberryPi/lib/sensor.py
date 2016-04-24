@@ -13,6 +13,7 @@ import random
 import os
 import logging
 import re
+import threading
 from client import AsynchronousSender
 from localObjects import SensorDataType, Ordering
 
@@ -323,10 +324,20 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 		# (lower than, equal, greater than).
 		self.ordering = None
 
+		# To keep the traffic on the bus low, only allow temperature refreshes
+		# every 60 seconds. 
+		self.refreshInterval = 60
+		self.lastTemperatureUpdate = 0.0
 
-	# Internal function that reads the data of the sensor and returns it
-	# as a float number or None, if it fails.
-	def _getData(self):
+		# Locks temperature value in order to be thread safe.
+		self.updateLock = threading.Semaphore(1)
+
+		# Internal sensor data value only accessed when locked.
+		self._sensorData = None
+
+
+	# Internal function that reads the data of the sensor.
+	def _updateData(self):
 
 		try:
 			with open(self.sensorFile, 'r') as fp:
@@ -337,9 +348,14 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 				fp.readline()
 				line = fp.readline()
 
-				reMatch = re.match("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", line)
+				reMatch = re.match("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)",
+					line)
 				if reMatch:
-					return float(reMatch.group(2)) / 1000
+
+					temp = float(reMatch.group(2)) / 1000
+					self.updateLock.acquire()
+					self._sensorData = temp
+					self.updateLock.release()
 
 				else:
 					logging.error("[%s]: Could not parse sensor file."
@@ -348,8 +364,6 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 		except Exception as e:
 			logging.exception("[%s]: Could not read sensor file."
 				% self.fileName)
-
-		return None
 
 
 	def initializeSensor(self):
@@ -362,7 +376,13 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 			+ self.sensorName \
 			+ "/w1_slave"
 
-		self.sensorData = self._getData()
+		# First time the temperature is updated is done in a blocking way.
+		self._updateData()
+		self.lastTemperatureUpdate = int(time.time())
+		self.updateLock.acquire()
+		self.sensorData = self._sensorData
+		self.updateLock.release()
+
 		if not self.sensorData:
 			return False
 
@@ -377,12 +397,20 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 	def updateState(self):
 
-		# Update temperature data of sensor.
-		temp = self._getData()
-		if not temp:
-			logging.error("[%s]: Could not get data from sensor file."
-				% self.fileName)
-		self.sensorData = temp
+		# Restrict the times the temperature is actually read from the sensor
+		# to keep the traffic on the bus relatively low.
+		if (int(time.time()) - self.lastTemperatureUpdate) > self.interval:
+			self.lastTemperatureUpdate = int(time.time())
+
+			# Update temperature in a non-blocking way
+			# (this means also, that the current temperature value will
+			# not be the updated one, but one of the next rounds will have it)
+			thread = threading.Thread(target=self._updateData)
+			thread.start()
+
+		self.updateLock.acquire()
+		self.sensorData = self._sensorData
+		self.updateLock.release()
 
 		logging.debug("[%s]: Current temperature of sensor '%s': %.3f."
 			% (self.fileName, self.description, self.sensorData))
