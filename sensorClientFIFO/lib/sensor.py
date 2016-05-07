@@ -132,6 +132,20 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 		self.temporaryState = None
 
+		self.forceSendState = False
+
+
+	def _checkDataType(self, dataType):
+		if dataType != self.sensorDataType:
+			return False
+		return True
+
+
+	def _checkState(self, state):
+		if state != 0 and state != 1:
+			return False
+		return True
+
 
 	def initializeSensor(self):
 		self.changeState = True
@@ -151,6 +165,9 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 
 	def forceSendState(self):
+		if self.forceSendState:
+			self.forceSendState = False
+			return True
 		return False
 
 
@@ -207,9 +224,55 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 				message = json.loads(data)
 
-				# check if the received message is valid
-				# => if it is parse it
+				# Parse message depending on type.
+				# Type: statechange
 				if str(message["message"]).upper() == "STATECHANGE":
+
+					# Check if state is valid.
+					tempInputState = int(message["payload"]["state"])
+					if (self._checkState(tempInputState)):
+						logging.error("[%s]: Received state "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
+
+					# Check if data type is valid.
+					tempDataType = int(message["payload"]["dataType"])
+					if self._checkDataType(tempDataType):
+						logging.error("[%s]: Received data type "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
+
+					# Set new data.
+					if self.sensorDataType == SensorDataType.NONE:
+						self.sensorData = None
+					elif self.sensorDataType == SensorDataType.INT:
+						self.sensorData = int(message["payload"]["data"])
+					elif self.sensorDataType == SensorDataType.FLOAT:
+						self.sensorData = float(message["payload"]["data"])
+
+					# Set state.
+					self.temporaryState = tempInputState
+
+					# Force state change sending if the data could be changed.
+					if self.sensorDataType != SensorDataType.NONE:
+						self.forceSendState = True
+
+				# Type: sensoralert
+				elif str(message["message"]).upper() == "SENSORALERT":
+
+
+					# TODO
+					# modify SENSORALERT message to be conform with the new
+					# protocol layout
+
+
+
 
 					self.hasOptionalData = bool(
 						message["payload"]["hasOptionalData"])
@@ -243,8 +306,9 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					else:
 						self.temporaryState = tempInputState
 
+				# Type: invalid
 				else:
-					raise ValueError("Received unvalid message type.")
+					raise ValueError("Received invalid message type.")
 
 			except Exception as e:
 				logging.exception("[%s]: Could not parse received data from "
@@ -272,10 +336,6 @@ class SensorExecuter:
 
 
 	def execute(self):
-
-		# initialize all sensors
-		for sensor in self.sensors:
-			sensor.initializeSensor()
 
 		# time on which the last full sensor states were sent
 		# to the server
