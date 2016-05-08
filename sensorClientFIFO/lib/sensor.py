@@ -136,12 +136,34 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 
 	def _checkDataType(self, dataType):
+		if not isinstance(dataType, int):
+			return False
 		if dataType != self.sensorDataType:
 			return False
 		return True
 
 
+	def _checkChangeState(self, changeState):
+		if not isinstance(changeState, bool):
+			return False
+		return True
+
+
+	def _checkHasLatestData(self, hasLatestData):
+		if not isinstance(hasLatestData, bool):
+			return False
+		return True
+
+
+	def _checkHasOptionalData(self, hasOptionalData):
+		if not isinstance(hasOptionalData, bool):
+			return False
+		return True
+
+
 	def _checkState(self, state):
+		if not isinstance(state, int):
+			return False
 		if state != 0 and state != 1:
 			return False
 		return True
@@ -229,7 +251,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 				if str(message["message"]).upper() == "STATECHANGE":
 
 					# Check if state is valid.
-					tempInputState = int(message["payload"]["state"])
+					tempInputState = message["payload"]["state"]
 					if (self._checkState(tempInputState)):
 						logging.error("[%s]: Received state "
 							% self.fileName
@@ -239,7 +261,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 						continue
 
 					# Check if data type is valid.
-					tempDataType = int(message["payload"]["dataType"])
+					tempDataType = message["payload"]["dataType"]
 					if self._checkDataType(tempDataType):
 						logging.error("[%s]: Received data type "
 							% self.fileName
@@ -266,45 +288,108 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 				# Type: sensoralert
 				elif str(message["message"]).upper() == "SENSORALERT":
 
+					# Check if state is valid.
+					tempInputState = message["payload"]["state"]
+					if (self._checkState(tempInputState)):
+						logging.error("[%s]: Received state "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
 
-					# TODO
-					# modify SENSORALERT message to be conform with the new
-					# protocol layout
+					# Check if hasOptionalData field is valid.
+					tempHasOptionalData = message[
+						"payload"]["hasOptionalData"]
+					if self._checkHasOptionalData(tempHasOptionalData):
+						logging.error("[%s]: Received hasOptionalData field "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
 
+					# Check if data type is valid.
+					tempDataType = message["payload"]["dataType"]
+					if self._checkDataType(tempDataType):
+						logging.error("[%s]: Received data type "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
 
+					if self.sensorDataType == SensorDataType.NONE:
+						tempSensorData = None
+					elif self.sensorDataType == SensorDataType.INT:
+						tempSensorData = int(message["payload"]["data"])
+					elif self.sensorDataType == SensorDataType.FLOAT:
+						tempSensorData = float(message["payload"]["data"])
 
+					# Check if hasLatestData field is valid.
+					tempHasLatestData = message[
+						"payload"]["hasLatestData"]
+					if self._checkHasLatestData(tempHasLatestData):
+						logging.error("[%s]: Received hasLatestData field "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
 
-					self.hasOptionalData = bool(
-						message["payload"]["hasOptionalData"])
+					# Check if changeState field is valid.
+					tempChangeState = message[
+						"payload"]["changeState"]
+					if self._checkChangeState(tempChangeState):
+						logging.error("[%s]: Received changeState field "
+							% self.fileName
+							+ "from FIFO file of sensor with id '%d' "
+							% self.id
+							+ "invalid. Ignoring message.")
+						continue
 
-					# check if data should be transfered with the sensor alert
+					# Check if data should be transfered with the sensor alert
 					# => if it should parse it
-					if self.hasOptionalData:
+					tempOptionalData = None
+					if tempHasOptionalData:
 
-						self.optionalData = message["payload"]["optionalData"]
+						tempOptionalData = message["payload"]["optionalData"]
 
 						# check if data is of type dict
-						if not isinstance(self.optionalData, dict):
+						if not isinstance(tempOptionalData, dict):
 							logging.warning("[%s]: Received optional data "
 								% self.fileName
 								+ "from FIFO file of sensor with id '%d' "
 								% self.id
-								+ "invalid. Ignoring data to transfer.")
-							
-							self.hasOptionalData = False
-							self.optionalData = None
+								+ "invalid. Ignoring message.")
+							continue
 
-					# set the new state as temporary
-					tempInputState = int(message["payload"]["state"])
-					if (tempInputState != 0
-						and tempInputState != 1):
-						logging.warning("[%s]: Received state "
-							% self.fileName
-							+ "from FIFO file of sensor with id '%d' "
-							% self.id
-							+ "invalid. Ignoring state change.")
-					else:
+					# Set optional data.
+					self.hasOptionalData = tempHasOptionalData
+					self.optionalData = tempOptionalData
+
+					# Set new data.
+					if tempHasLatestData:
+						self.sensorData = tempSensorData
+
+					# Set state.
+					if tempChangeState:
 						self.temporaryState = tempInputState
+
+
+
+
+
+					# TODO
+					# modify SENSORALERT message to be conform with the new
+					# protocol layout
+					# How can we send a sensor alert directly from here?
+					# How can we avoid if we update the state of the sensor
+					# that we send two sensor alerts?
+
+
+
+
 
 				# Type: invalid
 				else:
