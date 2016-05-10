@@ -31,7 +31,7 @@ If you have no idea what alertR actually is or how you can use it, this section 
 
 
 <div align="center">
-![Picture of alertR Mobile Manager](docs/mobile_manager_photo_v0.4.jpg)
+<img src="docs/mobile_manager_photo_v0.4.jpg" />
 </div>
 
 ## Videos
