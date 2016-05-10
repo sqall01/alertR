@@ -16,6 +16,7 @@ Here is a list of useful documentations to start with this project:
 
 # Table of Contents
 * [Version](#version)
+* [Media](#media)
 * [Installation](#installation)
 * [Update](#update)
 * [Bugs and Feedback](#bugs_and_feedback)
@@ -25,6 +26,22 @@ Here is a list of useful documentations to start with this project:
 <a name="version"/>
 
 The current stable version of alertR is 0.3. The development of alertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch.
+
+
+# Media
+<a name="media"/>
+
+If you have no idea what alertR actually is or how you can use it, this section might give you some ideas.
+
+The following video is a short introduction video of alertR as a home alarm system. This video was published in August 2014 and shows version 0.1 of alertR. Since then, a lot has changed and a lot new features were added. The subtitles have to be activated in order to understand what is happening.
+
+<iframe
+    width="640"
+    height="360"
+    src="//www.youtube.com/embed/TxhOPqBhqX8"
+    frameborder="0"
+    allowfullscreen>
+</iframe>
 
 
 # Installation
