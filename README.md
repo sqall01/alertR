@@ -34,12 +34,14 @@ The following shows a picture of the mobile manager in version 0.4.
 <div align="center">
 <img src="docs/mobile_manager_photo_v0.4.jpg" />
 </div>
+<br />
 
 A screenshot of the console manager in version 0.4.
 
 <div align="center">
 <img src="docs/manager_console_screenshot_v0.4.jpg" />
 </div>
+<br />
 
 An overview of the infrastructure a basic alertR setup has.
 
