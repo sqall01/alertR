@@ -33,12 +33,33 @@ The current stable version of alertR is 0.3. The development of alertR is done i
 
 If you have no idea what alertR actually is or how you can use it, this section might give you some ideas.
 
+## Videos
+<a name="media_videos"/>
+
 The following video is a short introduction video of alertR as a home alarm system. This video was published in August 2014 and shows version 0.1 of alertR. Since then, a lot has changed and a lot new features were added. The subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
 <a href="https://www.youtube.com/watch?feature=player_embedded&v=TxhOPqBhqX8
 " target="_blank">
 <img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="640" height="480" border="10" />
+</a>
+</div>
+
+The next video was published in December 2014 and shows version 0.2 of alertR. It demonstrates the D-Bus and Kodi (aka XBMC) notification capabilities. Again, the subtitles have to be activated in order to understand what is happening.
+
+<div align="center">
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=r7caH_UzKms
+" target="_blank">
+<img src="https://img.youtube.com/vi/r7caH_UzKms/0.jpg" width="640" height="480" border="10" />
+</a>
+</div>
+
+Part of the next release was a rule engine, which allows you to set up rules that must be satisfied before an alarm is triggered. Again, the subtitles have to be activated in order to understand what is happening.
+
+<div align="center">
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=iP3uPX41QEg
+" target="_blank">
+<img src="https://img.youtube.com/vi/iP3uPX41QEg/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
 
