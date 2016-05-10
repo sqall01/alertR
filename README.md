@@ -48,6 +48,7 @@ An overview of the infrastructure a basic alertR setup has.
 <div align="center">
 <img src="docs/alertR_infrastructure_basic.jpg" />
 </div>
+<br />
 
 
 ## Videos
@@ -61,6 +62,7 @@ The following video is a short introduction video of alertR as a home alarm syst
 <img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
+<br />
 
 The next video was published in December 2014 and shows version 0.2 of alertR. It demonstrates the D-Bus and Kodi (aka XBMC) notification capabilities. Again, the subtitles have to be activated in order to understand what is happening.
 
@@ -70,6 +72,7 @@ The next video was published in December 2014 and shows version 0.2 of alertR. I
 <img src="https://img.youtube.com/vi/r7caH_UzKms/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
+<br />
 
 Part of the next release was a rule engine, which allows you to set up rules that must be satisfied before an alarm is triggered. Again, the subtitles have to be activated in order to understand what is happening.
 
@@ -79,6 +82,7 @@ Part of the next release was a rule engine, which allows you to set up rules tha
 <img src="https://img.youtube.com/vi/iP3uPX41QEg/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
+<br />
 
 
 # Installation
