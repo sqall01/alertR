@@ -29,10 +29,24 @@ If you have no idea what alertR actually is or how you can use it, this section 
 ## Pictures
 <a name="media_pictures"/>
 
+The following shows a picture of the mobile manager in version 0.4.
 
 <div align="center">
 <img src="docs/mobile_manager_photo_v0.4.jpg" />
 </div>
+
+A screenshot of the console manager in version 0.4.
+
+<div align="center">
+<img src="docs/manager_console_screenshot_v0.4.jpg" />
+</div>
+
+An overview of the infrastructure a basic alertR setup has.
+
+<div align="center">
+<img src="docs/alertR_infrastructure_basic.jpg" />
+</div>
+
 
 ## Videos
 <a name="media_videos"/>
