@@ -38,7 +38,7 @@ The following video is a short introduction video of alertR as a home alarm syst
 <div align="center">
 <a href="https://www.youtube.com/watch?feature=player_embedded&v=TxhOPqBhqX8
 " target="_blank">
-<img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="640" height="360" border="10" />
+<img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="720" height="540" border="10" />
 </a>
 </div>
 
