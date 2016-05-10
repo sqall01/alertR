@@ -30,9 +30,9 @@ If you have no idea what alertR actually is or how you can use it, this section 
 <a name="media_pictures"/>
 
 
-
+<div align="center">
 ![Picture of alertR Mobile Manager](docs/mobile_manager_photo_v0.4.jpg)
-
+</div>
 
 ## Videos
 <a name="media_videos"/>
