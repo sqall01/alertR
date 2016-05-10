@@ -2,36 +2,33 @@
 
 alertR is a client/server based alarm and monitoring system. Originally it was developed as an open source home security system, but soon it became apparent that it can be used in a great variety of scenarios where an alarm or monitoring system is needed, for example as a simpler nagios to monitor the availability of a server/service.
 
-Here is a list of interesting use-cases with alertR:
-
-* [Introducing alertR: Open-Source alerting system (with video)](http://h4des.org/blog/index.php?/archives/345-Introducing-alertR-Open-Source-alerting-system.html)
-* [alertR: dbus and xbmc notification client (with video)](http://h4des.org/blog/index.php?/archives/347-alertR-dbus-and-xbmc-notification-client.html)
-* [alertR: rule engine (with video)](http://h4des.org/blog/index.php?/archives/349-alertR-rule-engine.html)
-* [Blog articles about alertR](http://h4des.org/blog/index.php?/categories/22-alertR)
-
-Here is a list of useful documentations to start with this project:
-
-* [The infrastructure of alertR](https://github.com/sqall01/alertR/wiki/infrastructure)
-
 
 # Table of Contents
 * [Version](#version)
 * [Media](#media)
+  * [Pictures](#media_pictures)
+  * [Videos](#media_videos)
 * [Installation](#installation)
 * [Update](#update)
+* [Further Notes](#further_notes)
 * [Bugs and Feedback](#bugs_and_feedback)
 
 
 # Version
 <a name="version"/>
 
-The current stable version of alertR is 0.3. The development of alertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch.
+The current stable version of alertR is 0.3. The development of alertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch. If you want to see what has changed during the releases, you can check the [Changelog File](CHANGELOG.md).
 
 
 # Media
 <a name="media"/>
 
 If you have no idea what alertR actually is or how you can use it, this section might give you some ideas.
+
+
+## Pictures
+<a name="media_pictures"/>
+
 
 ## Videos
 <a name="media_videos"/>
@@ -74,6 +71,12 @@ To install an alertR client or the alertR server, please use the installation sc
 <a name="update"/>
 
 If you have already a working alertR system installed and a newer version is available, use the update script to update your alertR instances. A detailed description of how to update an alertR instance is given in the [Update](https://github.com/sqall01/alertR/wiki/Update) section of the wiki.
+
+
+# Further Notes
+<a name="further_notes"/>
+
+If you are interested in alertR and its development, you can also read alertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR).
 
 
 # Bugs and Feedback
