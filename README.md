@@ -35,6 +35,9 @@ If you have no idea what alertR actually is or how you can use it, this section 
 
 The following video is a short introduction video of alertR as a home alarm system. This video was published in August 2014 and shows version 0.1 of alertR. Since then, a lot has changed and a lot new features were added. The subtitles have to be activated in order to understand what is happening.
 
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=TxhOPqBhqX8
+" target="_blank"><img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="240" height="180" border="10" /></a>
+
 <iframe
     width="640"
     height="360"
