@@ -140,10 +140,12 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 		self.temporaryState = None
 
+		# Used to force a state change to be sent to the server.
 		self.forceSendStateLock = threading.Semaphore(1)
 		self.shouldForceSendState = False
 		self.stateChange = None
 
+		# Used to force a sensor alert to be sent to the server.
 		self.forceSendAlertLock = threading.Semaphore(1)
 		self.shouldForceSendAlert = False
 		self.sensorAlert = None
