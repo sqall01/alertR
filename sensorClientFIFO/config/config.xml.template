@@ -206,10 +206,13 @@
 					'{"message": "statechange", "payload": {"state": 0}}'
 					see the alertR wiki for a more detailed message syntax
 					for the FIFO sensor)
+				dataType - Gives the data type of this sensor
+					(0 = none, 1 = int, 2 = float).
 			-->
 			<fifo
 				umask="0000"
-				fifoFile="/absolute/path/to/sensor_0.fifo" />
+				fifoFile="/absolute/path/to/sensor_0.fifo"
+				dataType="0" />
 
 		</sensor>
 
@@ -274,10 +277,13 @@
 					'{"message": "statechange", "payload": {"state": 0}}'
 					see the alertR wiki for a more detailed message syntax
 					for the FIFO sensor)
+				dataType - Gives the data type of this sensor
+					(0 = none, 1 = int, 2 = float).
 			-->
 			<fifo
 				umask="0002"
-				fifoFile="/absolute/path/to/sensor_1.fifo" />
+				fifoFile="/absolute/path/to/sensor_1.fifo"
+				dataType="2" />
 
 		</sensor>
 

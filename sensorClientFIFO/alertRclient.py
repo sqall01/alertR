@@ -14,6 +14,7 @@ from lib import SMTPAlert
 from lib import SensorFIFO, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
+from lib import SensorDataType
 import logging
 import time
 import socket
@@ -177,6 +178,15 @@ if __name__ == '__main__':
 				"umask"], 8)
 			sensor.fifoFile = str(item.find("fifo").attrib[
 				"fifoFile"])
+			sensor.sensorDataType = int(item.find("fifo").attrib[
+				"dataType"])
+
+			# Check sanity of sensor data type.
+			if (sensor.sensorDataType != SensorDataType.NONE
+				and sensor.sensorDataType != SensorDataType.INT
+				and sensor.sensorDataType != SensorDataType.FLOAT):
+				raise ValueError("Illegal data type for sensor %d."
+					% sensor.id)
 
 			# check if description is empty
 			if len(sensor.description) == 0:

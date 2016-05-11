@@ -14,7 +14,7 @@ import logging
 import json
 import threading
 from client import AsynchronousSender
-from localObjects import SensorDataType
+from localObjects import SensorDataType, SensorAlert, StateChange
 
 
 # Internal class that holds the important attributes
@@ -104,11 +104,22 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
+	# This function decides if a sensor alert for this sensor should be sent
+	# to the server. It is checked regularly and can be used to force
+	# a sensor alert despite the state of the sensor has not changed.
+	#
+	# Returns an object of class SensorAlert if a sensor alert should be sent
+	# or None.
+	def forceSendAlert(self):
+		raise NotImplementedError("Function not implemented yet.")
+
+
 	# This function decides if an update for this sensor should be sent
 	# to the server. It is checked regularly and can be used to force an update
 	# of the state and data of this sensor to be sent to the server.
 	#
-	# Returns True or False according on whether an update should be sent.
+	# Returns an object of class StateChange if a sensor alert should be sent
+	# or None.
 	def forceSendState(self):
 		raise NotImplementedError("Function not implemented yet.")
 
@@ -120,9 +131,6 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 		threading.Thread.__init__(self)
 		_PollingSensor.__init__(self)
 
-		# Set sensor to not hold any data.
-		self.sensorDataType = SensorDataType.NONE
-
 		# used for logging
 		self.fileName = os.path.basename(__file__)
 
@@ -132,7 +140,13 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 		self.temporaryState = None
 
-		self.forceSendState = False
+		self.forceSendStateLock = threading.Semaphore(1)
+		self.shouldForceSendState = False
+		self.stateChange = None
+
+		self.forceSendAlertLock = threading.Semaphore(1)
+		self.shouldForceSendAlert = False
+		self.sensorAlert = None
 
 
 	def _checkDataType(self, dataType):
@@ -175,6 +189,11 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 		self.state = 1 - self.triggerState
 		self.temporaryState = 1 - self.triggerState
 
+		# Set initial sensor data
+		if self.sensorDataType == SensorDataType.INT:
+			self.sensorData = 0
+		elif self.sensorDataType == SensorDataType.FLOAT:
+			self.sensorData = 0.0
 		return True
 
 
@@ -186,11 +205,26 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 		self.state = self.temporaryState
 
 
+	def forceSendAlert(self):
+		self.forceSendAlertLock.acquire()
+		returnValue = None
+		if self.shouldForceSendAlert:
+			returnValue = self.sensorAlert
+			self.sensorAlert = None
+			self.shouldForceSendAlert = False
+		self.forceSendAlertLock.release()
+		return returnValue
+
+
 	def forceSendState(self):
-		if self.forceSendState:
-			self.forceSendState = False
-			return True
-		return False
+		self.forceSendStateLock.acquire()
+		returnValue = None
+		if self.shouldForceSendState:
+			returnValue = self.stateChange
+			self.stateChange = None
+			self.shouldForceSendState = False
+		self.forceSendStateLock.release()
+		return returnValue
 
 
 	def run(self):
@@ -252,7 +286,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 					# Check if state is valid.
 					tempInputState = message["payload"]["state"]
-					if (self._checkState(tempInputState)):
+					if not self._checkState(tempInputState):
 						logging.error("[%s]: Received state "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -262,7 +296,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 					# Check if data type is valid.
 					tempDataType = message["payload"]["dataType"]
-					if self._checkDataType(tempDataType):
+					if not self._checkDataType(tempDataType):
 						logging.error("[%s]: Received data type "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -283,14 +317,27 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 					# Force state change sending if the data could be changed.
 					if self.sensorDataType != SensorDataType.NONE:
-						self.forceSendState = True
+
+						# Create state change object that is
+						# send to the server.
+						self.forceSendStateLock.acquire()
+						self.stateChange = StateChange()
+						self.stateChange.clientSensorId = self.id
+						if tempInputState == self.triggerState:
+							self.stateChange.state = 1
+						else:
+							self.stateChange.state = 0
+						self.stateChange.dataType = tempDataType
+						self.stateChange.sensorData = self.sensorData
+						self.shouldForceSendState = True
+						self.forceSendStateLock.release()
 
 				# Type: sensoralert
 				elif str(message["message"]).upper() == "SENSORALERT":
 
 					# Check if state is valid.
 					tempInputState = message["payload"]["state"]
-					if (self._checkState(tempInputState)):
+					if not self._checkState(tempInputState):
 						logging.error("[%s]: Received state "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -301,7 +348,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					# Check if hasOptionalData field is valid.
 					tempHasOptionalData = message[
 						"payload"]["hasOptionalData"]
-					if self._checkHasOptionalData(tempHasOptionalData):
+					if not self._checkHasOptionalData(tempHasOptionalData):
 						logging.error("[%s]: Received hasOptionalData field "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -311,7 +358,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 					# Check if data type is valid.
 					tempDataType = message["payload"]["dataType"]
-					if self._checkDataType(tempDataType):
+					if not self._checkDataType(tempDataType):
 						logging.error("[%s]: Received data type "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -329,7 +376,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					# Check if hasLatestData field is valid.
 					tempHasLatestData = message[
 						"payload"]["hasLatestData"]
-					if self._checkHasLatestData(tempHasLatestData):
+					if not self._checkHasLatestData(tempHasLatestData):
 						logging.error("[%s]: Received hasLatestData field "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -340,7 +387,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					# Check if changeState field is valid.
 					tempChangeState = message[
 						"payload"]["changeState"]
-					if self._checkChangeState(tempChangeState):
+					if not self._checkChangeState(tempChangeState):
 						logging.error("[%s]: Received changeState field "
 							% self.fileName
 							+ "from FIFO file of sensor with id '%d' "
@@ -376,20 +423,22 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					if tempChangeState:
 						self.temporaryState = tempInputState
 
-
-
-
-
-					# TODO
-					# modify SENSORALERT message to be conform with the new
-					# protocol layout
-					# How can we send a sensor alert directly from here?
-					# How can we avoid if we update the state of the sensor
-					# that we send two sensor alerts?
-
-
-
-
+					# Create sensor alert object that is send to the server.
+					self.forceSendAlertLock.acquire()
+					self.sensorAlert = SensorAlert()
+					self.sensorAlert.clientSensorId = self.id
+					if tempInputState == self.triggerState:
+						self.sensorAlert.state = 1
+					else:
+						self.sensorAlert.state = 0
+					self.sensorAlert.hasOptionalData = tempHasOptionalData
+					self.sensorAlert.optionalData = tempOptionalData
+					self.sensorAlert.changeState = tempChangeState
+					self.sensorAlert.hasLatestData = tempHasLatestData
+					self.sensorAlert.dataType = tempDataType
+					self.sensorAlert.sensorData = tempSensorData
+					self.shouldForceSendAlert = True
+					self.forceSendAlertLock.release()
 
 				# Type: invalid
 				else:
@@ -448,9 +497,26 @@ class SensorExecuter:
 				sensor.updateState()
 				currentState = sensor.getState()
 
+				# Check if a sensor alert is forced to send to the server.
+				# => update already known state and continue
+				sensorAlert = sensor.forceSendAlert()
+				if sensorAlert:
+					oldState = currentState
+
+					asyncSenderProcess = AsynchronousSender(
+						self.connection, self.globalData)
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					asyncSenderProcess.daemon = True
+					asyncSenderProcess.sendSensorAlert = True
+					asyncSenderProcess.sendSensorAlertSensorAlert = sensorAlert
+					asyncSenderProcess.start()
+
+					continue
+
 				# check if the current state is the same
 				# than the already known state => continue
-				if oldState == currentState:
+				elif oldState == currentState:
 					continue
 
 				# check if the current state is an alert triggering state
@@ -463,13 +529,25 @@ class SensorExecuter:
 						logging.info("[%s]: Sensor alert " % self.fileName
 							+ "triggered by '%s'." % sensor.description)
 
+						# Create sensor alert object to send to the server.
+						sensorAlert = SensorAlert()
+						sensorAlert.clientSensorId = sensor.id
+						sensorAlert.state = 1
+						sensorAlert.hasOptionalData = sensor.hasOptionalData
+						sensorAlert.optionalData = sensor.optionalData
+						sensorAlert.changeState = sensor.changeState
+						sensorAlert.hasLatestData = sensor.hasLatestData
+						sensorAlert.dataType = sensor.sensorDataType
+						sensorAlert.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
 						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
-						asyncSenderProcess.sendSensorAlertSensor = sensor
+						asyncSenderProcess.sendSensorAlertSensorAlert = \
+							sensorAlert
 						asyncSenderProcess.start()
 
 					# if sensor does not trigger sensor alert
@@ -479,13 +557,21 @@ class SensorExecuter:
 						logging.debug("[%s]: State " % self.fileName
 							+ "changed by '%s'." % sensor.description)
 
+						# Create state change object to send to the server.
+						stateChange = StateChange()
+						stateChange.clientSensorId = sensor.id
+						stateChange.state = 1
+						stateChange.dataType = sensor.sensorDataType
+						stateChange.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
 						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
-						asyncSenderProcess.sendStateChangeSensor = sensor
+						asyncSenderProcess.sendStateChangeStateChange = \
+							stateChange
 						asyncSenderProcess.start()
 
 				# only possible situation left => sensor changed
@@ -501,13 +587,25 @@ class SensorExecuter:
 							+ "for back to normal state "
 							+ "triggered by '%s'." % sensor.description)
 
+						# Create sensor alert object to send to the server.
+						sensorAlert = SensorAlert()
+						sensorAlert.clientSensorId = sensor.id
+						sensorAlert.state = 0
+						sensorAlert.hasOptionalData = sensor.hasOptionalData
+						sensorAlert.optionalData = sensor.optionalData
+						sensorAlert.changeState = sensor.changeState
+						sensorAlert.hasLatestData = sensor.hasLatestData
+						sensorAlert.dataType = sensor.sensorDataType
+						sensorAlert.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
 						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
-						asyncSenderProcess.sendSensorAlertSensor = sensor
+						asyncSenderProcess.sendSensorAlertSensorAlert = \
+							sensorAlert
 						asyncSenderProcess.start()
 
 					# if sensor does not trigger sensor alert when
@@ -518,27 +616,36 @@ class SensorExecuter:
 						logging.debug("[%s]: State " % self.fileName
 							+ "changed by '%s'." % sensor.description)
 
+						# Create state change object to send to the server.
+						stateChange = StateChange()
+						stateChange.clientSensorId = sensor.id
+						stateChange.state = 0
+						stateChange.dataType = sensor.sensorDataType
+						stateChange.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
 						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
-						asyncSenderProcess.sendStateChangeSensor = sensor
+						asyncSenderProcess.sendStateChangeStateChange = \
+							stateChange
 						asyncSenderProcess.start()
 
 			# Poll all sensors if they want to force an update that should
 			# be send to the server.
 			for sensor in self.sensors:
 
-				if sensor.forceSendState():
+				stateChange = sensor.forceSendState()
+				if stateChange:
 					asyncSenderProcess = AsynchronousSender(
 						self.connection, self.globalData)
 					# set thread to daemon
 					# => threads terminates when main thread terminates	
 					asyncSenderProcess.daemon = True
 					asyncSenderProcess.sendStateChange = True
-					asyncSenderProcess.sendStateChangeSensor = sensor
+					asyncSenderProcess.sendStateChangeStateChange = stateChange
 					asyncSenderProcess.start()
 
 			# check if the last state that was sent to the server
