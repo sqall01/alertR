@@ -1,3 +1,11 @@
+## 0.400
+
+Features:
+
+* Streamlined database layout.
+* Added persistent/non-persistent flag.
+
+
 ## 0.300
 
 Features:

@@ -1,3 +1,12 @@
+## 0.400
+
+Features:
+
+* Rewritten GUI to be more interactive.
+* New detailed view of single elements that show the configuration and connections to other elements.
+* Added persistent/non-persistent flag.
+
+
 ## 0.300
 
 Features:
@@ -7,11 +16,3 @@ Features:
 * Alert system update messages to manager clients now contain version, revision and client instance.
 * Shows if sensor alert was received for a "triggered" or "normal" state.
 * Sorts displayed sensors, alert clients and manager clients.
-
-
-## 0.400
-
-Features:
-
-* Rewritten GUI to be more interactive.
-* New detailed view of single elements that show the configuration and connections to other elements.
