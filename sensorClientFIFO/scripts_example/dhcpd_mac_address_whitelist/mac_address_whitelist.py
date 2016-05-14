@@ -116,7 +116,7 @@ if not found:
 
 		if SCAN_VIA_NMAP:
 
-			fifo_message = '{"message": "statechange", ' \
+			fifo_message = '{"message": "sensoralert", ' \
 				+ '"payload": {' \
 				+ '"state": 1, ' \
 				+ '"hasOptionalData": true, ' \
@@ -124,26 +124,27 @@ if not found:
 				+ '"message": ' \
 				+ '"Unknown client with IP: %s and MAC: %s and Ports: %s' \
 				% (client_ip, client_mac_address, nmap_result_string) \
-				+ '."}}}'
+				+ '."}, '
+				+ '"dataType": 0,'
+				+ '"hasLatestData": false, '
+				+ '"changeState": false, '
+				+ '}}'
 
 		else:
-			fifo_message = '{"message": "statechange", ' \
+			fifo_message = '{"message": "sensoralert", ' \
 				+ '"payload": {' \
 				+ '"state": 1, ' \
 				+ '"hasOptionalData": true, ' \
 				+ '"optionalData": {' \
 				+ '"message": ' \
-				+ '"Unknown client with IP: %s and MAC: %s."}}}' \
+				+ '"Unknown client with IP: %s and MAC: %s."' \
 				% (client_ip, client_mac_address)
+				+ '}, '
+				+ '"dataType": 0,'
+				+ '"hasLatestData": false, '
+				+ '"changeState": false, '
+				+ '}}'
 
-		fifo_file.write(fifo_message)
-
-	time.sleep(1)
-
-	with open(FIFO_FILE, 'w') as fifo_file:
-
-		fifo_message = '{"message": "statechange", "payload": {"state": 0, ' \
-			+ '"hasOptionalData": false}}'
 		fifo_file.write(fifo_message)
 
 	time.sleep(1)
