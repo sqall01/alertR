@@ -341,57 +341,24 @@ class ServerCommunication:
 
 
 	# Internal function that builds the sensor alert message.
-	def _buildSensorAlertMessage(self, sensor):
+	def _buildSensorAlertMessage(self, sensorAlert):
 
-		# Check if optional data should be transfered with this sensor alert
-		# => create payload of message accordingly.
-		if sensor.hasOptionalData:
-			# Set state of sensor alert according to state of sensor.
-			if sensor.triggerState == sensor.state:
-				payload = {"type": "request",
-					"clientSensorId": sensor.id,
-					"state": 1,
-					"hasOptionalData": True,
-					"optionalData": sensor.optionalData,
-					"changeState": sensor.changeState,
-					"hasLatestData": sensor.hasLatestData,
-					"dataType": sensor.sensorDataType
-					}
-			else:
-				payload = {"type": "request",
-					"clientSensorId": sensor.id,
-					"state": 0,
-					"hasOptionalData": True,
-					"optionalData": sensor.optionalData,
-					"changeState": sensor.changeState,
-					"hasLatestData": sensor.hasLatestData,
-					"dataType": sensor.sensorDataType
-					}
+		payload = {"type": "request",
+			"clientSensorId": sensorAlert.clientSensorId,
+			"state": sensorAlert.state,
+			"hasOptionalData": sensorAlert.hasOptionalData,
+			"changeState": sensorAlert.changeState,
+			"hasLatestData": sensorAlert.hasLatestData,
+			"dataType": sensorAlert.dataType
+			}
 
-		else:
-			# Set state of sensor alert according to state of sensor.
-			if sensor.triggerState == sensor.state:
-				payload = {"type": "request",
-					"clientSensorId": sensor.id,
-					"state": 1,
-					"hasOptionalData": False,
-					"changeState": sensor.changeState,
-					"hasLatestData": sensor.hasLatestData,
-					"dataType": sensor.sensorDataType
-					}
-			else:
-				payload = {"type": "request",
-					"clientSensorId": sensor.id,
-					"state": 0,
-					"hasOptionalData": False,
-					"changeState": sensor.changeState,
-					"hasLatestData": sensor.hasLatestData,
-					"dataType": sensor.sensorDataType
-					}
+		# Only add optional data field if it should be transfered.
+		if sensorAlert.hasOptionalData:
+			payload["optionalData"] = sensorAlert.optionalData
 
 		# Only add data field if sensor data type is not "none".
-		if sensor.sensorDataType != SensorDataType.NONE:
-			payload["data"] = sensor.sensorData
+		if sensorAlert.dataType != SensorDataType.NONE:
+			payload["data"] = sensorAlert.sensorData
 
 		message = {"clientTime": int(time.time()),
 			"message": "sensoralert",
@@ -430,28 +397,21 @@ class ServerCommunication:
 
 
 	# Internal function that builds the state change message.
-	def _buildStateChangeMessage(self, sensor):
-
-		# Convert the internal trigger state to the state
-		# convention of the alert system (1 = trigger, 0 = normal).
-		if sensor.triggerState == sensor.state:
-			state = 1
-		else:
-			state = 0
+	def _buildStateChangeMessage(self, stateChange):
 
 		logging.debug("[%s]: Building state change message for sensor "
 			% self.fileName
 			+ "with id %d and message state %d."
-			% (sensor.id, state))
+			% (stateChange.clientSensorId, stateChange.state))
 
 		payload = {"type": "request",
-			"clientSensorId": sensor.id,
-			"state": state,
-			"dataType": sensor.sensorDataType}
+			"clientSensorId": stateChange.clientSensorId,
+			"state": stateChange.state,
+			"dataType": stateChange.dataType}
 
 		# Only add data field if sensor data type is not "none".
-		if sensor.sensorDataType != SensorDataType.NONE:
-			payload["data"] = sensor.sensorData
+		if stateChange.dataType != SensorDataType.NONE:
+			payload["data"] = stateChange.sensorData
 
 		message = {"clientTime": int(time.time()),
 			"message": "statechange",
@@ -945,7 +905,7 @@ class ServerCommunication:
 
 
 	# this function sends a sensor alert to the server
-	def sendSensorAlert(self, sensor):
+	def sendSensorAlert(self, sensorAlert):
 
 		# Check if client is connected to server.
 		if not self._isConnected:
@@ -954,7 +914,7 @@ class ServerCommunication:
 				% self.fileName)
 			return False
 
-		sensorAlertMessage = self._buildSensorAlertMessage(sensor)
+		sensorAlertMessage = self._buildSensorAlertMessage(sensorAlert)
 
 		# initiate transaction with server and acquire lock
 		if not self._initiateTransaction("sensoralert",
@@ -1056,7 +1016,7 @@ class ServerCommunication:
 
 
 	# this function sends a changed state of a sensor to the server
-	def sendStateChange(self, sensor):
+	def sendStateChange(self, stateChange):
 
 		# Check if client is connected to server.
 		if not self._isConnected:
@@ -1065,7 +1025,7 @@ class ServerCommunication:
 				% self.fileName)
 			return False
 
-		stateChangeMessage = self._buildStateChangeMessage(sensor)
+		stateChangeMessage = self._buildStateChangeMessage(stateChange)
 
 		# initiate transaction with server and acquire lock
 		if not self._initiateTransaction("statechange",
@@ -1306,12 +1266,12 @@ class AsynchronousSender(threading.Thread):
 		# this option is used when the thread should
 		# send a sensor alert to the server
 		self.sendSensorAlert = False
-		self.sendSensorAlertSensor = None
+		self.sendSensorAlertSensorAlert = None
 
 		# this option is used when the thread should
 		# send a state change to the server
 		self.sendStateChange = False
-		self.sendStateChangeSensor = None
+		self.sendStateChangeStateChange = None
 
 		# this option is used when the thread should
 		# send a full sensors state update
@@ -1331,7 +1291,9 @@ class AsynchronousSender(threading.Thread):
 				return
 
 			# send sensor alert
-			if not self.serverComm.sendSensorAlert(self.sendSensorAlertSensor):
+			if not self.serverComm.sendSensorAlert(
+				self.sendSensorAlertSensorAlert):
+
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "alert to the server failed.")
 				return
@@ -1347,7 +1309,9 @@ class AsynchronousSender(threading.Thread):
 				return
 
 			# send sensor state change
-			if not self.serverComm.sendStateChange(self.sendStateChangeSensor):
+			if not self.serverComm.sendStateChange(
+				self.sendStateChangeStateChange):
+
 				logging.error("[%s]: Sending sensor " % self.fileName
 					+ "state change to the server failed.")
 				return

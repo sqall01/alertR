@@ -12,7 +12,7 @@ import random
 import os
 import logging
 from client import AsynchronousSender
-from localObjects import SensorDataType
+from localObjects import SensorDataType, SensorAlert, StateChange
 import subprocess
 
 
@@ -103,11 +103,22 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
+	# This function decides if a sensor alert for this sensor should be sent
+	# to the server. It is checked regularly and can be used to force
+	# a sensor alert despite the state of the sensor has not changed.
+	#
+	# Returns an object of class SensorAlert if a sensor alert should be sent
+	# or None.
+	def forceSendAlert(self):
+		raise NotImplementedError("Function not implemented yet.")
+
+
 	# This function decides if an update for this sensor should be sent
 	# to the server. It is checked regularly and can be used to force an update
 	# of the state and data of this sensor to be sent to the server.
 	#
-	# Returns True or False according on whether an update should be sent.
+	# Returns an object of class StateChange if a sensor alert should be sent
+	# or None.
 	def forceSendState(self):
 		raise NotImplementedError("Function not implemented yet.")
 
@@ -226,8 +237,12 @@ class ExecuterSensor(_PollingSensor):
 				self.process = None
 
 
+	def forceSendAlert(self):
+		return None
+
+
 	def forceSendState(self):
-		return False
+		return None
 
 
 # this class polls the sensor states and triggers alerts and state changes
@@ -275,9 +290,26 @@ class SensorExecuter:
 				sensor.updateState()
 				currentState = sensor.getState()
 
+				# Check if a sensor alert is forced to send to the server.
+				# => update already known state and continue
+				sensorAlert = sensor.forceSendAlert()
+				if sensorAlert:
+					oldState = currentState
+
+					asyncSenderProcess = AsynchronousSender(
+						self.connection, self.globalData)
+					# set thread to daemon
+					# => threads terminates when main thread terminates	
+					asyncSenderProcess.daemon = True
+					asyncSenderProcess.sendSensorAlert = True
+					asyncSenderProcess.sendSensorAlertSensorAlert = sensorAlert
+					asyncSenderProcess.start()
+
+					continue
+
 				# check if the current state is the same
 				# than the already known state => continue
-				if oldState == currentState:
+				elif oldState == currentState:
 					continue
 
 				# check if the current state is an alert triggering state
@@ -290,13 +322,25 @@ class SensorExecuter:
 						logging.info("[%s]: Sensor alert " % self.fileName
 							+ "triggered by '%s'." % sensor.description)
 
+						# Create sensor alert object to send to the server.
+						sensorAlert = SensorAlert()
+						sensorAlert.clientSensorId = sensor.id
+						sensorAlert.state = 1
+						sensorAlert.hasOptionalData = sensor.hasOptionalData
+						sensorAlert.optionalData = sensor.optionalData
+						sensorAlert.changeState = sensor.changeState
+						sensorAlert.hasLatestData = sensor.hasLatestData
+						sensorAlert.dataType = sensor.sensorDataType
+						sensorAlert.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates
+						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
-						asyncSenderProcess.sendSensorAlertSensor = sensor
+						asyncSenderProcess.sendSensorAlertSensorAlert = \
+							sensorAlert
 						asyncSenderProcess.start()
 
 					# if sensor does not trigger sensor alert
@@ -306,13 +350,21 @@ class SensorExecuter:
 						logging.debug("[%s]: State " % self.fileName
 							+ "changed by '%s'." % sensor.description)
 
+						# Create state change object to send to the server.
+						stateChange = StateChange()
+						stateChange.clientSensorId = sensor.id
+						stateChange.state = 1
+						stateChange.dataType = sensor.sensorDataType
+						stateChange.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates
+						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
-						asyncSenderProcess.sendStateChangeSensor = sensor
+						asyncSenderProcess.sendStateChangeStateChange = \
+							stateChange
 						asyncSenderProcess.start()
 
 				# only possible situation left => sensor changed
@@ -328,13 +380,25 @@ class SensorExecuter:
 							+ "for back to normal state "
 							+ "triggered by '%s'." % sensor.description)
 
+						# Create sensor alert object to send to the server.
+						sensorAlert = SensorAlert()
+						sensorAlert.clientSensorId = sensor.id
+						sensorAlert.state = 0
+						sensorAlert.hasOptionalData = sensor.hasOptionalData
+						sensorAlert.optionalData = sensor.optionalData
+						sensorAlert.changeState = sensor.changeState
+						sensorAlert.hasLatestData = sensor.hasLatestData
+						sensorAlert.dataType = sensor.sensorDataType
+						sensorAlert.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates
+						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
-						asyncSenderProcess.sendSensorAlertSensor = sensor
+						asyncSenderProcess.sendSensorAlertSensorAlert = \
+							sensorAlert
 						asyncSenderProcess.start()
 
 					# if sensor does not trigger sensor alert when
@@ -345,27 +409,36 @@ class SensorExecuter:
 						logging.debug("[%s]: State " % self.fileName
 							+ "changed by '%s'." % sensor.description)
 
+						# Create state change object to send to the server.
+						stateChange = StateChange()
+						stateChange.clientSensorId = sensor.id
+						stateChange.state = 0
+						stateChange.dataType = sensor.sensorDataType
+						stateChange.sensorData = sensor.sensorData
+
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates
+						# => threads terminates when main thread terminates	
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
-						asyncSenderProcess.sendStateChangeSensor = sensor
+						asyncSenderProcess.sendStateChangeStateChange = \
+							stateChange
 						asyncSenderProcess.start()
 
 			# Poll all sensors if they want to force an update that should
 			# be send to the server.
 			for sensor in self.sensors:
 
-				if sensor.forceSendState():
+				stateChange = sensor.forceSendState()
+				if stateChange:
 					asyncSenderProcess = AsynchronousSender(
 						self.connection, self.globalData)
 					# set thread to daemon
 					# => threads terminates when main thread terminates	
 					asyncSenderProcess.daemon = True
 					asyncSenderProcess.sendStateChange = True
-					asyncSenderProcess.sendStateChangeSensor = sensor
+					asyncSenderProcess.sendStateChangeStateChange = stateChange
 					asyncSenderProcess.start()
 
 			# check if the last state that was sent to the server
@@ -378,12 +451,12 @@ class SensorExecuter:
 				asyncSenderProcess = AsynchronousSender(
 					self.connection, self.globalData)
 				# set thread to daemon
-				# => threads terminates when main thread terminates
+				# => threads terminates when main thread terminates	
 				asyncSenderProcess.daemon = True
 				asyncSenderProcess.sendSensorsState = True
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
 				lastFullStateSent = time.time()
-
+				
 			time.sleep(0.5)

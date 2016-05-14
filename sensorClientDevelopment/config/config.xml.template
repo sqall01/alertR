@@ -199,7 +199,7 @@
 			<!--
 				The special configuration for the development sensors.
 				dataType - Gives the data type of this sensor
-				(0 = none, 1 = int, 2 = float).
+					(0 = none, 1 = int, 2 = float).
 			-->
 			<dev
 				dataType="0" />
@@ -260,7 +260,7 @@
 			<!--
 				The special configuration for the development sensors.
 				dataType - Gives the data type of this sensor
-				(0 = none, 1 = int, 2 = float).
+					(0 = none, 1 = int, 2 = float).
 			-->
 			<dev
 				dataType="0" />
