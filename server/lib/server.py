@@ -992,8 +992,8 @@ class ClientCommunication:
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
-		# list[5] = list(tuples of (id, sensorId, sensorDataInt))
-		# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
+		# list[5] = list(tuples of (sensorId, sensorDataInt))
+		# list[6] = list(tuples of (sensorId, sensorDataFloat))
 		# or None
 		alertSystemInformation = self.storage.getAlertSystemInformation(
 			logger=self.logger)
@@ -1066,8 +1066,8 @@ class ClientCommunication:
 			if sensorsInformation[i][7] == SensorDataType.INT:
 				found = False
 				for sensorDataTuple in sensorsDataInt:
-					if sensorId == sensorDataTuple[1]:
-						tempDict["data"] = sensorDataTuple[2]
+					if sensorId == sensorDataTuple[0]:
+						tempDict["data"] = sensorDataTuple[1]
 						found = True
 						break
 				if not found:
@@ -1090,8 +1090,8 @@ class ClientCommunication:
 			elif sensorsInformation[i][7] == SensorDataType.FLOAT:
 				found = False
 				for sensorDataTuple in sensorsDataFloat:
-					if sensorId == sensorDataTuple[1]:
-						tempDict["data"] = sensorDataTuple[2]
+					if sensorId == sensorDataTuple[0]:
+						tempDict["data"] = sensorDataTuple[1]
 						found = True
 						break
 				if not found:

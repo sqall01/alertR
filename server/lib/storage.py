@@ -583,22 +583,20 @@ class Sqlite(_Storage):
 
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "sensorId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
+			+ "PRIMARY KEY(sensorId, alertLevel), "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# Create sensorsDataInt table.
 		self.cursor.execute("CREATE TABLE sensorsDataInt ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "sensorId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data INTEGER NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# Create sensorsDataFloat table.
 		self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "sensorId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data REAL NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -618,15 +616,13 @@ class Sqlite(_Storage):
 
 		# Create sensorAlertsDataInt table.
 		self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data INTEGER NOT NULL, "
 			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# Create sensorAlertsDataFloat table.
 		self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data REAL NOT NULL, "
 			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
@@ -640,9 +636,9 @@ class Sqlite(_Storage):
 
 		# create alertsAlertLevels table
 		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
-			+ "id INTEGER PRIMARY KEY AUTOINCREMENT, "
 			+ "alertId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
+			+ "PRIMARY KEY(alertId, alertLevel), "
 			+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
 		# create managers table
@@ -1407,8 +1403,7 @@ class Sqlite(_Storage):
 				# get sensor alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM sensorsAlertLevels "
 						+ "WHERE sensorId = ? ", (sensorId, ))
 					result = self.cursor.fetchall()
@@ -1429,7 +1424,7 @@ class Sqlite(_Storage):
 					# check if alert level already exists
 					found = False
 					for dbAlertLevel in result:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
@@ -1448,8 +1443,7 @@ class Sqlite(_Storage):
 				# get updated sensor alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM sensorsAlertLevels "
 						+ "WHERE sensorId = ? ", (sensorId, ))
 					result = self.cursor.fetchall()
@@ -1470,19 +1464,19 @@ class Sqlite(_Storage):
 					# check if database alert level does exist
 					found = False
 					for alertLevel in sensor["alertLevels"]:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
 						continue
 
 					logger.info("[%s]: Alert level '%d' in database does "
-						% (self.fileName, dbAlertLevel[1])
+						% (self.fileName, dbAlertLevel[0])
 						+ "not exist anymore for sensor. Deleting it.")
 
 					self.cursor.execute("DELETE FROM sensorsAlertLevels "
-						+ "WHERE id = ?",
-						(dbAlertLevel[0], ))
+						+ "WHERE sensorId = ? AND alertLevel = ?",
+						(sensorId, dbAlertLevel[0]))
 
 		# get updated sensors from database
 		try:
@@ -1679,8 +1673,7 @@ class Sqlite(_Storage):
 				# get alert alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM alertsAlertLevels "
 						+ "WHERE alertId = ? ", (alertId, ))
 					result = self.cursor.fetchall()
@@ -1701,7 +1694,7 @@ class Sqlite(_Storage):
 					# check if alert level already exists
 					found = False
 					for dbAlertLevel in result:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
@@ -1720,8 +1713,7 @@ class Sqlite(_Storage):
 				# get updated alert alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM alertsAlertLevels "
 						+ "WHERE alertId = ? ", (alertId, ))
 					result = self.cursor.fetchall()
@@ -1742,19 +1734,19 @@ class Sqlite(_Storage):
 					# check if database alert level does exist
 					found = False
 					for alertLevel in alert["alertLevels"]:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
 						continue
 
 					logger.info("[%s]: Alert level '%d' in database does "
-						% (self.fileName, dbAlertLevel[1])
+						% (self.fileName, dbAlertLevel[0])
 						+ "not exist anymore for alert. Deleting it.")
 
 					self.cursor.execute("DELETE FROM alertsAlertLevels "
-						+ "WHERE id = ?",
-						(dbAlertLevel[0], ))
+						+ "WHERE alertId = ? AND alertLevel = ?",
+						(alertId, dbAlertLevel[0]))
 
 		# get updated alerts from database
 		try:
@@ -2867,8 +2859,8 @@ class Sqlite(_Storage):
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
-	# list[5] = list(tuples of (id, sensorId, sensorDataInt))
-	# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
+	# list[5] = list(tuples of (sensorId, sensorDataInt))
+	# list[6] = list(tuples of (sensorId, sensorDataFloat))
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 
@@ -2947,8 +2939,8 @@ class Sqlite(_Storage):
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
-		# list[5] = list(tuples of (id, sensorId, sensorDataInt))
-		# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
+		# list[5] = list(tuples of (sensorId, sensorDataInt))
+		# list[6] = list(tuples of (sensorId, sensorDataFloat))
 		# or None
 		return alertSystemInformation
 
@@ -3508,22 +3500,20 @@ class Mysql(_Storage):
 
 		# create sensorsAlertLevels table
 		self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "sensorId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
+			+ "PRIMARY KEY(sensorId, alertLevel), "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# Create sensorsDataInt table.
 		self.cursor.execute("CREATE TABLE sensorsDataInt ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "sensorId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data INTEGER NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
 		# Create sensorsDataFloat table.
 		self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "sensorId INTEGER NOT NULL UNIQUE, "
+			+ "sensorId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data DOUBLE NOT NULL, "
 			+ "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
@@ -3543,15 +3533,13 @@ class Mysql(_Storage):
 
 		# Create sensorAlertsDataInt table.
 		self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data INTEGER NOT NULL, "
 			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
 		# Create sensorAlertsDataFloat table.
 		self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-			+ "sensorAlertId INTEGER NOT NULL UNIQUE, "
+			+ "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
 			+ "data DOUBLE NOT NULL, "
 			+ "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
@@ -3565,9 +3553,9 @@ class Mysql(_Storage):
 
 		# create alertsAlertLevels table
 		self.cursor.execute("CREATE TABLE alertsAlertLevels ("
-			+ "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
 			+ "alertId INTEGER NOT NULL, "
 			+ "alertLevel INTEGER NOT NULL, "
+			+ "PRIMARY KEY(alertId, alertLevel), "
 			+ "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
 		# create managers table
@@ -4421,8 +4409,7 @@ class Mysql(_Storage):
 				# get sensor alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM sensorsAlertLevels "
 						+ "WHERE sensorId = %s ", (sensorId, ))
 					result = self.cursor.fetchall()
@@ -4446,7 +4433,7 @@ class Mysql(_Storage):
 					# check if alert level already exists
 					found = False
 					for dbAlertLevel in result:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
@@ -4465,8 +4452,7 @@ class Mysql(_Storage):
 				# get updated sensor alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM sensorsAlertLevels "
 						+ "WHERE sensorId = %s ", (sensorId, ))
 					result = self.cursor.fetchall()
@@ -4490,19 +4476,19 @@ class Mysql(_Storage):
 					# check if database alert level does exist
 					found = False
 					for alertLevel in sensor["alertLevels"]:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
 						continue
 
 					logger.info("[%s]: Alert level '%d' in database does "
-						% (self.fileName, dbAlertLevel[1])
+						% (self.fileName, dbAlertLevel[0])
 						+ "not exist anymore for sensor. Deleting it.")
 
 					self.cursor.execute("DELETE FROM sensorsAlertLevels "
-						+ "WHERE id = %s",
-						(dbAlertLevel[0], ))
+						+ "WHERE sensorId = %s AND alertLevel = %s",
+						(sensorId, dbAlertLevel[0]))
 
 		# get updated sensors from database
 		try:
@@ -4737,8 +4723,7 @@ class Mysql(_Storage):
 				# get alert alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM alertsAlertLevels "
 						+ "WHERE alertId = %s ", (alertId, ))
 					result = self.cursor.fetchall()
@@ -4763,7 +4748,7 @@ class Mysql(_Storage):
 					# check if alert level already exists
 					found = False
 					for dbAlertLevel in result:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
@@ -4782,8 +4767,7 @@ class Mysql(_Storage):
 				# get updated alert alert levels from database
 				try:
 
-					self.cursor.execute("SELECT id, "
-						+ "alertLevel "
+					self.cursor.execute("SELECT alertLevel "
 						+ "FROM alertsAlertLevels "
 						+ "WHERE alertId = %s ", (alertId, ))
 					result = self.cursor.fetchall()
@@ -4807,19 +4791,19 @@ class Mysql(_Storage):
 					# check if database alert level does exist
 					found = False
 					for alertLevel in alert["alertLevels"]:
-						if dbAlertLevel[1] == alertLevel:
+						if dbAlertLevel[0] == alertLevel:
 							found = True
 							break
 					if found:
 						continue
 
 					logger.info("[%s]: Alert level '%d' in database does "
-						% (self.fileName, dbAlertLevel[1])
+						% (self.fileName, dbAlertLevel[0])
 						+ "not exist anymore for alert. Deleting it.")
 
 					self.cursor.execute("DELETE FROM alertsAlertLevels "
-						+ "WHERE id = %s",
-						(dbAlertLevel[0], ))
+						+ "WHERE alertId = %s AND alertLevel = %s",
+						(alertId, dbAlertLevel[0]))
 
 		# get updated alerts from database
 		try:
@@ -6385,8 +6369,8 @@ class Mysql(_Storage):
 	# list[3] = list(tuples of (managerId, nodeId, description))
 	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 	# description))
-	# list[5] = list(tuples of (id, sensorId, sensorDataInt))
-	# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
+	# list[5] = list(tuples of (sensorId, sensorDataInt))
+	# list[6] = list(tuples of (sensorId, sensorDataFloat))
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 
@@ -6482,8 +6466,8 @@ class Mysql(_Storage):
 		# list[3] = list(tuples of (managerId, nodeId, description))
 		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
 		# description))
-		# list[5] = list(tuples of (id, sensorId, sensorDataInt))
-		# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
+		# list[5] = list(tuples of (sensorId, sensorDataInt))
+		# list[6] = list(tuples of (sensorId, sensorDataFloat))
 		# or None
 		return alertSystemInformation
 
