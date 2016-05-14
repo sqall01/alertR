@@ -124,10 +124,10 @@ if not found:
 				+ '"message": ' \
 				+ '"Unknown client with IP: %s and MAC: %s and Ports: %s' \
 				% (client_ip, client_mac_address, nmap_result_string) \
-				+ '."}, '
-				+ '"dataType": 0,'
-				+ '"hasLatestData": false, '
-				+ '"changeState": false, '
+				+ '."}, ' \
+				+ '"dataType": 0, ' \
+				+ '"hasLatestData": false, ' \
+				+ '"changeState": false, ' \
 				+ '}}'
 
 		else:
@@ -138,11 +138,11 @@ if not found:
 				+ '"optionalData": {' \
 				+ '"message": ' \
 				+ '"Unknown client with IP: %s and MAC: %s."' \
-				% (client_ip, client_mac_address)
-				+ '}, '
-				+ '"dataType": 0,'
-				+ '"hasLatestData": false, '
-				+ '"changeState": false, '
+				% (client_ip, client_mac_address) \
+				+ '}, ' \
+				+ '"dataType": 0, ' \
+				+ '"hasLatestData": false, ' \
+				+ '"changeState": false, ' \
 				+ '}}'
 
 		fifo_file.write(fifo_message)
