@@ -1618,7 +1618,7 @@ class Console:
 					# create new sensor urwid object
 					# (also links urwid object to sensor object)
 					sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
-						self.connectionTimeout)
+						self.connectionTimeout, self.serverEventHandler)
 
 					# append the final sensor urwid object to the list
 					# of sensor objects
