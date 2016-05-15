@@ -449,6 +449,10 @@ class ClientCommunication:
 		# Check each alert if correct.
 		for alert in alerts:
 
+			if not isinstance(alert, dict):
+				isCorrect = False
+				break
+
 			if not "alertLevels" in alert.keys():
 				isCorrect = False
 				break
@@ -522,6 +526,10 @@ class ClientCommunication:
 
 		# Check each sensor if correct.
 		for sensor in sensors:
+
+			if not isinstance(sensor, dict):
+				isCorrect = False
+				break
 
 			if not "alertDelay" in sensor.keys():
 				isCorrect = False
@@ -654,6 +662,10 @@ class ClientCommunication:
 
 		# Check each sensor if correct.
 		for sensor in sensors:
+
+			if not isinstance(sensor, dict):
+				isCorrect = False
+				break
 
 			if not "clientSensorId" in sensor.keys():
 				isCorrect = False
