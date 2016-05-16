@@ -126,6 +126,312 @@ class ServerCommunication:
 		self.connectionLock.release()
 
 
+	# Internal function to check sanity of the alertLevels.
+	def _checkMsgAlertLevels(self, alertLevels):
+
+		isCorrect = True
+		if not isinstance(alertLevels, list):
+			isCorrect = False
+		elif not all(isinstance(item, int) for item in alertLevels):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "alertLevels not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the changeState.
+	def _checkMsgChangeState(self, changeState):
+
+		isCorrect = True
+		if not isinstance(changeState, bool):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "changeState not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the description.
+	def _checkMsgDescription(self, description):
+
+		isCorrect = True
+		if not (isinstance(description, str)
+			or isinstance(description, unicode)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "description not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the hasLatestData.
+	def _checkMsgHasLatestData(self, hasLatestData):
+
+		isCorrect = True
+		if not isinstance(hasLatestData, bool):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "hasLatestData not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the hasOptionalData.
+	def _checkMsgHasOptionalData(self, hasOptionalData):
+
+		isCorrect = True
+		if not isinstance(hasOptionalData, bool):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "hasOptionalData not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the optionalData.
+	def _checkMsgOptionalData(self, optionalData):
+
+		isCorrect = True
+		if not isinstance(optionalData, dict):
+			isCorrect = False
+		if "message" in optionalData.keys():
+			if not self._checkMsgOptionalDataMessage(optionalData["message"]):
+				isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "optionalData not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the optionalData message.
+	def _checkMsgOptionalDataMessage(self, message):
+
+		isCorrect = True
+		if not (isinstance(message, str)
+			or isinstance(message, unicode)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "optionalData message not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the rulesActivated.
+	def _checkMsgRulesActivated(self, rulesActivated):
+
+		isCorrect = True
+		if not isinstance(rulesActivated, bool):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "rulesActivated not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the sensor data.
+	def _checkMsgSensorData(self, data, dataType):
+
+		isCorrect = True
+		if (dataType == SensorDataType.NONE
+			and not data is None):
+			isCorrect = False
+		elif (dataType == SensorDataType.INT
+			and not isinstance(data, int)):
+			isCorrect = False
+		elif (dataType == SensorDataType.FLOAT
+			and not isinstance(data, float)):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "data not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the sensor data type.
+	def _checkMsgSensorDataType(self, dataType):
+
+		isCorrect = True
+		if not isinstance(dataType, int):
+			isCorrect = False
+		elif not (SensorDataType.NONE == dataType
+			or SensorDataType.INT == dataType
+			or SensorDataType.FLOAT == dataType):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "dataType not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the sensorId.
+	def _checkMsgSensorId(self, sensorId):
+
+		isCorrect = True
+		if not isinstance(sensorId, int):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "sensorId not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the serverTime.
+	def _checkMsgServerTime(self, serverTime):
+
+		isCorrect = True
+		if not isinstance(serverTime, int):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "serverTime not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
+	# Internal function to check sanity of the state.
+	def _checkMsgState(self, state):
+
+		isCorrect = True
+		if not isinstance(state, int):
+			isCorrect = False
+		elif (state != 0 and state != 1):
+			isCorrect = False
+
+		if not isCorrect:
+			# send error message back
+			try:
+				message = {"clientTime": int(time.time()),
+					"message": message["message"],
+					"error": "state not valid"}
+				self.client.send(json.dumps(message))
+			except Exception as e:
+				pass
+
+			return False
+
+		return True
+
+
 	# this internal function cleans up the session before releasing the
 	# lock and exiting/closing the session
 	def _cleanUpSessionForClosing(self):
@@ -521,77 +827,95 @@ class ServerCommunication:
 
 		logging.info("[%s]: Received sensor alert." % self.fileName)
 
-		sensorAlert = SensorAlert()
-
 		# extract sensor alert values
+		sensorAlert = SensorAlert()
+		sensorAlert.timeReceived = int(time.time())
 		try:
+			if not self._checkMsgServerTime(
+				incomingMessage["serverTime"]):
+				logging.error("[%s]: Received serverTime invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgAlertLevels(
+				incomingMessage["payload"]["alertLevels"]):
+				logging.error("[%s]: Received alertLevels invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgDescription(
+				incomingMessage["payload"]["description"]):
+				logging.error("[%s]: Received description invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgRulesActivated(
+				incomingMessage["payload"]["rulesActivated"]):
+				logging.error("[%s]: Received rulesActivated invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgSensorId(
+				incomingMessage["payload"]["sensorId"]):
+				logging.error("[%s]: Received sensorId invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgState(
+				incomingMessage["payload"]["state"]):
+				logging.error("[%s]: Received state invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgHasOptionalData(
+				incomingMessage["payload"]["hasOptionalData"]):
+				logging.error("[%s]: Received hasOptionalData invalid."
+					% self.fileName)
+				return False
+			if incomingMessage["payload"]["hasOptionalData"]:
+				if not self._checkMsgOptionalData(
+					incomingMessage["payload"]["optionalData"]):
+					logging.error("[%s]: Received optionalData invalid."
+						% self.fileName)
+					return False
+			if not self._checkMsgSensorDataType(
+				incomingMessage["payload"]["dataType"]):
+				logging.error("[%s]: Received dataType invalid."
+					% self.fileName)
+				return False
+			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
+				if not self._checkMsgSensorData(
+					incomingMessage["payload"]["data"],
+					incomingMessage["payload"]["dataType"]):
+					logging.error("[%s]: Received data invalid."
+						% self.fileName)
+					return False
+			if not self._checkMsgHasLatestData(
+				incomingMessage["payload"]["hasLatestData"]):
+				logging.error("[%s]: Received hasLatestData invalid."
+					% self.fileName)
+				return False
+			if not self._checkMsgChangeState(
+				incomingMessage["payload"]["changeState"]):
+				logging.error("[%s]: Received changeState invalid."
+					% self.fileName)
+				return False
+
 			sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
-			# check if alertLevels is a list
-			if not isinstance(sensorAlert.alertLevels, list):
-				# send error message back
-				try:
-					message = {"clientTime": int(time.time()),
-						"message": message["message"],
-						"error": "alertLevels not of type list"}
-					self.client.send(json.dumps(message))
-				except Exception as e:
-					pass
-
-				return False
-			# check if all elements of the alertLevels list
-			# are of type int
-			if not all(isinstance(item, int)
-				for item in sensorAlert.alertLevels):
-				# send error message back
-				try:
-					message = {"clientTime": int(time.time()),
-						"message": message["message"],
-						"error": "alertLevels items not of type int"}
-					self.client.send(json.dumps(message))
-				except Exception as e:
-					pass
-
-				return False
-
-			sensorAlert.state = int(incomingMessage["payload"]["state"])
-			sensorAlert.description = \
-				str(incomingMessage["payload"]["description"])
-			sensorAlert.timeReceived = int(time.time())
-			sensorAlert.changeState = \
-				bool(incomingMessage["payload"]["changeState"])
+			sensorAlert.state = incomingMessage["payload"]["state"]
+			sensorAlert.description = incomingMessage["payload"]["description"]
+			sensorAlert.changeState = incomingMessage["payload"]["changeState"]
 
 			# parse received data (if data transfer is activated)
 			sensorAlert.optionalData = None
 			sensorAlert.hasOptionalData = \
-				bool(incomingMessage["payload"]["hasOptionalData"])
+				incomingMessage["payload"]["hasOptionalData"]
 			if sensorAlert.hasOptionalData:
 				sensorAlert.optionalData = incomingMessage[
 					"payload"]["optionalData"]
 
-				# check if data is of type dict
-				# => if not ignore it
-				if not isinstance(sensorAlert.optionalData, dict):
-					logging.warning("[%s]: Received data in sensor alert "
-						% self.fileName
-						+ "not valid. Ignoring it.")
+			sensorAlert.changeState = incomingMessage["payload"]["changeState"]
+			sensorAlert.hasLatestData = \
+				incomingMessage["payload"]["hasLatestData"]
 
-					sensorAlert.optionalData = None
-					sensorAlert.hasOptionalData = False
-
-			sensorAlert.changeState = bool(
-				incomingMessage["payload"]["changeState"])
-			sensorAlert.hasLatestData = bool(
-				incomingMessage["payload"]["hasLatestData"])
-			sensorAlert.dataType = int(
-				incomingMessage["payload"]["dataType"])
-
+			sensorAlert.dataType = incomingMessage["payload"]["dataType"]
 			sensorAlert.sensorData = None
-			if sensorAlert.dataType == SensorDataType.INT:
-				sensorAlert.sensorData = int(
-					incomingMessage["payload"]["data"])
-			elif sensorAlert.dataType == SensorDataType.FLOAT:
-				sensorAlert.sensorData = float(
-					incomingMessage["payload"]["data"])
+			if sensorAlert.dataType != SensorDataType.NONE:
+				sensorAlert.sensorData = incomingMessage["payload"]["data"]
 
 		except Exception as e:
 			logging.exception("[%s]: Received sensor alert " % self.fileName
