@@ -3,7 +3,7 @@
 Features:
 
 * Added ds18b20 temperature sensor.
-* Added persistent/non-persistent flag.
+* Added persistent/non-persistent flag (sensor clients always persistent).
 
 
 ## 0.300

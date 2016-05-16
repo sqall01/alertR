@@ -2,7 +2,8 @@
 
 Features:
 
-* Added persistent/non-persistent flag.
+* Added persistent/non-persistent flag (sensor clients always persistent).
+* Added sensor data feature.
 
 
 ## 0.300

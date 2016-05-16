@@ -4,8 +4,9 @@ Features:
 
 * Username, remoteSensorId and remoteAlertId transmitted to manager clients.
 * Sensor alert messages transfer information if it should change the state of the sensor.
-* Server has internal sensors that can trigger on internal events (like a sensor timeout, client timeout).
+* Server has internal sensors that can trigger on internal events (at the moment sensor timeout, client timeout).
 * Changed logging system to have separated log files for each client connection.
+* Removed eMail notification option in alertLevels (is now moved to a separate alert client with eMail templating).
 
 
 ## 0.300

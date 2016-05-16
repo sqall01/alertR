@@ -6,6 +6,10 @@ This file only contains major changes with respect to the alertR system. Please 
 Features:
 
 * Protocol header of RTS message got size field to enable variable message sizes.
+* Added persistent/non-persistent flag.
+* Sensor can hold data (at the moment none/integer/float).
+* Username of nodes and remoteSensorId of sensors visible for manager clients.
+* SensorAlert messages do not necessarily change the state of the sensor (can now be independent from the state).
 
 
 ## 0.300
