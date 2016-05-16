@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.300">
+<config version="0.400">
 
 	<!--
 		in this section general options are configured
