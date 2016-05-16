@@ -2069,7 +2069,7 @@ class ServerCommunication:
 	# internal function that handles received sensor alerts
 	def _sensorAlertHandler(self, incomingMessage):
 
-		logging.debug("[%s]: Received sensor alert." % self.fileName)
+		logging.info("[%s]: Received sensor alert." % self.fileName)
 
 		# extract sensor alert values
 		sensorAlert = SensorAlert()
