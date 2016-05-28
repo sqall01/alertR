@@ -9,4 +9,4 @@ How to use it?
 
 To use this client you have to configure it first. A commented configuration template file is located inside the "config" folder.
 
-If you need a more detailed description of how to set up an alertR system, a basic example configuration is given in the [wiki](https://github.com/sqall01/alertR/wiki/Example-Configuration).
+If you need a more detailed description of how to set up an alertR system, please refer to the [wiki](https://github.com/sqall01/alertR/wiki).
