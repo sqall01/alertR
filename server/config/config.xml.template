@@ -18,7 +18,7 @@
 			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
 		-->
 		<log
-			dir="/absolute/path/to/logfile.log"
+			dir="/absolute/path/to/logfiles/"
 			level="INFO" />
 
 		<!--
