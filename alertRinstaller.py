@@ -61,9 +61,8 @@ caCertificate = "-----BEGIN CERTIFICATE-----\n" \
 	+ "hS9OMPagMRYjyOfiZRYzy78aG6A9+MpeizGLYAiJLQwGXFK3xPkKmNEVX58Svnw2\n" \
 	+ "Yzi9RKR/5CYrCsSXaQ3pjOLAEFe4yHYSkVXySGnYvCoCWw9E1CAx2/S6cCZdkGCe\n" \
 	+ "vEsXCS+0yx5DaMkHJ8HSXPfqIbloEpw8nL+e/IBcm2PN7EeqJSdnoDfzAIJ9VNep\n" \
+	+ "+OkuE6N36B9K\n" \
 	+ "-----END CERTIFICATE-----\n"
-#	+ "+OkuE6N36B9K\n" \ TODO
-#	+ "-----END CERTIFICATE-----\n"
 
 # internal class that is used as an enum to represent the type of file update
 class _FileUpdateType:
