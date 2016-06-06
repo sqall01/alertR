@@ -61,8 +61,9 @@ caCertificate = "-----BEGIN CERTIFICATE-----\n" \
 	+ "hS9OMPagMRYjyOfiZRYzy78aG6A9+MpeizGLYAiJLQwGXFK3xPkKmNEVX58Svnw2\n" \
 	+ "Yzi9RKR/5CYrCsSXaQ3pjOLAEFe4yHYSkVXySGnYvCoCWw9E1CAx2/S6cCZdkGCe\n" \
 	+ "vEsXCS+0yx5DaMkHJ8HSXPfqIbloEpw8nL+e/IBcm2PN7EeqJSdnoDfzAIJ9VNep\n" \
-	+ "+OkuE6N36B9K\n" \
 	+ "-----END CERTIFICATE-----\n"
+#	+ "+OkuE6N36B9K\n" \ TODO
+#	+ "-----END CERTIFICATE-----\n"
 
 # internal class that is used as an enum to represent the type of file update
 class _FileUpdateType:
@@ -90,11 +91,18 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 			self.sock = sock
 			self._tunnel()
 
-		# the only thing that has to be changed in the original function from
-		# httplib (tell ssl.wrap_socket to verify server certificate)
-		self.sock = ssl.wrap_socket(sock, self.key_file, 
-			self.cert_file, cert_reqs=ssl.CERT_REQUIRED, 
-			ca_certs=self.servercert_file)
+		# Verify SSL certificate.
+		if self.servercert_file:
+			# the only thing that has to be changed in the original function
+			# from httplib (tell ssl.wrap_socket to verify server certificate)
+			self.sock = ssl.wrap_socket(sock, self.key_file, 
+				self.cert_file, cert_reqs=ssl.CERT_REQUIRED, 
+				ca_certs=self.servercert_file)
+
+		# Ignore SSL certificate.
+		else:
+			self.sock = ssl.wrap_socket(sock, self.key_file, 
+				self.cert_file, cert_reqs=ssl.CERT_NONE)
 
 
 # this class processes all actions concerning the update process
@@ -1184,14 +1192,24 @@ def listAllInstances(host, port, caFile, serverPath):
 def exit(exitCode, caFile):
 
 	# remove temporary ca file
+	removeCaFile(caFile)
+
+	sys.exit(exitCode)
+
+
+# this function removes the CA file
+def removeCaFile(caFile):
+
+	if not caFile:
+		return
+
+	# remove temporary ca file
 	try:
 		os.remove(caFile)
 	except Exception as e:
 		logging.error("[%s]: Could not remove temporary "
 			% fileName
 			+ "certificate file.")
-
-	sys.exit(exitCode)
 
 
 if __name__ == '__main__':
@@ -1232,7 +1250,17 @@ if __name__ == '__main__':
 		+ "For more detailed examples how to install an alertR instance " \
 		+ "please visit: " \
 		+ "\t\t\t\t\t\t\t\t\t\t" \
-		+ "https://github.com/sqall01/alertR/wiki/Example-configuration"
+		+ "https://github.com/sqall01/alertR/wiki/Installation"
+
+	parser.add_option("",
+		"--no-check-ssl-certificate",
+		dest="noCheckSSLCertificate",
+		action="store_true",
+		help="Do not verify the SSL certificate of the repository. " \
+			"Only use it if you know what you are doing. This option " \
+			"will allow Man-In-The-Middle attacks during the installation " \
+			"process. (Optional)",
+		default=False)
 
 	installationGroup = optparse.OptionGroup(parser,
 		"Arguments needed to install an alertR instance")
@@ -1271,9 +1299,13 @@ if __name__ == '__main__':
 
 	(options, args) = parser.parse_args()
 
+	# Remove CA file for checking SSL connection.
+	if options.noCheckSSLCertificate:
+		removeCaFile(caFile)
+		caFile = None
 
 	# list all available instances in the used alertR repository
-	if options.list is True:
+	if options.list:
 
 		if listAllInstances(host, port, caFile, serverPath) is False:
 
@@ -1394,7 +1426,6 @@ if __name__ == '__main__':
 			exit(1, caFile)
 
 		else:
-
 			print
 			print "INSTALLATION SUCCESSFUL!"
 			print "Please configure this alertR instance before you start it."
