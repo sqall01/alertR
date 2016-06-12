@@ -812,4 +812,58 @@
 
 	</alertLevels>
 
+	<!--
+		In this section options for the internal sensors are configured.
+		Internal sensors are used by the server to react to fail states
+		and to trigger sensorAlerts in the alertR system.
+	-->
+	<internalSensors>
+
+		<!--
+			The sensorTimeout sensor is an internal sensor that triggers when
+			a sensor timed out. The server checks regularly if a sensor
+			has timed out and will trigger a sensorAlert if one does
+			(sensorAlert with state "triggered" when a sensor times out
+			and a sensorAlert with state "normal" if the sensor reconnects).
+			activated - This flags indicates if the internal sensor is
+				activated or not.
+				("True" or "False")
+		-->
+		<sensorTimeout
+			activated="True">
+
+			<!--
+				The alertLevel that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels).
+			-->
+			<alertLevel>0</alertLevel>
+
+		</sensorTimeout>
+
+		<!--
+			The nodeTimeout sensor is an internal sensor that triggers when
+			a node/client timed out. The server checks regularly if a node
+			has timed out and will trigger a sensorAlert if one does
+			(sensorAlert with state "triggered" when a node times out
+			and a sensorAlert with state "normal" if the node reconnects).
+			NOTE: This check is only performed on "persistent" nodes/clients.
+			"Non-persistent" clients are allowed to disconnect from the system.
+			activated - This flags indicates if the internal sensor is
+				activated or not.
+				("True" or "False")
+		-->
+		<nodeTimeout
+			activated="True">
+
+			<!--
+				The alertLevel that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels).
+			-->
+			<alertLevel>0</alertLevel>
+			<alertLevel>1</alertLevel>
+
+		</nodeTimeout>
+
+	</internalSensors>
+
 </config>
