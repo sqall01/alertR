@@ -70,6 +70,10 @@ class GlobalData:
 		self.storageBackendSqliteFile = os.path.dirname(os.path.abspath(
 			__file__)) + "/../config/database.db"
 
+		# How often the alertR server should try to connect to the
+		# MySQL server when the connection establishment fails.
+		self.storageBackendMysqlRetries = 5
+
 		# location of the certifiacte file
 		self.serverCertFile = None
 

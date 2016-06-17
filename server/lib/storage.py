@@ -3161,6 +3161,8 @@ class Mysql(_Storage):
 
 		self.globalData = globalData
 		self.logger = self.globalData.logger
+		self.storageBackendMysqlRetries = \
+			self.globalData.storageBackendMysqlRetries
 
 		# version of server
 		self.version = self.globalData.version
@@ -3256,14 +3258,39 @@ class Mysql(_Storage):
 	# internal function that connects to the mysql server
 	# (needed because direct changes to the database by another program
 	# are not seen if the connection to the mysql server is kept alive)
-	def _openConnection(self):
+	def _openConnection(self, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
 		# import the needed package
 		import MySQLdb
 
-		self.conn = MySQLdb.connect(host=self.host, port=self.port,
-			user=self.username,	passwd=self.password, db=self.database)
+		currentTry = 0
+		successful = False
 
-		self.cursor = self.conn.cursor()
+		while True:
+			try:
+				self.conn = MySQLdb.connect(host=self.host, port=self.port,
+					user=self.username,	passwd=self.password, db=self.database)
+
+				self.cursor = self.conn.cursor()
+				break
+
+			except Exception as e:
+
+				# Re-throw the exception if we reached our retry limit.
+				if currentTry >= self.storageBackendMysqlRetries:
+					raise
+
+				currentTry += 1
+				logger.exception("[%s]: Not able to connect to the MySQL "
+					% self.fileName
+					+ "server. Waiting before retrying (%d/%d)."
+					% (currentTry, self.storageBackendMysqlRetries))
+
+				time.sleep(3)
 
 
 	# internal function that closes the connection to the mysql server
@@ -3703,7 +3730,7 @@ class Mysql(_Storage):
 		self._acquireLock(logger)
 
 		# connect to the database
-		self._openConnection()
+		self._openConnection(logger)
 
 		# get version from the current database
 		self.cursor.execute("SELECT value FROM internals "
@@ -3755,7 +3782,7 @@ class Mysql(_Storage):
 		self._acquireLock(logger)
 
 		# connect to the database
-		self._openConnection()
+		self._openConnection(logger)
 
 		uniqueID = self._generateUniqueId()
 
@@ -3782,7 +3809,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -4141,7 +4168,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -4571,7 +4598,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -4886,7 +4913,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5020,7 +5047,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5056,7 +5083,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5099,7 +5126,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5142,7 +5169,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5176,7 +5203,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5249,7 +5276,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5338,7 +5365,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5390,7 +5417,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5435,7 +5462,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5480,7 +5507,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5531,7 +5558,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5583,7 +5610,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5669,7 +5696,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5790,7 +5817,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5846,7 +5873,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5897,7 +5924,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5947,7 +5974,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -5997,7 +6024,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6050,7 +6077,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6101,7 +6128,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6149,7 +6176,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6200,7 +6227,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6256,7 +6283,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6322,7 +6349,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6382,7 +6409,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6485,7 +6512,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6552,7 +6579,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
@@ -6614,7 +6641,7 @@ class Mysql(_Storage):
 
 		# connect to the database
 		try:
-			self._openConnection()
+			self._openConnection(logger)
 		except Exception as e:
 			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
