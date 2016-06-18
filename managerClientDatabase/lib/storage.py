@@ -79,6 +79,8 @@ class Mysql(_Storage):
 		self.alerts = self.globalData.alerts
 		self.managers = self.globalData.managers
 		self.alertLevels = self.globalData.alertLevels
+		self.storageBackendMysqlRetries = \
+			self.globalData.storageBackendMysqlRetries
 
 		# local copy of elements in the database (to make the update faster)
 		self.optionsCopy = list()
@@ -776,10 +778,29 @@ class Mysql(_Storage):
 		# import the needed package
 		import MySQLdb
 
-		self.conn = MySQLdb.connect(host=self.host, port=self.port,
-			user=self.username,	passwd=self.password, db=self.database)
+		currentTry = 0
+		while True:
+			try:
 
-		self.cursor = self.conn.cursor()
+				self.conn = MySQLdb.connect(host=self.host, port=self.port,
+					user=self.username,	passwd=self.password, db=self.database)
+
+				self.cursor = self.conn.cursor()
+				break
+
+			except Exception as e:
+
+				# Re-throw the exception if we reached our retry limit.
+				if currentTry >= self.storageBackendMysqlRetries:
+					raise
+
+				currentTry += 1
+				logging.exception("[%s]: Not able to connect to the MySQL "
+					% self.fileName
+					+ "server. Waiting before retrying (%d/%d)."
+					% (currentTry, self.storageBackendMysqlRetries))
+
+				time.sleep(3)
 
 
 	# internal function that releases the lock

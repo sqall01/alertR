@@ -40,6 +40,10 @@ class GlobalData:
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
 			+ "/../config/config.xml"
 
+		# How often the alertR client should try to connect to the
+		# MySQL server when the connection establishment fails.
+		self.storageBackendMysqlRetries = 5
+
 		# path to the unix socket which is used to communicate
 		# with the web page (only set when server is activated
 		# in the configuration file)
