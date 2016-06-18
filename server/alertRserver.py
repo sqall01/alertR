@@ -30,6 +30,15 @@ import random
 import xml.etree.ElementTree
 
 
+# Function creates a path location for the given user input.
+def makePath(inputLocation):
+	# Do nothing if the given location is an absolute path.
+	if inputLocation[0] == "/":
+		return inputLocation
+	# Assume we have a given relative path.
+	return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
+
+
 # function is used to parse a rule of an alert level recursively
 def parseRuleRecursively(currentRoot, currentRule):
 
@@ -733,8 +742,8 @@ if __name__ == '__main__':
 		configRoot = xml.etree.ElementTree.parse(
 			globalData.configFile).getroot()
 
-		globalData.logdir = str(configRoot.find("general").find(
-			"log").attrib["dir"])
+		globalData.logdir = makePath(str(configRoot.find("general").find(
+			"log").attrib["dir"]))
 
 		# parse chosen log level
 		tempLoglevel = str(
@@ -815,8 +824,8 @@ if __name__ == '__main__':
 				configRoot.find("update").find("server").attrib["port"])
 			updateLocation = str(
 				configRoot.find("update").find("server").attrib["location"])
-			updateCaFile = str(
-				configRoot.find("update").find("server").attrib["caFile"])
+			updateCaFile = makePath(str(
+				configRoot.find("update").find("server").attrib["caFile"]))
 			updateInterval = int(
 				configRoot.find("update").find("general").attrib["interval"])
 			updateEmailNotification = (str(
@@ -882,10 +891,10 @@ if __name__ == '__main__':
 		# get server configurations
 		globalData.logger.debug("[%s]: Parsing server configuration."
 			% fileName)
-		globalData.serverCertFile = str(configRoot.find("general").find(
-				"server").attrib["certFile"])
-		globalData.serverKeyFile = str(configRoot.find("general").find(
-				"server").attrib["keyFile"])
+		globalData.serverCertFile = makePath(str(configRoot.find(
+			"general").find("server").attrib["certFile"]))
+		globalData.serverKeyFile = makePath(str(configRoot.find(
+			"general").find("server").attrib["keyFile"]))
 		port = int(configRoot.find("general").find("server").attrib["port"])
 
 		if (os.path.exists(globalData.serverCertFile) is False
@@ -899,8 +908,8 @@ if __name__ == '__main__':
 
 		if globalData.useClientCertificates is True:
 
-			globalData.clientCAFile = str(configRoot.find("general").find(
-				"client").attrib["clientCAFile"])
+			globalData.clientCAFile = makePath(str(configRoot.find(
+				"general").find("client").attrib["clientCAFile"]))
 
 			if os.path.exists(globalData.clientCAFile) is False:
 				raise ValueError("Client CA file does not exist.")

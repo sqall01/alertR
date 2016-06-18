@@ -22,6 +22,15 @@ import random
 import xml.etree.ElementTree
 
 
+# Function creates a path location for the given user input.
+def makePath(inputLocation):
+	# Do nothing if the given location is an absolute path.
+	if inputLocation[0] == "/":
+		return inputLocation
+	# Assume we have a given relative path.
+	return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
+
+
 if __name__ == '__main__':
 
 	# generate object of the global needed data
@@ -35,7 +44,8 @@ if __name__ == '__main__':
 		configRoot = xml.etree.ElementTree.parse(
 			globalData.configFile).getroot()
 
-		logfile = str(configRoot.find("general").find("log").attrib["file"])
+		logfile = makePath(
+			str(configRoot.find("general").find("log").attrib["file"]))
 
 		# parse chosen log level
 		tempLoglevel = str(
@@ -55,8 +65,8 @@ if __name__ == '__main__':
 			raise ValueError("No valid log level in config file.")
 
 		# initialize logging
-		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
-			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
+		logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+			datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
 			level=loglevel)
 
 	except Exception as e:
@@ -81,8 +91,8 @@ if __name__ == '__main__':
 			configRoot.find("general").find("server").attrib["port"])
 
 		# get server certificate file and check if it does exist
-		serverCAFile = os.path.abspath(
-			str(configRoot.find("general").find("server").attrib["caFile"]))
+		serverCAFile = os.path.abspath(makePath(
+			str(configRoot.find("general").find("server").attrib["caFile"])))
 		if os.path.exists(serverCAFile) is False:
 			raise ValueError("Server CA does not exist.")
 
@@ -92,17 +102,17 @@ if __name__ == '__main__':
 			"certificateRequired"]).upper()	== "TRUE")
 
 		if certificateRequired is True:
-			clientCertFile = os.path.abspath(str(
-			configRoot.find("general").find("client").attrib["certFile"]))
-			clientKeyFile = os.path.abspath(str(
-			configRoot.find("general").find("client").attrib["keyFile"]))
+			clientCertFile = os.path.abspath(makePath(str(
+			configRoot.find("general").find("client").attrib["certFile"])))
+			clientKeyFile = os.path.abspath(makePath(str(
+			configRoot.find("general").find("client").attrib["keyFile"])))
 			if (os.path.exists(clientCertFile) is False
 				or os.path.exists(clientKeyFile) is False):
 				raise ValueError("Client certificate or key does not exist.")
 		else:
 			clientCertFile = None
 			clientKeyFile = None
-		
+
 		# get user credentials
 		username = str(
 			configRoot.find("general").find("credentials").attrib["username"])
@@ -137,8 +147,8 @@ if __name__ == '__main__':
 				configRoot.find("update").find("server").attrib["port"])
 			updateLocation = str(
 				configRoot.find("update").find("server").attrib["location"])
-			updateCaFile = str(
-				configRoot.find("update").find("server").attrib["caFile"])
+			updateCaFile = makePath(str(
+				configRoot.find("update").find("server").attrib["caFile"]))
 			updateInterval = int(
 				configRoot.find("update").find("general").attrib["interval"])
 			updateEmailNotification = (str(
@@ -176,8 +186,8 @@ if __name__ == '__main__':
 			# fifo specific options
 			sensor.umask = int(item.find("fifo").attrib[
 				"umask"], 8)
-			sensor.fifoFile = str(item.find("fifo").attrib[
-				"fifoFile"])
+			sensor.fifoFile = makePath(str(item.find("fifo").attrib[
+				"fifoFile"]))
 			sensor.sensorDataType = int(item.find("fifo").attrib[
 				"dataType"])
 
@@ -221,8 +231,8 @@ if __name__ == '__main__':
 		globalData.smtpAlert = None
 
 	# initialize logging
-	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
-		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile, 
+	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
 		level=loglevel)
 
 	# check if sensors were found => if not exit
@@ -245,7 +255,7 @@ if __name__ == '__main__':
 	while True:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
-		# => send eMail alert		
+		# => send eMail alert
 		if (globalData.smtpAlert is not None
 			and (connectionRetries % 5) == 0):
 			globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
@@ -255,7 +265,7 @@ if __name__ == '__main__':
 			# => send email that communication problems are solved
 			if not globalData.smtpAlert is None:
 				globalData.smtpAlert.sendCommunicationAlertClear()
-			
+
 			connectionRetries = 1
 			break
 		connectionRetries += 1
@@ -264,12 +274,12 @@ if __name__ == '__main__':
 			+ "Try again in 5 seconds.")
 		time.sleep(5)
 
-	# when connected => generate watchdog object to monitor the 
+	# when connected => generate watchdog object to monitor the
 	# server connection
 	watchdog = ConnectionWatchdog(globalData.serverComm,
 		globalData.pingInterval, globalData.smtpAlert)
 	# set thread to daemon
-	# => threads terminates when main thread terminates	
+	# => threads terminates when main thread terminates
 	watchdog.daemon = True
 	watchdog.start()
 
