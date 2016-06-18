@@ -3288,7 +3288,7 @@ class Mysql(_Storage):
 					+ "server. Waiting before retrying (%d/%d)."
 					% (currentTry, self.storageBackendMysqlRetries))
 
-				time.sleep(3)
+				time.sleep(5)
 
 
 	# internal function that closes the connection to the mysql server
