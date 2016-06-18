@@ -3268,8 +3268,6 @@ class Mysql(_Storage):
 		import MySQLdb
 
 		currentTry = 0
-		successful = False
-
 		while True:
 			try:
 				self.conn = MySQLdb.connect(host=self.host, port=self.port,
