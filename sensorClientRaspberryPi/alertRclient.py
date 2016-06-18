@@ -28,6 +28,9 @@ def makePath(inputLocation):
 	# Do nothing if the given location is an absolute path.
 	if inputLocation[0] == "/":
 		return inputLocation
+	# Replace ~ with the home directory.
+	elif inputLocation[0] == "~":
+		return os.environ["HOME"] + inputLocation[1:]
 	# Assume we have a given relative path.
 	return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
 
