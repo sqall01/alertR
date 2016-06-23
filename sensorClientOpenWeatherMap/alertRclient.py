@@ -11,7 +11,8 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import OpenWeatherMapTempPollingSensor, SensorExecuter
+from lib import OpenWeatherMapTempPollingSensor, \
+	OpenWeatherMapHumidityPollingSensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
 import logging
@@ -172,6 +173,35 @@ if __name__ == '__main__':
 			if sensorType == "temperature".upper():
 
 				sensor = OpenWeatherMapTempPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# OpenWeatherMap temperature specific settings
+				sensor.apiKey = str(item.find("openweathermap").attrib[
+					"apiKey"])
+				sensor.countryCode = str(item.find("openweathermap").attrib[
+					"countryCode"])
+				sensor.zipCode = str(item.find("openweathermap").attrib[
+					"zipCode"])
+
+			elif sensorType == "humidity".upper():
+
+				sensor = OpenWeatherMapHumidityPollingSensor()
 
 				# these options are needed by the server to
 				# differentiate between the registered sensors

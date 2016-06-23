@@ -124,7 +124,7 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-# Class that controls one sensor for OpenWeatherMap
+# Class that controls one temperature sensor for OpenWeatherMap
 class OpenWeatherMapTempPollingSensor(_PollingSensor):
 
 	def __init__(self):
@@ -163,8 +163,10 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 
 		if (int(time.time()) - self.lastUpdate) > self.interval:
 
-			logging.debug("[%s]: Getting data from OpenWeatherMap."
-				% self.fileName)
+			logging.debug("[%s]: Getting temperature data from OpenWeatherMap "
+				% self.fileName
+				+ "for %s in %s."
+				% (self.zipCode, self.countryCode))
 
 			try:
 				# Get weather data from OpenWeatherMap
@@ -186,6 +188,105 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 						logging.info("[%s]: Received new temperature data "
 							% self.fileName
 							+ "from OpenWeatherMap: %.1f degrees Celsius."
+							% temp)
+
+						self.sensorData = temp
+						self._forceSendState = True
+					self.lastUpdate = int(time.time())
+				else:
+					self.sensorData = -998
+
+			except Exception as e:
+				logging.exception("[%s]: Could not get weather data."
+					% self.fileName)
+				self.sensorData = -999
+
+
+	def forceSendAlert(self):
+		return None
+
+
+	def forceSendState(self):
+		if self._forceSendState:
+			self._forceSendState = False
+
+			stateChange = StateChange()
+			stateChange.clientSensorId = self.id
+			if self.state == self.triggerState:
+				stateChange.state = 1
+			else:
+				stateChange.state = 0
+			stateChange.dataType = self.sensorDataType
+			stateChange.sensorData = self.sensorData
+
+			return stateChange
+		return None
+
+
+# Class that controls one humidity sensor for OpenWeatherMap
+class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
+
+	def __init__(self):
+		_PollingSensor.__init__(self)
+
+		# Used for logging.
+		self.fileName = os.path.basename(__file__)
+
+		# Set sensor to hold float data.
+		self.sensorDataType = SensorDataType.INT
+
+		self.lastUpdate = 0
+		self.interval = 60
+		self.host = "api.openweathermap.org"
+		self.port = 80
+
+		self._forceSendState = False
+
+
+	def initializeSensor(self):
+		self.hasLatestData = False
+		self.changeState = False
+		self.state = 1 - self.triggerState
+
+		# Update data directly for the first time.
+		self.updateState()
+
+		return True
+
+
+	def getState(self):
+		return self.state
+
+
+	def updateState(self):
+
+		if (int(time.time()) - self.lastUpdate) > self.interval:
+
+			logging.debug("[%s]: Getting humidity data from OpenWeatherMap "
+				% self.fileName
+				+ "for %s in %s."
+				% (self.zipCode, self.countryCode))
+
+			try:
+				# Get weather data from OpenWeatherMap
+				conn = httplib.HTTPConnection(self.host, self.port)
+				location = "/data/2.5/weather?q=" + self.zipCode \
+					+ "," + self.countryCode \
+					+ "&appid=" + self.apiKey
+				conn.request("GET", location)
+				response = conn.getresponse()
+
+				# Extract data.
+				if response.status == 200:
+					jsonData =  json.loads(response.read())
+
+					temp = int(jsonData["main"]["humidity"])
+
+					if temp != self.sensorData:
+
+						logging.info("[%s]: Received new humidity data "
+							% self.fileName
+							+ "from OpenWeatherMap: %d%%."
 							% temp)
 
 						self.sensorData = temp
