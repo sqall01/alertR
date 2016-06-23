@@ -80,6 +80,12 @@
 		"desc": "DO NOT USE YET",
 		"type": "sensor"
 		},
+	"sensorClientOpenWeatherMap": {
+		"location": "sensorClientOpenWeatherMap/",
+		"name": "alertR Sensor Client OpenWeatherMap",
+		"desc": "DO NOT USE YET",
+		"type": "sensor"
+		},
 	"sensorClientPing": {
 		"location": "sensorClientPing/",
 		"name": "alertR Sensor Client Ping",
