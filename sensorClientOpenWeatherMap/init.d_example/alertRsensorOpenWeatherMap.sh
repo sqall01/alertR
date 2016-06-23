@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          alertRsensorRaspberryPi
+# Provides:          alertRsensorOpenWeatherMap
 # Required-Start:    $all
 # Should-Start:      $all
 # Required-Stop:     $remote_fs $syslog $network
@@ -13,11 +13,11 @@
 set -e
 
 # change USER to the user which runs the alertRclient
-USER=root # need root permissions to access the gpios on a raspberry pi
+USER=pi
 # change DAEMON to the path to run the alertRclient
 DAEMON=/absolute/path/to/alertRclient.py
 
-NAME=alertRsensorRaspberryPi
+NAME=alertRsensorOpenWeatherMap
 PIDFILE=/var/run/$NAME.pid
 DAEMON_OPTS=""
 PATH=/sbin:/usr/sbin:/bin:/usr/bin

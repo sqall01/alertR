@@ -1,12 +1,12 @@
 # example unit file when systemd is used
 
 [Unit]
-Description=alertR Sensor Client Raspberry Pi
+Description=alertR Sensor Client OpenWeatherMap
 
 [Service]
 Type=simple
-ExecStart=/etc/init.d/alertRsensorRaspberryPi.sh start
-ExecStop=/etc/init.d/alertRsensorRaspberryPi.sh stop
+ExecStart=/etc/init.d/alertRsensorOpenWeatherMap.sh start
+ExecStop=/etc/init.d/alertRsensorOpenWeatherMap.sh stop
 RemainAfterExit=yes
 
 [Install]
