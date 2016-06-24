@@ -1513,10 +1513,22 @@ class Sqlite(_Storage):
 				+ "does not exist anymore for the node. Deleting it.")
 
 			try:
+				# Delete sensor alertLevels.
 				self.cursor.execute("DELETE FROM sensorsAlertLevels "
 					+ "WHERE sensorId = ?",
 					(dbSensor[0], ))
 
+				# Delete old data entries (if any exist at all).
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataInt "
+					+ "WHERE sensorId = ?",
+					(dbSensor[0], ))
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataFloat "
+					+ "WHERE sensorId = ?",
+					(dbSensor[0], ))
+
+				# Finally, delete sensor.
 				self.cursor.execute("DELETE FROM sensors "
 					+ "WHERE id = ?",
 					(dbSensor[0], ))
@@ -4553,10 +4565,22 @@ class Mysql(_Storage):
 				+ "does not exist anymore for the node. Deleting it.")
 
 			try:
+				# Delete sensor alertLevels.
 				self.cursor.execute("DELETE FROM sensorsAlertLevels "
 					+ "WHERE sensorId = %s",
 					(dbSensor[0], ))
 
+				# Delete old data entries (if any exist at all).
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataInt "
+					+ "WHERE sensorId = %s",
+					(dbSensor[0], ))
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataFloat "
+					+ "WHERE sensorId = %s",
+					(dbSensor[0], ))
+
+				# Finally, delete sensor.
 				self.cursor.execute("DELETE FROM sensors "
 					+ "WHERE id = %s",
 					(dbSensor[0], ))
