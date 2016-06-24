@@ -150,6 +150,7 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 		self.state = 1 - self.triggerState
 
 		# Update data directly for the first time.
+		self.lastUpdate = 0
 		self.updateState()
 
 		return True
@@ -192,7 +193,6 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 
 						self.sensorData = temp
 						self._forceSendState = True
-					self.lastUpdate = int(time.time())
 				else:
 					self.sensorData = -998
 
@@ -200,6 +200,8 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 				logging.exception("[%s]: Could not get weather data."
 					% self.fileName)
 				self.sensorData = -999
+
+			self.lastUpdate = int(time.time())
 
 
 	def forceSendAlert(self):
@@ -249,6 +251,7 @@ class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
 		self.state = 1 - self.triggerState
 
 		# Update data directly for the first time.
+		self.lastUpdate = 0
 		self.updateState()
 
 		return True
@@ -291,14 +294,16 @@ class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
 
 						self.sensorData = temp
 						self._forceSendState = True
-					self.lastUpdate = int(time.time())
 				else:
 					self.sensorData = -998
+
 
 			except Exception as e:
 				logging.exception("[%s]: Could not get weather data."
 					% self.fileName)
 				self.sensorData = -999
+
+			self.lastUpdate = int(time.time())
 
 
 	def forceSendAlert(self):
@@ -376,7 +381,7 @@ class SensorExecuter:
 					asyncSenderProcess = AsynchronousSender(
 						self.connection, self.globalData)
 					# set thread to daemon
-					# => threads terminates when main thread terminates	
+					# => threads terminates when main thread terminates
 					asyncSenderProcess.daemon = True
 					asyncSenderProcess.sendSensorAlert = True
 					asyncSenderProcess.sendSensorAlertSensorAlert = sensorAlert
@@ -413,7 +418,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensorAlert = \
@@ -437,7 +442,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeStateChange = \
@@ -471,7 +476,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendSensorAlert = True
 						asyncSenderProcess.sendSensorAlertSensorAlert = \
@@ -496,7 +501,7 @@ class SensorExecuter:
 						asyncSenderProcess = AsynchronousSender(
 							self.connection, self.globalData)
 						# set thread to daemon
-						# => threads terminates when main thread terminates	
+						# => threads terminates when main thread terminates
 						asyncSenderProcess.daemon = True
 						asyncSenderProcess.sendStateChange = True
 						asyncSenderProcess.sendStateChangeStateChange = \
@@ -512,7 +517,7 @@ class SensorExecuter:
 					asyncSenderProcess = AsynchronousSender(
 						self.connection, self.globalData)
 					# set thread to daemon
-					# => threads terminates when main thread terminates	
+					# => threads terminates when main thread terminates
 					asyncSenderProcess.daemon = True
 					asyncSenderProcess.sendStateChange = True
 					asyncSenderProcess.sendStateChangeStateChange = stateChange
@@ -528,12 +533,12 @@ class SensorExecuter:
 				asyncSenderProcess = AsynchronousSender(
 					self.connection, self.globalData)
 				# set thread to daemon
-				# => threads terminates when main thread terminates	
+				# => threads terminates when main thread terminates
 				asyncSenderProcess.daemon = True
 				asyncSenderProcess.sendSensorsState = True
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
 				lastFullStateSent = time.time()
-				
+
 			time.sleep(0.5)
