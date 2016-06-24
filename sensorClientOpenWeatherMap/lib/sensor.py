@@ -194,12 +194,12 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 						self.sensorData = temp
 						self._forceSendState = True
 				else:
-					self.sensorData = -998
+					self.sensorData = float(-998)
 
 			except Exception as e:
 				logging.exception("[%s]: Could not get weather data."
 					% self.fileName)
-				self.sensorData = -999
+				self.sensorData = float(-999)
 
 			self.lastUpdate = int(time.time())
 
