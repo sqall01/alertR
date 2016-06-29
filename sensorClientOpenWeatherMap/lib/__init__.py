@@ -9,7 +9,7 @@
 
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
-from sensor import OpenWeatherMapTempPollingSensor, \
-	OpenWeatherMapHumidityPollingSensor, SensorExecuter
+from sensor import WundergroundTempPollingSensor, \
+	WundergroundHumidityPollingSensor, SensorExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData

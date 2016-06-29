@@ -11,8 +11,8 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import OpenWeatherMapTempPollingSensor, \
-	OpenWeatherMapHumidityPollingSensor, SensorExecuter
+from lib import WundergroundTempPollingSensor, \
+	WundergroundHumidityPollingSensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
 import logging
@@ -167,12 +167,12 @@ if __name__ == '__main__':
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
 
-			sensorType = str(item.find("openweathermap").attrib[
+			sensorType = str(item.find("wunderground").attrib[
 				"type"]).upper()
 
 			if sensorType == "temperature".upper():
 
-				sensor = OpenWeatherMapTempPollingSensor()
+				sensor = WundergroundTempPollingSensor()
 
 				# these options are needed by the server to
 				# differentiate between the registered sensors
@@ -191,17 +191,17 @@ if __name__ == '__main__':
 				for alertLevelXml in item.iterfind("alertLevel"):
 					sensor.alertLevels.append(int(alertLevelXml.text))
 
-				# OpenWeatherMap temperature specific settings
-				sensor.apiKey = str(item.find("openweathermap").attrib[
+				# Wunderground temperature specific settings
+				sensor.apiKey = str(item.find("wunderground").attrib[
 					"apiKey"])
-				sensor.countryCode = str(item.find("openweathermap").attrib[
-					"countryCode"])
-				sensor.zipCode = str(item.find("openweathermap").attrib[
-					"zipCode"])
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
 
 			elif sensorType == "humidity".upper():
 
-				sensor = OpenWeatherMapHumidityPollingSensor()
+				sensor = WundergroundHumidityPollingSensor()
 
 				# these options are needed by the server to
 				# differentiate between the registered sensors
@@ -220,13 +220,13 @@ if __name__ == '__main__':
 				for alertLevelXml in item.iterfind("alertLevel"):
 					sensor.alertLevels.append(int(alertLevelXml.text))
 
-				# OpenWeatherMap temperature specific settings
-				sensor.apiKey = str(item.find("openweathermap").attrib[
+				# Wunderground temperature specific settings
+				sensor.apiKey = str(item.find("wunderground").attrib[
 					"apiKey"])
-				sensor.countryCode = str(item.find("openweathermap").attrib[
-					"countryCode"])
-				sensor.zipCode = str(item.find("openweathermap").attrib[
-					"zipCode"])
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
 
 			else:
 				raise ValueError("Type of sensor '%s' not valid."

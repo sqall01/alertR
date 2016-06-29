@@ -195,7 +195,7 @@
 			-->
 			<alertLevel>0</alertLevel>
 
-			<openweathermap
+			<wunderground
 				type="temperature" />
 
 		</sensor>

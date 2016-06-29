@@ -124,8 +124,8 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-# Class that controls one temperature sensor for OpenWeatherMap
-class OpenWeatherMapTempPollingSensor(_PollingSensor):
+# Class that controls one temperature sensor for Wunderground
+class WundergroundTempPollingSensor(_PollingSensor):
 
 	def __init__(self):
 		_PollingSensor.__init__(self)
@@ -137,8 +137,8 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 		self.sensorDataType = SensorDataType.FLOAT
 
 		self.lastUpdate = 0
-		self.interval = 60
-		self.host = "api.openweathermap.org"
+		self.interval = 180
+		self.host = "api.wunderground.com"
 		self.port = 80
 
 		self._forceSendState = False
@@ -164,17 +164,17 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 
 		if (int(time.time()) - self.lastUpdate) > self.interval:
 
-			logging.debug("[%s]: Getting temperature data from OpenWeatherMap "
+			logging.debug("[%s]: Getting temperature data from Wunderground "
 				% self.fileName
 				+ "for %s in %s."
-				% (self.zipCode, self.countryCode))
+				% (self.city, self.country))
 
 			try:
-				# Get weather data from OpenWeatherMap
+				# Get weather data from Wunderground
 				conn = httplib.HTTPConnection(self.host, self.port)
-				location = "/data/2.5/weather?q=" + self.zipCode \
-					+ "," + self.countryCode \
-					+ "&appid=" + self.apiKey
+				location = "/api/" + self.apiKey \
+					+ "/geolookup/conditions/forecast/q/" + self.country \
+					+ "/" + self.city + ".json"
 				conn.request("GET", location)
 				response = conn.getresponse()
 
@@ -182,13 +182,13 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 				if response.status == 200:
 					jsonData =  json.loads(response.read())
 
-					temp = float(int(jsonData["main"]["temp"])) / 10
+					temp = float(jsonData["current_observation"]["temp_c"])
 
 					if temp != self.sensorData:
 
 						logging.info("[%s]: Received new temperature data "
 							% self.fileName
-							+ "from OpenWeatherMap: %.1f degrees Celsius."
+							+ "from Wunderground: %.1f degrees Celsius."
 							% temp)
 
 						self.sensorData = temp
@@ -225,8 +225,8 @@ class OpenWeatherMapTempPollingSensor(_PollingSensor):
 		return None
 
 
-# Class that controls one humidity sensor for OpenWeatherMap
-class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
+# Class that controls one humidity sensor for Wunderground
+class WundergroundHumidityPollingSensor(_PollingSensor):
 
 	def __init__(self):
 		_PollingSensor.__init__(self)
@@ -238,8 +238,8 @@ class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
 		self.sensorDataType = SensorDataType.INT
 
 		self.lastUpdate = 0
-		self.interval = 60
-		self.host = "api.openweathermap.org"
+		self.interval = 180
+		self.host = "api.wunderground.com"
 		self.port = 80
 
 		self._forceSendState = False
@@ -265,17 +265,17 @@ class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
 
 		if (int(time.time()) - self.lastUpdate) > self.interval:
 
-			logging.debug("[%s]: Getting humidity data from OpenWeatherMap "
+			logging.debug("[%s]: Getting humidity data from Wunderground "
 				% self.fileName
 				+ "for %s in %s."
-				% (self.zipCode, self.countryCode))
+				% (self.city, self.country))
 
 			try:
-				# Get weather data from OpenWeatherMap
+				# Get weather data from Wunderground
 				conn = httplib.HTTPConnection(self.host, self.port)
-				location = "/data/2.5/weather?q=" + self.zipCode \
-					+ "," + self.countryCode \
-					+ "&appid=" + self.apiKey
+				location = "/api/" + self.apiKey \
+					+ "/geolookup/conditions/forecast/q/" + self.country \
+					+ "/" + self.city + ".json"
 				conn.request("GET", location)
 				response = conn.getresponse()
 
@@ -283,13 +283,14 @@ class OpenWeatherMapHumidityPollingSensor(_PollingSensor):
 				if response.status == 200:
 					jsonData =  json.loads(response.read())
 
-					temp = int(jsonData["main"]["humidity"])
+					temp = int(jsonData["current_observation"][
+						"relative_humidity"].replace("%", ""))
 
 					if temp != self.sensorData:
 
 						logging.info("[%s]: Received new humidity data "
 							% self.fileName
-							+ "from OpenWeatherMap: %d%%."
+							+ "from Wunderground: %d%%."
 							% temp)
 
 						self.sensorData = temp
