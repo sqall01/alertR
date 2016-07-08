@@ -80,10 +80,10 @@
 		"desc": "DO NOT USE YET",
 		"type": "sensor"
 		},
-	"sensorClientOpenWeatherMap": {
-		"location": "sensorClientOpenWeatherMap/",
-		"name": "alertR Sensor Client OpenWeatherMap",
-		"desc": "DO NOT USE YET",
+	"sensorClientWeatherService": {
+		"location": "sensorClientWeatherService/",
+		"name": "alertR Sensor Client Weather Service",
+		"desc": "This client is specialized to fetch data from a weather service provider (Wunderground.com) and provide the alertR system with this information.",
 		"type": "sensor"
 		},
 	"sensorClientPing": {
