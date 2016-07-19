@@ -12,7 +12,8 @@ import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
 from lib import WundergroundDataCollector, WundergroundTempPollingSensor, \
-	WundergroundHumidityPollingSensor, SensorExecuter
+	WundergroundHumidityPollingSensor, WundergroundForecastTempPollingSensor, \
+	WundergroundForecastRainPollingSensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
 import logging
@@ -236,6 +237,92 @@ if __name__ == '__main__':
 					"country"])
 				sensor.city = str(item.find("wunderground").attrib[
 					"city"])
+
+				# Register location in data collector.
+				sensorDataCollector.addLocation(sensor.country,
+					sensor.city)
+				sensor.dataCollector = sensorDataCollector
+
+			elif sensorType == "forecasttemp".upper():
+
+				sensor = WundergroundForecastTempPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# Wunderground temperature specific settings
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
+				sensor.kind = str(item.find("wunderground").attrib[
+					"kind"]).upper()
+				sensor.day = int(item.find("wunderground").attrib[
+					"day"])
+
+				# Sanity check of kind option.
+				if (sensor.kind != "high".upper()
+					and sensor.kind != "low".upper()):
+					raise ValueError("Kind of sensor '%s' not valid."
+						% sensor.kind)
+
+				# Sanity check of day option.
+				if sensor.day < 0 and sensor.day > 2:
+					raise ValueError("Day of sensor '%d' not valid."
+						% sensor.day)
+
+				# Register location in data collector.
+				sensorDataCollector.addLocation(sensor.country,
+					sensor.city)
+				sensor.dataCollector = sensorDataCollector
+
+			elif sensorType == "forecastrain".upper():
+
+				sensor = WundergroundForecastRainPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# Wunderground temperature specific settings
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
+				sensor.day = int(item.find("wunderground").attrib[
+					"day"])
+
+				# Sanity check of day option.
+				if sensor.day < 0 and sensor.day > 2:
+					raise ValueError("Day of sensor '%d' not valid."
+						% sensor.day)
 
 				# Register location in data collector.
 				sensorDataCollector.addLocation(sensor.country,

@@ -125,7 +125,7 @@ class _PollingSensor:
 		raise NotImplementedError("Function not implemented yet.")
 
 
-# Class that controls one temperature sensor for Wunderground
+# Class that controls one temperature sensor for Wunderground.
 class WundergroundTempPollingSensor(_PollingSensor):
 
 	def __init__(self):
@@ -192,7 +192,7 @@ class WundergroundTempPollingSensor(_PollingSensor):
 		return None
 
 
-# Class that controls one humidity sensor for Wunderground
+# Class that controls one humidity sensor for Wunderground.
 class WundergroundHumidityPollingSensor(_PollingSensor):
 
 	def __init__(self):
@@ -256,9 +256,148 @@ class WundergroundHumidityPollingSensor(_PollingSensor):
 		return None
 
 
+# Class that controls one forecast temperature sensor for Wunderground.
+class WundergroundForecastTempPollingSensor(_PollingSensor):
+
+	def __init__(self):
+		_PollingSensor.__init__(self)
+
+		# Used for logging.
+		self.fileName = os.path.basename(__file__)
+
+		# Set sensor to hold float data.
+		self.sensorDataType = SensorDataType.FLOAT
+
+		self.host = "api.wunderground.com"
+		self.port = 80
+
+		self._forceSendState = False
+
+		# Instance of data collector thread.
+		self.dataCollector = None
+
+		self.country = None
+		self.city = None
+		self.day = None
+		self.kind = None
+
+
+	def initializeSensor(self):
+		self.hasLatestData = False
+		self.changeState = False
+		self.state = 1 - self.triggerState
+
+		# Update data directly for the first time.
+		self.updateState()
+
+		return True
+
+
+	def getState(self):
+		return self.state
+
+
+	def updateState(self):
+		if self.kind == "HIGH":
+			temp = self.dataCollector.getForecastTemperatureHigh(
+				self.country, self.city, self.day)
+		else:
+			temp = self.dataCollector.getForecastTemperatureLow(
+				self.country, self.city, self.day)
+		if temp != self.sensorData:
+			self.sensorData = temp
+			self._forceSendState = True
+
+
+	def forceSendAlert(self):
+		return None
+
+
+	def forceSendState(self):
+		if self._forceSendState:
+			self._forceSendState = False
+
+			stateChange = StateChange()
+			stateChange.clientSensorId = self.id
+			if self.state == self.triggerState:
+				stateChange.state = 1
+			else:
+				stateChange.state = 0
+			stateChange.dataType = self.sensorDataType
+			stateChange.sensorData = self.sensorData
+
+			return stateChange
+		return None
+
+
+# Class that controls one forecast rain sensor for Wunderground.
+class WundergroundForecastRainPollingSensor(_PollingSensor):
+
+	def __init__(self):
+		_PollingSensor.__init__(self)
+
+		# Used for logging.
+		self.fileName = os.path.basename(__file__)
+
+		# Set sensor to hold float data.
+		self.sensorDataType = SensorDataType.INT
+
+		self._forceSendState = False
+
+		# Instance of data collector thread.
+		self.dataCollector = None
+
+		self.country = None
+		self.city = None
+		self.day = None
+
+
+	def initializeSensor(self):
+		self.hasLatestData = False
+		self.changeState = False
+		self.state = 1 - self.triggerState
+
+		# Update data directly for the first time.
+		self.updateState()
+
+		return True
+
+
+	def getState(self):
+		return self.state
+
+
+	def updateState(self):
+		temp = self.dataCollector.getForecastRain(
+			self.country, self.city, self.day)
+		if temp != self.sensorData:
+			self.sensorData = temp
+			self._forceSendState = True
+
+
+	def forceSendAlert(self):
+		return None
+
+
+	def forceSendState(self):
+		if self._forceSendState:
+			self._forceSendState = False
+
+			stateChange = StateChange()
+			stateChange.clientSensorId = self.id
+			if self.state == self.triggerState:
+				stateChange.state = 1
+			else:
+				stateChange.state = 0
+			stateChange.dataType = self.sensorDataType
+			stateChange.sensorData = self.sensorData
+
+			return stateChange
+		return None
+
+
 # Class that collects data from Wunderground.
 class WundergroundDataCollector(threading.Thread):
-
 
 	def __init__(self, globalData):
 		threading.Thread.__init__(self)
@@ -304,6 +443,61 @@ class WundergroundDataCollector(threading.Thread):
 			self.collectedData[tempCountry][tempCity] = dict()
 			self.collectedData[tempCountry][tempCity]["temp"] = float(-1000)
 			self.collectedData[tempCountry][tempCity]["humidity"] = -1000
+			self.collectedData[tempCountry][tempCity]["forecast"] = list()
+			for i in range(3):
+				self.collectedData[tempCountry][tempCity][
+					"forecast"].append(dict())
+				self.collectedData[tempCountry][tempCity][
+					"forecast"][i]["tempHigh"] = float(-1000)
+				self.collectedData[tempCountry][tempCity][
+					"forecast"][i]["tempLow"] = float(-1000)
+				self.collectedData[tempCountry][tempCity][
+					"forecast"][i]["rain"] = -1000
+
+
+	def getForecastTemperatureLow(self, country, city, day):
+		tempCountry = country.lower()
+		tempCity = city.lower()
+
+		# Sanity check day.
+		if day < 0 and day > 2:
+			return float(-1001)
+
+		self.updateLock.acquire()
+		temp = self.collectedData[tempCountry][tempCity][
+			"forecast"][day]["tempLow"]
+		self.updateLock.release()
+		return temp
+
+
+	def getForecastTemperatureHigh(self, country, city, day):
+		tempCountry = country.lower()
+		tempCity = city.lower()
+
+		# Sanity check day.
+		if day < 0 and day > 2:
+			return float(-1001)
+
+		self.updateLock.acquire()
+		temp = self.collectedData[tempCountry][tempCity][
+			"forecast"][day]["tempHigh"]
+		self.updateLock.release()
+		return temp
+
+
+	def getForecastRain(self, country, city, day):
+		tempCountry = country.lower()
+		tempCity = city.lower()
+
+		# Sanity check day.
+		if day < 0 and day > 2:
+			return float(-1001)
+
+		self.updateLock.acquire()
+		temp = self.collectedData[tempCountry][tempCity][
+			"forecast"][day]["rain"]
+		self.updateLock.release()
+		return temp
 
 
 	def getTemperature(self, country, city):
@@ -359,12 +553,56 @@ class WundergroundDataCollector(threading.Thread):
 						humidity = int(jsonData["current_observation"][
 							"relative_humidity"].replace("%", ""))
 						temp = float(jsonData["current_observation"]["temp_c"])
+						forecastDay0TempHigh = float(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][0]["high"]["celsius"])
+						forecastDay0TempLow = float(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][0]["low"]["celsius"])
+						forecastDay0Rain = int(jsonData["forecast"][
+							"simpleforecast"]["forecastday"][0]["pop"])
+						forecastDay1TempHigh = float(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][1]["high"]["celsius"])
+						forecastDay1TempLow = float(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][1]["low"]["celsius"])
+						forecastDay1Rain = int(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][1]["pop"])
+						forecastDay2TempHigh = float(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][2]["high"]["celsius"])
+						forecastDay2TempLow = float(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][2]["low"]["celsius"])
+						forecastDay2Rain = int(
+							jsonData["forecast"]["simpleforecast"][
+							"forecastday"][2]["pop"])
 
 						self.updateLock.acquire()
 						self.collectedData[country][city]["humidity"] \
 							= humidity
 						self.collectedData[country][city]["temp"] \
 							= temp
+						self.collectedData[country][city][
+							"forecast"][0]["tempHigh"] = forecastDay0TempHigh
+						self.collectedData[country][city][
+							"forecast"][0]["tempLow"] = forecastDay0TempLow
+						self.collectedData[country][city][
+							"forecast"][0]["rain"] = forecastDay0Rain
+						self.collectedData[country][city][
+							"forecast"][1]["tempHigh"] = forecastDay1TempHigh
+						self.collectedData[country][city][
+							"forecast"][1]["tempLow"] = forecastDay1TempLow
+						self.collectedData[country][city][
+							"forecast"][1]["rain"] = forecastDay1Rain
+						self.collectedData[country][city][
+							"forecast"][2]["tempHigh"] = forecastDay2TempHigh
+						self.collectedData[country][city][
+							"forecast"][2]["tempLow"] = forecastDay2TempLow
+						self.collectedData[country][city][
+							"forecast"][2]["rain"] = forecastDay2Rain
 						self.updateLock.release()
 
 						logging.info("[%s]: Received new humidity data "
@@ -377,6 +615,48 @@ class WundergroundDataCollector(threading.Thread):
 							+ "from Wunderground: %.1f degrees Celsius "
 							% temp
 							+ "for %s in %s."
+							% (city, country))
+
+						logging.info("[%s]: Received new temperature forecast "
+							% self.fileName
+							+ "from Wunderground for day 0: min %.1f max %.1f "
+							% (forecastDay0TempLow, forecastDay0TempHigh)
+							+ "degrees Celsius for %s in %s."
+							% (city, country))
+
+						logging.info("[%s]: Received new rain forecast "
+							% self.fileName
+							+ "from Wunderground for day 0: %d%% "
+							% forecastDay0Rain
+							+ "chance of rain for %s in %s."
+							% (city, country))
+
+						logging.info("[%s]: Received new temperature forecast "
+							% self.fileName
+							+ "from Wunderground for day 1: min %.1f max %.1f "
+							% (forecastDay1TempLow, forecastDay1TempHigh)
+							+ "degrees Celsius for %s in %s."
+							% (city, country))
+
+						logging.info("[%s]: Received new rain forecast "
+							% self.fileName
+							+ "from Wunderground for day 1: %d%% "
+							% forecastDay1Rain
+							+ "chance of rain for %s in %s."
+							% (city, country))
+
+						logging.info("[%s]: Received new temperature forecast "
+							% self.fileName
+							+ "from Wunderground for day 2: min %.1f max %.1f "
+							% (forecastDay2TempLow, forecastDay2TempHigh)
+							+ "degrees Celsius for %s in %s."
+							% (city, country))
+
+						logging.info("[%s]: Received new rain forecast "
+							% self.fileName
+							+ "from Wunderground for day 2: %d%% "
+							% forecastDay2Rain
+							+ "chance of rain for %s in %s."
 							% (city, country))
 
 					else:

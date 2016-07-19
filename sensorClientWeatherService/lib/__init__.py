@@ -10,6 +10,7 @@
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import WundergroundDataCollector, WundergroundTempPollingSensor, \
-	WundergroundHumidityPollingSensor, SensorExecuter
+	WundergroundHumidityPollingSensor, WundergroundForecastTempPollingSensor, \
+	WundergroundForecastRainPollingSensor, SensorExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData
