@@ -92,7 +92,7 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 
 		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 
-		<title>alertR mobile manager</title>
+		<title>alertR Mobile Web Manager</title>
 
 		<link rel="stylesheet" href="css/style.css" />
 

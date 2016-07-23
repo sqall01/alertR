@@ -3,6 +3,7 @@
 Features:
 
 * User paths can now be relative paths.
+* Added start up log entries.
 
 
 ## 0.400

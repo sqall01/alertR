@@ -247,6 +247,7 @@ if __name__ == '__main__':
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
+	logging.info("[%s] Connecting to server." % fileName)
 	while 1:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
@@ -272,6 +273,7 @@ if __name__ == '__main__':
 
 	# when connected => generate watchdog object to monitor the
 	# server connection
+	logging.info("[%s] Starting watchdog thread." % fileName)
 	watchdog = ConnectionWatchdog(globalData.serverComm,
 		globalData.pingInterval, globalData.smtpAlert)
 	# set thread to daemon
@@ -318,6 +320,7 @@ if __name__ == '__main__':
 
 	# only start update checker if it is activated
 	if updateActivated is True:
+		logging.info("[%s] Starting update check thread." % fileName)
 		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
 			updateCaFile, updateInterval, updateEmailNotification, globalData)
 		# set thread to daemon
@@ -326,12 +329,15 @@ if __name__ == '__main__':
 		updateChecker.start()
 
 		# only start version informer if the update check is activated
+		logging.info("[%s] Starting version informer thread." % fileName)
 		globalData.versionInformer = VersionInformer(updateServer, updatePort,
 			updateLocation, updateCaFile, updateInterval, globalData)
 		# set thread to daemon
 		# => threads terminates when main thread terminates
 		globalData.versionInformer.daemon = True
 		globalData.versionInformer.start()
+
+	logging.info("[%s] Client started." % fileName)
 
 	# generate receiver to handle incoming data (for example status updates)
 	receiver = Receiver(globalData.serverComm)

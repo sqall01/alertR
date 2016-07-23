@@ -227,6 +227,7 @@ if __name__ == '__main__':
 		level=loglevel)
 
 	# generate a screen updater thread (that generates the GUI)
+	logging.info("[%s] Starting screen updater thread." % fileName)
 	globalData.screenUpdater = ScreenUpdater(globalData)
 	# set thread to daemon
 	# => threads terminates when main thread terminates
@@ -238,6 +239,7 @@ if __name__ == '__main__':
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
+	logging.info("[%s] Connecting to server." % fileName)
 	while 1:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
@@ -263,6 +265,7 @@ if __name__ == '__main__':
 
 	# when connected => generate watchdog object to monitor the
 	# server connection
+	logging.info("[%s] Starting watchdog thread." % fileName)
 	watchdog = ConnectionWatchdog(globalData.serverComm,
 		globalData.pingInterval, globalData.smtpAlert)
 	# set thread to daemon
@@ -271,6 +274,7 @@ if __name__ == '__main__':
 	watchdog.start()
 
 	# generate receiver to handle incoming data (for example status updates)
+	logging.info("[%s] Starting receiver thread." % fileName)
 	receiver = Receiver(globalData.serverComm)
 	# set thread to daemon
 	# => threads terminates when main thread terminates
@@ -279,6 +283,7 @@ if __name__ == '__main__':
 
 	# only start update checker if it is activated
 	if updateActivated is True:
+		logging.info("[%s] Starting update check thread." % fileName)
 		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
 			updateCaFile, updateInterval, updateEmailNotification, globalData)
 		# set thread to daemon
@@ -286,8 +291,9 @@ if __name__ == '__main__':
 		updateChecker.daemon = True
 		updateChecker.start()
 
+	logging.info("[%s] Client started." % fileName)
+
 	# generate the console object and start it
 	# (does not return unless it is exited)
 	globalData.console = Console(globalData)
-	logging.info("[%s] Starting console." % fileName)
 	globalData.console.startConsole()
