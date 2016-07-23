@@ -1,3 +1,10 @@
+## 0.400-1
+
+Features:
+
+* User paths can now be relative paths.
+
+
 ## 0.400
 
 Features:

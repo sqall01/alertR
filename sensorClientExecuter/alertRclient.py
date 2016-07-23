@@ -240,6 +240,7 @@ if __name__ == '__main__':
 		sys.exit(1)
 
 	# Initialize sensors before starting worker threads.
+	logging.info("[%s] Initializing sensors." % fileName)
 	for sensor in globalData.sensors:
 		if not sensor.initializeSensor():
 			logging.critical("[%s]: Not able to initialize sensor."
@@ -251,6 +252,7 @@ if __name__ == '__main__':
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
+	logging.info("[%s] Connecting to server." % fileName)
 	while True:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
@@ -275,6 +277,7 @@ if __name__ == '__main__':
 
 	# when connected => generate watchdog object to monitor the
 	# server connection
+	logging.info("[%s] Starting watchdog thread." % fileName)
 	watchdog = ConnectionWatchdog(globalData.serverComm,
 		globalData.pingInterval, globalData.smtpAlert)
 	# set thread to daemon
@@ -284,12 +287,15 @@ if __name__ == '__main__':
 
 	# only start update checker if it is activated
 	if updateActivated is True:
+		logging.info("[%s] Starting update check thread." % fileName)
 		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
 			updateCaFile, updateInterval, updateEmailNotification, globalData)
 		# set thread to daemon
 		# => threads terminates when main thread terminates
 		updateChecker.daemon = True
 		updateChecker.start()
+
+	logging.info("[%s] Client started." % fileName)
 
 	# set up sensor executer and execute it
 	# (note: we will not return from the executer unless the client
