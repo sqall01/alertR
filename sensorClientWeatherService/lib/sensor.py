@@ -15,7 +15,7 @@ import json
 import httplib
 import threading
 from client import AsynchronousSender
-from localObjects import SensorDataType, SensorAlert, StateChange
+from localObjects import SensorDataType, Ordering, SensorAlert, StateChange
 
 
 # Internal class that holds the important attributes
@@ -148,6 +148,17 @@ class WundergroundTempPollingSensor(_PollingSensor):
 		self.country = None
 		self.city = None
 
+		# This flag indicates if this sensor has a threshold that should be
+		# checked and raise a sensor alert if it is reached.
+		self.hasThreshold = False
+
+		# The threshold that should raise a sensor alert if it is reached.
+		self.threshold = None
+
+		# Says how the threshold should be checked
+		# (lower than, equal, greater than).
+		self.ordering = None
+
 
 	def initializeSensor(self):
 		self.hasLatestData = False
@@ -169,6 +180,75 @@ class WundergroundTempPollingSensor(_PollingSensor):
 		if temp != self.sensorData:
 			self.sensorData = temp
 			self._forceSendState = True
+
+		# Only check if threshold is reached if it is activated.
+		if self.hasThreshold:
+
+			# Sensor is currently triggered.
+			# Check if it is "normal" again.
+			if self.state == self.triggerState:
+				if self.ordering == Ordering.LT:
+					if self.sensorData >= self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (back to normal).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData != self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is unequal to threshold (back to normal).")
+
+				elif self.ordering == Ordering.GT:
+					if (self.sensorData <= self.threshold
+						and self.sensorData >= -273.0):
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (back to normal).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
+
+			# Sensor is currently not triggered.
+			# Check if it has to be triggered.
+			else:
+				if self.ordering == Ordering.LT:
+					if (self.sensorData < self.threshold
+						and self.sensorData >= -273.0):
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (triggered).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData == self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is equal to threshold (triggered).")
+
+				elif self.ordering == Ordering.GT:
+					if self.sensorData > self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (triggered).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
 
 
 	def forceSendAlert(self):
@@ -212,6 +292,17 @@ class WundergroundHumidityPollingSensor(_PollingSensor):
 		self.country = None
 		self.city = None
 
+		# This flag indicates if this sensor has a threshold that should be
+		# checked and raise a sensor alert if it is reached.
+		self.hasThreshold = False
+
+		# The threshold that should raise a sensor alert if it is reached.
+		self.threshold = None
+
+		# Says how the threshold should be checked
+		# (lower than, equal, greater than).
+		self.ordering = None
+
 
 	def initializeSensor(self):
 		self.hasLatestData = False
@@ -233,6 +324,75 @@ class WundergroundHumidityPollingSensor(_PollingSensor):
 		if temp != self.sensorData:
 			self.sensorData = temp
 			self._forceSendState = True
+
+		# Only check if threshold is reached if it is activated.
+		if self.hasThreshold:
+
+			# Sensor is currently triggered.
+			# Check if it is "normal" again.
+			if self.state == self.triggerState:
+				if self.ordering == Ordering.LT:
+					if self.sensorData >= self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Humidity %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (back to normal).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData != self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Humidity %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is unequal to threshold (back to normal).")
+
+				elif self.ordering == Ordering.GT:
+					if (self.sensorData <= self.threshold
+						and self.sensorData >= 0):
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Humidity %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (back to normal).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
+
+			# Sensor is currently not triggered.
+			# Check if it has to be triggered.
+			else:
+				if self.ordering == Ordering.LT:
+					if (self.sensorData < self.threshold
+						and self.sensorData >= 0):
+						self.state = self.triggerState
+						logging.info("[%s]: Humidity %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (triggered).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData == self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Humidity %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is equal to threshold (triggered).")
+
+				elif self.ordering == Ordering.GT:
+					if self.sensorData > self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Humidity %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (triggered).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
 
 
 	def forceSendAlert(self):
@@ -281,6 +441,17 @@ class WundergroundForecastTempPollingSensor(_PollingSensor):
 		self.day = None
 		self.kind = None
 
+		# This flag indicates if this sensor has a threshold that should be
+		# checked and raise a sensor alert if it is reached.
+		self.hasThreshold = False
+
+		# The threshold that should raise a sensor alert if it is reached.
+		self.threshold = None
+
+		# Says how the threshold should be checked
+		# (lower than, equal, greater than).
+		self.ordering = None
+
 
 	def initializeSensor(self):
 		self.hasLatestData = False
@@ -307,6 +478,75 @@ class WundergroundForecastTempPollingSensor(_PollingSensor):
 		if temp != self.sensorData:
 			self.sensorData = temp
 			self._forceSendState = True
+
+		# Only check if threshold is reached if it is activated.
+		if self.hasThreshold:
+
+			# Sensor is currently triggered.
+			# Check if it is "normal" again.
+			if self.state == self.triggerState:
+				if self.ordering == Ordering.LT:
+					if self.sensorData >= self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (back to normal).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData != self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is unequal to threshold (back to normal).")
+
+				elif self.ordering == Ordering.GT:
+					if (self.sensorData <= self.threshold
+						and self.sensorData >= -273.0):
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (back to normal).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
+
+			# Sensor is currently not triggered.
+			# Check if it has to be triggered.
+			else:
+				if self.ordering == Ordering.LT:
+					if (self.sensorData < self.threshold
+						and self.sensorData >= -273.0):
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (triggered).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData == self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is equal to threshold (triggered).")
+
+				elif self.ordering == Ordering.GT:
+					if self.sensorData > self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Temperature %.3f of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (triggered).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
 
 
 	def forceSendAlert(self):
@@ -351,6 +591,17 @@ class WundergroundForecastRainPollingSensor(_PollingSensor):
 		self.city = None
 		self.day = None
 
+		# This flag indicates if this sensor has a threshold that should be
+		# checked and raise a sensor alert if it is reached.
+		self.hasThreshold = False
+
+		# The threshold that should raise a sensor alert if it is reached.
+		self.threshold = None
+
+		# Says how the threshold should be checked
+		# (lower than, equal, greater than).
+		self.ordering = None
+
 
 	def initializeSensor(self):
 		self.hasLatestData = False
@@ -373,6 +624,75 @@ class WundergroundForecastRainPollingSensor(_PollingSensor):
 		if temp != self.sensorData:
 			self.sensorData = temp
 			self._forceSendState = True
+
+		# Only check if threshold is reached if it is activated.
+		if self.hasThreshold:
+
+			# Sensor is currently triggered.
+			# Check if it is "normal" again.
+			if self.state == self.triggerState:
+				if self.ordering == Ordering.LT:
+					if self.sensorData >= self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Chance of rain %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (back to normal).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData != self.threshold:
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Chance of rain %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is unequal to threshold (back to normal).")
+
+				elif self.ordering == Ordering.GT:
+					if (self.sensorData <= self.threshold
+						and self.sensorData >= 0):
+						self.state = 1 - self.triggerState
+						logging.info("[%s]: Chance of rain %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (back to normal).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
+
+			# Sensor is currently not triggered.
+			# Check if it has to be triggered.
+			else:
+				if self.ordering == Ordering.LT:
+					if (self.sensorData < self.threshold
+						and self.sensorData >= 0):
+						self.state = self.triggerState
+						logging.info("[%s]: Chance of rain %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is below threshold (triggered).")
+
+				elif self.ordering == Ordering.EQ:
+					if self.sensorData == self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Chance of rain %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is equal to threshold (triggered).")
+
+				elif self.ordering == Ordering.GT:
+					if self.sensorData > self.threshold:
+						self.state = self.triggerState
+						logging.info("[%s]: Chance of rain %d of sensor '%s' "
+							% (self.fileName, self.sensorData,
+							self.description)
+							+ "is above threshold (triggered).")
+
+				else:
+					logging.error("[%s]: Do not know how to check threshold. "
+						% self.fileName
+						+ "Skipping check.")
 
 
 	def forceSendAlert(self):

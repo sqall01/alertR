@@ -14,3 +14,4 @@ from sensor import WundergroundDataCollector, WundergroundTempPollingSensor, \
 	WundergroundForecastRainPollingSensor, SensorExecuter
 from update import UpdateChecker, Updater
 from globalData import GlobalData
+from localObjects import Ordering

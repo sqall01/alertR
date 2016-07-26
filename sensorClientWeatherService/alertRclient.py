@@ -16,6 +16,7 @@ from lib import WundergroundDataCollector, WundergroundTempPollingSensor, \
 	WundergroundForecastRainPollingSensor, SensorExecuter
 from lib import UpdateChecker
 from lib import GlobalData
+from lib import Ordering
 import logging
 import time
 import socket
@@ -205,6 +206,21 @@ if __name__ == '__main__':
 					"country"])
 				sensor.city = str(item.find("wunderground").attrib[
 					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = float(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
 
 				# Register location in data collector.
 				sensorDataCollector.addLocation(sensor.country,
@@ -237,6 +253,21 @@ if __name__ == '__main__':
 					"country"])
 				sensor.city = str(item.find("wunderground").attrib[
 					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = int(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
 
 				# Register location in data collector.
 				sensorDataCollector.addLocation(sensor.country,
@@ -269,6 +300,22 @@ if __name__ == '__main__':
 					"country"])
 				sensor.city = str(item.find("wunderground").attrib[
 					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = float(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
+
 				sensor.kind = str(item.find("wunderground").attrib[
 					"kind"]).upper()
 				sensor.day = int(item.find("wunderground").attrib[
@@ -316,6 +363,22 @@ if __name__ == '__main__':
 					"country"])
 				sensor.city = str(item.find("wunderground").attrib[
 					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = int(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
+
 				sensor.day = int(item.find("wunderground").attrib[
 					"day"])
 
