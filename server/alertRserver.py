@@ -1457,8 +1457,9 @@ if __name__ == '__main__':
 				ServerSession)
 			break
 		except Exception as e:
-			logging.exception("[%s]: Starting server failed. " % fileName
-			+ "Try again in 5 seconds.")
+			globalData.logger.exception("[%s]: Starting server failed. "
+				% fileName
+				+ "Try again in 5 seconds.")
 			time.sleep(5)
 
 	globalData.logger.info("[%s] Starting server thread." % fileName)
