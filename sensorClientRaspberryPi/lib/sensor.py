@@ -14,6 +14,8 @@ import os
 import logging
 import re
 import threading
+import datetime
+import calendar
 from client import AsynchronousSender
 from localObjects import SensorDataType, Ordering, SensorAlert, StateChange
 
@@ -223,10 +225,12 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 		# check if the last time the sensor was triggered is longer ago
 		# than the configured delay between two triggers
 		# => set time and reset edge counter
-		if (time.time() - self.lastTimeTriggered) > self.delayBetweenTriggers:
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		if (utcTimestamp - self.lastTimeTriggered) > self.delayBetweenTriggers:
 
 			self.edgeCounter = 1
-			self.lastTimeTriggered = time.time()
+			self.lastTimeTriggered = utcTimestamp
 
 		else:
 
@@ -290,8 +294,10 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 	def updateState(self):
 		# check if the sensor is triggered and if it is longer
 		# triggered than configured => set internal state to normal
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		if (self.state == self.triggerState
-			and ((time.time() - self.lastTimeTriggered)
+			and ((utcTimestamp - self.lastTimeTriggered)
 			> self.timeSensorTriggered)):
 			self._internalState = 1 - self.triggerState
 
@@ -396,8 +402,10 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 			+ "/w1_slave"
 
 		# First time the temperature is updated is done in a blocking way.
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		self._updateData()
-		self.lastTemperatureUpdate = int(time.time())
+		self.lastTemperatureUpdate = utcTimestamp
 		self.updateLock.acquire()
 		self.sensorData = self._sensorData
 		self.updateLock.release()
@@ -405,7 +413,7 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 		if not self.sensorData:
 			return False
 
-		self.lastUpdate = int(time.time())
+		self.lastUpdate = utcTimestamp
 
 		return True
 
@@ -418,8 +426,10 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 		# Restrict the times the temperature is actually read from the sensor
 		# to keep the traffic on the bus relatively low.
-		if (int(time.time()) - self.lastTemperatureUpdate) > self.interval:
-			self.lastTemperatureUpdate = int(time.time())
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		if (utcTimestamp - self.lastTemperatureUpdate) > self.interval:
+			self.lastTemperatureUpdate = utcTimestamp
 
 			# Update temperature in a non-blocking way
 			# (this means also, that the current temperature value will
@@ -507,8 +517,10 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 
 	def forceSendState(self):
-		if (int(time.time()) - self.lastUpdate) > self.interval:
-			self.lastUpdate = int(time.time())
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		if (utcTimestamp - self.lastUpdate) > self.interval:
+			self.lastUpdate = utcTimestamp
 
 			stateChange = StateChange()
 			stateChange.clientSensorId = self.id
@@ -721,7 +733,9 @@ class SensorExecuter:
 
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
-			if (time.time() - lastFullStateSent) > 60:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if (utcTimestamp - lastFullStateSent) > 60:
 
 				logging.debug("[%s]: Last state " % self.fileName
 					+ "timed out.")
@@ -735,6 +749,6 @@ class SensorExecuter:
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
-				lastFullStateSent = time.time()
+				lastFullStateSent = utcTimestamp
 				
 			time.sleep(0.5)

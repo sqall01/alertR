@@ -1,5 +1,11 @@
 This file only contains major changes with respect to the alertR system. Please refer to the CHANGELOG.md files of the instances to see the changes in more detail.
 
+## 0.500
+
+Features:
+
+* Uses UTC time instead of local time.
+
 
 ## 0.400
 

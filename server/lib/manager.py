@@ -12,6 +12,8 @@ import os
 import time
 import logging
 import collections
+import datetime
+import calendar
 from server import AsynchronousSender
 
 
@@ -73,12 +75,14 @@ class ManagerUpdateExecuter(threading.Thread):
 			# check if last status update has timed out
 			# or a status update is forced
 			# => send status update to all manager
-			if (((int(time.time()) - self.managerUpdateInterval)
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if (((utcTimestamp - self.managerUpdateInterval)
 				> self.lastStatusUpdateSend)
 				or self.forceStatusUpdate):
 
 				# update time when last status update was sent
-				self.lastStatusUpdateSend = int(time.time())
+				self.lastStatusUpdateSend = utcTimestamp
 
 				# reset new client variable
 				self.forceStatusUpdate = False

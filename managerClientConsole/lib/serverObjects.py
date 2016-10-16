@@ -10,6 +10,8 @@
 import os
 import logging
 import time
+import datetime
+import calendar
 
 
 # this class represents an option of the server
@@ -596,7 +598,8 @@ class ServerEventHandler:
 	def receivedSensorAlert(self, serverTime, sensorAlert):
 
 		self.serverTime = serverTime
-		timeReceived = int(time.time())
+		timeReceived = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		self.sensorAlerts.append(sensorAlert)
 
 		# If rules are not activated (and therefore the sensor alert was

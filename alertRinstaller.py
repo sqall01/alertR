@@ -23,6 +23,8 @@ import math
 import importlib
 import threading
 import optparse
+import datetime
+import calendar
 
 
 ################ GLOBAL CONFIGURATION DATA ################
@@ -160,7 +162,9 @@ class Updater:
 		# check if the last version information check was done shortly before
 		# or was done at all
 		# => if not get the newest version information
-		if ((time.time() - self.lastChecked) > 60
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		if ((utcTimestamp - self.lastChecked) > 60
 			or self.newestFiles == None):
 			if self._getNewestVersionInformation() is False:
 				logging.error("[%s]: Not able to get version "
@@ -595,7 +599,8 @@ class Updater:
 			self.newestRev = rev
 			self.newestFiles = newestFiles
 
-		self.lastChecked = time.time()
+		self.lastChecked = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 
@@ -1015,7 +1020,7 @@ def getRepositoryInformation(host, port, caFile, serverPath):
 
 	fileName = os.path.basename(__file__)
 
-	conn = VerifiedHTTPSConnection(host, port, caFile)
+	conn = VerifiedHTTPSConnection("fcm.googleapis.com", 443, caFile)
 
 	logging.debug("[%s]: Downloading repository information."
 		% fileName)

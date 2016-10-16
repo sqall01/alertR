@@ -12,6 +12,8 @@ import random
 import os
 import logging
 import subprocess
+import datetime
+import calendar
 from client import AsynchronousSender
 from localObjects import SensorDataType, SensorAlert, StateChange
 
@@ -176,13 +178,15 @@ class PingWatchdogSensor(_PollingSensor):
 
 			# check if the interval in which the service should be checked
 			# is exceeded
-			if (int(time.time()) - self.timeExecute) > self.intervalToCheck:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if (utcTimestamp - self.timeExecute) > self.intervalToCheck:
 
 				logging.debug("[%s]: Executing process " % self.fileName
 							+ "'%s'." % self.description)
 				self.process = subprocess.Popen([self.execute,
 					"-c3", str(self.host)])
-				self.timeExecute = int(time.time())
+				self.timeExecute = utcTimestamp
 
 		# => process is still running
 		else:
@@ -191,7 +195,9 @@ class PingWatchdogSensor(_PollingSensor):
 			if self.process.poll() is None:
 
 				# check if process has timed out
-				if (int(time.time()) - self.timeExecute) > self.timeout:
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				if (utcTimestamp - self.timeExecute) > self.timeout:
 
 					self.state = 1
 
@@ -442,7 +448,9 @@ class SensorExecuter:
 
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
-			if (time.time() - lastFullStateSent) > 60:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if (utcTimestamp - lastFullStateSent) > 60:
 
 				logging.debug("[%s]: Last state " % self.fileName
 					+ "timed out.")
@@ -456,6 +464,6 @@ class SensorExecuter:
 				asyncSenderProcess.start()
 
 				# update time on which the full state update was sent
-				lastFullStateSent = time.time()
+				lastFullStateSent = utcTimestamp
 				
 			time.sleep(0.5)

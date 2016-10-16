@@ -14,6 +14,8 @@ import time
 import socket
 import struct
 import hashlib
+import datetime
+import calendar
 from localObjects import SensorDataType
 
 
@@ -376,8 +378,10 @@ class Sqlite(_Storage):
 	def _generateUniqueId(self):
 
 		# generate unique id for this installation
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		uniqueString = socket.gethostname() \
-			+ struct.pack("d", time.time()) \
+			+ struct.pack("d", utcTimestamp) \
 			+ os.urandom(200)
 		sha256 = hashlib.sha256()
 		sha256.update(uniqueString)
@@ -1211,6 +1215,8 @@ class Sqlite(_Storage):
 
 				# add sensor to database
 				try:
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
 					self.cursor.execute("INSERT INTO sensors ("
 						+ "nodeId, "
 						+ "remoteSensorId, "
@@ -1223,7 +1229,7 @@ class Sqlite(_Storage):
 						sensor["clientSensorId"],
 						sensor["description"],
 						sensor["state"],
-						int(time.time()),
+						utcTimestamp,
 						sensor["alertDelay"],
 						sensor["dataType"]))
 				except Exception as e:
@@ -2055,12 +2061,14 @@ class Sqlite(_Storage):
 
 					return False
 
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
 				self.cursor.execute("UPDATE sensors SET "
 					+ "state = ?, "
 					+ "lastStateUpdated = ? "
 					+ "WHERE nodeId = ? "
 					+ "AND remoteSensorId = ?",
-					(stateTuple[1], int(time.time()), nodeId, stateTuple[0]))
+					(stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
 			except Exception as e:
 				logger.exception("[%s]: Not able to update sensor state."
 					% self.fileName)
@@ -2161,10 +2169,12 @@ class Sqlite(_Storage):
 
 		# Update time of sensor in the database.
 		try:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			self.cursor.execute("UPDATE sensors SET "
 				+ "lastStateUpdated = ? "
 				+ "WHERE id = ?",
-				(int(time.time()), sensorId))
+				(utcTimestamp, sensorId))
 
 		except Exception as e:
 			logger.exception("[%s]: Not able to update sensor time."
@@ -2329,6 +2339,8 @@ class Sqlite(_Storage):
 				dbHasLatestData = 1
 			else:
 				dbHasLatestData = 0
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
@@ -2338,7 +2350,7 @@ class Sqlite(_Storage):
 				+ "changeState, "
 				+ "hasLatestData, "
 				+ "dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-				(nodeId, sensorId, state, int(time.time()), dataJson,
+				(nodeId, sensorId, state, utcTimestamp, dataJson,
 				dbChangeState, dbHasLatestData, dataType))
 
 			# Get sensorAlertId of current added sensor alert.
@@ -3330,8 +3342,10 @@ class Mysql(_Storage):
 	def _generateUniqueId(self):
 
 		# generate unique id for this installation
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		uniqueString = socket.gethostname() \
-			+ struct.pack("d", time.time()) \
+			+ struct.pack("d", utcTimestamp) \
 			+ os.urandom(200)
 		sha256 = hashlib.sha256()
 		sha256.update(uniqueString)
@@ -4228,6 +4242,8 @@ class Mysql(_Storage):
 
 				# add sensor to database
 				try:
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
 					self.cursor.execute("INSERT INTO sensors ("
 						+ "nodeId, "
 						+ "remoteSensorId, "
@@ -4240,7 +4256,7 @@ class Mysql(_Storage):
 						sensor["clientSensorId"],
 						sensor["description"],
 						sensor["state"],
-						int(time.time()),
+						utcTimestamp,
 						sensor["alertDelay"],
 						sensor["dataType"]))
 				except Exception as e:
@@ -5256,12 +5272,14 @@ class Mysql(_Storage):
 
 					return False
 
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
 				self.cursor.execute("UPDATE sensors SET "
 					+ "state = %s, "
 					+ "lastStateUpdated = %s "
 					+ "WHERE nodeId = %s "
 					+ "AND remoteSensorId = %s",
-					(stateTuple[1], int(time.time()), nodeId, stateTuple[0]))
+					(stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
 			except Exception as e:
 				logger.exception("[%s]: Not able to update sensor state."
 					% self.fileName)
@@ -5398,10 +5416,12 @@ class Mysql(_Storage):
 
 		# Update time of sensor in the database.
 		try:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			self.cursor.execute("UPDATE sensors SET "
 				+ "lastStateUpdated = %s "
 				+ "WHERE id = %s",
-				(int(time.time()), sensorId))
+				(utcTimestamp, sensorId))
 
 		except Exception as e:
 			logger.exception("[%s]: Not able to update sensor time."
@@ -5651,6 +5671,8 @@ class Mysql(_Storage):
 				dbHasLatestData = 1
 			else:
 				dbHasLatestData = 0
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
@@ -5660,7 +5682,7 @@ class Mysql(_Storage):
 				+ "changeState, "
 				+ "hasLatestData, "
 				+ "dataType) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-				(nodeId, sensorId, state, int(time.time()), dataJson,
+				(nodeId, sensorId, state, utcTimestamp, dataJson,
 				dbChangeState, dbHasLatestData, dataType))
 
 			# Get sensorAlertId of current added sensor alert.

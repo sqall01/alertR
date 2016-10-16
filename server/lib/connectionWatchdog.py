@@ -12,6 +12,8 @@ import time
 import logging
 import os
 import json
+import datetime
+import calendar
 from localObjects import SensorDataType, SensorTimeoutSensor, NodeTimeoutSensor
 
 
@@ -92,7 +94,8 @@ class ConnectionWatchdog(threading.Thread):
 		# Get all nodes that are longer in the pre-timeout set
 		# then the allowed grace period.
 		newTimeouts = set()
-		currentTime = int(time.time())
+		currentTime = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		self._acquireNodeTimeoutLock()
 		for preTuple in set(self._preTimeoutNodeIds):
 			if (currentTime - preTuple[1]) > self.gracePeriodTimeout:
@@ -114,7 +117,9 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Check if the time of the data last received lies
 			# too far in the past => kill connection.
-			if ((time.time() - serverSession.clientComm.lastRecv)
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if ((utcTimestamp - serverSession.clientComm.lastRecv)
 				>= self.connectionTimeout):
 
 				self.logger.error("[%s]: Connection to " % self.fileName
@@ -231,7 +236,9 @@ class ConnectionWatchdog(threading.Thread):
 		# Start sensor timeout reminder timer when the sensor timeout list
 		# was empty before.
 		if wasEmpty and self.timeoutSensorIds:
-			self.lastSensorTimeoutReminder = time.time()
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			self.lastSensorTimeoutReminder = utcTimestamp
 
 
 	# Internal function that processes old occurred sensor timeouts
@@ -345,10 +352,12 @@ class ConnectionWatchdog(threading.Thread):
 		elif self.timeoutSensorIds:
 
 			# Check if a sensor timeout reminder has to be raised.
-			if ((time.time() - self.lastSensorTimeoutReminder)
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if ((utcTimestamp - self.lastSensorTimeoutReminder)
 				>= self.timeoutReminderTime):
 
-				self.lastSensorTimeoutReminder = time.time()
+				self.lastSensorTimeoutReminder = utcTimestamp
 
 				# Raise sensor alert for internal sensor timeout sensor.
 				if not self.sensorTimeoutSensor is None:
@@ -424,10 +433,12 @@ class ConnectionWatchdog(threading.Thread):
 		elif self._timeoutNodeIds:
 
 			# Check if a node timeout reminder has to be raised.
-			if ((time.time() - self._lastNodeTimeoutReminder)
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if ((utcTimestamp - self._lastNodeTimeoutReminder)
 				>= self.timeoutReminderTime):
 
-				self._lastNodeTimeoutReminder = time.time()
+				self._lastNodeTimeoutReminder = utcTimestamp
 
 				# Raise sensor alert for internal node timeout sensor.
 				if not self.nodeTimeoutSensor is None:
@@ -654,7 +665,9 @@ class ConnectionWatchdog(threading.Thread):
 		# Start node timeout reminder timer when the sensor timeout list
 		# was empty before.
 		if wasEmpty and self._timeoutNodeIds:
-			self._lastNodeTimeoutReminder = time.time()
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			self._lastNodeTimeoutReminder = utcTimestamp
 
 		self._releaseNodeTimeoutLock()
 
@@ -712,7 +725,9 @@ class ConnectionWatchdog(threading.Thread):
 			% hostname)
 
 		# Add node id with time that timeout occurred into pre-timeout set.
-		self._preTimeoutNodeIds.add( (nodeId, int(time.time())) )
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		self._preTimeoutNodeIds.add( (nodeId, utcTimestamp) )
 
 		self._releaseNodeTimeoutLock()
 
@@ -874,8 +889,10 @@ class ConnectionWatchdog(threading.Thread):
 			# Get all sensors that have timed out.
 			# Data: list of tuples of (sensorId, nodeId,
 			# lastStateUpdated, description)
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
-				int(time.time()) - (2 * self.connectionTimeout))
+				utcTimestamp - (2 * self.connectionTimeout))
 
 			# Process occurred sensor time outs (and if they newly occurred).
 			self._processNewSensorTimeouts(sensorsTimeoutList)

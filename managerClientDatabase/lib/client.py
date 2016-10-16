@@ -18,6 +18,8 @@ import os
 import base64
 import random
 import json
+import datetime
+import calendar
 from localObjects import SensorDataType
 BUFSIZE = 4096
 
@@ -129,7 +131,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the alertDelay.
-	def _checkMsgAlertDelay(self, alertDelay):
+	def _checkMsgAlertDelay(self, alertDelay, messageType):
 
 		isCorrect = True
 		if not isinstance(alertDelay, int):
@@ -138,8 +140,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertDelay not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -151,7 +155,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the alertId.
-	def _checkMsgAlertId(self, alertId):
+	def _checkMsgAlertId(self, alertId, messageType):
 
 		isCorrect = True
 		if not isinstance(alertId, int):
@@ -160,8 +164,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertId not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -173,7 +179,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the alertLevel.
-	def _checkMsgAlertLevel(self, alertLevel):
+	def _checkMsgAlertLevel(self, alertLevel, messageType):
 
 		isCorrect = True
 		if not isinstance(alertLevel, int):
@@ -182,8 +188,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertLevel not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -195,7 +203,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the alertLevels.
-	def _checkMsgAlertLevels(self, alertLevels):
+	def _checkMsgAlertLevels(self, alertLevels, messageType):
 
 		isCorrect = True
 		if not isinstance(alertLevels, list):
@@ -206,8 +214,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertLevels not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -219,7 +229,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the changeState.
-	def _checkMsgChangeState(self, changeState):
+	def _checkMsgChangeState(self, changeState, messageType):
 
 		isCorrect = True
 		if not isinstance(changeState, bool):
@@ -228,8 +238,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "changeState not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -241,7 +253,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the connected.
-	def _checkMsgConnected(self, connected):
+	def _checkMsgConnected(self, connected, messageType):
 
 		isCorrect = True
 		if not isinstance(connected, int):
@@ -252,8 +264,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "connected not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -265,7 +279,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the description.
-	def _checkMsgDescription(self, description):
+	def _checkMsgDescription(self, description, messageType):
 
 		isCorrect = True
 		if not (isinstance(description, str)
@@ -275,8 +289,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "description not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -288,7 +304,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the hasLatestData.
-	def _checkMsgHasLatestData(self, hasLatestData):
+	def _checkMsgHasLatestData(self, hasLatestData, messageType):
 
 		isCorrect = True
 		if not isinstance(hasLatestData, bool):
@@ -297,8 +313,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "hasLatestData not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -310,7 +328,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the hasOptionalData.
-	def _checkMsgHasOptionalData(self, hasOptionalData):
+	def _checkMsgHasOptionalData(self, hasOptionalData, messageType):
 
 		isCorrect = True
 		if not isinstance(hasOptionalData, bool):
@@ -319,8 +337,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "hasOptionalData not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -332,7 +352,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the hostname.
-	def _checkMsgHostname(self, hostname):
+	def _checkMsgHostname(self, hostname, messageType):
 
 		isCorrect = True
 		if not (isinstance(hostname, str)
@@ -342,8 +362,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "hostname not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -355,7 +377,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the instance.
-	def _checkMsgInstance(self, instance):
+	def _checkMsgInstance(self, instance, messageType):
 
 		isCorrect = True
 		if not (isinstance(instance, str)
@@ -365,8 +387,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "instance not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -378,7 +402,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the lastStateUpdated.
-	def _checkMsgLastStateUpdated(self, lastStateUpdated):
+	def _checkMsgLastStateUpdated(self, lastStateUpdated, messageType):
 
 		isCorrect = True
 		if not isinstance(lastStateUpdated, int):
@@ -387,8 +411,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "lastStateUpdated not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -400,7 +426,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the managerId.
-	def _checkMsgManagerId(self, managerId):
+	def _checkMsgManagerId(self, managerId, messageType):
 
 		isCorrect = True
 		if not isinstance(managerId, int):
@@ -409,8 +435,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "managerId not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -422,7 +450,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the name.
-	def _checkMsgName(self, name):
+	def _checkMsgName(self, name, messageType):
 
 		isCorrect = True
 		if not (isinstance(name, str)
@@ -432,8 +460,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "name not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -445,7 +475,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the nodeId.
-	def _checkMsgNodeId(self, nodeId):
+	def _checkMsgNodeId(self, nodeId, messageType):
 
 		isCorrect = True
 		if not isinstance(nodeId, int):
@@ -454,8 +484,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "nodeId not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -467,7 +499,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the nodeType.
-	def _checkMsgNodeType(self, nodeType):
+	def _checkMsgNodeType(self, nodeType, messageType):
 
 		isCorrect = True
 		if not (isinstance(nodeType, str)
@@ -481,8 +513,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "nodeType not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -494,20 +528,25 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the optionalData.
-	def _checkMsgOptionalData(self, optionalData):
+	def _checkMsgOptionalData(self, optionalData, messageType):
 
 		isCorrect = True
 		if not isinstance(optionalData, dict):
 			isCorrect = False
 		if "message" in optionalData.keys():
-			if not self._checkMsgOptionalDataMessage(optionalData["message"]):
+			if not self._checkMsgOptionalDataMessage(
+				optionalData["message"],
+				messageType):
+
 				isCorrect = False
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "optionalData not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -519,7 +558,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the optionalData message.
-	def _checkMsgOptionalDataMessage(self, message):
+	def _checkMsgOptionalDataMessage(self, message, messageType):
 
 		isCorrect = True
 		if not (isinstance(message, str)
@@ -529,8 +568,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "optionalData message not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -542,7 +583,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the optionType.
-	def _checkMsgOptionType(self, optionType):
+	def _checkMsgOptionType(self, optionType, messageType):
 
 		isCorrect = True
 		if not (isinstance(optionType, str)
@@ -555,8 +596,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "optionType not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -568,7 +611,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the option value.
-	def _checkMsgOptionValue(self, value):
+	def _checkMsgOptionValue(self, value, messageType):
 
 		isCorrect = True
 		if not isinstance(value, float):
@@ -580,8 +623,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "value not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -593,7 +638,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the persistent.
-	def _checkMsgPersistent(self, persistent):
+	def _checkMsgPersistent(self, persistent, messageType):
 
 		isCorrect = True
 		if not isinstance(persistent, int):
@@ -604,8 +649,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "persistent not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -617,7 +664,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the remoteAlertId.
-	def _checkMsgRemoteAlertId(self, remoteAlertId):
+	def _checkMsgRemoteAlertId(self, remoteAlertId, messageType):
 
 		isCorrect = True
 		if not isinstance(remoteAlertId, int):
@@ -626,8 +673,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "remoteAlertId not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -639,7 +688,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the remoteSensorId.
-	def _checkMsgRemoteSensorId(self, remoteSensorId):
+	def _checkMsgRemoteSensorId(self, remoteSensorId, messageType):
 
 		isCorrect = True
 		if not isinstance(remoteSensorId, int):
@@ -648,8 +697,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "remoteSensorId not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -661,7 +712,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the rev.
-	def _checkMsgRev(self, rev):
+	def _checkMsgRev(self, rev, messageType):
 
 		isCorrect = True
 		if not isinstance(rev, int):
@@ -670,8 +721,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "rev not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -683,7 +736,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the rulesActivated.
-	def _checkMsgRulesActivated(self, rulesActivated):
+	def _checkMsgRulesActivated(self, rulesActivated, messageType):
 
 		isCorrect = True
 		if not isinstance(rulesActivated, bool):
@@ -692,8 +745,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "rulesActivated not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -705,7 +760,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the sensor data.
-	def _checkMsgSensorData(self, data, dataType):
+	def _checkMsgSensorData(self, data, dataType, messageType):
 
 		isCorrect = True
 		if (dataType == SensorDataType.NONE
@@ -721,8 +776,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "data not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -734,7 +791,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the sensor data type.
-	def _checkMsgSensorDataType(self, dataType):
+	def _checkMsgSensorDataType(self, dataType, messageType):
 
 		isCorrect = True
 		if not isinstance(dataType, int):
@@ -747,8 +804,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "dataType not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -760,7 +819,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the sensorId.
-	def _checkMsgSensorId(self, sensorId):
+	def _checkMsgSensorId(self, sensorId, messageType):
 
 		isCorrect = True
 		if not isinstance(sensorId, int):
@@ -769,8 +828,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "sensorId not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -782,7 +843,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the serverTime.
-	def _checkMsgServerTime(self, serverTime):
+	def _checkMsgServerTime(self, serverTime, messageType):
 
 		isCorrect = True
 		if not isinstance(serverTime, int):
@@ -791,8 +852,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "serverTime not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -804,7 +867,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the state.
-	def _checkMsgState(self, state):
+	def _checkMsgState(self, state, messageType):
 
 		isCorrect = True
 		if not isinstance(state, int):
@@ -815,8 +878,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "state not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -828,7 +893,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the status alertLevels list.
-	def _checkMsgStatusAlertLevelsList(self, alertLevels):
+	def _checkMsgStatusAlertLevelsList(self, alertLevels, messageType):
 
 		isCorrect = True
 		if not isinstance(alertLevels, list):
@@ -844,21 +909,30 @@ class ServerCommunication:
 			if not "alertLevel" in alertLevel.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertLevel(alertLevel["alertLevel"]):
+			elif not self._checkMsgAlertLevel(
+				alertLevel["alertLevel"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "name" in alertLevel.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgName(alertLevel["name"]):
+			elif not self._checkMsgName(
+				alertLevel["name"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "triggerAlways" in alertLevel.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgTriggerAlways(alertLevel["triggerAlways"]):
+			elif not self._checkMsgTriggerAlways(
+				alertLevel["triggerAlways"],
+				messageType):
+
 				isCorrect = False
 				break
 
@@ -866,7 +940,8 @@ class ServerCommunication:
 				isCorrect = False
 				break
 			elif not self._checkMsgRulesActivated(
-				alertLevel["rulesActivated"]):
+				alertLevel["rulesActivated"],
+				messageType):
 
 				isCorrect = False
 				break
@@ -874,8 +949,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertLevels list not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -887,7 +964,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the status alerts list.
-	def _checkMsgStatusAlertsList(self, alerts):
+	def _checkMsgStatusAlertsList(self, alerts, messageType):
 
 		isCorrect = True
 		if not isinstance(alerts, list):
@@ -903,43 +980,60 @@ class ServerCommunication:
 			if not "nodeId" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgNodeId(alert["nodeId"]):
+			elif not self._checkMsgNodeId(
+				alert["nodeId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "alertId" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertId(alert["alertId"]):
+			elif not self._checkMsgAlertId(
+				alert["alertId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "description" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgDescription(alert["description"]):
+			elif not self._checkMsgDescription(
+				alert["description"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "alertLevels" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertLevels(alert["alertLevels"]):
+			elif not self._checkMsgAlertLevels(
+				alert["alertLevels"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "remoteAlertId" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgRemoteAlertId(alert["remoteAlertId"]):
+			elif not self._checkMsgRemoteAlertId(
+				alert["remoteAlertId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "alerts list not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -951,7 +1045,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the status managers list.
-	def _checkMsgStatusManagersList(self, managers):
+	def _checkMsgStatusManagersList(self, managers, messageType):
 
 		isCorrect = True
 		if not isinstance(managers, list):
@@ -967,29 +1061,40 @@ class ServerCommunication:
 			if not "nodeId" in manager.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgNodeId(manager["nodeId"]):
+			elif not self._checkMsgNodeId(
+				manager["nodeId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "managerId" in manager.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgManagerId(manager["managerId"]):
+			elif not self._checkMsgManagerId(
+				manager["managerId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "description" in manager.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgDescription(manager["description"]):
+			elif not self._checkMsgDescription(
+				manager["description"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "managers list not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1001,7 +1106,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the status nodes list.
-	def _checkMsgStatusNodesList(self, nodes):
+	def _checkMsgStatusNodesList(self, nodes, messageType):
 
 		isCorrect = True
 		if not isinstance(nodes, list):
@@ -1017,71 +1122,100 @@ class ServerCommunication:
 			if not "nodeId" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgNodeId(node["nodeId"]):
+			elif not self._checkMsgNodeId(
+				node["nodeId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "hostname" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgHostname(node["hostname"]):
+			elif not self._checkMsgHostname(
+				node["hostname"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "nodeType" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgNodeType(node["nodeType"]):
+			elif not self._checkMsgNodeType(
+				node["nodeType"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "instance" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgInstance(node["instance"]):
+			elif not self._checkMsgInstance(
+				node["instance"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "connected" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgConnected(node["connected"]):
+			elif not self._checkMsgConnected(
+				node["connected"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "version" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgVersion(node["version"]):
+			elif not self._checkMsgVersion(
+				node["version"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "rev" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgRev(node["rev"]):
+			elif not self._checkMsgRev(
+				node["rev"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "username" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgUsername(node["username"]):
+			elif not self._checkMsgUsername(
+				node["username"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "persistent" in node.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgPersistent(node["persistent"]):
+			elif not self._checkMsgPersistent(
+				node["persistent"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "nodes list not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1093,7 +1227,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the status options list.
-	def _checkMsgStatusOptionsList(self, options):
+	def _checkMsgStatusOptionsList(self, options, messageType):
 
 		isCorrect = True
 		if not isinstance(options, list):
@@ -1109,22 +1243,30 @@ class ServerCommunication:
 			if not "type" in option.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgOptionType(option["type"]):
+			elif not self._checkMsgOptionType(
+				option["type"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "value" in option.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgOptionValue(option["value"]):
+			elif not self._checkMsgOptionValue(
+				option["value"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "options list not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1136,7 +1278,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the status sensors list.
-	def _checkMsgStatusSensorsList(self, sensors):
+	def _checkMsgStatusSensorsList(self, sensors, messageType):
 
 		isCorrect = True
 		if not isinstance(sensors, list):
@@ -1152,35 +1294,50 @@ class ServerCommunication:
 			if not "nodeId" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgNodeId(sensor["nodeId"]):
+			elif not self._checkMsgNodeId(
+				sensor["nodeId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "sensorId" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgSensorId(sensor["sensorId"]):
+			elif not self._checkMsgSensorId(
+				sensor["sensorId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "alertDelay" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertDelay(sensor["alertDelay"]):
+			elif not self._checkMsgAlertDelay(
+				sensor["alertDelay"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "alertLevels" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertLevels(sensor["alertLevels"]):
+			elif not self._checkMsgAlertLevels(
+				sensor["alertLevels"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "description" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgDescription(sensor["description"]):
+			elif not self._checkMsgDescription(
+				sensor["description"],
+				messageType):
+
 				isCorrect = False
 				break
 
@@ -1188,7 +1345,8 @@ class ServerCommunication:
 				isCorrect = False
 				break
 			elif not self._checkMsgLastStateUpdated(
-				sensor["lastStateUpdated"]):
+				sensor["lastStateUpdated"],
+				messageType):
 
 				isCorrect = False
 				break
@@ -1196,21 +1354,29 @@ class ServerCommunication:
 			if not "state" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgState(sensor["state"]):
+			elif not self._checkMsgState(
+				sensor["state"],
+				messageType):
 				isCorrect = False
 				break
 
 			if not "remoteSensorId" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgRemoteSensorId(sensor["remoteSensorId"]):
+			elif not self._checkMsgRemoteSensorId(
+				sensor["remoteSensorId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "dataType" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgSensorDataType(sensor["dataType"]):
+			elif not self._checkMsgSensorDataType(
+				sensor["dataType"],
+				messageType):
+
 				isCorrect = False
 				break
 
@@ -1218,8 +1384,10 @@ class ServerCommunication:
 				if not "data" in sensor.keys():
 					isCorrect = False
 					break
-				elif not self._checkMsgSensorData(sensor["data"],
-					sensor["dataType"]):
+				elif not self._checkMsgSensorData(
+					sensor["data"],
+					sensor["dataType"],
+					messageType):
 
 					isCorrect = False
 					break
@@ -1227,8 +1395,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "sensors list not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1240,7 +1410,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the triggerAlways.
-	def _checkMsgTriggerAlways(self, triggerAlways):
+	def _checkMsgTriggerAlways(self, triggerAlways, messageType):
 
 		isCorrect = True
 		if not isinstance(triggerAlways, int):
@@ -1251,8 +1421,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "triggerAlways not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1264,7 +1436,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the username.
-	def _checkMsgUsername(self, username):
+	def _checkMsgUsername(self, username, messageType):
 
 		isCorrect = True
 		if not (isinstance(username, str)
@@ -1274,8 +1446,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "username not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1287,7 +1461,7 @@ class ServerCommunication:
 
 
 	# Internal function to check sanity of the version.
-	def _checkMsgVersion(self, version):
+	def _checkMsgVersion(self, version, messageType):
 
 		isCorrect = True
 		if not isinstance(version, float):
@@ -1296,8 +1470,10 @@ class ServerCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
+					"message": messageType,
 					"error": "version not valid"}
 				self.client.send(json.dumps(message))
 			except Exception as e:
@@ -1377,7 +1553,9 @@ class ServerCommunication:
 			try:
 				payload = {"type": "rts",
 					"id": transactionId}
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"size": messageSize,
 					"message": messageType,
 					"payload": payload}
@@ -1474,7 +1652,9 @@ class ServerCommunication:
 			"rev": self.rev,
 			"username": self.username,
 			"password": self.password}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"size": regMessageSize,
 			"message": "initialization",
 			"payload": payload}
@@ -1487,7 +1667,9 @@ class ServerCommunication:
 			"optionType": optionType,
 			"value": float(optionValue),
 			"timeDelay": optionDelay}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "option",
 			"payload": payload}
 		return json.dumps(message)
@@ -1497,7 +1679,9 @@ class ServerCommunication:
 	def _buildPingMessage(self):
 
 		payload = {"type": "request"}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "ping",
 			"payload": payload}
 		return json.dumps(message)
@@ -1516,7 +1700,9 @@ class ServerCommunication:
 			"instance": self.instance,
 			"persistent": self.persistent,
 			"manager": manager}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "initialization",
 			"payload": payload}
 		return json.dumps(message)
@@ -1555,7 +1741,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
@@ -1571,7 +1759,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -1610,7 +1800,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "version not compatible"}
 					self.client.send(json.dumps(message))
@@ -1625,7 +1817,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": message["message"],
 					"error": "version not valid"}
 				self.client.send(json.dumps(message))
@@ -1668,7 +1862,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
@@ -1684,7 +1880,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -1721,37 +1919,51 @@ class ServerCommunication:
 		try:
 
 			if not self._checkMsgServerTime(
-				incomingMessage["serverTime"]):
+				incomingMessage["serverTime"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received serverTime invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgStatusOptionsList(
-				incomingMessage["payload"]["options"]):
+				incomingMessage["payload"]["options"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received options invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgStatusNodesList(
-				incomingMessage["payload"]["nodes"]):
+				incomingMessage["payload"]["nodes"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received nodes invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgStatusSensorsList(
-				incomingMessage["payload"]["sensors"]):
+				incomingMessage["payload"]["sensors"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received sensors invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgStatusManagersList(
-				incomingMessage["payload"]["managers"]):
+				incomingMessage["payload"]["managers"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received managers invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgStatusAlertsList(
-				incomingMessage["payload"]["alerts"]):
+				incomingMessage["payload"]["alerts"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received alerts invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgStatusAlertLevelsList(
-				incomingMessage["payload"]["alertLevels"]):
+				incomingMessage["payload"]["alertLevels"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received alertLevels invalid."
 					% self.fileName)
 				return False
@@ -1770,7 +1982,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received status invalid"}
 				self.client.send(json.dumps(message))
@@ -1794,7 +2008,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "received option invalid"}
 					self.client.send(json.dumps(message))
@@ -1835,7 +2051,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "received node invalid"}
 					self.client.send(json.dumps(message))
@@ -1887,7 +2105,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "received sensor invalid"}
 					self.client.send(json.dumps(message))
@@ -1931,7 +2151,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "received manager invalid"}
 					self.client.send(json.dumps(message))
@@ -1969,7 +2191,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "received alert invalid"}
 					self.client.send(json.dumps(message))
@@ -2008,7 +2232,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "received alertLevel invalid"}
 					self.client.send(json.dumps(message))
@@ -2035,7 +2261,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "handling received data failed"}
 				self.client.send(json.dumps(message))
@@ -2048,9 +2276,10 @@ class ServerCommunication:
 		logging.debug("[%s]: Sending status " % self.fileName
 			+ "response message.")
 		try:
-
 			payload = {"type": "response", "result": "ok"}
-			message = {"clientTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"clientTime": utcTimestamp,
 				"message": "status", "payload": payload}
 			self.client.send(json.dumps(message))
 
@@ -2073,68 +2302,93 @@ class ServerCommunication:
 
 		# extract sensor alert values
 		sensorAlert = SensorAlert()
-		sensorAlert.timeReceived = int(time.time())
+		sensorAlert.timeReceived = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		try:
 			if not self._checkMsgServerTime(
-				incomingMessage["serverTime"]):
+				incomingMessage["serverTime"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received serverTime invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgAlertLevels(
-				incomingMessage["payload"]["alertLevels"]):
+				incomingMessage["payload"]["alertLevels"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received alertLevels invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgDescription(
-				incomingMessage["payload"]["description"]):
+				incomingMessage["payload"]["description"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received description invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgRulesActivated(
-				incomingMessage["payload"]["rulesActivated"]):
+				incomingMessage["payload"]["rulesActivated"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received rulesActivated invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgSensorId(
-				incomingMessage["payload"]["sensorId"]):
+				incomingMessage["payload"]["sensorId"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received sensorId invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgState(
-				incomingMessage["payload"]["state"]):
+				incomingMessage["payload"]["state"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received state invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgHasOptionalData(
-				incomingMessage["payload"]["hasOptionalData"]):
+				incomingMessage["payload"]["hasOptionalData"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received hasOptionalData invalid."
 					% self.fileName)
 				return False
 			if incomingMessage["payload"]["hasOptionalData"]:
 				if not self._checkMsgOptionalData(
-					incomingMessage["payload"]["optionalData"]):
+					incomingMessage["payload"]["optionalData"],
+					incomingMessage["message"]):
+
 					logging.error("[%s]: Received optionalData invalid."
 						% self.fileName)
 					return False
 			if not self._checkMsgSensorDataType(
-				incomingMessage["payload"]["dataType"]):
+				incomingMessage["payload"]["dataType"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received dataType invalid."
 					% self.fileName)
 				return False
 			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
 				if not self._checkMsgSensorData(
 					incomingMessage["payload"]["data"],
-					incomingMessage["payload"]["dataType"]):
+					incomingMessage["payload"]["dataType"],
+					incomingMessage["message"]):
+
 					logging.error("[%s]: Received data invalid."
 						% self.fileName)
 					return False
 			if not self._checkMsgHasLatestData(
-				incomingMessage["payload"]["hasLatestData"]):
+				incomingMessage["payload"]["hasLatestData"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received hasLatestData invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgChangeState(
-				incomingMessage["payload"]["changeState"]):
+				incomingMessage["payload"]["changeState"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received changeState invalid."
 					% self.fileName)
 				return False
@@ -2181,7 +2435,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor alert invalid"}
 				self.client.send(json.dumps(message))
@@ -2194,9 +2450,10 @@ class ServerCommunication:
 		logging.debug("[%s]: Sending sensor alert " % self.fileName
 			+ "response message.")
 		try:
-
 			payload = {"type": "response", "result": "ok"}
-			message = {"clientTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"clientTime": utcTimestamp,
 				"message": "sensoralert", "payload": payload}
 			self.client.send(json.dumps(message))
 
@@ -2223,29 +2480,39 @@ class ServerCommunication:
 		# extract state change values
 		try:
 			if not self._checkMsgServerTime(
-				incomingMessage["serverTime"]):
+				incomingMessage["serverTime"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received serverTime invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgSensorId(
-				incomingMessage["payload"]["sensorId"]):
+				incomingMessage["payload"]["sensorId"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received sensorId invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgState(
-				incomingMessage["payload"]["state"]):
+				incomingMessage["payload"]["state"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received state invalid."
 					% self.fileName)
 				return False
 			if not self._checkMsgSensorDataType(
-				incomingMessage["payload"]["dataType"]):
+				incomingMessage["payload"]["dataType"],
+				incomingMessage["message"]):
+
 				logging.error("[%s]: Received dataType invalid."
 					% self.fileName)
 				return False
 			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
 				if not self._checkMsgSensorData(
 					incomingMessage["payload"]["data"],
-					incomingMessage["payload"]["dataType"]):
+					incomingMessage["payload"]["dataType"],
+					incomingMessage["message"]):
+
 					logging.error("[%s]: Received data invalid."
 						% self.fileName)
 					return False
@@ -2268,7 +2535,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received state change invalid"}
 				self.client.send(json.dumps(message))
@@ -2281,9 +2550,10 @@ class ServerCommunication:
 		logging.debug("[%s]: Sending state change " % self.fileName
 			+ "response message.")
 		try:
-
 			payload = {"type": "response", "result": "ok"}
-			message = {"clientTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"clientTime": utcTimestamp,
 				"message": "statechange", "payload": payload}
 			self.client.send(json.dumps(message))
 
@@ -2375,7 +2645,9 @@ class ServerCommunication:
 
 				# send CTS (clear to send) message
 				payload = {"type": "cts", "id": receivedTransactionId}
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": str(message["message"]),
 					"payload": payload}
 				self.client.send(json.dumps(message))
@@ -2434,7 +2706,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "request expected"}
 					self.client.send(json.dumps(message))
@@ -2461,7 +2735,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": message["message"],
 					"error": "initial status update expected"}
 				self.client.send(json.dumps(message))
@@ -2479,7 +2755,8 @@ class ServerCommunication:
 			self._releaseLock()
 			return False
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		# set client as connected
 		self.isConnected = True
@@ -2541,7 +2818,9 @@ class ServerCommunication:
 
 					# send CTS (clear to send) message
 					payload = {"type": "cts", "id": receivedTransactionId}
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": str(message["message"]),
 						"payload": payload}
 					self.client.send(json.dumps(message))
@@ -2634,7 +2913,9 @@ class ServerCommunication:
 
 					# send error message back
 					try:
-						message = {"clientTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"clientTime": utcTimestamp,
 							"message": message["message"],
 							"error": "request expected"}
 						self.client.send(json.dumps(message))
@@ -2709,7 +2990,9 @@ class ServerCommunication:
 					+ "command. Server sent: '%s'." % data)
 
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown command/message type"}
 					self.client.send(json.dumps(message))
@@ -2724,7 +3007,8 @@ class ServerCommunication:
 			# handle incoming message event
 			self.serverEventHandler.handleEvent()
 
-			self.lastRecv = time.time()
+			self.lastRecv = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 
 
 	# this function sends an option change to the server for example
@@ -2773,7 +3057,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "option message expected"}
 					self.client.send(json.dumps(message))
@@ -2792,7 +3078,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -2823,7 +3111,8 @@ class ServerCommunication:
 
 		logging.debug("[%s]: Received valid option response." % self.fileName)
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 		self._releaseLock()
 
 		return True
@@ -2902,7 +3191,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "ping message expected"}
 					self.client.send(json.dumps(message))
@@ -2921,7 +3212,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -2954,7 +3247,8 @@ class ServerCommunication:
 		self._releaseLock()
 
 		# update time of the last received data
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 
@@ -3036,7 +3330,9 @@ class ConnectionWatchdog(threading.Thread):
 
 			# check if the time of the data last received lies too far in the
 			# past => send ping to check connection
-			if (time.time() - self.connection.lastRecv) > self.pingInterval:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if (utcTimestamp - self.connection.lastRecv) > self.pingInterval:
 				logging.debug("[%s]: Ping interval exceeded."
 						% self.fileName)
 

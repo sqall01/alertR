@@ -28,6 +28,8 @@ import time
 import threading
 import random
 import xml.etree.ElementTree
+import datetime
+import calendar
 
 
 # Function creates a path location for the given user input.
@@ -1342,7 +1344,8 @@ if __name__ == '__main__':
 			sensor.nodeId = serverNodeId
 			sensor.alertDelay = 0
 			sensor.state = 0
-			sensor.lastStateUpdated = time.time()
+			sensor.lastStateUpdated = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			sensor.description = "Internal: Sensor Timeout"
 
 			# Sensor timeout sensor has always this fix internal id
@@ -1378,7 +1381,8 @@ if __name__ == '__main__':
 			sensor.nodeId = serverNodeId
 			sensor.alertDelay = 0
 			sensor.state = 0
-			sensor.lastStateUpdated = time.time()
+			sensor.lastStateUpdated = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			sensor.description = "Internal: Node Timeout"
 
 			# Node timeout sensor has always this fix internal id

@@ -20,6 +20,8 @@ import tempfile
 import shutil
 import stat
 import math
+import datetime
+import calendar
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -212,7 +214,9 @@ class Updater:
 		# check if the last version information check was done shortly before
 		# or was done at all
 		# => if not get the newest version information
-		if ((time.time() - self.lastChecked) > 60
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		if ((utcTimestamp - self.lastChecked) > 60
 			or self.newestFiles is None):
 			if self._getNewestVersionInformation() is False:
 				logging.error("[%s]: Not able to get version "
@@ -653,7 +657,8 @@ class Updater:
 			self.newestRev = rev
 			self.newestFiles = newestFiles
 
-		self.lastChecked = time.time()
+		self.lastChecked = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 

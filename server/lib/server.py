@@ -17,6 +17,8 @@ import os
 import base64
 import random
 import json
+import datetime
+import calendar
 from localObjects import SensorDataType, Sensor
 
 BUFSIZE = 4096
@@ -112,7 +114,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the alertDelay.
-	def _checkMsgAlertDelay(self, alertDelay):
+	def _checkMsgAlertDelay(self, alertDelay, messageType):
 
 		isCorrect = True
 		if not isinstance(alertDelay, int):
@@ -121,8 +123,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertDelay not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -134,7 +138,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the alertLevels.
-	def _checkMsgAlertLevels(self, alertLevels):
+	def _checkMsgAlertLevels(self, alertLevels, messageType):
 
 		isCorrect = True
 		if not isinstance(alertLevels, list):
@@ -145,8 +149,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "alertLevels not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -158,7 +164,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the changeState.
-	def _checkMsgChangeState(self, changeState):
+	def _checkMsgChangeState(self, changeState, messageType):
 
 		isCorrect = True
 		if not isinstance(changeState, bool):
@@ -167,8 +173,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "changeState not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -180,7 +188,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the clientAlertId.
-	def _checkMsgClientAlertId(self, clientAlertId):
+	def _checkMsgClientAlertId(self, clientAlertId, messageType):
 
 		isCorrect = True
 		if not isinstance(clientAlertId, int):
@@ -189,8 +197,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "clientAlertId not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -202,7 +212,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the clientSensorId.
-	def _checkMsgClientSensorId(self, clientSensorId):
+	def _checkMsgClientSensorId(self, clientSensorId, messageType):
 
 		isCorrect = True
 		if not isinstance(clientSensorId, int):
@@ -211,8 +221,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "clientSensorId not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -224,7 +236,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the description.
-	def _checkMsgDescription(self, description):
+	def _checkMsgDescription(self, description, messageType):
 
 		isCorrect = True
 		if not (isinstance(description, str)
@@ -234,8 +246,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "description not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -247,7 +261,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the hasLatestData.
-	def _checkMsgHasLatestData(self, hasLatestData):
+	def _checkMsgHasLatestData(self, hasLatestData, messageType):
 
 		isCorrect = True
 		if not isinstance(hasLatestData, bool):
@@ -256,8 +270,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "hasLatestData not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -269,7 +285,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the hostname.
-	def _checkMsgHostname(self, hostname):
+	def _checkMsgHostname(self, hostname, messageType):
 
 		isCorrect = True
 		if not (isinstance(hostname, str)
@@ -279,8 +295,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "hostname not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -292,7 +310,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the instance.
-	def _checkMsgInstance(self, instance):
+	def _checkMsgInstance(self, instance, messageType):
 
 		isCorrect = True
 		if not (isinstance(instance, str)
@@ -302,8 +320,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "instance not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -315,7 +335,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the nodeType.
-	def _checkMsgNodeType(self, nodeType):
+	def _checkMsgNodeType(self, nodeType, messageType):
 
 		isCorrect = True
 		if not (isinstance(nodeType, str)
@@ -329,8 +349,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "nodeType not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -342,7 +364,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the optionType.
-	def _checkMsgOptionType(self, optionType):
+	def _checkMsgOptionType(self, optionType, messageType):
 
 		isCorrect = True
 		if not (isinstance(optionType, str)
@@ -355,8 +377,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "optionType not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -368,7 +392,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the option timeDelay.
-	def _checkMsgOptionTimeDelay(self, timeDelay):
+	def _checkMsgOptionTimeDelay(self, timeDelay, messageType):
 
 		isCorrect = True
 		if not isinstance(timeDelay, int):
@@ -377,8 +401,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "timeDelay not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -390,7 +416,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the option value.
-	def _checkMsgOptionValue(self, value):
+	def _checkMsgOptionValue(self, value, messageType):
 
 		isCorrect = True
 		if not isinstance(value, float):
@@ -402,8 +428,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "value not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -415,7 +443,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the persistence.
-	def _checkMsgPersistent(self, persistent):
+	def _checkMsgPersistent(self, persistent, messageType):
 
 		isCorrect = True
 		if not isinstance(persistent, int):
@@ -427,8 +455,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "persistent not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -440,7 +470,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the registration alerts list.
-	def _checkMsgRegAlertsList(self, alerts):
+	def _checkMsgRegAlertsList(self, alerts, messageType):
 
 		isCorrect = True
 		if not isinstance(alerts, list):
@@ -456,29 +486,40 @@ class ClientCommunication:
 			if not "alertLevels" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertLevels(alert["alertLevels"]):
+			elif not self._checkMsgAlertLevels(
+				alert["alertLevels"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "clientAlertId" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgClientAlertId(alert["clientAlertId"]):
+			elif not self._checkMsgClientAlertId(
+				alert["clientAlertId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "description" in alert.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgDescription(alert["description"]):
+			elif not self._checkMsgDescription(
+				alert["description"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "alerts list not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -490,7 +531,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the registration manager dictionary.
-	def _checkMsgRegManagerDict(self, manager):
+	def _checkMsgRegManagerDict(self, manager, messageType):
 
 		isCorrect = True
 		if not isinstance(manager, dict):
@@ -499,14 +540,19 @@ class ClientCommunication:
 
 			if not "description" in manager.keys():
 				isCorrect = False
-			elif not self._checkMsgDescription(manager["description"]):
+			elif not self._checkMsgDescription(
+				manager["description"],
+				messageType):
+
 				isCorrect = False
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "manager dictionary not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -518,7 +564,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the registration sensors list.
-	def _checkMsgRegSensorsList(self, sensors):
+	def _checkMsgRegSensorsList(self, sensors, messageType):
 
 		isCorrect = True
 		if not isinstance(sensors, list):
@@ -534,28 +580,40 @@ class ClientCommunication:
 			if not "alertDelay" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertDelay(sensor["alertDelay"]):
+			elif not self._checkMsgAlertDelay(
+				sensor["alertDelay"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "alertLevels" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgAlertLevels(sensor["alertLevels"]):
+			elif not self._checkMsgAlertLevels(
+				sensor["alertLevels"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "clientSensorId" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgClientSensorId(sensor["clientSensorId"]):
+			elif not self._checkMsgClientSensorId(
+				sensor["clientSensorId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "dataType" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgSensorDataType(sensor["dataType"]):
+			elif not self._checkMsgSensorDataType(
+				sensor["dataType"],
+				messageType):
+
 				isCorrect = False
 				break
 
@@ -564,30 +622,41 @@ class ClientCommunication:
 				if not "data" in sensor.keys():
 					isCorrect = False
 					break
-				elif not self._checkMsgSensorData(sensor["data"],
-					sensorDataType):
+				elif not self._checkMsgSensorData(
+					sensor["data"],
+					sensorDataType,
+					messageType):
+
 					isCorrect = False
 					break
 
 			if not "description" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgDescription(sensor["description"]):
+			elif not self._checkMsgDescription(
+				sensor["description"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "state" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgState(sensor["state"]):
+			elif not self._checkMsgState(
+				sensor["state"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "sensors list not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -599,7 +668,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the sensor data.
-	def _checkMsgSensorData(self, data, dataType):
+	def _checkMsgSensorData(self, data, dataType, messageType):
 
 		isCorrect = True
 		if (dataType == SensorDataType.NONE
@@ -615,8 +684,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "data not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -628,7 +699,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the sensor data type.
-	def _checkMsgSensorDataType(self, dataType):
+	def _checkMsgSensorDataType(self, dataType, messageType):
 
 		isCorrect = True
 		if not isinstance(dataType, int):
@@ -641,8 +712,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "dataType not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -654,7 +727,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the status sensors list.
-	def _checkMsgStatusSensorsList(self, sensors):
+	def _checkMsgStatusSensorsList(self, sensors, messageType):
 
 		isCorrect = True
 		if not isinstance(sensors, list):
@@ -670,14 +743,20 @@ class ClientCommunication:
 			if not "clientSensorId" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgClientSensorId(sensor["clientSensorId"]):
+			elif not self._checkMsgClientSensorId(
+				sensor["clientSensorId"],
+				messageType):
+
 				isCorrect = False
 				break
 
 			if not "dataType" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgSensorDataType(sensor["dataType"]):
+			elif not self._checkMsgSensorDataType(
+				sensor["dataType"],
+				messageType):
+
 				isCorrect = False
 				break
 
@@ -686,23 +765,31 @@ class ClientCommunication:
 				if not "data" in sensor.keys():
 					isCorrect = False
 					break
-				elif not self._checkMsgSensorData(sensor["data"],
-					sensorDataType):
+				elif not self._checkMsgSensorData(
+					sensor["data"],
+					sensorDataType,
+					messageType):
+
 					isCorrect = False
 					break
 
 			if not "state" in sensor.keys():
 				isCorrect = False
 				break
-			elif not self._checkMsgState(sensor["state"]):
+			elif not self._checkMsgState(
+				sensor["state"],
+				messageType):
+
 				isCorrect = False
 				break
 
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "sensors list not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -714,7 +801,7 @@ class ClientCommunication:
 
 
 	# Internal function to check sanity of the state.
-	def _checkMsgState(self, state):
+	def _checkMsgState(self, state, messageType):
 
 		isCorrect = True
 		if not isinstance(state, int):
@@ -725,8 +812,10 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
-					"message": message["message"],
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
+					"message": messageType,
 					"error": "state not valid"}
 				self.sslSocket.send(json.dumps(message))
 			except Exception as e:
@@ -814,7 +903,9 @@ class ClientCommunication:
 
 				payload = {"type": "rts",
 					"id": transactionId}
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"size": messageSize,
 					"message": messageType,
 					"payload": payload}
@@ -960,7 +1051,9 @@ class ClientCommunication:
 					"data": sensorAlert.sensorData
 					}
 
-		message = {"serverTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"serverTime": utcTimestamp,
 			"message": "sensoralert",
 			"payload": payload}
 		return json.dumps(message)
@@ -970,7 +1063,9 @@ class ClientCommunication:
 	def _buildSensorAlertsOffMessage(self):
 
 		payload = {"type": "request"}
-		message = {"serverTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"serverTime": utcTimestamp,
 			"message": "sensoralertsoff",
 			"payload": payload}
 
@@ -986,7 +1081,9 @@ class ClientCommunication:
 			"dataType": dataType}
 		if dataType != SensorDataType.NONE:
 			payload["data"] = data
-		message = {"serverTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"serverTime": utcTimestamp,
 			"message": "statechange",
 			"payload": payload}
 		return json.dumps(message)
@@ -1017,7 +1114,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": "status",
 					"error": "not able to get alert system data from database"}
 				self.sslSocket.send(json.dumps(message))
@@ -1090,7 +1189,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": "status",
 							"error": "not able to find data for sensor"}
 						self.sslSocket.send(json.dumps(message))
@@ -1114,7 +1215,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": "status",
 							"error": "not able to find data for sensor"}
 						self.sslSocket.send(json.dumps(message))
@@ -1174,7 +1277,9 @@ class ClientCommunication:
 			"managers": managers,
 			"alerts": alerts,
 			"alertLevels": alertLevels}
-		message = {"serverTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"serverTime": utcTimestamp,
 			"message": "status",
 			"payload": payload}
 		return json.dumps(message)
@@ -1259,7 +1364,9 @@ class ClientCommunication:
 
 			# Send error message back.
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "message header malformed"}
 				self.sslSocket.send(json.dumps(message))
@@ -1278,7 +1385,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -1294,7 +1403,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "request expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -1310,7 +1421,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "message not valid"}
 				self.sslSocket.send(json.dumps(message))
@@ -1337,7 +1450,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "version not compatible"}
 					self.sslSocket.send(json.dumps(message))
@@ -1353,7 +1468,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "version not valid"}
 				self.sslSocket.send(json.dumps(message))
@@ -1379,7 +1496,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "no user credentials"}
 				self.sslSocket.send(json.dumps(message))
@@ -1409,7 +1528,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "username already in use"}
 					self.sslSocket.send(json.dumps(message))
@@ -1427,7 +1548,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "invalid user credentials"}
 				self.sslSocket.send(json.dumps(message))
@@ -1442,7 +1565,9 @@ class ClientCommunication:
 				"result": "ok",
 				"version": self.serverVersion,
 				"rev" : self.serverRev}
-			message = {"serverTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"serverTime": utcTimestamp,
 				"message": "initialization",
 				"payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -1504,7 +1629,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -1520,7 +1647,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "request expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -1536,7 +1665,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "message not valid"}
 				self.sslSocket.send(json.dumps(message))
@@ -1547,19 +1678,31 @@ class ClientCommunication:
 
 		# extract general client configuration from message
 		try:
-			if not self._checkMsgHostname(message["payload"]["hostname"]):
+			if not self._checkMsgHostname(
+				message["payload"]["hostname"],
+				message["message"]):
+
 				self.logger.error("[%s]: Received hostname invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
-			if not self._checkMsgNodeType(message["payload"]["nodeType"]):
+			if not self._checkMsgNodeType(
+				message["payload"]["nodeType"],
+				message["message"]):
+
 				self.logger.error("[%s]: Received nodeType invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
-			if not self._checkMsgInstance(message["payload"]["instance"]):
+			if not self._checkMsgInstance(
+				message["payload"]["instance"],
+				message["message"]):
+
 				self.logger.error("[%s]: Received instance invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
-			if not self._checkMsgPersistent(message["payload"]["persistent"]):
+			if not self._checkMsgPersistent(
+				message["payload"]["persistent"],
+				message["message"]):
+
 				self.logger.error("[%s]: Received persistent invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
@@ -1578,7 +1721,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "registration message not valid"}
 				self.sslSocket.send(json.dumps(message))
@@ -1597,7 +1742,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "invalid node type or instance"}
 				self.sslSocket.send(json.dumps(message))
@@ -1619,7 +1766,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "unable to add node to database"}
 				self.sslSocket.send(json.dumps(message))
@@ -1637,7 +1786,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "unable to get node id from database"}
 				self.sslSocket.send(json.dumps(message))
@@ -1653,7 +1804,9 @@ class ClientCommunication:
 			# extract sensors from message
 			try:
 				if not self._checkMsgRegSensorsList(
-					message["payload"]["sensors"]):
+					message["payload"]["sensors"],
+					message["message"]):
+
 					self.logger.error("[%s]: Received sensors invalid (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
@@ -1666,7 +1819,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "no sensors in message"}
 					self.sslSocket.send(json.dumps(message))
@@ -1705,7 +1860,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "sensor data invalid"}
 						self.sslSocket.send(json.dumps(message))
@@ -1739,7 +1896,9 @@ class ClientCommunication:
 
 						# send error message back
 						try:
-							message = {"serverTime": int(time.time()),
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							message = {"serverTime": utcTimestamp,
 								"message": message["message"],
 								"error": "alert level does not exist"}
 							self.sslSocket.send(json.dumps(message))
@@ -1750,13 +1909,15 @@ class ClientCommunication:
 
 				# Create sensor object for the currently received sensor.
 				# NOTE: sensor id is not known yet.
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
 				tempSensor = Sensor()
 				tempSensor.nodeId = self.nodeId
 				tempSensor.remoteSensorId = sensorId
 				tempSensor.description = description
 				tempSensor.state = state
 				tempSensor.alertLevels = alertLevels
-				tempSensor.lastStateUpdated = int(time.time())
+				tempSensor.lastStateUpdated = utcTimestamp
 				tempSensor.alertDelay = alertDelay
 				tempSensor.dataType = sensorDataType
 				tempSensor.data = sensorData
@@ -1772,7 +1933,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unable to add sensors to database"}
 					self.sslSocket.send(json.dumps(message))
@@ -1796,7 +1959,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "unable to get sensor id from database"}
 						self.sslSocket.send(json.dumps(message))
@@ -1812,7 +1977,9 @@ class ClientCommunication:
 			# extract alerts from message
 			try:
 				if not self._checkMsgRegAlertsList(
-					message["payload"]["alerts"]):
+					message["payload"]["alerts"],
+					message["message"]):
+
 					self.logger.error("[%s]: Received alerts invalid (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
@@ -1827,7 +1994,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "no alerts in message"}
 					self.sslSocket.send(json.dumps(message))
@@ -1866,7 +2035,9 @@ class ClientCommunication:
 
 							# send error message back
 							try:
-								message = {"serverTime": int(time.time()),
+								utcTimestamp = calendar.timegm(
+									datetime.datetime.utcnow().utctimetuple())
+								message = {"serverTime": utcTimestamp,
 									"message": message["message"],
 									"error": "alert level does not exist"}
 								self.sslSocket.send(json.dumps(message))
@@ -1882,7 +2053,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "alert data invalid"}
 						self.sslSocket.send(json.dumps(message))
@@ -1905,7 +2078,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unable to add alerts to database"}
 					self.sslSocket.send(json.dumps(message))
@@ -1920,7 +2095,9 @@ class ClientCommunication:
 			# extract manager from message
 			try:
 				if not self._checkMsgRegManagerDict(
-					message["payload"]["manager"]):
+					message["payload"]["manager"],
+					message["message"]):
+
 					self.logger.error("[%s]: Received manager invalid (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))
 					return False
@@ -1933,7 +2110,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "no manager in message"}
 					self.sslSocket.send(json.dumps(message))
@@ -1952,7 +2131,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "manager data invalid"}
 					self.sslSocket.send(json.dumps(message))
@@ -1973,7 +2154,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unable to add manager to database"}
 					self.sslSocket.send(json.dumps(message))
@@ -1989,7 +2172,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "node type not known"}
 				self.sslSocket.send(json.dumps(message))
@@ -2002,7 +2187,9 @@ class ClientCommunication:
 		try:
 
 			payload = {"type": "response", "result": "ok"}
-			message = {"serverTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"serverTime": utcTimestamp,
 				"message": "initialization",
 				"payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -2023,17 +2210,23 @@ class ClientCommunication:
 		# extract option type and value from message
 		try:
 			if not self._checkMsgOptionType(
-				incomingMessage["payload"]["optionType"]):
+				incomingMessage["payload"]["optionType"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received optionType invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgOptionValue(
-				incomingMessage["payload"]["value"]):
+				incomingMessage["payload"]["value"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received value invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgOptionTimeDelay(
-				incomingMessage["payload"]["timeDelay"]):
+				incomingMessage["payload"]["timeDelay"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received timeDelay invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
@@ -2048,7 +2241,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received option invalid"}
 				self.sslSocket.send(json.dumps(message))
@@ -2083,7 +2278,9 @@ class ClientCommunication:
 		# send option response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"serverTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"serverTime": utcTimestamp,
 				"message": "option", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
@@ -2102,7 +2299,9 @@ class ClientCommunication:
 		# extract sensors from message
 		try:
 			if not self._checkMsgStatusSensorsList(
-				incomingMessage["payload"]["sensors"]):
+				incomingMessage["payload"]["sensors"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received sensors invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
@@ -2116,7 +2315,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received status invalid"}
 				self.sslSocket.send(json.dumps(message))
@@ -2133,7 +2334,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "count of sensors not correct"}
 				self.sslSocket.send(json.dumps(message))
@@ -2164,7 +2367,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "unknown client sensor id"}
 						self.sslSocket.send(json.dumps(message))
@@ -2175,7 +2380,8 @@ class ClientCommunication:
 
 				# Update sensor object.
 				sensor.state = sensors[i]["state"]
-				sensor.lastStateUpdated = int(time.time())
+				sensor.lastStateUpdated = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
 
 				stateList.append( (remoteSensorId, sensor.state) )
 
@@ -2187,7 +2393,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor state invalid"}
 				self.sslSocket.send(json.dumps(message))
@@ -2207,7 +2415,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to update sensor state in database"}
 				self.sslSocket.send(json.dumps(message))
@@ -2245,7 +2455,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "received sensor data type wrong"}
 						self.sslSocket.send(json.dumps(message))
@@ -2272,7 +2484,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor data invalid"}
 				self.sslSocket.send(json.dumps(message))
@@ -2296,7 +2510,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to update sensor data in database"}
 					self.sslSocket.send(json.dumps(message))
@@ -2308,7 +2524,9 @@ class ClientCommunication:
 		# send status response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"serverTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"serverTime": utcTimestamp,
 				"message": "status", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
@@ -2328,23 +2546,32 @@ class ClientCommunication:
 		sensor = None
 		try:
 			if not self._checkMsgClientSensorId(
-				incomingMessage["payload"]["clientSensorId"]):
+				incomingMessage["payload"]["clientSensorId"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received clientSensorId invalid "
 					% self.fileName
 					+ "(%s:%d)."
 					% (self.clientAddress, self.clientPort))
 				return False
-			if not self._checkMsgState(incomingMessage["payload"]["state"]):
+			if not self._checkMsgState(
+				incomingMessage["payload"]["state"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received state invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgChangeState(
-				incomingMessage["payload"]["changeState"]):
+				incomingMessage["payload"]["changeState"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received changeState invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgHasLatestData(
-				incomingMessage["payload"]["hasLatestData"]):
+				incomingMessage["payload"]["hasLatestData"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received hasLatestData invalid "
 					% self.fileName
 					+ "(%s:%d)."
@@ -2358,7 +2585,9 @@ class ClientCommunication:
 			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
 				if not self._checkMsgSensorData(
 					incomingMessage["payload"]["data"],
-					incomingMessage["payload"]["dataType"]):
+					incomingMessage["payload"]["dataType"],
+					incomingMessage["message"]):
+
 					self.logger.error("[%s]: Received data invalid (%s:%d)."
 						% (self.fileName, self.clientAddress,
 						self.clientPort))
@@ -2388,7 +2617,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown client sensor id"}
 					self.sslSocket.send(json.dumps(message))
@@ -2407,7 +2638,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "received sensor data type wrong"}
 					self.sslSocket.send(json.dumps(message))
@@ -2427,7 +2660,9 @@ class ClientCommunication:
 				if not isinstance(optionalData, dict):
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "optionalData not of type dict"}
 						self.sslSocket.send(json.dumps(message))
@@ -2450,7 +2685,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor alert invalid"}
 				self.sslSocket.send(json.dumps(message))
@@ -2478,7 +2715,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to update sensor state in database"}
 					self.sslSocket.send(json.dumps(message))
@@ -2502,7 +2741,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to update sensor data in database"}
 					self.sslSocket.send(json.dumps(message))
@@ -2518,7 +2759,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to update sensor time in database"}
 				self.sslSocket.send(json.dumps(message))
@@ -2536,7 +2779,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to add sensor alert to database"}
 				self.sslSocket.send(json.dumps(message))
@@ -2551,7 +2796,9 @@ class ClientCommunication:
 		# send sensor alert response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"serverTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"serverTime": utcTimestamp,
 				"message": "sensoralert", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
@@ -2571,25 +2818,34 @@ class ClientCommunication:
 		sensor = None
 		try:
 			if not self._checkMsgClientSensorId(
-				incomingMessage["payload"]["clientSensorId"]):
+				incomingMessage["payload"]["clientSensorId"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received clientSensorId invalid "
 					% self.fileName
 					+ "(%s:%d)."
 					% (self.clientAddress, self.clientPort))
 				return False
-			if not self._checkMsgState(incomingMessage["payload"]["state"]):
+			if not self._checkMsgState(
+				incomingMessage["payload"]["state"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received state invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgSensorDataType(
-				incomingMessage["payload"]["dataType"]):
+				incomingMessage["payload"]["dataType"],
+				incomingMessage["message"]):
+
 				self.logger.error("[%s]: Received dataType invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
 			if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
 				if not self._checkMsgSensorData(
 					incomingMessage["payload"]["data"],
-					incomingMessage["payload"]["dataType"]):
+					incomingMessage["payload"]["dataType"],
+					incomingMessage["message"]):
+				
 					self.logger.error("[%s]: Received data invalid (%s:%d)."
 						% (self.fileName, self.clientAddress,
 						self.clientPort))
@@ -2616,7 +2872,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown client sensor id"}
 					self.sslSocket.send(json.dumps(message))
@@ -2635,7 +2893,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "received sensor data type wrong"}
 					self.sslSocket.send(json.dumps(message))
@@ -2646,7 +2906,8 @@ class ClientCommunication:
 
 			# Update sensor object.
 			sensor.state = state
-			sensor.lastStateUpdated = int(time.time())
+			sensor.lastStateUpdated = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			sensor.data = sensorData
 
 		except Exception as e:
@@ -2657,7 +2918,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received state change invalid"}
 				self.sslSocket.send(json.dumps(message))
@@ -2692,7 +2955,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to change sensor state in database"}
 				self.sslSocket.send(json.dumps(message))
@@ -2715,7 +2980,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to change sensor data in database"}
 					self.sslSocket.send(json.dumps(message))
@@ -2734,7 +3001,9 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to get sensor id from database"}
 				self.sslSocket.send(json.dumps(message))
@@ -2746,7 +3015,9 @@ class ClientCommunication:
 		# send state change response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			message = {"serverTime": int(time.time()),
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			message = {"serverTime": utcTimestamp,
 				"message": "statechange", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
 		except Exception as e:
@@ -2802,7 +3073,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "status message expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -2818,7 +3091,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -2840,7 +3115,8 @@ class ClientCommunication:
 				% (self.clientAddress, self.clientPort))
 			return False
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 
@@ -2880,7 +3156,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "state change message expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -2896,7 +3174,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -2920,7 +3200,8 @@ class ClientCommunication:
 
 			return False
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 
@@ -2966,7 +3247,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "sensor alerts off message expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -2982,7 +3265,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -3005,7 +3290,8 @@ class ClientCommunication:
 
 			return False
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 
@@ -3106,7 +3392,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "sensor alert message expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -3123,7 +3411,9 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.sslSocket.send(json.dumps(message))
@@ -3151,7 +3441,8 @@ class ClientCommunication:
 			self._releaseLock()
 			return False
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		self._releaseLock()
 		return True
@@ -3185,7 +3476,8 @@ class ClientCommunication:
 
 		# change the time of the last received message
 		# (for the watchdog so it can see that the connection is still alive)
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		# get the sensor count from the database for this connection
 		# if the nodeType is "sensor"
@@ -3316,7 +3608,9 @@ class ClientCommunication:
 					# send CTS (clear to send) message
 					payload = {"type": "cts",
 						"id": receivedTransactionId}
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": str(message["message"]),
 						"payload": payload}
 					self.sslSocket.send(json.dumps(message))
@@ -3419,7 +3713,9 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						message = {"serverTime": int(time.time()),
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "request expected"}
 						self.sslSocket.send(json.dumps(message))
@@ -3455,7 +3751,9 @@ class ClientCommunication:
 
 				try:
 					payload = {"type": "response", "result": "ok"}
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": "ping", "payload": payload}
 					self.sslSocket.send(json.dumps(message))
 				except Exception as e:
@@ -3554,7 +3852,9 @@ class ClientCommunication:
 					% (data, self.clientAddress, self.clientPort))
 
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown command/message type"}
 					self.sslSocket.send(json.dumps(message))
@@ -3566,7 +3866,8 @@ class ClientCommunication:
 				self._releaseLock()
 				return
 
-			self.lastRecv = time.time()
+			self.lastRecv = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 
 
 # this class is used for the threaded tcp server and extends the constructor

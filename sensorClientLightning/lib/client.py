@@ -17,6 +17,8 @@ import base64
 import xml.etree.cElementTree
 import random
 import json
+import datetime
+import calendar
 from localObjects import SensorDataType
 BUFSIZE = 4096
 
@@ -190,7 +192,9 @@ class ServerCommunication:
 			try:
 				payload = {"type": "rts",
 					"id": transactionId}
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"size": messageSize,
 					"message": messageType,
 					"payload": payload}
@@ -287,7 +291,9 @@ class ServerCommunication:
 			"rev": self.rev,
 			"username": self.username,
 			"password": self.password}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"size": regMessageSize,
 			"message": "initialization",
 			"payload": payload}
@@ -298,7 +304,9 @@ class ServerCommunication:
 	def _buildPingMessage(self):
 
 		payload = {"type": "request"}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "ping",
 			"payload": payload}
 		return json.dumps(message)
@@ -333,7 +341,9 @@ class ServerCommunication:
 			"instance": self.instance,
 			"persistent": self.persistent,
 			"sensors": sensors}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "initialization",
 			"payload": payload}
 
@@ -360,7 +370,9 @@ class ServerCommunication:
 		if sensorAlert.dataType != SensorDataType.NONE:
 			payload["data"] = sensorAlert.sensorData
 
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "sensoralert",
 			"payload": payload}
 		return json.dumps(message)
@@ -390,7 +402,9 @@ class ServerCommunication:
 			sensors.append(tempSensor)
 
 		payload = {"type": "request", "sensors": sensors}
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "status",
 			"payload": payload}
 		return json.dumps(message)
@@ -413,7 +427,9 @@ class ServerCommunication:
 		if stateChange.dataType != SensorDataType.NONE:
 			payload["data"] = stateChange.sensorData
 
-		message = {"clientTime": int(time.time()),
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		message = {"clientTime": utcTimestamp,
 			"message": "statechange",
 			"payload": payload}
 		return json.dumps(message)
@@ -452,7 +468,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
@@ -468,7 +486,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -507,7 +527,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "version not compatible"}
 					self.client.send(json.dumps(message))
@@ -522,7 +544,9 @@ class ServerCommunication:
 
 			# send error message back
 			try:
-				message = {"clientTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"clientTime": utcTimestamp,
 					"message": message["message"],
 					"error": "version not valid"}
 				self.client.send(json.dumps(message))
@@ -565,7 +589,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
 					self.client.send(json.dumps(message))
@@ -581,7 +607,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -648,7 +676,8 @@ class ServerCommunication:
 			return False
 
 		# update the time the last data was received by the server
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		# set client as connected
 		self._isConnected = True
@@ -742,7 +771,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "ping message expected"}
 					self.client.send(json.dumps(message))
@@ -761,7 +792,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -793,7 +826,8 @@ class ServerCommunication:
 		logging.debug("[%s]: Received valid ping response." % self.fileName)
 		self._releaseLock()
 
-		self.lastRecv = time.time()
+		self.lastRecv = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
 
 		return True
 
@@ -851,7 +885,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "status message expected"}
 					self.client.send(json.dumps(message))
@@ -870,7 +906,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -959,7 +997,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "sensor alert message expected"}
 					self.client.send(json.dumps(message))
@@ -978,7 +1018,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -1070,7 +1112,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "state change message expected"}
 					self.client.send(json.dumps(message))
@@ -1089,7 +1133,9 @@ class ServerCommunication:
 
 				# send error message back
 				try:
-					message = {"clientTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"clientTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
 					self.client.send(json.dumps(message))
@@ -1204,7 +1250,9 @@ class ConnectionWatchdog(threading.Thread):
 
 			# check if the time of the data last received lies too far in the
 			# past => send ping to check connection
-			if (time.time() - self.connection.lastRecv) > self.pingInterval:
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if (utcTimestamp - self.connection.lastRecv) > self.pingInterval:
 				logging.debug("[%s]: Ping interval exceeded."
 						% self.fileName)
 

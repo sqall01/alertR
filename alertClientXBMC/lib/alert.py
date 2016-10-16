@@ -12,6 +12,8 @@ import random
 import os
 import logging
 import threading
+import datetime
+import calendar
 from thirdparty import xbmcjson
 
 
@@ -80,10 +82,12 @@ class XbmcAlert(_Alert):
 
 		# only execute if the last triggered alert was more than
 		# the configured trigger delay ago
-		if (time.time() - self.triggered) > self.triggerDelay:
+		utcTimestamp = calendar.timegm(
+			datetime.datetime.utcnow().utctimetuple())
+		if (utcTimestamp - self.triggered) > self.triggerDelay:
 
 			# set the time the alert was triggered
-			self.triggered = time.time()
+			self.triggered = utcTimestamp
 
 			# extract the received message if it was received and should be
 			# displayed

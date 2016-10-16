@@ -12,6 +12,8 @@ import os
 import time
 import logging
 import json
+import datetime
+import calendar
 from server import AsynchronousSender
 from localObjects import SensorAlert, SensorDataType
 
@@ -73,8 +75,10 @@ class SensorAlertExecuter(threading.Thread):
 			# update sensor rule element (set as not triggered)
 			# if sensor does not count as triggered
 			# => unset triggered flag
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			if (((currentRuleElement.timeWhenTriggered
-				+ currentRuleElement.timeTriggeredFor) < time.time())
+				+ currentRuleElement.timeTriggeredFor) < utcTimestamp)
 				and currentRuleElement.triggered):
 
 				self.logger.debug("[%s]: Sensor " % self.fileName
@@ -106,16 +110,18 @@ class SensorAlertExecuter(threading.Thread):
 						> currentRuleElement.timeWhenTriggered):
 
 						# check if an alert delay has to be considered
-						if not ((time.time() - sensorAlertTimeReceived)
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						if not ((utcTimestamp - sensorAlertTimeReceived)
 							> sensorAlertAlertDelay):
 
 							self.logger.debug("[%s]: Sensor alert "
 								% self.fileName
 								+ "for sensor with id '%d' still delayed for "
 								% ruleSensorId
-								+ "'%.2f' seconds."
+								+ "'%d' seconds."
 								% (sensorAlertAlertDelay
-								- (time.time() - sensorAlertTimeReceived)))
+								- (utcTimestamp - sensorAlertTimeReceived)))
 
 							continue
 
@@ -131,7 +137,7 @@ class SensorAlertExecuter(threading.Thread):
 						# => set triggered flag
 						if ((currentRuleElement.timeWhenTriggered
 							+ currentRuleElement.timeTriggeredFor)
-							> time.time()):
+							> utcTimestamp):
 
 							self.logger.debug("[%s]: Sensor "
 								% self.fileName
@@ -172,7 +178,9 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (weekdayElement.weekday, weekdayElement.time))
 
-						currentRuleElement.timeWhenTriggered = time.time()
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						currentRuleElement.timeWhenTriggered = utcTimestamp
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -202,7 +210,9 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (weekdayElement.weekday, weekdayElement.time))
 
-						currentRuleElement.timeWhenTriggered = time.time()
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						currentRuleElement.timeWhenTriggered = utcTimestamp
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -241,7 +251,9 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (monthdayElement.monthday, monthdayElement.time))
 
-						currentRuleElement.timeWhenTriggered = time.time()
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						currentRuleElement.timeWhenTriggered = utcTimestamp
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -269,7 +281,9 @@ class SensorAlertExecuter(threading.Thread):
 							+ "with value '%d' for '%s' counts as triggered."
 							% (monthdayElement.monthday, monthdayElement.time))
 
-						currentRuleElement.timeWhenTriggered = time.time()
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						currentRuleElement.timeWhenTriggered = utcTimestamp
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -311,7 +325,9 @@ class SensorAlertExecuter(threading.Thread):
 							% (hourElement.start, hourElement.end,
 							hourElement.time))
 
-						currentRuleElement.timeWhenTriggered = time.time()
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						currentRuleElement.timeWhenTriggered = utcTimestamp
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -343,7 +359,9 @@ class SensorAlertExecuter(threading.Thread):
 							% (hourElement.start, hourElement.end,
 							hourElement.time))
 
-						currentRuleElement.timeWhenTriggered = time.time()
+						utcTimestamp = calendar.timegm(
+							datetime.datetime.utcnow().utctimetuple())
+						currentRuleElement.timeWhenTriggered = utcTimestamp
 						currentRuleElement.triggered = True
 
 				# check if rule element is triggered
@@ -383,7 +401,9 @@ class SensorAlertExecuter(threading.Thread):
 						+ "from '%d' to '%d' counts as triggered."
 						% (minuteElement.start, minuteElement.end))
 
-					currentRuleElement.timeWhenTriggered = time.time()
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					currentRuleElement.timeWhenTriggered = utcTimestamp
 					currentRuleElement.triggered = True
 
 			# check if rule element is triggered
@@ -417,7 +437,9 @@ class SensorAlertExecuter(threading.Thread):
 						+ "from '%d' to '%d' counts as triggered."
 						% (secondElement.start, secondElement.end))
 
-					currentRuleElement.timeWhenTriggered = time.time()
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					currentRuleElement.timeWhenTriggered = utcTimestamp
 					currentRuleElement.triggered = True
 
 			# check if rule element is triggered
@@ -621,7 +643,9 @@ class SensorAlertExecuter(threading.Thread):
 						+ "also to triggered.")
 
 					currentRuleElement.triggered = True
-					currentRuleElement.timeWhenTriggered = time.time()
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					currentRuleElement.timeWhenTriggered = utcTimestamp
 
 				return True
 
@@ -650,7 +674,9 @@ class SensorAlertExecuter(threading.Thread):
 								+ "also to triggered.")
 
 							currentRuleElement.triggered = True
-							currentRuleElement.timeWhenTriggered = time.time()
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							currentRuleElement.timeWhenTriggered = utcTimestamp
 
 						return True
 
@@ -667,7 +693,9 @@ class SensorAlertExecuter(threading.Thread):
 								+ "also to triggered.")
 
 							currentRuleElement.triggered = True
-							currentRuleElement.timeWhenTriggered = time.time()
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							currentRuleElement.timeWhenTriggered = utcTimestamp
 
 						return True
 
@@ -684,7 +712,9 @@ class SensorAlertExecuter(threading.Thread):
 								+ "also to triggered.")
 
 							currentRuleElement.triggered = True
-							currentRuleElement.timeWhenTriggered = time.time()
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							currentRuleElement.timeWhenTriggered = utcTimestamp
 
 						return True
 
@@ -702,7 +732,9 @@ class SensorAlertExecuter(threading.Thread):
 								+ "also to triggered.")
 
 							currentRuleElement.triggered = True
-							currentRuleElement.timeWhenTriggered = time.time()
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							currentRuleElement.timeWhenTriggered = utcTimestamp
 
 						return True
 
@@ -719,7 +751,9 @@ class SensorAlertExecuter(threading.Thread):
 								+ "also to triggered.")
 
 							currentRuleElement.triggered = True
-							currentRuleElement.timeWhenTriggered = time.time()
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							currentRuleElement.timeWhenTriggered = utcTimestamp
 
 						return True
 
@@ -736,7 +770,9 @@ class SensorAlertExecuter(threading.Thread):
 								+ "also to triggered.")
 
 							currentRuleElement.triggered = True
-							currentRuleElement.timeWhenTriggered = time.time()
+							utcTimestamp = calendar.timegm(
+								datetime.datetime.utcnow().utctimetuple())
+							currentRuleElement.timeWhenTriggered = utcTimestamp
 
 						return True
 
@@ -762,8 +798,10 @@ class SensorAlertExecuter(threading.Thread):
 									+ "also to triggered.")
 
 								currentRuleElement.triggered = True
+								utcTimestamp = calendar.timegm(
+									datetime.datetime.utcnow().utctimetuple())
 								currentRuleElement.timeWhenTriggered = \
-									time.time()
+									utcTimestamp
 
 							return True
 
@@ -1015,6 +1053,8 @@ class SensorAlertExecuter(threading.Thread):
 
 			# if there does not exist an alert delay
 			# => remove sensor alert
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			if sensorAlertAlertDelay == 0:
 				sensorAlertList.remove(sensorAlert)
 
@@ -1022,7 +1062,7 @@ class SensorAlertExecuter(threading.Thread):
 			# => only remove sensor alert from the list when there is no
 			# delay to wait (add an artificial delay from 5 seconds
 			# to make race condition unlikely)
-			elif ((time.time() - sensorAlertTimeReceived)
+			elif ((utcTimestamp - sensorAlertTimeReceived)
 				> (sensorAlertAlertDelay + 5)):
 				sensorAlertList.remove(sensorAlert)
 
@@ -1037,9 +1077,11 @@ class SensorAlertExecuter(threading.Thread):
 
 			# remove all triggered elements from the counter
 			# if the time that they have to wait has passed
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			for counterTimeWhenTriggered in list(ruleStart.counterList):
 				if ((counterTimeWhenTriggered + ruleStart.counterWaitTime)
-					< time.time()):
+					< utcTimestamp):
 
 					self.logger.debug("[%s]: Counter for rule with order '%d' "
 						% (self.fileName, ruleStart.order)
@@ -1366,7 +1408,9 @@ class SensorAlertExecuter(threading.Thread):
 				sensorAlertToHandle[1] = triggeredAlertLevels
 
 			# check if sensor alert has triggered
-			if ((time.time() - sensorAlert.timeReceived)
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
+			if ((utcTimestamp - sensorAlert.timeReceived)
 				> sensorAlert.alertDelay):
 
 				# generate integer list of alert levels that have triggered

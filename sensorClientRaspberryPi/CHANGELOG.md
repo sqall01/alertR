@@ -1,3 +1,10 @@
+## 0.500
+
+Features:
+
+* Uses UTC time instead of local time.
+
+
 ## 0.400-1
 
 Features:

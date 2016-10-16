@@ -12,6 +12,8 @@ import logging
 import os
 import time
 import urwid
+import datetime
+import calendar
 from audio import AudioOptions
 from screenElements import PinUrwid, StatusUrwid, WarningUrwid
 
@@ -145,8 +147,10 @@ class ScreenUpdater(threading.Thread):
 			# check if the screen is unlocked
 			# and the screen unlocked time has timed out
 			# => lock screen
+			utcTimestamp = calendar.timegm(
+				datetime.datetime.utcnow().utctimetuple())
 			if (not self.console.inPinView
-				and (int(time.time()) - self.console.screenUnlockedTime)
+				and (utcTimestamp - self.console.screenUnlockedTime)
 				> self.unlockedScreenTimeout):
 
 				logging.info("[%s]: Timeout for unlocked screen."

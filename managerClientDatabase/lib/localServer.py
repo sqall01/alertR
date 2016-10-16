@@ -12,6 +12,8 @@ import logging
 import os
 import json
 import time
+import datetime
+import calendar
 BUFSIZE = 1024
 
 
@@ -60,7 +62,9 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 
 				# send error message back
 				try:
-					message = {"serverTime": int(time.time()),
+					utcTimestamp = calendar.timegm(
+						datetime.datetime.utcnow().utctimetuple())
+					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "only option message valid"}
 					self.request.send(json.dumps(message))
@@ -75,7 +79,9 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received json message invalid"}
 				self.request.send(json.dumps(message))
@@ -96,7 +102,9 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received attributes invalid"}
 				self.request.send(json.dumps(message))
@@ -110,7 +118,9 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "only option type 'alertSystemActive' allowed"}
 				self.request.send(json.dumps(message))
@@ -125,8 +135,9 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 
 			# send response to client
 			try:
-
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"payload": 
 						{"type": "response",
@@ -146,7 +157,9 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
 
 			# send error message back
 			try:
-				message = {"serverTime": int(time.time()),
+				utcTimestamp = calendar.timegm(
+					datetime.datetime.utcnow().utctimetuple())
+				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "sending message to server failed"}
 				self.request.send(json.dumps(message))

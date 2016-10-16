@@ -18,10 +18,10 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.400
+		self.version = 0.500
 
 		# revision of the used server
-		self.rev = 1
+		self.rev = 0
 
 		# name of this server
 		self.name = "alertR Server"
