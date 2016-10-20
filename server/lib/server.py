@@ -2578,7 +2578,9 @@ class ClientCommunication:
 					% (self.clientAddress, self.clientPort))
 				return False
 			if not self._checkMsgSensorDataType(
-				incomingMessage["payload"]["dataType"]):
+				incomingMessage["payload"]["dataType"],
+				incomingMessage["message"]):
+			
 				self.logger.error("[%s]: Received dataType invalid (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 				return False
