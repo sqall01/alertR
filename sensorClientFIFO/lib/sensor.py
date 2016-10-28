@@ -13,8 +13,6 @@ import os
 import logging
 import json
 import threading
-import datetime
-import calendar
 from client import AsynchronousSender
 from localObjects import SensorDataType, SensorAlert, StateChange
 
@@ -654,8 +652,7 @@ class SensorExecuter:
 
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if (utcTimestamp - lastFullStateSent) > 60:
 
 				logging.debug("[%s]: Last state " % self.fileName

@@ -10,8 +10,6 @@
 import os
 import logging
 import time
-import datetime
-import calendar
 from localObjects import SensorDataType
 from events import EventSensorAlert, EventNewVersion
 from events import EventStateChange, EventConnectedChange, EventSensorTimeOut
@@ -242,8 +240,7 @@ class ServerEventHandler:
 	# internal function that removes all nodes that are not checked
 	def _removeNotCheckedNodes(self):
 
-		timeReceived = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		timeReceived = int(time.time())
 
 		for node in self.nodes:
 			if node.checked is False:
@@ -334,8 +331,7 @@ class ServerEventHandler:
 		managers, alerts, alertLevels):
 
 		self.serverTime = serverTime
-		timeReceived = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		timeReceived = int(time.time())
 
 		# mark all nodes as not checked
 		self._markAlertSystemObjectsAsNotChecked()
@@ -758,8 +754,7 @@ class ServerEventHandler:
 	def receivedSensorAlert(self, serverTime, sensorAlert):
 
 		self.serverTime = serverTime
-		timeReceived = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		timeReceived = int(time.time())
 		self.sensorAlerts.append(sensorAlert)
 
 		# when events are activated
@@ -868,8 +863,7 @@ class ServerEventHandler:
 		# when events are activated
 		# => create state change event
 		if self.eventsLifeSpan != 0:
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			tempStateEvent = EventStateChange(utcTimestamp)
 			tempStateEvent.state = state
 			tempStateEvent.description = sensor.description
@@ -932,8 +926,7 @@ class ServerEventHandler:
 						# => create event
 						if (node.version < tempVersion
 							and node.newestVersion < tempVersion):
-							utcTimestamp = calendar.timegm(
-								datetime.datetime.utcnow().utctimetuple())
+							utcTimestamp = int(time.time())
 							tempEvent = EventNewVersion(utcTimestamp)
 							tempEvent.usedVersion = node.version
 							tempEvent.usedRev = node.rev
@@ -951,8 +944,7 @@ class ServerEventHandler:
 						elif node.version == tempVersion:
 							if (node.rev < tempRev
 								and node.newestRev < tempRev):
-								utcTimestamp = calendar.timegm(
-									datetime.datetime.utcnow().utctimetuple())
+								utcTimestamp = int(time.time())
 								tempEvent = EventNewVersion(utcTimestamp)
 								tempEvent.usedVersion = node.version
 								tempEvent.usedRev = node.rev
@@ -1000,8 +992,7 @@ class ServerEventHandler:
 
 					continue
 				if foundNode.connected == 1:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					tempEvent = EventSensorTimeOut(utcTimestamp)
 					tempEvent.hostname = foundNode.hostname
 					tempEvent.description = sensor.description

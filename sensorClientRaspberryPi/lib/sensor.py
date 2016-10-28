@@ -14,8 +14,6 @@ import os
 import logging
 import re
 import threading
-import datetime
-import calendar
 from client import AsynchronousSender
 from localObjects import SensorDataType, Ordering, SensorAlert, StateChange
 
@@ -225,8 +223,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 		# check if the last time the sensor was triggered is longer ago
 		# than the configured delay between two triggers
 		# => set time and reset edge counter
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		if (utcTimestamp - self.lastTimeTriggered) > self.delayBetweenTriggers:
 
 			self.edgeCounter = 1
@@ -294,8 +291,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 	def updateState(self):
 		# check if the sensor is triggered and if it is longer
 		# triggered than configured => set internal state to normal
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		if (self.state == self.triggerState
 			and ((utcTimestamp - self.lastTimeTriggered)
 			> self.timeSensorTriggered)):
@@ -402,8 +398,7 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 			+ "/w1_slave"
 
 		# First time the temperature is updated is done in a blocking way.
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		self._updateData()
 		self.lastTemperatureUpdate = utcTimestamp
 		self.updateLock.acquire()
@@ -426,8 +421,7 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 		# Restrict the times the temperature is actually read from the sensor
 		# to keep the traffic on the bus relatively low.
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		if (utcTimestamp - self.lastTemperatureUpdate) > self.interval:
 			self.lastTemperatureUpdate = utcTimestamp
 
@@ -517,8 +511,7 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 
 	def forceSendState(self):
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		if (utcTimestamp - self.lastUpdate) > self.interval:
 			self.lastUpdate = utcTimestamp
 
@@ -733,8 +726,7 @@ class SensorExecuter:
 
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if (utcTimestamp - lastFullStateSent) > 60:
 
 				logging.debug("[%s]: Last state " % self.fileName

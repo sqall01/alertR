@@ -12,8 +12,6 @@ import os
 import threading
 import time
 import json
-import datetime
-import calendar
 from events import EventSensorAlert, EventNewVersion
 from events import EventStateChange, EventConnectedChange, EventSensorTimeOut
 from events import EventNewOption, EventNewNode, EventNewSensor
@@ -819,8 +817,7 @@ class Mysql(_Storage):
 
 		# delete all events that are older than the configured life span 
 		try:
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.cursor.execute("SELECT id, type FROM events "
 				+ "WHERE (timeOccurred + "
 				+ str(self.eventsLifeSpan * 86400)
@@ -1647,8 +1644,7 @@ class Mysql(_Storage):
 		# life span
 		try:
 			# delete all sensor alerts with the returned id
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.cursor.execute("SELECT id FROM sensorAlerts "
 				+ "WHERE (timeReceived + "
 				+ str(self.sensorAlertLifeSpan * 86400)

@@ -23,8 +23,6 @@ import math
 import importlib
 import threading
 import optparse
-import datetime
-import calendar
 
 
 ################ GLOBAL CONFIGURATION DATA ################
@@ -162,8 +160,7 @@ class Updater:
 		# check if the last version information check was done shortly before
 		# or was done at all
 		# => if not get the newest version information
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		if ((utcTimestamp - self.lastChecked) > 60
 			or self.newestFiles == None):
 			if self._getNewestVersionInformation() is False:
@@ -599,8 +596,7 @@ class Updater:
 			self.newestRev = rev
 			self.newestFiles = newestFiles
 
-		self.lastChecked = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.lastChecked = int(time.time())
 
 		return True
 

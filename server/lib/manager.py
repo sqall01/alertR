@@ -12,8 +12,6 @@ import os
 import time
 import logging
 import collections
-import datetime
-import calendar
 from server import AsynchronousSender
 
 
@@ -75,8 +73,7 @@ class ManagerUpdateExecuter(threading.Thread):
 			# check if last status update has timed out
 			# or a status update is forced
 			# => send status update to all manager
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if (((utcTimestamp - self.managerUpdateInterval)
 				> self.lastStatusUpdateSend)
 				or self.forceStatusUpdate):

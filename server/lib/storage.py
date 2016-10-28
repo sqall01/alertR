@@ -14,8 +14,6 @@ import time
 import socket
 import struct
 import hashlib
-import datetime
-import calendar
 from localObjects import SensorDataType
 
 
@@ -378,8 +376,7 @@ class Sqlite(_Storage):
 	def _generateUniqueId(self):
 
 		# generate unique id for this installation
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		uniqueString = socket.gethostname() \
 			+ struct.pack("d", utcTimestamp) \
 			+ os.urandom(200)
@@ -1215,8 +1212,7 @@ class Sqlite(_Storage):
 
 				# add sensor to database
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					self.cursor.execute("INSERT INTO sensors ("
 						+ "nodeId, "
 						+ "remoteSensorId, "
@@ -2061,8 +2057,7 @@ class Sqlite(_Storage):
 
 					return False
 
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				self.cursor.execute("UPDATE sensors SET "
 					+ "state = ?, "
 					+ "lastStateUpdated = ? "
@@ -2169,8 +2164,7 @@ class Sqlite(_Storage):
 
 		# Update time of sensor in the database.
 		try:
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.cursor.execute("UPDATE sensors SET "
 				+ "lastStateUpdated = ? "
 				+ "WHERE id = ?",
@@ -2339,8 +2333,7 @@ class Sqlite(_Storage):
 				dbHasLatestData = 1
 			else:
 				dbHasLatestData = 0
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "
@@ -3342,8 +3335,7 @@ class Mysql(_Storage):
 	def _generateUniqueId(self):
 
 		# generate unique id for this installation
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		uniqueString = socket.gethostname() \
 			+ struct.pack("d", utcTimestamp) \
 			+ os.urandom(200)
@@ -4242,8 +4234,7 @@ class Mysql(_Storage):
 
 				# add sensor to database
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					self.cursor.execute("INSERT INTO sensors ("
 						+ "nodeId, "
 						+ "remoteSensorId, "
@@ -5272,8 +5263,7 @@ class Mysql(_Storage):
 
 					return False
 
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				self.cursor.execute("UPDATE sensors SET "
 					+ "state = %s, "
 					+ "lastStateUpdated = %s "
@@ -5416,8 +5406,7 @@ class Mysql(_Storage):
 
 		# Update time of sensor in the database.
 		try:
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.cursor.execute("UPDATE sensors SET "
 				+ "lastStateUpdated = %s "
 				+ "WHERE id = %s",
@@ -5671,8 +5660,7 @@ class Mysql(_Storage):
 				dbHasLatestData = 1
 			else:
 				dbHasLatestData = 0
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.cursor.execute("INSERT INTO sensorAlerts ("
 				+ "nodeId, "
 				+ "sensorId, "

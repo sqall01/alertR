@@ -12,8 +12,6 @@ import time
 import logging
 import os
 import json
-import datetime
-import calendar
 from localObjects import SensorDataType, SensorTimeoutSensor, NodeTimeoutSensor
 
 
@@ -94,8 +92,7 @@ class ConnectionWatchdog(threading.Thread):
 		# Get all nodes that are longer in the pre-timeout set
 		# then the allowed grace period.
 		newTimeouts = set()
-		currentTime = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		currentTime = int(time.time())
 		self._acquireNodeTimeoutLock()
 		for preTuple in set(self._preTimeoutNodeIds):
 			if (currentTime - preTuple[1]) > self.gracePeriodTimeout:
@@ -117,8 +114,7 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Check if the time of the data last received lies
 			# too far in the past => kill connection.
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if ((utcTimestamp - serverSession.clientComm.lastRecv)
 				>= self.connectionTimeout):
 
@@ -236,8 +232,7 @@ class ConnectionWatchdog(threading.Thread):
 		# Start sensor timeout reminder timer when the sensor timeout list
 		# was empty before.
 		if wasEmpty and self.timeoutSensorIds:
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self.lastSensorTimeoutReminder = utcTimestamp
 
 
@@ -352,8 +347,7 @@ class ConnectionWatchdog(threading.Thread):
 		elif self.timeoutSensorIds:
 
 			# Check if a sensor timeout reminder has to be raised.
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if ((utcTimestamp - self.lastSensorTimeoutReminder)
 				>= self.timeoutReminderTime):
 
@@ -433,8 +427,7 @@ class ConnectionWatchdog(threading.Thread):
 		elif self._timeoutNodeIds:
 
 			# Check if a node timeout reminder has to be raised.
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if ((utcTimestamp - self._lastNodeTimeoutReminder)
 				>= self.timeoutReminderTime):
 
@@ -665,8 +658,7 @@ class ConnectionWatchdog(threading.Thread):
 		# Start node timeout reminder timer when the sensor timeout list
 		# was empty before.
 		if wasEmpty and self._timeoutNodeIds:
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			self._lastNodeTimeoutReminder = utcTimestamp
 
 		self._releaseNodeTimeoutLock()
@@ -725,8 +717,7 @@ class ConnectionWatchdog(threading.Thread):
 			% hostname)
 
 		# Add node id with time that timeout occurred into pre-timeout set.
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		self._preTimeoutNodeIds.add( (nodeId, utcTimestamp) )
 
 		self._releaseNodeTimeoutLock()
@@ -889,8 +880,7 @@ class ConnectionWatchdog(threading.Thread):
 			# Get all sensors that have timed out.
 			# Data: list of tuples of (sensorId, nodeId,
 			# lastStateUpdated, description)
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
 				utcTimestamp - (2 * self.connectionTimeout))
 

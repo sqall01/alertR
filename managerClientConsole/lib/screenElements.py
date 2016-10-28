@@ -11,8 +11,6 @@ import logging
 import os
 import time
 import urwid
-import datetime
-import calendar
 from localObjects import SensorDataType
 
 
@@ -1475,8 +1473,7 @@ class SensorAlertUrwid:
 	def sensorAlertOutdated(self):
 		# check if the sensor alert is older than the configured time to
 		# show the sensor alerts in the list
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		if (utcTimestamp - self.timeReceived) > self.timeShowSensorAlert:
 			return True
 		return False

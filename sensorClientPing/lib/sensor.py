@@ -12,8 +12,6 @@ import random
 import os
 import logging
 import subprocess
-import datetime
-import calendar
 from client import AsynchronousSender
 from localObjects import SensorDataType, SensorAlert, StateChange
 
@@ -178,8 +176,7 @@ class PingWatchdogSensor(_PollingSensor):
 
 			# check if the interval in which the service should be checked
 			# is exceeded
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if (utcTimestamp - self.timeExecute) > self.intervalToCheck:
 
 				logging.debug("[%s]: Executing process " % self.fileName
@@ -195,8 +192,7 @@ class PingWatchdogSensor(_PollingSensor):
 			if self.process.poll() is None:
 
 				# check if process has timed out
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				if (utcTimestamp - self.timeExecute) > self.timeout:
 
 					self.state = 1
@@ -448,8 +444,7 @@ class SensorExecuter:
 
 			# check if the last state that was sent to the server
 			# is older than 60 seconds => send state update
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			if (utcTimestamp - lastFullStateSent) > 60:
 
 				logging.debug("[%s]: Last state " % self.fileName

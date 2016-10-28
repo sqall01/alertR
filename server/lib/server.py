@@ -17,8 +17,6 @@ import os
 import base64
 import random
 import json
-import datetime
-import calendar
 from localObjects import SensorDataType, Sensor
 
 BUFSIZE = 4096
@@ -123,8 +121,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "alertDelay not valid"}
@@ -149,8 +146,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "alertLevels not valid"}
@@ -173,8 +169,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "changeState not valid"}
@@ -197,8 +192,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "clientAlertId not valid"}
@@ -221,8 +215,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "clientSensorId not valid"}
@@ -246,8 +239,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "description not valid"}
@@ -270,8 +262,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "hasLatestData not valid"}
@@ -295,8 +286,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "hostname not valid"}
@@ -320,8 +310,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "instance not valid"}
@@ -349,8 +338,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "nodeType not valid"}
@@ -377,8 +365,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "optionType not valid"}
@@ -401,8 +388,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "timeDelay not valid"}
@@ -428,8 +414,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "value not valid"}
@@ -455,8 +440,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "persistent not valid"}
@@ -516,8 +500,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "alerts list not valid"}
@@ -549,8 +532,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "manager dictionary not valid"}
@@ -653,8 +635,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "sensors list not valid"}
@@ -684,8 +665,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "data not valid"}
@@ -712,8 +692,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "dataType not valid"}
@@ -786,8 +765,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "sensors list not valid"}
@@ -812,8 +790,7 @@ class ClientCommunication:
 		if not isCorrect:
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": messageType,
 					"error": "state not valid"}
@@ -903,8 +880,7 @@ class ClientCommunication:
 
 				payload = {"type": "rts",
 					"id": transactionId}
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"size": messageSize,
 					"message": messageType,
@@ -1051,8 +1027,7 @@ class ClientCommunication:
 					"data": sensorAlert.sensorData
 					}
 
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		message = {"serverTime": utcTimestamp,
 			"message": "sensoralert",
 			"payload": payload}
@@ -1063,8 +1038,7 @@ class ClientCommunication:
 	def _buildSensorAlertsOffMessage(self):
 
 		payload = {"type": "request"}
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		message = {"serverTime": utcTimestamp,
 			"message": "sensoralertsoff",
 			"payload": payload}
@@ -1081,8 +1055,7 @@ class ClientCommunication:
 			"dataType": dataType}
 		if dataType != SensorDataType.NONE:
 			payload["data"] = data
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		message = {"serverTime": utcTimestamp,
 			"message": "statechange",
 			"payload": payload}
@@ -1114,8 +1087,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": "status",
 					"error": "not able to get alert system data from database"}
@@ -1189,8 +1161,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": "status",
 							"error": "not able to find data for sensor"}
@@ -1215,8 +1186,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": "status",
 							"error": "not able to find data for sensor"}
@@ -1277,8 +1247,7 @@ class ClientCommunication:
 			"managers": managers,
 			"alerts": alerts,
 			"alertLevels": alertLevels}
-		utcTimestamp = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		utcTimestamp = int(time.time())
 		message = {"serverTime": utcTimestamp,
 			"message": "status",
 			"payload": payload}
@@ -1364,8 +1333,7 @@ class ClientCommunication:
 
 			# Send error message back.
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "message header malformed"}
@@ -1385,8 +1353,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
@@ -1403,8 +1370,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "request expected"}
@@ -1421,8 +1387,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "message not valid"}
@@ -1450,8 +1415,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "version not compatible"}
@@ -1468,8 +1432,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "version not valid"}
@@ -1496,8 +1459,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "no user credentials"}
@@ -1528,8 +1490,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "username already in use"}
@@ -1548,8 +1509,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "invalid user credentials"}
@@ -1565,8 +1525,7 @@ class ClientCommunication:
 				"result": "ok",
 				"version": self.serverVersion,
 				"rev" : self.serverRev}
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			message = {"serverTime": utcTimestamp,
 				"message": "initialization",
 				"payload": payload}
@@ -1629,8 +1588,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "initialization message expected"}
@@ -1647,8 +1605,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "request expected"}
@@ -1665,8 +1622,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "message not valid"}
@@ -1721,8 +1677,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "registration message not valid"}
@@ -1742,8 +1697,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "invalid node type or instance"}
@@ -1766,8 +1720,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "unable to add node to database"}
@@ -1786,8 +1739,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "unable to get node id from database"}
@@ -1819,8 +1771,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "no sensors in message"}
@@ -1860,8 +1811,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "sensor data invalid"}
@@ -1896,8 +1846,7 @@ class ClientCommunication:
 
 						# send error message back
 						try:
-							utcTimestamp = calendar.timegm(
-								datetime.datetime.utcnow().utctimetuple())
+							utcTimestamp = int(time.time())
 							message = {"serverTime": utcTimestamp,
 								"message": message["message"],
 								"error": "alert level does not exist"}
@@ -1909,8 +1858,7 @@ class ClientCommunication:
 
 				# Create sensor object for the currently received sensor.
 				# NOTE: sensor id is not known yet.
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				tempSensor = Sensor()
 				tempSensor.nodeId = self.nodeId
 				tempSensor.remoteSensorId = sensorId
@@ -1933,8 +1881,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unable to add sensors to database"}
@@ -1959,8 +1906,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "unable to get sensor id from database"}
@@ -1994,8 +1940,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "no alerts in message"}
@@ -2035,8 +1980,7 @@ class ClientCommunication:
 
 							# send error message back
 							try:
-								utcTimestamp = calendar.timegm(
-									datetime.datetime.utcnow().utctimetuple())
+								utcTimestamp = int(time.time())
 								message = {"serverTime": utcTimestamp,
 									"message": message["message"],
 									"error": "alert level does not exist"}
@@ -2053,8 +1997,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "alert data invalid"}
@@ -2078,8 +2021,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unable to add alerts to database"}
@@ -2110,8 +2052,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "no manager in message"}
@@ -2131,8 +2072,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "manager data invalid"}
@@ -2154,8 +2094,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unable to add manager to database"}
@@ -2172,8 +2111,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": message["message"],
 					"error": "node type not known"}
@@ -2187,8 +2125,7 @@ class ClientCommunication:
 		try:
 
 			payload = {"type": "response", "result": "ok"}
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			message = {"serverTime": utcTimestamp,
 				"message": "initialization",
 				"payload": payload}
@@ -2241,8 +2178,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received option invalid"}
@@ -2278,8 +2214,7 @@ class ClientCommunication:
 		# send option response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			message = {"serverTime": utcTimestamp,
 				"message": "option", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -2315,8 +2250,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received status invalid"}
@@ -2334,8 +2268,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "count of sensors not correct"}
@@ -2367,8 +2300,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "unknown client sensor id"}
@@ -2380,8 +2312,7 @@ class ClientCommunication:
 
 				# Update sensor object.
 				sensor.state = sensors[i]["state"]
-				sensor.lastStateUpdated = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				sensor.lastStateUpdated = int(time.time())
 
 				stateList.append( (remoteSensorId, sensor.state) )
 
@@ -2393,8 +2324,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor state invalid"}
@@ -2415,8 +2345,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to update sensor state in database"}
@@ -2455,8 +2384,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "received sensor data type wrong"}
@@ -2484,8 +2412,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor data invalid"}
@@ -2510,8 +2437,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to update sensor data in database"}
@@ -2524,8 +2450,7 @@ class ClientCommunication:
 		# send status response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			message = {"serverTime": utcTimestamp,
 				"message": "status", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -2619,8 +2544,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown client sensor id"}
@@ -2640,8 +2564,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "received sensor data type wrong"}
@@ -2662,8 +2585,7 @@ class ClientCommunication:
 				if not isinstance(optionalData, dict):
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "optionalData not of type dict"}
@@ -2687,8 +2609,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received sensor alert invalid"}
@@ -2717,8 +2638,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to update sensor state in database"}
@@ -2743,8 +2663,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to update sensor data in database"}
@@ -2761,8 +2680,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to update sensor time in database"}
@@ -2781,8 +2699,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to add sensor alert to database"}
@@ -2798,8 +2715,7 @@ class ClientCommunication:
 		# send sensor alert response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			message = {"serverTime": utcTimestamp,
 				"message": "sensoralert", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -2874,8 +2790,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown client sensor id"}
@@ -2895,8 +2810,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "received sensor data type wrong"}
@@ -2908,8 +2822,7 @@ class ClientCommunication:
 
 			# Update sensor object.
 			sensor.state = state
-			sensor.lastStateUpdated = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			sensor.lastStateUpdated = int(time.time())
 			sensor.data = sensorData
 
 		except Exception as e:
@@ -2920,8 +2833,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "received state change invalid"}
@@ -2957,8 +2869,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to change sensor state in database"}
@@ -2982,8 +2893,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": incomingMessage["message"],
 						"error": "not able to change sensor data in database"}
@@ -3003,8 +2913,7 @@ class ClientCommunication:
 
 			# send error message back
 			try:
-				utcTimestamp = calendar.timegm(
-					datetime.datetime.utcnow().utctimetuple())
+				utcTimestamp = int(time.time())
 				message = {"serverTime": utcTimestamp,
 					"message": incomingMessage["message"],
 					"error": "not able to get sensor id from database"}
@@ -3017,8 +2926,7 @@ class ClientCommunication:
 		# send state change response
 		try:
 			payload = {"type": "response", "result": "ok"}
-			utcTimestamp = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			utcTimestamp = int(time.time())
 			message = {"serverTime": utcTimestamp,
 				"message": "statechange", "payload": payload}
 			self.sslSocket.send(json.dumps(message))
@@ -3075,8 +2983,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "status message expected"}
@@ -3093,8 +3000,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
@@ -3117,8 +3023,7 @@ class ClientCommunication:
 				% (self.clientAddress, self.clientPort))
 			return False
 
-		self.lastRecv = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.lastRecv = int(time.time())
 
 		return True
 
@@ -3158,8 +3063,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "state change message expected"}
@@ -3176,8 +3080,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
@@ -3202,8 +3105,7 @@ class ClientCommunication:
 
 			return False
 
-		self.lastRecv = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.lastRecv = int(time.time())
 
 		return True
 
@@ -3249,8 +3151,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "sensor alerts off message expected"}
@@ -3267,8 +3168,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
@@ -3292,8 +3192,7 @@ class ClientCommunication:
 
 			return False
 
-		self.lastRecv = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.lastRecv = int(time.time())
 
 		return True
 
@@ -3394,8 +3293,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "sensor alert message expected"}
@@ -3413,8 +3311,7 @@ class ClientCommunication:
 
 				# send error message back
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "response expected"}
@@ -3443,8 +3340,7 @@ class ClientCommunication:
 			self._releaseLock()
 			return False
 
-		self.lastRecv = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.lastRecv = int(time.time())
 
 		self._releaseLock()
 		return True
@@ -3478,8 +3374,7 @@ class ClientCommunication:
 
 		# change the time of the last received message
 		# (for the watchdog so it can see that the connection is still alive)
-		self.lastRecv = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.lastRecv = int(time.time())
 
 		# get the sensor count from the database for this connection
 		# if the nodeType is "sensor"
@@ -3610,8 +3505,7 @@ class ClientCommunication:
 					# send CTS (clear to send) message
 					payload = {"type": "cts",
 						"id": receivedTransactionId}
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": str(message["message"]),
 						"payload": payload}
@@ -3715,8 +3609,7 @@ class ClientCommunication:
 
 					# send error message back
 					try:
-						utcTimestamp = calendar.timegm(
-							datetime.datetime.utcnow().utctimetuple())
+						utcTimestamp = int(time.time())
 						message = {"serverTime": utcTimestamp,
 							"message": message["message"],
 							"error": "request expected"}
@@ -3753,8 +3646,7 @@ class ClientCommunication:
 
 				try:
 					payload = {"type": "response", "result": "ok"}
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": "ping", "payload": payload}
 					self.sslSocket.send(json.dumps(message))
@@ -3854,8 +3746,7 @@ class ClientCommunication:
 					% (data, self.clientAddress, self.clientPort))
 
 				try:
-					utcTimestamp = calendar.timegm(
-						datetime.datetime.utcnow().utctimetuple())
+					utcTimestamp = int(time.time())
 					message = {"serverTime": utcTimestamp,
 						"message": message["message"],
 						"error": "unknown command/message type"}
@@ -3868,8 +3759,7 @@ class ClientCommunication:
 				self._releaseLock()
 				return
 
-			self.lastRecv = calendar.timegm(
-				datetime.datetime.utcnow().utctimetuple())
+			self.lastRecv = int(time.time())
 
 
 # this class is used for the threaded tcp server and extends the constructor

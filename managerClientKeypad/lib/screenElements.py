@@ -11,8 +11,6 @@ import logging
 import os
 import time
 import urwid
-import datetime
-import calendar
 
 
 # this class is an urwid object for a status
@@ -150,8 +148,7 @@ class PinUrwid(urwid.Edit):
 			return True
 
 		# set time the screen was unlocked
-		self.console.screenUnlockedTime = calendar.timegm(
-			datetime.datetime.utcnow().utctimetuple())
+		self.console.screenUnlockedTime = int(time.time())
 
 		# show menu
 		self.console.showMenuView()
