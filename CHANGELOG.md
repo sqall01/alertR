@@ -4,7 +4,7 @@ This file only contains major changes with respect to the alertR system. Please 
 
 Features:
 
-* Uses UTC time instead of local time.
+* 
 
 
 ## 0.400

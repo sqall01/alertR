@@ -2,7 +2,7 @@
 
 Features:
 
-* Uses UTC time instead of local time.
+* 
 
 
 ## 0.401
