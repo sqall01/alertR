@@ -230,17 +230,23 @@
 				or not)
 				fromAddr - email address from which this eMail should be sent
 				toAddr - email address to which the eMail should be sent
-				subject - the subject of the eMail
 				templateFile - the template file which contains the
-					text of the eMail (the template file can also contain
+					text of the eMail. The template file can also contain
 					specific keywords that are resolved to the corresponding
-					sensor alert information)
+					sensor alert information. Refer to the example template
+					file to get a list of available keywords.
+				subject - the subject of the eMail. The subject can also
+					contain keywords (the same as the templateFile)
+					that are resolved to the corresponding sensor alert
+					information. Refer to the example template
+					file to get a list of available keywords.
+
 			-->
 			<mail
 				fromAddr="alertR@h4des.org"
 				toAddr="anoutheraddress@alertr.de"
-				subject="[alertR] second mail alert subject"
-				templateFile="/absolute/path/to/alert2_template.mail" />
+				templateFile="/absolute/path/to/alert2_template.mail"
+				subject="[alertR] second mail alert subject" />
 
 		</alert>
 

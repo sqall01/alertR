@@ -2,7 +2,8 @@
 
 Features:
 
-* Uses UTC time instead of local time.
+* Added keyword $SENSORDATA$.
+* Subjects can now contain keywords.
 
 
 ## 0.400-1

@@ -61,21 +61,11 @@ class MailAlert(_Alert):
 		self.bodyText = None
 
 
-	# this function is called once when the alert client has connected itself
-	# to the server (should be use to initialize everything that is needed
-	# for the alert)
-	def initializeAlert(self):
+	# Internal function that replaces the wildcards in the message
+	# with the corresponding values.
+	def _replaceWildcards(self, sensorAlert, message):
 
-		# set the state of the alert to "not triggered"
-		self.triggered = False
-
-		with open(self.templateFile, 'r') as fp:
-			self.bodyText = fp.read()
-
-
-	def triggerAlert(self, sensorAlert):
-
-		# create a received message text
+		# Create a received message text.
 		if (sensorAlert.hasOptionalData
 			and "message" in sensorAlert.optionalData):
 			receivedMessage = sensorAlert.optionalData["message"]
@@ -92,16 +82,47 @@ class MailAlert(_Alert):
 		else:
 			stateMessage = "Undefined"
 
-		# replace wildcards with the actual values
-		tempMsg = self.bodyText.replace("$MESSAGE$", receivedMessage)
+		# Convert data to a string.
+		if sensorAlert.dataType == SensorDataType.NONE:
+			dataMessage = "None"
+		elif (sensorAlert.dataType == SensorDataType.INT
+			or sensorAlert.dataType == SensorDataType.FLOAT):
+			dataMessage = str(sensorAlert.sensorData)
+		else:
+			dataMessage = "Unknown"
+
+		# Replace wildcards in the message with the actual values.
+		tempMsg = message.replace("$MESSAGE$", receivedMessage)
 		tempMsg = tempMsg.replace("$STATE$", stateMessage)
 		tempMsg = tempMsg.replace("$SENSORDESC$", sensorDescription)
 		tempMsg = tempMsg.replace("$TIMERECEIVED$",
 			time.strftime("%d %b %Y %H:%M:%S",
 			time.localtime(sensorAlert.timeReceived)))
+		tempMsg = tempMsg.replace("$SENSORDATA$", dataMessage)
+
+		return tempMsg
+
+
+	# this function is called once when the alert client has connected itself
+	# to the server (should be use to initialize everything that is needed
+	# for the alert)
+	def initializeAlert(self):
+
+		# set the state of the alert to "not triggered"
+		self.triggered = False
+
+		with open(self.templateFile, 'r') as fp:
+			self.bodyText = fp.read()
+
+
+	def triggerAlert(self, sensorAlert):
+
+		# replace wildcards with the actual values
+		tempMsg = self._replaceWildcards(sensorAlert, self.bodyText)
+		tempSbj = self._replaceWildcards(sensorAlert, self.subject)
 
 		emailHeader = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
-			% (self.fromAddr, self.toAddr, self.subject)
+			% (self.fromAddr, self.toAddr, tempSbj)
 
 		try:
 			logging.info("[%s] Sending eMail for triggered alert."

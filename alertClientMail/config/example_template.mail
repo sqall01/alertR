@@ -26,6 +26,12 @@ Keyword: $TIMERECEIVED$
 The $TIMERECEIVED$ keyword will be replaced by the
 time the sensor alert was received.
 
+Keyword: $SENSORDATA$
+The $SENSORDATA$ keyword will be replaced by the
+data the sensor alert holds. If the sensor alert
+does not contain any message, the keyword will be
+replaced by the string "None".
+
 This are all keywords that are currently available.
 Have fun to using them.
 
