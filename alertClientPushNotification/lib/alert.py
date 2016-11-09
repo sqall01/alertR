@@ -33,6 +33,7 @@ class ErrorCodes:
     GOOGLE_UNKNOWN = 6
     GOOGLE_AUTH = 7
     VERSION_MISSMATCH = 8
+    NO_NOTIFICATION_PERMISSION = 9
 
 
 # Simple class of an ssl tcp client.
@@ -137,7 +138,8 @@ class PushAlert(_Alert):
 			ErrorCodes.AUTH_ERROR,
 			ErrorCodes.ILLEGAL_MSG_ERROR,
 			ErrorCodes.GOOGLE_MSG_TOO_LARGE,
-			ErrorCodes.VERSION_MISSMATCH
+			ErrorCodes.VERSION_MISSMATCH,
+			ErrorCodes.NO_NOTIFICATION_PERMISSION
 			]
 
 
