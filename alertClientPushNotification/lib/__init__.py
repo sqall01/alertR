@@ -9,6 +9,6 @@
 
 from client import ServerCommunication, ConnectionWatchdog, Receiver
 from smtp import SMTPAlert
-from alert import PushAlert
+from alert import PushAlert, ErrorCodes
 from update import UpdateChecker, Updater
 from globalData import GlobalData
