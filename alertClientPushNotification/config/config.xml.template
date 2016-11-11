@@ -205,6 +205,9 @@
 					corresponding sensor alert information.
 					Refer to the example template
 					file to get a list of available keywords.
+					(IMPORTANT: the message size that can be transfered is 
+					limited. Therefore, try not to exceed 2000 characters in
+					the message body).
 				subject - the subject of the notification. The subject can also
 					contain keywords (the same as the templateFile)
 					that are resolved to the corresponding sensor alert
@@ -268,6 +271,9 @@
 					corresponding sensor alert information.
 					Refer to the example template
 					file to get a list of available keywords.
+					(IMPORTANT: the message size that can be transfered is 
+					limited. Therefore, try not to exceed 2000 characters in
+					the message body).
 				subject - the subject of the notification. The subject can also
 					contain keywords (the same as the templateFile)
 					that are resolved to the corresponding sensor alert
