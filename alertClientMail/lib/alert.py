@@ -13,6 +13,7 @@ import os
 import logging
 import smtplib
 import threading
+from localObjects import SensorDataType
 
 
 # internal class that holds the important attributes
