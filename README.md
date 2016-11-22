@@ -57,8 +57,7 @@ An overview of the infrastructure a basic alertR setup has.
 The following video is a short introduction video of alertR as a home alarm system. The subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
-<a href="https://www.youtube.com/watch?feature=player_embedded&v=gafnnETwNYA
-" target="_blank">
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=gafnnETwNYA&yt:cc=on" target="_blank">
 <img src="https://img.youtube.com/vi/gafnnETwNYA/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
@@ -67,8 +66,7 @@ The following video is a short introduction video of alertR as a home alarm syst
 The next video was published in December 2014 and shows version 0.2 of alertR. It demonstrates the D-Bus and Kodi (aka XBMC) notification capabilities. Again, the subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
-<a href="https://www.youtube.com/watch?feature=player_embedded&v=r7caH_UzKms
-" target="_blank">
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=r7caH_UzKms&yt:cc=on" target="_blank">
 <img src="https://img.youtube.com/vi/r7caH_UzKms/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
@@ -77,8 +75,7 @@ The next video was published in December 2014 and shows version 0.2 of alertR. I
 Part of the next release was a rule engine, which allows you to set up rules that must be satisfied before an alarm is triggered. Again, the subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
-<a href="https://www.youtube.com/watch?feature=player_embedded&v=iP3uPX41QEg
-" target="_blank">
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=iP3uPX41QEg&yt:cc=on" target="_blank">
 <img src="https://img.youtube.com/vi/iP3uPX41QEg/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
