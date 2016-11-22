@@ -54,12 +54,12 @@ An overview of the infrastructure a basic alertR setup has.
 ## Videos
 <a name="media_videos"/>
 
-The following video is a short introduction video of alertR as a home alarm system. This video was published in August 2014 and shows version 0.1 of alertR. Since then, a lot has changed and a lot new features were added. The subtitles have to be activated in order to understand what is happening.
+The following video is a short introduction video of alertR as a home alarm system. The subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
-<a href="https://www.youtube.com/watch?feature=player_embedded&v=TxhOPqBhqX8
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=gafnnETwNYA
 " target="_blank">
-<img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="640" height="480" border="10" />
+<img src="https://img.youtube.com/vi/gafnnETwNYA/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
 <br />
