@@ -1016,7 +1016,7 @@ def getRepositoryInformation(host, port, caFile, serverPath):
 
 	fileName = os.path.basename(__file__)
 
-	conn = VerifiedHTTPSConnection("fcm.googleapis.com", 443, caFile)
+	conn = VerifiedHTTPSConnection(host, port, caFile)
 
 	logging.debug("[%s]: Downloading repository information."
 		% fileName)
