@@ -1,7 +1,7 @@
 alertR Alert Client Push Notification
 ======
 
-This client handles triggered sensor alerts and is written to send a push notification on the configured channel when it receives a sensor alert. It needs an account at [alertr.de](https://alertr.de) and the receiving devices to have the alertR app installed. For each alert you configure, you can customize the message content by using template files. Special keywords will be replaced by information about the received sensor alert.
+This client handles triggered sensor alerts and is written to send a push notification on the configured channel when it receives a sensor alert. It needs an account at [alertr.de](https://alertr.de) and the receiving devices to have the [alertR app](https://play.google.com/store/apps/details?id=de.alertr.alertralarmnotification) installed. For each alert you configure, you can customize the message content by using template files. Special keywords will be replaced by information about the received sensor alert.
 
 
 How to use it?
