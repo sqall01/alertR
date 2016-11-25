@@ -4,7 +4,7 @@ This file only contains major changes with respect to the alertR system. Please 
 
 Features:
 
-* 
+* Push notification client.
 
 
 ## 0.400
