@@ -29,7 +29,7 @@ If you have no idea what alertR actually is or how you can use it, this section 
 ## Pictures
 <a name="media_pictures"/>
 
-The following shows a screenshot of the Android app introduced in version 0.5.
+The following shows a screenshot of the [Android app](https://play.google.com/store/apps/details?id=de.alertr.alertralarmnotification) introduced in version 0.5.
 
 <div align="center">
 <img src="docs/screenshot_android_app.png" />
