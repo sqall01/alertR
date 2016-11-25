@@ -106,7 +106,7 @@ If you are interested in alertR and its development, you can also read alertR re
 
 If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use alertR, writing code for it, and so on.
 
-If you do not know how to do any of it, you can support the project by [donating](https://alertr.de/donatings.php). Since services such as the push notification service have a monthly upkeep, the donation helps to keep these services free for everyone.
+If you do not know how to do any of it, you can support the project by [donating](https://alertr.de/donations.php). Since services such as the push notification service have a monthly upkeep, the donation helps to keep these services free for everyone.
 
 [![Donate](https://www.paypalobjects.com/en_US/DE/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TVHGG76JVCSGC)
 
