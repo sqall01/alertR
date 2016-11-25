@@ -118,14 +118,19 @@ if __name__ == '__main__':
 	alerts = list()
 	try:
 
+		# Parse alertr.de account settings.
+		tempConf = configRoot.find("alerts")
+		alertrUsername = str(tempConf.attrib["username"])
+		alertrPassword = str(tempConf.attrib["password"])
+
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
 			alert = dict()
 
 			# Read the push notification settings.
-			alert["username"] = str(item.find("push").attrib["username"])
-			alert["password"] = str(item.find("push").attrib["password"])
+			alert["username"] = alertrUsername
+			alert["password"] = alertrPassword
 			alert["channel"] = str(item.find("push").attrib["channel"])
 			alert["encSecret"] = str(item.find("push").attrib["secret"])
 			alert["subject"] = str(item.find("push").attrib["subject"])

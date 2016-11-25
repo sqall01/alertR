@@ -152,8 +152,14 @@
 
 	<!--
 		section of all alerts that could be triggered
+
+		username - The username of your alertr.de account (it is
+			your used email address).
+		password - The password of your alertr.de account.
 	-->
-	<alerts>
+	<alerts
+		username="alertR@alertr.de"
+		password="secretalertrdepassword">
 
 		<!--
 			a single alert is configured in an "alert" element
@@ -182,9 +188,6 @@
 
 			<!--
 				push notification specific settings for the notifications
-				username - the username of your alertr.de account (it is
-					your used email address).
-				password - the password of your alertr.de account.
 				secret - the secret that is used to encrypt the notification.
 					All devices that should receive the notifications have
 					to be configured with the same secret.
@@ -215,8 +218,6 @@
 					file to get a list of available keywords.
 			-->
 			<push
-				username="alertR@alertr.de"
-				password="secretalertrdepassword"
 				secret="MySecretEncrytionPassword"
 				channel="MyOwnChannelOne"
 				templateFile="/absolute/path/to/alert1_template.msg"
@@ -248,9 +249,6 @@
 
 			<!--
 				push notification specific settings for the notifications
-				username - the username of your alertr.de account (it is
-					your used email address).
-				password - the password of your alertr.de account.
 				secret - the secret that is used to encrypt the notification.
 					All devices that should receive the notifications have
 					to be configured with the same secret.
@@ -281,8 +279,6 @@
 					file to get a list of available keywords.
 			-->
 			<push
-				username="alertR@alertr.de"
-				password="secretalertrdepassword"
 				secret="MySecretEncrytionPassword"
 				channel="MyOwnChannelTwo"
 				templateFile="/absolute/path/to/alert2_template.msg"
