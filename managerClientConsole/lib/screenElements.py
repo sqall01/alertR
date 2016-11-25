@@ -263,10 +263,6 @@ class SensorDetailedUrwid:
 
 	def __init__(self, sensor, node, alertLevels):
 
-		# TODO
-		# needs also a list of sensor alerts that are triggered by this
-		# sensor recently
-
 		self.node = node
 		self.sensor = sensor
 
