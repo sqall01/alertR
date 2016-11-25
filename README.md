@@ -17,7 +17,7 @@ alertR is a client/server based alarm and monitoring system. Originally it was d
 # Version
 <a name="version"/>
 
-The current stable version of alertR is 0.4. The development of alertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch. If you want to see what has changed during the releases, you can check the [Changelog File](CHANGELOG.md).
+The current stable version of alertR is 0.5. The development of alertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch. If you want to see what has changed during the releases, you can check the [Changelog File](CHANGELOG.md).
 
 
 # Media
