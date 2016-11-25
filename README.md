@@ -11,6 +11,7 @@ alertR is a client/server based alarm and monitoring system. Originally it was d
 * [Installation](#installation)
 * [Update](#update)
 * [Further Notes](#further_notes)
+* [Supporting alertR](#supporting_alertr)
 * [Bugs and Feedback](#bugs_and_feedback)
 
 
@@ -98,6 +99,16 @@ If you have already a working alertR system installed and a newer version is ava
 <a name="further_notes"/>
 
 If you are interested in alertR and its development, you can also read alertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR).
+
+
+# Supporting alertR
+<a name="supporting_alertr"/>
+
+If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use alertR, writing code for it, and so on.
+
+If you do not know how to do any of it, you can support the project by [donating](https://alertr.de/donatings.php). Since services such as the push notification service have a monthly upkeep, the donation helps to keep these services free for everyone.
+
+[![Donate](https://www.paypalobjects.com/en_US/DE/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TVHGG76JVCSGC)
 
 
 # Bugs and Feedback
