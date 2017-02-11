@@ -1485,8 +1485,9 @@ class ClientCommunication:
 
 			if serverSession.clientComm.username == self.username:
 
-				self.logger.error("[%s]: Username already in use (%s:%d)."
-				% (self.fileName, self.clientAddress, self.clientPort))
+				self.logger.error("[%s]: Username '%s' already in use (%s:%d)."
+				% (self.fileName, self.username, self.clientAddress,
+				self.clientPort))
 
 				# send error message back
 				try:
