@@ -49,7 +49,7 @@ class GlobalData:
 
 		# This is the time a "persistent" client does not count as
 		# timed out if it disconnects from the server.
-		self.gracePeriodTimeout = 20
+		self.gracePeriodTimeout = 60
 
 		# The time a reminder of timed out sensors is raised.
 		self.timeoutReminderTime = 1800.0
