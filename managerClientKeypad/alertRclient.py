@@ -181,8 +181,15 @@ if __name__ == '__main__':
 		audioActivated = (str(
 				configRoot.find("manager").find("audio").attrib[
 				"enabled"]).upper() == "TRUE")
+		audioPlaySilence = (str(
+				configRoot.find("manager").find("audio").attrib[
+				"playSilence"]).upper() == "TRUE")
 		if audioActivated is True:
 			globalData.audioOutput = AudioOutput()
+
+			# Play silence as a workaround for HDMI delays.
+			if audioPlaySilence is True:
+				globalData.audioOutput.playSilence()
 
 		# get settings for the keypad
 		globalData.timeDelayedActivation = int(

@@ -93,3 +93,10 @@ class AudioOutput:
 		self._acquireLock()
 		self._playFile(self.soundDirectory + "warning.wav")
 		self._releaseLock()
+
+
+	def playSilence(self):
+		logging.debug("[%s]: Playing silence." % self.fileName)
+
+		devZero = open("/dev/zero", "rb")
+		subprocess.Popen(["aplay", "-c", "2", "-r", "48000", "-f", "S16_LE"], stdin=devZero)

@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.500">
+<config version="0.501">
 
 	<!--
 		in this section general options are configured
@@ -163,11 +163,16 @@
 			description="test manager" />
 
 		<!--
-			audio specific settings
-			enabled - should the client output audio? ("True" or "False")
+			Audio specific settings
+			enabled - Should the client output audio? ("True" or "False")
+			playSilence - Should the client play silence all the time
+				in order to keep the sound channel open? This is a workaround
+				if HDMI is used. The delay of some speakers will cut the
+				beginning of the played sound otherwise. ("True" or "False")
 		-->
 		<audio
-			enabled="True" />
+			enabled="True"
+			playSilence="True" />
 
 		<!--
 			keypad specific settings
