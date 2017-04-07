@@ -1,3 +1,10 @@
+## 0.501
+
+Features:
+
+* Play silent option as a workaround for HDMI sound delay.
+
+
 ## 0.400-1
 
 Features:
