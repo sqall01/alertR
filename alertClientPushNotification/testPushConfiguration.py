@@ -75,6 +75,17 @@ def makePath(inputLocation):
 	return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
 
 
+# Create the channel name linked to the username.
+# NOTE: This function is not collision free but will improve collision
+# resistance if multiple parties choose the same channel.
+def generatePrefixedChannel(username, channel):
+	# Create a encryption key from the secret.
+	sha256 = hashlib.sha256()
+	sha256.update(username)
+	prefix = sha256.hexdigest()[0:8]
+	return prefix + "_" + channel
+
+
 if __name__ == '__main__':
 
 	fileName = os.path.basename(__file__)
@@ -207,10 +218,12 @@ if __name__ == '__main__':
 
 		temp = iv + encrypted_payload
 		data_send = base64.b64encode(temp)
+		prefixed_channel = generatePrefixedChannel(alert["username"],
+			alert["channel"])
 
 		data = {"username": alert["username"],
 				"password": alert["password"],
-				"channel": alert["channel"],
+				"channel": prefixed_channel,
 				"data": data_send,
 				"version": 0.1}
 

@@ -143,6 +143,17 @@ class PushAlert(_Alert):
 			]
 
 
+	# Create the channel name linked to the username.
+	# NOTE: This function is not collision free but will improve collision
+	# resistance if multiple parties choose the same channel.
+	def _generatePrefixedChannel(self, username, channel):
+		# Create a encryption key from the secret.
+		sha256 = hashlib.sha256()
+		sha256.update(username)
+		prefix = sha256.hexdigest()[0:8]
+		return prefix + "_" + channel
+
+
 	# Internal function that prepares the data
 	# (which is a json string) that is send to the devices.
 	def _prepareMessage(self, payload):
@@ -176,9 +187,12 @@ class PushAlert(_Alert):
 		logging.debug("[%s] Sending sensorAlert message."
 				% self.fileName)
 
+		prefixedChannel = self._generatePrefixedChannel(self.username,
+			self.channel)
+
 		finalData = {"username": self.username,
 			"password": self.password,
-			"channel": self.channel,
+			"channel": prefixedChannel,
 			"data": data,
 			"version": self.protocolVersion}
 
