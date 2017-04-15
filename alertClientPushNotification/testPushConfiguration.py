@@ -83,7 +83,7 @@ def generatePrefixedChannel(username, channel):
 	sha256 = hashlib.sha256()
 	sha256.update(username)
 	prefix = sha256.hexdigest()[0:8]
-	return prefix + "_" + channel
+	return prefix.lower() + "_" + channel
 
 
 if __name__ == '__main__':
