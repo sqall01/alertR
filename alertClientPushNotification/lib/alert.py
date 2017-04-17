@@ -125,6 +125,7 @@ class PushAlert(_Alert):
 		self.protocolVersion = 0.1
 		self.username = None
 		self.password = None
+		self.sbjMsgSize = 1400
 
 		# Error codes to determine if we can retry to send the message or not.
 		self.retryCodes = [
@@ -178,6 +179,48 @@ class PushAlert(_Alert):
 
 		temp = iv + encryptedPayload
 		return base64.b64encode(temp)
+
+
+	# Internal function that replaces the wildcards in the message
+	# with the corresponding values.
+	def _replaceWildcards(self, sensorAlert, message):
+
+		# Create a received message text.
+		if (sensorAlert.hasOptionalData
+			and "message" in sensorAlert.optionalData):
+			receivedMessage = sensorAlert.optionalData["message"]
+		else:
+			receivedMessage = "None"
+
+		sensorDescription = sensorAlert.description
+
+		# convert state to a text
+		if sensorAlert.state == 0:
+			stateMessage = "Normal"
+		elif sensorAlert.state == 1:
+			stateMessage = "Triggered"
+		else:
+			stateMessage = "Undefined"
+
+		# Convert data to a string.
+		if sensorAlert.dataType == SensorDataType.NONE:
+			dataMessage = "None"
+		elif (sensorAlert.dataType == SensorDataType.INT
+			or sensorAlert.dataType == SensorDataType.FLOAT):
+			dataMessage = str(sensorAlert.sensorData)
+		else:
+			dataMessage = "Unknown"
+
+		# Replace wildcards in the message with the actual values.
+		tempMsg = message.replace("$MESSAGE$", receivedMessage)
+		tempMsg = tempMsg.replace("$STATE$", stateMessage)
+		tempMsg = tempMsg.replace("$SENSORDESC$", sensorDescription)
+		tempMsg = tempMsg.replace("$TIMERECEIVED$",
+			time.strftime("%d %b %Y %H:%M:%S",
+			time.localtime(sensorAlert.timeReceived)))
+		tempMsg = tempMsg.replace("$SENSORDATA$", dataMessage)
+
+		return tempMsg
 
 
 	# Internal function that sends the message to the push server.
@@ -266,46 +309,29 @@ class PushAlert(_Alert):
 		return True
 
 
-	# Internal function that replaces the wildcards in the message
-	# with the corresponding values.
-	def _replaceWildcards(self, sensorAlert, message):
+	# Truncates the message and subject to fit in a notification message.
+	def _truncToSize(self, subject, message):
+		lenJsonSbj = len(json.dumps(subject))
+		lenSbj = len(subject)
+		lenJsonMsg = len(json.dumps(message))
+		lenMsg = len(message)
 
-		# Create a received message text.
-		if (sensorAlert.hasOptionalData
-			and "message" in sensorAlert.optionalData):
-			receivedMessage = sensorAlert.optionalData["message"]
-		else:
-			receivedMessage = "None"
+		# Consider json encoding (characters like \n need two characters).
+		if (lenJsonSbj + lenJsonMsg) > self.sbjMsgSize:
+			numberToRemove = (lenJsonSbj + lenJsonMsg + 7) - self.sbjMsgSize
+			if lenMsg > numberToRemove:
+				message = message[0:(lenMsg-numberToRemove)]
+				message += "*TRUNC*"
+			elif lenSbj > numberToRemove:
+				subject = subject[0:(lenSbj-numberToRemove)]
+				subject += "*TRUNC*"
+			else:
+				message = "*TRUNC*"
+				numberToRemove = numberToRemove - lenMsg + 7
+				subject = subject[0:(lenSbj-numberToRemove)]
+				subject += "*TRUNC*"
 
-		sensorDescription = sensorAlert.description
-
-		# convert state to a text
-		if sensorAlert.state == 0:
-			stateMessage = "Normal"
-		elif sensorAlert.state == 1:
-			stateMessage = "Triggered"
-		else:
-			stateMessage = "Undefined"
-
-		# Convert data to a string.
-		if sensorAlert.dataType == SensorDataType.NONE:
-			dataMessage = "None"
-		elif (sensorAlert.dataType == SensorDataType.INT
-			or sensorAlert.dataType == SensorDataType.FLOAT):
-			dataMessage = str(sensorAlert.sensorData)
-		else:
-			dataMessage = "Unknown"
-
-		# Replace wildcards in the message with the actual values.
-		tempMsg = message.replace("$MESSAGE$", receivedMessage)
-		tempMsg = tempMsg.replace("$STATE$", stateMessage)
-		tempMsg = tempMsg.replace("$SENSORDESC$", sensorDescription)
-		tempMsg = tempMsg.replace("$TIMERECEIVED$",
-			time.strftime("%d %b %Y %H:%M:%S",
-			time.localtime(sensorAlert.timeReceived)))
-		tempMsg = tempMsg.replace("$SENSORDATA$", dataMessage)
-
-		return tempMsg
+		return subject, message
 
 
 	# this function is called once when the alert client has connected itself
@@ -329,6 +355,7 @@ class PushAlert(_Alert):
 
 		tempMsg = self._replaceWildcards(sensorAlert, self.msgText)
 		tempSbj = self._replaceWildcards(sensorAlert, self.subject)
+		tempSbj, tempMsg = self._truncToSize(tempSbj, tempMsg)
 
 		# Send message to push server.
 		while True:
