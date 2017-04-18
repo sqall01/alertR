@@ -355,7 +355,13 @@ class PushAlert(_Alert):
 
 		tempMsg = self._replaceWildcards(sensorAlert, self.msgText)
 		tempSbj = self._replaceWildcards(sensorAlert, self.subject)
+		oldSize = len(tempMsg) + len(tempSbj)
 		tempSbj, tempMsg = self._truncToSize(tempSbj, tempMsg)
+		newSize = len(tempMsg) + len(tempSbj)
+
+		if oldSize != newSize:
+			logging.info("[%s] Truncated message size from %d to %d."
+				% (self.fileName, oldSize, newSize))
 
 		# Send message to push server.
 		while True:
@@ -376,7 +382,7 @@ class PushAlert(_Alert):
 				break
 
 			logging.info("[%s] Retrying to send notification to channel '%s' "
-					% (self.channel, self.fileName)
+					% (self.fileName, self.channel)
 					+ "in %d seconds."
 					% self.pushRetryTimeout)
 
