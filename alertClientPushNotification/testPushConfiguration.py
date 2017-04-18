@@ -19,6 +19,7 @@ import random
 import json
 import hashlib
 import sys
+import re
 from Crypto.Cipher import AES
 from lib import GlobalData
 from lib import ErrorCodes
@@ -86,6 +87,10 @@ def generatePrefixedChannel(username, channel):
 	return prefix.lower() + "_" + channel
 
 
+def checkChannel(channel):
+	return bool(re.match(r'^[a-zA-Z0-9-_.~%]+$', channel))
+
+
 if __name__ == '__main__':
 
 	fileName = os.path.basename(__file__)
@@ -147,6 +152,11 @@ if __name__ == '__main__':
 			alert["subject"] = str(item.find("push").attrib["subject"])
 			alert["templateFile"] = makePath(
 				str(item.find("push").attrib["templateFile"]))
+
+			# Check if channel is allowed.
+			if not checkChannel(alert["channel"]):
+				raise ValueError("Channel '%s' contains illegal characters."
+					% alert["channel"])
 
 			# check if the template file exists
 			if not os.path.isfile(alert["templateFile"]):

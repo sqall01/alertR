@@ -17,6 +17,7 @@ import threading
 import base64
 import json
 import hashlib
+import re
 from Crypto.Cipher import AES
 from localObjects import SensorDataType
 BUFSIZE = 4096
@@ -77,7 +78,7 @@ class Client:
 # Internal class that holds the important attributes
 # for a alert to work with (this class must be inherited from the
 # used alert class).
-class _Alert:
+class _Alert(object):
 
 	def __init__(self):
 		self.id = None
@@ -116,7 +117,7 @@ class PushAlert(_Alert):
 		self.pushRetryTimeout = self.globalData.pushRetryTimeout
 
 		# These are the message settings.
-		self.channel = None
+		self._channel = None
 		self.encSecret = None
 		self.subject = None
 		self.templateFile = None
@@ -142,6 +143,20 @@ class PushAlert(_Alert):
 			ErrorCodes.VERSION_MISSMATCH,
 			ErrorCodes.NO_NOTIFICATION_PERMISSION
 			]
+
+
+	@property
+	def channel(self):
+		return self._channel
+
+
+	@channel.setter
+	def channel(self, value):
+		if bool(re.match(r'^[a-zA-Z0-9-_.~%]+$', value)):
+			self._channel = value
+		else:
+			raise ValueError("Channel '%s' contains illegal characters."
+				% value)
 
 
 	# Create the channel name linked to the username.
