@@ -126,7 +126,7 @@ class PushAlert(_Alert):
 		self.protocolVersion = 0.1
 		self.username = None
 		self.password = None
-		self.sbjMsgSize = 1400
+		self.sbjMsgSize = self.globalData.pushSbjMsgSize
 
 		# Error codes to determine if we can retry to send the message or not.
 		self.retryCodes = [

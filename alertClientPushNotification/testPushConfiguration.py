@@ -92,15 +92,15 @@ def checkChannel(channel):
 
 
 # Truncates the message and subject to fit in a notification message.
-def truncToSize(subject, message):
+def truncToSize(subject, message, sbjMsgSize=1400):
 	len_json_sbj = len(json.dumps(subject))
 	len_sbj = len(subject)
 	len_json_msg = len(json.dumps(message))
 	len_msg = len(message)
 
 	# Consider json encoding (characters like \n need two characters).
-	if (len_json_sbj + len_json_msg) > 1400:
-		number_to_remove = (len_json_sbj + len_json_msg + 7) - 1400
+	if (len_json_sbj + len_json_msg) > sbjMsgSize:
+		number_to_remove = (len_json_sbj + len_json_msg + 7) - sbjMsgSize
 		if len_msg > number_to_remove:
 			message = message[0:(len_msg-number_to_remove)]
 			message += "*TRUNC*"
@@ -219,7 +219,8 @@ if __name__ == '__main__':
 			+ "Id: %d\nDescription: %s\n\nCheers,\nalertR" \
 			% (alert["id"], alert["description"])
 
-		subject, message = truncToSize(subject, message)
+		subject, message = truncToSize(subject, message,
+			globalData.pushSbjMsgSize)
 		utc_timestamp = int(time.time())
 		payload = json.dumps( {
 			"sbj": subject,

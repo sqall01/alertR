@@ -59,3 +59,4 @@ class GlobalData:
 		self.pushServerCert = os.path.dirname(os.path.abspath(__file__)) \
 			+ "/../config/push.alertr.de.crt"
 		self.pushRetryTimeout = 300
+		self.pushSbjMsgSize = 1400
