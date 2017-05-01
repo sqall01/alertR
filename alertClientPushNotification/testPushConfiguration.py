@@ -300,7 +300,7 @@ if __name__ == '__main__':
 				% fileName
 				+ "Please try again later.")
 		elif response["Code"] == ErrorCodes.VERSION_MISSMATCH:
-			logging.error("[%s]: Version missmatch. "
+			logging.error("[%s]: Version mismatch. "
 				% fileName
 				+ "Please update your client.")
 		elif response["Code"] == ErrorCodes.NO_NOTIFICATION_PERMISSION:
