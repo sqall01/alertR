@@ -308,7 +308,7 @@ if __name__ == '__main__':
 				% fileName
 				+ "Please update channel configuration.")
 		else:
-			logging.error("[%s]: The following error code occured: %d."
+			logging.error("[%s]: The following error code occurred: %d."
 				% (fileName, response["Code"])
 				+ "Please make sure to use the newest version. "
 				+ "If you do, please open an issue on "
