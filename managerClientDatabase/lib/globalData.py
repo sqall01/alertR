@@ -21,7 +21,7 @@ class GlobalData:
 		self.version = 0.500
 
 		# revision of the used client
-		self.rev = 0
+		self.rev = 1
 
 		# name of this client
 		self.name = "alertR Manger Client Database"
@@ -31,7 +31,7 @@ class GlobalData:
 
 		# interval in which a ping should be send when 
 		# no data was received/send		
-		self.pingInterval = 30
+		self.pingInterval = 20
 
 		# type of this node/client
 		self.nodeType = "manager"

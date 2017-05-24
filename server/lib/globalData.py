@@ -45,7 +45,7 @@ class GlobalData:
 		self.managerUpdateExecuter = None
 
 		# this is the time in seconds when the client times out
-		self.connectionTimeout = 60
+		self.connectionTimeout = 30
 
 		# This is the time a "persistent" client does not count as
 		# timed out if it disconnects from the server.

@@ -1,3 +1,10 @@
+## 0.501-1
+
+Features:
+
+* Changed timeout setting in order to have a more stable connection recovery.
+
+
 ## 0.501
 
 Features:
