@@ -57,7 +57,7 @@ class Client:
 		count = self.sslSocket.send(data)
 
 
-	def recv(self, buffsize, timeout=3.0):
+	def recv(self, buffsize, timeout=20.0):
 		data = None
 		self.sslSocket.settimeout(timeout)
 		data = self.sslSocket.recv(buffsize)
