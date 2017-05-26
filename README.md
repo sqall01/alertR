@@ -30,6 +30,13 @@ If you have no idea what alertR actually is or how you can use it, this section 
 ## Pictures
 <a name="media_pictures"/>
 
+A picture of a [MagicMirror](https://magicmirror.builders/) showing alertR system information.
+
+<div align="center">
+<img src="docs/magicmirror.jpg" />
+</div>
+<br />
+
 The following shows a screenshot of the [Android app](https://play.google.com/store/apps/details?id=de.alertr.alertralarmnotification) introduced in version 0.5.
 
 <div align="center">
