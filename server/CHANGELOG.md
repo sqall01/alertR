@@ -3,6 +3,7 @@
 Features:
 
 * Changed timeout setting in order to have a more stable connection recovery.
+* Fixed problem with multiple log entries.
 
 
 ## 0.400-1

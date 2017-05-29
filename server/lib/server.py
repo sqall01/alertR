@@ -32,7 +32,6 @@ class ClientCommunication:
 
 		# get global configured data
 		self.globalData = globalData
-		self.logger = self.globalData.logger
 		self.serverVersion = self.globalData.version
 		self.serverRev = self.globalData.rev
 		self.storage = self.globalData.storage
@@ -95,6 +94,11 @@ class ClientCommunication:
 		# List of all sensors this client manages (is only used if the client
 		# is of type "sensor").
 		self.sensors = list()
+
+		# Needed for logging.
+		self.logger = self.globalData.logger
+		self.loggerFileHandler = None
+
 
 
 	# internal function that acquires the lock
@@ -1291,12 +1295,21 @@ class ClientCommunication:
 			'%m/%d/%Y %H:%M:%S')
 		fh.setFormatter(format)
 		self.logger.addHandler(fh)
+		self.loggerFileHandler = fh
 
 		# Set the logger instance also for the server session.
 		for serverSession in self.serverSessions:
 			if serverSession.clientComm == self:
 				serverSession.setLogger(self.logger)
 				break
+
+
+	# Internal function to finalize an own logger instance for this
+	# connection.
+	def _finalizeLogger(self):
+		if self.loggerFileHandler is not None:
+			self.logger.removeHandler(self.loggerFileHandler)
+			self.loggerFileHandler.close()
 
 
 	# Internal function to verify the server/client version
@@ -3387,6 +3400,7 @@ class ClientCommunication:
 						% (self.fileName, self.clientAddress, self.clientPort))
 
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 		# mark node as connected in the database
@@ -3398,6 +3412,7 @@ class ClientCommunication:
 				% (self.clientAddress, self.clientPort))
 
 			self._releaseLock()
+			self._finalizeLogger()
 			return
 
 		# check if the type of the node is manager
@@ -3414,6 +3429,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 			if (not self._initiateTransaction("status",
@@ -3426,6 +3442,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 			if (not self._sendManagerAllInformation(alertSystemStateMessage)):
@@ -3437,6 +3454,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 		# if node is no manager
@@ -3470,6 +3488,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 				# change timeout of the socket back to configured seconds
@@ -3486,6 +3505,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 				# check if RTS was received
@@ -3532,6 +3552,7 @@ class ClientCommunication:
 							# clean up session before exiting
 							self._cleanUpSessionForClosing()
 							self._releaseLock()
+							self._finalizeLogger()
 							return
 
 				# if no RTS was received
@@ -3546,6 +3567,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 			except ssl.SSLError as e:
@@ -3578,6 +3600,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 			except Exception as e:
@@ -3587,6 +3610,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 			# extract message type
@@ -3601,6 +3625,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 				# check if the received type is the correct one
@@ -3621,6 +3646,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 				# extract the command/message type of the message
@@ -3635,6 +3661,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 			# check if PING was received => send PONG back
@@ -3659,6 +3686,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 			# check if SENSORALERT was received
@@ -3681,6 +3709,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 			# check if STATECHANGE was received
@@ -3702,6 +3731,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 			# check if STATUS was received
@@ -3720,6 +3750,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 			# check if OPTION was received (for manager only)
@@ -3738,6 +3769,7 @@ class ClientCommunication:
 					# clean up session before exiting
 					self._cleanUpSessionForClosing()
 					self._releaseLock()
+					self._finalizeLogger()
 					return
 
 			# command is unknown => close connection
@@ -3758,6 +3790,7 @@ class ClientCommunication:
 				# clean up session before exiting
 				self._cleanUpSessionForClosing()
 				self._releaseLock()
+				self._finalizeLogger()
 				return
 
 			self.lastRecv = int(time.time())
