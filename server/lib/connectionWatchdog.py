@@ -882,7 +882,7 @@ class ConnectionWatchdog(threading.Thread):
 			# lastStateUpdated, description)
 			utcTimestamp = int(time.time())
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
-				utcTimestamp - (4 * self.connectionTimeout))
+				utcTimestamp - int(1.5 * self.gracePeriodTimeout))
 
 			# Process occurred sensor time outs (and if they newly occurred).
 			self._processNewSensorTimeouts(sensorsTimeoutList)
