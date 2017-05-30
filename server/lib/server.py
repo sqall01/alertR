@@ -1308,8 +1308,12 @@ class ClientCommunication:
 	# connection.
 	def _finalizeLogger(self):
 		if self.loggerFileHandler is not None:
+			self.logger.debug("[%s]: Closing log file (%s:%d)."
+				% (self.fileName, self.clientAddress, self.clientPort))
 			self.logger.removeHandler(self.loggerFileHandler)
 			self.loggerFileHandler.close()
+			self.loggerFileHandler = None
+		self.logger = self.globalData.logger
 
 
 	# Internal function to verify the server/client version
