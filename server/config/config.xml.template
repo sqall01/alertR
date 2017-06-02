@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the server
 -->
-<config version="0.500">
+<config version="0.501">
 
 	<!--
 		in this section general options are configured
@@ -863,6 +863,25 @@
 			<alertLevel>1</alertLevel>
 
 		</nodeTimeout>
+
+		<!--
+			The alertSystemActive sensor is an internal sensor that triggers
+			when the alarm system changes its state (activated/deactivated).
+			It allows you to utilize the global alarm system state changes.
+			activated - This flags indicates if the internal sensor is
+				activated or not.
+				("True" or "False")
+		-->
+		<alertSystemActive
+			activated="True">
+
+			<!--
+				The alertLevel that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels).
+			-->
+			<alertLevel>0</alertLevel>
+
+		</alertSystemActive>
 
 	</internalSensors>
 

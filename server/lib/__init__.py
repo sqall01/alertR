@@ -11,8 +11,9 @@ from connectionWatchdog import ConnectionWatchdog
 from server import ServerSession, ThreadedTCPServer, AsynchronousSender
 from storage import Sqlite, Mysql
 from alert import SensorAlertExecuter
-from localObjects import SensorDataType, Sensor, AlertLevel, \
-	SensorTimeoutSensor, NodeTimeoutSensor
+from localObjects import SensorDataType, Sensor, AlertLevel
+from internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, \
+	AlertSystemActiveSensor
 from ruleObjects import RuleStart, RuleElement, RuleBoolean, RuleSensor, \
 	RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from userBackend import CSVBackend

@@ -12,7 +12,8 @@ import time
 import logging
 import os
 import json
-from localObjects import SensorDataType, SensorTimeoutSensor, NodeTimeoutSensor
+from localObjects import SensorDataType
+from internalSensors import SensorTimeoutSensor, NodeTimeoutSensor
 
 
 # This class checks handles all timeouts of nodes, sensors, and so on.

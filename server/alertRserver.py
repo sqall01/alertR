@@ -12,8 +12,8 @@ import os
 from lib import ConnectionWatchdog
 from lib import ServerSession, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import SensorDataType, AlertLevel, SensorTimeoutSensor, \
-	NodeTimeoutSensor
+from lib import SensorDataType, AlertLevel
+from lib import SensorTimeoutSensor, NodeTimeoutSensor, AlertSystemActiveSensor
 from lib import SensorAlertExecuter
 from lib import RuleStart, RuleElement, RuleBoolean, RuleSensor, RuleWeekday, \
 	RuleMonthday, RuleHour, RuleMinute, RuleSecond
@@ -1404,6 +1404,49 @@ if __name__ == '__main__':
 			# Add tuple to db state list to set initial states of the
 			# internal sensors.
 			dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+
+		# Parse alert system active sensor (if activated).
+		item = internalSensorsCfg.find("alertSystemActive")
+		if (str(item.attrib["activated"]).upper() == "TRUE"):
+
+			sensor = AlertSystemActiveSensor()
+
+			sensor.nodeId = serverNodeId
+			sensor.alertDelay = 0
+			sensor.state = 0
+			sensor.lastStateUpdated = int(time.time())
+			sensor.description = "Internal: Alert System Active"
+
+			# Alert system active sensor has always this fix internal id
+			# (stored as remoteSensorId).
+			sensor.remoteSensorId = 2
+
+			sensor.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				sensor.alertLevels.append(int(alertLevelXml.text))
+
+			globalData.internalSensors.append(sensor)
+
+			# Create sensor dictionary element for database interaction.
+			temp = dict()
+			temp["clientSensorId"] = sensor.remoteSensorId
+			temp["alertDelay"] = sensor.alertDelay
+			temp["alertLevels"] = sensor.alertLevels
+			temp["description"] = sensor.description
+			temp["state"] = 0
+			temp["dataType"] = sensor.dataType
+			dbSensors.append(temp)
+
+			# Set initial state of the internal sensor to the state
+			# of the alert system.
+			if globalData.storage.isAlertSystemActive():
+				initState = 1
+			else:
+				initState = 0
+
+			# Add tuple to db state list to set initial states of the
+			# internal sensors.
+			dbInitialStateList.append( (sensor.remoteSensorId, initState) )
 
 		# Add internal sensors to database (updates/deletes also old
 		# sensor data in the database).

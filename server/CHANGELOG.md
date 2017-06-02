@@ -1,3 +1,10 @@
+## 0.501-0
+
+Features:
+
+* Added alert system state as an internal sensor in order to generate sensor alerts if alert system changes state (activated/deactivated).
+
+
 ## 0.500-1
 
 Features:

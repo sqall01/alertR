@@ -18,6 +18,7 @@ import base64
 import random
 import json
 from localObjects import SensorDataType, Sensor
+from internalSensors import AlertSystemActiveSensor
 
 BUFSIZE = 4096
 
@@ -4080,6 +4081,8 @@ class AsynchronousOptionExecuter(threading.Thread):
 		self.asyncOptionExecutersLock \
 			= self.globalData.asyncOptionExecutersLock
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
+		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
+		self.internalSensors = self.globalData.internalSensors
 
 		# get option data to change
 		self.optionType = optionType
@@ -4149,6 +4152,42 @@ class AsynchronousOptionExecuter(threading.Thread):
 					% (serverSession.clientComm.clientAddress,
 					serverSession.clientComm.clientPort))
 				sensorAlertsOffProcess.start()
+
+		# Check if the alert system was acitvated/deactivated
+		# => generate sensor alert if internal sensor is activated.
+		if self.optionType == "alertSystemActive":
+			# Get internal sensor object if activated.
+			alertSystemActiveSensor = None
+			for internalSensor in self.internalSensors:
+				if isinstance(internalSensor, AlertSystemActiveSensor):
+					alertSystemActiveSensor = internalSensor
+					break
+
+			# Add sensor alert to database for processing
+			# if internal sensor is active.
+			if alertSystemActiveSensor:
+				
+				if self.optionValue == 0:
+					state = 0
+				else:
+					state = 1
+
+				if self.storage.addSensorAlert(
+					alertSystemActiveSensor.nodeId, # nodeId
+					alertSystemActiveSensor.sensorId, # sensorId
+					state, # state
+					"", # dataJson
+					True, # changeState
+					False, # hasLatestData
+					SensorDataType.NONE, # sensorData
+					None): # logger
+
+					self.sensorAlertExecuter.sensorAlertEvent.set()
+
+				else:
+					self.logger.error("[%s]: Not able to add sensor alert "
+						% self.fileName
+						+ "for internal alert system active sensor.")
 
 		# wake up manager update executer
 		self.managerUpdateExecuter.forceStatusUpdate = True
