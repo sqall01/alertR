@@ -30,6 +30,7 @@ class ConnectionWatchdog(threading.Thread):
 		self.smtpAlert = self.globalData.smtpAlert
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
+		self.internalSensors = self.globalData.internalSensors
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -61,7 +62,7 @@ class ConnectionWatchdog(threading.Thread):
 		self._nodeTimeoutLock = threading.BoundedSemaphore(1)
 
 		# Get activated internal sensors.
-		for internalSensor in self.globalData.internalSensors:
+		for internalSensor in self.internalSensors:
 			if isinstance(internalSensor, SensorTimeoutSensor):
 				# Use set of sensor timeout sensor if it is activated.
 				self.timeoutSensorIds = internalSensor.timeoutSensorIds
@@ -868,16 +869,6 @@ class ConnectionWatchdog(threading.Thread):
 			# Process nodes that timed out but reconnected.
 			self._processOldNodeTimeouts()
 
-			# Update time of internal node timeout sensor in order to avoid
-			# timeouts of the sensor.
-			if (self.nodeTimeoutSensor
-				and not self.storage.updateSensorTime(
-					self.nodeTimeoutSensor.sensorId)):
-
-				self.logger.error("[%s]: Not able to update sensor time "
-					% self.fileName
-					+ "for internal node timeout sensors.")
-
 			# Get all sensors that have timed out.
 			# Data: list of tuples of (sensorId, nodeId,
 			# lastStateUpdated, description)
@@ -891,18 +882,17 @@ class ConnectionWatchdog(threading.Thread):
 			# Process sensors that timed out but reconnected.
 			self._processOldSensorTimeouts(sensorsTimeoutList)
 
-			# Update time of internal sensor timeout sensor in order to avoid
-			# timeouts of the sensor.
-			if (self.sensorTimeoutSensor
-				and not self.storage.updateSensorTime(
-					self.sensorTimeoutSensor.sensorId)):
-
-				self.logger.error("[%s]: Not able to update sensor time "
-					% self.fileName
-					+ "for internal sensor timeout sensors.")
-
 			# Process reminder of timeouts.
 			self._processTimeoutReminder()
+
+			# Update time of all internal sensors in order to avoid
+			# timeouts of these sensors.
+			for internalSensor in self.internalSensors:
+				if not self.storage.updateSensorTime(internalSensor.sensorId):
+					self.logger.error("[%s]: Not able to update sensor time "
+						% self.fileName
+						+ "for internal sensor with sensor id %d sensors."
+						% internalSensor.sensorId)
 
 
 	# sets the exit flag to shut down the thread
