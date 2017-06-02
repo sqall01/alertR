@@ -83,8 +83,8 @@ Part of one release was a rule engine, which allows you to set up rules that mus
 The next video was published in December 2014 and shows version 0.2 of alertR. It demonstrates the D-Bus and Kodi (aka XBMC) notification capabilities. Again, the subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
-<a href="https://www.youtube.com/watch?feature=player_embedded&v=r7caH_UzKms&yt:cc=on" target="_blank">
-<img src="https://img.youtube.com/vi/r7caH_UzKms/0.jpg" width="640" height="480" border="10" />
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=TxhOPqBhqX8&yt:cc=on" target="_blank">
+<img src="https://img.youtube.com/vi/TxhOPqBhqX8/0.jpg" width="640" height="480" border="10" />
 </a>
 </div>
 <br />
