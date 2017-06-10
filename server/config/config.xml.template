@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the server
 -->
-<config version="0.501">
+<config version="0.502">
 
 	<!--
 		in this section general options are configured
@@ -828,9 +828,11 @@
 			activated - This flags indicates if the internal sensor is
 				activated or not.
 				("True" or "False")
+			description - Description of this sensor.
 		-->
 		<sensorTimeout
-			activated="True">
+			activated="True"
+			description="Internal: Sensor Timeout">
 
 			<!--
 				The alertLevel that is triggered by the sensor
@@ -851,9 +853,11 @@
 			activated - This flags indicates if the internal sensor is
 				activated or not.
 				("True" or "False")
+			description - Description of this sensor.
 		-->
 		<nodeTimeout
-			activated="True">
+			activated="True"
+			description="Internal: Node Timeout">
 
 			<!--
 				The alertLevel that is triggered by the sensor
@@ -871,9 +875,11 @@
 			activated - This flags indicates if the internal sensor is
 				activated or not.
 				("True" or "False")
+			description - Description of this sensor.
 		-->
 		<alertSystemActive
-			activated="True">
+			activated="True"
+			description="Internal: Alert System Active">
 
 			<!--
 				The alertLevel that is triggered by the sensor

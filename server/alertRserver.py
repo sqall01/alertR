@@ -1343,7 +1343,7 @@ if __name__ == '__main__':
 			sensor.alertDelay = 0
 			sensor.state = 0
 			sensor.lastStateUpdated = int(time.time())
-			sensor.description = "Internal: Sensor Timeout"
+			sensor.description = str(item.attrib["description"])
 
 			# Sensor timeout sensor has always this fix internal id
 			# (stored as remoteSensorId).
@@ -1379,7 +1379,7 @@ if __name__ == '__main__':
 			sensor.alertDelay = 0
 			sensor.state = 0
 			sensor.lastStateUpdated = int(time.time())
-			sensor.description = "Internal: Node Timeout"
+			sensor.description = str(item.attrib["description"])
 
 			# Node timeout sensor has always this fix internal id
 			# (stored as remoteSensorId).
@@ -1415,7 +1415,7 @@ if __name__ == '__main__':
 			sensor.alertDelay = 0
 			sensor.state = 0
 			sensor.lastStateUpdated = int(time.time())
-			sensor.description = "Internal: Alert System Active"
+			sensor.description = str(item.attrib["description"])
 
 			# Alert system active sensor has always this fix internal id
 			# (stored as remoteSensorId).
