@@ -1,3 +1,10 @@
+## 0.502-0
+
+Features:
+
+* Making internal sensor description available for configuration.
+* Adding optional data to internal sensor alerts.
+
 ## 0.501-0
 
 Features:

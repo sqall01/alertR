@@ -173,6 +173,9 @@ class ConnectionWatchdog(threading.Thread):
 			nodeId = sensorTuple[1]
 			nodeTuple = self.storage.getNodeById(nodeId)
 			hostname = nodeTuple[1]
+			username = nodeTuple[2]
+			nodeType = nodeTuple[3]
+			instance = nodeTuple[4]
 			lastStateUpdated = sensorTuple[2]
 			description = sensorTuple[3]
 			if hostname is None:
@@ -205,7 +208,12 @@ class ConnectionWatchdog(threading.Thread):
 					# Create message for sensor alert.
 					message = "Sensor '%s' on host '%s' timed out." \
 						% (description, hostname)
-					dataJson = json.dumps({"message": message})
+					dataJson = json.dumps({"message": message,
+											"description": description,
+											"hostname": hostname,
+											"username": username,
+											"instance": instance,
+											"nodeType": nodeType})
 
 					# Add sensor alert to database for processing.
 					if self.storage.addSensorAlert(
@@ -277,6 +285,9 @@ class ConnectionWatchdog(threading.Thread):
 			nodeId = sensorTuple[1]
 			nodeTuple = self.storage.getNodeById(nodeId)
 			hostname = nodeTuple[1]
+			username = nodeTuple[2]
+			nodeType = nodeTuple[3]
+			instance = nodeTuple[4]
 			description = sensorTuple[3]
 			lastStateUpdated = sensorTuple[5]
 
@@ -304,7 +315,12 @@ class ConnectionWatchdog(threading.Thread):
 				# Create message for sensor alert.
 				message = "Sensor '%s' on host '%s' reconnected." \
 					% (description, hostname)
-				dataJson = json.dumps({"message": message})
+				dataJson = json.dumps({"message": message,
+										"description": description,
+										"hostname": hostname,
+										"username": username,
+										"instance": instance,
+										"nodeType": nodeType})
 
 				if self.storage.addSensorAlert(
 					self.sensorTimeoutSensor.nodeId,
@@ -610,6 +626,7 @@ class ConnectionWatchdog(threading.Thread):
 				return
 
 			instance = nodeTuple[4]
+			nodeType = nodeTuple[3]
 			username = nodeTuple[2]
 			hostname = nodeTuple[1]
 
@@ -633,7 +650,11 @@ class ConnectionWatchdog(threading.Thread):
 				message = "Node '%s' with username '%s' on host '%s' " \
 					% (str(instance), str(username), str(hostname)) \
 					+ "timed out."
-				dataJson = json.dumps({"message": message})
+				dataJson = json.dumps({"message": message,
+										"hostname": hostname,
+										"username": username,
+										"instance": instance,
+										"nodeType": nodeType})
 
 				# Add sensor alert to database for processing.
 				if self.storage.addSensorAlert(
@@ -770,6 +791,7 @@ class ConnectionWatchdog(threading.Thread):
 				return
 
 			instance = nodeTuple[4]
+			nodeType = nodeTuple[3]
 			username = nodeTuple[2]
 			hostname = nodeTuple[1]
 
@@ -793,7 +815,11 @@ class ConnectionWatchdog(threading.Thread):
 				message = "Node '%s' with username '%s' on host '%s' " \
 					% (str(instance), str(username), str(hostname)) \
 					+ "reconnected."
-				dataJson = json.dumps({"message": message})
+				dataJson = json.dumps({"message": message,
+										"hostname": hostname,
+										"username": username,
+										"instance": instance,
+										"nodeType": nodeType})
 
 				# Add sensor alert to database for processing.
 				if self.storage.addSensorAlert(
