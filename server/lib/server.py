@@ -4163,7 +4163,8 @@ class AsynchronousOptionExecuter(threading.Thread):
 					alertSystemActiveSensor = internalSensor
 					break
 
-			# Add sensor alert to database for processing
+			# Change sensor state and
+			# add sensor alert to database for processing
 			# if internal sensor is active.
 			if alertSystemActiveSensor:
 				
@@ -4171,6 +4172,16 @@ class AsynchronousOptionExecuter(threading.Thread):
 					state = 0
 				else:
 					state = 1
+
+				if not self.storage.updateSensorState(
+					alertSystemActiveSensor.nodeId, # nodeId
+					[(alertSystemActiveSensor.remoteSensorId,
+					state)], # stateList
+					None): # logger
+
+					self.logger.error("[%s]: Not able to change sensor state "
+						% self.fileName
+						+ "for internal alert system active sensor.")
 
 				if self.storage.addSensorAlert(
 					alertSystemActiveSensor.nodeId, # nodeId
