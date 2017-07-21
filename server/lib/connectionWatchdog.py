@@ -27,7 +27,6 @@ class ConnectionWatchdog(threading.Thread):
 		self.logger = self.globalData.logger
 		self.serverSessions = self.globalData.serverSessions
 		self.storage = self.globalData.storage
-		self.smtpAlert = self.globalData.smtpAlert
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
 		self.internalSensors = self.globalData.internalSensors
@@ -210,7 +209,7 @@ class ConnectionWatchdog(threading.Thread):
 							self.sensorTimeoutSensor.nodeId, # nodeId
 							[(self.sensorTimeoutSensor.remoteSensorId,
 							self.sensorTimeoutSensor.state)], # stateList
-							None): # logger
+							self.logger): # logger
 
 							self.logger.error("[%s]: Not able to change "
 								% self.fileName
@@ -236,7 +235,7 @@ class ConnectionWatchdog(threading.Thread):
 						changeState, # changeState
 						False, # hasLatestData
 						SensorDataType.NONE, # sensorData
-						None): # logger
+						self.logger): # logger
 
 						processSensorAlerts = True
 
@@ -329,7 +328,7 @@ class ConnectionWatchdog(threading.Thread):
 						self.sensorTimeoutSensor.nodeId, # nodeId
 						[(self.sensorTimeoutSensor.remoteSensorId,
 						self.sensorTimeoutSensor.state)], # stateList
-						None): # logger
+						self.logger): # logger
 
 						self.logger.error("[%s]: Not able to change "
 							% self.fileName
@@ -354,7 +353,7 @@ class ConnectionWatchdog(threading.Thread):
 					changeState, # changeState
 					False, # hasLatestData
 					SensorDataType.NONE, # sensorData
-					None): # logger
+					self.logger): # logger
 
 					processSensorAlerts = True
 
@@ -450,7 +449,7 @@ class ConnectionWatchdog(threading.Thread):
 						False, # changeState
 						False, # hasLatestData
 						SensorDataType.NONE, # sensorData
-						None): # logger
+						self.logger): # logger
 
 						processSensorAlerts = True
 
@@ -511,7 +510,7 @@ class ConnectionWatchdog(threading.Thread):
 						False, # changeState
 						False, # hasLatestData
 						SensorDataType.NONE, # sensorData
-						None): # logger
+						self.logger): # logger
 
 						processSensorAlerts = True
 
@@ -675,7 +674,7 @@ class ConnectionWatchdog(threading.Thread):
 						self.nodeTimeoutSensor.nodeId, # nodeId
 						[(self.nodeTimeoutSensor.remoteSensorId,
 						self.nodeTimeoutSensor.state)], # stateList
-						None): # logger
+						self.logger): # logger
 
 						self.logger.error("[%s]: Not able to change "
 							% self.fileName
@@ -701,7 +700,7 @@ class ConnectionWatchdog(threading.Thread):
 					changeState, # changeState
 					False, # hasLatestData
 					SensorDataType.NONE, # sensorData
-					None): # logger
+					self.logger): # logger
 
 					processSensorAlerts = True
 
@@ -852,7 +851,7 @@ class ConnectionWatchdog(threading.Thread):
 						self.nodeTimeoutSensor.nodeId, # nodeId
 						[(self.nodeTimeoutSensor.remoteSensorId,
 						self.nodeTimeoutSensor.state)], # stateList
-						None): # logger
+						self.logger): # logger
 
 						self.logger.error("[%s]: Not able to change "
 							% self.fileName
@@ -878,7 +877,7 @@ class ConnectionWatchdog(threading.Thread):
 					changeState, # changeState
 					False, # hasLatestData
 					SensorDataType.NONE, # sensorData
-					None): # logger
+					self.logger): # logger
 
 					processSensorAlerts = True
 
