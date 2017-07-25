@@ -66,3 +66,14 @@ class AlertSystemActiveSensor(_InternalSensor):
 		_InternalSensor.__init__(self)
 
 		self.dataType = SensorDataType.NONE
+
+
+# Class that represents the internal sensor that
+# is responsible to trigger sensor alerts if a
+# node has a new version available in the update repository.
+class VersionInformerSensor(_InternalSensor):
+
+	def __init__(self):
+		_InternalSensor.__init__(self)
+
+		self.dataType = SensorDataType.NONE

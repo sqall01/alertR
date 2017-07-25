@@ -55,104 +55,6 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 			ca_certs=self.servercert_file)
 
 
-# this class checks in specific intervals for updates and notifies
-# the user about new versions of this client
-class UpdateChecker(threading.Thread):
-
-	def __init__(self, host, port, serverPath, caFile, interval,
-		emailNotification, globalData):
-		threading.Thread.__init__(self)
-
-		# used for logging
-		self.fileName = os.path.basename(__file__)
-
-		# get global configured data
-		self.globalData = globalData
-		self.logger = self.globalData.logger
-		self.version = self.globalData.version
-		self.rev = self.globalData.rev
-		self.smtpAlert = self.globalData.smtpAlert
-
-		# set interval for update checking
-		self.checkInterval = interval
-
-		# create an updater process
-		self.updater = Updater(host, port, serverPath, caFile,
-			self.globalData)
-
-		self.emailNotification = emailNotification
-
-		# needed to keep track of the newest version
-		self.newestVersion = self.version
-		self.newestRev = self.rev
-
-
-	def run(self):
-
-		updateFailCount = 0
-
-		while True:
-
-			time.sleep(self.checkInterval)
-
-			# check if updates failed at least 10 times in a row
-			# => log and notify user
-			if updateFailCount >= 10:
-
-				self.logger.error("[%s]: Update checking failed for %d "
-					% (self.fileName, updateFailCount)
-					+ "times in a row.")
-
-				if self.emailNotification is True:
-					self.smtpAlert.sendUpdateCheckFailureAlert(
-						updateFailCount, self.globalData.name)
-
-			self.logger.info("[%s]: Checking for a new version." % self.fileName)
-
-			if self.updater.getNewestVersionInformation() is False:
-				updateFailCount += 1
-				continue
-
-			# check if updates failed at least 10 times in a row before
-			# => problems are now resolved => log and notify user
-			if updateFailCount >= 10:
-				self.logger.info("[%s]: Update problems resolved."
-					% self.fileName)
-
-				if self.emailNotification is True:
-					self.smtpAlert.sendUpdateCheckFailureAlertClear(
-						updateFailCount, self.globalData.name)
-
-			updateFailCount = 0
-
-			# check if the version on the server is newer than the used
-			# (or last known) one
-			# => notify user about the new version
-			if (self.updater.newestVersion > self.newestVersion or
-				(self.updater.newestRev > self.newestRev
-				and self.updater.newestVersion == self.newestVersion)):
-
-				self.logger.warning("[%s]: New version %.3f-%d available "
-					% (self.fileName, self.updater.newestVersion,
-					self.updater.newestRev)
-					+ "(current version: %.3f-%d)."
-					% (self.version, self.rev))
-
-				# update newest known version
-				self.newestVersion = self.updater.newestVersion
-				self.newestRev = self.updater.newestRev
-
-				if self.emailNotification is True:
-					self.smtpAlert.sendUpdateCheckNewVersion(self.version,
-						self.rev, self.newestVersion, self.newestRev,
-						self.globalData.name)
-
-			else:
-
-				self.logger.info("[%s]: No new version available."
-					% self.fileName)
-
-
 # this class processes all actions concerning the update process
 class Updater:
 
@@ -169,7 +71,6 @@ class Updater:
 		self.logger = self.globalData.logger
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
-		self.smtpAlert = self.globalData.smtpAlert
 		self.instance = self.globalData.instance
 
 		# location of this instance

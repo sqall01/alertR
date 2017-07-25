@@ -1,3 +1,10 @@
+## 0.503-0
+
+Features:
+
+* Removed smtp functionality.
+* Added internal sensor for version checks.
+
 ## 0.502-0
 
 Features:

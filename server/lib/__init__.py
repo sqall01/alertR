@@ -13,12 +13,12 @@ from storage import Sqlite, Mysql
 from alert import SensorAlertExecuter
 from localObjects import SensorDataType, Sensor, AlertLevel
 from internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, \
-	AlertSystemActiveSensor
+	AlertSystemActiveSensor, VersionInformerSensor
 from ruleObjects import RuleStart, RuleElement, RuleBoolean, RuleSensor, \
 	RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from userBackend import CSVBackend
-from smtp import SMTPAlert
 from manager import ManagerUpdateExecuter
-from update import UpdateChecker, Updater
+from update import Updater
 from globalData import GlobalData
 from survey import SurveyExecuter
+from versionInformer import VersionInformer
