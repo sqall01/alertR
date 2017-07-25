@@ -275,7 +275,7 @@ class VersionInformer(threading.Thread):
 				verInfoObj = self.repoVersions[repoInstance]
 				if not verInfoObj.getNewestVersionInformation():
 
-					logging.exception("[%s]: Getting version information "
+					logging.error("[%s]: Getting version information "
 					% self.fileName
 					+ "for instance '%s' failed."
 					% verInfoObj.instance)
