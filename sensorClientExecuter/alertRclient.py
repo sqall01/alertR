@@ -180,6 +180,7 @@ if __name__ == '__main__':
 				"triggerAlertNormal"]).upper() == "TRUE")
 			sensor.triggerState = int(item.find("general").attrib[
 				"triggerState"])
+			
 
 			sensor.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):
@@ -192,10 +193,22 @@ if __name__ == '__main__':
 				"intervalToCheck"])
 			sensor.execute.append(makePath(
 				str(item.find("executer").attrib["execute"])))
+			sensor.parseOutput = (str(item.find("executer").attrib[
+				"parseOutput"]).upper() == "TRUE")
+
+			# Only parse data type if "parseOutput" is active.
+			if sensor.parseOutput:
+				sensor.sensorDataType = int(item.find("executer").attrib[
+					"dataType"])
 
 			# parse all arguments that are used for the command
 			for argument in item.find("executer").iterfind("argument"):
 				sensor.execute.append(str(argument.text))
+
+			if sensor.timeout >= sensor.intervalToCheck:
+				raise ValueError("IntervalToCheck of sensor %d has to be "
+					% sensor.id
+					+ "larger than the timeout value.")
 
 			# check if description is empty
 			if len(sensor.description) == 0:
@@ -205,7 +218,7 @@ if __name__ == '__main__':
 			# check if the id of the sensor is unique
 			for registeredSensor in globalData.sensors:
 				if registeredSensor.id == sensor.id:
-					raise ValueError("Id of sensor %d"
+					raise ValueError("Id of sensor %d "
 						% sensor.id + "is already taken.")
 
 			if (not sensor.triggerAlert

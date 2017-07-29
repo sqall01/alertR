@@ -1,3 +1,11 @@
+### 0.501
+
+Features:
+
+* IntervalToCheck has to be larger than timeout value.
+* Parses output of executed command (if wanted).
+
+
 ## 0.500-1
 
 Features:
