@@ -283,7 +283,7 @@ if __name__ == '__main__':
 			# check if the id of the sensor is unique
 			for registeredSensor in globalData.sensors:
 				if registeredSensor.id == sensor.id:
-					raise ValueError("Id of sensor %d"
+					raise ValueError("Id of sensor %d "
 						% sensor.id + "is already taken.")
 
 			if (not sensor.triggerAlert
