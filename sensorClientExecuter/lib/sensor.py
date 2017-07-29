@@ -483,8 +483,8 @@ class ExecuterSensor(_PollingSensor):
 
 						logging.error("[%s] Not able to parse output "
 							% self.fileName
-							+ "of sensor with id '%d'."
-							% self.id)
+							+ "of sensor with id '%d': %s"
+							% (self.id, output))
 
 						self.state = 1
 
