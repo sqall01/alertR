@@ -86,6 +86,11 @@ class _PollingSensor:
 		self.hasOptionalData = False
 		self.optionalData = None
 
+		# Flag indicates if the sensor changes its state directly
+		# by using forceSendAlert() and forceSendState() and the SensorExecuter
+		# should ignore state changes and thereby not generate sensor alerts.
+		self.handlesStateMsgs = False
+
 
 	# this function returns the current state of the sensor
 	def getState(self):
@@ -190,6 +195,9 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 		self.hasLatestData = False
 		self.state = 1 - self.triggerState
 		self.temporaryState = 1 - self.triggerState
+
+		# Sensor handles state changes itself by receiving messages.
+		self.handlesStateMsgs = True
 
 		# Set initial sensor data
 		if self.sensorDataType == SensorDataType.INT:
@@ -317,8 +325,10 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					# Set state.
 					self.temporaryState = tempInputState
 
-					# Force state change sending if the data could be changed.
-					if self.sensorDataType != SensorDataType.NONE:
+					# Force state change sending if the data could be changed
+					# or the state has changed.
+					if (self.sensorDataType != SensorDataType.NONE
+						or self.state != self.temporaryState):
 
 						# Create state change object that is
 						# send to the server.
@@ -519,6 +529,12 @@ class SensorExecuter:
 				# check if the current state is the same
 				# than the already known state => continue
 				elif oldState == currentState:
+					continue
+
+				# Check if we should ignore state changes and just let
+				# the sensor handle sensor alerts by using forceSendAlert()
+				# and forceSendState().
+				elif sensor.handlesStateMsgs:
 					continue
 
 				# check if the current state is an alert triggering state
