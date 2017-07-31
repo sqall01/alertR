@@ -11,5 +11,5 @@ from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import SensorDev, SensorExecuter
 from localObjects import SensorDataType
-from update import UpdateChecker, Updater
+from update import Updater
 from globalData import GlobalData

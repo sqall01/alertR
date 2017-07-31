@@ -14,7 +14,6 @@ from lib import SMTPAlert
 from lib import WundergroundDataCollector, WundergroundTempPollingSensor, \
 	WundergroundHumidityPollingSensor, WundergroundForecastTempPollingSensor, \
 	WundergroundForecastRainPollingSensor, SensorExecuter
-from lib import UpdateChecker
 from lib import GlobalData
 from lib import Ordering
 import logging
@@ -143,31 +142,6 @@ if __name__ == '__main__':
 				configRoot.find("smtp").find("general").attrib["fromAddr"])
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
-
-		# parse update options
-		updateActivated = (str(
-			configRoot.find("update").find("general").attrib[
-			"activated"]).upper() == "TRUE")
-		if updateActivated is True:
-			updateServer = str(
-				configRoot.find("update").find("server").attrib["host"])
-			updatePort = int(
-				configRoot.find("update").find("server").attrib["port"])
-			updateLocation = str(
-				configRoot.find("update").find("server").attrib["location"])
-			updateCaFile = makePath(str(
-				configRoot.find("update").find("server").attrib["caFile"]))
-			updateInterval = int(
-				configRoot.find("update").find("general").attrib["interval"])
-			updateEmailNotification = (str(
-				configRoot.find("update").find("general").attrib[
-				"emailNotification"]).upper() == "TRUE")
-
-			# email notification works only if smtp is activated
-			if (updateEmailNotification is True
-				and smtpActivated is False):
-				raise ValueError("Update check can not have email "
-					+ "notification activated when smtp is not activated.")
 
 		# Parse data collector settings.
 		tempConf = configRoot.find("sensors")
@@ -490,16 +464,6 @@ if __name__ == '__main__':
 	# => thread terminates when main thread terminates
 	watchdog.daemon = True
 	watchdog.start()
-
-	# only start update checker if it is activated
-	if updateActivated is True:
-		logging.info("[%s] Starting update check thread." % fileName)
-		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
-			updateCaFile, updateInterval, updateEmailNotification, globalData)
-		# set thread to daemon
-		# => thread terminates when main thread terminates
-		updateChecker.daemon = True
-		updateChecker.start()
 
 	logging.info("[%s] Client started." % fileName)
 

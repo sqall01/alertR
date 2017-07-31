@@ -1,3 +1,10 @@
+## 0.501
+
+Features:
+
+* Removed update checker process (moved to server instance).
+
+
 ## 0.500-1
 
 Features:

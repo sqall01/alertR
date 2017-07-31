@@ -109,9 +109,6 @@ if __name__ == '__main__':
 				% globalData.version)
 
 		# parse update options
-		updateActivated = (str(
-			configRoot.find("update").find("general").attrib[
-			"activated"]).upper() == "TRUE")
 		updateServer = str(
 			configRoot.find("update").find("server").attrib["host"])
 		updatePort = int(
@@ -122,22 +119,6 @@ if __name__ == '__main__':
 			configRoot.find("update").find("server").attrib["caFile"])
 		updateInterval = int(
 			configRoot.find("update").find("general").attrib["interval"])
-
-		# when automatic update is not activated
-		# => ask before continuing
-		if updateActivated is False:
-			print
-			print "NOTE: Automatic checking for updates is deactivated.",
-			print "Please, make sure you configured the update section of",
-			print "the configuration file correctly."
-			print "Do you want to continue the update process?"
-
-			if options.yes is False:
-				if userConfirmation() is False:
-					print "Bye."
-					sys.exit(0)
-			else:
-				print "NOTE: Skipping confirmation."
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)

@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.500">
+<config version="0.501">
 
 	<!--
 		in this section general options are configured
@@ -107,33 +107,16 @@
 
 
 	<!--
-		in this section the options of the update checking are configured
+		in this section the options of the update process are configured
 	-->
 	<update>
 
 		<!--
-			the general settings of the update checking
-			activated - should the client check for updates?
-				("True" or "False")
-			interval - the interval in seconds in which the client checks
-				online for updates
-			emailNotification - should an email notification be sent to the
-				user if a new version is available? ("True" or "False")
-				NOTE: this option only works if smtp is activated
-				NOTE: if this option is deactivated, the client will only
-				output the notification about the new version into the log file
-		-->
-		<general
-			activated="True"
-			interval="86400"
-			emailNotification="True" />
-
-		<!--
-			the server settings of the update checking (only change these
+			the server settings of the update process (only change these
 				settings if you want to use your own repository and not
 				the alertR master repository on github)
 			host - address of the used web server
-				NOTE: the update checking uses HTTPS and does not allow HTTP
+				NOTE: the update process uses HTTPS and does not allow HTTP
 			port - port of the used web server
 			location - the location of the used alertR repository
 			caFile - the location of the CA/certificate file that is used

@@ -12,6 +12,6 @@ from smtp import SMTPAlert
 from sensor import WundergroundDataCollector, WundergroundTempPollingSensor, \
 	WundergroundHumidityPollingSensor, WundergroundForecastTempPollingSensor, \
 	WundergroundForecastRainPollingSensor, SensorExecuter
-from update import UpdateChecker, Updater
+from update import Updater
 from globalData import GlobalData
 from localObjects import Ordering
