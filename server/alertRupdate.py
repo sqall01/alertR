@@ -120,8 +120,6 @@ if __name__ == '__main__':
 			configRoot.find("update").find("server").attrib["location"])
 		updateCaFile = str(
 			configRoot.find("update").find("server").attrib["caFile"])
-		updateInterval = int(
-			configRoot.find("update").find("general").attrib["interval"])
 
 		# when automatic update is not activated
 		# => ask before continuing

@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import ExecuterAlert
+from lib import DbusAlert
 from lib import GlobalData
 import logging
 import time
@@ -146,23 +146,13 @@ if __name__ == '__main__':
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			alert = ExecuterAlert()
+			alert = DbusAlert()
 
-			# get executer specific values
-			tempExecute = makePath(
-				str(item.find("executer").attrib["execute"]))
-			alert.triggerExecute.append(tempExecute)
-			alert.stopExecute.append(tempExecute)
-
-			# parse all arguments that are used for the command when
-			# an alert is triggered
-			for argument in item.find("executer").iterfind("triggerArgument"):
-				alert.triggerExecute.append(str(argument.text))
-
-			# parse all arguments that are used for the command when
-			# an alert is stopped
-			for argument in item.find("executer").iterfind("stopArgument"):
-				alert.stopExecute.append(str(argument.text))
+			# get dbus client settings
+			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
+			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
@@ -198,6 +188,11 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 	else:
 		globalData.smtpAlert = None
+
+	# initialize logging
+	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
+		level=loglevel)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,

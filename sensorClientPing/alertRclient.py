@@ -9,9 +9,9 @@
 
 import sys
 import os
-from lib import ServerCommunication, ConnectionWatchdog
+from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import PingWatchdogSensor, SensorExecuter
+from lib import DbusAlert
 from lib import GlobalData
 import logging
 import time
@@ -120,13 +120,19 @@ if __name__ == '__main__':
 		password = str(
 			configRoot.find("general").find("credentials").attrib["password"])
 
-		# Set connection settings.
-		globalData.persistent = 1 # Consider sensor client always persistent
+		# Get connection settings.
+		temp = (str(
+			configRoot.find("general").find("connection").attrib[
+			"persistent"]).upper()	== "TRUE")
+		if temp:
+			globalData.persistent = 1
+		else:
+			globalData.persistent = 0
 
 		# parse smtp options if activated
 		smtpActivated = (str(
 			configRoot.find("smtp").find("general").attrib[
-			"activated"]).upper() == "TRUE")
+			"activated"]).upper()	== "TRUE")
 		if smtpActivated is True:
 			smtpServer = str(
 				configRoot.find("smtp").find("server").attrib["host"])
@@ -137,56 +143,38 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# parse all sensors
-		for item in configRoot.find("sensors").iterfind("sensor"):
+		# parse all alerts
+		for item in configRoot.find("alerts").iterfind("alert"):
 
-			sensor = PingWatchdogSensor()
+			alert = DbusAlert()
+
+			# get dbus client settings
+			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
+			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
 			# these options are needed by the server to
-			# differentiate between the registered sensors
-			sensor.id = int(item.find("general").attrib["id"])
-			sensor.description = str(item.find("general").attrib[
-				"description"])
-			sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
-			sensor.triggerAlert = (str(item.find("general").attrib[
-				"triggerAlert"]).upper() == "TRUE")
-			sensor.triggerAlertNormal = (str(item.find("general").attrib[
-				"triggerAlertNormal"]).upper() == "TRUE")
-			sensor.triggerState = int(item.find("general").attrib[
-				"triggerState"])
+			# differentiate between the registered alerts
+			alert.id = int(item.find("general").attrib["id"])
+			alert.description = str(item.find("general").attrib["description"])
 
-			sensor.alertLevels = list()
+			alert.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):
-				sensor.alertLevels.append(int(alertLevelXml.text))
-
-			# ping specific options
-			sensor.timeout = int(item.find("ping").attrib[
-				"timeout"])
-			sensor.intervalToCheck = int(item.find("ping").attrib[
-				"intervalToCheck"])
-			sensor.host = str(item.find("ping").attrib[
-				"host"])
-			sensor.execute = makePath(str(item.find("ping").attrib[
-				"execute"]))
+				alert.alertLevels.append(int(alertLevelXml.text))
 
 			# check if description is empty
-			if len(sensor.description) == 0:
-				raise ValueError("Description of sensor %d is empty."
-					% sensor.id)
+			if len(alert.description) == 0:
+				raise ValueError("Description of alert %d is empty."
+					% alert.id)
 
-			# check if the id of the sensor is unique
-			for registeredSensor in globalData.sensors:
-				if registeredSensor.id == sensor.id:
-					raise ValueError("Id of sensor %d "
-						% sensor.id + "is already taken.")
+			# check if the id of the alert is unique
+			for registeredAlert in globalData.alerts:
+				if registeredAlert.id == alert.id:
+					raise ValueError("Id of alert %d"
+						% alert.id + "is already taken.")
 
-			if (not sensor.triggerAlert
-				and sensor.triggerAlertNormal):
-					raise ValueError("'triggerAlert' for sensor %d "
-						% sensor.id + "has to be activated when "
-						+ "'triggerAlertNormal' is activated.")
-
-			globalData.sensors.append(sensor)
+			globalData.alerts.append(alert)
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
@@ -206,26 +194,13 @@ if __name__ == '__main__':
 		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
 		level=loglevel)
 
-	# check if sensors were found => if not exit
-	if not globalData.sensors:
-		logging.critical("[%s]: No sensors configured." % fileName)
-		sys.exit(1)
-
-	# Initialize sensors before starting worker threads.
-	logging.info("[%s] Initializing sensors." % fileName)
-	for sensor in globalData.sensors:
-		if not sensor.initializeSensor():
-			logging.critical("[%s]: Not able to initialize sensor."
-				% fileName)
-			sys.exit(1)
-
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
 	logging.info("[%s] Connecting to server." % fileName)
-	while True:
+	while 1:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
 		# => send eMail alert
@@ -257,10 +232,13 @@ if __name__ == '__main__':
 	watchdog.daemon = True
 	watchdog.start()
 
+	# initialize all alerts
+	logging.info("[%s] Initializing alerts." % fileName)
+	for alert in globalData.alerts:
+		alert.initializeAlert()
+
 	logging.info("[%s] Client started." % fileName)
 
-	# set up sensor executer and execute it
-	# (note: we will not return from the executer unless the client
-	# is terminated)
-	sensorExecuter = SensorExecuter(globalData)
-	sensorExecuter.execute()
+	# generate receiver to handle incoming data (for example status updates)
+	receiver = Receiver(globalData.serverComm)
+	receiver.run()

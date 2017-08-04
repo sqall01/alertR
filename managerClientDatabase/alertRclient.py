@@ -10,17 +10,13 @@
 import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
-from lib import LocalServerSession, ThreadedUnixStreamServer
-from lib import Mysql
 from lib import SMTPAlert
+from lib import DbusAlert
 from lib import GlobalData
-from lib import VersionInformer
 import logging
 import time
 import socket
 import random
-import threading
-import stat
 import xml.etree.ElementTree
 
 
@@ -147,77 +143,38 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# parse update options
-		updateActivated = (str(
-			configRoot.find("update").find("general").attrib[
-			"activated"]).upper() == "TRUE")
-		if updateActivated is True:
-			updateServer = str(
-				configRoot.find("update").find("server").attrib["host"])
-			updatePort = int(
-				configRoot.find("update").find("server").attrib["port"])
-			updateLocation = str(
-				configRoot.find("update").find("server").attrib["location"])
-			updateCaFile = makePath(str(
-				configRoot.find("update").find("server").attrib["caFile"]))
-			updateInterval = int(
-				configRoot.find("update").find("general").attrib["interval"])
+		# parse all alerts
+		for item in configRoot.find("alerts").iterfind("alert"):
 
-		# get manager settings
-		globalData.description = str(
-			configRoot.find("manager").find("general").attrib[
-			"description"])
+			alert = DbusAlert()
 
-		# only parse manager server configuration when the server
-		# is activated
-		if (str(configRoot.find("manager").find("server").attrib[
-				"activated"]).upper() == "TRUE"):
-			globalData.unixSocketFile = makePath(str(
-				configRoot.find("manager").find("server").attrib[
-				"unixSocketFile"]))
+			# get dbus client settings
+			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
+			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
-		globalData.sensorAlertLifeSpan = int(
-			configRoot.find("manager").find("options").attrib[
-			"sensorAlertLifeSpan"])
+			# these options are needed by the server to
+			# differentiate between the registered alerts
+			alert.id = int(item.find("general").attrib["id"])
+			alert.description = str(item.find("general").attrib["description"])
 
-		if globalData.sensorAlertLifeSpan < 0:
-			raise ValueError("Option 'sensorAlertLifeSpan' has to be "
-				+ "greater or equal to 0.")
+			alert.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				alert.alertLevels.append(int(alertLevelXml.text))
 
-		globalData.eventsLifeSpan = int(
-			configRoot.find("manager").find("options").attrib[
-			"eventsLifeSpan"])
+			# check if description is empty
+			if len(alert.description) == 0:
+				raise ValueError("Description of alert %d is empty."
+					% alert.id)
 
-		if globalData.eventsLifeSpan < 0:
-			raise ValueError("Option 'eventsLifeSpan' has to be "
-				+ "greater or equal to 0.")
+			# check if the id of the alert is unique
+			for registeredAlert in globalData.alerts:
+				if registeredAlert.id == alert.id:
+					raise ValueError("Id of alert %d"
+						% alert.id + "is already taken.")
 
-		# configure storage backend (check which backend is configured)
-		userBackendMethod = str(
-			configRoot.find("manager").find("storage").attrib[
-			"method"])
-		if userBackendMethod.upper() == "MYSQL":
-
-			backendUsername = str(
-			configRoot.find("manager").find("storage").attrib[
-			"username"])
-			backendPassword = str(
-			configRoot.find("manager").find("storage").attrib[
-			"password"])
-			backendServer = str(
-			configRoot.find("manager").find("storage").attrib[
-			"server"])
-			backendPort = int(
-			configRoot.find("manager").find("storage").attrib[
-			"port"])
-			backendDatabase = str(
-			configRoot.find("manager").find("storage").attrib[
-			"database"])
-
-			globalData.storage = Mysql(backendServer, backendPort,
-				backendDatabase, backendUsername, backendPassword, globalData)
-		else:
-			raise ValueError("No valid storage backend method in config file.")
+			globalData.alerts.append(alert)
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
@@ -231,6 +188,11 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 	else:
 		globalData.smtpAlert = None
+
+	# initialize logging
+	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
+		level=loglevel)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
@@ -258,7 +220,6 @@ if __name__ == '__main__':
 
 		logging.critical("[%s]: Connecting to server failed. " % fileName
 			+ "Try again in 5 seconds.")
-		print "Connecting to server failed. Try again in 5 seconds."
 		time.sleep(5)
 
 	# when connected => generate watchdog object to monitor the
@@ -271,51 +232,10 @@ if __name__ == '__main__':
 	watchdog.daemon = True
 	watchdog.start()
 
-	# check if local unix socket server is activated
-	# => start local server process
-	if not globalData.unixSocketFile is None:
-
-		logging.info("[%s]: Starting local unix socket server " % fileName
-			+ "instance.")
-
-		while 1:
-			try:
-
-				# remove unix socket file (if exists)
-				try:
-					os.remove(globalData.unixSocketFile)
-				except OSError:
-					pass
-
-				# listen to the unix socket
-				server = ThreadedUnixStreamServer(globalData,
-					globalData.unixSocketFile, LocalServerSession)
-
-				# make socket writeable by everyone
-				os.chmod(globalData.unixSocketFile, stat.S_IRUSR | stat.S_IWUSR
-					| stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP
-					| stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)
-
-				break
-			except Exception as e:
-				logging.exception("[%s]: Starting server failed. " % fileName
-				+ "Try again in 5 seconds.")
-				time.sleep(5)
-
-		serverThread = threading.Thread(target=server.serve_forever)
-		# set thread to daemon
-		# => threads terminates when main thread terminates
-		serverThread.daemon =True
-		serverThread.start()
-
-		# only start version informer if the update check is activated
-		logging.info("[%s] Starting version informer thread." % fileName)
-		globalData.versionInformer = VersionInformer(updateServer, updatePort,
-			updateLocation, updateCaFile, updateInterval, globalData)
-		# set thread to daemon
-		# => threads terminates when main thread terminates
-		globalData.versionInformer.daemon = True
-		globalData.versionInformer.start()
+	# initialize all alerts
+	logging.info("[%s] Initializing alerts." % fileName)
+	for alert in globalData.alerts:
+		alert.initializeAlert()
 
 	logging.info("[%s] Client started." % fileName)
 

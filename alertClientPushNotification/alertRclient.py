@@ -11,10 +11,11 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import PushAlert
+from lib import DbusAlert
 from lib import GlobalData
 import logging
 import time
+import socket
 import random
 import xml.etree.ElementTree
 
@@ -142,29 +143,16 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# Parse alertr.de account settings.
-		tempConf = configRoot.find("alerts")
-		alertrUsername = str(tempConf.attrib["username"])
-		alertrPassword = str(tempConf.attrib["password"])
-
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			alert = PushAlert(globalData)
+			alert = DbusAlert()
 
-			# Read the push notification settings.
-			alert.username = alertrUsername
-			alert.password = alertrPassword
-			alert.channel = str(item.find("push").attrib["channel"])
-			alert.encSecret = str(item.find("push").attrib["secret"])
-			alert.subject = str(item.find("push").attrib["subject"])
-			alert.templateFile = makePath(
-				str(item.find("push").attrib["templateFile"]))
-
-			# check if the template file exists
-			if not os.path.isfile(alert.templateFile):
-				raise ValueError("Message template file '%s' does not exist."
-					% alert.templateFile)
+			# get dbus client settings
+			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
+			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
@@ -200,6 +188,11 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 	else:
 		globalData.smtpAlert = None
+
+	# initialize logging
+	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
+		level=loglevel)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,

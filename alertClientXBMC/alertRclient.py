@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import XbmcAlert
+from lib import DbusAlert
 from lib import GlobalData
 import logging
 import time
@@ -146,18 +146,12 @@ if __name__ == '__main__':
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			alert = XbmcAlert()
+			alert = DbusAlert()
 
-			# get xbmc settings
-			alert.host = str(item.find("xbmc").attrib["host"])
-			alert.port = int(item.find("xbmc").attrib["port"])
-			alert.displayTime = int(item.find("xbmc").attrib["displayTime"])
-			alert.showMessage = (str(item.find("xbmc").attrib[
-				"showMessage"]).upper() == "TRUE")
-			alert.pausePlayer = (str(item.find("xbmc").attrib[
-				"pausePlayer"]).upper() == "TRUE")
-			alert.triggerDelay = int(item.find("xbmc").attrib["triggerDelay"])
-			alert.displayReceivedMessage = (str(item.find("xbmc").attrib[
+			# get dbus client settings
+			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
+			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
 				"displayReceivedMessage"]).upper() == "TRUE")
 
 			# these options are needed by the server to

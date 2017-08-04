@@ -11,11 +11,8 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import ScreenUpdater
-from lib import Console
+from lib import DbusAlert
 from lib import GlobalData
-from lib import AudioOutput
-from lib import SensorWarningState
 import logging
 import time
 import socket
@@ -146,48 +143,38 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# get manager settings
-		globalData.description = str(
-			configRoot.find("manager").find("general").attrib[
-			"description"])
+		# parse all alerts
+		for item in configRoot.find("alerts").iterfind("alert"):
 
-		# get audio settings
-		audioActivated = (str(
-				configRoot.find("manager").find("audio").attrib[
-				"enabled"]).upper() == "TRUE")
-		audioPlaySilence = (str(
-				configRoot.find("manager").find("audio").attrib[
-				"playSilence"]).upper() == "TRUE")
-		if audioActivated is True:
-			globalData.audioOutput = AudioOutput()
+			alert = DbusAlert()
 
-			# Play silence as a workaround for HDMI delays.
-			if audioPlaySilence is True:
-				globalData.audioOutput.playSilence()
+			# get dbus client settings
+			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
+			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
+			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
+				"displayReceivedMessage"]).upper() == "TRUE")
 
-		# get settings for the keypad
-		globalData.timeDelayedActivation = int(
-			configRoot.find("manager").find("keypad").attrib[
-			"timeDelayedActivation"])
+			# these options are needed by the server to
+			# differentiate between the registered alerts
+			alert.id = int(item.find("general").attrib["id"])
+			alert.description = str(item.find("general").attrib["description"])
 
-		# parse all pins
-		for item in configRoot.find("manager").find("keypad").iterfind("pin"):
-			globalData.pins.append(item.text)
-		if not globalData.pins:
-			raise ValueError("No PIN configured.")
+			alert.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				alert.alertLevels.append(int(alertLevelXml.text))
 
-		# parse all sensor warning states
-		for item in configRoot.find("manager").find(
-			"sensorwarningstates").iterfind("sensor"):
+			# check if description is empty
+			if len(alert.description) == 0:
+				raise ValueError("Description of alert %d is empty."
+					% alert.id)
 
-			temp = SensorWarningState()
-			temp.username = str(item.attrib["username"])
-			temp.remoteSensorId = int(item.attrib["remoteSensorId"])
-			if (str(item.attrib["warningState"]).upper() == "TRUE"):
-				temp.warningState = 1
-			else:
-				temp.warningState = 0
-			globalData.sensorWarningStates.append(temp)
+			# check if the id of the alert is unique
+			for registeredAlert in globalData.alerts:
+				if registeredAlert.id == alert.id:
+					raise ValueError("Id of alert %d"
+						% alert.id + "is already taken.")
+
+			globalData.alerts.append(alert)
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
@@ -206,14 +193,6 @@ if __name__ == '__main__':
 	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
 		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
 		level=loglevel)
-
-	# generate a screen updater thread (that generates the GUI)
-	logging.info("[%s] Starting screen updater thread." % fileName)
-	globalData.screenUpdater = ScreenUpdater(globalData)
-	# set thread to daemon
-	# => threads terminates when main thread terminates
-	globalData.screenUpdater.daemon = True
-	globalData.screenUpdater.start()
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
@@ -241,7 +220,6 @@ if __name__ == '__main__':
 
 		logging.critical("[%s]: Connecting to server failed. " % fileName
 			+ "Try again in 5 seconds.")
-		print "Connecting to server failed. Try again in 5 seconds."
 		time.sleep(5)
 
 	# when connected => generate watchdog object to monitor the
@@ -254,17 +232,13 @@ if __name__ == '__main__':
 	watchdog.daemon = True
 	watchdog.start()
 
-	# generate receiver to handle incoming data (for example status updates)
-	logging.info("[%s] Starting receiver thread." % fileName)
-	receiver = Receiver(globalData.serverComm)
-	# set thread to daemon
-	# => threads terminates when main thread terminates
-	receiver.daemon = True
-	receiver.start()
+	# initialize all alerts
+	logging.info("[%s] Initializing alerts." % fileName)
+	for alert in globalData.alerts:
+		alert.initializeAlert()
 
 	logging.info("[%s] Client started." % fileName)
 
-	# generate the console object and start it
-	# (does not return unless it is exited)
-	globalData.console = Console(globalData)
-	globalData.console.startConsole()
+	# generate receiver to handle incoming data (for example status updates)
+	receiver = Receiver(globalData.serverComm)
+	receiver.run()
