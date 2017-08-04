@@ -10,7 +10,6 @@
 import sys
 import os
 from lib import GlobalData
-from lib import UpdateChecker
 from lib import Updater
 import xml.etree.ElementTree
 import logging
