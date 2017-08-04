@@ -11,11 +11,10 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import DbusAlert
+from lib import MailAlert
 from lib import GlobalData
 import logging
 import time
-import socket
 import random
 import xml.etree.ElementTree
 
@@ -146,13 +145,31 @@ if __name__ == '__main__':
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			alert = DbusAlert()
+			alert = MailAlert()
 
-			# get dbus client settings
-			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
-			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
-			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
-				"displayReceivedMessage"]).upper() == "TRUE")
+			# use server configuration of the general smtp option
+			# (does not matter if it is activated or not)
+			alert.host = str(
+				configRoot.find("smtp").find("server").attrib["host"])
+			alert.port = int(
+				configRoot.find("smtp").find("server").attrib["port"])
+
+			# read the mail settings
+			alert.fromAddr = str(item.find("mail").attrib["fromAddr"])
+			alert.toAddr = str(item.find("mail").attrib["toAddr"])
+			alert.subject = str(item.find("mail").attrib["subject"])
+			alert.templateFile = makePath(
+				str(item.find("mail").attrib["templateFile"]))
+
+			# check if the template file exists
+			if not os.path.isfile(alert.templateFile):
+				raise ValueError("Mail template file '%s' does not exist."
+					% alert.templateFile)
+
+			if (alert.host != "127.0.0.1"
+				or alert.port != 25):
+				raise NotImplementedError('Only SMTP server host "127.0.0.1" '
+					+ 'and port "25" is implemented')
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
@@ -188,11 +205,6 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 	else:
 		globalData.smtpAlert = None
-
-	# initialize logging
-	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
-		level=loglevel)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,

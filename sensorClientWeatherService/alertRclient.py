@@ -9,10 +9,13 @@
 
 import sys
 import os
-from lib import ServerCommunication, ConnectionWatchdog, Receiver
+from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import DbusAlert
+from lib import WundergroundDataCollector, WundergroundTempPollingSensor, \
+	WundergroundHumidityPollingSensor, WundergroundForecastTempPollingSensor, \
+	WundergroundForecastRainPollingSensor, SensorExecuter
 from lib import GlobalData
+from lib import Ordering
 import logging
 import time
 import socket
@@ -36,6 +39,9 @@ if __name__ == '__main__':
 
 	# generate object of the global needed data
 	globalData = GlobalData()
+
+	# Create sensor data collector thread.
+	sensorDataCollector = WundergroundDataCollector(globalData)
 
 	fileName = os.path.basename(__file__)
 
@@ -120,19 +126,13 @@ if __name__ == '__main__':
 		password = str(
 			configRoot.find("general").find("credentials").attrib["password"])
 
-		# Get connection settings.
-		temp = (str(
-			configRoot.find("general").find("connection").attrib[
-			"persistent"]).upper()	== "TRUE")
-		if temp:
-			globalData.persistent = 1
-		else:
-			globalData.persistent = 0
+		# Set connection settings.
+		globalData.persistent = 1 # Consider sensor client always persistent
 
 		# parse smtp options if activated
 		smtpActivated = (str(
 			configRoot.find("smtp").find("general").attrib[
-			"activated"]).upper()	== "TRUE")
+			"activated"]).upper() == "TRUE")
 		if smtpActivated is True:
 			smtpServer = str(
 				configRoot.find("smtp").find("server").attrib["host"])
@@ -143,38 +143,251 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# parse all alerts
-		for item in configRoot.find("alerts").iterfind("alert"):
+		# Parse data collector settings.
+		tempConf = configRoot.find("sensors")
+		sensorDataCollector.apiKey = str(tempConf.attrib["apiKey"])
+		sensorDataCollector.interval = int(tempConf.attrib["interval"])
 
-			alert = DbusAlert()
+		# parse all sensors
+		for item in configRoot.find("sensors").iterfind("sensor"):
 
-			# get dbus client settings
-			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
-			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
-			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
-				"displayReceivedMessage"]).upper() == "TRUE")
+			sensorType = str(item.find("wunderground").attrib[
+				"type"]).upper()
 
-			# these options are needed by the server to
-			# differentiate between the registered alerts
-			alert.id = int(item.find("general").attrib["id"])
-			alert.description = str(item.find("general").attrib["description"])
+			if sensorType == "temperature".upper():
 
-			alert.alertLevels = list()
-			for alertLevelXml in item.iterfind("alertLevel"):
-				alert.alertLevels.append(int(alertLevelXml.text))
+				sensor = WundergroundTempPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# Wunderground temperature specific settings
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = float(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
+
+				# Register location in data collector.
+				sensorDataCollector.addLocation(sensor.country,
+					sensor.city)
+				sensor.dataCollector = sensorDataCollector
+
+			elif sensorType == "humidity".upper():
+
+				sensor = WundergroundHumidityPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# Wunderground temperature specific settings
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = int(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
+
+				# Register location in data collector.
+				sensorDataCollector.addLocation(sensor.country,
+					sensor.city)
+				sensor.dataCollector = sensorDataCollector
+
+			elif sensorType == "forecasttemp".upper():
+
+				sensor = WundergroundForecastTempPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# Wunderground temperature specific settings
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = float(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
+
+				sensor.kind = str(item.find("wunderground").attrib[
+					"kind"]).upper()
+				sensor.day = int(item.find("wunderground").attrib[
+					"day"])
+
+				# Sanity check of kind option.
+				if (sensor.kind != "high".upper()
+					and sensor.kind != "low".upper()):
+					raise ValueError("Kind of sensor '%s' not valid."
+						% sensor.kind)
+
+				# Sanity check of day option.
+				if sensor.day < 0 and sensor.day > 2:
+					raise ValueError("Day of sensor '%d' not valid."
+						% sensor.day)
+
+				# Register location in data collector.
+				sensorDataCollector.addLocation(sensor.country,
+					sensor.city)
+				sensor.dataCollector = sensorDataCollector
+
+			elif sensorType == "forecastrain".upper():
+
+				sensor = WundergroundForecastRainPollingSensor()
+
+				# these options are needed by the server to
+				# differentiate between the registered sensors
+				sensor.id = int(item.find("general").attrib["id"])
+				sensor.description = str(item.find("general").attrib[
+					"description"])
+				sensor.alertDelay = int(item.find("general").attrib[
+					"alertDelay"])
+				sensor.triggerAlert = (str(item.find("general").attrib[
+					"triggerAlert"]).upper() == "TRUE")
+				sensor.triggerAlertNormal = (str(item.find("general").attrib[
+					"triggerAlertNormal"]).upper() == "TRUE")
+				sensor.triggerState = 1
+
+				sensor.alertLevels = list()
+				for alertLevelXml in item.iterfind("alertLevel"):
+					sensor.alertLevels.append(int(alertLevelXml.text))
+
+				# Wunderground temperature specific settings
+				sensor.country = str(item.find("wunderground").attrib[
+					"country"])
+				sensor.city = str(item.find("wunderground").attrib[
+					"city"])
+				sensor.hasThreshold = (str(item.find("wunderground").attrib[
+					"hasThreshold"]).upper() == "TRUE")
+				sensor.threshold = int(
+					item.find("wunderground").attrib["threshold"])
+				orderingStr = str(
+					item.find("wunderground").attrib["ordering"]).upper()
+				if orderingStr == "LT":
+					sensor.ordering = Ordering.LT
+				elif orderingStr == "EQ":
+					sensor.ordering = Ordering.EQ
+				elif orderingStr == "GT":
+					sensor.ordering = Ordering.GT
+				else:
+					raise ValueError("Type of ordering '%s' not valid."
+						% orderingStr)
+
+				sensor.day = int(item.find("wunderground").attrib[
+					"day"])
+
+				# Sanity check of day option.
+				if sensor.day < 0 and sensor.day > 2:
+					raise ValueError("Day of sensor '%d' not valid."
+						% sensor.day)
+
+				# Register location in data collector.
+				sensorDataCollector.addLocation(sensor.country,
+					sensor.city)
+				sensor.dataCollector = sensorDataCollector
+
+			else:
+				raise ValueError("Type of sensor '%s' not valid."
+					% sensorType)
 
 			# check if description is empty
-			if len(alert.description) == 0:
-				raise ValueError("Description of alert %d is empty."
-					% alert.id)
+			if len(sensor.description) == 0:
+				raise ValueError("Description of sensor %d is empty."
+					% sensor.id)
 
-			# check if the id of the alert is unique
-			for registeredAlert in globalData.alerts:
-				if registeredAlert.id == alert.id:
-					raise ValueError("Id of alert %d"
-						% alert.id + "is already taken.")
+			# check if the id of the sensor is unique
+			for registeredSensor in globalData.sensors:
+				if registeredSensor.id == sensor.id:
+					raise ValueError("Id of sensor %d "
+						% sensor.id + "is already taken.")
 
-			globalData.alerts.append(alert)
+			if (not sensor.triggerAlert
+				and sensor.triggerAlertNormal):
+					raise ValueError("'triggerAlert' for sensor %d "
+						% sensor.id + "has to be activated when "
+						+ "'triggerAlertNormal' is activated.")
+
+			globalData.sensors.append(sensor)
 
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
@@ -194,13 +407,33 @@ if __name__ == '__main__':
 		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
 		level=loglevel)
 
+	# check if sensors were found => if not exit
+	if not globalData.sensors:
+		logging.critical("[%s]: No sensors configured." % fileName)
+		sys.exit(1)
+
+	# Start data collector thread.
+	# Set thread to daemon.
+	# => Thread terminates when main thread terminates.
+	logging.info("[%s] Starting data collector thread." % fileName)
+	sensorDataCollector.daemon = True
+	sensorDataCollector.start()
+
+	# Initialize sensors before starting worker threads.
+	logging.info("[%s] Initializing sensors." % fileName)
+	for sensor in globalData.sensors:
+		if not sensor.initializeSensor():
+			logging.critical("[%s]: Not able to initialize sensor."
+				% fileName)
+			sys.exit(1)
+
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,
 		serverCAFile, username, password, clientCertFile, clientKeyFile,
 		globalData)
 	connectionRetries = 1
 	logging.info("[%s] Connecting to server." % fileName)
-	while 1:
+	while True:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
 		# => send eMail alert
@@ -228,17 +461,14 @@ if __name__ == '__main__':
 	watchdog = ConnectionWatchdog(globalData.serverComm,
 		globalData.pingInterval, globalData.smtpAlert)
 	# set thread to daemon
-	# => threads terminates when main thread terminates
+	# => thread terminates when main thread terminates
 	watchdog.daemon = True
 	watchdog.start()
 
-	# initialize all alerts
-	logging.info("[%s] Initializing alerts." % fileName)
-	for alert in globalData.alerts:
-		alert.initializeAlert()
-
 	logging.info("[%s] Client started." % fileName)
 
-	# generate receiver to handle incoming data (for example status updates)
-	receiver = Receiver(globalData.serverComm)
-	receiver.run()
+	# set up sensor executer and execute it
+	# (note: we will not return from the executer unless the client
+	# is terminated)
+	sensorExecuter = SensorExecuter(globalData)
+	sensorExecuter.execute()

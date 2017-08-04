@@ -11,7 +11,7 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import DbusAlert
+from lib import TemplateAlert
 from lib import GlobalData
 import logging
 import time
@@ -146,13 +146,13 @@ if __name__ == '__main__':
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			alert = DbusAlert()
+			# PLACE YOUR CODE HERE
+			# replace the creation of an instance of the template alert
+			# class with your own alert class (you can also add
+			# your own needed configuration parameters for this alert)
+			alert = TemplateAlert()
 
-			# get dbus client settings
-			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
-			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
-			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
-				"displayReceivedMessage"]).upper() == "TRUE")
+
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
@@ -188,11 +188,6 @@ if __name__ == '__main__':
 			smtpFromAddr, smtpToAddr)
 	else:
 		globalData.smtpAlert = None
-
-	# initialize logging
-	logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-		datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
-		level=loglevel)
 
 	# generate object for the communication to the server and connect to it
 	globalData.serverComm = ServerCommunication(server, serverPort,

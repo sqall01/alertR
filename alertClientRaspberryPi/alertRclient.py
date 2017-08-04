@@ -11,12 +11,13 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import DbusAlert
+from lib import RaspberryPiGPIOAlert
 from lib import GlobalData
 import logging
 import time
 import socket
 import random
+import RPi.GPIO as GPIO
 import xml.etree.ElementTree
 
 
@@ -146,13 +147,18 @@ if __name__ == '__main__':
 		# parse all alerts
 		for item in configRoot.find("alerts").iterfind("alert"):
 
-			alert = DbusAlert()
+			alert = RaspberryPiGPIOAlert()
 
-			# get dbus client settings
-			alert.triggerDelay = int(item.find("dbus").attrib["triggerDelay"])
-			alert.displayTime = int(item.find("dbus").attrib["displayTime"])
-			alert.displayReceivedMessage = (str(item.find("dbus").attrib[
-				"displayReceivedMessage"]).upper() == "TRUE")
+			# get gpio pin settings
+			alert.gpioPin = int(item.find("gpio").attrib["gpioPin"])
+			if int(item.find("gpio").attrib["gpioPinStateNormal"]) == 1:
+				alert.gpioPinStateNormal = GPIO.HIGH
+			else:
+				alert.gpioPinStateNormal = GPIO.LOW
+			if int(item.find("gpio").attrib["gpioPinStateTriggered"]) == 1:
+				alert.gpioPinStateTriggered = GPIO.HIGH
+			else:
+				alert.gpioPinStateTriggered = GPIO.LOW
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
