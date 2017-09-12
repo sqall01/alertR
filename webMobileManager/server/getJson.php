@@ -36,17 +36,16 @@ if($configWebAuth) {
 }
 
 // connect to the mysql database and
-$mysqlConnection = mysql_connect($configMysqlServer . ":" . $configMysqlPort,
-	$configMysqlUsername, $configMysqlPassword);
-if(!$mysqlConnection) {
-	echo "Error: mysql_connection.";
-	exit(1);				
-}
-if(!mysql_select_db($configMysqlDb, $mysqlConnection)) {
-	echo "Error: mysql_select_db.";
-	exit(1);
-}
 
+try {
+	$db = new PDO('mysql:host=' . $configMysqlServer
+			. ';dbname=' . $configMysqlDb
+			. ';charset=utf8mb4',
+			$configMysqlUsername, $configMysqlPassword);
+} catch (PDOException $e) {
+	echo "Error: mysql_connection failed! (Error=" . $e->getMessage() . ")\n";
+	die();
+}
 
 // check if it is set which data should be returned
 if(isset($_GET["data"])
@@ -61,9 +60,9 @@ if(isset($_GET["data"])
 
 			// generate internals array
 			case "INTERNALS":
-				$resultInternals = mysql_query("SELECT * FROM internals");
+				$stmt = $db->query('SELECT * FROM internals');
 				$internalsArray = array();
-				while($row = mysql_fetch_assoc($resultInternals)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$internalEntry = array("id" => $row["id"],
 						"type" => $row["type"],
 						"value" => $row["value"]);
@@ -74,9 +73,9 @@ if(isset($_GET["data"])
 
 			// generate options array
 			case "OPTIONS":
-				$resultOptions = mysql_query("SELECT * FROM options");
+				$stmt = $db->query('SELECT * FROM options');
 				$optionsArray = array();
-				while($row = mysql_fetch_assoc($resultOptions)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$optionEntry = array("id" => $row["id"],
 						"type" => $row["type"],
 						"value" => $row["value"]);
@@ -87,9 +86,9 @@ if(isset($_GET["data"])
 
 			// generate nodes array
 			case "NODES":
-				$resultNodes = mysql_query("SELECT * FROM nodes");
+				$stmt = $db->query('SELECT * FROM nodes');
 				$nodesArray = array();
-				while($row = mysql_fetch_assoc($resultNodes)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$nodeEntry = array("id" => $row["id"],
 						"hostname" => $row["hostname"],
 						"nodeType" => $row["nodeType"],
@@ -108,11 +107,14 @@ if(isset($_GET["data"])
 
 			// generate sensors array
 			case "SENSORS":
-				$resultSensors = mysql_query("SELECT * FROM sensors");
-				$resultSensorsAlertLevels = mysql_query(
-					"SELECT * FROM sensorsAlertLevels");
+				$stmt = $db->query('SELECT * FROM sensors');
+				$resultSensors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+				$stmt = $db->query('SELECT * FROM sensorsAlertLevels');
+				$resultSensorsAlertLevels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 				$sensorsAlertLevelsArray = array();
-				while($row = mysql_fetch_assoc($resultSensorsAlertLevels)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$sensorsAlertLevelEntry = array(
 						"sensorId" => $row["sensorId"],
 						"alertLevel" => $row["alertLevel"]);
@@ -120,7 +122,7 @@ if(isset($_GET["data"])
 						$sensorsAlertLevelEntry);
 				}
 				$sensorsArray = array();
-				while($row = mysql_fetch_assoc($resultSensors)) {
+				foreach($resultSensors as $row) {
 
 					// get alert levels of sensor
 					$alertLevelArray = array();
@@ -137,18 +139,18 @@ if(isset($_GET["data"])
 					switch($row["dataType"]) {
 
 						case SensorDataType::INT_TYPE:
-							$resultData = mysql_query("SELECT data FROM "
+							$stmt = $db->query("SELECT data FROM "
 								. "sensorsDataInt WHERE sensorId = "
 								. intval($row["id"]));
-							$dataRow = mysql_fetch_assoc($resultData);
+							$dataRow = $stmt->fetch(PDO::FETCH_ASSOC);
 							$data = $dataRow["data"];
 							break;
 
 						case SensorDataType::FLOAT_TYPE:
-							$resultData = mysql_query("SELECT data FROM "
+							$stmt = $db->query("SELECT data FROM "
 								. "sensorsDataFloat WHERE sensorId = "
 								. intval($row["id"]));
-							$dataRow = mysql_fetch_assoc($resultData);
+							$dataRow = $stmt->fetch(PDO::FETCH_ASSOC);
 							$data = $dataRow["data"];
 							break;
 
@@ -172,11 +174,12 @@ if(isset($_GET["data"])
 
 			// generate alerts array
 			case "ALERTS":
-				$resultAlerts = mysql_query("SELECT * FROM alerts");
-				$resultAlertsAlertLevels = mysql_query(
-					"SELECT * FROM alertsAlertLevels");
+				$stmt = $db->query("SELECT * FROM alerts");
+				$resultAlerts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+				$stmt = $db->query("SELECT * FROM alertsAlertLevels");
 				$alertsAlertLevelsArray = array();
-				while($row = mysql_fetch_assoc($resultAlertsAlertLevels)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$alertsAlertLevelEntry = array(
 						"alertId" => $row["alertId"],
 						"alertLevel" => $row["alertLevel"]);
@@ -184,7 +187,7 @@ if(isset($_GET["data"])
 						$alertsAlertLevelEntry);
 				}
 				$alertsArray = array();
-				while($row = mysql_fetch_assoc($resultAlerts)) {
+				foreach($resultAlerts as $row) {
 
 					// get alert levels of sensor
 					$alertLevelArray = array();
@@ -207,9 +210,9 @@ if(isset($_GET["data"])
 
 			// generate managers array
 			case "MANAGERS":
-				$resultManagers = mysql_query("SELECT * FROM managers");
+				$stmt = $db->query("SELECT * FROM managers");
 				$managersArray = array();
-				while($row = mysql_fetch_assoc($resultManagers)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$managerEntry = array("id" => $row["id"],
 						"nodeId" => $row["nodeId"],
 						"description" => $row["description"]);
@@ -229,23 +232,20 @@ if(isset($_GET["data"])
 					&& intval($_GET["sensorAlertsNumber"]) > 0) {
 					$rangeStart = intval($_GET["sensorAlertsRangeStart"]);
 					$number = intval($_GET["sensorAlertsNumber"]);
-					$resultSensorAlerts = mysql_query(
-						"SELECT * FROM sensorAlerts ORDER BY id DESC "
+					$stmt =	$db->query("SELECT * FROM sensorAlerts ORDER BY id DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
+					$resultSensorAlerts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				}
 				// no range is given => get all sensor alerts
 				else {
-					$resultSensorAlerts = mysql_query(
-						"SELECT * FROM sensorAlerts ORDER BY id DESC");
+					$stmt = $db->query("SELECT * FROM sensorAlerts ORDER BY id DESC");
+					$resultSensorAlerts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				}
 
 				// Get alert levels of the sensor alerts.
-				$resultSensorAlertsAlertLevels = mysql_query(
-					"SELECT * FROM sensorAlertsAlertLevels");
+				$stmt = $db->query("SELECT * FROM sensorAlertsAlertLevels");
 				$sensorAlertsAlertLevelsArray = array();
-				while($row = mysql_fetch_assoc(
-					$resultSensorAlertsAlertLevels)) {
-
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$sensorAlertsAlertLevelEntry = array(
 						"sensorAlertId" => $row["sensorAlertId"],
 						"alertLevel" => $row["alertLevel"]);
@@ -254,7 +254,7 @@ if(isset($_GET["data"])
 				}
 
 				$sensorAlertsArray = array();
-				while($row = mysql_fetch_assoc($resultSensorAlerts)) {
+				foreach( $resultSensorAlerts as $row) {
 
 					// Get alert levels of sensor alert.
 					$alertLevelArray = array();
@@ -275,19 +275,19 @@ if(isset($_GET["data"])
 					switch($row["dataType"]) {
 
 						case SensorDataType::INT_TYPE:
-							$resultData = mysql_query("SELECT data FROM "
+							$stmt = $db->query("SELECT data FROM "
 								. "sensorAlertsDataInt WHERE sensorAlertId = "
 								. intval($row["id"]));
-							$dataRow = mysql_fetch_assoc($resultData);
+							$dataRow = $stmt->fetch(PDO::FETCH_ASSOC);
 							$data = $dataRow["data"];
 							break;
 
 						case SensorDataType::FLOAT_TYPE:
-							$resultData = mysql_query("SELECT data FROM "
+							$stmt = $db->query("SELECT data FROM "
 								. "sensorAlertsDataFloat WHERE "
 								. "sensorAlertId = "
 								. intval($row["id"]));
-							$dataRow = mysql_fetch_assoc($resultData);
+							$dataRow = $stmt->fetch(PDO::FETCH_ASSOC);
 							$data = $dataRow["data"];
 							break;
 
@@ -312,9 +312,9 @@ if(isset($_GET["data"])
 
 			// generate alert levels array
 			case "ALERTLEVELS":
-				$resultAlertLevels = mysql_query("SELECT * FROM alertLevels");
+				$stmt = $db->query("SELECT * FROM alertLevels");
 				$alertLevelsArray = array();
-				while($row = mysql_fetch_assoc($resultAlertLevels)) {
+				while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					$alertLevelEntry = array(
 						"alertLevel" => $row["alertLevel"],
 						"name" => $row["name"],
@@ -334,392 +334,384 @@ if(isset($_GET["data"])
 					&& intval($_GET["eventsNumber"]) > 0) {
 					$rangeStart = intval($_GET["eventsRangeStart"]);
 					$number = intval($_GET["eventsNumber"]);
-					$resultEvents = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM events ORDER BY id DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
+					$resultEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					$resultEventsChangeAlert = mysql_query(
-						"SELECT * FROM eventsChangeAlert "
+					$stmt = $db->query("SELECT * FROM eventsChangeAlert "
 						. "ORDER BY eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsChangeAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeAlertArray, $row);
 					}
 
-					$resultEventsChangeManager = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeManager "
 						. "ORDER BY eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeManagerArray = array();
 					while(
-						$row = mysql_fetch_assoc($resultEventsChangeManager)) {
+						$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeManagerArray, $row);
 					}
 
-					$resultEventsChangeNode = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeNode ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeNodeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsChangeNode)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeNodeArray, $row);
 					}
 
-					$resultEventsChangeOption = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeOption ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeOptionArray = array();
 					while(
-						$row = mysql_fetch_assoc($resultEventsChangeOption)) {
+						$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeOptionArray, $row);
 					}
 
-					$resultEventsChangeSensor = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeSensor ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsChangeSensorArray = array();
 					while(
-						$row = mysql_fetch_assoc($resultEventsChangeSensor)) {
+						$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeSensorArray, $row);
 					}
 
-					$resultEventsConnectedChange = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsConnectedChange ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsConnectedChangeArray = array();
-					while($row =
-						mysql_fetch_assoc($resultEventsConnectedChange)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsConnectedChangeArray, $row);
 					}
 
-					$resultEventsDeleteAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteAlert ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDeleteAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteAlertArray, $row);
 					}
 
-					$resultEventsDeleteManager = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteManager ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteManagerArray = array();
 					while(
-						$row = mysql_fetch_assoc($resultEventsDeleteManager)) {
+						$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteManagerArray, $row);
 					}
 
-					$resultEventsDeleteNode = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteNode ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteNodeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDeleteNode)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteNodeArray, $row);
 						
 					}
 
-					$resultEventsDeleteSensor = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteSensor ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDeleteSensorArray = array();
 					while(
-						$row = mysql_fetch_assoc($resultEventsDeleteSensor)) {
+						$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteSensorArray, $row);
 					}
 
-					$resultEventsNewAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewAlert ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewAlertArray, $row);
 					}
 
-					$resultEventsNewManager = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewManager ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewManagerArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewManager)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewManagerArray, $row);
 					}
 
-					$resultEventsNewNode = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewNode ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewNodeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewNode)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewNodeArray, $row);
 					}
 
-					$resultEventsNewOption = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewOption ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewOptionArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewOption)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewOptionArray, $row);
 					}
 
-					$resultEventsNewSensor = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewSensor ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewSensorArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewSensor)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewSensorArray, $row);
 					}
 
-					$resultEventsNewVersion = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewVersion ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsNewVersionArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewVersion)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewVersionArray, $row);
 					}
 
-					$resultEventsSensorAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsSensorAlert ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsSensorAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsSensorAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsSensorAlertArray, $row);
 					}
 
-					$resultEventsSensorTimeOut = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsSensorTimeOut ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsSensorTimeOutArray = array();
 					while(
-						$row = mysql_fetch_assoc($resultEventsSensorTimeOut)) {
+						$row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsSensorTimeOutArray, $row);
 					}
 
-					$resultEventsStateChange = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsStateChange ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsStateChangeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsStateChange)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsStateChangeArray, $row);
 					}
 
-					$resultEventsDataInt = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDataInt ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDataIntArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDataInt)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDataIntArray, $row);
 					}
 
-					$resultEventsDataFloat = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDataFloat ORDER BY "
 						. "eventId DESC "
 						. "LIMIT " . $rangeStart . "," . $number);
 					$eventsDataFloatArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDataFloat)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDataFloatArray, $row);
 					}
 
 				}
 				// no range is given => get all events
 				else {
-					$resultEvents = mysql_query(
-						"SELECT * FROM events ORDER BY id DESC");
+					$stmt = $db->query('SELECT * FROM events ORDER BY id DESC');
+					$resultEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					$resultEventsChangeAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeAlert ORDER BY "
 						. "eventId DESC");
 					$eventsChangeAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsChangeAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeAlertArray, $row);
 					}
 
-					$resultEventsChangeManager = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeManager ORDER BY "
 						. "eventId DESC");
 					$eventsChangeManagerArray = array();
-					while(
-						$row = mysql_fetch_assoc($resultEventsChangeManager)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeManagerArray, $row);
 					}
 
-					$resultEventsChangeNode = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeNode ORDER BY "
 						. "eventId DESC");
 					$eventsChangeNodeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsChangeNode)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeNodeArray, $row);
 					}
 
-					$resultEventsChangeOption = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeOption ORDER BY "
 						. "eventId DESC");
 					$eventsChangeOptionArray = array();
-					while(
-						$row = mysql_fetch_assoc($resultEventsChangeOption)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeOptionArray, $row);
 					}
 
-					$resultEventsChangeSensor = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsChangeSensor ORDER BY "
 						. "eventId DESC");
 					$eventsChangeSensorArray = array();
-					while(
-						$row = mysql_fetch_assoc($resultEventsChangeSensor)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsChangeSensorArray, $row);
 					}
 
-					$resultEventsConnectedChange = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsConnectedChange ORDER BY "
 						. "eventId "
 						. "DESC");
 					$eventsConnectedChangeArray = array();
-					while($row =
-						mysql_fetch_assoc($resultEventsConnectedChange)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsConnectedChangeArray, $row);
 					}
 
-					$resultEventsDeleteAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteAlert ORDER BY "
 						. "eventId DESC");
 					$eventsDeleteAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDeleteAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteAlertArray, $row);
 					}
 
-					$resultEventsDeleteManager = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteManager ORDER BY "
 						. "eventId DESC");
 					$eventsDeleteManagerArray = array();
-					while(
-						$row = mysql_fetch_assoc($resultEventsDeleteManager)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteManagerArray, $row);
 					}
 
-					$resultEventsDeleteNode = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteNode ORDER BY "
 						. "eventId DESC");
 					$eventsDeleteNodeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDeleteNode)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteNodeArray, $row);
 					}
 
-					$resultEventsDeleteSensor = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDeleteSensor ORDER BY "
 						. "eventId DESC");
 					$eventsDeleteSensorArray = array();
-					while(
-						$row = mysql_fetch_assoc($resultEventsDeleteSensor)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDeleteSensorArray, $row);
 					}
 
-					$resultEventsNewAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewAlert ORDER BY "
 						. "eventId DESC");
 					$eventsNewAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewAlertArray, $row);
 					}
 
-					$resultEventsNewManager = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewManager ORDER BY "
 						. "eventId DESC");
 					$eventsNewManagerArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewManager)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewManagerArray, $row);
 					}
 
-					$resultEventsNewNode = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewNode ORDER BY "
 						. "eventId DESC");
 					$eventsNewNodeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewNode)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewNodeArray, $row);
 					}
 
-					$resultEventsNewOption = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewOption ORDER BY "
 						. "eventId DESC");
 					$eventsNewOptionArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewOption)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewOptionArray, $row);
 					}
 
-					$resultEventsNewSensor = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewSensor ORDER BY "
 						. "eventId DESC");
 					$eventsNewSensorArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewSensor)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewSensorArray, $row);
 					}
 
-					$resultEventsNewVersion = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsNewVersion ORDER BY "
 						. "eventId DESC");
 					$eventsNewVersionArray = array();
-					while($row = mysql_fetch_assoc($resultEventsNewVersion)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsNewVersionArray, $row);
 					}
 
-					$resultEventsSensorAlert = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsSensorAlert ORDER BY "
 						. "eventId DESC");
 					$eventsSensorAlertArray = array();
-					while($row = mysql_fetch_assoc($resultEventsSensorAlert)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsSensorAlertArray, $row);
 					}
 
-					$resultEventsSensorTimeOut = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsSensorTimeOut ORDER BY "
 						. "eventId DESC");
 					$eventsSensorTimeOutArray = array();
-					while(
-						$row = mysql_fetch_assoc($resultEventsSensorTimeOut)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsSensorTimeOutArray, $row);
 					}
 
-					$resultEventsStateChange = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsStateChange ORDER BY "
 						. "eventId DESC");
 					$eventsStateChangeArray = array();
-					while($row = mysql_fetch_assoc($resultEventsStateChange)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsStateChangeArray, $row);
 					}
 
-					$resultEventsDataInt = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDataInt ORDER BY "
 						. "eventId DESC");
 					$eventsDataIntArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDataInt)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDataIntArray, $row);
 					}
 
-					$resultEventsDataFloat = mysql_query(
+					$stmt = $db->query(
 						"SELECT * FROM eventsDataFloat ORDER BY "
 						. "eventId DESC");
 					$eventsDataFloatArray = array();
-					while($row = mysql_fetch_assoc($resultEventsDataFloat)) {
+					while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						array_push($eventsDataFloatArray, $row);
 					}
 				}
 
 				$eventsArray = array();
-				while($row = mysql_fetch_assoc($resultEvents)) {
+				foreach($resultEvents as $row) {
 					switch($row["type"]) {
 						case "changeAlert":
 							$oldDescription = null;
