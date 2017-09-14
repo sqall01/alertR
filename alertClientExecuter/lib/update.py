@@ -58,7 +58,8 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 # this class processes all actions concerning the update process
 class Updater:
 
-	def __init__(self, host, port, serverPath, caFile, globalData):
+	def __init__(self, host, port, serverPath, caFile, globalData,
+		localInstanceInfo):
 
 		# used for logging
 		self.fileName = os.path.basename(__file__)
@@ -86,11 +87,17 @@ class Updater:
 		self.newestVersion = self.version
 		self.newestRev = self.rev
 		self.newestFiles = None
-		self.lastChecked = 0.0
-		self.repoInstanceLocation = None
+		self.lastChecked = 0
+		self.localInstanceInfo = localInstanceInfo
+		self.repoInfo = None
+		self.instanceInfo = None
 
 		# size of the download chunks
 		self.chunkSize = 4096
+
+		# Get newest data from repository.
+		if not self._getNewestVersionInformation():
+			raise ValueError("Not able to get newest repository information.")
 
 
 	# internal function that acquires the lock
@@ -447,13 +454,73 @@ class Updater:
 		return sha256.hexdigest()
 
 
-	# internal function that gets the newest version information from the
+	# Internal function that gets the newest instance information from the
 	# online repository
 	#
 	# return True or False
-	def _getNewestVersionInformation(self):
+	def _getInstanceInformation(self):
 
 		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+
+		logging.debug("[%s]: Downloading instance information."
+			% self.fileName)
+
+		# get instance information string from the server
+		instanceInfoString = ""
+		try:
+
+			conn.request("GET", self.serverPath + "/"
+				+ self.repoInstanceLocation + "/instanceInfo.json")
+			response = conn.getresponse()
+
+			# check if server responded correctly
+			if response.status == 200:
+				instanceInfoString = response.read()
+
+			else:
+				raise ValueError("Server response code not 200 (was %d)."
+					% response.status)
+
+			conn.close()
+
+		except Exception as e:
+			logging.exception("[%s]: Getting version information failed."
+				% self.fileName)
+
+			return False
+
+		# parse instance information string
+		try:
+			self.instanceInfo = json.loads(instanceInfoString)
+
+			if not isinstance(self.instanceInfo["version"], float):
+				raise ValueError("Key 'version' is not of type float.")
+
+			if not isinstance(self.instanceInfo["rev"], int):
+				raise ValueError("Key 'rev' is not of type int.")
+
+			if not isinstance(self.instanceInfo["dependencies"], dict):
+				raise ValueError("Key 'dependencies' is not of type dict.")
+
+		except Exception as e:
+			logging.exception("[%s]: Parsing version information failed."
+				% self.fileName)
+
+			return False
+
+		return True
+
+
+	# Internal function that gets the newest repository information from the
+	# online repository.
+	#
+	# return True or False
+	def _getRepositoryInformation(self):
+
+		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+
+		logging.debug("[%s]: Downloading repository information."
+			% self.fileName)
 
 		# get repository information from the server
 		repoInfoString = ""
@@ -470,6 +537,8 @@ class Updater:
 				raise ValueError("Server response code not 200 (was %d)."
 					% response.status)
 
+			conn.close()
+
 		except Exception as e:
 			logging.exception("[%s]: Getting repository information failed."
 				% self.fileName)
@@ -479,19 +548,15 @@ class Updater:
 
 		# parse repository information string
 		try:
-			jsonData = json.loads(repoInfoString)
+			self.repoInfo = json.loads(repoInfoString)
 
-			if not isinstance(jsonData, dict):
+			if not isinstance(self.repoInfo, dict):
 				raise ValueError("Received repository information is "
 					+ "not of type dict.")
 
-			if not self.instance in jsonData["instances"].keys():
-				raise ValueError("Instance '%s' is not managed by "
-					% self.instance
-					+ "used repository.")
-
-			self.repoInstanceLocation = str(
-				jsonData["instances"][self.instance]["location"])
+			if not "instances" in self.repoInfo.keys():
+				raise ValueError("Received repository information has "
+					+ "no information about the instances.")
 
 		except Exception as e:
 			logging.exception("[%s]: Parsing repository information failed."
@@ -499,38 +564,34 @@ class Updater:
 
 			return False
 
+		# Set repository location on server.
+		self.repoInstanceLocation = str(
+				self.repoInfo["instances"][self.instance]["location"])
 
-		# get version string from the server
-		versionString = ""
+		return True
+
+
+	# internal function that gets the newest version information from the
+	# online repository
+	#
+	# return True or False
+	def _getNewestVersionInformation(self):
+
 		try:
-
-			conn.request("GET", self.serverPath + "/"
-				+ self.repoInstanceLocation + "/instanceInfo.json")
-			response = conn.getresponse()
-
-			# check if server responded correctly
-			if response.status == 200:
-				versionString = response.read()
-
-			else:
-				raise ValueError("Server response code not 200 (was %d)."
-					% response.status)
-
+			self._getRepositoryInformation()
+			self._getInstanceInformation()
 		except Exception as e:
-			logging.exception("[%s]: Getting version information failed."
-				% self.fileName)
+			logging.exception("[%s]: Retrieving newest repository "
+				% self.fileName
+				+ "information failed.")
 
 			return False
 
-
-		# parse version information string
+		# Parse version information.
 		try:
-			jsonData = json.loads(versionString)
-
-			version = float(jsonData["version"])
-			rev = int(jsonData["rev"])
-
-			newestFiles = jsonData["files"]
+			version = float(self.instanceInfo["version"])
+			rev = int(self.instanceInfo["rev"])
+			newestFiles = self.instanceInfo["files"]
 
 			if not isinstance(newestFiles, dict):
 				raise ValueError("Key 'files' is not of type dict.")
@@ -561,17 +622,45 @@ class Updater:
 		return True
 
 
-	# function that gets the newest version information from the
-	# online repository
-	def getNewestVersionInformation(self):
+	# This function returns the instance information data.
+	def getInstanceInformation(self):
 
 		self._acquireLock()
+		utcTimestamp = int(time.time())
+		if ((utcTimestamp - self.lastChecked) > 60
+			or self.instanceInfo is None):
 
-		result = self._getNewestVersionInformation()
+			if not self._getRepositoryInformation():
+				self._releaseLock()
+				raise ValueError("Not able to get newest "
+					+ "repository information.")
+
+			if not self._getInstanceInformation():
+				self._releaseLock()
+				raise ValueError("Not able to get newest "
+					+ "instance information.")
 
 		self._releaseLock()
 
-		return result
+		return self.instanceInfo
+
+
+	# This function returns the repository information data.
+	def getRepositoryInformation(self):
+
+		self._acquireLock()
+		utcTimestamp = int(time.time())
+		if ((utcTimestamp - self.lastChecked) > 60
+			or self.repoInfo is None):
+
+			if not self._getRepositoryInformation():
+				self._releaseLock()
+				raise ValueError("Not able to get newest "
+					+ "repository information.")
+
+		self._releaseLock()
+
+		return self.repoInfo
 
 
 	# function that updates this instance of the alertR infrastructure

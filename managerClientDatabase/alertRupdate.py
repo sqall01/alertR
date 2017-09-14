@@ -9,12 +9,23 @@
 
 import sys
 import os
+import json
 from lib import GlobalData
 from lib import Updater
 import xml.etree.ElementTree
 import logging
 import optparse
 
+
+def outputUpdateFailed():
+	print
+	print "UPDATE PROCESS FAILED!"
+	print "To see the reason take a look at the update",
+	print "process output.",
+	print "You can change the log level in the configuration",
+	print "file to 'DEBUG'",
+	print "and repeat the update process to get more detailed",
+	print "information."
 
 # this function asks the user for confirmation
 def userConfirmation():
@@ -124,13 +135,29 @@ if __name__ == '__main__':
 	logging.info("[%s]: Current version: %.3f-%d." %
 		(fileName, globalData.version, globalData.rev))
 
-	# create an updater process
-	updater = Updater(updateServer, updatePort, updateLocation,
-		updateCaFile, globalData)
+	# Parse local instance information (if it exists, otherwise create one).
+	localInstanceInfo = None
+	try:
+		with open(instanceLocation + "/instanceInfo.json", 'r') as fp:
+			localInstanceInfo = json.loads(fp.read())
+	except:
+		localInstanceInfo = {"files": {},
+			"version": globalData.version,
+			"rev": globalData.rev,
+			"dependencies": {}}
 
-	# get newest version information
-	if updater.getNewestVersionInformation() is False:
+	# create an updater process
+	try:
+		updater = Updater(updateServer, updatePort, updateLocation,
+			updateCaFile, globalData, localInstanceInfo)
+	except:
+		logging.exception("[%s]: Not able to create update object."
+			% fileName)
+		outputUpdateFailed()
 		sys.exit(1)
+
+	# Get new instance information.
+	newInstanceInfo = updater.getInstanceInformation()
 
 	# check if the received version is newer than the current one
 	if (updater.newestVersion > globalData.version or
@@ -209,14 +236,19 @@ if __name__ == '__main__':
 
 			logging.error("[%s]: Update failed." % fileName)
 
-			print
-			print "UPDATE PROCESS FAILED!"
-			print "To see the reason take a look at the update",
-			print "process output.",
-			print "You can change the log level in the configuration",
-			print "file to 'DEBUG'",
-			print "and repeat the update process to get more detailed",
-			print "information."
+			outputUpdateFailed()
+			sys.exit(1)
+
+		# Store new instance information file manually afterwards.
+		try:
+			with open(instanceLocation + "/instanceInfo.json", 'w') as fp:
+				fp.write(json.dumps(newInstanceInfo))
+		except:
+			logging.exception("[%s]: Not able to store new "
+				% fileName
+				+ "'instanceInfo.json'.")
+
+			outputUpdateFailed()
 			sys.exit(1)
 
 		logging.info("[%s]: Update finished." % fileName)
