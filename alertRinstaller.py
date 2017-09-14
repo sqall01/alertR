@@ -1106,12 +1106,13 @@ def getInstanceInformation(host, port, caFile, serverPath,
 	try:
 		jsonData = json.loads(instanceInfoString)
 
-		version = float(jsonData["version"])
-		rev = int(jsonData["rev"])
+		if not isinstance(jsonData["version"], float):
+			raise ValueError("Key 'version' is not of type float.")
 
-		dependencies = jsonData["dependencies"]
+		if not isinstance(jsonData["rev"], int):
+			raise ValueError("Key 'rev' is not of type int.")
 
-		if not isinstance(dependencies, dict):
+		if not isinstance(jsonData["dependencies"], dict):
 			raise ValueError("Key 'dependencies' is not of type dict.")
 
 	except Exception as e:
@@ -1210,6 +1211,18 @@ def removeCaFile(caFile):
 		logging.error("[%s]: Could not remove temporary "
 			% fileName
 			+ "certificate file.")
+
+
+def outputFailureAndExit(caFile):
+	print
+	print "INSTALLATION FAILED!"
+	print "To see the reason take a look at the installation",
+	print "process output.",
+	print "You can change the log level in the",
+	print "file to 'DEBUG'",
+	print "and repeat the installation process to get more detailed",
+	print "information."
+	exit(1, caFile)
 
 
 if __name__ == '__main__':
@@ -1414,18 +1427,20 @@ if __name__ == '__main__':
 		if installer.updateInstance() is False:
 
 			logging.error("[%s]: Installation failed." % fileName)
-
-			print
-			print "INSTALLATION FAILED!"
-			print "To see the reason take a look at the installation",
-			print "process output.",
-			print "You can change the log level in the",
-			print "file to 'DEBUG'",
-			print "and repeat the installation process to get more detailed",
-			print "information."
-			exit(1, caFile)
+			outputFailureAndExit(caFile)
 
 		else:
+
+			# Store instance information file manually afterwards.
+			try:
+				with open(targetLocation + "/instanceInfo.json", 'w') as fp:
+					fp.write(json.dumps(instanceInfo))
+			except:
+				logging.exception("[%s]: Not able to store "
+					% fileName
+					+ "'instanceInfo.json'.")
+				outputFailureAndExit(caFile)
+
 			print
 			print "INSTALLATION SUCCESSFUL!"
 			print "Please configure this alertR instance before you start it."
