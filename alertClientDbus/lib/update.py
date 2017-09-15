@@ -256,7 +256,6 @@ class Updater:
 			elif filesToUpdate[clientFile] == _FileUpdateType.DELETE:
 				raise NotImplementedError("Feature not yet implemented.")
 
-
 		return True
 
 
@@ -458,9 +457,22 @@ class Updater:
 	# online repository
 	#
 	# return True or False
-	def _getInstanceInformation(self):
+	def _getInstanceInformation(self, conn=None):
 
-		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		if conn is None:
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+
+		try:
+			if self._getRepositoryInformation(conn) is False:
+				raise ValueError("Not able to get newest "
+					+ "repository information.")
+
+		except Exception as e:
+			logging.exception("[%s]: Retrieving newest repository "
+				% self.fileName
+				+ "information failed.")
+
+			return False
 
 		logging.debug("[%s]: Downloading instance information."
 			% self.fileName)
@@ -515,9 +527,10 @@ class Updater:
 	# online repository.
 	#
 	# return True or False
-	def _getRepositoryInformation(self):
+	def _getRepositoryInformation(self, conn=None):
 
-		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		if conn is None:
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 
 		logging.debug("[%s]: Downloading repository information."
 			% self.fileName)
@@ -575,13 +588,18 @@ class Updater:
 	# online repository
 	#
 	# return True or False
-	def _getNewestVersionInformation(self):
+	def _getNewestVersionInformation(self, conn=None):
+
+		if conn is None:
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
 
 		try:
-			self._getRepositoryInformation()
-			self._getInstanceInformation()
+			if self._getInstanceInformation(conn) is False:
+				raise ValueError("Not able to get newest "
+					+ "instance information.")
+
 		except Exception as e:
-			logging.exception("[%s]: Retrieving newest repository "
+			logging.exception("[%s]: Retrieving newest instance "
 				% self.fileName
 				+ "information failed.")
 
@@ -629,11 +647,6 @@ class Updater:
 		utcTimestamp = int(time.time())
 		if ((utcTimestamp - self.lastChecked) > 60
 			or self.instanceInfo is None):
-
-			if not self._getRepositoryInformation():
-				self._releaseLock()
-				raise ValueError("Not able to get newest "
-					+ "repository information.")
 
 			if not self._getInstanceInformation():
 				self._releaseLock()
