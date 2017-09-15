@@ -132,10 +132,12 @@ class Updater:
 
 		counterUpdate = 0
 		counterNew = 0
+		counterDelete = 0
+		fileList = self.newestFiles.keys()
 
 		# get all files that have to be updated
 		filesToUpdate = dict()
-		for clientFile in self.newestFiles.keys():
+		for clientFile in fileList:
 
 			# check if file already exists
 			# => check if file has to be updated
@@ -172,8 +174,20 @@ class Updater:
 				filesToUpdate[clientFile] = _FileUpdateType.NEW
 				counterNew += 1
 
-		logging.info("[%s]: Files to modify: %d; New files: %d"
-			% (self.fileName, counterUpdate, counterNew))
+		# Get all files that have to be deleted.
+		for clientFile in self.localInstanceInfo["files"].keys():
+			if clientFile not in fileList:
+
+				logging.debug("[%s]: Delete file: '%s'"
+					% (self.fileName, clientFile))
+
+				filesToUpdate[clientFile] = _FileUpdateType.DELETE
+				counterDelete += 1
+
+		logging.info("[%s]: Files to modify: %d; New files: %d; "
+			% (self.fileName, counterUpdate, counterNew)
+			+ "Files to delete: %d"
+			% counterDelete)
 
 		return filesToUpdate
 
@@ -254,7 +268,20 @@ class Updater:
 
 			# check if the file has to be deleted
 			elif filesToUpdate[clientFile] == _FileUpdateType.DELETE:
-				raise NotImplementedError("Feature not yet implemented.")
+
+				# check if the file is not writable
+				# => cancel update
+				if not os.access(self.instanceLocation + clientFile, os.W_OK):
+					logging.error("[%s]: File '%s' is not writable "
+						% (self.fileName, clientFile)
+						+ "(deletable).")
+					return False
+
+				logging.debug("[%s]: File '%s' is writable (deletable)."
+						% (self.fileName, clientFile))
+
+			else:
+				raise ValueError("Unknown file update type.")
 
 		return True
 
@@ -316,6 +343,49 @@ class Updater:
 					% fileLocation)
 
 				return False
+
+		return True
+
+
+	# Internal function that deletes sub directories in the target directory
+	# for the given file location if they are empty.
+	#
+	# return True or False
+	def _deleteSubDirectories(self, fileLocation, targetDirectory):
+
+		folderStructure = fileLocation.split("/")
+		del folderStructure[-1]
+
+		try:
+
+			i = len(folderStructure) - 1
+			
+			while 0 <= i:
+
+				tempDir = ""
+				for j in range(i + 1):
+					tempDir = tempDir + "/" + folderStructure[j]
+
+				# If the directory to delete is not empty then finish
+				# the whole sub directory delete process.
+				if os.listdir(targetDirectory + tempDir):
+					break
+
+				logging.debug("[%s]: Deleting directory '%s/%s/'."
+					% (self.fileName, targetDirectory, tempDir))
+
+				os.rmdir(targetDirectory + tempDir)
+
+				i -= 1
+
+		except Exception as e:
+
+			logging.exception("[%s]: Deleting directory structure for "
+				% self.fileName
+				+ "'%s' failed."
+				% fileLocation)
+
+			return False
 
 		return True
 
@@ -749,7 +819,27 @@ class Updater:
 
 			# check if the file has to be deleted
 			if filesToUpdate[fileToUpdate] == _FileUpdateType.DELETE:
-				raise NotImplementedError("Not yet implemented.")
+
+				# remove old file.
+				try:
+
+					logging.debug("[%s]: Deleting file '%s'."
+						% (self.fileName, fileToUpdate))
+
+					os.remove(self.instanceLocation + "/" + fileToUpdate)
+
+				except Exception as e:
+					logging.exception("[%s]: Deleting file '%s' failed."
+					% (self.fileName, fileToUpdate))
+
+					self._releaseLock()
+
+					return False
+
+				# Delete sub directories (if they are empty).
+				self._deleteSubDirectories(fileToUpdate, self.instanceLocation)
+
+				continue
 
 			# check if the file is new
 			# => create all sub directories (if they are missing)
