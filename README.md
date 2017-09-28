@@ -58,6 +58,13 @@ An overview of the infrastructure a basic alertR setup has.
 </div>
 <br />
 
+Number of active alertR installations calculated from participants of the voluntary survey.
+
+<div align="center">
+<img src="https://alertr.de/img/graphs/survey_numbers.php" />
+</div>
+<br />
+
 
 ## Videos
 <a name="media_videos"/>
