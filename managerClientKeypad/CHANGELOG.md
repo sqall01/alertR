@@ -3,6 +3,7 @@
 Features:
 
 * Removed update checker process (moved to server instance).
+* Update process checks dependency changes and can delete old files.
 
 
 ## 0.501-1

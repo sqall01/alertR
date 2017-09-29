@@ -4,6 +4,7 @@ Features:
 
 * Removed smtp functionality.
 * Added internal sensor for version checks.
+* Update process checks dependency changes and can delete old files.
 
 ## 0.502-0
 
