@@ -641,6 +641,11 @@ class Updater:
 				raise ValueError("Received repository information has "
 					+ "no information about the instances.")
 
+			if not self.instance in self.repoInfo["instances"].keys():
+				raise ValueError("Instance '%s' is not managed by "
+					% self.instance
+					+ "used repository.")
+
 		except Exception as e:
 			logging.exception("[%s]: Parsing repository information failed."
 				% self.fileName)
