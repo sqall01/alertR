@@ -1,6 +1,6 @@
 # alertR
 
-alertR is a client/server based alarm and monitoring system. Originally it was developed as an open source home security system, but soon it became apparent that it can be used in a great variety of scenarios where an alarm or monitoring system is needed, for example as a simpler nagios to monitor the availability of a server/service.
+alertR is a client/server based alarm and monitoring system. Originally it was developed as an open source home security system, but soon it became apparent that it can be used in a great variety of scenarios where an alarm or monitoring system is needed. Because of the way it is designed, alertR can be used in any scenario a sensor with the state "triggered" and "normal" has to be monitored. This can be a sensor for a home security or home automation system, but also computer services like a failing HDD drive in a RAID or the availability of a web server.
 
 
 # Table of Contents
