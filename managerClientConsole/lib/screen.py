@@ -629,6 +629,15 @@ class Console:
 		self.consoleLock.release()
 
 
+	# Callback function for the search field that is called whenever
+	# the state of the field changes (a user presses a new key).
+	# This function searches instantly for the entered keyword and
+	# shows the result.
+	def _callbackSearchFieldChange(self, editElement, state, userData):
+		self.searchKeyword = state.lower()
+		self._showSearchResult()
+
+
 	# get a list of alert level objects that belong to the given
 	# object (object has to have attribute alertLevels)
 	def _getAlertLevelsOfObj(self, obj):
@@ -1064,7 +1073,7 @@ class Console:
 	# Creates an overlayed view with the search field.
 	def _showSearchView(self):
 
-		self.searchView = SearchViewUrwid()
+		self.searchView = SearchViewUrwid(self._callbackSearchFieldChange)
 
 		# show search view as an overlay
 		overlayView = urwid.Overlay(self.searchView.get(), self.mainFrame,
