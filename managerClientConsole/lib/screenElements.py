@@ -1473,3 +1473,26 @@ class SensorAlertUrwid:
 		if (utcTimestamp - self.timeReceived) > self.timeShowSensorAlert:
 			return True
 		return False
+
+
+# This class is an urwid object for the search field.
+class SearchViewUrwid:
+
+	def __init__(self):
+		self.edit = urwid.Edit()
+		editList = urwid.ListBox([self.edit])
+		editFrame = urwid.Frame(editList,
+			footer=urwid.Text("Keys: ESC - Back, Enter - Search"))
+		self.editBox = urwid.LineBox(editFrame,
+			title="Search")
+
+
+	# This function returns the final urwid widget that is used
+	# to render this object.
+	def get(self):
+		return self.editBox
+
+
+	# Returns entered text.
+	def getText(self):
+		return self.edit.edit_text

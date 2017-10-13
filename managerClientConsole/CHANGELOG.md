@@ -4,6 +4,7 @@ Features:
 
 * Removed update checker process (moved to server instance).
 * Update process checks dependency changes and can delete old files.
+* Search feature for sensors, alertLevels, alerts, and managers added
 
 
 ## 0.500-1

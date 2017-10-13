@@ -9,7 +9,8 @@
 
 from screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, \
 	AlertUrwid, AlertDetailedUrwid, ManagerUrwid, ManagerDetailedUrwid, \
-	AlertLevelUrwid, AlertLevelDetailedUrwid, SensorAlertUrwid
+	AlertLevelUrwid, AlertLevelDetailedUrwid, SensorAlertUrwid, \
+	SearchViewUrwid
 import threading
 import logging
 import os
@@ -195,8 +196,11 @@ class Console:
 		# urwid object that shows if the alert system is active
 		self.alertSystemActive = None
 
-		# a list of all urwid sensor objects
+		# A list of all urwid sensor objects.
 		self.sensorUrwidObjects = list()
+
+		# A list of active urwid sensor objects.
+		self.activeSensorUrwidObjects = list()
 
 		# a list of all urwid sensor objects that are shown on the page
 		self.shownSensorUrwidObjects = list()
@@ -213,6 +217,9 @@ class Console:
 		# a list of all urwid alert objects
 		self.alertUrwidObjects = list()
 
+		# A list of active urwid alert objects.
+		self.activeAlertUrwidObjects = list()
+
 		# a list of all urwid alert objects that are shown on the page
 		self.shownAlertUrwidObjects = list()
 
@@ -228,6 +235,9 @@ class Console:
 		# a list of all urwid manager objects
 		self.managerUrwidObjects = list()
 
+		# A list of active urwid manager objects.
+		self.activeManagerUrwidObjects = list()
+
 		# a list of all urwid manager objects that are shown on the page
 		self.shownManagerUrwidObjects = list()
 
@@ -242,6 +252,9 @@ class Console:
 
 		# a list of all urwid alert level objects
 		self.alertLevelUrwidObjects = list()
+
+		# A list of active urwid alert level objects.
+		self.activeAlertLevelUrwidObjects = list()
 
 		# a list of all urwid alert level objects that are shown on the page
 		self.shownAlertLevelUrwidObjects = list()
@@ -294,8 +307,17 @@ class Console:
 		# flag that signalizes if a detailed view of an object is shown or not
 		self.inDetailView = False
 
+		# Flag that signalizes if the search view is shown or not
+		self.inSearchView = False
+
 		# the urwid object of the detailed view
 		self.detailedView = None
+
+		# The urwid object of the search view
+		self.searchView = None
+
+		# The keyword that is currently searched for.
+		self.searchKeyword = ""
 
 
 	# set the focus to the sensors
@@ -425,14 +447,84 @@ class Console:
 		self.detailedView = None
 
 
+	# Close the search view.
+	def _closeSearchView(self):
+		self.mainLoop.widget = self.mainFrame
+		self.inSearchView = False
+		self.searchView = None
+
+
+	# Shows the results of the search.
+	def _showSearchResult(self):
+		keyword = self.searchKeyword
+		if self.currentFocused == FocusedElement.sensors:
+
+			# Filter for all sensor urwid objects that contain the keyword
+			# (case-insensitive).
+			foundSensors = filter(
+				lambda obj : keyword in obj.sensor.description.lower(),
+				self.sensorUrwidObjects)
+
+			logging.debug("[%s]: Found %d sensors for keyword '%s'."
+				% (self.fileName, len(foundSensors), keyword))
+
+			# Display currently found objects.
+			self.activeSensorUrwidObjects = foundSensors
+			self._showSensorsAtPageIndex(0)
+
+		elif self.currentFocused == FocusedElement.alerts:
+
+			# Filter for all alert urwid objects that contain the keyword
+			# (case-insensitive).
+			foundAlerts = filter(
+				lambda obj : keyword in obj.alert.description.lower(),
+				self.alertUrwidObjects)
+
+			logging.debug("[%s]: Found %d alerts for keyword '%s'."
+				% (self.fileName, len(foundAlerts), keyword))
+
+			# Display currently found objects.
+			self.activeAlertUrwidObjects = foundAlerts
+			self._showAlertsAtPageIndex(0)
+
+		elif self.currentFocused == FocusedElement.managers:
+
+			# Filter for all manager urwid objects that contain the keyword
+			# (case-insensitive).
+			foundManagers = filter(
+				lambda obj : keyword in obj.manager.description.lower(),
+				self.managerUrwidObjects)
+
+			logging.debug("[%s]: Found %d managers for keyword '%s'."
+				% (self.fileName, len(foundManagers), keyword))
+
+			# Display currently found objects.
+			self.activeManagerUrwidObjects = foundManagers
+			self._showManagersAtPageIndex(0)
+
+		elif self.currentFocused == FocusedElement.alertLevels:
+
+			# Filter for all alert level urwid objects that contain the keyword
+			# (case-insensitive).
+			foundAlertLevels = filter(
+				lambda obj : keyword in obj.alertLevel.name.lower(),
+				self.alertLevelUrwidObjects)
+
+			logging.debug("[%s]: Found %d alert levels for keyword '%s'."
+				% (self.fileName, len(foundAlertLevels), keyword))
+
+			# Display currently found objects.
+			self.activeAlertLevelUrwidObjects = foundAlertLevels
+			self._showAlertLevelsAtPageIndex(0)
+
+
 	# switches focus to the next element group
 	def _switchFocusedElementGroup(self):
-
 		if self.currentFocused == FocusedElement.sensors:
 			self.currentFocused = FocusedElement.alerts
 			self._focusAlerts()
 			self.alertsKeyBindings.set_text(
-				"Keys: b - Previous Page, n - Next Page")
+				"Keys: b - Previous Page, n - Next Page, s - Search")
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text("Keys: None")
@@ -442,7 +534,7 @@ class Console:
 			self._focusManagers()
 			self.alertsKeyBindings.set_text("Keys: None")
 			self.managersKeyBindings.set_text(
-				"Keys: b - Previous Page, n - Next Page")
+				"Keys: b - Previous Page, n - Next Page, s - Search")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text("Keys: None")
 
@@ -452,7 +544,7 @@ class Console:
 			self.alertsKeyBindings.set_text("Keys: None")
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text(
-				"Keys: b - Previous Page, n - Next Page")
+				"Keys: b - Previous Page, n - Next Page, s - Search")
 			self.sensorsKeyBindings.set_text("Keys: None")
 
 		else:
@@ -462,7 +554,7 @@ class Console:
 			self.managersKeyBindings.set_text("Keys: None")
 			self.alertLevelsKeyBindings.set_text("Keys: None")
 			self.sensorsKeyBindings.set_text(
-				"Keys: b - Previous Page, n - Next Page")
+				"Keys: b - Previous Page, n - Next Page, s - Search")
 
 
 	# this function moves the focus to the next element depending
@@ -581,9 +673,9 @@ class Console:
 	def _showAlertsAtPageIndex(self, pageIndex):
 
 		# calculate how many pages the alert urwid objects have
-		alertPageCount = (len(self.alertUrwidObjects)
-			/ self.maxCountShowAlertsPerPage)
-		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+		activeLength = len(self.activeAlertUrwidObjects)
+		alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
+		if ((activeLength % self.maxCountShowAlertsPerPage)
 			!= 0):
 			alertPageCount += 1
 
@@ -600,10 +692,10 @@ class Console:
 		del self.shownAlertUrwidObjects[:]
 		for i in range(self.maxCountShowAlertsPerPage):
 			tempItemIndex = i + (pageIndex * self.maxCountShowAlertsPerPage)
-			if tempItemIndex >= len(self.alertUrwidObjects):
+			if tempItemIndex >= activeLength:
 				break
 			self.shownAlertUrwidObjects.append(
-				self.alertUrwidObjects[tempItemIndex])
+				self.activeAlertUrwidObjects[tempItemIndex])
 
 		# delete all old shown alert objects and replace them by the new ones
 		del self.alertsGrid.contents[:]
@@ -622,11 +714,11 @@ class Console:
 		logging.debug("[%s]: Show next alerts page." % self.fileName)
 
 		# calculate how many pages the alert urwid objects have
-		alertPageCount = (len(self.alertUrwidObjects)
-			/ self.maxCountShowAlertsPerPage)
+		activeLength = len(self.activeAlertUrwidObjects)
+		alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
 		if alertPageCount == 0:
 			return
-		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+		if ((activeLength % self.maxCountShowAlertsPerPage)
 			!= 0):
 			alertPageCount += 1
 
@@ -645,11 +737,11 @@ class Console:
 		logging.debug("[%s]: Show previous alerts page." % self.fileName)
 
 		# calculate how many pages the alert urwid objects have
-		alertPageCount = (len(self.alertUrwidObjects)
-			/ self.maxCountShowAlertsPerPage)
+		activeLength = len(self.activeAlertUrwidObjects)
+		alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
 		if alertPageCount == 0:
 			return
-		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+		if ((activeLength % self.maxCountShowAlertsPerPage)
 			!= 0):
 			alertPageCount += 1
 
@@ -667,10 +759,10 @@ class Console:
 	def _showAlertLevelsAtPageIndex(self, pageIndex):
 
 		# calculate how many pages the alert level urwid objects have
-		alertLevelPageCount = (len(self.alertLevelUrwidObjects) 
+		activeLength = len(self.activeAlertLevelUrwidObjects)
+		alertLevelPageCount = (activeLength 
 			/ self.maxCountShowAlertLevelsPerPage)
-		if ((len(self.alertLevelUrwidObjects)
-			% self.maxCountShowAlertLevelsPerPage) 
+		if ((activeLength % self.maxCountShowAlertLevelsPerPage) 
 			!= 0):
 			alertLevelPageCount += 1
 
@@ -689,10 +781,10 @@ class Console:
 		for i in range(self.maxCountShowAlertLevelsPerPage):
 			tempItemIndex = i + (pageIndex
 				* self.maxCountShowAlertLevelsPerPage)
-			if tempItemIndex >= len(self.alertLevelUrwidObjects):
+			if tempItemIndex >= activeLength:
 				break
 			self.shownAlertLevelUrwidObjects.append(
-				self.alertLevelUrwidObjects[tempItemIndex])
+				self.activeAlertLevelUrwidObjects[tempItemIndex])
 
 		# delete all old shown alert level objects
 		# and replace them by the new ones
@@ -712,12 +804,12 @@ class Console:
 		logging.debug("[%s]: Show next alert levels page." % self.fileName)
 
 		# calculate how many pages the alert level urwid objects have
-		alertLevelPageCount = (len(self.alertLevelUrwidObjects) 
+		activeLength = len(self.activeAlertLevelUrwidObjects)
+		alertLevelPageCount = (activeLength
 			/ self.maxCountShowAlertLevelsPerPage)
 		if alertLevelPageCount == 0:
 			return
-		if ((len(self.alertLevelUrwidObjects)
-			% self.maxCountShowAlertLevelsPerPage)
+		if ((activeLength % self.maxCountShowAlertLevelsPerPage)
 			!= 0):
 			alertLevelPageCount += 1
 
@@ -736,12 +828,12 @@ class Console:
 		logging.debug("[%s]: Show previous alert levels page." % self.fileName)
 
 		# calculate how many pages the alert level urwid objects have
-		alertLevelPageCount = (len(self.alertLevelUrwidObjects)
+		activeLength = len(self.activeAlertLevelUrwidObjects)
+		alertLevelPageCount = (activeLength
 			/ self.maxCountShowAlertLevelsPerPage)
 		if alertLevelPageCount == 0:
 			return
-		if ((len(self.alertLevelUrwidObjects)
-			% self.maxCountShowAlertLevelsPerPage)
+		if ((activeLength % self.maxCountShowAlertLevelsPerPage)
 			!= 0):
 			alertLevelPageCount += 1
 
@@ -888,9 +980,9 @@ class Console:
 	def _showManagersAtPageIndex(self, pageIndex):
 
 		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+		activeLength = len(self.activeManagerUrwidObjects)
+		managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
+		if ((activeLength % self.maxCountShowManagersPerPage)
 			!= 0):
 			managerPageCount += 1
 
@@ -907,10 +999,10 @@ class Console:
 		del self.shownManagerUrwidObjects[:]
 		for i in range(self.maxCountShowManagersPerPage):
 			tempItemIndex = i + (pageIndex * self.maxCountShowManagersPerPage)
-			if tempItemIndex >= len(self.managerUrwidObjects):
+			if tempItemIndex >= activeLength:
 				break
 			self.shownManagerUrwidObjects.append(
-				self.managerUrwidObjects[tempItemIndex])
+				self.activeManagerUrwidObjects[tempItemIndex])
 
 		# delete all old shown manager objects and replace them by the new ones
 		del self.managersGrid.contents[:]
@@ -929,11 +1021,11 @@ class Console:
 		logging.debug("[%s]: Show next managers page." % self.fileName)
 
 		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
+		activeLength = len(self.activeManagerUrwidObjects)
+		managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
 		if managerPageCount == 0:
 			return
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+		if ((activeLength % self.maxCountShowManagersPerPage)
 			!= 0):
 			managerPageCount += 1
 
@@ -952,11 +1044,11 @@ class Console:
 		logging.debug("[%s]: Show previous managers page." % self.fileName)
 
 		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
+		activeLength = len(self.activeManagerUrwidObjects)
+		managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
 		if managerPageCount == 0:
 			return
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+		if ((activeLength % self.maxCountShowManagersPerPage)
 			!= 0):
 			managerPageCount += 1
 
@@ -969,15 +1061,27 @@ class Console:
 		self._showManagersAtPageIndex(self.currentManagerPage)
 
 
+	# Creates an overlayed view with the search field.
+	def _showSearchView(self):
+
+		self.searchView = SearchViewUrwid()
+
+		# show search view as an overlay
+		overlayView = urwid.Overlay(self.searchView.get(), self.mainFrame,
+			align="center", width=("relative", 80), min_width=80,
+			valign="middle", height=("relative", 5), min_height=5)
+		self.mainLoop.widget = overlayView
+		self.inSearchView = True
+
+
 	# internal function that shows the sensor urwid objects given
 	# by a page index
 	def _showSensorsAtPageIndex(self, pageIndex):
 
 		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects) 
-			/ self.maxCountShowSensorsPerPage)
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage) 
-			!= 0):
+		activeLength = len(self.activeSensorUrwidObjects)
+		sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
+		if ((activeLength % self.maxCountShowSensorsPerPage) != 0):
 			sensorPageCount += 1
 
 		# check if the index to show is within the page range
@@ -993,10 +1097,10 @@ class Console:
 		del self.shownSensorUrwidObjects[:]
 		for i in range(self.maxCountShowSensorsPerPage):
 			tempItemIndex = i + (pageIndex * self.maxCountShowSensorsPerPage)
-			if tempItemIndex >= len(self.sensorUrwidObjects):
+			if tempItemIndex >= activeLength:
 				break
 			self.shownSensorUrwidObjects.append(
-				self.sensorUrwidObjects[tempItemIndex])
+				self.activeSensorUrwidObjects[tempItemIndex])
 
 		# delete all old shown sensor objects and replace them by the new ones
 		del self.sensorsGrid.contents[:]
@@ -1015,11 +1119,11 @@ class Console:
 		logging.debug("[%s]: Show next sensors page." % self.fileName)
 
 		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects) 
-			/ self.maxCountShowSensorsPerPage)
+		activeLength = len(self.activeSensorUrwidObjects)
+		sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
 		if sensorPageCount == 0:
 			return
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+		if ((activeLength % self.maxCountShowSensorsPerPage)
 			!= 0):
 			sensorPageCount += 1
 
@@ -1038,11 +1142,11 @@ class Console:
 		logging.debug("[%s]: Show previous sensors page." % self.fileName)
 
 		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects)
-			/ self.maxCountShowSensorsPerPage)
+		activeLength = len(self.activeSensorUrwidObjects)
+		sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
 		if sensorPageCount == 0:
 			return
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+		if ((activeLength % self.maxCountShowSensorsPerPage)
 			!= 0):
 			sensorPageCount += 1
 
@@ -1053,6 +1157,29 @@ class Console:
 
 		# update shown sensors
 		self._showSensorsAtPageIndex(self.currentSensorPage)
+
+
+	# Resets the search result and display all elements again.
+	def _resetSearchResult(self):
+
+		self.searchKeyword = ""
+
+		if self.currentFocused == FocusedElement.sensors:
+			self.activeSensorUrwidObjects = list(self.sensorUrwidObjects)
+			self._showSensorsAtPageIndex(0)
+		
+		elif self.currentFocused == FocusedElement.alerts:
+			self.activeAlertUrwidObjects = list(self.alertUrwidObjects)
+			self._showAlertsAtPageIndex(0)
+
+		elif self.currentFocused == FocusedElement.managers:
+			self.activeManagerUrwidObjects = list(self.managerUrwidObjects)
+			self._showManagersAtPageIndex(0)
+
+		elif self.currentFocused == FocusedElement.alertLevels:
+			self.activeAlertLevelUrwidObjects = list(
+				self.alertLevelUrwidObjects)
+			self._showAlertLevelsAtPageIndex(0)
 
 
 	# this function is called to update the screen
@@ -1138,7 +1265,9 @@ class Console:
 		# change focus to next element group
 		# order: (sensors, alerts, managers, alert levels)
 		elif key in ["tab"]:
-			if not self.inDetailView:
+			if not self.inDetailView and not self.inSearchView:
+				if self.searchKeyword != "":
+					self._resetSearchResult()
 				self._switchFocusedElementGroup()
 
 		# move focus to next element in the element group
@@ -1153,13 +1282,35 @@ class Console:
 		elif key in ["esc"]:
 			if self.inDetailView:
 				self._closeDetailedView()
+
+			elif self.inSearchView:
+				self._resetSearchResult()
+				self._closeSearchView()
+
+			elif self.searchKeyword != "":
+				self._resetSearchResult()
+
 			else:
 				raise urwid.ExitMainLoop()
 
-		# open overlayed view with information
+		# Open overlayed view with detailed information
+		# or apply search keyword.
 		elif key in ["enter"]:
-			self._showDetailedView()
+			if self.inSearchView:
 
+				keyword = self.searchView.getText()
+				self.searchKeyword = keyword.lower()
+
+				self._showSearchResult()
+
+				self._closeSearchView()
+
+			else:
+				self._showDetailedView()
+
+		# Open overlayed view with search field.
+		elif key in ["s", "S"]:
+			self._showSearchView()
 		return True
 
 
@@ -1191,21 +1342,22 @@ class Console:
 			sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
 				self.connectionTimeout, self.serverEventHandler)
 
-			# append the final sensor urwid object to the list
-			# of sensor objects
+			# Append the final sensor urwid object to the list
+			# of sensor objects.
 			self.sensorUrwidObjects.append(sensorUrwid)
+			self.activeSensorUrwidObjects.append(sensorUrwid)
 
 		# check if sensor urwid objects list is not empty
-		if self.sensorUrwidObjects:
+		if self.activeSensorUrwidObjects:
 
 			# get the sensor objects for the first page
 			for i in range(self.maxCountShowSensorsPerPage):
 				# break if there are less sensor urwid objects than should
 				# be shown
-				if i >= len(self.sensorUrwidObjects):
+				if i >= len(self.activeSensorUrwidObjects):
 					break
 				self.shownSensorUrwidObjects.append(
-					self.sensorUrwidObjects[i])
+					self.activeSensorUrwidObjects[i])
 
 			# create grid object for the sensors
 			self.sensorsGrid = urwid.GridFlow(
@@ -1217,9 +1369,9 @@ class Console:
 			self.sensorsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
 		# calculate how many pages the sensor urwid objects have
-		sensorPageCount = (len(self.sensorUrwidObjects)
-			/ self.maxCountShowSensorsPerPage)
-		if ((len(self.sensorUrwidObjects) % self.maxCountShowSensorsPerPage)
+		activeLength = len(self.activeSensorUrwidObjects)
+		sensorPageCount = (activeLength	/ self.maxCountShowSensorsPerPage)
+		if ((activeLength % self.maxCountShowSensorsPerPage)
 			!= 0):
 			sensorPageCount += 1
 
@@ -1227,7 +1379,8 @@ class Console:
 		tempText = "Page 1 / %d " % sensorPageCount 
 		self.sensorsFooter = urwid.Text(tempText, align='center')
 		self.sensorsKeyBindings = urwid.Text(
-			"Keys: b - Previous Page, n - Next Page", align='center')
+			"Keys: b - Previous Page, n - Next Page, s - Search",
+			align='center')
 
 		# build box around the sensor grid with title
 		self.sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
@@ -1258,18 +1411,19 @@ class Console:
 			# append the final manager urwid object to the list
 			# of manager objects
 			self.managerUrwidObjects.append(managerUrwid)
+			self.activeManagerUrwidObjects.append(managerUrwid)
 
 		# check if manager urwid objects list is not empty
-		if self.managerUrwidObjects:
+		if self.activeManagerUrwidObjects:
 
 			# get the manager objects for the first page
 			for i in range(self.maxCountShowManagersPerPage):
 				# break if there are less manager urwid objects than should
 				# be shown
-				if i >= len(self.managerUrwidObjects):
+				if i >= len(self.activeManagerUrwidObjects):
 					break
 				self.shownManagerUrwidObjects.append(
-					self.managerUrwidObjects[i])
+					self.activeManagerUrwidObjects[i])
 
 			# create grid object for the managers
 			self.managersGrid = urwid.GridFlow(
@@ -1280,9 +1434,9 @@ class Console:
 			self.managersGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
 		# calculate how many pages the manager urwid objects have
-		managerPageCount = (len(self.managerUrwidObjects)
-			/ self.maxCountShowManagersPerPage)
-		if ((len(self.managerUrwidObjects) % self.maxCountShowManagersPerPage)
+		activeLength = len(self.activeManagerUrwidObjects)
+		managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
+		if ((activeLength % self.maxCountShowManagersPerPage)
 			!= 0):
 			managerPageCount += 1
 
@@ -1323,18 +1477,19 @@ class Console:
 			# append the final alert urwid object to the list
 			# of alert objects
 			self.alertUrwidObjects.append(alertUrwid)
+			self.activeAlertUrwidObjects.append(alertUrwid)
 
 		# check if alert urwid objects list is not empty
-		if self.alertUrwidObjects:
+		if self.activeAlertUrwidObjects:
 
 			# get the alert objects for the first page
 			for i in range(self.maxCountShowAlertsPerPage):
 				# break if there are less alert urwid objects than should
 				# be shown
-				if i >= len(self.alertUrwidObjects):
+				if i >= len(self.activeAlertUrwidObjects):
 					break
 				self.shownAlertUrwidObjects.append(
-					self.alertUrwidObjects[i])
+					self.activeAlertUrwidObjects[i])
 
 			# create grid object for the alerts
 			self.alertsGrid = urwid.GridFlow(
@@ -1345,9 +1500,9 @@ class Console:
 			self.alertsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
 		# calculate how many pages the alert urwid objects have
-		alertPageCount = (len(self.alertUrwidObjects)
-			/ self.maxCountShowAlertsPerPage)
-		if ((len(self.alertUrwidObjects) % self.maxCountShowAlertsPerPage)
+		activeLength = len(self.activeAlertUrwidObjects)
+		alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
+		if ((activeLength % self.maxCountShowAlertsPerPage)
 			!= 0):
 			alertPageCount += 1
 
@@ -1372,18 +1527,19 @@ class Console:
 			# append the final alert level urwid object to the list
 			# of alert level objects
 			self.alertLevelUrwidObjects.append(alertLevelUrwid)
+			self.activeAlertLevelUrwidObjects.append(alertLevelUrwid)
 
 		# check if alert level urwid objects list is not empty
-		if self.alertLevelUrwidObjects:
+		if self.activeAlertLevelUrwidObjects:
 
 			# get the alert level objects for the first page
 			for i in range(self.maxCountShowAlertLevelsPerPage):
 				# break if there are less alert level urwid objects than should
 				# be shown
-				if i >= len(self.alertLevelUrwidObjects):
+				if i >= len(self.activeAlertLevelUrwidObjects):
 					break
 				self.shownAlertLevelUrwidObjects.append(
-					self.alertLevelUrwidObjects[i])
+					self.activeAlertLevelUrwidObjects[i])
 
 			# create grid object for the alert levels
 			self.alertLevelsGrid = urwid.GridFlow(
@@ -1394,10 +1550,10 @@ class Console:
 			self.alertLevelsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
 		# calculate how many pages the alert level urwid objects have
-		alertLevelPageCount = (len(self.alertLevelUrwidObjects)
+		activeLength = len(self.activeAlertLevelUrwidObjects)
+		alertLevelPageCount = (activeLength
 			/ self.maxCountShowAlertLevelsPerPage)
-		if ((len(self.alertLevelUrwidObjects) 
-			% self.maxCountShowAlertLevelsPerPage) != 0):
+		if ((activeLength % self.maxCountShowAlertLevelsPerPage) != 0):
 			alertLevelPageCount += 1
 
 		# generate footer text for sensors box
@@ -1464,7 +1620,7 @@ class Console:
 		footer = urwid.Text("Keys: "
 			+ "1 - Activate, "
 			+ "2 - Deactivate, "
-			+ "ESC - Quit, "
+			+ "ESC - Back/Quit, "
 			+ "TAB - Next Elements, "
 			+ "Up/Down/Left/Right - Move Cursor, "
 			+ "Enter - Select Element")
@@ -1561,13 +1717,18 @@ class Console:
 				# => remove it 
 				if not sensorUrwidObject.updateCompleteWidget():
 
-					# remove sensor urwid object from the list of the
-					# current shown objects if it is shown
+					# Remove sensor urwid object from the list of the
+					# currently shown objects if it is shown.
 					if sensorUrwidObject in self.shownSensorUrwidObjects:
 						self.shownSensorUrwidObjects.remove(sensorUrwidObject)
 
 						# update shown sensors
 						self._showSensorsAtPageIndex(self.currentSensorPage)
+
+					# Remove sensor urwid object from the list of the
+					# currently active objects.
+					if sensorUrwidObject in self.activeSensorUrwidObjects:
+						self.activeSensorUrwidObjects.remove(sensorUrwidObject)
 
 					# remove sensor urwid object from list of objects
 					# to delete all references to object
@@ -1620,9 +1781,24 @@ class Console:
 					sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
 						self.connectionTimeout, self.serverEventHandler)
 
-					# append the final sensor urwid object to the list
-					# of sensor objects
+					# Append the final sensor urwid object to the list
+					# of sensor objects.
 					self.sensorUrwidObjects.append(sensorUrwid)
+
+					# Add it to active sensor urwid objects if sensors
+					# are not focused.
+					if (self.currentFocused != FocusedElement.sensors):
+
+						self.activeSensorUrwidObjects.append(sensorUrwid)
+
+					# Add it to active sensor urwid objects if we do not
+					# search anything or the keyword does match the sensor.
+					else:
+						if (self.searchKeyword == ""
+							or self.searchKeyword
+								in sensorUrwid.sensor.description.lower()):
+
+							self.activeSensorUrwidObjects.append(sensorUrwid)
 
 					# update shown sensors
 					self._showSensorsAtPageIndex(self.currentSensorPage)
@@ -1641,6 +1817,11 @@ class Console:
 
 						# update shown alerts
 						self._showAlertsAtPageIndex(self.currentAlertPage)
+
+					# Remove alert urwid object from the list of the
+					# currently active objects.
+					if alertUrwidObject in self.activeAlertUrwidObjects:
+						self.activeAlertUrwidObjects.remove(alertUrwidObject)
 
 					# remove alert urwid object from list of objects
 					# to delete all references to object
@@ -1695,6 +1876,21 @@ class Console:
 					# of alert objects
 					self.alertUrwidObjects.append(alertUrwid)
 
+					# Add it to active alert urwid objects if alerts
+					# are not focused.
+					if (self.currentFocused != FocusedElement.alerts):
+
+						self.activeAlertUrwidObjects.append(alertUrwid)
+
+					# Add it to active alert urwid objects if we do not
+					# search anything or the keyword does match the alert.
+					else:
+						if (self.searchKeyword == ""
+							or self.searchKeyword
+								in alertUrwid.alert.description.lower()):
+
+							self.activeAlertUrwidObjects.append(alertUrwid)
+
 					# update shown alerts
 					self._showAlertsAtPageIndex(self.currentAlertPage)
 
@@ -1713,6 +1909,12 @@ class Console:
 
 						# update shown managers
 						self._showManagersAtPageIndex(self.currentManagerPage)
+
+					# Remove manager urwid object from the list of the
+					# currently active objects.
+					if managerUrwidObject in self.activeManagerUrwidObjects:
+						self.activeManagerUrwidObjects.remove(
+							managerUrwidObject)
 
 					# remove manager urwid object from list of objects
 					# to delete all references to object
@@ -1763,6 +1965,21 @@ class Console:
 					# of manager objects
 					self.managerUrwidObjects.append(managerUrwid)
 
+					# Add it to active manager urwid objects if managers
+					# are not focused.
+					if (self.currentFocused != FocusedElement.managers):
+
+						self.activeManagerUrwidObjects.append(managerUrwid)
+
+					# Add it to active manager urwid objects if we do not
+					# search anything or the keyword does match the manager.
+					else:
+						if (self.searchKeyword == ""
+							or self.searchKeyword
+								in managerUrwid.manager.description.lower()):
+
+							self.activeManagerUrwidObjects.append(managerUrwid)
+
 					# update shown managers
 					self._showManagersAtPageIndex(self.currentManagerPage)
 
@@ -1783,6 +2000,13 @@ class Console:
 						# update shown alert levels
 						self._showAlertLevelsAtPageIndex(
 							self.currentAlertLevelPage)
+
+					# Remove alert level urwid object from the list of the
+					# currently active objects.
+					if (alertLevelUrwidObject
+						in self.activeAlertLevelUrwidObjects):
+						self.activeAlertLevelUrwidObjects.remove(
+							alertLevelUrwidObject)
 
 					# remove alert level urwid object from list of objects
 					# to delete all references to object
@@ -1829,6 +2053,24 @@ class Console:
 					# append the final alert level urwid object to the list
 					# of alert level objects
 					self.alertLevelUrwidObjects.append(alertLevelUrwid)
+
+					# Add it to active alert level urwid objects if
+					# alert levels are not focused.
+					if (self.currentFocused != FocusedElement.alertLevels):
+
+						self.activeAlertLevelUrwidObjects.append(
+							alertLevelUrwid)
+
+					# Add it to active alert level urwid objects if we do not
+					# search anything or the keyword does match the
+					# alert level.
+					else:
+						if (self.searchKeyword == ""
+							or self.searchKeyword
+								in alertLevelUrwid.alertLevel.name.lower()):
+
+							self.activeAlertLevelUrwidObjects.append(
+								alertLevelUrwid)
 
 					# update shown alert levels
 					self._showAlertLevelsAtPageIndex(
