@@ -10,5 +10,5 @@
 from client import ServerCommunication, ConnectionWatchdog, Receiver
 from smtp import SMTPAlert
 from alert import ExecuterAlert
-from update import UpdateChecker, Updater
+from update import Updater
 from globalData import GlobalData

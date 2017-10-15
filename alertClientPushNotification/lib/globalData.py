@@ -17,10 +17,10 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.500
+		self.version = 0.501
 
 		# revision of the used client
-		self.rev = 1
+		self.rev = 0
 
 		# name of this client
 		self.name = "alertR Alert Client Push Notification"

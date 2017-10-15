@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.500">
+<config version="0.502">
 
 	<!--
 		in this section general options are configured
@@ -96,33 +96,16 @@
 
 
 	<!--
-		in this section the options of the update checking are configured
+		in this section the options of the update process are configured
 	-->
 	<update>
 
 		<!--
-			the general settings of the update checking
-			activated - should the client check for updates?
-				("True" or "False")
-			interval - the interval in seconds in which the client checks
-				online for updates
-			emailNotification - should an email notification be sent to the
-				user if a new version is available? ("True" or "False")
-				NOTE: this option only works if smtp is activated
-				NOTE: if this option is deactivated, the client will only
-				output the notification about the new version into the log file
-		-->
-		<general
-			activated="True"
-			interval="86400"
-			emailNotification="True" />
-
-		<!--
-			the server settings of the update checking (only change these
+			the server settings of the update process (only change these
 				settings if you want to use your own repository and not
 				the alertR master repository on github)
 			host - address of the used web server
-				NOTE: the update checking uses HTTPS and does not allow HTTP
+				NOTE: the update process uses HTTPS and does not allow HTTP
 			port - port of the used web server
 			location - the location of the used alertR repository
 			caFile - the location of the CA/certificate file that is used
@@ -198,18 +181,34 @@
 
 			<!--
 				the executer specific settings
-				execute - watchdog script to execute
-					(command/path to execute)
-				timeout - the timeout interval in seconds tells the sensor
+				execute - Watchdog script to execute
+					(command/path to execute).
+				timeout - The timeout interval in seconds tells the sensor
 					client when the executed script has timed out and
-					therefore a alert has to be triggered
-				intervalToCheck - interval in seconds in which the service
-					should be tested
+					therefore a alert has to be triggered.
+				intervalToCheck - Interval in seconds in which the service
+					should be tested (has to be larger than the timeout).
+				parseOutput - Indicates if the output of the executed
+					command should be parsed (only output on stdout
+					will be parsed, stderr will be ignored). If it
+					should not be parsed, then the exist code of the
+					command is used to determine the sensor state
+					(exist code = 0 => normal; exit code != 0 => triggered).
+					If the output should be parsed, then the command itself
+					determines the state of the sensor by communicating via
+					the used protocol
+					(see https://github.com/sqall01/alertR/wiki/Protocol#protocol_schematics_executer_sensor
+					for the used protocol).
+				dataType - Gives the data type of this sensor
+					(0 = none, 1 = int, 2 = float).
+					Is only used if "parseOutput" is set to "True".
 			-->
 			<executer
 				execute="/absolute/path/to/watchdog_script.sh"
 				timeout="5"
-				intervalToCheck="10">
+				intervalToCheck="10"
+				parseOutput="False"
+				dataType="0">
 
 				<!--
 					the arguments that the executed script gets passed
@@ -277,18 +276,34 @@
 
 			<!--
 				the executer specific settings
-				execute - watchdog script to execute
-					(command/path to execute)
-				timeout - the timeout interval in seconds tells the sensor
+				execute - Watchdog script to execute
+					(command/path to execute).
+				timeout - The timeout interval in seconds tells the sensor
 					client when the executed script has timed out and
-					therefore a alert has to be triggered
-				intervalToCheck - interval in seconds in which the service
-					should be tested
+					therefore a alert has to be triggered.
+				intervalToCheck - Interval in seconds in which the service
+					should be tested (has to be larger than the timeout).
+				parseOutput - Indicates if the output of the executed
+					command should be parsed (only output on stdout
+					will be parsed, stderr will be ignored). If it
+					should not be parsed, then the exist code of the
+					command is used to determine the sensor state
+					(exist code = 0 => normal; exit code != 0 => triggered).
+					If the output should be parsed, then the command itself
+					determines the state of the sensor by communicating via
+					the used protocol
+					(see https://github.com/sqall01/alertR/wiki/Protocol#protocol_schematics_executer_sensor
+					for the used protocol).
+				dataType - Gives the data type of this sensor
+					(0 = none, 1 = int, 2 = float).
+					Is only used if "parseOutput" is set to "True".
 			-->
 			<executer
 				execute="/bin/bash"
 				timeout="3"
-				intervalToCheck="5">
+				intervalToCheck="5"
+				parseOutput="True"
+				dataType="0">
 
 				<!--
 					the arguments that the executed script gets passed

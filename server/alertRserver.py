@@ -12,17 +12,17 @@ import os
 from lib import ConnectionWatchdog
 from lib import ServerSession, ThreadedTCPServer
 from lib import Sqlite, Mysql
-from lib import SensorDataType, AlertLevel, SensorTimeoutSensor, \
-	NodeTimeoutSensor
+from lib import SensorDataType, AlertLevel
+from lib import SensorTimeoutSensor, NodeTimeoutSensor, \
+	AlertSystemActiveSensor, VersionInformerSensor
 from lib import SensorAlertExecuter
 from lib import RuleStart, RuleElement, RuleBoolean, RuleSensor, RuleWeekday, \
 	RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from lib import CSVBackend
-from lib import SMTPAlert
 from lib import ManagerUpdateExecuter
-from lib import UpdateChecker
 from lib import GlobalData
 from lib import SurveyExecuter
+from lib import VersionInformer
 import logging
 import time
 import threading
@@ -795,23 +795,6 @@ if __name__ == '__main__':
 				+ "compatible with client version '%.3f'."
 				% globalData.version)
 
-		# parse smtp options if activated
-		globalData.logger.debug("[%s]: Parsing smtp configuration." % fileName)
-		smtpActivated = (str(
-			configRoot.find("smtp").find("general").attrib[
-			"activated"]).upper() == "TRUE")
-		if smtpActivated is True:
-			smtpServer = str(
-				configRoot.find("smtp").find("server").attrib["host"])
-			smtpPort = int(
-				configRoot.find("smtp").find("server").attrib["port"])
-			smtpFromAddr = str(
-				configRoot.find("smtp").find("general").attrib["fromAddr"])
-			smtpToAddr = str(
-				configRoot.find("smtp").find("general").attrib["toAddr"])
-			globalData.smtpAlert = SMTPAlert(globalData, smtpServer, smtpPort,
-			smtpFromAddr, smtpToAddr)
-
 		# parse update options
 		globalData.logger.debug("[%s]: Parsing update configuration."
 			% fileName)
@@ -831,15 +814,6 @@ if __name__ == '__main__':
 				configRoot.find("update").find("server").attrib["caFile"]))
 			updateInterval = int(
 				configRoot.find("update").find("general").attrib["interval"])
-			updateEmailNotification = (str(
-				configRoot.find("update").find("general").attrib[
-				"emailNotification"]).upper() == "TRUE")
-
-			# email notification works only if smtp is activated
-			if (updateEmailNotification is True
-				and smtpActivated is False):
-				raise ValueError("Update check can not have email "
-					+ "notification activated when smtp is not activated.")
 
 		# configure user credentials backend
 		globalData.logger.debug("[%s]: Parsing user backend configuration."
@@ -1343,7 +1317,7 @@ if __name__ == '__main__':
 			sensor.alertDelay = 0
 			sensor.state = 0
 			sensor.lastStateUpdated = int(time.time())
-			sensor.description = "Internal: Sensor Timeout"
+			sensor.description = str(item.attrib["description"])
 
 			# Sensor timeout sensor has always this fix internal id
 			# (stored as remoteSensorId).
@@ -1379,11 +1353,90 @@ if __name__ == '__main__':
 			sensor.alertDelay = 0
 			sensor.state = 0
 			sensor.lastStateUpdated = int(time.time())
-			sensor.description = "Internal: Node Timeout"
+			sensor.description = str(item.attrib["description"])
 
 			# Node timeout sensor has always this fix internal id
 			# (stored as remoteSensorId).
 			sensor.remoteSensorId = 1
+
+			sensor.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				sensor.alertLevels.append(int(alertLevelXml.text))
+
+			globalData.internalSensors.append(sensor)
+
+			# Create sensor dictionary element for database interaction.
+			temp = dict()
+			temp["clientSensorId"] = sensor.remoteSensorId
+			temp["alertDelay"] = sensor.alertDelay
+			temp["alertLevels"] = sensor.alertLevels
+			temp["description"] = sensor.description
+			temp["state"] = 0
+			temp["dataType"] = sensor.dataType
+			dbSensors.append(temp)
+
+			# Add tuple to db state list to set initial states of the
+			# internal sensors.
+			dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+
+		# Parse alert system active sensor (if activated).
+		item = internalSensorsCfg.find("alertSystemActive")
+		if (str(item.attrib["activated"]).upper() == "TRUE"):
+
+			sensor = AlertSystemActiveSensor()
+
+			sensor.nodeId = serverNodeId
+			sensor.alertDelay = 0
+			sensor.state = 0
+			sensor.lastStateUpdated = int(time.time())
+			sensor.description = str(item.attrib["description"])
+
+			# Alert system active sensor has always this fix internal id
+			# (stored as remoteSensorId).
+			sensor.remoteSensorId = 2
+
+			sensor.alertLevels = list()
+			for alertLevelXml in item.iterfind("alertLevel"):
+				sensor.alertLevels.append(int(alertLevelXml.text))
+
+			globalData.internalSensors.append(sensor)
+
+			# Create sensor dictionary element for database interaction.
+			temp = dict()
+			temp["clientSensorId"] = sensor.remoteSensorId
+			temp["alertDelay"] = sensor.alertDelay
+			temp["alertLevels"] = sensor.alertLevels
+			temp["description"] = sensor.description
+			temp["state"] = 0
+			temp["dataType"] = sensor.dataType
+			dbSensors.append(temp)
+
+			# Set initial state of the internal sensor to the state
+			# of the alert system.
+			if globalData.storage.isAlertSystemActive():
+				initState = 1
+			else:
+				initState = 0
+
+			# Add tuple to db state list to set initial states of the
+			# internal sensors.
+			dbInitialStateList.append( (sensor.remoteSensorId, initState) )
+
+		# Parse version informer sensor (if activated).
+		item = internalSensorsCfg.find("versionInformer")
+		if (str(item.attrib["activated"]).upper() == "TRUE"):
+
+			sensor = VersionInformerSensor()
+
+			sensor.nodeId = serverNodeId
+			sensor.alertDelay = 0
+			sensor.state = 0
+			sensor.lastStateUpdated = int(time.time())
+			sensor.description = str(item.attrib["description"])
+
+			# Version informer sensor has always this fix internal id
+			# (stored as remoteSensorId).
+			sensor.remoteSensorId = 3
 
 			sensor.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):
@@ -1478,15 +1531,16 @@ if __name__ == '__main__':
 	globalData.connectionWatchdog.daemon = True
 	globalData.connectionWatchdog.start()
 
-	# only start update checker if it is activated
+	# Only start version informer if update check is available.
 	if updateActivated is True:
-		globalData.logger.info("[%s] Starting update check thread." % fileName)
-		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
-			updateCaFile, updateInterval, updateEmailNotification, globalData)
+		globalData.logger.info("[%s] Starting version checker thread."
+			% fileName)
+		versionInformer = VersionInformer(updateServer, updatePort,
+			updateLocation, updateCaFile, updateInterval, globalData)
 		# set thread to daemon
 		# => threads terminates when main thread terminates
-		updateChecker.daemon = True
-		updateChecker.start()
+		versionInformer.daemon = True
+		versionInformer.start()
 
 	# only start survey executer if user wants to participate
 	if surveyActivated:

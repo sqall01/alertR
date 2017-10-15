@@ -1,3 +1,25 @@
+## 0.503-0
+
+Features:
+
+* Removed smtp functionality.
+* Added internal sensor for version checks.
+* Update process checks dependency changes and can delete old files.
+
+## 0.502-0
+
+Features:
+
+* Making internal sensor description available for configuration.
+* Adding optional data to internal sensor alerts.
+
+## 0.501-0
+
+Features:
+
+* Added alert system state as an internal sensor in order to generate sensor alerts if alert system changes state (activated/deactivated).
+
+
 ## 0.500-1
 
 Features:

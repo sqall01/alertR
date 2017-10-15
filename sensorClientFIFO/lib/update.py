@@ -55,107 +55,11 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 			ca_certs=self.servercert_file)
 
 
-# this class checks in specific intervals for updates and notifies
-# the user about new versions of this client
-class UpdateChecker(threading.Thread):
-
-	def __init__(self, host, port, serverPath, caFile, interval,
-		emailNotification, globalData):
-		threading.Thread.__init__(self)
-
-		# used for logging
-		self.fileName = os.path.basename(__file__)
-
-		# get global configured data
-		self.globalData = globalData
-		self.version = self.globalData.version
-		self.rev = self.globalData.rev
-		self.smtpAlert = self.globalData.smtpAlert
-
-		# set interval for update checking
-		self.checkInterval = interval
-
-		# create an updater process
-		self.updater = Updater(host, port, serverPath, caFile,
-			self.globalData)
-
-		self.emailNotification = emailNotification
-
-		# needed to keep track of the newest version
-		self.newestVersion = self.version
-		self.newestRev = self.rev
-
-
-	def run(self):
-
-		updateFailCount = 0
-
-		while True:
-
-			time.sleep(self.checkInterval)
-
-			# check if updates failed at least 10 times in a row
-			# => log and notify user
-			if updateFailCount >= 10:
-
-				logging.error("[%s]: Update checking failed for %d "
-					% (self.fileName, updateFailCount)
-					+ "times in a row.")
-
-				if self.emailNotification is True:
-					self.smtpAlert.sendUpdateCheckFailureAlert(
-						updateFailCount, self.globalData.name)
-
-			logging.info("[%s]: Checking for a new version." % self.fileName)
-
-			if self.updater.getNewestVersionInformation() is False:
-				updateFailCount += 1
-				continue
-
-			# check if updates failed at least 10 times in a row before
-			# => problems are now resolved => log and notify user
-			if updateFailCount >= 10:
-				logging.info("[%s]: Update problems resolved."
-					% self.fileName)
-
-				if self.emailNotification is True:
-					self.smtpAlert.sendUpdateCheckFailureAlertClear(
-						updateFailCount, self.globalData.name)
-
-			updateFailCount = 0
-
-			# check if the version on the server is newer than the used
-			# (or last known) one
-			# => notify user about the new version
-			if (self.updater.newestVersion > self.newestVersion or
-				(self.updater.newestRev > self.newestRev
-				and self.updater.newestVersion == self.newestVersion)):
-
-				logging.warning("[%s]: New version %.3f-%d available "
-					% (self.fileName, self.updater.newestVersion,
-					self.updater.newestRev)
-					+ "(current version: %.3f-%d)."
-					% (self.version, self.rev))
-
-				# update newest known version
-				self.newestVersion = self.updater.newestVersion
-				self.newestRev = self.updater.newestRev
-
-				if self.emailNotification is True:
-					self.smtpAlert.sendUpdateCheckNewVersion(self.version,
-						self.rev, self.newestVersion, self.newestRev,
-						self.globalData.name)
-
-			else:
-
-				logging.info("[%s]: No new version available."
-					% self.fileName)
-
-
 # this class processes all actions concerning the update process
 class Updater:
 
-	def __init__(self, host, port, serverPath, caFile, globalData):
+	def __init__(self, host, port, serverPath, caFile, globalData,
+		localInstanceInfo):
 
 		# used for logging
 		self.fileName = os.path.basename(__file__)
@@ -167,7 +71,6 @@ class Updater:
 		self.globalData = globalData
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
-		self.smtpAlert = self.globalData.smtpAlert
 		self.instance = self.globalData.instance
 
 		# location of this instance
@@ -184,11 +87,17 @@ class Updater:
 		self.newestVersion = self.version
 		self.newestRev = self.rev
 		self.newestFiles = None
-		self.lastChecked = 0.0
-		self.repoInstanceLocation = None
+		self.lastChecked = 0
+		self.localInstanceInfo = localInstanceInfo
+		self.repoInfo = None
+		self.instanceInfo = None
 
 		# size of the download chunks
 		self.chunkSize = 4096
+
+		# Get newest data from repository.
+		if not self._getNewestVersionInformation():
+			raise ValueError("Not able to get newest repository information.")
 
 
 	# internal function that acquires the lock
@@ -223,10 +132,12 @@ class Updater:
 
 		counterUpdate = 0
 		counterNew = 0
+		counterDelete = 0
+		fileList = self.newestFiles.keys()
 
 		# get all files that have to be updated
 		filesToUpdate = dict()
-		for clientFile in self.newestFiles.keys():
+		for clientFile in fileList:
 
 			# check if file already exists
 			# => check if file has to be updated
@@ -263,8 +174,20 @@ class Updater:
 				filesToUpdate[clientFile] = _FileUpdateType.NEW
 				counterNew += 1
 
-		logging.info("[%s]: Files to modify: %d; New files: %d"
-			% (self.fileName, counterUpdate, counterNew))
+		# Get all files that have to be deleted.
+		for clientFile in self.localInstanceInfo["files"].keys():
+			if clientFile not in fileList:
+
+				logging.debug("[%s]: Delete file: '%s'"
+					% (self.fileName, clientFile))
+
+				filesToUpdate[clientFile] = _FileUpdateType.DELETE
+				counterDelete += 1
+
+		logging.info("[%s]: Files to modify: %d; New files: %d; "
+			% (self.fileName, counterUpdate, counterNew)
+			+ "Files to delete: %d"
+			% counterDelete)
 
 		return filesToUpdate
 
@@ -345,8 +268,20 @@ class Updater:
 
 			# check if the file has to be deleted
 			elif filesToUpdate[clientFile] == _FileUpdateType.DELETE:
-				raise NotImplementedError("Feature not yet implemented.")
 
+				# check if the file is not writable
+				# => cancel update
+				if not os.access(self.instanceLocation + clientFile, os.W_OK):
+					logging.error("[%s]: File '%s' is not writable "
+						% (self.fileName, clientFile)
+						+ "(deletable).")
+					return False
+
+				logging.debug("[%s]: File '%s' is writable (deletable)."
+						% (self.fileName, clientFile))
+
+			else:
+				raise ValueError("Unknown file update type.")
 
 		return True
 
@@ -408,6 +343,49 @@ class Updater:
 					% fileLocation)
 
 				return False
+
+		return True
+
+
+	# Internal function that deletes sub directories in the target directory
+	# for the given file location if they are empty.
+	#
+	# return True or False
+	def _deleteSubDirectories(self, fileLocation, targetDirectory):
+
+		folderStructure = fileLocation.split("/")
+		del folderStructure[-1]
+
+		try:
+
+			i = len(folderStructure) - 1
+			
+			while 0 <= i:
+
+				tempDir = ""
+				for j in range(i + 1):
+					tempDir = tempDir + "/" + folderStructure[j]
+
+				# If the directory to delete is not empty then finish
+				# the whole sub directory delete process.
+				if os.listdir(targetDirectory + tempDir):
+					break
+
+				logging.debug("[%s]: Deleting directory '%s/%s/'."
+					% (self.fileName, targetDirectory, tempDir))
+
+				os.rmdir(targetDirectory + tempDir)
+
+				i -= 1
+
+		except Exception as e:
+
+			logging.exception("[%s]: Deleting directory structure for "
+				% self.fileName
+				+ "'%s' failed."
+				% fileLocation)
+
+			return False
 
 		return True
 
@@ -545,13 +523,87 @@ class Updater:
 		return sha256.hexdigest()
 
 
-	# internal function that gets the newest version information from the
+	# Internal function that gets the newest instance information from the
 	# online repository
 	#
 	# return True or False
-	def _getNewestVersionInformation(self):
+	def _getInstanceInformation(self, conn=None):
 
-		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		if conn is None:
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+
+		try:
+			if self._getRepositoryInformation(conn) is False:
+				raise ValueError("Not able to get newest "
+					+ "repository information.")
+
+		except Exception as e:
+			logging.exception("[%s]: Retrieving newest repository "
+				% self.fileName
+				+ "information failed.")
+
+			return False
+
+		logging.debug("[%s]: Downloading instance information."
+			% self.fileName)
+
+		# get instance information string from the server
+		instanceInfoString = ""
+		try:
+
+			conn.request("GET", self.serverPath + "/"
+				+ self.repoInstanceLocation + "/instanceInfo.json")
+			response = conn.getresponse()
+
+			# check if server responded correctly
+			if response.status == 200:
+				instanceInfoString = response.read()
+
+			else:
+				raise ValueError("Server response code not 200 (was %d)."
+					% response.status)
+
+			conn.close()
+
+		except Exception as e:
+			logging.exception("[%s]: Getting version information failed."
+				% self.fileName)
+
+			return False
+
+		# parse instance information string
+		try:
+			self.instanceInfo = json.loads(instanceInfoString)
+
+			if not isinstance(self.instanceInfo["version"], float):
+				raise ValueError("Key 'version' is not of type float.")
+
+			if not isinstance(self.instanceInfo["rev"], int):
+				raise ValueError("Key 'rev' is not of type int.")
+
+			if not isinstance(self.instanceInfo["dependencies"], dict):
+				raise ValueError("Key 'dependencies' is not of type dict.")
+
+		except Exception as e:
+			logging.exception("[%s]: Parsing version information failed."
+				% self.fileName)
+
+			return False
+
+		return True
+
+
+	# Internal function that gets the newest repository information from the
+	# online repository.
+	#
+	# return True or False
+	def _getRepositoryInformation(self, conn=None):
+
+		if conn is None:
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+
+		logging.debug("[%s]: Downloading repository information."
+			% self.fileName)
 
 		# get repository information from the server
 		repoInfoString = ""
@@ -568,6 +620,8 @@ class Updater:
 				raise ValueError("Server response code not 200 (was %d)."
 					% response.status)
 
+			conn.close()
+
 		except Exception as e:
 			logging.exception("[%s]: Getting repository information failed."
 				% self.fileName)
@@ -577,19 +631,20 @@ class Updater:
 
 		# parse repository information string
 		try:
-			jsonData = json.loads(repoInfoString)
+			self.repoInfo = json.loads(repoInfoString)
 
-			if not isinstance(jsonData, dict):
+			if not isinstance(self.repoInfo, dict):
 				raise ValueError("Received repository information is "
 					+ "not of type dict.")
 
-			if not self.instance in jsonData["instances"].keys():
+			if not "instances" in self.repoInfo.keys():
+				raise ValueError("Received repository information has "
+					+ "no information about the instances.")
+
+			if not self.instance in self.repoInfo["instances"].keys():
 				raise ValueError("Instance '%s' is not managed by "
 					% self.instance
 					+ "used repository.")
-
-			self.repoInstanceLocation = str(
-				jsonData["instances"][self.instance]["location"])
 
 		except Exception as e:
 			logging.exception("[%s]: Parsing repository information failed."
@@ -597,38 +652,39 @@ class Updater:
 
 			return False
 
+		# Set repository location on server.
+		self.repoInstanceLocation = str(
+				self.repoInfo["instances"][self.instance]["location"])
 
-		# get version string from the server
-		versionString = ""
+		return True
+
+
+	# internal function that gets the newest version information from the
+	# online repository
+	#
+	# return True or False
+	def _getNewestVersionInformation(self, conn=None):
+
+		if conn is None:
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+
 		try:
-
-			conn.request("GET", self.serverPath + "/"
-				+ self.repoInstanceLocation + "/instanceInfo.json")
-			response = conn.getresponse()
-
-			# check if server responded correctly
-			if response.status == 200:
-				versionString = response.read()
-
-			else:
-				raise ValueError("Server response code not 200 (was %d)."
-					% response.status)
+			if self._getInstanceInformation(conn) is False:
+				raise ValueError("Not able to get newest "
+					+ "instance information.")
 
 		except Exception as e:
-			logging.exception("[%s]: Getting version information failed."
-				% self.fileName)
+			logging.exception("[%s]: Retrieving newest instance "
+				% self.fileName
+				+ "information failed.")
 
 			return False
 
-
-		# parse version information string
+		# Parse version information.
 		try:
-			jsonData = json.loads(versionString)
-
-			version = float(jsonData["version"])
-			rev = int(jsonData["rev"])
-
-			newestFiles = jsonData["files"]
+			version = float(self.instanceInfo["version"])
+			rev = int(self.instanceInfo["rev"])
+			newestFiles = self.instanceInfo["files"]
 
 			if not isinstance(newestFiles, dict):
 				raise ValueError("Key 'files' is not of type dict.")
@@ -659,17 +715,40 @@ class Updater:
 		return True
 
 
-	# function that gets the newest version information from the
-	# online repository
-	def getNewestVersionInformation(self):
+	# This function returns the instance information data.
+	def getInstanceInformation(self):
 
 		self._acquireLock()
+		utcTimestamp = int(time.time())
+		if ((utcTimestamp - self.lastChecked) > 60
+			or self.instanceInfo is None):
 
-		result = self._getNewestVersionInformation()
+			if not self._getInstanceInformation():
+				self._releaseLock()
+				raise ValueError("Not able to get newest "
+					+ "instance information.")
 
 		self._releaseLock()
 
-		return result
+		return self.instanceInfo
+
+
+	# This function returns the repository information data.
+	def getRepositoryInformation(self):
+
+		self._acquireLock()
+		utcTimestamp = int(time.time())
+		if ((utcTimestamp - self.lastChecked) > 60
+			or self.repoInfo is None):
+
+			if not self._getRepositoryInformation():
+				self._releaseLock()
+				raise ValueError("Not able to get newest "
+					+ "repository information.")
+
+		self._releaseLock()
+
+		return self.repoInfo
 
 
 	# function that updates this instance of the alertR infrastructure
@@ -745,7 +824,27 @@ class Updater:
 
 			# check if the file has to be deleted
 			if filesToUpdate[fileToUpdate] == _FileUpdateType.DELETE:
-				raise NotImplementedError("Not yet implemented.")
+
+				# remove old file.
+				try:
+
+					logging.debug("[%s]: Deleting file '%s'."
+						% (self.fileName, fileToUpdate))
+
+					os.remove(self.instanceLocation + "/" + fileToUpdate)
+
+				except Exception as e:
+					logging.exception("[%s]: Deleting file '%s' failed."
+					% (self.fileName, fileToUpdate))
+
+					self._releaseLock()
+
+					return False
+
+				# Delete sub directories (if they are empty).
+				self._deleteSubDirectories(fileToUpdate, self.instanceLocation)
+
+				continue
 
 			# check if the file is new
 			# => create all sub directories (if they are missing)

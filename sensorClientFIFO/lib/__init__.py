@@ -10,6 +10,6 @@
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import SensorFIFO, SensorExecuter
-from update import UpdateChecker, Updater
+from update import Updater
 from localObjects import SensorDataType
 from globalData import GlobalData

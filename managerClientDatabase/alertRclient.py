@@ -13,7 +13,6 @@ from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import LocalServerSession, ThreadedUnixStreamServer
 from lib import Mysql
 from lib import SMTPAlert
-from lib import UpdateChecker
 from lib import GlobalData
 from lib import VersionInformer
 import logging
@@ -163,15 +162,6 @@ if __name__ == '__main__':
 				configRoot.find("update").find("server").attrib["caFile"]))
 			updateInterval = int(
 				configRoot.find("update").find("general").attrib["interval"])
-			updateEmailNotification = (str(
-				configRoot.find("update").find("general").attrib[
-				"emailNotification"]).upper() == "TRUE")
-
-			# email notification works only if smtp is activated
-			if (updateEmailNotification is True
-				and smtpActivated is False):
-				raise ValueError("Update check can not have email "
-					+ "notification activated when smtp is not activated.")
 
 		# get manager settings
 		globalData.description = str(
@@ -317,16 +307,6 @@ if __name__ == '__main__':
 		# => threads terminates when main thread terminates
 		serverThread.daemon =True
 		serverThread.start()
-
-	# only start update checker if it is activated
-	if updateActivated is True:
-		logging.info("[%s] Starting update check thread." % fileName)
-		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
-			updateCaFile, updateInterval, updateEmailNotification, globalData)
-		# set thread to daemon
-		# => threads terminates when main thread terminates
-		updateChecker.daemon = True
-		updateChecker.start()
 
 		# only start version informer if the update check is activated
 		logging.info("[%s] Starting version informer thread." % fileName)

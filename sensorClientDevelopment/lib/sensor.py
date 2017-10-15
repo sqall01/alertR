@@ -85,6 +85,11 @@ class _PollingSensor:
 		self.hasOptionalData = False
 		self.optionalData = None
 
+		# Flag indicates if the sensor changes its state directly
+		# by using forceSendAlert() and forceSendState() and the SensorExecuter
+		# should ignore state changes and thereby not generate sensor alerts.
+		self.handlesStateMsgs = False
+
 
 	# this function returns the current state of the sensor
 	def getState(self):
@@ -260,6 +265,12 @@ class SensorExecuter(threading.Thread):
 				# check if the current state is the same
 				# than the already known state => continue
 				elif oldState == currentState:
+					continue
+
+				# Check if we should ignore state changes and just let
+				# the sensor handle sensor alerts by using forceSendAlert()
+				# and forceSendState().
+				elif sensor.handlesStateMsgs:
 					continue
 
 				# check if the current state is an alert triggering state

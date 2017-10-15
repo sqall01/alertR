@@ -999,9 +999,11 @@ class ServerCommunication:
 			return False
 
 		# trigger all alerts that have the same alert level
+		atLeastOnceTriggered = False
 		for alert in self.alerts:
 			for alertLevel in sensorAlert.alertLevels:
 				if alertLevel in alert.alertLevels:
+					atLeastOnceTriggered = True
 					# trigger alert in an own thread to not block this one
 					alertTriggerProcess = AsynchronousAlertExecuter(alert)
 					alertTriggerProcess.sensorAlert = sensorAlert
@@ -1011,6 +1013,12 @@ class ServerCommunication:
 					alertTriggerProcess.triggerAlert = True
 					alertTriggerProcess.start()
 					break
+
+		# Write to log file if no alert was triggered for received sensorAlert.
+		if not atLeastOnceTriggered:
+			alertLevelsStr = ", ".join(map(str, sensorAlert.alertLevels))
+			logging.info("[%s]: No alert triggered for alertLevels: %s."
+				% (self.fileName, alertLevelsStr))
 
 		return True
 

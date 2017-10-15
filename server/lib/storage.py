@@ -85,6 +85,11 @@ class _Storage():
 	def getNodeId(self, username, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
+	# Gets the ids of all nodes
+	#
+	# return list of nodeIds
+	def getNodeIds(self, logger=None):
+		raise NotImplemented("Function not implemented yet.")
 
 	# gets the count of the sensors of a node in the database
 	#
@@ -1950,6 +1955,34 @@ class Sqlite(_Storage):
 		self._releaseLock(logger)
 
 		return nodeId
+
+
+	# Gets the ids of all nodes
+	#
+	# return list of nodeIds
+	def getNodeIds(self, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		nodeIds = list()
+		try:
+			self.cursor.execute("SELECT id FROM nodes")
+			result = self.cursor.fetchall()
+
+			# Unpack list of tuples of one integer to list of integers.
+			nodeIds = map(lambda x: x[0], result)
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to get node ids."
+				% self.fileName)
+
+		self._releaseLock(logger)
+
+		return nodeIds
 
 
 	# gets the count of the sensors of a node in the database
@@ -5098,6 +5131,47 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		return nodeId
+
+
+	# Gets the ids of all nodes
+	#
+	# return list of nodeIds
+	def getNodeIds(self, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection(logger)
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return None
+
+		nodeIds = list()
+		try:
+			self.cursor.execute("SELECT id FROM nodes")
+			result = self.cursor.fetchall()
+
+			# Unpack list of tuples of one integer to list of integers.
+			nodeIds = map(lambda x: x[0], result)
+		except Exception as e:
+			logger.exception("[%s]: Not able to get node ids."
+				% self.fileName)
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		return nodeIds
 
 
 	# gets the count of the sensors of a node in the database

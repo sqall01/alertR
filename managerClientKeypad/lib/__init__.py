@@ -12,7 +12,7 @@ from smtp import SMTPAlert
 from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
 	ServerEventHandler
 from screen import ScreenUpdater, Console
-from update import UpdateChecker, Updater
+from update import Updater
 from globalData import GlobalData
 from audio import AudioOutput, AudioOptions
 from localObjects import SensorWarningState

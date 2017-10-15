@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the server
 -->
-<config version="0.500">
+<config version="0.503">
 
 	<!--
 		in this section general options are configured
@@ -68,35 +68,6 @@
 
 
 	<!--
-		in this section options for email alerts are configured
-	-->
-	<smtp>
-
-		<!--
-			the general settings of the email notifications
-			activated - are email alerts active? ("True" or "False")
-			fromAddr - email address from which this email should be sent
-			toAddr - email address to which the email should be sent
-		-->
-		<general
-			activated="True"
-			fromAddr="alertSystem@h4des.org"
-			toAddr="youraddress@somehost.de" />
-
-		<!--
-			the server settings of the email notifications
-			host - address of the used smtp server
-				(only 127.0.0.1 supported at the moment)
-			port - port of the used smtp server
-		-->
-		<server
-			host="127.0.0.1"
-			port="25" />
-
-	</smtp>
-
-
-	<!--
 		in this section the options of the update checking are configured
 	-->
 	<update>
@@ -107,16 +78,10 @@
 				("True" or "False")
 			interval - the interval in seconds in which the server checks
 				online for updates
-			emailNotification - should an email notification be sent to the
-				user if a new version is available? ("True" or "False")
-				NOTE: this option only works if smtp is activated
-				NOTE: if this option is deactivated, the server will only
-				output the notification about the new version into the log file
 		-->
 		<general
 			activated="True"
-			interval="86400"
-			emailNotification="True" />
+			interval="86400" />
 
 		<!--
 			the server settings of the update checking (only change these
@@ -828,9 +793,11 @@
 			activated - This flags indicates if the internal sensor is
 				activated or not.
 				("True" or "False")
+			description - Description of this sensor.
 		-->
 		<sensorTimeout
-			activated="True">
+			activated="True"
+			description="Internal: Sensor Timeout">
 
 			<!--
 				The alertLevel that is triggered by the sensor
@@ -851,9 +818,11 @@
 			activated - This flags indicates if the internal sensor is
 				activated or not.
 				("True" or "False")
+			description - Description of this sensor.
 		-->
 		<nodeTimeout
-			activated="True">
+			activated="True"
+			description="Internal: Node Timeout">
 
 			<!--
 				The alertLevel that is triggered by the sensor
@@ -863,6 +832,48 @@
 			<alertLevel>1</alertLevel>
 
 		</nodeTimeout>
+
+		<!--
+			The alertSystemActive sensor is an internal sensor that triggers
+			when the alarm system changes its state (activated/deactivated).
+			It allows you to utilize the global alarm system state changes.
+			activated - This flags indicates if the internal sensor is
+				activated or not.
+				("True" or "False")
+			description - Description of this sensor.
+		-->
+		<alertSystemActive
+			activated="True"
+			description="Internal: Alert System Active">
+
+			<!--
+				The alertLevel that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels).
+			-->
+			<alertLevel>0</alertLevel>
+
+		</alertSystemActive>
+
+		<!--
+			The versionInformer sensor is an internal sensor that triggers
+			when a new version is available in the update repository for
+			any node connected to your alarm system.
+			activated - This flags indicates if the internal sensor is
+				activated or not.
+				("True" or "False")
+			description - Description of this sensor.
+		-->
+		<versionInformer
+			activated="True"
+			description="Internal: Version Informer">
+
+			<!--
+				The alertLevel that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels).
+			-->
+			<alertLevel>0</alertLevel>
+
+		</versionInformer>
 
 	</internalSensors>
 

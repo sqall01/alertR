@@ -1,3 +1,19 @@
+## 0.502
+
+Features:
+
+* Removed update checker process (moved to server instance).
+* Update process checks dependency changes and can delete old files.
+
+
+### 0.501
+
+Features:
+
+* IntervalToCheck has to be larger than timeout value.
+* Parses output of executed command (if wanted).
+
+
 ## 0.500-1
 
 Features:

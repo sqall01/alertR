@@ -12,7 +12,6 @@ import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
 from lib import ExecuterSensor, SensorExecuter
-from lib import UpdateChecker
 from lib import GlobalData
 import logging
 import time
@@ -138,31 +137,6 @@ if __name__ == '__main__':
 			smtpToAddr = str(
 				configRoot.find("smtp").find("general").attrib["toAddr"])
 
-		# parse update options
-		updateActivated = (str(
-			configRoot.find("update").find("general").attrib[
-			"activated"]).upper() == "TRUE")
-		if updateActivated is True:
-			updateServer = str(
-				configRoot.find("update").find("server").attrib["host"])
-			updatePort = int(
-				configRoot.find("update").find("server").attrib["port"])
-			updateLocation = str(
-				configRoot.find("update").find("server").attrib["location"])
-			updateCaFile = makePath(str(
-				configRoot.find("update").find("server").attrib["caFile"]))
-			updateInterval = int(
-				configRoot.find("update").find("general").attrib["interval"])
-			updateEmailNotification = (str(
-				configRoot.find("update").find("general").attrib[
-				"emailNotification"]).upper() == "TRUE")
-
-			# email notification works only if smtp is activated
-			if (updateEmailNotification is True
-				and smtpActivated is False):
-				raise ValueError("Update check can not have email "
-					+ "notification activated when smtp is not activated.")
-
 		# parse all sensors
 		for item in configRoot.find("sensors").iterfind("sensor"):
 
@@ -180,6 +154,7 @@ if __name__ == '__main__':
 				"triggerAlertNormal"]).upper() == "TRUE")
 			sensor.triggerState = int(item.find("general").attrib[
 				"triggerState"])
+			
 
 			sensor.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):
@@ -192,10 +167,22 @@ if __name__ == '__main__':
 				"intervalToCheck"])
 			sensor.execute.append(makePath(
 				str(item.find("executer").attrib["execute"])))
+			sensor.parseOutput = (str(item.find("executer").attrib[
+				"parseOutput"]).upper() == "TRUE")
+
+			# Only parse data type if "parseOutput" is active.
+			if sensor.parseOutput:
+				sensor.sensorDataType = int(item.find("executer").attrib[
+					"dataType"])
 
 			# parse all arguments that are used for the command
 			for argument in item.find("executer").iterfind("argument"):
 				sensor.execute.append(str(argument.text))
+
+			if sensor.timeout >= sensor.intervalToCheck:
+				raise ValueError("IntervalToCheck of sensor %d has to be "
+					% sensor.id
+					+ "larger than the timeout value.")
 
 			# check if description is empty
 			if len(sensor.description) == 0:
@@ -205,7 +192,7 @@ if __name__ == '__main__':
 			# check if the id of the sensor is unique
 			for registeredSensor in globalData.sensors:
 				if registeredSensor.id == sensor.id:
-					raise ValueError("Id of sensor %d"
+					raise ValueError("Id of sensor %d "
 						% sensor.id + "is already taken.")
 
 			if (not sensor.triggerAlert
@@ -284,16 +271,6 @@ if __name__ == '__main__':
 	# => threads terminates when main thread terminates
 	watchdog.daemon = True
 	watchdog.start()
-
-	# only start update checker if it is activated
-	if updateActivated is True:
-		logging.info("[%s] Starting update check thread." % fileName)
-		updateChecker = UpdateChecker(updateServer, updatePort, updateLocation,
-			updateCaFile, updateInterval, updateEmailNotification, globalData)
-		# set thread to daemon
-		# => threads terminates when main thread terminates
-		updateChecker.daemon = True
-		updateChecker.start()
 
 	logging.info("[%s] Client started." % fileName)
 

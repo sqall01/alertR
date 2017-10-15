@@ -18,7 +18,7 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.500
+		self.version = 0.503
 
 		# revision of the used server
 		self.rev = 1
@@ -86,9 +86,6 @@ class GlobalData:
 		# path to CA that is used to authenticate clients
 		self.clientCAFile = None
 
-		# instance of the email alerting object
-		self.smtpAlert = None
-
 		# a list of all alert leves that are configured on this server
 		self.alertLevels = list()
 
@@ -109,3 +106,7 @@ class GlobalData:
 		self.logger = None
 		self.logdir = None
 		self.loglevel = None
+
+		# Number of failed attempts for version information fetching
+		# from the update repository before generating a notification.
+		self.updateMaxFails = 10
