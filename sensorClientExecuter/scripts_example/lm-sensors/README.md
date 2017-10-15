@@ -71,7 +71,7 @@ sqall@towel:~$ python lm-sensors.py -d coretemp-isa-0000 -s "Physical id 0" -k t
 
 ```
 
-Note the whitespaces in the sensor name "Physical id 0". Therefore, we have to put quotes around the argument in the command line.
+Note the whitespaces in the sensor name "Physical id 0". Because of them, we have to put quotes around the argument in the command line.
 
 The corresponding sensor configuration for the alertR Sensor Client Executer looks like the following:
 
