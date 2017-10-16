@@ -10,7 +10,7 @@ twitter: https://twitter.com/sqall01
 blog: http://blog.h4des.org
 github: https://github.com/sqall01
 
-Licensed under the GNU Public License, version 2.
+Licensed under the GNU Affero General Public License, version 3.
 
 */
 
