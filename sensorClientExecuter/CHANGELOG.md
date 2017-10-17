@@ -1,3 +1,10 @@
+## 0.502-1
+
+Features:
+
+* Logging of command stdout/stderr whenever it fails.
+
+
 ## 0.502
 
 Features:

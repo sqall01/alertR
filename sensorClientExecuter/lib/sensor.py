@@ -424,12 +424,9 @@ class ExecuterSensor(_PollingSensor):
 				logging.debug("[%s]: Executing process " % self.fileName
 							+ "'%s'." % self.description)
 
-				# Distinguish if we should parse the output or not.
-				if self.parseOutput:
-					self.process = subprocess.Popen(self.execute,
-						stdout=subprocess.PIPE)
-				else:
-					self.process = subprocess.Popen(self.execute)
+				self.process = subprocess.Popen(self.execute,
+					stdout=subprocess.PIPE,
+					stderr=subprocess.PIPE)
 
 				self.timeExecute = utcTimestamp
 
@@ -478,13 +475,17 @@ class ExecuterSensor(_PollingSensor):
 				if self.parseOutput:
 
 					# Parse output.
-					output, _ = self.process.communicate()
+					output, err = self.process.communicate()
 					if not self._parseOutput(output):
 
 						logging.error("[%s] Not able to parse output "
 							% self.fileName
-							+ "of sensor with id '%d': %s"
-							% (self.id, output))
+							+ "of sensor with id '%d'."
+							% self.id)
+						logging.error("[%s] Sensor with id '%d' stdout: %s"
+							% (self.fileName, self.id, output))
+						logging.error("[%s] Sensor with id '%d' stderr: %s"
+							% (self.fileName, self.id, err))
 
 						self.state = 1
 
@@ -517,6 +518,12 @@ class ExecuterSensor(_PollingSensor):
 					# process did not exited correctly
 					# => something is wrong with the service
 					else:
+						output, err = self.process.communicate()
+						logging.error("[%s] Sensor with id '%d' stdout: %s"
+							% (self.fileName, self.id, output))
+						logging.error("[%s] Sensor with id '%d' stderr: %s"
+							% (self.fileName, self.id, err))
+
 						self.state = 1
 
 				# set process to none so it can be newly started
