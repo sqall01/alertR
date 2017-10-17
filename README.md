@@ -65,6 +65,13 @@ Number of active alertR installations calculated from participants of the volunt
 </div>
 <br />
 
+Number of messages sent by the alertR push service in the last 12 weeks.
+
+<div align="center">
+<img src="https://alertr.de/img/graphs/push_numbers.php" />
+</div>
+<br />
+
 
 ## Videos
 <a name="media_videos"/>
