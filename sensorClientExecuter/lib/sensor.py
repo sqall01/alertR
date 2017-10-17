@@ -519,9 +519,9 @@ class ExecuterSensor(_PollingSensor):
 					# => something is wrong with the service
 					else:
 						output, err = self.process.communicate()
-						logging.error("[%s] Sensor with id '%d' stdout: %s"
+						logging.debug("[%s] Sensor with id '%d' stdout: %s"
 							% (self.fileName, self.id, output))
-						logging.error("[%s] Sensor with id '%d' stderr: %s"
+						logging.debug("[%s] Sensor with id '%d' stderr: %s"
 							% (self.fileName, self.id, err))
 
 						self.state = 1
