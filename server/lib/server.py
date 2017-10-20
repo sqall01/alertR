@@ -2865,18 +2865,18 @@ class ClientCommunication:
 		if sensorDataType == SensorDataType.NONE:
 			self.logger.info("[%s]: State change for remote sensor id %d "
 				% (self.fileName, remoteSensorId)
-				+ "and state %d."
-				% state)
+				+ "and state %d (%s:%d)."
+				% (state, self.clientAddress, self.clientPort))
 		elif sensorDataType == SensorDataType.INT:
 			self.logger.info("[%s]: State change for remote sensor id %d "
 				% (self.fileName, remoteSensorId)
-				+ "and state %d and data %d."
-				% (state, sensorData))
+				+ "and state %d and data %d (%s:%d)."
+				% (state, sensorData, self.clientAddress, self.clientPort))
 		elif sensorDataType == SensorDataType.FLOAT:
 			self.logger.info("[%s]: State change for remote sensor id %d "
 				% (self.fileName, remoteSensorId)
-				+ "and state %d and data %.3f."
-				% (state, sensorData))
+				+ "and state %d and data %.3f (%s:%d)."
+				% (state, sensorData, self.clientAddress, self.clientPort))
 
 		# update sensor state
 		stateTuple = (remoteSensorId, state)
