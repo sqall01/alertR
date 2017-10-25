@@ -1,3 +1,9 @@
+## 0.503-2
+
+Features:
+
+* Bugfix: Revision of server node was not updated in database.
+
 ## 0.503-0
 
 Features:

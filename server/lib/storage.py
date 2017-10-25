@@ -329,10 +329,6 @@ class Sqlite(_Storage):
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 
-		# unique id of this server (is also the username of this server)
-		# (used for caching)
-		self.uniqueID = None
-
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
@@ -479,18 +475,18 @@ class Sqlite(_Storage):
 			logger = self.logger
 
 		# if unique id already cached => return it
-		if not self.uniqueID is None:
-			return self.uniqueID
+		if not self.globalData.uniqueID is None:
+			return self.globalData.uniqueID
 
 		try:
 			self.cursor.execute("SELECT value "
 				+ "FROM internals WHERE type=?", ("uniqueID", ))
-			self.uniqueID = self.cursor.fetchall()[0][0]
+			self.globalData.uniqueID = self.cursor.fetchall()[0][0]
 		except Exception as e:
 			logger.exception("[%s]: Not able to get the unique id."
 				% self.fileName)
 
-		return self.uniqueID
+		return self.globalData.uniqueID
 
 
 	# internal function that acquires the lock
@@ -560,20 +556,6 @@ class Sqlite(_Storage):
 			+ "version REAL NOT NULL, "
 			+ "rev INTEGER NOT NULL, "
 			+ "persistent INTEGER NOT NULL)")
-
-		# create node entry for this server (use unique id as username)
-		self.cursor.execute("INSERT INTO nodes ("
-			+ "hostname, "
-			+ "username, "
-			+ "nodeType, "
-			+ "instance, "
-			+ "connected, "
-			+ "version, "
-			+ "rev, "
-			+ "persistent) "
-			+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-			(socket.gethostname(), uniqueID, "server", "server", 1,
-			self.version, self.rev, 1))
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -1128,6 +1110,49 @@ class Sqlite(_Storage):
 						logger.exception("[%s]: Not able to "
 							% self.fileName
 							+ "delete manager information of the node.")
+
+						self._releaseLock(logger)
+
+						return False
+
+				# if old node had type "server"
+				# => delete all sensor information
+				elif dbNodeType == "server":
+
+					try:
+						# Get all sensor ids that are connected to
+						# the old server.
+						self.cursor.execute("SELECT id FROM sensors "
+							+ "WHERE nodeId = ? ", (nodeId, ))
+						result = self.cursor.fetchall()
+
+						# Delete all sensor alert levels, data and sensors of
+						# this node.
+						for sensorIdResult in result:
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsAlertLevels "
+								+ "WHERE sensorId = ?",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataInt "
+								+ "WHERE sensorId = ?",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataFloat "
+								+ "WHERE sensorId = ?",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM sensors "
+								+ "WHERE id = ?",
+								(sensorIdResult[0], ))
+
+					except Exception as e:
+						logger.exception("[%s]: Not able to "
+							% self.fileName
+							+ "delete sensors of the node.")
 
 						self._releaseLock(logger)
 
@@ -3218,10 +3243,6 @@ class Mysql(_Storage):
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
 
-		# unique id of this server (is also the username of this server)
-		# (used for caching)
-		self.uniqueID = None
-
 		# needed mysql parameters
 		self.host = host
 		self.port = port
@@ -3466,18 +3487,18 @@ class Mysql(_Storage):
 			logger = self.logger
 
 		# if unique id already cached => return it
-		if not self.uniqueID is None:
-			return self.uniqueID
+		if not self.globalData.uniqueID is None:
+			return self.globalData.uniqueID
 
 		try:
 			self.cursor.execute("SELECT value "
 				+ "FROM internals WHERE type=%s", ("uniqueID", ))
-			self.uniqueID = self.cursor.fetchall()[0][0]
+			self.globalData.uniqueID = self.cursor.fetchall()[0][0]
 		except Exception as e:
 			logger.exception("[%s]: Not able to get the unique id."
 				% self.fileName)
 
-		return self.uniqueID
+		return self.globalData.uniqueID
 
 
 	# internal function that acquires the lock
@@ -3547,20 +3568,6 @@ class Mysql(_Storage):
 			+ "version DOUBLE NOT NULL, "
 			+ "rev INTEGER NOT NULL, "
 			+ "persistent INTEGER NOT NULL)")
-
-		# create node entry for this server (use unique id as username)
-		self.cursor.execute("INSERT INTO nodes ("
-			+ "hostname, "
-			+ "username, "
-			+ "nodeType, "
-			+ "instance, "
-			+ "connected, "
-			+ "version, "
-			+ "rev, "
-			+ "persistent) "
-			+ "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-			(socket.gethostname(), uniqueID, "server", "server", 1,
-			self.version, self.rev, 1))
 
 		# create sensors table
 		self.cursor.execute("CREATE TABLE sensors ("
@@ -4152,6 +4159,52 @@ class Mysql(_Storage):
 						logger.exception("[%s]: Not able to "
 							% self.fileName
 							+ "delete manager information of the node.")
+
+						# close connection to the database
+						self._closeConnection()
+
+						self._releaseLock(logger)
+
+						return False
+
+				# if old node had type "server"
+				# => delete all sensor information
+				elif dbNodeType == "server":
+
+					try:
+						# Get all sensor ids that are connected to
+						# the old server.
+						self.cursor.execute("SELECT id FROM sensors "
+							+ "WHERE nodeId = %s ", (nodeId, ))
+						result = self.cursor.fetchall()
+
+						# Delete all sensor alert levels, data and sensors of
+						# this node.
+						for sensorIdResult in result:
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsAlertLevels "
+								+ "WHERE sensorId = %s",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataInt "
+								+ "WHERE sensorId = %s",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM "
+								+ "sensorsDataFloat "
+								+ "WHERE sensorId = %s",
+								(sensorIdResult[0], ))
+
+							self.cursor.execute("DELETE FROM sensors "
+								+ "WHERE id = %s",
+								(sensorIdResult[0], ))
+
+					except Exception as e:
+						logger.exception("[%s]: Not able to "
+							% self.fileName
+							+ "delete sensors of the node.")
 
 						# close connection to the database
 						self._closeConnection()

@@ -23,6 +23,7 @@ from lib import ManagerUpdateExecuter
 from lib import GlobalData
 from lib import SurveyExecuter
 from lib import VersionInformer
+import socket
 import logging
 import time
 import threading
@@ -858,7 +859,23 @@ if __name__ == '__main__':
 		else:
 			raise ValueError("No valid storage backend method in config file.")
 
-		# get survey configurations
+		# Add server as node to the database.
+		serverUsername = globalData.storage.getUniqueID()
+		if not globalData.storage.addNode(serverUsername,
+			socket.gethostname(),
+			"server",
+			"server",
+			globalData.version,
+			globalData.rev,
+			1):
+			raise ValueError("Not able to add server as node to the database.")
+		serverNodeId = globalData.storage.getNodeId(serverUsername)
+
+		# Mark server node as connected.
+		if not globalData.storage.markNodeAsConnected(serverNodeId):
+			raise ValueError("Not able to mark server node as connected.")
+
+		# Get survey configurations
 		globalData.logger.debug("[%s]: Parsing survey configuration."
 			% fileName)
 		surveyActivated = (str(
@@ -1298,12 +1315,10 @@ if __name__ == '__main__':
 				raise ValueError("An alert level for a sensor exists "
 					+ "in the database that is not configured.")
 
-		# parse internal server sensors
+		# Parse internal server sensors
 		globalData.logger.debug("[%s]: Parsing internal sensors configuration."
 			% fileName)
 		internalSensorsCfg = configRoot.find("internalSensors")
-		serverUsername = globalData.storage.getUniqueID()
-		serverNodeId = globalData.storage.getNodeId(serverUsername)
 		dbSensors = list()
 		dbInitialStateList = list()
 

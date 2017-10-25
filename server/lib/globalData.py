@@ -21,7 +21,7 @@ class GlobalData:
 		self.version = 0.503
 
 		# revision of the used server
-		self.rev = 1
+		self.rev = 2
 
 		# name of this server
 		self.name = "alertR Server"
@@ -110,3 +110,6 @@ class GlobalData:
 		# Number of failed attempts for version information fetching
 		# from the update repository before generating a notification.
 		self.updateMaxFails = 10
+
+		# Unique id of this server (is also the username of this server).
+		self.uniqueID = None
