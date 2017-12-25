@@ -1,3 +1,10 @@
+## 0.501-1
+
+Features:
+
+* Added option to pass the received sensor alert as json string to the argument.
+
+
 ## 0.501
 
 Features:

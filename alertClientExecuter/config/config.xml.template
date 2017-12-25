@@ -172,18 +172,25 @@
 				execute="/absolute/path/to/command.sh">
 
 				<!--
-					the arguments that are used for the command that
+					The arguments that are used for the command that
 					is executed when a sensor alert was triggered
-					(the amount of arguments are variable)
+					(the amount of arguments are variable).
+					You can use the placeholder "$SENSORALERT$"
+					in order to pass the received sensor alert as
+					json string to the command.
 				-->
 				<triggerArgument>startArg1</triggerArgument>
 				<triggerArgument>startArg2</triggerArgument>
-				<triggerArgument>startArg3</triggerArgument>
+				<triggerArgument>$SENSORALERT$</triggerArgument>
+				<triggerArgument>startArg4</triggerArgument>
 
 				<!--
-					the arguments that are used for the command that
+					The arguments that are used for the command that
 					is executed when a all alerts are stopped
-					(the amount of arguments are variable)
+					(the amount of arguments are variable).
+					You can use the placeholder "$SENSORALERT$"
+					in order to pass the received sensor alert as
+					json string to the command.
 				-->
 				<stopArgument>stopArg1</stopArgument>
 				<stopArgument>stopArg2</stopArgument>
