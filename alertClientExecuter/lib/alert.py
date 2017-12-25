@@ -66,24 +66,6 @@ class ExecuterAlert(_Alert):
 		self.stopExecuteReplace = list()
 
 
-	# Converts the SensorAlert object into a dictionary.
-	def _convertSensorAlertToDict(self, sensorAlert):
-		sensorAlertDict = {"alertLevels": sensorAlert.alertLevels,
-			"description": sensorAlert.description,
-			"rulesActivated": sensorAlert.rulesActivated,
-			"sensorId": sensorAlert.sensorId,
-			"state": sensorAlert.state,
-			"hasOptionalData": sensorAlert.hasOptionalData,
-			"optionalData": sensorAlert.optionalData,
-			"dataType": sensorAlert.dataType,
-			"data": sensorAlert.sensorData,
-			"hasLatestData": sensorAlert.hasLatestData,
-			"changeState": sensorAlert.changeState
-		}
-
-		return sensorAlertDict
-
-
 	# this function is called once when the alert client has connected itself
 	# to the server (should be use to initialize everything that is needed
 	# for the alert)
@@ -110,8 +92,7 @@ class ExecuterAlert(_Alert):
 		tempExecute = list(self.triggerExecute)
 		for i in self.triggerExecuteReplace:
 			if tempExecute[i].upper() == "$SENSORALERT$":
-				sensorAlertDict = self._convertSensorAlertToDict(sensorAlert)
-				tempExecute[i] = json.dumps(sensorAlertDict)
+				tempExecute[i] = json.dumps(sensorAlert.convertToDict())
 
 		try:
 			subprocess.Popen(tempExecute, close_fds=True)
@@ -130,8 +111,7 @@ class ExecuterAlert(_Alert):
 		tempExecute = list(self.stopExecute)
 		for i in self.stopExecuteReplace:
 			if tempExecute[i].upper() == "$SENSORALERT$":
-				sensorAlertDict = self._convertSensorAlertToDict(sensorAlert)
-				tempExecute[i] = json.dumps(sensorAlertDict)
+				tempExecute[i] = json.dumps(sensorAlert.convertToDict())
 
 		try:
 			subprocess.Popen(tempExecute, close_fds=True)
