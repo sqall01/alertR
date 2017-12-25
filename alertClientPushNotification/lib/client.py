@@ -944,10 +944,13 @@ class ServerCommunication:
 					% self.fileName)
 				return False
 
+			sensorAlert.sensorId = incomingMessage["payload"]["sensorId"]
 			sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
 			sensorAlert.state = incomingMessage["payload"]["state"]
 			sensorAlert.description = incomingMessage["payload"]["description"]
 			sensorAlert.changeState = incomingMessage["payload"]["changeState"]
+			sensorAlert.rulesActivated = \
+				incomingMessage["payload"]["rulesActivated"]
 
 			# parse received data (if data transfer is activated)
 			sensorAlert.optionalData = None
