@@ -53,3 +53,21 @@ class SensorAlert:
 		# The sensor data type and data that is connected to this sensor alert.
 		self.dataType = None
 		self.sensorData = None
+
+
+	# Converts the SensorAlert object into a dictionary.
+	def convertToDict(self):
+		sensorAlertDict = {"alertLevels": self.alertLevels,
+			"description": self.description,
+			"rulesActivated": self.rulesActivated,
+			"sensorId": self.sensorId,
+			"state": self.state,
+			"hasOptionalData": self.hasOptionalData,
+			"optionalData": self.optionalData,
+			"dataType": self.dataType,
+			"data": self.sensorData,
+			"hasLatestData": self.hasLatestData,
+			"changeState": self.changeState
+		}
+
+		return sensorAlertDict
