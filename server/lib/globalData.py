@@ -21,7 +21,7 @@ class GlobalData:
 		self.version = 0.503
 
 		# revision of the used server
-		self.rev = 2
+		self.rev = 3
 
 		# name of this server
 		self.name = "alertR Server"

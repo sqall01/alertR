@@ -397,9 +397,10 @@ class ConnectionWatchdog(threading.Thread):
 				# Raise sensor alert for internal sensor timeout sensor.
 				if not self.sensorTimeoutSensor is None:
 
-					# Create message for sensor alert.
+					# Create message and sensors field for sensor alert.
 					message = "%d sensor(s) still timed out:" \
 						% len(self.timeoutSensorIds)
+					sensorsField = list()
 					for sensorId in self.timeoutSensorIds:
 
 						# Get a tuple of (sensorId, nodeId,
@@ -421,6 +422,9 @@ class ConnectionWatchdog(threading.Thread):
 						nodeId = sensorTuple[1]
 						nodeTuple = self.storage.getNodeById(nodeId)
 						hostname = nodeTuple[1]
+						username = nodeTuple[2]
+						nodeType = nodeTuple[3]
+						instance = nodeTuple[4]
 						description = sensorTuple[3]
 						lastStateUpdated = sensorTuple[5]
 						lastStateUpdateStr = time.strftime("%D %H:%M:%S",
@@ -431,6 +435,13 @@ class ConnectionWatchdog(threading.Thread):
 								+ "get hostname for node from database.")
 							continue
 
+						sensorField = {"description": description,
+										"hostname": hostname,
+										"username": username,
+										"instance": instance,
+										"nodeType": nodeType,
+										"lastStateUpdated": lastStateUpdated}
+
 						message += " Host: '%s', " \
 							% hostname \
 							+ "Sensor: '%s', " \
@@ -438,7 +449,10 @@ class ConnectionWatchdog(threading.Thread):
 							+ "Last seen: %s;" \
 							% lastStateUpdateStr
 
-					dataJson = json.dumps({"message": message})
+						sensorsField.append(sensorField)
+
+					dataJson = json.dumps({"message": message,
+											"sensors": sensorsField})
 
 					# Add sensor alert to database for processing.
 					if self.storage.addSensorAlert(
@@ -477,9 +491,10 @@ class ConnectionWatchdog(threading.Thread):
 				# Raise sensor alert for internal node timeout sensor.
 				if not self.nodeTimeoutSensor is None:
 
-					# Create message for sensor alert.
+					# Create message and nodes field for sensor alert.
 					message = "%d node(s) still timed out:" \
 						% len(self._timeoutNodeIds)
+					nodesField = list()
 					for nodeId in self._timeoutNodeIds:
 
 						nodeTuple = self.storage.getNodeById(nodeId)
@@ -490,7 +505,13 @@ class ConnectionWatchdog(threading.Thread):
 							continue
 						instance = nodeTuple[4]
 						username = nodeTuple[2]
+						nodeType = nodeTuple[3]
 						hostname = nodeTuple[1]
+
+						nodeField = {"hostname": hostname,
+										"username": username,
+										"instance": instance,
+										"nodeType": nodeType}
 
 						message += " Node: '%s, " \
 							% str(instance) \
@@ -499,7 +520,10 @@ class ConnectionWatchdog(threading.Thread):
 							+ "Hostname: '%s';" \
 							% str(hostname)
 
-					dataJson = json.dumps({"message": message})
+						nodesField.append(nodeField)
+
+					dataJson = json.dumps({"message": message,
+											"nodes": nodesField})
 
 					# Add sensor alert to database for processing.
 					if self.storage.addSensorAlert(
