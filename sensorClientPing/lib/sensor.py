@@ -163,8 +163,11 @@ class PingWatchdogSensor(_PollingSensor):
 	def initializeSensor(self):
 		self.changeState = True
 		self.hasLatestData = False
+		self.hasOptionalData = True
 		self.timeExecute = 0.0
 		self.state = 1 - self.triggerState
+
+		self.optionalData = {"host": self.host}
 
 		return True
 
@@ -200,7 +203,7 @@ class PingWatchdogSensor(_PollingSensor):
 				utcTimestamp = int(time.time())
 				if (utcTimestamp - self.timeExecute) > self.timeout:
 
-					self.state = 1
+					self.state = self.triggerState
 
 					logging.error("[%s]: Process " % self.fileName
 							+ "'%s' has timed out." % self.description)
@@ -226,17 +229,21 @@ class PingWatchdogSensor(_PollingSensor):
 					# in the next state update
 					self.process = None
 
+					self.optionalData["reason"] = "processtimeout"
+
 			# process has finished
 			else:
 
 				# check if the process has exited with code 0
 				# => everything works fine
 				if self.process.poll() == 0:
-					self.state = 0
+					self.state = 1 - self.triggerState
+					self.optionalData["reason"] = "reachable"
 				# process did not exited correctly
 				# => something is wrong with the ctf service
 				else:
-					self.state = 1
+					self.state = self.triggerState
+					self.optionalData["reason"] = "notreachable"
 
 				# set process to none so it can be newly started
 				# in the next state update
