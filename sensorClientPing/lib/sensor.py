@@ -216,16 +216,19 @@ class PingWatchdogSensor(_PollingSensor):
 
 					# check if the process has terminated
 					# => if not kill it
-					if self.process.poll() != -15:
+					exitCode = self.process.poll()
+					if exitCode != -15:
 						try:
 							logging.error("[%s]: Could not " % self.fileName
 							+ "terminate '%s'. Killing it." % self.description)
 
 							self.process.kill()
+							exitCode = self.process.poll()
 						except:
 							pass
+					self.optionalData["exitCode"] = exitCode
 
-					# set process to none so it can be newly started
+					# set process to None so it can be newly started
 					# in the next state update
 					self.process = None
 
@@ -236,14 +239,17 @@ class PingWatchdogSensor(_PollingSensor):
 
 				# check if the process has exited with code 0
 				# => everything works fine
-				if self.process.poll() == 0:
+				exitCode = self.process.poll()
+				if exitCode == 0:
 					self.state = 1 - self.triggerState
 					self.optionalData["reason"] = "reachable"
+					self.optionalData["exitCode"] = exitCode
 				# process did not exited correctly
 				# => something is wrong with the ctf service
 				else:
 					self.state = self.triggerState
 					self.optionalData["reason"] = "notreachable"
+					self.optionalData["exitCode"] = exitCode
 
 				# set process to none so it can be newly started
 				# in the next state update
