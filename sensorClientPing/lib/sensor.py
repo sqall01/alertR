@@ -243,13 +243,12 @@ class PingWatchdogSensor(_PollingSensor):
 				if exitCode == 0:
 					self.state = 1 - self.triggerState
 					self.optionalData["reason"] = "reachable"
-					self.optionalData["exitCode"] = exitCode
 				# process did not exited correctly
 				# => something is wrong with the ctf service
 				else:
 					self.state = self.triggerState
 					self.optionalData["reason"] = "notreachable"
-					self.optionalData["exitCode"] = exitCode
+				self.optionalData["exitCode"] = exitCode
 
 				# set process to none so it can be newly started
 				# in the next state update
