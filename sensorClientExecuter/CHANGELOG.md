@@ -1,3 +1,10 @@
+## 0.502-2
+
+Features:
+
+* Added optional data to sensor alert.
+
+
 ## 0.502-1
 
 Features:

@@ -412,6 +412,9 @@ class ExecuterSensor(_PollingSensor):
 
 	def updateState(self):
 
+		self.hasOptionalData = False
+		self.optionalData = None
+
 		# check if a process is executed
 		# => if none no process is executed
 		if self.process is None:
@@ -440,7 +443,7 @@ class ExecuterSensor(_PollingSensor):
 				utcTimestamp = int(time.time())
 				if (utcTimestamp - self.timeExecute) > self.timeout:
 
-					self.state = 1
+					self.state = self.triggerState
 					self.hasOptionalData = True
 					self.optionalData = {"message": "Timeout"}
 
@@ -455,7 +458,8 @@ class ExecuterSensor(_PollingSensor):
 
 					# check if the process has terminated
 					# => if not kill it
-					if self.process.poll() != -15:
+					exitCode = self.process.poll()
+					if exitCode != -15:
 						try:
 							logging.error("[%s]: Could not " % self.fileName
 							+ "terminate '%s'. Killing it." % self.description)
@@ -463,6 +467,7 @@ class ExecuterSensor(_PollingSensor):
 							self.process.kill()
 						except:
 							pass
+					self.optionalData["exitCode"] = exitCode
 
 					# set process to none so it can be newly started
 					# in the next state update
@@ -487,7 +492,7 @@ class ExecuterSensor(_PollingSensor):
 						logging.error("[%s] Sensor with id '%d' stderr: %s"
 							% (self.fileName, self.id, err))
 
-						self.state = 1
+						self.state = self.triggerState
 
 						# Generate sensor alert object.
 						self.sensorAlert = SensorAlert()
@@ -508,13 +513,14 @@ class ExecuterSensor(_PollingSensor):
 						self.shouldForceSendAlert = True
 
 				else:
-					self.hasOptionalData = False
-					self.optionalData = None
+					self.hasOptionalData = True
+					self.optionalData = dict()
 
 					# check if the process has exited with code 0
 					# => everything works fine
-					if self.process.poll() == 0:
-						self.state = 0
+					exitCode = self.process.poll()
+					if exitCode == 0:
+						self.state = 1 - self.triggerState
 					# process did not exited correctly
 					# => something is wrong with the service
 					else:
@@ -524,7 +530,8 @@ class ExecuterSensor(_PollingSensor):
 						logging.debug("[%s] Sensor with id '%d' stderr: %s"
 							% (self.fileName, self.id, err))
 
-						self.state = 1
+						self.state = self.triggerState
+					self.optionalData["exitCode"] = exitCode
 
 				# set process to none so it can be newly started
 				# in the next state update
