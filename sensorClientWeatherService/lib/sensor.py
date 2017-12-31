@@ -173,6 +173,11 @@ class WundergroundTempPollingSensor(_PollingSensor):
 		# Update data directly for the first time.
 		self.updateState()
 
+		self.hasOptionalData = True
+		self.optionalData = {"country": self.country,
+								"city": self.city,
+								"type": "temperature"}
+
 		return True
 
 
@@ -316,6 +321,11 @@ class WundergroundHumidityPollingSensor(_PollingSensor):
 
 		# Update data directly for the first time.
 		self.updateState()
+
+		self.hasOptionalData = True
+		self.optionalData = {"country": self.country,
+								"city": self.city,
+								"type": "humidity"}
 
 		return True
 
@@ -466,6 +476,13 @@ class WundergroundForecastTempPollingSensor(_PollingSensor):
 		# Update data directly for the first time.
 		self.updateState()
 
+		self.hasOptionalData = True
+		self.optionalData = {"country": self.country,
+								"city": self.city,
+								"type": "forecasttemp",
+								"kind": self.kind,
+								"day": self.day}
+
 		return True
 
 
@@ -615,6 +632,12 @@ class WundergroundForecastRainPollingSensor(_PollingSensor):
 
 		# Update data directly for the first time.
 		self.updateState()
+
+		self.hasOptionalData = True
+		self.optionalData = {"country": self.country,
+								"city": self.city,
+								"type": "forecastrain",
+								"day": self.day}
 
 		return True
 
