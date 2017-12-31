@@ -415,6 +415,9 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
 
 		self.lastUpdate = utcTimestamp
 
+		self.hasOptionalData = True
+		self.optionalData = {"sensorName": self.sensorName}
+
 		return True
 
 

@@ -1,3 +1,10 @@
+## 0.501-1
+
+Features:
+
+* Added optional data to sensor alert for DS18b20 sensor.
+
+
 ## 0.501
 
 Features:

@@ -20,7 +20,7 @@ class GlobalData:
 		self.version = 0.501
 
 		# revision of the used client
-		self.rev = 0
+		self.rev = 1
 
 		# name of this client
 		self.name = "alertR Sensor Client Raspberry Pi"
