@@ -1173,7 +1173,7 @@ class SensorExecuter:
 					if sensor.triggerAlertNormal:
 
 						logging.info("[%s]: Sensor alert " % self.fileName
-							+ "for back to normal state "
+							+ "for normal state "
 							+ "triggered by '%s'." % sensor.description)
 
 						# Create sensor alert object to send to the server.
