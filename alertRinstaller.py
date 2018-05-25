@@ -34,7 +34,7 @@ loglevel = logging.INFO
 # repository information
 host = "raw.githubusercontent.com"
 port = 443
-serverPath = "/sqall01/alertR/dev/"
+serverPath = "/sqall01/alertR/master/"
 
 ################ GLOBAL CONFIGURATION DATA ################
 
