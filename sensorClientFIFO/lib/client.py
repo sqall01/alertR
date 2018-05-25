@@ -629,9 +629,12 @@ class ServerCommunication:
 		try:
 			self.client.connect()
 		except Exception as e:
-			self.client.close()
 			logging.exception("[%s]: Connecting to server failed."
 				% self.fileName)
+			try:
+				self.client.close()
+			except:
+				pass
 
 			self._releaseLock()
 
@@ -642,9 +645,9 @@ class ServerCommunication:
 
 		# First check version and authenticate.
 		if not self._verifyVersionAndAuthenticate(len(regMessage)):
-			self.client.close()
 			logging.error("[%s]: Version verification and " % self.fileName
 				+ "authentication failed.")
+			self.client.close()
 
 			self._releaseLock()
 
@@ -652,9 +655,9 @@ class ServerCommunication:
 
 		# Second register node.
 		if not self._registerNode(regMessage):
-			self.client.close()
 			logging.error("[%s]: Registration failed."
 				% self.fileName)
+			self.client.close()
 
 			self._releaseLock()
 
