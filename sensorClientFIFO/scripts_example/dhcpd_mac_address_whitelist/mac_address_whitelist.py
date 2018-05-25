@@ -7,7 +7,7 @@ import subprocess
 import time
 import fcntl
 import smtplib
-
+import json
 
 # FIFO file of the alertR sensor client
 FIFO_FILE = "/home/alertR/sensorClientFIFO/config/dhcpd.fifo"
@@ -114,38 +114,33 @@ if not found:
 	# send message to alertR
 	with open(FIFO_FILE, 'w') as fifo_file:
 
+		msg_dict = dict()
+		msg_dict["message"] = "sensoralert"
+
+		payload_dict = dict()
+		payload_dict["state"] = 1
+		payload_dict["hasOptionalData"] = True
+		payload_dict["dataType"] = 0
+		payload_dict["hasLatestData"] = False
+		payload_dict["changeState"] = False
+		
+		optionalData_dict = dict()
 		if SCAN_VIA_NMAP:
-
-			fifo_message = '{"message": "sensoralert", ' \
-				+ '"payload": {' \
-				+ '"state": 1, ' \
-				+ '"hasOptionalData": true, ' \
-				+ '"optionalData": {' \
-				+ '"message": ' \
-				+ '"Unknown client with IP: %s and MAC: %s and Ports: %s' \
-				% (client_ip, client_mac_address, nmap_result_string) \
-				+ '."}, ' \
-				+ '"dataType": 0, ' \
-				+ '"hasLatestData": false, ' \
-				+ '"changeState": false, ' \
-				+ '}}'
-
+			optionalData_dict["message"] = "Unknown client with IP: %s " \
+				% client_ip \
+				+ "and MAC: %s and Ports: %s." \
+				% (client_mac_address, nmap_result_string)
 		else:
-			fifo_message = '{"message": "sensoralert", ' \
-				+ '"payload": {' \
-				+ '"state": 1, ' \
-				+ '"hasOptionalData": true, ' \
-				+ '"optionalData": {' \
-				+ '"message": ' \
-				+ '"Unknown client with IP: %s and MAC: %s."' \
-				% (client_ip, client_mac_address) \
-				+ '}, ' \
-				+ '"dataType": 0, ' \
-				+ '"hasLatestData": false, ' \
-				+ '"changeState": false, ' \
-				+ '}}'
+			optionalData_dict["message"] = "Unknown client with IP: %s " \
+				% client_ip \
+				+ "and MAC: %s." \
+				% client_mac_address
 
-		fifo_file.write(fifo_message)
+
+		payload_dict["optionalData"] = optionalData_dict
+		msg_dict["payload"] = payload_dict
+
+		fifo_file.write(json.dumps(msg_dict))
 
 	time.sleep(1)
 
