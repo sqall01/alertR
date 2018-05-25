@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Manager Client Keypad"
+		self.name = "AlertR Manager Client Keypad"
 
 		# the instance of this client
 		self.instance = "managerClientKeypad"

@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Sensor Client FIFO"
+		self.name = "AlertR Sensor Client FIFO"
 
 		# the instance of this client
 		self.instance = "sensorClientFIFO"

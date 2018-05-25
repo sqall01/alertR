@@ -283,7 +283,7 @@ def checkDependencies(oldDependencies, newDependencies):
 					print 
 					print "The needed module '%s' is not" % importName,
 					print "installed. You need to install it before",
-					print "you can use this alertR instance."
+					print "you can use this AlertR instance."
 
 					return False
 
@@ -476,7 +476,7 @@ if __name__ == '__main__':
 		or options.force is True):
 
 		if options.force is True:
-			logging.info("[%s]: Forcing update of alertR instance."
+			logging.info("[%s]: Forcing update of AlertR instance."
 				% fileName)
 
 		# Check if we have new dependencies before installing.
@@ -503,12 +503,12 @@ if __name__ == '__main__':
 			print
 			print "WARNING: You are about to make an update that changes", 
 			print "the used network protocol.",
-			print "This means that after you have updated this alertR",
-			print "instance you also have to update your alertR server and",
-			print "all your alertR clients in order to have a working",
+			print "This means that after you have updated this AlertR",
+			print "instance you also have to update your AlertR server and",
+			print "all your AlertR clients in order to have a working",
 			print "system again."
 			print "Are you sure you want to continue and update this",
-			print "alertR instance?"
+			print "AlertR instance?"
 			userConfirmation(options)
 
 		# if the update needs changes in the configuration file
@@ -518,16 +518,16 @@ if __name__ == '__main__':
 			print "WARNING: You are about to make an update that needs", 
 			print "changes in the configuration file.",
 			print "This means that you have to manually update your used",
-			print "configuration file before you can use this alertR",
+			print "configuration file before you can use this AlertR",
 			print "instance again."
 			print "Are you sure you want to continue and update this",
-			print "alertR instance?"
+			print "AlertR instance?"
 			userConfirmation(options)
 
 		print
-		print "Please make sure that this alertR instance is stopped before",
+		print "Please make sure that this AlertR instance is stopped before",
 		print "continuing the update process."
-		print "Are you sure this alertR instance is not running?"
+		print "Are you sure this AlertR instance is not running?"
 		userConfirmation(options)
 
 		if updater.updateInstance() is False:
@@ -557,19 +557,19 @@ if __name__ == '__main__':
 		# if the update changes the protocol
 		# => output a reminder
 		if protocolUpdate is True:
-			print "NOTE: Please make sure you update all your alertR",
+			print "NOTE: Please make sure you update all your AlertR",
 			print "instances before you restart this instance."
 
 		# if the update needs changes in the configuration file
 		# => output a reminder
 		if configUpdate is True:
 			print "NOTE: Please make sure you manually update the",
-			print "configuration file of this alertR instance before",
+			print "configuration file of this AlertR instance before",
 			print "you restart this instance."
 
 		if (protocolUpdate is False
 			and configUpdate is False):
-			print "NOTE: Please start this alertR instance now."
+			print "NOTE: Please start this AlertR instance now."
 
 	else:
 		logging.info("[%s]: No new version available." % fileName)

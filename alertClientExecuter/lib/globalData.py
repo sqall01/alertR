@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 1
 
 		# name of this client
-		self.name = "alertR Alert Client Executer"
+		self.name = "AlertR Alert Client Executer"
 
 		# the instance of this client
 		self.instance = "alertClientExecuter"

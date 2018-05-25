@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Alert Client XBMC"
+		self.name = "AlertR Alert Client XBMC"
 
 		# the instance of this client
 		self.instance = "alertClientXBMC"

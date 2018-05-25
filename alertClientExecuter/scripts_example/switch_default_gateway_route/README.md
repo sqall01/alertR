@@ -1,7 +1,7 @@
 Switch Default Gateway Route
 ======
 
-This script switches the default gateway route used by your host to an alternative one. The idea behind it is, when your Internet connection on your normal default gateway is down, you can switch to an alternative one. For example, you can check the Internet connection on your router or any other host and notify the alertR system if the Internet connection is down. Then the alertR Alert Client Executer can execute this script to switch the Internet connection from the normal route to an alternative route. As an alternative route an UMTS connection can be used. This is particularly useful if you have services that need a constant access to the Internet or if you want your alertR system to send emergency notifications even when your Internet connection is down.
+This script switches the default gateway route used by your host to an alternative one. The idea behind it is, when your Internet connection on your normal default gateway is down, you can switch to an alternative one. For example, you can check the Internet connection on your router or any other host and notify the AlertR system if the Internet connection is down. Then the AlertR Alert Client Executer can execute this script to switch the Internet connection from the normal route to an alternative route. As an alternative route an UMTS connection can be used. This is particularly useful if you have services that need a constant access to the Internet or if you want your AlertR system to send emergency notifications even when your Internet connection is down.
 
 
 How to use it?
@@ -94,15 +94,15 @@ root@raspberrypi:/home/pi/alertR/alertClientExecuter/scripts# chmod 755 switch_r
 ```
 
 
-alertR Configuration:
+AlertR Configuration:
 ------
 
-We consider the following configuration of your alertR system:
+We consider the following configuration of your AlertR system:
 
 * You have installed a script that checks if the Internet connection is down using your normal gateway (for example on your router). This script triggers a sensor alert when the Internet connection is down (state: "triggered"), and this script triggers a sensor alert when the Internet connection is up again (state: "normal").
-* The sensor alert that is triggered by the Internet checking script is for the alert level 10 and 11. On the alertR server, alert level 10 is configured to always trigger a sensor alert and only on the "triggered" state. Alert level 11 is also configured to always trigger a sensor alert but only on the "normal" state.
+* The sensor alert that is triggered by the Internet checking script is for the alert level 10 and 11. On the AlertR server, alert level 10 is configured to always trigger a sensor alert and only on the "triggered" state. Alert level 11 is also configured to always trigger a sensor alert but only on the "normal" state.
 
-The following alert-specific settings have to be made for the alertR Alert Client Executer to work with the given alertR system configuration:
+The following alert-specific settings have to be made for the AlertR Alert Client Executer to work with the given AlertR system configuration:
 
 ```bash
 
@@ -152,4 +152,4 @@ The following alert-specific settings have to be made for the alertR Alert Clien
 
 ```
 
-If you need a more detailed description of how to set up an alertR system, please refer to the [wiki](https://github.com/sqall01/alertR/wiki).
+If you need a more detailed description of how to set up an AlertR system, please refer to the [wiki](https://github.com/sqall01/alertR/wiki).

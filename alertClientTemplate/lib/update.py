@@ -751,7 +751,7 @@ class Updater:
 		return self.repoInfo
 
 
-	# function that updates this instance of the alertR infrastructure
+	# function that updates this instance of the AlertR infrastructure
 	def updateInstance(self):
 
 		self._acquireLock()
@@ -854,7 +854,7 @@ class Updater:
 			# copy file to correct location
 			try:
 
-				logging.debug("[%s]: Copying file '%s' to alertR instance "
+				logging.debug("[%s]: Copying file '%s' to AlertR instance "
 					% (self.fileName, fileToUpdate)
 					+ "directory.")
 

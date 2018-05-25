@@ -24,7 +24,7 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Manger Client Database"
+		self.name = "AlertR Manger Client Database"
 
 		# the instance of this client
 		self.instance = "managerClientDatabase"
@@ -40,7 +40,7 @@ class GlobalData:
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
 			+ "/../config/config.xml"
 
-		# How often the alertR client should try to connect to the
+		# How often the AlertR client should try to connect to the
 		# MySQL server when the connection establishment fails.
 		self.storageBackendMysqlRetries = 5
 
