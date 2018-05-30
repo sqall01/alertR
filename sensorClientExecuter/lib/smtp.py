@@ -50,7 +50,7 @@ class SMTPAlert:
 		if self.communicationAlertSent:
 			return True
 
-		subject = "[alertR] (%s) Communication problems detected" \
+		subject = "[AlertR] (%s) Communication problems detected" \
 			% socket.gethostname()
 
 		message = "Communication problems detected between the host '%s' " \
@@ -89,7 +89,7 @@ class SMTPAlert:
 		if not self.communicationAlertSent:
 			return True
 
-		subject = "[alertR] (%s) Communication problems solved" \
+		subject = "[AlertR] (%s) Communication problems solved" \
 			% socket.gethostname()
 
 		message = "The communication problems between the host '%s' " \

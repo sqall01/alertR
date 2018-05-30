@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Alert Client Template"
+		self.name = "AlertR Alert Client Template"
 
 		# the instance of this client
 		self.instance = "alertClientTemplate"

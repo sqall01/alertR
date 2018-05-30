@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 0
 
 		# name of this client
-		self.name = "alertR Alert Client Raspberry Pi"
+		self.name = "AlertR Alert Client Raspberry Pi"
 
 		# the instance of this client
 		self.instance = "alertClientRaspberryPi"

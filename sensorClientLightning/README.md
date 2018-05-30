@@ -1,4 +1,4 @@
-alertR Sensor Client Lightning
+AlertR Sensor Client Lightning
 ======
 
 NOT YET FINISHED. PLEASE DO NOT USE IT AT THE MOMENT.

@@ -23,7 +23,7 @@ class GlobalData:
 		self.rev = 1
 
 		# name of this client
-		self.name = "alertR Sensor Client Ping"
+		self.name = "AlertR Sensor Client Ping"
 
 		# the instance of this client
 		self.instance = "sensorClientPing"

@@ -1,7 +1,7 @@
-alertR Server
+AlertR Server
 ======
 
-This is the server that handles the logic of the alert system. It is mandatory in order to use alertR. It uses either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.
+This is the server that handles the logic of the alert system. It is mandatory in order to use AlertR. It uses either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.
 
 
 How to use it?
@@ -17,4 +17,4 @@ The clients do not have to be configured at the server side (only on the client 
 
 A init.d example file for Debian systems is located inside the "init.d_example" folder if you want to start the server with the start of the host computer.
 
-If you need a more detailed description of how to set up an alertR system, please refer to the [wiki](https://github.com/sqall01/alertR/wiki).
+If you need a more detailed description of how to set up an AlertR system, please refer to the [wiki](https://github.com/sqall01/alertR/wiki).

@@ -24,7 +24,7 @@ class GlobalData:
 		self.rev = 3
 
 		# name of this server
-		self.name = "alertR Server"
+		self.name = "AlertR Server"
 
 		# the instance of this server
 		self.instance = "server"
