@@ -2,7 +2,7 @@
 
 AlertR is a client/server based alarm system and monitoring system which targets developers, tinkers, privacy advocates, and all people that are interested in DIY solutions. Despite the obvious use as a home alarm system, it can also be used to help server administrators to monitor their services (or used in any other cases in which sensors are required). Because of the way it is designed, AlertR can be used in any scenario a sensor with the state `triggered` and `normal` has to be monitored. This can be a sensor for a home security or home automation system, but also computer services like a failing HDD drive in a RAID or the availability of a web server.
 
-The vision of AlertR is to have a single service running that           gathers all the information someone wants (like temperature data, service states, or bank account transfers) and provides the ability to react on them automatically. In addition, it should serve as single point to let the user look up aggregated information of his/her services. All this should be done in such a way that the user is always in control of his/her data and no one besides him/her is able to access them.
+The vision for AlertR is to have a single service running that           gathers all the information someone wants (like temperature data, service states, or bank account transfers) and provides the ability to react on them automatically. In addition, it should serve as single point to let the user look up aggregated information of his/her services. All this should be done in such a way that the user is always in control of his/her data and no one besides him/her is able to access them.
 
 
 # Table of Contents
