@@ -155,11 +155,12 @@
 					it about the new state.
 					("True" or "False")
 				triggerState - on which internal state the alert should
-					trigger (either 0 or 1) for example some sensors
-					trigger with an internal state of 1 and some with an
-					internal state of 0 in order to decide if the sensor has
-					triggered this have to be set to the correct value
-					regardless on which internal state the sensor will trigger
+					trigger (either 0 or 1). Some sensors trigger with an
+					internal state of 1 (i.e., a pull-up when a switch is
+					opened), and some with an
+					internal state of 0. In order to decide if the sensor has
+					triggered this has to be set to the correct value.
+					Regardless on which internal state the sensor will trigger,
 					the alert system uses for its communication:
 					state = 0 => not triggered
 					state = 1 => triggered
@@ -251,11 +252,12 @@
 					it about the new state.
 					("True" or "False")
 				triggerState - on which internal state the alert should
-					trigger (either 0 or 1) for example some sensors
-					trigger with an internal state of 1 and some with an
-					internal state of 0 in order to decide if the sensor has
-					triggered this have to be set to the correct value
-					regardless on which internal state the sensor will trigger
+					trigger (either 0 or 1). Some sensors trigger with an
+					internal state of 1 (i.e., a pull-up when a switch is
+					opened), and some with an
+					internal state of 0. In order to decide if the sensor has
+					triggered this has to be set to the correct value.
+					Regardless on which internal state the sensor will trigger,
 					the alert system uses for its communication:
 					state = 0 => not triggered
 					state = 1 => triggered
