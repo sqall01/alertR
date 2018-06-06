@@ -189,17 +189,6 @@
 					the used protocol
 					(see https://github.com/sqall01/alertR/wiki/Protocol#protocol_schematics_executer_sensor
 					for the used protocol).
-				triggerState - on which internal state the alert should
-					trigger (either 0 or 1). Some sensors trigger with an
-					internal state of 1 (i.e., a pull-up when a switch is
-					opened), and some with an
-					internal state of 0. In order to decide if the sensor has
-					triggered this has to be set to the correct value.
-					Regardless on which internal state the sensor will trigger,
-					the alert system uses for its communication:
-					state = 0 => not triggered
-					state = 1 => triggered
-					Is only used if "parseOutput" is set to "True".
 				dataType - Gives the data type of this sensor
 					(0 = none, 1 = int, 2 = float).
 					Is only used if "parseOutput" is set to "True".
@@ -209,7 +198,6 @@
 				timeout="5"
 				intervalToCheck="10"
 				parseOutput="False"
-				triggerState="1"
 				dataType="0">
 
 				<!--
@@ -286,17 +274,6 @@
 					the used protocol
 					(see https://github.com/sqall01/alertR/wiki/Protocol#protocol_schematics_executer_sensor
 					for the used protocol).
-				triggerState - on which internal state the alert should
-					trigger (either 0 or 1). Some sensors trigger with an
-					internal state of 1 (i.e., a pull-up when a switch is
-					opened), and some with an
-					internal state of 0. In order to decide if the sensor has
-					triggered this has to be set to the correct value.
-					Regardless on which internal state the sensor will trigger,
-					the alert system uses for its communication:
-					state = 0 => not triggered
-					state = 1 => triggered
-					Is only used if "parseOutput" is set to "True".
 				dataType - Gives the data type of this sensor
 					(0 = none, 1 = int, 2 = float).
 					Is only used if "parseOutput" is set to "True".
@@ -306,7 +283,6 @@
 				timeout="3"
 				intervalToCheck="5"
 				parseOutput="True"
-				triggerState="1"
 				dataType="0">
 
 				<!--

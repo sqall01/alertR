@@ -152,6 +152,7 @@ if __name__ == '__main__':
 				"triggerAlert"]).upper() == "TRUE")
 			sensor.triggerAlertNormal = (str(item.find("general").attrib[
 				"triggerAlertNormal"]).upper() == "TRUE")
+			sensor.triggerState = 1
 
 			sensor.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):
@@ -166,13 +167,6 @@ if __name__ == '__main__':
 				str(item.find("executer").attrib["execute"])))
 			sensor.parseOutput = (str(item.find("executer").attrib[
 				"parseOutput"]).upper() == "TRUE")
-
-			# Only parse triggerState if "parseOutput" is active.
-			if sensor.parseOutput:
-				sensor.triggerState = int(item.find("executer").attrib[
-					"triggerState"])
-			else:
-				sensor.triggerState = 1
 
 			# Only parse data type if "parseOutput" is active.
 			if sensor.parseOutput:

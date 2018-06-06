@@ -179,23 +179,12 @@
 					'{"message": "statechange", "payload": {"state": 0}}'
 					see the alertR wiki for a more detailed message syntax
 					for the FIFO sensor)
-				triggerState - on which internal state the alert should
-					trigger (either 0 or 1). Some sensors trigger with an
-					internal state of 1 (i.e., a pull-up when a switch is
-					opened), and some with an
-					internal state of 0. In order to decide if the sensor has
-					triggered this has to be set to the correct value.
-					Regardless on which internal state the sensor will trigger,
-					the alert system uses for its communication:
-					state = 0 => not triggered
-					state = 1 => triggered
 				dataType - Gives the data type of this sensor
 					(0 = none, 1 = int, 2 = float).
 			-->
 			<fifo
 				umask="0000"
 				fifoFile="/absolute/path/to/sensor_0.fifo"
-				triggerState="1"
 				dataType="0" />
 
 		</sensor>
@@ -251,23 +240,12 @@
 					'{"message": "statechange", "payload": {"state": 0}}'
 					see the alertR wiki for a more detailed message syntax
 					for the FIFO sensor)
-				triggerState - on which internal state the alert should
-					trigger (either 0 or 1). Some sensors trigger with an
-					internal state of 1 (i.e., a pull-up when a switch is
-					opened), and some with an
-					internal state of 0. In order to decide if the sensor has
-					triggered this has to be set to the correct value.
-					Regardless on which internal state the sensor will trigger,
-					the alert system uses for its communication:
-					state = 0 => not triggered
-					state = 1 => triggered
 				dataType - Gives the data type of this sensor
 					(0 = none, 1 = int, 2 = float).
 			-->
 			<fifo
 				umask="0002"
 				fifoFile="/absolute/path/to/sensor_1.fifo"
-				triggerState="1"
 				dataType="2" />
 
 		</sensor>
