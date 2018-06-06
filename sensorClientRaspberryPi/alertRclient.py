@@ -159,8 +159,6 @@ if __name__ == '__main__':
 					"triggerAlert"]).upper() == "TRUE")
 				sensor.triggerAlertNormal = (str(item.find("general").attrib[
 					"triggerAlertNormal"]).upper() == "TRUE")
-				sensor.triggerState = int(item.find("general").attrib[
-					"triggerState"])
 
 				sensor.alertLevels = list()
 				for alertLevelXml in item.iterfind("alertLevel"):
@@ -168,6 +166,8 @@ if __name__ == '__main__':
 
 				# raspberry pi gpio specific settings
 				sensor.gpioPin = int(item.find("gpio").attrib["gpioPin"])
+				sensor.triggerState = int(item.find("gpio").attrib[
+					"triggerState"])
 
 			elif sensorType == "interrupt".upper():
 

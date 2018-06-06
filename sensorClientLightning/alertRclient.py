@@ -158,8 +158,7 @@ if __name__ == '__main__':
 				"triggerAlert"]).upper() == "TRUE")
 			sensor.triggerAlertNormal = (str(item.find("general").attrib[
 				"triggerAlertNormal"]).upper() == "TRUE")
-			sensor.triggerState = int(item.find("general").attrib[
-				"triggerState"])
+			sensor.triggerState = 1
 
 			sensor.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):

@@ -17,10 +17,10 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used client (and protocol)
-		self.version = 0.502
+		self.version = 0.503
 
 		# revision of the used client
-		self.rev = 2
+		self.rev = 0
 
 		# name of this client
 		self.name = "AlertR Sensor Client Executer"

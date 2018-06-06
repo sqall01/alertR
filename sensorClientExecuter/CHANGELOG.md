@@ -1,3 +1,10 @@
+## 0.503
+
+Features:
+
+* Removed unnecessary triggerState and moved it to individual sensor when necessary.
+
+
 ## 0.502-2
 
 Features:
