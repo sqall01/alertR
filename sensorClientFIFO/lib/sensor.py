@@ -256,8 +256,9 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 			# create a new FIFO file
 			try:
-				os.umask(self.umask)
+				oldUmask = os.umask(self.umask)
 				os.mkfifo(self.fifoFile)
+				os.umask(oldUmask)
 			except Exception as e:
 				logging.exception("[%s]: Could not create "
 					% self.fileName
