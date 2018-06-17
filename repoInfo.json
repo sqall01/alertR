@@ -3,13 +3,13 @@
 	"alertClientDbus" : {
 		"location": "alertClientDbus/",
 		"name": "AlertR Alert Client Dbus",
-		"desc": "This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example you can start it on your PC and you get notified as soon as the door bell rings or the front door was opened.",
+		"desc": "This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example, you can start it on your PC and you get notified as soon as the door bell rings or the front door was opened.",
 		"type": "alert"
 		},
 	"alertClientExecuter": {
 		"location": "alertClientExecuter/",
 		"name": "AlertR Alert Client Executer",
-		"desc": "This client handles triggered alerts and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when all alerts are stopped. For example you can start a init script on a Linux system when a sensor alert was triggered and when all alerts are stopped the init script is stopped.",
+		"desc": "This client handles triggered alerts and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when all alerts are stopped. For example, you can start a init script on a Linux system when a sensor alert was triggered and when all alerts are stopped the init script is stopped.",
 		"type": "alert"
 		},
 
@@ -30,7 +30,7 @@
 	"alertClientRaspberryPi": {
 		"location": "alertClientRaspberryPi/",
 		"name": "AlertR Alert Client Raspberry Pi",
-		"desc": "This client handles triggered alerts and is written to set/unset GPIO pins of a Raspberry Pi. This means it gets notified by the server if an alert was triggered by a sensor and can set/unset configured GPIO pins, for example to activate a siren or something else.",
+		"desc": "This client handles triggered alerts and is written to set/unset GPIO pins of a Raspberry Pi. This means it gets notified by the server if an alert was triggered by a sensor and can set/unset configured GPIO pins, for example, to activate a siren or something else.",
 		"type": "alert"
 		},
 	"alertClientTemplate": {
@@ -42,7 +42,7 @@
 	"alertClientXBMC": {
 		"location": "alertClientXBMC/",
 		"name": "AlertR Alert Client XBMC",
-		"desc": "This client handles triggered alerts and is written to communicate with XBMC/Kodi. It can show a message notification on the display and can pause video/audio playback (for now). For example you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.",
+		"desc": "This client handles triggered alerts and is written to communicate with XBMC/Kodi. It can show a message notification on the display and can pause video/audio playback (for now). For example, you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.",
 		"type": "alert"
 		},
 	"managerClientConsole": {
@@ -60,7 +60,7 @@
 	"managerClientDatabase": {
 		"location": "managerClientDatabase/",
 		"name": "AlertR Manger Client Database",
-		"desc": "This client stores the state of the alert system in a database for external usage. It uses a MySQL db to store all information about the alert system and events that occur (for example a client that disconnected from the alert system). External components, such as a website, can use the information in the database for their purposes. In the case of a website, it can process the data and show a visualization to the user. In order to let external components interact with the alert system, the manager client contains a local UNIX socket server which can be contacted.",
+		"desc": "This client stores the state of the alert system in a database for external usage. It uses a MySQL db to store all information about the alert system and events that occur (for example, a client that disconnected from the alert system). External components, such as a website, can use the information in the database for their purposes. In the case of a website, it can process the data and show a visualization to the user. In order to let external components interact with the alert system, the manager client contains a local UNIX socket server which can be contacted.",
 		"type": "manager"
 		},
 	"sensorClientExecuter": {
@@ -78,7 +78,7 @@
 	"sensorClientFIFO": {
 		"location": "sensorClientFIFO/",
 		"name": "AlertR Sensor Client FIFO",
-		"desc": "This client is build for the integration of already developed scripts or other software into the AlertR infrastructure as a sensor. For each sensor it creates a FIFO file on the file system and monitors it. Other scripts/programs can write into the FIFO file to change the state of the associated sensor. For example you can use a cronjob to write into the FIFO file at specific times to trigger a sensor event or the ISC DHCP server to write into the FIFO file each time a client in a specific subnet requests an IP address.",
+		"desc": "This client is build for the integration of already developed scripts or other software into the AlertR infrastructure as a sensor. For each sensor it creates a FIFO file on the file system and monitors it. Other scripts/programs can write into the FIFO file to change the state of the associated sensor. For example, you can use a cronjob to write into the FIFO file at specific times to trigger a sensor event or the ISC DHCP server to write into the FIFO file each time a client in a specific subnet requests an IP address.",
 		"type": "sensor"
 		},
 	"sensorClientLightning": {
@@ -102,7 +102,7 @@
 	"sensorClientRaspberryPi": {
 		"location": "sensorClientRaspberryPi/",
 		"name": "AlertR Sensor Client Raspberry Pi",
-		"desc": "This client handles Raspberry Pi GPIO pins as sensors. It either polls the state of a GPIO pin or uses an interrupt on a falling/rising edge and triggers an alert if the state has changed/interrupt has occurred (or a state change if it goes back from a state in which it triggers an alert to a normal state). This means it notifies the server if an alert was triggered by a sensor. A sensor connected to the GPIO pin can be anything you like for example a PIR (Passive InfraRed) sensor, a magnetic switch on a window, a water leak alarm sensor, a smoke detector and so on.",
+		"desc": "This client handles Raspberry Pi GPIO pins as sensors. It either polls the state of a GPIO pin or uses an interrupt on a falling/rising edge and triggers an alert if the state has changed/interrupt has occurred (or a state change if it goes back from a state in which it triggers an alert to a normal state). This means it notifies the server if an alert was triggered by a sensor. A sensor connected to the GPIO pin can be anything you like, for example, a PIR (Passive InfraRed) sensor, a magnetic switch on a window, a water leak alarm sensor, a smoke detector and so on.",
 		"type": "sensor"
 		},
 	"server": {
