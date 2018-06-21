@@ -54,7 +54,7 @@
 	"managerClientKeypad": {
 		"location": "managerClientKeypad/",
 		"name": "AlertR Manager Client Keypad",
-		"desc": "This client manages the state of the alert system. It can activate or deactivate it. You have to enter a PIN before you can activate the alert system, deactivate it or activate it with a configured delay. It is written to work as a client with keypad and small display (original for a Raspbery Pi, but is not limited to it). The client should be near an entrance to allow the user to activate/deactivate the alert system when she leaves/enters.",
+		"desc": "This client manages the state of the alarm system. It can activate or deactivate it. You have to enter a PIN before you can activate the alarm system, deactivate it or activate it with a configured delay. It is written to work as a client with keypad and small display (original for a Raspbery Pi, but is not limited to it). The client should be near an entrance to allow the user to activate/deactivate the alarm system when she leaves/enters.",
 		"type": "manager"
 		},
 	"managerClientDatabase": {
