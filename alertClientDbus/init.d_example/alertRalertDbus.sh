@@ -12,16 +12,29 @@
 
 set -e
 
-# change USER to the user which runs the alertRclient
+# Change USER to the user which runs the alertRclient.
 USER=someUser
-# change DAEMON to the path to run the alertRclient
+# Change DAEMON to the path to run the alertRclient.
 DAEMON=/absolute/path/to/alertRclient.py
 
-# this export is important for the dbus client to work correctly
-# normally the display of the xserver that is used by the user is ":0.0" and
-# this should work in almost all cases
-# but if this does not work, check which display is exported by our user
+# This export is important for the dbus client to work correctly.
+# Normally the display of the xserver that is used by the user is ":0.0" and
+# this should work in almost all cases.
+# But if this does not work, check which display is exported by our user.
 export DISPLAY=":0.0"
+
+# IMPORTANT: if you start this AlertR client as a different user than the one
+# the X session is running on, you need to allow this user to access your X
+# session in order to display notifications. For example, if the user the
+# AlertR client is running on is `alertr` and the user you use for your daily
+# usage is `someUser`, then `someUser` has to execute the following command
+# each time she/he logs in:
+#
+# xhost +SI:localuser:alertr
+# 
+# This allows the user `alertr` to access the X session of `someUser`. In
+# order to automate this, it is best to place this command somewhere that is
+# executed each time the user logs in like the `.xsessionrc` file.
 
 NAME=alertRalertDbus
 PIDFILE=/var/run/$NAME.pid
