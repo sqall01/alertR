@@ -1407,6 +1407,15 @@ class SensorAlertExecuter(threading.Thread):
 					if not serverSession.clientComm.clientInitialized:
 						continue
 
+					# Only send a sensor alert to a client that actually
+					# handles a triggered alert level.
+					clientAlertLevels = \
+						serverSession.clientComm.clientAlertLevels
+					atLeastOne = any(al.level in clientAlertLevels
+									 for al in triggeredAlertLevels)
+					if not atLeastOne:
+						continue
+
 					# sending sensor alert to manager/alert node
 					# via a thread to not block the sensor alert executer
 					sensorAlertProcess = AsynchronousSender(
@@ -1485,6 +1494,14 @@ class SensorAlertExecuter(threading.Thread):
 						and serverSession.clientComm.nodeType != "alert"):
 						continue
 					if not serverSession.clientComm.clientInitialized:
+						continue
+
+					# Only send a sensor alert to a client that actually
+					# handles a triggered alert level.
+					clientAlertLevels = \
+						serverSession.clientComm.clientAlertLevels
+					atLeastOne = alertLevel.level in clientAlertLevels
+					if not atLeastOne:
 						continue
 
 					# sending sensor alert to manager/alert node

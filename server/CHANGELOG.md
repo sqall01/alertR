@@ -1,3 +1,10 @@
+## 0.503-4
+
+Features:
+
+* Only send sensor alert messages to clients that actually handles the triggered alert level.
+
+
 ## 0.503-3
 
 Features:

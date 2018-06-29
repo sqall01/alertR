@@ -52,6 +52,12 @@ class ClientCommunication:
 		# username that is used by the client to authorize itself
 		self.username = None
 
+		# Set of alert levels (integer) the client responds to
+		# (in case of a sensor client, all alert levels the client triggers,
+		# in case of an alert client, all alert levels the client handles,
+		# in case of a manager client, all alert levels).
+		self.clientAlertLevels = set()
+
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
@@ -1910,6 +1916,12 @@ class ClientCommunication:
 
 				return False
 
+			# Update alert levels the client handles
+			# (sensor clients handle only alert levels the sensors trigger).
+			for sensorDict in sensors:
+				for alertLevelInt in sensorDict["alertLevels"]:
+					self.clientAlertLevels.add(alertLevelInt)
+
 			# Get sensor id for each registered sensor object.
 			for sensor in self.sensors:
 
@@ -2050,6 +2062,12 @@ class ClientCommunication:
 
 				return False
 
+			# Update alert levels the client handles
+			# (alert clients handle only alert levels the alerts respond to).
+			for alertDict in alerts:
+				for alertLevelInt in alertDict["alertLevels"]:
+					self.clientAlertLevels.add(alertLevelInt)
+
 		# check if the type of the node is manager
 		elif self.nodeType == "manager":
 
@@ -2122,6 +2140,11 @@ class ClientCommunication:
 					pass
 
 				return False
+
+			# Update alert levels the client handles
+			# (manager clients handle all alert levels).
+			for alertLevel in self.alertLevels:
+				self.clientAlertLevels.add(alertLevel.level)
 
 		# if nodeType is not known
 		else:
