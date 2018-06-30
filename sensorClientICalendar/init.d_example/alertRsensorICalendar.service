@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Sensor Client iCalendar
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRsensorICalendar.sh start
+ExecStop=/etc/init.d/alertRsensorICalendar.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
