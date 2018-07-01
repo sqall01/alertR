@@ -11,14 +11,14 @@ import time
 import random
 import os
 import logging
-import json
 import icalendar
+import datetime
+from dateutil import rrule
 import requests
 import threading
 import Queue
 from client import AsynchronousSender
 from localObjects import SensorDataType, SensorAlert, StateChange
-import subprocess
 
 
 # Internal class that holds the important attributes
@@ -241,11 +241,11 @@ class ICalendarSensor(_PollingSensor):
 		self.icalendarLock.acquire()
 
 		# Only process calendar data if we have any.
-		if self.iCalendar is None:
+		if self.icalendar is None:
 			self.icalendarLock.release()
 			return
 
-		for event in self.iCalendar.walk("VEVENT"):
+		for event in self.icalendar.walk("VEVENT"):
 
 			if event.is_empty():
 				continue
@@ -282,7 +282,7 @@ class ICalendarSensor(_PollingSensor):
 			logging.debug("[%s] Do not know how to handle type '%s' "
 				% (self.fileName, dtstart.dt.__class__)
 				+ "of event start.")
-			continue
+			return
 
 		# Create current date time according to the event's timezone.
 		timezone = eventDatetime.tzinfo
@@ -301,9 +301,12 @@ class ICalendarSensor(_PollingSensor):
 			# date time object. Current and event date time are still
 			# in the same timezone after this.
 			if eventRule.has_key("UNTIL"):
-				timezone = None
-				currentDatetime = currentDatetime.replace(tzinfo=None)
-				eventDatetime = eventDatetime.replace(tzinfo=None)
+				if type(eventRule.get("until")[0]) == datetime.datetime:
+					timezone = eventRule.get("until")[0].tzinfo
+				else:
+					timezone = None
+				currentDatetime = currentDatetime.replace(tzinfo=timezone)
+				eventDatetime = eventDatetime.replace(tzinfo=timezone)
 
 			# Use python dateutil for parsing the rrule.
 			eventDatetimeAfter = None
@@ -321,7 +324,7 @@ class ICalendarSensor(_PollingSensor):
 				eventDatetimeBefore = rrset.before(currentDatetime)
 
 			except:
-				logging.debug("[%s] Not able to parse rrule for '%s'."
+				logging.exception("[%s] Not able to parse rrule for '%s'."
 					% (self.fileName, event.get("SUMMARY")))
 
 			# Process the event alarms for the first event occuring after the
@@ -345,13 +348,13 @@ class ICalendarSensor(_PollingSensor):
 
 			# Check if the event is in the past (minus 10 minutes).
 			if eventDatetime <= (currentDatetime - self.timedelta10min):
-				continue
+				return
 
 			self._processEventAlarms(event, eventDatetime)
 
 
 	# Processes each reminder/alarm of an event.
-	def _processEventAlarms(event, eventDatetime):
+	def _processEventAlarms(self, event, eventDatetime):
 
 		# Create current date time according to the event's timezone.
 		timezone = eventDatetime.tzinfo
@@ -366,7 +369,26 @@ class ICalendarSensor(_PollingSensor):
 				trigger = alarm.get("TRIGGER")
 
 				# Get time when reminder is triggered.
-				triggerDatetime = eventDatetime + trigger.dt
+				# When trigger time is a delta, then calculate the actual time.
+				if type(trigger.dt) == datetime.timedelta:
+					triggerDatetime = eventDatetime + trigger.dt
+
+				# When trigger time is an actual time, use this.
+				elif type(trigger.dt) == datetime.datetime:
+					triggerDatetime = trigger.dt.replace(tzinfo=timezone)
+
+				# When trigger time is only a date, start at midnight.
+				elif type(trigger.dt) == datetime.date:
+					triggerDatetime = datetime.datetime.combine(trigger.dt,
+												datetime.datetime.min.time())
+					triggerDatetime = triggerDatetime.replace(
+															tzinfo=timezone)
+				else:
+					logging.error("[%s] Error: Do not know how to handle "
+						% self.fileName
+						+ "trigger type '%s'."
+						% trigger.dt.__class__)
+					continue
 
 				# Uid of event is needed.
 				uid = event.get("UID")
