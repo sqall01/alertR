@@ -186,6 +186,7 @@ class ICalendarSensor(_PollingSensor):
 		# Time deltas needed for calculations.
 		self.timedelta10min = datetime.timedelta(minutes=10)
 		self.timedelta1day = datetime.timedelta(days=1)
+		self.timedelta2day = datetime.timedelta(days=2)
 
 
 	# Collect calendar data from the server.
@@ -327,13 +328,13 @@ class ICalendarSensor(_PollingSensor):
 				logging.exception("[%s] Not able to parse rrule for '%s'."
 					% (self.fileName, event.get("SUMMARY")))
 
-			# Process the event alarms for the first event occuring after the
+			# Process the event alarms for the first event occurring after the
 			# current time.
 			if eventDatetimeAfter:
 
 				self._processEventAlarms(event, eventDatetimeAfter)
 
-			# Process the event alarms for the first event occuring before the
+			# Process the event alarms for the first event occurring before the
 			# current time (needed because of edge cases with alarms 0 seconds
 			# before event). But only check event if it is not older than
 			# 10 minutes.
@@ -490,14 +491,32 @@ class ICalendarSensor(_PollingSensor):
 			# Update time.
 			self.lastUpdate = utcTimestamp
 
+
+
+			# TODO REMOVE AFTER DEBUGGING
+			logging.debug("Number of already triggered elements: %d" % len(self.alreadyTriggered))
+
+
+
 		# Process calendar data for occurring reminder.
 		self._processCalendar()
+
+		# Clean up already triggered alerts.
+		for triggeredTuple in list(self.alreadyTriggered):
+			uid = triggeredTuple[0]
+			triggerDatetime = triggeredTuple[1]
+
+			timezone = triggerDatetime.tzinfo
+			currentDatetime = datetime.datetime.fromtimestamp(time.time(),
+															  timezone)
+			if (currentDatetime - self.timedelta2day) >= triggerDatetime:
+				self.alreadyTriggered.remove(triggeredTuple)
 
 
 
 		# TODO
 		# - remember to enter optionalData into the wiki
-		# - clean up of self.alreadyTriggered needed
+
 
 	def forceSendAlert(self):
 
