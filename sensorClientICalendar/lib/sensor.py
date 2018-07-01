@@ -180,6 +180,13 @@ class ICalendarSensor(_PollingSensor):
 		# A queue of reminder sensor alerts.
 		self.reminderAlertQueue = Queue.Queue()
 
+		# Set of tuples that describe reminders that were already triggered.
+		self.alreadyTriggered = set()
+
+		# Time deltas needed for calculations.
+		self.timedelta10min = datetime.timedelta(minutes=10)
+		self.timedelta1day = datetime.timedelta(days=1)
+
 
 	# Collect calendar data from the server.
 	def _getCalendar(self):
@@ -238,15 +245,185 @@ class ICalendarSensor(_PollingSensor):
 			self.icalendarLock.release()
 			return
 
+		for event in self.iCalendar.walk("VEVENT"):
 
+			if event.is_empty():
+				continue
 
-		# TODO calendar data processing
-		# - remember to lock access to calendar object.
-		# - place sensor alert in queue: self.reminderAlertQueue
+			if not event.has_key("DTSTART") or not event.has_key("SUMMARY"):
+				continue
 
-
+			# Process the vent.
+			self._processEvent(event)
 
 		self.icalendarLock.release()
+
+
+	# Processes an event of a calendar.
+	def _processEvent(self, event):
+
+		# Get time when event starts.
+		dtstart = event.get("DTSTART")
+
+		# Get current time in timezone of event.
+		eventDatetime = None
+
+		# Create a date time starting at midnight
+		# if we have an "all day" event.
+		if type(dtstart.dt) == datetime.date:
+			eventDatetime = datetime.datetime.combine(dtstart.dt,
+				datetime.datetime.min.time())
+
+		# Copy the date time if we have a "normal" event.
+		elif type(dtstart.dt) == datetime.datetime:
+			eventDatetime = dtstart.dt
+
+		else:
+			logging.debug("[%s] Do not know how to handle type '%s' "
+				% (self.fileName, dtstart.dt.__class__)
+				+ "of event start.")
+			continue
+
+		# Create current date time according to the event's timezone.
+		timezone = eventDatetime.tzinfo
+		currentDatetime = datetime.datetime.fromtimestamp(time.time(),
+														   timezone)
+
+		# Process rrule if event has one (rrule means event is repeating).
+		if event.has_key("RRULE"):
+
+			eventRule = event.get("RRULE")
+
+			# Sometimes the rrule will fail to parse the event rule if
+			# we have a mix of "date times" with timezone and an
+			# "until" without
+			# it. Therefore, we remove the timezone information from each
+			# date time object. Current and event date time are still
+			# in the same timezone after this.
+			if eventRule.has_key("UNTIL"):
+				timezone = None
+				currentDatetime = currentDatetime.replace(tzinfo=None)
+				eventDatetime = eventDatetime.replace(tzinfo=None)
+
+			# Use python dateutil for parsing the rrule.
+			eventDatetimeAfter = None
+			eventDatetimeBefore = None
+
+			try:
+				rrset = rrule.rruleset()
+				rrulestr = rrule.rrulestr(eventRule.to_ical(),
+					dtstart=eventDatetime)
+				rrset.rrule(rrulestr)
+
+				# Get first event that occurs before
+				# and after the current time.
+				eventDatetimeAfter = rrset.after(currentDatetime)
+				eventDatetimeBefore = rrset.before(currentDatetime)
+
+			except:
+				logging.debug("[%s] Not able to parse rrule for '%s'."
+					% (self.fileName, event.get("SUMMARY")))
+
+			# Process the event alarms for the first event occuring after the
+			# current time.
+			if eventDatetimeAfter:
+
+				self._processEventAlarms(event, eventDatetimeAfter)
+
+			# Process the event alarms for the first event occuring before the
+			# current time (needed because of edge cases with alarms 0 seconds
+			# before event). But only check event if it is not older than
+			# 10 minutes.
+			if eventDatetimeBefore:
+				if (eventDatetimeBefore >=
+					(currentDatetime - self.timedelta10min)):
+
+					self._processEventAlarms(event, eventDatetimeBefore)
+
+		# Process "normal" events.
+		else:
+
+			# Check if the event is in the past (minus 10 minutes).
+			if eventDatetime <= (currentDatetime - self.timedelta10min):
+				continue
+
+			self._processEventAlarms(event, eventDatetime)
+
+
+	# Processes each reminder/alarm of an event.
+	def _processEventAlarms(event, eventDatetime):
+
+		# Create current date time according to the event's timezone.
+		timezone = eventDatetime.tzinfo
+		currentDatetime = datetime.datetime.fromtimestamp(time.time(),
+														   timezone)
+
+		for alarm in event.walk("VALARM"):
+
+			if alarm.has_key("TRIGGER"):
+
+				# Get time delta when reminder is triggered.
+				trigger = alarm.get("TRIGGER")
+
+				# Get time when reminder is triggered.
+				triggerDatetime = eventDatetime + trigger.dt
+
+				# Uid of event is needed.
+				uid = event.get("UID")
+
+				# Get time when event starts.
+				dtstart = event.get("DTSTART")
+
+				# Check if we already triggered an alarm for the event
+				# with this uid and the given alarm trigger time.
+				if (uid, triggerDatetime) in self.alreadyTriggered:
+					break
+
+				# Check if the alarm trigger time lies in the past but not
+				# more than 1 day.
+				if((currentDatetime - self.timedelta1day)
+					<= triggerDatetime
+					<= currentDatetime):
+
+					summary = event.get("SUMMARY")
+
+					# Create the utc unix timestamp for the start of the event.
+					unixStart = datetime.datetime.fromtimestamp(0,
+															dtstart.dt.tzinfo)
+					utcDtstart = int(
+									(dtstart.dt - unixStart).total_seconds())
+
+					# Create the utc unix timestamp for the reminder trigger.
+					unixStart = datetime.datetime.fromtimestamp(0,
+													triggerDatetime.tzinfo)
+					utcTrigger = int(
+							(triggerDatetime - unixStart).total_seconds())
+
+					eventDateStr = time.strftime("%D %H:%M:%S",
+												 time.localtime(utcDtstart))
+					msg = "Reminder for event '%s' at %s" \
+						% (summary, eventDateStr)
+
+					# Create sensor alert.
+					sensorAlert = SensorAlert()
+					sensorAlert.clientSensorId = self.id
+					sensorAlert.state = 1
+					sensorAlert.hasOptionalData = True
+					sensorAlert.optionalData = {"message": msg,
+												"calendar": self.name,
+												"type": "reminder",
+												"name": summary,
+												"trigger": utcTrigger,
+												"start": utcDtstart}
+					sensorAlert.changeState = False
+					sensorAlert.hasLatestData = False
+					sensorAlert.dataType = SensorDataType.NONE
+
+					self.reminderAlertQueue.put(sensorAlert)
+
+					# Store the event uid and the alarm trigger time
+					# as already triggered.
+					self.alreadyTriggered.add( (uid, triggerDatetime) )
 
 
 	def initializeSensor(self):
@@ -295,14 +472,10 @@ class ICalendarSensor(_PollingSensor):
 		self._processCalendar()
 
 
-		#print self.icalendar
 
 		# TODO
-		# - create sensor alert for reminder
-		# - use queue object for sensor alerts <-- queue is already processed in forceSendAlert()
-		# - remember to lock access to calendar object.
 		# - remember to enter optionalData into the wiki
-		
+		# - clean up of self.alreadyTriggered needed
 
 	def forceSendAlert(self):
 
@@ -320,7 +493,7 @@ class ICalendarSensor(_PollingSensor):
 				% (self.maxFailedAttempts, self.name) \
 				+ "to retrieve calendar data."
 			sensorAlert.optionalData = {"message": msg,
-										"name": self.name,
+										"calendar": self.name,
 										"type": "timeout"}
 			sensorAlert.changeState = True
 			sensorAlert.hasLatestData = False
@@ -341,7 +514,7 @@ class ICalendarSensor(_PollingSensor):
 			msg = "Calendar data for '%s' retrievable again." \
 				% self.name
 			sensorAlert.optionalData = {"message": msg,
-										"name": self.name,
+										"calendar": self.name,
 										"type": "timeout"}
 			sensorAlert.changeState = True
 			sensorAlert.hasLatestData = False
