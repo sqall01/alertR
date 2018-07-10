@@ -17,6 +17,8 @@ from dateutil import rrule
 import requests
 import threading
 import Queue
+import pytz
+import calendar
 from client import AsynchronousSender
 from localObjects import SensorDataType, SensorAlert, StateChange
 
@@ -272,12 +274,15 @@ class ICalendarSensor(_PollingSensor):
 		# Create a date time starting at midnight
 		# if we have an "all day" event.
 		if type(dtstart.dt) == datetime.date:
-			eventDatetime = datetime.datetime.combine(dtstart.dt,
-				datetime.datetime.min.time())
+			eventUTCTime = calendar.timegm(dtstart.dt.timetuple())
+			eventDatetime = datetime.datetime.utcfromtimestamp(eventUTCTime)
+			eventDatetime = eventDatetime.replace(tzinfo=pytz.UTC)
 
 		# Copy the date time if we have a "normal" event.
 		elif type(dtstart.dt) == datetime.datetime:
 			eventDatetime = dtstart.dt
+			if eventDatetime.tzinfo is None:
+				eventDatetime = eventDatetime.replace(tzinfo=pytz.UTC)
 
 		else:
 			logging.debug("[%s] Do not know how to handle type '%s' "
@@ -285,29 +290,39 @@ class ICalendarSensor(_PollingSensor):
 				+ "of event start.")
 			return
 
-		# Create current date time according to the event's timezone.
-		timezone = eventDatetime.tzinfo
-		currentDatetime = datetime.datetime.fromtimestamp(time.time(),
-														   timezone)
+		# Create current datetime object.
+		currentUTCTime = time.time()
+		currentDatetime = datetime.datetime.utcfromtimestamp(currentUTCTime)
+		currentDatetime = currentDatetime.replace(tzinfo=pytz.UTC)
 
 		# Process rrule if event has one (rrule means event is repeating).
 		if event.has_key("RRULE"):
 
 			eventRule = event.get("RRULE")
 
-			# Sometimes the rrule will fail to parse the event rule if
-			# we have a mix of "date times" with timezone and an
-			# "until" without
-			# it. Therefore, we remove the timezone information from each
-			# date time object. Current and event date time are still
-			# in the same timezone after this.
 			if eventRule.has_key("UNTIL"):
+				# Sometimes the rrule will fail to parse the event rule if
+				# we have a mix of "date times" with timezone and an
+				# "until" without it.
 				if type(eventRule.get("until")[0]) == datetime.datetime:
 					timezone = eventRule.get("until")[0].tzinfo
-				else:
-					timezone = None
-				currentDatetime = currentDatetime.replace(tzinfo=timezone)
-				eventDatetime = eventDatetime.replace(tzinfo=timezone)
+
+					# "RRULE values must be specified in UTC when
+					# DTSTART is timezone-aware"
+					if timezone is None:
+						eventRule["UNTIL"][0] = eventRule["UNTIL"][0].replace(
+															tzinfo=pytz.UTC)
+
+				# Since date objects do not have a timezone but rrule needs
+				# one, we replace the date object with a datetime object
+				# in UTC time.
+				elif type(eventRule.get("until")[0]) == datetime.date:
+					tempUntil = eventRule.get("until")[0]
+					ruleUTCTime = calendar.timegm(tempUntil.timetuple())
+					ruleDatetime = datetime.datetime.utcfromtimestamp(
+																ruleUTCTime)
+					ruleDatetime = ruleDatetime.replace(tzinfo=pytz.UTC)
+					eventRule["UNTIL"][0] = ruleDatetime
 
 			# Use python dateutil for parsing the rrule.
 			eventDatetimeAfter = None
@@ -315,8 +330,9 @@ class ICalendarSensor(_PollingSensor):
 
 			try:
 				rrset = rrule.rruleset()
+
 				rrulestr = rrule.rrulestr(eventRule.to_ical(),
-					dtstart=eventDatetime)
+										  dtstart=eventDatetime)
 				rrset.rrule(rrulestr)
 
 				# Get first event that occurs before
@@ -346,7 +362,6 @@ class ICalendarSensor(_PollingSensor):
 
 		# Process "normal" events.
 		else:
-
 			# Check if the event is in the past (minus 10 minutes).
 			if eventDatetime <= (currentDatetime - self.timedelta10min):
 				return
@@ -357,10 +372,10 @@ class ICalendarSensor(_PollingSensor):
 	# Processes each reminder/alarm of an event.
 	def _processEventAlarms(self, event, eventDatetime):
 
-		# Create current date time according to the event's timezone.
-		timezone = eventDatetime.tzinfo
-		currentDatetime = datetime.datetime.fromtimestamp(time.time(),
-														   timezone)
+		# Create current datetime object.
+		currentUTCTime = time.time()
+		currentDatetime = datetime.datetime.utcfromtimestamp(currentUTCTime)
+		currentDatetime = currentDatetime.replace(tzinfo=pytz.UTC)
 
 		for alarm in event.walk("VALARM"):
 
@@ -376,14 +391,21 @@ class ICalendarSensor(_PollingSensor):
 
 				# When trigger time is an actual time, use this.
 				elif type(trigger.dt) == datetime.datetime:
-					triggerDatetime = trigger.dt.replace(tzinfo=timezone)
+					triggerDatetime = trigger.dt
+
+					# Thunderbird uses the same timezone as the event when
+					# no is given.
+					if triggerDatetime.tzinfo is None:
+						triggerDatetime = triggerDatetime.replace(
+												tzinfo=eventDatetime.tzinfo)
 
 				# When trigger time is only a date, start at midnight.
 				elif type(trigger.dt) == datetime.date:
-					triggerDatetime = datetime.datetime.combine(trigger.dt,
-												datetime.datetime.min.time())
-					triggerDatetime = triggerDatetime.replace(
-															tzinfo=timezone)
+					triggerUTCTime = calendar.timegm(trigger.dt.timetuple())
+					triggerDatetime = datetime.datetime.utcfromtimestamp(
+																triggerUTCTime)
+					triggerDatetime = triggerDatetime.replace(tzinfo=pytz.UTC)
+
 				else:
 					logging.error("[%s] Error: Do not know how to handle "
 						% self.fileName
@@ -411,16 +433,15 @@ class ICalendarSensor(_PollingSensor):
 					summary = event.get("SUMMARY")
 
 					# Create the utc unix timestamp for the start of the event.
-					unixStart = datetime.datetime.fromtimestamp(0,
-															dtstart.dt.tzinfo)
+					unixStart = datetime.datetime.utcfromtimestamp(0)
+					unixStart = unixStart.replace(tzinfo=pytz.UTC)
+
 					utcDtstart = int(
-									(dtstart.dt - unixStart).total_seconds())
+								(eventDatetime - unixStart).total_seconds())
 
 					# Create the utc unix timestamp for the reminder trigger.
-					unixStart = datetime.datetime.fromtimestamp(0,
-													triggerDatetime.tzinfo)
 					utcTrigger = int(
-							(triggerDatetime - unixStart).total_seconds())
+								(triggerDatetime - unixStart).total_seconds())
 
 					eventDateStr = time.strftime("%D %H:%M:%S",
 												 time.localtime(utcDtstart))
@@ -491,12 +512,8 @@ class ICalendarSensor(_PollingSensor):
 			# Update time.
 			self.lastUpdate = utcTimestamp
 
-
-
-			# TODO REMOVE AFTER DEBUGGING
-			logging.debug("Number of already triggered elements: %d" % len(self.alreadyTriggered))
-
-
+			logging.debug("Number of remaining already triggered elements: %d"
+				% len(self.alreadyTriggered))
 
 		# Process calendar data for occurring reminder.
 		self._processCalendar()
@@ -511,11 +528,6 @@ class ICalendarSensor(_PollingSensor):
 															  timezone)
 			if (currentDatetime - self.timedelta2day) >= triggerDatetime:
 				self.alreadyTriggered.remove(triggeredTuple)
-
-
-
-		# TODO
-		# - remember to enter optionalData into the wiki
 
 
 	def forceSendAlert(self):

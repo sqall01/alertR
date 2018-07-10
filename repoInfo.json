@@ -63,6 +63,12 @@
 		"desc": "This client stores the state of the alert system in a database for external usage. It uses a MySQL db to store all information about the alert system and events that occur (for example, a client that disconnected from the alert system). External components, such as a website, can use the information in the database for their purposes. In the case of a website, it can process the data and show a visualization to the user. In order to let external components interact with the alert system, the manager client contains a local UNIX socket server which can be contacted.",
 		"type": "manager"
 		},
+	"sensorClientICalendar": {
+		"location": "sensorClientICalendar/",
+		"name": "AlertR Sensor Client iCalendar",
+		"desc": "This client handles calendar services as a sensor. For this, reminders in this calendar are used to trigger sensor alerts. Every calendar service that gives the option to retrieve the calendar data as .ics file via an URL can be used with this sensor client. For example, you can combine this sensor client with your Google calendar to generate sensor alerts every time a reminder is triggered. These sensor alerts can then be instrumented by every AlertR alert client to perform a certain task (e.g., display a message on your Kodi media center setup).",
+		"type": "sensor"
+		},
 	"sensorClientExecuter": {
 		"location": "sensorClientExecuter/",
 		"name": "AlertR Sensor Client Executer",

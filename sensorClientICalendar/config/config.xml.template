@@ -156,7 +156,7 @@
 			-->
 			<general
 				id="0"
-				description="example icalendar with htaccess"
+				description="Example Google Calendar"
 				alertDelay="0"
 				triggerAlert="True"
 				triggerAlertNormal="False" />
@@ -168,17 +168,100 @@
 			<alertLevel>0</alertLevel>
 
 			<!--
-				TODO
+				The iCalendar specific settings:
+				name - The name used for the calendar.
+				interval - Interval in seconds in which the calendar is
+					fetched from the service.
+				location - The location of the calendar to retrieve
+					the .ics file (should be a https URL, however, http
+					works also but is not recommended).
+				htaccessAuth - The authentication mode that is used by the
+					server. Supported are no authentication, basic HTTP
+					authentication, and digest HTTP authentication.
+					(NONE, BASIC, or DIGEST)
+				htaccessUser - Username used for the authentication
+					(only used if htaccessAuth is not set to NONE)
+				htaccessPass - Password used for the authentication
+					(only used if htaccessAuth is not set to NONE)
 			-->
 			<icalendar
-				name=""
-				interval=""
-				location=""
-				htaccessAuth=""
+				name="My Google Calendar"
+				interval="60"
+				location="https://www.google.com/calendar/ical/sqall%40alertr.de/private-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/basic.ics"
+				htaccessAuth="NONE"
 				htaccessUser=""
 				htaccessPass="" />
 
 		</sensor>
+
+		<!--
+			a single sensor is configured in a "sensor" element
+			if you need additional sensors just add a new one
+		-->
+		<sensor>
+
+			<!--
+				the general configuration of a sensor
+				id - local id of this sensor (has to be unique on this client)
+				description - description of this sensor
+				alertDelay - delay after which (when the alert system is still
+					active) the alert should trigger (this is processed
+					by the server and the value here is only used to register
+					with it at the server)
+				triggerAlert - this flag indicates if this sensor should
+					trigger an alert for example it could be just used to
+					signal the state to the server and not trigger
+					any alert (regardless of if the alert system is
+					active or not)
+					("True" or "False")
+				triggerAlertNormal - this flag indicates if this sensor should
+					trigger an alert when it goes back to a normal state (and
+					not only if a triggered state is reached and the flag
+					"triggerAlert" is set). If this flag is not set, this
+					client sends only a state change to the server to inform
+					it about the new state.
+					("True" or "False")
+			-->
+			<general
+				id="1"
+				description="Example icalendar with htaccess (e.g., Kopano)"
+				alertDelay="0"
+				triggerAlert="True"
+				triggerAlertNormal="False" />
+
+			<!--
+				the alert level that is triggered by the sensor
+				(a sensor must have one but can have multiple alert levels)
+			-->
+			<alertLevel>0</alertLevel>
+
+			<!--
+				The iCalendar specific settings:
+				name - The name used for the calendar.
+				interval - Interval in seconds in which the calendar is
+					fetched from the service.
+				location - The location of the calendar to retrieve
+					the .ics file (should be a https URL, however, http
+					works also but is not recommended).
+				htaccessAuth - The authentication mode that is used by the
+					server. Supported are no authentication, basic HTTP
+					authentication, and digest HTTP authentication.
+					(NONE, BASIC, or DIGEST)
+				htaccessUser - Username used for the authentication
+					(only used if htaccessAuth is not set to NONE)
+				htaccessPass - Password used for the authentication
+					(only used if htaccessAuth is not set to NONE)
+			-->
+			<icalendar
+				name="My Private Calendar Service"
+				interval="60"
+				location="https://mykopanoservice.com:8080/ical/"
+				htaccessAuth="BASIC"
+				htaccessUser="myUsername"
+				htaccessPass="MySuperSecretPassword" />
+
+		</sensor>
+
 
 	</sensors>
 

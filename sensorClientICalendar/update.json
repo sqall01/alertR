@@ -25,7 +25,12 @@
 			{
 			"import": "icalendar",
 			"packet": "icalendar",
-			"version": "4.0.0"
+			"version": "4.0.2"
+			},
+			{
+			"import": "dateutil",
+			"packet": "python-dateutil",
+			"version": "2.7.3"
 			}
 		]
 	}
