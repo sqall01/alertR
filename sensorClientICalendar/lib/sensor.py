@@ -512,7 +512,9 @@ class ICalendarSensor(_PollingSensor):
 			# Update time.
 			self.lastUpdate = utcTimestamp
 
-			logging.debug("Number of remaining already triggered elements: %d"
+			logging.debug("[%s] Number of remaining already "
+				% self.fileName
+				+ "triggered elements: %d"
 				% len(self.alreadyTriggered))
 
 		# Process calendar data for occurring reminder.
@@ -538,6 +540,11 @@ class ICalendarSensor(_PollingSensor):
 		if (not self.inFailedState
 			and self.failedCounter > self.maxFailedAttempts):
 
+			logging.warning("[%s] Triggering sensor alert for "
+				% self.fileName
+				+ "'%d' failed calendar fetching attempts."
+				% self.failedCounter)
+
 			sensorAlert = SensorAlert()
 			sensorAlert.clientSensorId = self.id
 			sensorAlert.state = 1
@@ -559,6 +566,10 @@ class ICalendarSensor(_PollingSensor):
 		# calendar data again trigger a sensor alert for "normal".
 		elif (self.inFailedState
 			and self.failedCounter <= self.maxFailedAttempts):
+
+			logging.warning("[%s] Fetching calendar succeeded after "
+				% self.fileName
+				+ "multiple failed attempts. Triggering sensor alert.")
 
 			sensorAlert = SensorAlert()
 			sensorAlert.clientSensorId = self.id
