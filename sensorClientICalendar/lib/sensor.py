@@ -430,7 +430,17 @@ class ICalendarSensor(_PollingSensor):
 					<= triggerDatetime
 					<= currentDatetime):
 
-					summary = event.get("SUMMARY")
+					title = event.get("SUMMARY")
+
+					# Get description if event has one.
+					evDescription = ""
+					if event.has_key("DESCRIPTION")
+						evDescription = event.get("DESCRIPTION")
+
+					# Get location if event has one.
+					location = ""
+					if event.has_key("LOCATION")
+						location = event.get("LOCATION")
 
 					# Create the utc unix timestamp for the start of the event.
 					unixStart = datetime.datetime.utcfromtimestamp(0)
@@ -446,7 +456,7 @@ class ICalendarSensor(_PollingSensor):
 					eventDateStr = time.strftime("%D %H:%M:%S",
 												 time.localtime(utcDtstart))
 					msg = "Reminder for event '%s' at %s" \
-						% (summary, eventDateStr)
+						% (title, eventDateStr)
 
 					# Create sensor alert.
 					sensorAlert = SensorAlert()
@@ -456,7 +466,9 @@ class ICalendarSensor(_PollingSensor):
 					sensorAlert.optionalData = {"message": msg,
 												"calendar": self.name,
 												"type": "reminder",
-												"name": summary,
+												"title": title,
+												"description": evDescription,
+												"location": location,
 												"trigger": utcTrigger,
 												"start": utcDtstart}
 					sensorAlert.changeState = False
