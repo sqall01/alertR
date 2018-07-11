@@ -434,12 +434,12 @@ class ICalendarSensor(_PollingSensor):
 
 					# Get description if event has one.
 					evDescription = ""
-					if event.has_key("DESCRIPTION")
+					if event.has_key("DESCRIPTION"):
 						evDescription = event.get("DESCRIPTION")
 
 					# Get location if event has one.
 					location = ""
-					if event.has_key("LOCATION")
+					if event.has_key("LOCATION"):
 						location = event.get("LOCATION")
 
 					# Create the utc unix timestamp for the start of the event.
