@@ -13,7 +13,7 @@ import os
 import logging
 import icalendar
 import datetime
-from dateutil import rrule
+import dateutil
 import requests
 import threading
 import Queue
@@ -271,12 +271,16 @@ class ICalendarSensor(_PollingSensor):
 		# Get current time in timezone of event.
 		eventDatetime = None
 
-		# Create a date time starting at midnight
-		# if we have an "all day" event.
+		# Create a datetime starting at midnight
+		# if we have an "all day" event. This event is in the local
+		# timezone.
 		if type(dtstart.dt) == datetime.date:
 			eventUTCTime = calendar.timegm(dtstart.dt.timetuple())
 			eventDatetime = datetime.datetime.utcfromtimestamp(eventUTCTime)
-			eventDatetime = eventDatetime.replace(tzinfo=pytz.UTC)
+			# Since we just overwrite the timezone here, we do not
+			# care about conversion from UTC since the new datetime
+			# object starts at midnight in the given timezone.
+			eventDatetime = eventDatetime.replace(tzinfo=dateutil.tz.tzlocal())
 
 		# Copy the date time if we have a "normal" event.
 		elif type(dtstart.dt) == datetime.datetime:
@@ -329,10 +333,10 @@ class ICalendarSensor(_PollingSensor):
 			eventDatetimeBefore = None
 
 			try:
-				rrset = rrule.rruleset()
+				rrset = dateutil.rrule.rruleset()
 
-				rrulestr = rrule.rrulestr(eventRule.to_ical(),
-										  dtstart=eventDatetime)
+				rrulestr = dateutil.rrule.rrulestr(eventRule.to_ical(),
+												   dtstart=eventDatetime)
 				rrset.rrule(rrulestr)
 
 				# Get first event that occurs before
@@ -393,18 +397,23 @@ class ICalendarSensor(_PollingSensor):
 				elif type(trigger.dt) == datetime.datetime:
 					triggerDatetime = trigger.dt
 
-					# Thunderbird uses the same timezone as the event when
+					# Use the same timezone as the event when
 					# no is given.
 					if triggerDatetime.tzinfo is None:
 						triggerDatetime = triggerDatetime.replace(
 												tzinfo=eventDatetime.tzinfo)
 
-				# When trigger time is only a date, start at midnight.
+				# When trigger time is only a date, start at midnight,
+				# however, use the same timezone as the event.
 				elif type(trigger.dt) == datetime.date:
 					triggerUTCTime = calendar.timegm(trigger.dt.timetuple())
 					triggerDatetime = datetime.datetime.utcfromtimestamp(
 																triggerUTCTime)
-					triggerDatetime = triggerDatetime.replace(tzinfo=pytz.UTC)
+					# Since we just overwrite the timezone here, we do not
+					# care about conversion from UTC since the new datetime
+					# object starts at midnight in the given timezone.
+					triggerDatetime = triggerDatetime.replace(
+												tzinfo=eventDatetime.tzinfo)
 
 				else:
 					logging.error("[%s] Error: Do not know how to handle "
