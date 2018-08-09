@@ -917,6 +917,14 @@ def checkDependencies(dependencies):
 				if not userConfirmation():
 					versionCorrect = False
 
+				# if the version is not correct => abort the next checks
+				if versionCorrect is False:
+
+					print "Please update your installed version of the",
+					print "module '%s'." % importName
+
+					return False
+
 			# check the installed module automatically
 			else:
 
