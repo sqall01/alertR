@@ -1342,11 +1342,15 @@ class ServerCommunication:
 	# this function reconnects the client to the server
 	def reconnect(self):
 
+		logging.info("[%s] Reconnecting to server." % self.fileName)
+
 		self._acquireLock()
 
 		# clean up session before exiting
 		self._cleanUpSessionForClosing()
+
 		self._releaseLock()
+
 		return self.initializeCommunication()
 
 
@@ -1535,6 +1539,11 @@ class ConnectionWatchdog(threading.Thread):
 						if not self.smtpAlert is None:
 							self.smtpAlert.sendCommunicationAlertClear()
 
+						logging.info("[%s] Reconnecting successful "
+							% self.fileName
+							+ "after %d attempts."
+							% self.connectionRetries)
+
 						self.connectionRetries = 1
 						break
 					self.connectionRetries +=1
@@ -1575,6 +1584,11 @@ class ConnectionWatchdog(threading.Thread):
 							# problems are solved
 							if not self.smtpAlert is None:
 								self.smtpAlert.sendCommunicationAlertClear()
+
+							logging.info("[%s] Reconnecting successful "
+								% self.fileName
+								+ "after %d attempts."
+								% self.connectionRetries)
 
 							self.connectionRetries = 1
 							break

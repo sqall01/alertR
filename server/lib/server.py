@@ -817,12 +817,12 @@ class ClientCommunication:
 	# this internal function cleans up the session before releasing the
 	# lock and exiting/closing the session
 	def _cleanUpSessionForClosing(self):
+		# mark node as not connected
+		self.storage.markNodeAsNotConnected(self.nodeId, logger=self.logger)
+
 		# set flag that the initialization process of
 		# the client is finished as false
 		self.clientInitialized = False
-
-		# mark node as not connected
-		self.storage.markNodeAsNotConnected(self.nodeId, logger=self.logger)
 
 		# wake up manager update executer
 		self.managerUpdateExecuter.forceStatusUpdate = True

@@ -110,7 +110,7 @@ class ConnectionWatchdog(threading.Thread):
 		for serverSession in self.serverSessions:
 
 			# Check if client communication object exists.
-			if serverSession.clientComm == None:
+			if serverSession.clientComm is None:
 				continue
 
 			# Check if the time of the data last received lies
@@ -142,7 +142,7 @@ class ConnectionWatchdog(threading.Thread):
 		for serverSession in self.serverSessions:
 
 			# Check if client communication object exists.
-			if serverSession.clientComm == None:
+			if serverSession.clientComm is None:
 				continue
 
 			nodeId = serverSession.clientComm.nodeId
