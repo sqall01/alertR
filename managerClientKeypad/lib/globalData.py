@@ -30,7 +30,7 @@ class GlobalData:
 
 		# interval in which a ping should be send when 
 		# no data was received/send		
-		self.pingInterval = 20
+		self.pingInterval = 30
 
 		# type of this node/client
 		self.nodeType = "manager"

@@ -45,7 +45,7 @@ class GlobalData:
 		self.managerUpdateExecuter = None
 
 		# this is the time in seconds when the client times out
-		self.connectionTimeout = 30
+		self.connectionTimeout = 90
 
 		# This is the time a "persistent" client does not count as
 		# timed out if it disconnects from the server.
@@ -90,7 +90,7 @@ class GlobalData:
 		self.alertLevels = list()
 
 		# time the server is waiting on receives until a time out occurs
-		self.serverReceiveTimeout = 20.0
+		self.serverReceiveTimeout = 50.0
 
 		# list and lock of/for the asynchronous option executer
 		self.asyncOptionExecutersLock = threading.BoundedSemaphore(1)
