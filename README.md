@@ -132,13 +132,13 @@ If you have already a working AlertR system installed and a newer version is ava
 # Further Notes
 <a name="further_notes"/>
 
-If you are interested in AlertR and its development, you can also read AlertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR). To post your awesome projects or ask a community for help you can use [r/AlertR](https://www.reddit.com/r/AlertR/).
+If you are interested in AlertR and its development, you can also read AlertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR). To post your awesome projects or ask a community for help you can use [reddit](https://www.reddit.com/r/AlertR/).
 
 
 # Supporting AlertR
 <a name="supporting_alertr"/>
 
-If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use AlertR (for example on [r/AlertR](https://www.reddit.com/r/AlertR/)), writing code for it, and so on.
+If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use AlertR (for example on [reddit](https://www.reddit.com/r/AlertR/)), writing code for it, and so on.
 
 If you do not know how to do any of it or do not have the time, you can support the project by [donating](https://alertr.de/donations.php) or support me on [Patreon](https://www.patreon.com/sqall). Since services such as the push notification service have a monthly upkeep, the donation helps to keep these services free for everyone.
 
