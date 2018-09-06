@@ -4,6 +4,8 @@ AlertR is a client/server based alarm system and monitoring system which targets
 
 The vision for AlertR is to have a single service running that           gathers all the information someone wants (like temperature data, service states, or bank account transfers) and provides the ability to react on them automatically. In addition, it should serve as single point to let the user look up aggregated information of his/her services. All this should be done in such a way that the user is always in control of his/her data and no one besides him/her is able to access them.
 
+The project is well documented in the [Github Wiki](https://github.com/sqall01/alertR/wiki/) and a community page can be found on [reddit](https://www.reddit.com/r/AlertR/).
+
 
 # Table of Contents
 * [Version](#version)
@@ -130,13 +132,13 @@ If you have already a working AlertR system installed and a newer version is ava
 # Further Notes
 <a name="further_notes"/>
 
-If you are interested in AlertR and its development, you can also read AlertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR).
+If you are interested in AlertR and its development, you can also read AlertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR). To post your awesome projects or ask a community for help you can use [r/AlertR](https://www.reddit.com/r/AlertR/).
 
 
 # Supporting AlertR
 <a name="supporting_alertr"/>
 
-If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use AlertR, writing code for it, and so on.
+If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use AlertR (for example on [r/AlertR](https://www.reddit.com/r/AlertR/)), writing code for it, and so on.
 
 If you do not know how to do any of it or do not have the time, you can support the project by [donating](https://alertr.de/donations.php) or support me on [Patreon](https://www.patreon.com/sqall). Since services such as the push notification service have a monthly upkeep, the donation helps to keep these services free for everyone.
 
