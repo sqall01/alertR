@@ -17,8 +17,14 @@ import logging
 import time
 import socket
 import random
+import signal
 import RPi.GPIO as GPIO
 import xml.etree.ElementTree
+
+
+# Signal handler to gracefully shutdown the client.
+def signalHandler(signum, frame):
+	GPIO.cleanup()
 
 
 # Function creates a path location for the given user input.
@@ -185,6 +191,10 @@ if __name__ == '__main__':
 	except Exception as e:
 		logging.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)
+
+    # Register sigterm handler to gracefully shutdown the client.
+    signal.signal(signal.SIGTERM, signalHandler)
+    signal.signal(signal.SIGINT, signalHandler)
 
 	random.seed()
 

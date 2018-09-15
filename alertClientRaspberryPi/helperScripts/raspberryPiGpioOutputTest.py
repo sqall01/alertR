@@ -4,10 +4,15 @@
 
 import RPi.GPIO as GPIO
 import time
+import signal
 
 # NOTE: this is the actual pin number (not the number of the GPIO)
 outputPin = 18
 
+def signalHandler(signum, frame):
+	GPIO.cleanup()
+
+signal.signal(signal.SIGINT, signalHandler)
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(outputPin, GPIO.OUT)
@@ -22,3 +27,5 @@ time.sleep(5)
 
 print "low"
 GPIO.output(outputPin, GPIO.LOW)
+
+GPIO.cleanup()
