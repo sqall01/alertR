@@ -5,12 +5,14 @@
 import RPi.GPIO as GPIO
 import time
 import signal
+import sys
 
 # NOTE: this is the actual pin number (not the number of the GPIO)
 outputPin = 18
 
 def signalHandler(signum, frame):
 	GPIO.cleanup()
+	sys.exit(0)
 
 signal.signal(signal.SIGINT, signalHandler)
 

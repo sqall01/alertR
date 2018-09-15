@@ -25,6 +25,7 @@ import xml.etree.ElementTree
 # Signal handler to gracefully shutdown the client.
 def signalHandler(signum, frame):
 	GPIO.cleanup()
+	sys.exit(0)
 
 
 # Function creates a path location for the given user input.
