@@ -914,6 +914,7 @@ def checkDependencies(dependencies):
 				print "Do you have a version installed that satisfies",
 				print "the needed version?"
 
+				versionCorrect = True
 				if not userConfirmation():
 					versionCorrect = False
 
