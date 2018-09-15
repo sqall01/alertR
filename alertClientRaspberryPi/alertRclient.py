@@ -193,9 +193,9 @@ if __name__ == '__main__':
 		logging.exception("[%s]: Could not parse config." % fileName)
 		sys.exit(1)
 
-    # Register sigterm handler to gracefully shutdown the client.
-    signal.signal(signal.SIGTERM, signalHandler)
-    signal.signal(signal.SIGINT, signalHandler)
+	# Register sigterm handler to gracefully shutdown the client.
+	signal.signal(signal.SIGTERM, signalHandler)
+	signal.signal(signal.SIGINT, signalHandler)
 
 	random.seed()
 
