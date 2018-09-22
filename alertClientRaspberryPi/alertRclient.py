@@ -22,9 +22,12 @@ import RPi.GPIO as GPIO
 import xml.etree.ElementTree
 
 
-# Signal handler to gracefully shutdown the client.
+# Signal handler to cleaning up the client.
 def signalHandler(signum, frame):
+	fileName = os.path.basename(__file__)
+	logging.info("[%s]: Resetting GPIOs." % fileName)
 	GPIO.cleanup()
+	logging.info("[%s]: Exiting client." % fileName)
 	sys.exit(0)
 
 
