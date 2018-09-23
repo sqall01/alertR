@@ -1,4 +1,4 @@
-# AlertR
+![AlertR Logo](docs/alertr_logo_black.png)
 
 AlertR is a client/server based alarm system and monitoring system which targets developers, tinkers, privacy advocates, and all people that are interested in DIY solutions. Despite the obvious use as a home alarm system, it can also be used to help server administrators to monitor their services (or used in any other cases in which sensors are required). Because of the way it is designed, AlertR can be used in any scenario a sensor with the state `triggered` and `normal` has to be monitored. This can be a sensor for a home security or home automation system, but also computer services like a failing HDD drive in a RAID or the availability of a web server.
 
