@@ -26,6 +26,7 @@ class ConfigWatchdog(threading.Thread):
 		self.globalData = globalData
 		self.logger = self.globalData.logger
 		self.userBackend = self.globalData.userBackend
+		self.serverSessions = self.globalData.serverSessions
 
 		# File name of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -55,6 +56,32 @@ class ConfigWatchdog(threading.Thread):
 				md5.update(data)
 
 		return md5.hexdigest()
+
+
+	# This function synchronizes the existing usernames with
+	# existing connections. When a connection still exists with
+	# a username which does not exist anymore, it is closed.
+	def _syncUsernamesAndConnections(self):
+
+		for serverSession in self.serverSessions:
+
+			# Check if client communication object exists.
+			if serverSession.clientComm is None:
+				continue
+
+			username = serverSession.clientComm.username
+			if username is None:
+				continue
+
+			# Close connection to the client if the username
+			# does no longer exist.
+			if not self.userBackend.userExists(username):
+
+				self.logger.info("[%s]: Username '%s' does not exist anymore. "
+					% (self.fileName, username)
+					+ "Closing connection to client.")
+
+				serverSession.closeConnection()
 
 
 	def run(self):
@@ -92,3 +119,7 @@ class ConfigWatchdog(threading.Thread):
 
 						self.CSVUsersHash = newHash
 						self.userBackend.readUserdata()
+
+						# Close connections to clients which usernames
+						# are no longer valid.
+						self._syncUsernamesAndConnections()
