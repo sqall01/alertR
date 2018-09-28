@@ -1,3 +1,10 @@
+## 0.503-5
+
+Features:
+
+* Changed users.csv file format and added manageUsers.py script to manage users.
+* Users can now be changed at runtime.
+
 ## 0.503-4
 
 Features:

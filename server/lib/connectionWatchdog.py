@@ -16,7 +16,7 @@ from localObjects import SensorDataType
 from internalSensors import SensorTimeoutSensor, NodeTimeoutSensor
 
 
-# This class checks handles all timeouts of nodes, sensors, and so on.
+# This class handles all timeouts of nodes, sensors, and so on.
 class ConnectionWatchdog(threading.Thread):
 
 	def __init__(self, globalData, connectionTimeout):
@@ -31,7 +31,7 @@ class ConnectionWatchdog(threading.Thread):
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
 		self.internalSensors = self.globalData.internalSensors
 
-		# file nme of this file (used for logging)
+		# file name of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
 		# Get value for the configured timeout of a session.
@@ -947,7 +947,7 @@ class ConnectionWatchdog(threading.Thread):
 		# start and accept connections.
 		self._isInitialized = True
 
-		while 1:
+		while True:
 			# wait 5 seconds before checking time of last received data
 			for i in range(5):
 				if self.exitFlag:

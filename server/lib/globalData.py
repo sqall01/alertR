@@ -21,7 +21,7 @@ class GlobalData:
 		self.version = 0.503
 
 		# revision of the used server
-		self.rev = 4
+		self.rev = 5
 
 		# name of this server
 		self.name = "AlertR Server"
@@ -57,6 +57,11 @@ class GlobalData:
 		# this is the interval in seconds in which the managers
 		# are sent updates of the clients (at least)
 		self.managerUpdateInterval = 60.0
+
+		# This is the interval in seconds in which the configuration
+		# files that can be reloaded during runtime are checked
+		# for changes and reloaded if changed.
+		self.configCheckInterval = 60.0
 
 		# path to the configuration file of the client
 		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
@@ -101,6 +106,9 @@ class GlobalData:
 
 		# Instance of the connection watchdog object.
 		self.connectionWatchdog = None
+
+		# Instance of the config watchdog object.
+		self.configWatchdog = None
 
 		# Information concerning logging instances.
 		self.logger = None

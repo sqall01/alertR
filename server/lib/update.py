@@ -59,7 +59,7 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 class Updater:
 
 	def __init__(self, host, port, serverPath, caFile, globalData,
-		localInstanceInfo):
+		localInstanceInfo, retrieveInfo=True):
 
 		# used for logging
 		self.fileName = os.path.basename(__file__)
@@ -97,8 +97,10 @@ class Updater:
 		self.chunkSize = 4096
 
 		# Get newest data from repository.
-		if not self._getNewestVersionInformation():
-			raise ValueError("Not able to get newest repository information.")
+		if retrieveInfo:
+			if not self._getNewestVersionInformation():
+				raise ValueError("Not able to get newest "
+					+ "repository information.")
 
 
 	# internal function that acquires the lock

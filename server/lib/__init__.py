@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from connectionWatchdog import ConnectionWatchdog
+from configWatchdog import ConfigWatchdog
 from server import ServerSession, ThreadedTCPServer, AsynchronousSender
 from storage import Sqlite, Mysql
 from alert import SensorAlertExecuter

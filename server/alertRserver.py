@@ -9,7 +9,7 @@
 
 import sys
 import os
-from lib import ConnectionWatchdog
+from lib import ConnectionWatchdog, ConfigWatchdog
 from lib import ServerSession, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import SensorDataType, AlertLevel
@@ -1538,13 +1538,24 @@ if __name__ == '__main__':
 	serverThread.start()
 
 	# start a watchdog thread that controls all server sessions
-	globalData.logger.info("[%s] Starting watchdog thread." % fileName)
+	globalData.logger.info("[%s] Starting connection watchdog thread."
+		% fileName)
 	globalData.connectionWatchdog = ConnectionWatchdog(globalData,
 		globalData.connectionTimeout)
 	# set thread to daemon
 	# => threads terminates when main thread terminates
 	globalData.connectionWatchdog.daemon = True
 	globalData.connectionWatchdog.start()
+
+	# Start a watchdog thread that checks all configuration files.
+	globalData.logger.info("[%s] Starting config watchdog thread."
+		% fileName)
+	globalData.configWatchdog = ConfigWatchdog(globalData,
+		globalData.configCheckInterval)
+	# set thread to daemon
+	# => threads terminates when main thread terminates
+	globalData.configWatchdog.daemon = True
+	globalData.configWatchdog.start()
 
 	# Only start version informer if update check is available.
 	if updateActivated is True:
