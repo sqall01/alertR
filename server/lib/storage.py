@@ -85,11 +85,13 @@ class _Storage():
 	def getNodeId(self, username, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
+
 	# Gets the ids of all nodes
 	#
 	# return list of nodeIds
 	def getNodeIds(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
+
 
 	# gets the count of the sensors of a node in the database
 	#
@@ -217,6 +219,15 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
+	# Gets all nodes from the database.
+	#
+	# return a list of tuples of
+	# (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev, persistent) or None
+	def getNodes(self, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
@@ -270,10 +281,17 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# deletes a sensor alert given by its sensor alert id
+	# Deletes a sensor alert given by its sensor alert id.
 	#
 	# return True or False
 	def deleteSensorAlert(self, sensorAlertId, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# Deletes a node given by its node id.
+	#
+	# return True or False
+	def deleteNode(self, nodeId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -401,6 +419,34 @@ class Sqlite(_Storage):
 			return result[0][0]
 		else:
 			raise ValueError("Node id was not found.")
+
+
+	# Internal function that gets the node from the database given by its id.
+	#
+	# return a tuple of (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev, persistent) or None
+	def _getNodeById(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("SELECT * FROM nodes "
+				+ "WHERE id = ?", (nodeId, ))
+
+			result = self.cursor.fetchall()
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "node with id %d." % nodeId)
+
+			return None
+
+		if len(result) == 1:
+			return result[0]
+		else:
+			return None
 
 
 	# internal function that gets the sensor id of a sensor when the id
@@ -663,6 +709,183 @@ class Sqlite(_Storage):
 
 		# commit all changes
 		self.conn.commit()
+
+
+	# Internal function that deletes all alert data corresponding
+	# to the given node id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteAlertsForNodeId(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			# Get all alert ids that are connected to
+			# the node.
+			self.cursor.execute("SELECT id FROM alerts "
+				+ "WHERE nodeId = ?", (nodeId, ))
+			result = self.cursor.fetchall()
+
+			# Delete all alert alert levels and alerts of
+			# this node
+			for alertIdResult in result:
+
+				self.cursor.execute("DELETE FROM "
+					+ "alertsAlertLevels "
+					+ "WHERE alertId = ?",
+					(alertIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM alerts "
+					+ "WHERE id = ?",
+					(alertIdResult[0], ))
+
+			# Commit all changes.
+			self.conn.commit()
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to "
+				% self.fileName
+				+ "delete alerts for node with id %d."
+				% nodeId)
+
+			return False
+
+		return True
+
+
+	# Internal function that deletes all manager data corresponding
+	# to the given node id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteManagerForNodeId(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("DELETE FROM managers "
+				+ "WHERE nodeId = ?",
+				(nodeId, ))
+
+			# Commit all changes.
+			self.conn.commit()
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to "
+				% self.fileName
+				+ "delete manager for node with id %d."
+				% nodeId)
+
+			return False
+
+		return True
+
+
+	# Internal function that deletes all sensor data corresponding
+	# to the given node id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteSensorsForNodeId(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			# Get all sensor ids that are connected to
+			# the old sensor.
+			self.cursor.execute("SELECT id FROM sensors "
+				+ "WHERE nodeId = ? ", (nodeId, ))
+			result = self.cursor.fetchall()
+
+			# Delete all sensor alert levels, data and sensors of
+			# this node.
+			for sensorIdResult in result:
+
+				# Get all sensor alert ids that are connected to
+				# the this sensor.
+				self.cursor.execute("SELECT id FROM sensorAlerts "
+					+ "WHERE sensorId = ? ",
+					(sensorIdResult[0], ))
+				sensorAlertIdsresult = self.cursor.fetchall()
+
+				# Delete all sensor alert data connected to the corresponding
+				# sensor alert.
+				for sensorAlertIdResult in sensorAlertIdsresult:
+					sensorAlertId = sensorAlertIdResult[0]
+					if not self._deleteSensorAlert(sensorAlertId, logger):
+						return False
+
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsAlertLevels "
+					+ "WHERE sensorId = ?",
+					(sensorIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataInt "
+					+ "WHERE sensorId = ?",
+					(sensorIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataFloat "
+					+ "WHERE sensorId = ?",
+					(sensorIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM sensors "
+					+ "WHERE id = ?",
+					(sensorIdResult[0], ))
+
+			# Commit all changes.
+			self.conn.commit()
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to "
+				% self.fileName
+				+ "delete sensors for node with id %d."
+				% nodeId)
+
+			return False
+
+		return True
+
+
+	# Internal function thatdeletes a sensor alert given by its
+	# sensor alert id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteSensorAlert(self, sensorAlertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("DELETE FROM sensorAlertsDataInt "
+				+ "WHERE sensorAlertId = ?",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
+				+ "WHERE sensorAlertId = ?",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlerts "
+				+ "WHERE id = ?",
+				(sensorAlertId, ))
+		except Exception as e:
+			logger.exception("[%s]: Not able to delete "
+				% self.fileName
+				+ "sensor alert with id %d."
+				% sensorAlertId)
+
+			return False
+
+		# commit all changes
+		self.conn.commit()
+
+		return True
 
 
 	# Internal function that inserts sensor data according to its type.
@@ -1025,41 +1248,7 @@ class Sqlite(_Storage):
 				# => delete all sensors
 				if dbNodeType == "sensor":
 
-					try:
-						# get all sensor ids that are connected to
-						# the old sensor
-						self.cursor.execute("SELECT id FROM sensors "
-							+ "WHERE nodeId = ? ", (nodeId, ))
-						result = self.cursor.fetchall()
-
-						# Delete all sensor alert levels, data and sensors of
-						# this node.
-						for sensorIdResult in result:
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsAlertLevels "
-								+ "WHERE sensorId = ?",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataInt "
-								+ "WHERE sensorId = ?",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataFloat "
-								+ "WHERE sensorId = ?",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM sensors "
-								+ "WHERE id = ?",
-								(sensorIdResult[0], ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete sensors of the node.")
-
+					if not self._deleteSensorsForNodeId(nodeId, logger):
 						self._releaseLock(logger)
 
 						return False
@@ -1068,31 +1257,7 @@ class Sqlite(_Storage):
 				# => delete all alerts
 				elif dbNodeType == "alert":
 
-					try:
-						# get all alert ids that are connected to
-						# the old alert
-						self.cursor.execute("SELECT id FROM alerts "
-							+ "WHERE nodeId = ?", (nodeId, ))
-						result = self.cursor.fetchall()
-
-						# delete all alert alert levels and alerts of
-						# this node
-						for alertIdResult in result:
-
-							self.cursor.execute("DELETE FROM "
-								+ "alertsAlertLevels "
-								+ "WHERE alertId = ?",
-								(alertIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM alerts "
-								+ "WHERE id = ?",
-								(alertIdResult[0], ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete alerts of the node.")
-
+					if not self._deleteAlertsForNodeId(nodeId, logger):
 						self._releaseLock(logger)
 
 						return False
@@ -1101,16 +1266,7 @@ class Sqlite(_Storage):
 				# => delete all manager information
 				elif dbNodeType == "manager":
 
-					try:
-						self.cursor.execute("DELETE FROM managers "
-							+ "WHERE nodeId = ?",
-							(nodeId, ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete manager information of the node.")
-
+					if not self._deleteManagerForNodeId(nodeId, logger):
 						self._releaseLock(logger)
 
 						return False
@@ -1119,41 +1275,7 @@ class Sqlite(_Storage):
 				# => delete all sensor information
 				elif dbNodeType == "server":
 
-					try:
-						# Get all sensor ids that are connected to
-						# the old server.
-						self.cursor.execute("SELECT id FROM sensors "
-							+ "WHERE nodeId = ? ", (nodeId, ))
-						result = self.cursor.fetchall()
-
-						# Delete all sensor alert levels, data and sensors of
-						# this node.
-						for sensorIdResult in result:
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsAlertLevels "
-								+ "WHERE sensorId = ?",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataInt "
-								+ "WHERE sensorId = ?",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataFloat "
-								+ "WHERE sensorId = ?",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM sensors "
-								+ "WHERE id = ?",
-								(sensorIdResult[0], ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete sensors of the node.")
-
+					if not self._deleteSensorsForNodeId(nodeId, logger):
 						self._releaseLock(logger)
 
 						return False
@@ -2532,7 +2654,7 @@ class Sqlite(_Storage):
 		return returnList
 
 
-	# deletes a sensor alert given by its sensor alert id
+	# Deletes a sensor alert given by its sensor alert id.
 	#
 	# return True or False
 	def deleteSensorAlert(self, sensorAlertId, logger=None):
@@ -2543,21 +2665,80 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
+		result = self._deleteSensorAlert(sensorAlertId, logger)
+
+		self._releaseLock(logger)
+
+		return result
+
+
+	# Deletes a node given by its node id.
+	#
+	# return True or False
+	def deleteNode(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# Get node type from database.
+		nodeTuple = self._getNodeById(nodeId, logger)
+		if nodeTuple is None:
+			logger.error("[%s]: Not able to get node with id %d."
+				% (self.fileName, nodeId))
+
+			self._releaseLock(logger)
+
+			return False
+		nodeType = nodeTuple[3]
+
+		# Delete all corresponding alert entries from database.
+		if nodeType == "alert":
+
+			if not self._deleteAlertsForNodeId(nodeId, logger):
+				self._releaseLock(logger)
+
+				return False
+
+		# Delete all corresponding manager entries from database.
+		elif nodeType == "manager":
+
+			if not self._deleteManagerForNodeId(nodeId, logger):
+				self._releaseLock(logger)
+
+				return False
+
+		# Delete all corresponding sensor entries from database.
+		elif nodeType == "sensor":
+
+			if not self._deleteSensorsForNodeId(nodeId, logger):
+				self._releaseLock(logger)
+
+				return False
+
+		# Return if we do not know how to handle the node.
+		else:
+			logger.exception("[%s]: Unknown node type '%s' for node "
+				% (self.fileName, nodeType)
+				+ "with id %d."
+				% nodeId)
+
+			self._releaseLock(logger)
+
+			return False
+
+		# Delete node from database.
 		try:
-			self.cursor.execute("DELETE FROM sensorAlertsDataInt "
-				+ "WHERE sensorAlertId = ?",
-				(sensorAlertId, ))
-
-			self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
-				+ "WHERE sensorAlertId = ?",
-				(sensorAlertId, ))
-
-			self.cursor.execute("DELETE FROM sensorAlerts "
+			self.cursor.execute("DELETE FROM "
+				+ "nodes "
 				+ "WHERE id = ?",
-				(sensorAlertId, ))
+				(nodeId, ))
+
 		except Exception as e:
-			logger.exception("[%s]: Not able to delete sensor alert."
-				% self.fileName)
+			logger.exception("[%s]: Not able to delete node with id %d."
+				% (self.fileName, nodeId))
 
 			self._releaseLock(logger)
 
@@ -2902,15 +3083,38 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
-		try:
-			self.cursor.execute("SELECT * FROM nodes "
-				+ "WHERE id = ?", (nodeId, ))
+		result = self._getNodeById(nodeId, logger)
 
-			result = self.cursor.fetchall()
+		self._releaseLock(logger)
+
+		# return a tuple of (nodeId, hostname, username, nodeType, instance,
+		# connected, version, rev, persistent) or None
+		return result
+
+
+	# Gets all nodes from the database.
+	#
+	# return a list of tuples of
+	# (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev, persistent) or None
+	def getNodes(self, logger=None):
+		
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		try:
+
+			# Get all nodes information.
+			self.cursor.execute("SELECT * FROM nodes")
+			nodesInformation = self.cursor.fetchall()
+
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "node with id %d from database." % nodeId)
+				+ "nodes from database.")
 
 			self._releaseLock(logger)
 
@@ -2918,9 +3122,9 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a tuple of (nodeId, hostname, username, nodeType, instance,
-		# connected, version, rev, persistent) or None
-		return result[0]
+		# list(tuples of (nodeId, hostname, username, nodeType,
+		# instance, connected, version, rev, persistent))
+		return nodesInformation
 
 
 	# gets all information that the server has at the current moment
@@ -3415,6 +3619,34 @@ class Mysql(_Storage):
 			raise ValueError("Node id was not found.")
 
 
+	# Internal function that gets the node from the database given by its id.
+	#
+	# return a tuple of (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev, persistent) or None
+	def _getNodeById(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("SELECT * FROM nodes "
+				+ "WHERE id = %s", (nodeId, ))
+
+			result = self.cursor.fetchall()
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "node with id %d from database." % nodeId)
+
+			return None
+
+		if len(result) == 1:
+			return result[0]
+		else:
+			return None
+
+
 	# internal function that gets the sensor id of a sensor when the id
 	# of a node is given and the remote sensor id that is used
 	# by the node internally
@@ -3675,6 +3907,184 @@ class Mysql(_Storage):
 
 		# commit all changes
 		self.conn.commit()
+
+
+	# Internal function that deletes all alert data corresponding
+	# to the given node id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteAlertsForNodeId(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			# get all alert ids that are connected to
+			# the old alert
+			self.cursor.execute("SELECT id FROM alerts "
+				+ "WHERE nodeId = %s", (nodeId, ))
+			result = self.cursor.fetchall()
+
+			# delete all alert alert levels and alerts of
+			# this node
+			for alertIdResult in result:
+
+				self.cursor.execute("DELETE FROM "
+					+ "alertsAlertLevels "
+					+ "WHERE alertId = %s",
+					(alertIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM alerts "
+					+ "WHERE id = %s",
+					(alertIdResult[0], ))
+
+			# Commit all changes.
+			self.conn.commit()
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to "
+				% self.fileName
+				+ "delete alerts for node with id %d."
+				% nodeId)
+
+			return False
+
+		return True
+
+
+	# Internal function that deletes all manager data corresponding
+	# to the given node id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteManagerForNodeId(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("DELETE FROM managers "
+				+ "WHERE nodeId = %s",
+				(nodeId, ))
+
+			# Commit all changes.
+			self.conn.commit()
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to "
+				% self.fileName
+				+ "delete manager for node with id %d."
+				% nodeId)
+
+			return False
+
+		return True
+
+
+	# Internal function that deletes all sensor data corresponding
+	# to the given node id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteSensorsForNodeId(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			# Get all sensor ids that are connected to
+			# the old sensor.
+			self.cursor.execute("SELECT id FROM sensors "
+				+ "WHERE nodeId = %s ", (nodeId, ))
+			result = self.cursor.fetchall()
+
+			# Delete all sensor alert levels, data and sensors of
+			# this node.
+			for sensorIdResult in result:
+
+				# Get all sensor alert ids that are connected to
+				# the this sensor.
+				self.cursor.execute("SELECT id FROM sensorAlerts "
+					+ "WHERE sensorId = %s ",
+					(sensorIdResult[0], ))
+				sensorAlertIdsresult = self.cursor.fetchall()
+
+				# Delete all sensor alert data connected to the corresponding
+				# sensor alert.
+				for sensorAlertIdResult in sensorAlertIdsresult:
+					sensorAlertId = sensorAlertIdResult[0]
+					if not self._deleteSensorAlert(sensorAlertId, logger):
+						return False
+
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsAlertLevels "
+					+ "WHERE sensorId = %s",
+					(sensorIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataInt "
+					+ "WHERE sensorId = %s",
+					(sensorIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM "
+					+ "sensorsDataFloat "
+					+ "WHERE sensorId = %s",
+					(sensorIdResult[0], ))
+
+				self.cursor.execute("DELETE FROM sensors "
+					+ "WHERE id = %s",
+					(sensorIdResult[0], ))
+
+			# Commit all changes.
+			self.conn.commit()
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to "
+				% self.fileName
+				+ "delete sensors for node with id %d."
+				% nodeId)
+
+			return False
+
+		return True
+
+
+	# Internal function thatdeletes a sensor alert given by its
+	# sensor alert id.
+	#
+	# Returns true if everything worked fine.
+	def _deleteSensorAlert(self, sensorAlertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("DELETE FROM sensorAlertsDataInt "
+				+ "WHERE sensorAlertId = %s",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
+				+ "WHERE sensorAlertId = %s",
+				(sensorAlertId, ))
+
+			self.cursor.execute("DELETE FROM sensorAlerts "
+				+ "WHERE id = %s",
+				(sensorAlertId, ))
+		except Exception as e:
+			logger.exception("[%s]: Not able to delete "
+				% self.fileName
+				+ "sensor alert with id %d."
+				% sensorAlertId)
+
+			return False
+
+		# commit all changes
+		self.conn.commit()
+
+		return True
+
 
 	# Internal function that inserts sensor data according to its type.
 	#
@@ -4068,40 +4478,7 @@ class Mysql(_Storage):
 				# => delete all sensors
 				if dbNodeType == "sensor":
 
-					try:
-						# get all sensor ids that are connected to
-						# the old sensor
-						self.cursor.execute("SELECT id FROM sensors "
-							+ "WHERE nodeId = %s ", (nodeId, ))
-						result = self.cursor.fetchall()
-
-						# Delete all sensor alert levels, data and sensors of
-						# this node.
-						for sensorIdResult in result:
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsAlertLevels "
-								+ "WHERE sensorId = %s",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataInt "
-								+ "WHERE sensorId = %s",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataFloat "
-								+ "WHERE sensorId = %s",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM sensors "
-								+ "WHERE id = %s",
-								(sensorIdResult[0], ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete sensors of the node.")
+					if not self._deleteAlertsForNodeId(nodeId, logger):
 
 						# close connection to the database
 						self._closeConnection()
@@ -4114,30 +4491,7 @@ class Mysql(_Storage):
 				# => delete all alerts
 				elif dbNodeType == "alert":
 
-					try:
-						# get all alert ids that are connected to
-						# the old alert
-						self.cursor.execute("SELECT id FROM alerts "
-							+ "WHERE nodeId = %s", (nodeId, ))
-						result = self.cursor.fetchall()
-
-						# delete all alert alert levels and alerts of
-						# this node
-						for alertIdResult in result:
-
-							self.cursor.execute("DELETE FROM "
-								+ "alertsAlertLevels "
-								+ "WHERE alertId = %s",
-								(alertIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM alerts "
-								+ "WHERE id = %s",
-								(alertIdResult[0], ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete alerts of the node.")
+					if not self._deleteAlertsForNodeId(nodeId, logger):
 
 						# close connection to the database
 						self._closeConnection()
@@ -4150,15 +4504,7 @@ class Mysql(_Storage):
 				# => delete all manager information
 				elif dbNodeType == "manager":
 
-					try:
-						self.cursor.execute("DELETE FROM managers "
-							+ "WHERE nodeId = %s",
-							(nodeId, ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete manager information of the node.")
+					if not self._deleteManagerForNodeId(nodeId, logger):
 
 						# close connection to the database
 						self._closeConnection()
@@ -4171,40 +4517,7 @@ class Mysql(_Storage):
 				# => delete all sensor information
 				elif dbNodeType == "server":
 
-					try:
-						# Get all sensor ids that are connected to
-						# the old server.
-						self.cursor.execute("SELECT id FROM sensors "
-							+ "WHERE nodeId = %s ", (nodeId, ))
-						result = self.cursor.fetchall()
-
-						# Delete all sensor alert levels, data and sensors of
-						# this node.
-						for sensorIdResult in result:
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsAlertLevels "
-								+ "WHERE sensorId = %s",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataInt "
-								+ "WHERE sensorId = %s",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM "
-								+ "sensorsDataFloat "
-								+ "WHERE sensorId = %s",
-								(sensorIdResult[0], ))
-
-							self.cursor.execute("DELETE FROM sensors "
-								+ "WHERE id = %s",
-								(sensorIdResult[0], ))
-
-					except Exception as e:
-						logger.exception("[%s]: Not able to "
-							% self.fileName
-							+ "delete sensors of the node.")
+					if not self._deleteAlertsForNodeId(nodeId, logger):
 
 						# close connection to the database
 						self._closeConnection()
@@ -5963,7 +6276,7 @@ class Mysql(_Storage):
 		return returnList
 
 
-	# deletes a sensor alert given by its sensor alert id
+	# Deletes a sensor alert given by its sensor alert id.
 	#
 	# return True or False
 	def deleteSensorAlert(self, sensorAlertId, logger=None):
@@ -5985,21 +6298,112 @@ class Mysql(_Storage):
 
 			return False
 
+		result = self._deleteSensorAlert(sensorAlertId, logger)
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		return result
+
+
+	# Deletes a node given by its node id.
+	#
+	# return True or False
+	def deleteNode(self, nodeId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# Connect to the database.
 		try:
-			self.cursor.execute("DELETE FROM sensorAlertsDataInt "
-				+ "WHERE sensorAlertId = %s",
-				(sensorAlertId, ))
-
-			self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
-				+ "WHERE sensorAlertId = %s",
-				(sensorAlertId, ))
-
-			self.cursor.execute("DELETE FROM sensorAlerts "
-				+ "WHERE id = %s",
-				(sensorAlertId, ))
+			self._openConnection(logger)
 		except Exception as e:
-			logger.exception("[%s]: Not able to delete sensor alert."
+			logger.exception("[%s]: Not able to connect to database."
 				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return False
+
+		# Get node type from database.
+		nodeTuple = self._getNodeById(nodeId, logger)
+		if nodeTuple is None:
+			logger.error("[%s]: Not able to get node with id %d."
+				% (self.fileName, nodeId))
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock(logger)
+
+			return False
+		nodeType = nodeTuple[3]
+
+		# Delete all corresponding alert entries from database.
+		if nodeType == "alert":
+
+			if not self._deleteAlertsForNodeId(nodeId, logger):
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return False
+
+		# Delete all corresponding manager entries from database.
+		elif nodeType == "manager":
+
+			if not self._deleteManagerForNodeId(nodeId, logger):
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return False
+
+		# Delete all corresponding sensor entries from database.
+		elif nodeType == "sensor":
+
+			if not self._deleteSensorsForNodeId(nodeId, logger):
+
+				# close connection to the database
+				self._closeConnection()
+
+				self._releaseLock(logger)
+
+				return False
+
+		# Return if we do not know how to handle the node.
+		else:
+			logger.exception("[%s]: Unknown node type '%s' for node "
+				% (self.fileName, nodeType)
+				+ "with id %d."
+				% nodeId)
+
+			# close connection to the database
+			self._closeConnection()
+
+			self._releaseLock(logger)
+
+			return False
+
+		# Delete node from database.
+		try:
+			self.cursor.execute("DELETE FROM "
+				+ "nodes "
+				+ "WHERE id = %s",
+				(nodeId, ))
+
+		except Exception as e:
+			logger.exception("[%s]: Not able to delete node with id %d."
+				% (self.fileName, nodeId))
 
 			# close connection to the database
 			self._closeConnection()
@@ -6517,15 +6921,52 @@ class Mysql(_Storage):
 
 			return None
 
-		try:
-			self.cursor.execute("SELECT * FROM nodes "
-				+ "WHERE id = %s", (nodeId, ))
+		result = self._getNodeById(nodeId, logger)
 
-			result = self.cursor.fetchall()
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		# return a tuple of (nodeId, hostname, username, nodeType, instance,
+		# connected, version, rev, persistent) or None
+		return result
+
+
+	# Gets all nodes from the database.
+	#
+	# return a list of tuples of
+	# (nodeId, hostname, username, nodeType, instance,
+	# connected, version, rev, persistent) or None
+	def getNodes(self, logger=None):
+		
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# Connect to the database.
+		try:
+			self._openConnection(logger)
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return None
+
+		try:
+
+			# Get all nodes information.
+			self.cursor.execute("SELECT * FROM nodes")
+			nodesInformation = self.cursor.fetchall()
+
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "node with id %d from database." % nodeId)
+				+ "nodes from database.")
 
 			# close connection to the database
 			self._closeConnection()
@@ -6539,9 +6980,9 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a tuple of (nodeId, hostname, username, nodeType, instance,
-		# connected, version, rev, persistent) or None
-		return result[0]
+		# list(tuples of (nodeId, hostname, username, nodeType,
+		# instance, connected, version, rev, persistent))
+		return nodesInformation
 
 
 	# gets all information that the server has at the current moment
