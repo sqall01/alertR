@@ -128,7 +128,7 @@ class GlobalData:
 	# Function returns a copy of the server sessions list.
 	def getServerSessions(self):
 		self._serverSessionsLock.acquire()
-		copy = list(self._serverSessionsLock)
+		copy = list(self._serverSessions)
 		self._serverSessionsLock.release()
 		return copy
 
@@ -136,12 +136,12 @@ class GlobalData:
 	# Adds a server session.
 	def addServerSession(self, serverSession):
 		self._serverSessionsLock.acquire()
-		self._serverSessionsLock.append(serverSession)
+		self._serverSessions.append(serverSession)
 		self._serverSessionsLock.release()
 
 
 	# Adds a server session.
 	def removeServerSession(self, serverSession):
 		self._serverSessionsLock.acquire()
-		self._serverSessionsLock.remove(serverSession)
+		self._serverSessions.remove(serverSession)
 		self._serverSessionsLock.release()
