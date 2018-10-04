@@ -3492,14 +3492,14 @@ class ClientCommunication:
 			self.managerUpdateExecuter.forceStatusUpdate = True
 			self.managerUpdateExecuter.managerUpdateEvent.set()
 
+		# Set flag that the initialization process of the client is finished.
+		self.clientInitialized = True
+
 		# If client has registered itself,
 		# notify the connection watchdog about the reconnect.
 		# NOTE: We do not care if the client is set as "persistent"
 		# because it could changed its configuration since the last time seen.
 		self.connectionWatchdog.removeNodeTimeout(self.nodeId)
-
-		# Set flag that the initialization process of the client is finished.
-		self.clientInitialized = True
 
 		# handle commands
 		while True:
