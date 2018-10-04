@@ -25,7 +25,6 @@ class ManagerUpdateExecuter(threading.Thread):
 		# get global configured data
 		self.globalData = globalData
 		self.logger = self.globalData.logger
-		self.serverSessions = self.globalData.serverSessions
 		self.managerUpdateInterval = self.globalData.managerUpdateInterval
 		self.storage = self.globalData.storage
 
@@ -89,7 +88,7 @@ class ManagerUpdateExecuter(threading.Thread):
 				# during the full state update)
 				self.queueStateChange.clear()
 
-				for serverSession in self.serverSessions:
+				for serverSession in self.globalData.getServerSessions():
 					# ignore sessions which do not exist yet
 					# and that are not managers
 					if serverSession.clientComm == None:
@@ -123,7 +122,7 @@ class ManagerUpdateExecuter(threading.Thread):
 				dataType = managerStateTuple[2]
 				sensorData = managerStateTuple[3]
 
-				for serverSession in self.serverSessions:
+				for serverSession in self.globalData.getServerSessions():
 					# ignore sessions which do not exist yet
 					# and that are not managers
 					if serverSession.clientComm == None:

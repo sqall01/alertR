@@ -26,7 +26,6 @@ class SensorAlertExecuter(threading.Thread):
 		# get global configured data
 		self.globalData = globalData
 		self.logger = self.globalData.logger
-		self.serverSessions = self.globalData.serverSessions
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.storage = self.globalData.storage
 		self.alertLevels = self.globalData.alertLevels
@@ -1396,7 +1395,7 @@ class SensorAlertExecuter(threading.Thread):
 					sensorAlert.alertLevels.append(triggeredAlertLevel.level)
 
 				# send sensor alert to all manager and alert clients
-				for serverSession in self.serverSessions:
+				for serverSession in self.globalData.getServerSessions():
 					# ignore sessions which do not exist yet
 					# and that are not managers
 					if serverSession.clientComm == None:
@@ -1485,7 +1484,7 @@ class SensorAlertExecuter(threading.Thread):
 				ruleSensorAlert.sensorData = None
 
 				# send sensor alert to all manager and alert clients
-				for serverSession in self.serverSessions:
+				for serverSession in self.globalData.getServerSessions():
 					# ignore sessions which do not exist yet
 					# and that are not managers
 					if serverSession.clientComm == None:

@@ -29,9 +29,6 @@ class GlobalData:
 		# the instance of this server
 		self.instance = "server"
 
-		# list of all sessions that are handled by the server
-		self.serverSessions = list()
-
 		# instance of the storage backend
 		self.storage = None
 
@@ -91,7 +88,7 @@ class GlobalData:
 		# path to CA that is used to authenticate clients
 		self.clientCAFile = None
 
-		# a list of all alert leves that are configured on this server
+		# a list of all alert levels that are configured on this server
 		self.alertLevels = list()
 
 		# time the server is waiting on receives until a time out occurs
@@ -121,3 +118,30 @@ class GlobalData:
 
 		# Unique id of this server (is also the username of this server).
 		self.uniqueID = None
+
+		# List of all sessions that are handled by the server.
+		# Should not be accessed directly.
+		self._serverSessions = list()
+		self._serverSessionsLock = threading.BoundedSemaphore(1)
+
+
+	# Function returns a copy of the server sessions list.
+	def getServerSessions(self):
+		self._serverSessionsLock.acquire()
+		copy = list(self._serverSessionsLock)
+		self._serverSessionsLock.release()
+		return copy
+
+
+	# Adds a server session.
+	def addServerSession(self, serverSession):
+		self._serverSessionsLock.acquire()
+		self._serverSessionsLock.append(serverSession)
+		self._serverSessionsLock.release()
+
+
+	# Adds a server session.
+	def removeServerSession(self, serverSession):
+		self._serverSessionsLock.acquire()
+		self._serverSessionsLock.remove(serverSession)
+		self._serverSessionsLock.release()

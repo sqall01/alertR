@@ -25,7 +25,6 @@ class ConnectionWatchdog(threading.Thread):
 		# get global configured data
 		self.globalData = globalData
 		self.logger = self.globalData.logger
-		self.serverSessions = self.globalData.serverSessions
 		self.storage = self.globalData.storage
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
@@ -107,7 +106,7 @@ class ConnectionWatchdog(threading.Thread):
 			self.addNodeTimeout(nodeId)
 
 		# Check all server sessions if the connection timed out.
-		for serverSession in self.serverSessions:
+		for serverSession in self.globalData.getServerSessions():
 
 			# Check if client communication object exists.
 			if serverSession.clientComm is None:
@@ -139,7 +138,7 @@ class ConnectionWatchdog(threading.Thread):
 	def _processOldNodeTimeouts(self):
 
 		# Check all server sessions if a timed out connection reconnected.
-		for serverSession in self.serverSessions:
+		for serverSession in self.globalData.getServerSessions():
 
 			# Check if client communication object exists.
 			if serverSession.clientComm is None:
@@ -574,7 +573,7 @@ class ConnectionWatchdog(threading.Thread):
 
 				# Skip node ids that have an active connection
 				# to this server.
-				for serverSession in self.serverSessions:
+				for serverSession in self.globalData.getServerSessions():
 
 					# Check if client communication object exists and
 					# client is initialized.
@@ -601,7 +600,7 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Check if all connections to the server are marked as connected
 			# in the database.
-			for serverSession in self.serverSessions:
+			for serverSession in self.globalData.getServerSessions():
 
 				# Check if client communication object exists and
 				# client is initialized.
