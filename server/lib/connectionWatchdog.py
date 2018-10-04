@@ -854,9 +854,10 @@ class ConnectionWatchdog(threading.Thread):
 			username = nodeTuple[2]
 			hostname = nodeTuple[1]
 
-			self.logger.error("[%s]: Node '%s' with username '%s' on host '%s' "
-				% (self.fileName, instance, username, hostname)
-				+ "reconnected.")
+			self.logger.error("[%s]: Node '%s' with username '%s' on "
+				% (self.fileName, instance, username)
+				+ "host '%s' reconnected."
+				% hostname)
 
 			if not self.nodeTimeoutSensor is None:
 
