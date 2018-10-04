@@ -27,6 +27,8 @@ class ConfigWatchdog(threading.Thread):
 		self.logger = self.globalData.logger
 		self.userBackend = self.globalData.userBackend
 		self.serverSessions = self.globalData.serverSessions
+		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
+		self.storage = self.globalData.storage
 
 		# File name of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -84,7 +86,46 @@ class ConfigWatchdog(threading.Thread):
 				serverSession.closeConnection()
 
 
+	# This function synchronizes the existing usernames with
+	# the entries in the database. When an entry still exists for
+	# a username which does not exist anymore, delete it.
+	#
+	# return True or False
+	def _syncUsernamesAndDatabase(self):
+
+		nodesList = self.storage.getNodes(self.logger)
+
+		if nodesList is None:
+			self.logger.error("[%s]: Not able to retrieve nodes from database."
+				% self.fileName)
+			return
+
+		# Check the username of each node if it still exists and delete if
+		# it does not.
+		for node in nodesList:
+			nodeId = node[0]
+			username = node[2]
+			nodeType = node[3]
+
+			# Ignore server node.
+			if nodeType == "server":
+				continue
+
+			if not self.userBackend.userExists(username):
+
+				self.logger.info("[%s]: Username '%s' does not exist anymore. "
+					% (self.fileName, username)
+					+ "Removing node from database.")
+
+				self.storage.deleteNode(nodeId, self.logger)
+
+
 	def run(self):
+
+		# Synchronize database with usernames in backend once in the
+		# beginning in order to catch changes that were made while
+		# the server was not running.
+		self._syncUsernamesAndDatabase() # TODO
 
 		if self.CSVUsersCheck and os.path.isfile(self.CSVUsersFile):
 			self.CSVUsersHash = self._createHash(self.CSVUsersFile)
@@ -123,3 +164,11 @@ class ConfigWatchdog(threading.Thread):
 						# Close connections to clients which usernames
 						# are no longer valid.
 						self._syncUsernamesAndConnections()
+
+						# Synchronize usernames that are no longer valid
+						# with our database.
+						if self._syncUsernamesAndDatabase(): # TODO
+							# Wake up manager update executer if
+							# we removed a node.
+							self.managerUpdateExecuter.forceStatusUpdate = True
+							self.managerUpdateExecuter.managerUpdateEvent.set()
