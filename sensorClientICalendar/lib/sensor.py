@@ -194,6 +194,10 @@ class ICalendarSensor(_PollingSensor):
 	# Collect calendar data from the server.
 	def _getCalendar(self):
 
+		# Update time.
+		utcTimestamp = int(time.time())
+		self.lastUpdate = utcTimestamp
+
 		logging.debug("[%s]: Retrieving calendar data from '%s'."
 				% (self.fileName, self.location))
 
@@ -233,10 +237,6 @@ class ICalendarSensor(_PollingSensor):
 
 		# Reset fail counter.
 		self.failedCounter = 0
-
-		# Update time.
-		utcTimestamp = int(time.time())
-		self.lastUpdate = utcTimestamp
 
 
 	# Process the calendar data if we have a reminder triggered.
@@ -529,9 +529,6 @@ class ICalendarSensor(_PollingSensor):
 			# on the updated data, but one of the next rounds will have it)
 			thread = threading.Thread(target=self._getCalendar)
 			thread.start()
-
-			# Update time.
-			self.lastUpdate = utcTimestamp
 
 			logging.debug("[%s] Number of remaining already "
 				% self.fileName
