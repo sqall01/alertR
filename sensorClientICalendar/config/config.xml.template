@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.500">
+<config version="0.501">
 
 	<!--
 		in this section general options are configured
@@ -170,8 +170,15 @@
 			<!--
 				The iCalendar specific settings:
 				name - The name used for the calendar.
-				interval - Interval in seconds in which the calendar is
+				intervalFetch - Interval in seconds in which the calendar is
 					fetched from the service.
+				intervalProcess - Interval in seconds in which the calendar
+					data is processed. When set to 0, every processing turn
+					the data is evaluated (a turn is roughly every 0,5
+					seconds). However, when you have a large calendar this
+					results in a high CPU usage. Here, you have to weigh up the
+					delay in triggered calendar alarms you can accept with
+					the used CPU.
 				location - The location of the calendar to retrieve
 					the .ics file (should be a https URL, however, http
 					works also but is not recommended).
@@ -186,7 +193,8 @@
 			-->
 			<icalendar
 				name="My Google Calendar"
-				interval="60"
+				intervalFetch="60"
+				intervalProcess="10"
 				location="https://www.google.com/calendar/ical/sqall%40alertr.de/private-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/basic.ics"
 				htaccessAuth="NONE"
 				htaccessUser=""
@@ -238,8 +246,15 @@
 			<!--
 				The iCalendar specific settings:
 				name - The name used for the calendar.
-				interval - Interval in seconds in which the calendar is
+				intervalFetch - Interval in seconds in which the calendar is
 					fetched from the service.
+				intervalProcess - Interval in seconds in which the calendar
+					data is processed. When set to 0, every processing turn
+					the data is evaluated (a turn is roughly every 0,5
+					seconds). However, when you have a large calendar this
+					results in a high CPU usage. Here, you have to weigh up the
+					delay in triggered calendar alarms you can accept with
+					the used CPU.
 				location - The location of the calendar to retrieve
 					the .ics file (should be a https URL, however, http
 					works also but is not recommended).
@@ -254,7 +269,8 @@
 			-->
 			<icalendar
 				name="My Private Calendar Service"
-				interval="60"
+				intervalFetch="60"
+				intervalProcess="10"
 				location="https://mykopanoservice.com:8080/ical/"
 				htaccessAuth="BASIC"
 				htaccessUser="myUsername"

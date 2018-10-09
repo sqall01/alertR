@@ -168,8 +168,10 @@ if __name__ == '__main__':
 				"htaccessUser"])
 			sensor.htaccessPass = str(item.find("icalendar").attrib[
 				"htaccessPass"])
-			sensor.interval = int(item.find("icalendar").attrib[
-				"interval"])
+			sensor.intervalFetch = int(item.find("icalendar").attrib[
+				"intervalFetch"])
+			sensor.intervalProcess = int(item.find("icalendar").attrib[
+				"intervalProcess"])
 
 			# Check htaccess authentication method.
 			if sensor.htaccessAuth not in ["BASIC", "DIGEST", "NONE"]:
@@ -178,10 +180,17 @@ if __name__ == '__main__':
 					+ "sensor %d is unknown."
 					% sensor.id)
 
-			# Check interval.
-			if sensor.interval < 1:
-				raise ValueError("Calendar interval %d of sensor %d illegal."
-					% (sensor.interval, sensor.id))
+			# Check fetch interval.
+			if sensor.intervalFetch < 1:
+				raise ValueError("Calendar intervalFetch %d of sensor %d "
+					% (sensor.intervalFetch, sensor.id)
+					+ "illegal.")
+
+			# Check process interval.
+			if sensor.intervalProcess < 0:
+				raise ValueError("Calendar intervalProcess %d of sensor %d "
+					% (sensor.intervalProcess, sensor.id)
+					+ "illegal.")
 
 			# check if description is empty
 			if len(sensor.description) == 0:

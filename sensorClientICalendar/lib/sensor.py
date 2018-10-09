@@ -163,7 +163,10 @@ class ICalendarSensor(_PollingSensor):
 
 		# The interval in seconds in which an update is collected
 		# from the server.
-		self.interval = None
+		self.intervalFetch = None
+
+		# The interval in seconds in which the calendar is processed.
+		self.intervalProcess = None
 
 		# Number of failed calendar collection attempts.
 		self.failedCounter = 0
@@ -173,8 +176,11 @@ class ICalendarSensor(_PollingSensor):
 		# Locks calendar data in order to be thread safe.
 		self.icalendarLock = threading.Semaphore(1)
 
-		# Time when the last update was done.
-		self.lastUpdate = 0
+		# Time when the data was fetched.
+		self.lastFetch = 0
+
+		# Time when the data was processed.
+		self.lastProcess = 0
 
 		# iCalendar data object.
 		self.icalendar = None
@@ -196,7 +202,7 @@ class ICalendarSensor(_PollingSensor):
 
 		# Update time.
 		utcTimestamp = int(time.time())
-		self.lastUpdate = utcTimestamp
+		self.lastFetch = utcTimestamp
 
 		logging.debug("[%s]: Retrieving calendar data from '%s'."
 				% (self.fileName, self.location))
@@ -241,6 +247,9 @@ class ICalendarSensor(_PollingSensor):
 
 	# Process the calendar data if we have a reminder triggered.
 	def _processCalendar(self):
+
+		self.lastProcess = int(time.time())
+
 		self.icalendarLock.acquire()
 
 		# Only process calendar data if we have any.
@@ -522,7 +531,7 @@ class ICalendarSensor(_PollingSensor):
 
 		# Check if we have to collect new calendar data. 
 		utcTimestamp = int(time.time())
-		if (utcTimestamp - self.lastUpdate) > self.interval:
+		if (utcTimestamp - self.lastFetch) > self.intervalFetch:
 
 			# Update calendar data in a non-blocking way
 			# (this means also, that the current state will not be processed
@@ -536,7 +545,8 @@ class ICalendarSensor(_PollingSensor):
 				% len(self.alreadyTriggered))
 
 		# Process calendar data for occurring reminder.
-		self._processCalendar()
+		if (utcTimestamp - self.lastProcess) > self.intervalProcess:
+			self._processCalendar()
 
 		# Clean up already triggered alerts.
 		for triggeredTuple in list(self.alreadyTriggered):
