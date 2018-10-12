@@ -29,6 +29,7 @@ class SensorAlertExecuter(threading.Thread):
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.storage = self.globalData.storage
 		self.alertLevels = self.globalData.alertLevels
+		self.serverSessions = self.globalData.serverSessions
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -1395,7 +1396,7 @@ class SensorAlertExecuter(threading.Thread):
 					sensorAlert.alertLevels.append(triggeredAlertLevel.level)
 
 				# send sensor alert to all manager and alert clients
-				for serverSession in self.globalData.getServerSessions():
+				for serverSession in self.serverSessions:
 					# ignore sessions which do not exist yet
 					# and that are not managers
 					if serverSession.clientComm == None:
@@ -1484,7 +1485,7 @@ class SensorAlertExecuter(threading.Thread):
 				ruleSensorAlert.sensorData = None
 
 				# send sensor alert to all manager and alert clients
-				for serverSession in self.globalData.getServerSessions():
+				for serverSession in self.serverSessions:
 					# ignore sessions which do not exist yet
 					# and that are not managers
 					if serverSession.clientComm == None:

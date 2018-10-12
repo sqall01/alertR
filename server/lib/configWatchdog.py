@@ -28,6 +28,7 @@ class ConfigWatchdog(threading.Thread):
 		self.userBackend = self.globalData.userBackend
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.storage = self.globalData.storage
+		self.serverSessions = self.globalData.serverSessions
 
 		# File name of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -64,7 +65,7 @@ class ConfigWatchdog(threading.Thread):
 	# a username which does not exist anymore, it is closed.
 	def _syncUsernamesAndConnections(self):
 
-		for serverSession in self.globalData.getServerSessions():
+		for serverSession in self.serverSessions:
 
 			# Check if client communication object exists.
 			if serverSession.clientComm is None:

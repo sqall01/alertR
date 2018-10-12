@@ -11,6 +11,44 @@ import os
 import threading
 
 
+# Class implements an iterator that iterates over a copy of the
+# server sessions.
+class ServerSessionsIterator(object):
+
+	def __init__(self, serverSessions):
+		self.idx = 0
+		self.serverSessions = list(serverSessions)
+
+	def __next__(self):
+		if self.idx >= len(self.serverSessions):
+			raise StopIteration
+		self.idx += 1
+		return self.serverSessions[self.idx - 1]
+
+	def next(self):
+		return self.__next__()
+
+
+# Class implements the list of server sessions handled by the server.
+class ServerSessions(object):
+
+	def __init__(self):
+		self._serverSessions = list()
+		self._serverSessionsLock = threading.Lock()
+
+	def append(self, serverSession):
+		with self._serverSessionsLock:
+			self._serverSessions.append(serverSession)
+
+	def remove(self, serverSession):
+		with self._serverSessionsLock:
+			self._serverSessions.remove(serverSession)
+
+	def __iter__(self):
+		with self._serverSessionsLock:
+			return ServerSessionsIterator(self._serverSessions)
+
+
 # this class is a global configuration class that holds
 # values that are needed all over the client
 class GlobalData:
@@ -120,28 +158,4 @@ class GlobalData:
 		self.uniqueID = None
 
 		# List of all sessions that are handled by the server.
-		# Should not be accessed directly.
-		self._serverSessions = list()
-		self._serverSessionsLock = threading.BoundedSemaphore(1)
-
-
-	# Function returns a copy of the server sessions list.
-	def getServerSessions(self):
-		self._serverSessionsLock.acquire()
-		copy = list(self._serverSessions)
-		self._serverSessionsLock.release()
-		return copy
-
-
-	# Adds a server session.
-	def addServerSession(self, serverSession):
-		self._serverSessionsLock.acquire()
-		self._serverSessions.append(serverSession)
-		self._serverSessionsLock.release()
-
-
-	# Adds a server session.
-	def removeServerSession(self, serverSession):
-		self._serverSessionsLock.acquire()
-		self._serverSessions.remove(serverSession)
-		self._serverSessionsLock.release()
+		self.serverSessions = ServerSessions()

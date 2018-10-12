@@ -44,6 +44,7 @@ class ClientCommunication:
 		self.asyncOptionExecutersLock \
 			= self.globalData.asyncOptionExecutersLock
 		self.connectionWatchdog = self.globalData.connectionWatchdog
+		self.serverSessions = self.globalData.serverSessions
 
 		# time the last message was received by the server
 		self.lastRecv = 0.0
@@ -1304,7 +1305,7 @@ class ClientCommunication:
 		self.loggerFileHandler = fh
 
 		# Set the logger instance also for the server session.
-		for serverSession in self.globalData.getServerSessions():
+		for serverSession in self.serverSessions:
 			if serverSession.clientComm == self:
 				serverSession.setLogger(self.logger)
 				break
@@ -1499,7 +1500,7 @@ class ClientCommunication:
 
 		# check if username is already in use
 		# => terminate connection
-		for serverSession in self.globalData.getServerSessions():
+		for serverSession in self.serverSessions:
 
 			# ignore THIS server session and not existing once
 			if (serverSession.clientComm is None
@@ -3867,7 +3868,8 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		self.clientCAFile = self.globalData.clientCAFile
 
 		# add own server session to the global list of server sessions
-		self.globalData.addServerSession(self)
+		self.serverSessions = self.globalData.serverSessions
+		self.serverSessions.append(self)
 
 		# Get reference to the connection watchdog object
 		# to inform it about disconnects.
@@ -3906,7 +3908,7 @@ class ServerSession(SocketServer.BaseRequestHandler):
 			# remove own server session from the global list of server sessions
 			# before closing server session
 			try:
-				self.globalData.removeServerSession(self)
+				self.serverSessions.remove(self)
 			except:
 				pass
 
@@ -3929,7 +3931,7 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		# remove own server session from the global list of server sessions
 		# before closing server session
 		try:
-			self.globalData.removeServerSession(self)
+			self.serverSessions.remove(self)
 		except:
 			pass
 
@@ -3955,7 +3957,7 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		except:
 			pass
 		try:
-			self.globalData.removeServerSession(self)
+			self.serverSessions.remove(self)
 		except:
 			pass
 
@@ -4104,6 +4106,7 @@ class AsynchronousOptionExecuter(threading.Thread):
 		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
 		self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
 		self.internalSensors = self.globalData.internalSensors
+		self.serverSessions = self.globalData.serverSessions
 
 		# get option data to change
 		self.optionType = optionType
@@ -4150,7 +4153,7 @@ class AsynchronousOptionExecuter(threading.Thread):
 		# => send sensor alerts off to alert clients
 		if (self.optionType == "alertSystemActive"
 			and self.optionValue == 0):
-			for serverSession in self.globalData.getServerSessions():
+			for serverSession in self.serverSessions:
 				# ignore sessions which do not exist yet
 				# and that are not managers
 				if serverSession.clientComm == None:
