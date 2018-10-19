@@ -165,7 +165,16 @@ def chooseNodeTypeAndInstance(updater):
 	return (nodeType, instance)
 
 # Adds a user to the backend.
-def addUser(userBackend, username, password, nodeType, instance, updater):
+def addUser(userBackend, username, password, nodeType, instance, yes, updater):
+
+	# First ask for confirmation if the server is not running.
+	temp = "\nPlease make sure that the AlertR Server is not running "
+	temp += "while adding a user.\nOtherwise it can lead to an "
+	temp += "inconsistent state and a corrupted database.\n"
+	temp += "Are you sure to continue?"
+	print(temp)
+	if not userConfirmation(yes):
+		sys.exit(0)
 
 	if username is None:
 		username = raw_input("Please enter username:\n")
@@ -326,7 +335,17 @@ def modifyUser(userBackend, username, password, nodeType, instance, yes,
 			sys.exit(1)
 
 # Deletes a user from the backend.
-def deleteUser(userBackend, username):
+def deleteUser(userBackend, username, yes):
+
+	# First ask for confirmation if the server is not running.
+	temp = "\nPlease make sure that the AlertR Server is not running "
+	temp += "while deleting a user.\nOtherwise it can lead to an "
+	temp += "inconsistent state and a corrupted database.\n"
+	temp += "Are you sure to continue?"
+	print(temp)
+	if not userConfirmation(yes):
+		sys.exit(0)
+
 	if username is None:
 		allUsernames = listUsers(userBackend)
 
@@ -512,7 +531,8 @@ if __name__ == '__main__':
 		"--yes",
 		dest="yes",
 		action="store_true",
-		help="Do not ask me for confirmation to modify a user. (Optional)",
+		help="Do not ask me for confirmation. I know what I am doing. "
+			+ "(Optional)",
 		default=False)
 	parser.add_option_group(optGroup)
 
@@ -622,10 +642,12 @@ if __name__ == '__main__':
 			options.password,
 			options.type,
 			options.instance,
+			options.yes,
 			updater)
 	elif options.delete:
 		deleteUser(globalData.userBackend,
-			options.username)
+			options.username,
+			options.yes)
 	elif options.modify:
 		modifyUser(globalData.userBackend,
 			options.username,
