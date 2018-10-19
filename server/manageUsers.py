@@ -22,6 +22,31 @@ def makePath(inputLocation):
 	# Assume we have a given relative path.
 	return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
 
+# This function asks the user for confirmation directly.
+def userAsk():
+
+	while True:
+		try:
+			localInput = raw_input("(y/n): ")
+		except KeyboardInterrupt:
+			print("Bye.")
+			sys.exit(0)
+		except:
+			continue
+
+		if localInput.strip().upper() == "Y":
+			return True
+		elif localInput.strip().upper() == "N":
+			return False
+		else:
+			print("Invalid input.")
+
+# This function asks the user for confirmation (if wanted).
+def userConfirmation(yes):
+	if yes is False:
+		return userAsk()
+	print("NOTE: Skipping confirmation.")
+	return True
 
 # Function that asks user for node type and instance.
 def chooseNodeTypeAndInstance(updater):
@@ -139,7 +164,6 @@ def chooseNodeTypeAndInstance(updater):
 
 	return (nodeType, instance)
 
-
 # Adds a user to the backend.
 def addUser(userBackend, username, password, nodeType, instance, updater):
 
@@ -183,9 +207,18 @@ def addUser(userBackend, username, password, nodeType, instance, updater):
 				% fileName)
 		sys.exit(1)
 
-
 # Modifies a user in the backend.
-def modifyUser(userBackend, username, password, nodeType, instance, updater):
+def modifyUser(userBackend, username, password, nodeType, instance, yes,
+	updater):
+
+	# First ask for confirmation if the server is not running.
+	temp = "\nPlease make sure that the AlertR Server is not running "
+	temp += "while modifying a user.\nOtherwise it can lead to an "
+	temp += "inconsistent state and a corrupted database.\n"
+	temp += "Are you sure to continue?"
+	print(temp)
+	if not userConfirmation(yes):
+		sys.exit(0)
 
 	# If we have no username given, ask for one.
 	if username is None:
@@ -292,7 +325,6 @@ def modifyUser(userBackend, username, password, nodeType, instance, updater):
 					+ "of user failed.")
 			sys.exit(1)
 
-
 # Deletes a user from the backend.
 def deleteUser(userBackend, username):
 	if username is None:
@@ -325,7 +357,6 @@ def deleteUser(userBackend, username):
 		logging.error("[%s]: Deleting user failed."
 				% fileName)
 		sys.exit(1)
-
 
 # Lists all existing users in the backend.
 def listUsers(userBackend):
@@ -477,6 +508,12 @@ if __name__ == '__main__':
 		action="store",
 		help="Instance of the node to be added/modified. (Optional)",
 		default=None)
+	optGroup.add_option("-y",
+		"--yes",
+		dest="yes",
+		action="store_true",
+		help="Do not ask me for confirmation to modify a user. (Optional)",
+		default=False)
 	parser.add_option_group(optGroup)
 
 	(options, args) = parser.parse_args()
@@ -486,7 +523,7 @@ if __name__ == '__main__':
 		or options.modify
 		or options.list)
 	if showHelp is False:
-		print "Use --help to get all available options."
+		print("Use --help to get all available options.")
 		sys.exit(0)
 
 	# Generate object of the global needed data.
@@ -525,8 +562,8 @@ if __name__ == '__main__':
 		globalData.logger = logging.getLogger("server")
 
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		print("Config could not be parsed.")
+		print(e)
 		sys.exit(1)
 
 	# Parse the rest of the config with initialized logging.
@@ -595,6 +632,7 @@ if __name__ == '__main__':
 			options.password,
 			options.type,
 			options.instance,
+			options.yes,
 			updater)
 	elif options.list:
 		listUsers(globalData.userBackend)
