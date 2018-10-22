@@ -1625,7 +1625,7 @@ class Console:
 		fillerBody = urwid.Filler(self.finalBody, "top")
 
 		# generate header and footer
-		header = urwid.Text("alertR Console Manager", align="center")
+		header = urwid.Text("AlertR Console Manager", align="center")
 		footer = urwid.Text("Keys: "
 			+ "1 - Activate, "
 			+ "2 - Deactivate, "

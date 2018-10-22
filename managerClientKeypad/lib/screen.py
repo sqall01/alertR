@@ -753,7 +753,7 @@ class Console:
 		fillerBody = urwid.Filler(self.finalBody, "top")
 
 		# generate header
-		header = urwid.Text("alertR keypad manager", align="center")
+		header = urwid.Text("AlertR Keypad Manager", align="center")
 
 		# build frame for final rendering
 		self.mainFrame = urwid.Frame(fillerBody, header=header)
