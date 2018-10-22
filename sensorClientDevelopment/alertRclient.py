@@ -71,8 +71,8 @@ if __name__ == '__main__':
 			level=loglevel)
 
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		print("Config could not be parsed.")
+		print(e)
 		sys.exit(1)
 
 	# parse the rest of the config with initialized logging
@@ -270,7 +270,7 @@ if __name__ == '__main__':
 	# read keyboard input and toggle the sensors accordingly
 	while True:
 
-		print "--------"
+		print("--------")
 		for sensor in globalData.sensors:
 			dataString = ""
 			if sensor.sensorDataType == SensorDataType.NONE:
@@ -305,4 +305,4 @@ if __name__ == '__main__':
 				sensor.toggleConsoleState()
 				break
 		if not found:
-			print "Sensor with local ID '%d' does not exist." % localSensorId
+			print("Sensor with local ID '%d' does not exist." % localSensorId)

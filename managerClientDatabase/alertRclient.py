@@ -75,8 +75,8 @@ if __name__ == '__main__':
 			level=loglevel)
 
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		print("Config could not be parsed.")
+		print(e)
 		sys.exit(1)
 
 	# parse the rest of the config with initialized logging
@@ -258,7 +258,6 @@ if __name__ == '__main__':
 
 		logging.critical("[%s]: Connecting to server failed. " % fileName
 			+ "Try again in 5 seconds.")
-		print "Connecting to server failed. Try again in 5 seconds."
 		time.sleep(5)
 
 	# when connected => generate watchdog object to monitor the

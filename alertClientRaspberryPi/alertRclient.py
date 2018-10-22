@@ -82,8 +82,8 @@ if __name__ == '__main__':
 			level=loglevel)
 
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		print("Config could not be parsed.")
+		print(e)
 		sys.exit(1)
 
 	# parse the rest of the config with initialized logging
