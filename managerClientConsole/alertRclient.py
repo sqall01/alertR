@@ -20,7 +20,7 @@ import socket
 import random
 import xml.etree.ElementTree
 
-logo = "" \
+asciiLogo = "" \
 	+ "         ,,,,,,,,,,,,,,,,,`` +                                     \n" \
 	+ "        ;@@@@@@@@@@@@@@@@@@@@@                                     \n" \
 	+ "        @                 @@  @                                    \n" \
@@ -67,7 +67,7 @@ def makePath(inputLocation):
 
 if __name__ == '__main__':
 
-	print(logo)
+	print(asciiLogo)
 
 	# generate object of the global needed data
 	globalData = GlobalData()
@@ -235,7 +235,7 @@ if __name__ == '__main__':
 		globalData)
 	connectionRetries = 1
 	logging.info("[%s] Connecting to server." % fileName)
-	print("Connecting to server at '%s'." % server)
+	print("Connecting to server at '%s:%d'." % (server, serverPort))
 	while 1:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
