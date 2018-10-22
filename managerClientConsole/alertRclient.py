@@ -20,6 +20,38 @@ import socket
 import random
 import xml.etree.ElementTree
 
+logo = "" \
+	+ "         ,,,,,,,,,,,,,,,,,`` +                                     \n" \
+	+ "        ;@@@@@@@@@@@@@@@@@@@@@                                     \n" \
+	+ "        @                 @@  @                                    \n" \
+	+ "       @@                  @ @@                                    \n" \
+	+ "       @                   #@ ,@                                   \n" \
+	+ "      @+                    @  @                                   \n" \
+	+ "     .@                     :@ '#                                  \n" \
+	+ "     @.          @           @'@@                                  \n" \
+	+ "    '@           @@@          @:@@                                 \n" \
+	+ "    @           @ @@          @@ @                                 \n" \
+	+ "   @@           # @@@          @                          @@@@#;   \n" \
+	+ "   @           @  :@@          +@@ @                      @@@@@@@# \n" \
+	+ "  @;           #   @@@          @@@@@                     @@    ,@`\n" \
+	+ " ,@           @    ;@@          .@  @                .    @@     @+\n" \
+	+ " @`           #     @@#          @' @                @    @@     @.\n" \
+	+ "+@       `,;@@@@@@@@@@@@+:,,,,,,,,@,@,,,,,,,,,,,,,,,,@,,,,@@,,,,@@,\n" \
+	+ " @           #       @@@         @@ @   @@@@`  @ @@. @@@@ @@@@@@.  \n" \
+	+ " +@         @        #@@         @  @  @+   @  @@    @    @@  `@@` \n" \
+	+ "  @`        #         @@:       @;  @  @    @  @     @    @@    +@ \n" \
+	+ "  .@       @          @@@      ,@   @  @+@@@@  @     @    @@     @,\n" \
+	+ "   @'      #           @@,     @`   @  @       @     @    @@     @+\n" \
+	+ "    @     @            @@@    #@    @  +@   `  @     @    @@     @@\n" \
+	+ "    @@   +@@            @@'   @     @   '@@@`  @     `@@@ @@     @@\n" \
+	+ "     @                       @#                                    \n" \
+	+ "     ;@                      @                                     \n" \
+	+ "      @,                    @,                                     \n" \
+	+ "      `@                   :@                                      \n" \
+	+ "       @+                  @                                       \n" \
+	+ "        @                 @@                                       \n" \
+	+ "        #@;;;;;;;;;;;;;;;;@                                        \n" \
+	+ "         @@@@@@@@@@@@@@@@@+                                        \n"
 
 # Function creates a path location for the given user input.
 def makePath(inputLocation):
@@ -34,6 +66,8 @@ def makePath(inputLocation):
 
 
 if __name__ == '__main__':
+
+	print(logo)
 
 	# generate object of the global needed data
 	globalData = GlobalData()
@@ -72,8 +106,8 @@ if __name__ == '__main__':
 			level=loglevel)
 
 	except Exception as e:
-		print "Config could not be parsed."
-		print e
+		print("Config could not be parsed.")
+		print(e)
 		sys.exit(1)
 
 	# parse the rest of the config with initialized logging
@@ -201,6 +235,7 @@ if __name__ == '__main__':
 		globalData)
 	connectionRetries = 1
 	logging.info("[%s] Connecting to server." % fileName)
+	print("Connecting to server at '%s'." % server)
 	while 1:
 		# check if 5 unsuccessful attempts are made to connect
 		# to the server and if smtp alert is activated
@@ -221,7 +256,7 @@ if __name__ == '__main__':
 
 		logging.critical("[%s]: Connecting to server failed. " % fileName
 			+ "Try again in 5 seconds.")
-		print "Connecting to server failed. Try again in 5 seconds."
+		print("Connecting to server failed. Try again in 5 seconds.")
 		time.sleep(5)
 
 	# when connected => generate watchdog object to monitor the
