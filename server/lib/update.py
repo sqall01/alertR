@@ -59,7 +59,8 @@ class VerifiedHTTPSConnection(httplib.HTTPSConnection):
 class Updater:
 
 	def __init__(self, host, port, serverPath, caFile, globalData,
-		localInstanceInfo, retrieveInfo=True):
+		localInstanceInfo, retrieveInfo=True,
+		timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
 
 		# used for logging
 		self.fileName = os.path.basename(__file__)
@@ -83,6 +84,7 @@ class Updater:
 		self.port = port
 		self.serverPath = serverPath
 		self.caFile = caFile
+		self.timeout = timeout
 
 		# needed to keep track of the newest version
 		self.newestVersion = self.version
@@ -417,7 +419,8 @@ class Updater:
 
 
 		# download file from server
-		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile,
+			timeout=self.timeout)
 		try:
 
 			conn.request("GET", self.serverPath + "/"
@@ -535,7 +538,8 @@ class Updater:
 	def _getInstanceInformation(self, conn=None):
 
 		if conn is None:
-			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile,
+				timeout=self.timeout)
 
 		try:
 			if self._getRepositoryInformation(conn) is False:
@@ -605,7 +609,8 @@ class Updater:
 	def _getRepositoryInformation(self, conn=None):
 
 		if conn is None:
-			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile,
+				timeout=self.timeout)
 
 		self.logger.debug("[%s]: Downloading repository information."
 			% self.fileName)
@@ -673,7 +678,8 @@ class Updater:
 	def _getNewestVersionInformation(self, conn=None):
 
 		if conn is None:
-			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+			conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile,
+				timeout=self.timeout)
 
 		try:
 			if self._getInstanceInformation(conn) is False:
