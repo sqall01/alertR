@@ -345,7 +345,7 @@ class CSVBackend(_userBackend):
 		fileData += " client instance\" per line.\n"
 		fileData += "# Note: whitespaces will be removed during parsing.\n"
 		fileData += "# Please do not modify this file directly and use\n" 
-		fileData += "# 'manageUsers.py' instead."
+		fileData += "# 'manageUsers.py' instead.\n"
 
 		# Create csv data for the file.
 		output = StringIO.StringIO()
