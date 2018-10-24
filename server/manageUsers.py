@@ -631,7 +631,8 @@ if __name__ == '__main__':
 		# Create an updater process.
 		try:
 			updater = Updater(updateServer, updatePort, updateLocation,
-				updateCaFile, globalData, None, retrieveInfo=False)
+				updateCaFile, globalData, None, retrieveInfo=False,
+				timeout=5)
 		except Exception as e:
 			logging.exception("[%s]: Not able create updater object."
 				% fileName)
