@@ -1230,7 +1230,12 @@ class SensorAlertExecuter(threading.Thread):
 		for sensorAlert in sensorAlertList:
 
 			# delete sensor alert from the database
-			self.storage.deleteSensorAlert(sensorAlert.sensorAlertId)
+			if not self.storage.deleteSensorAlert(sensorAlert.sensorAlertId):
+				self.logger.error("[%s]: Not able to delete "
+					% self.fileName
+					+ "sensor alert with id '%d' from database."
+					% sensorAlert.sensorAlertId)
+				continue
 
 			# get all alert levels for this sensor (list of integers)
 			sensorAlertLevels = self.storage.getSensorAlertLevels(
@@ -1321,17 +1326,17 @@ class SensorAlertExecuter(threading.Thread):
 					sensorDataTuple = self.storage.getSensorData(
 						sensorAlert.sensorId)
 
-					if sensorDataTuple:
+					if sensorDataTuple is None:
+						self.logger.error("[%s]: Unable to get sensor data "
+							% self.fileName
+							+ "from database. Skipping manager notification.")
+					else:
 						managerStateTuple = (sensorAlert.sensorId,
 							sensorAlert.state,
 							sensorDataTuple[0],
 							sensorDataTuple[1])
 						self.managerUpdateExecuter.queueStateChange.append(
 							managerStateTuple)
-					else:
-						self.logger.error("[%s]: Unable to get sensor data "
-							% self.fileName
-							+ "from database. Skipping manager notification.")
 
 				continue
 

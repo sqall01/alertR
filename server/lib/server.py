@@ -1146,6 +1146,9 @@ class ClientCommunication:
 			alertLevels = self.storage.getSensorAlertLevels(sensorId,
 				logger=self.logger)
 
+			if alertLevels is None:
+				return None
+
 			tempDict = {"sensorId": sensorId,
 				"nodeId": sensorsInformation[i][1],
 				"remoteSensorId": sensorsInformation[i][2],
@@ -1223,9 +1226,27 @@ class ClientCommunication:
 
 			alertId = alertsInformation[i][0]
 
-			# create list of alert levels of this alert
+			# Create list of alert levels of this alert.
 			dbAlertLevels = self.storage.getAlertAlertLevels(alertId,
 				logger=self.logger)
+			if dbAlertLevels is None:
+				self.logger.error("[%s]: Not able to get alert levels for "
+					% self.fileName
+					+ "alert with id %d in database (%s:%d)."
+					% (alertId, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					utcTimestamp = int(time.time())
+					message = {"serverTime": utcTimestamp,
+						"message": "status",
+						"error": "not able to get alert levels for alert"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
+				return None
+
 			alertLevels = list()
 			for tempAlertLevel in dbAlertLevels:
 				alertLevels.append(tempAlertLevel[0])
@@ -3423,6 +3444,15 @@ class ClientCommunication:
 		if self.nodeType == "sensor":
 			self.sensorCount = self.storage.getSensorCount(self.nodeId,
 				logger=self.logger)
+			# Since a user can be deleted during runtime, check if
+			# the node still existed in the database.
+			if self.sensorCount is None:
+				self.logger.error("[%s]: Could not " % self.fileName
+					+ "get node with id %d from database."
+					% self.nodeId)
+				self._releaseLock()
+				self._finalizeLogger()
+				return
 			if self.sensorCount == 0:
 				self.logger.error("[%s]: Getting sensor count failed (%s:%d)."
 						% (self.fileName, self.clientAddress, self.clientPort))

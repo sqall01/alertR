@@ -349,6 +349,14 @@ class VersionInformer(threading.Thread):
 			nodeIds = self.storage.getNodeIds(self.logger)
 			for nodeId in nodeIds:
 				nodeTuple = self.storage.getNodeById(nodeId, self.logger)
+				# Since a user can be deleted during runtime, check if
+				# the node still existed in the database.
+				if nodeTuple is None:
+					self.logger.error("[%s]: Could not " % self.fileName
+						+ "get node with id %d from database."
+						% nodeId)
+					continue
+
 				hostname = nodeTuple[1]
 				username = nodeTuple[2]
 				nodeType = nodeTuple[3]

@@ -117,8 +117,12 @@ class ConfigWatchdog(threading.Thread):
 					% (self.fileName, username)
 					+ "Removing node from database.")
 
-				self.storage.deleteNode(nodeId, self.logger)
+				if not self.storage.deleteNode(nodeId, self.logger):
 
+					self.logger.error("[%s]: Not able to delete node with id "
+						% self.fileName
+						+ "'%d'."
+						% nodeId)
 
 	def run(self):
 
