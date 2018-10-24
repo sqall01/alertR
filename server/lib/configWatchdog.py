@@ -124,12 +124,13 @@ class ConfigWatchdog(threading.Thread):
 						+ "'%d'."
 						% nodeId)
 
+
 	def run(self):
 
 		# Synchronize database with usernames in backend once in the
 		# beginning in order to catch changes that were made while
 		# the server was not running.
-		self._syncUsernamesAndDatabase() # TODO
+		self._syncUsernamesAndDatabase()
 
 		if self.CSVUsersCheck and os.path.isfile(self.CSVUsersFile):
 			self.CSVUsersHash = self._createHash(self.CSVUsersFile)
@@ -171,7 +172,7 @@ class ConfigWatchdog(threading.Thread):
 
 						# Synchronize usernames that are no longer valid
 						# with our database.
-						if self._syncUsernamesAndDatabase(): # TODO
+						if self._syncUsernamesAndDatabase():
 							# Wake up manager update executer if
 							# we removed a node.
 							self.managerUpdateExecuter.forceStatusUpdate = True
