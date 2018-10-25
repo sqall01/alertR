@@ -3875,8 +3875,9 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
-		# ssl socket wrapper
+		# ssl socket
 		self.sslSocket = None
+		self.sslContext = None
 
 		# instance of the client communication object
 		self.clientComm = None
@@ -3897,6 +3898,11 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		self.useClientCertificates = self.globalData.useClientCertificates
 		self.clientCAFile = self.globalData.clientCAFile
 
+		# Get TLS/SSL setting.
+		self.sslProtocol = self.globalData.sslProtocol
+		self.sslCiphers = self.globalData.sslCiphers
+		self.sslOptions = self.globalData.sslOptions
+
 		# add own server session to the global list of server sessions
 		self.serverSessions = self.globalData.serverSessions
 		self.serverSessions.append(self)
@@ -3914,20 +3920,22 @@ class ServerSession(SocketServer.BaseRequestHandler):
 		self.logger.info("[%s]: Client connected (%s:%d)."
 			% (self.fileName, self.clientAddress, self.clientPort))
 
+		# Set SSL context.
+		self.sslContext = ssl.SSLContext(self.sslProtocol)
+		self.sslContext.load_cert_chain(certfile=self.serverCertFile,
+			keyfile=self.serverKeyFile)
+		self.sslContext.set_ciphers(self.sslCiphers)
+		self.sslContext.options = self.sslOptions
+
+		# If activated, require a client certificate.
+		if self.useClientCertificates:
+			self.sslContext.verify_mode = ssl.CERT_REQUIRED
+			self.sslContext.load_verify_locations(cafile=self.clientCAFile)
+
 		# try to initiate ssl with client
 		try:
-
-			# check if the clients should also be forced to authenticate
-			# themselves via a certificate
-			if self.useClientCertificates is True:
-				self.sslSocket = ssl.wrap_socket(self.request,
-					server_side=True, certfile=self.serverCertFile,
-					keyfile=self.serverKeyFile, ssl_version=ssl.PROTOCOL_TLSv1,
-					cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.clientCAFile)
-			else:
-				self.sslSocket = ssl.wrap_socket(self.request,
-					server_side=True, certfile=self.serverCertFile,
-					keyfile=self.serverKeyFile, ssl_version=ssl.PROTOCOL_TLSv1)
+			self.sslSocket = self.sslContext.wrap_socket(self.request,
+				server_side=True)
 
 		except Exception as e:
 			self.logger.exception("[%s]: Unable to initialize SSL "

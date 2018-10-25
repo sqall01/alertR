@@ -9,6 +9,7 @@
 
 import os
 import threading
+import ssl
 
 
 # Class implements an iterator that iterates over a copy of the
@@ -56,10 +57,10 @@ class GlobalData:
 	def __init__(self):
 
 		# version of the used server (and protocol)
-		self.version = 0.503
+		self.version = 0.504
 
 		# revision of the used server
-		self.rev = 5
+		self.rev = 0
 
 		# name of this server
 		self.name = "AlertR Server"
@@ -125,6 +126,15 @@ class GlobalData:
 
 		# path to CA that is used to authenticate clients
 		self.clientCAFile = None
+
+		# Get TLS/SSL setting.
+		try:
+			self.sslProtocol = ssl.PROTOCOL_TLS
+		except AttributeError:
+			self.sslProtocol = ssl.PROTOCOL_SSLv23
+		self.sslOptions = ssl.OP_ALL
+		self.sslCiphers = "HIGH:!aNULL:!eNULL:!EXPORT" \
+			+ ":!CAMELLIA:!DES:!MD5:!PSK:!RC4"
 
 		# a list of all alert levels that are configured on this server
 		self.alertLevels = list()

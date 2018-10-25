@@ -1,3 +1,9 @@
+## 0.504
+
+Features:
+
+* Make TLS/SSL Options configurable.
+
 ## 0.503-5
 
 Features:

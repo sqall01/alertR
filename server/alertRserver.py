@@ -24,6 +24,7 @@ from lib import GlobalData
 from lib import SurveyExecuter
 from lib import VersionInformer
 import socket
+import ssl
 import logging
 import time
 import threading
@@ -788,12 +789,12 @@ if __name__ == '__main__':
 	# parse the rest of the config with initialized logging
 	try:
 
-		# check if config and client version are compatible
+		# check if config and server version are compatible
 		version = float(configRoot.attrib["version"])
 		if version != globalData.version:
 			raise ValueError("Config version '%.3f' not "
 				% version
-				+ "compatible with client version '%.3f'."
+				+ "compatible with server version '%.3f'."
 				% globalData.version)
 
 		# parse update options
@@ -907,6 +908,34 @@ if __name__ == '__main__':
 
 			if os.path.exists(globalData.clientCAFile) is False:
 				raise ValueError("Client CA file does not exist.")
+
+		# Get TLS/SSL configurations.
+		noSSLv2 = (str(
+			configRoot.find("general").find("ssl").attrib[
+			"noSSLv2"]).upper() == "TRUE")
+		noSSLv3 = (str(
+			configRoot.find("general").find("ssl").attrib[
+			"noSSLv3"]).upper() == "TRUE")
+		noTLSv1_0 = (str(
+			configRoot.find("general").find("ssl").attrib[
+			"noTLSv1_0"]).upper() == "TRUE")
+		noTLSv1_1 = (str(
+			configRoot.find("general").find("ssl").attrib[
+			"noTLSv1_1"]).upper() == "TRUE")
+		noTLSv1_2 = (str(
+			configRoot.find("general").find("ssl").attrib[
+			"noTLSv1_2"]).upper() == "TRUE")
+
+		if noSSLv2:
+			globalData.sslOptions |= ssl.OP_NO_SSLv2
+		if noSSLv3:
+			globalData.sslOptions |= ssl.OP_NO_SSLv3
+		if noTLSv1_0:
+			globalData.sslOptions |= ssl.OP_NO_TLSv1
+		if noTLSv1_1:
+			globalData.sslOptions |= ssl.OP_NO_TLSv1_1
+		if noTLSv1_2:
+			globalData.sslOptions |= ssl.OP_NO_TLSv1_2
 
 		# parse all alert levels
 		globalData.logger.debug("[%s]: Parsing alert levels configuration."

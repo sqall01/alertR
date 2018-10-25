@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the server
 -->
-<config version="0.503">
+<config version="0.504">
 
 	<!--
 		in this section general options are configured
@@ -48,6 +48,28 @@
 		<client
 			useClientCertificates="True"
 			clientCAFile="/absolute/path/to/some_CA.pem" />
+
+		<!--
+			The settings used for the TLS/SSL connection. In order to be
+			as secure as possible, only allow the highest version that is
+			supported by your hosts. This means that the most secure setting
+			is to set everything to "True". However, since TLSv1.3 is not
+			widely adopted yet (OpenSSL version 1.1.1), you should
+			also allow TLSv1.2.
+			noSSLv2 - Disables the use of SSLv2.
+			noSSLv3 - Disables the use of SSLv3.
+			noTLSv1_0 - Disables the use of TLSv1.0.
+			noTLSv1_1 - Disables the use of TLSv1.1
+				(Needs at least OpenSSL version 1.0.1).
+			noTLSv1_2 - Disables the use of TLSv1.2
+				(Needs at least OpenSSL version 1.0.1).
+		-->
+		<ssl
+			noSSLv2="True"
+			noSSLv3="True"
+			noTLSv1_0="True"
+			noTLSv1_1="True"
+			noTLSv1_2="False" />
 
 		<!--
 			settings for the alertR survey

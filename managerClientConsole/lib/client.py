@@ -43,12 +43,10 @@ class Client:
 		if (self.clientCertFile is None
 			or self.clientKeyFile is None):
 			self.sslSocket = ssl.wrap_socket(self.socket,
-				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
-				ssl_version=ssl.PROTOCOL_TLSv1)
+				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED)
 		else:
 			self.sslSocket = ssl.wrap_socket(self.socket,
 				ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
-				ssl_version=ssl.PROTOCOL_TLSv1,
 				certfile=self.clientCertFile, keyfile=self.clientKeyFile)
 
 		self.sslSocket.connect((self.host, self.port))
