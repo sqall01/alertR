@@ -3,7 +3,7 @@
 Features:
 
 * Changed users.csv file format and added manageUsers.py script to manage users.
-* Users can now be changed at runtime.
+* Users can now be added and deleted at runtime (modifying requires shutdown beforehand).
 
 ## 0.503-4
 
