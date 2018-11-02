@@ -348,21 +348,21 @@ class VersionInformer(threading.Thread):
 			outdatedNodes = set()
 			nodeIds = self.storage.getNodeIds(self.logger)
 			for nodeId in nodeIds:
-				nodeTuple = self.storage.getNodeById(nodeId, self.logger)
+				nodeObj = self.storage.getNodeById(nodeId, self.logger)
 				# Since a user can be deleted during runtime, check if
 				# the node still existed in the database.
-				if nodeTuple is None:
+				if nodeObj is None:
 					self.logger.error("[%s]: Could not " % self.fileName
 						+ "get node with id %d from database."
 						% nodeId)
 					continue
 
-				hostname = nodeTuple[1]
-				username = nodeTuple[2]
-				nodeType = nodeTuple[3]
-				instance = nodeTuple[4]
-				version = nodeTuple[6]
-				rev = nodeTuple[7]
+				hostname = nodeObj.hostname
+				username = nodeObj.username
+				nodeType = nodeObj.nodeType
+				instance = nodeObj.instance
+				version = nodeObj.version
+				rev = nodeObj.rev
 
 				# Check if instance is managed by update repository.
 				if instance in self.repoVersions.keys():

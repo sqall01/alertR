@@ -170,19 +170,19 @@ class ConnectionWatchdog(threading.Thread):
 		for sensorTuple in sensorsTimeoutList:
 			sensorId = sensorTuple[0]
 			nodeId = sensorTuple[1]
-			nodeTuple = self.storage.getNodeById(nodeId)
+			nodeObj = self.storage.getNodeById(nodeId)
 			# Since a user can be deleted during runtime, check if the
 			# node still existed in the database.
-			if nodeTuple is None:
+			if nodeObj is None:
 				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get node with id %d from database."
 					% nodeId)
 				continue
 
-			hostname = nodeTuple[1]
-			username = nodeTuple[2]
-			nodeType = nodeTuple[3]
-			instance = nodeTuple[4]
+			hostname = nodeObj.hostname
+			username = nodeObj.username
+			nodeType = nodeObj.nodeType
+			instance = nodeObj.instance
 			lastStateUpdated = sensorTuple[2]
 			description = sensorTuple[3]
 			if hostname is None:
@@ -302,19 +302,19 @@ class ConnectionWatchdog(threading.Thread):
 				continue
 
 			nodeId = sensorTuple[1]
-			nodeTuple = self.storage.getNodeById(nodeId)
+			nodeObj = self.storage.getNodeById(nodeId)
 			# Since a user can be deleted during runtime, check if the
 			# node still existed in the database.
-			if nodeTuple is None:
+			if nodeObj is None:
 				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get node with id %d from database."
 					% nodeId)
 				continue
 
-			hostname = nodeTuple[1]
-			username = nodeTuple[2]
-			nodeType = nodeTuple[3]
-			instance = nodeTuple[4]
+			hostname = nodeObj.hostname
+			username = nodeObj.username
+			nodeType = nodeObj.nodeType
+			instance = nodeObj.instance
 			description = sensorTuple[3]
 			lastStateUpdated = sensorTuple[5]
 
@@ -441,12 +441,12 @@ class ConnectionWatchdog(threading.Thread):
 
 						# Get sensor details.
 						nodeId = sensorTuple[1]
-						nodeTuple = self.storage.getNodeById(nodeId)
+						nodeObj = self.storage.getNodeById(nodeId)
 						# Since a user can be deleted during runtime, check if
 						# the node still existed in the database. Since the
 						# node does not exist anymore, remove the sensor
 						# from the timeout list.
-						if nodeTuple is None:
+						if nodeObj is None:
 							self.logger.error("[%s]: Could not " 
 								% self.fileName
 								+ "get node with id %d from database."
@@ -455,10 +455,10 @@ class ConnectionWatchdog(threading.Thread):
 							self.timeoutSensorIds.remove(sensorId)
 							continue
 
-						hostname = nodeTuple[1]
-						username = nodeTuple[2]
-						nodeType = nodeTuple[3]
-						instance = nodeTuple[4]
+						hostname = nodeObj.hostname
+						username = nodeObj.username
+						nodeType = nodeObj.nodeType
+						instance = nodeObj.instance
 						description = sensorTuple[3]
 						lastStateUpdated = sensorTuple[5]
 						lastStateUpdateStr = time.strftime("%D %H:%M:%S",
@@ -531,12 +531,12 @@ class ConnectionWatchdog(threading.Thread):
 					nodesField = list()
 					for nodeId in set(self._timeoutNodeIds):
 
-						nodeTuple = self.storage.getNodeById(nodeId)
+						nodeObj = self.storage.getNodeById(nodeId)
 						# Since a user can be deleted during runtime, check if
 						# the node still existed in the database. Since the
 						# node does not exist anymore, remove the node
 						# from the timeout list.
-						if nodeTuple is None:
+						if nodeObj is None:
 							self.logger.error("[%s]: Could not "
 								% self.fileName
 								+ "get node with id %d from database."
@@ -545,10 +545,10 @@ class ConnectionWatchdog(threading.Thread):
 							self.removeNodeTimeout(nodeId)
 							continue
 
-						instance = nodeTuple[4]
-						username = nodeTuple[2]
-						nodeType = nodeTuple[3]
-						hostname = nodeTuple[1]
+						instance = nodeObj.instance
+						username = nodeObj.username
+						nodeType = nodeObj.nodeType
+						hostname = nodeObj.hostname
 
 						nodeField = {"hostname": hostname,
 										"username": username,
@@ -693,10 +693,10 @@ class ConnectionWatchdog(threading.Thread):
 		# Only process node timeout if we do not already know about it.
 		if not nodeId in self._timeoutNodeIds:
 
-			nodeTuple = self.storage.getNodeById(nodeId)
+			nodeObj = self.storage.getNodeById(nodeId)
 			# Since a user can be deleted during runtime, check if
 			# the node still existed in the database.
-			if nodeTuple is None:
+			if nodeObj is None:
 				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get node with id %d from database."
 					% nodeId)
@@ -710,16 +710,16 @@ class ConnectionWatchdog(threading.Thread):
 			# Check if client is not persistent and therefore
 			# allowed to timeout or disconnect.
 			# => Ignore timeout/disconnect.
-			persistent = nodeTuple[8]
+			persistent = nodeObj.persistent
 			if persistent == 0:
 
 				self._releaseNodeTimeoutLock()
 				return
 
-			instance = nodeTuple[4]
-			nodeType = nodeTuple[3]
-			username = nodeTuple[2]
-			hostname = nodeTuple[1]
+			instance = nodeObj.instance
+			nodeType = nodeObj.nodeType
+			username = nodeObj.username
+			hostname = nodeObj.hostname
 
 			self._timeoutNodeIds.add(nodeId)
 
@@ -814,10 +814,10 @@ class ConnectionWatchdog(threading.Thread):
 			self._releaseNodeTimeoutLock()
 			return
 
-		nodeTuple = self.storage.getNodeById(nodeId)
+		nodeObj = self.storage.getNodeById(nodeId)
 		# Since a user can be deleted during runtime, check if
 		# the node still existed in the database.
-		if nodeTuple is None:
+		if nodeObj is None:
 			self.logger.error("[%s]: Could not " % self.fileName
 				+ "get node with id %d from database."
 				% nodeId)
@@ -831,14 +831,14 @@ class ConnectionWatchdog(threading.Thread):
 		# Check if client is not persistent and therefore
 		# allowed to timeout or disconnect.
 		# => Ignore timeout/disconnect.
-		persistent = nodeTuple[8]
+		persistent = nodeObj.persistent
 		if persistent == 0:
 			self._releaseNodeTimeoutLock()
 			return
 
-		instance = nodeTuple[4]
-		username = nodeTuple[2]
-		hostname = nodeTuple[1]
+		instance = nodeObj.instance
+		username = nodeObj.username
+		hostname = nodeObj.hostname
 		self.logger.debug("[%s]: Adding node '%s' with username '%s' "
 			% (self.fileName, instance, username)
 			+ "on host '%s' to pre-timeout set."
@@ -883,10 +883,10 @@ class ConnectionWatchdog(threading.Thread):
 
 			self._timeoutNodeIds.remove(nodeId)
 
-			nodeTuple = self.storage.getNodeById(nodeId)
+			nodeObj = self.storage.getNodeById(nodeId)
 			# Since a user can be deleted during runtime, check if
 			# the node still existed in the database.
-			if nodeTuple is None:
+			if nodeObj is None:
 				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get node with id %d from database."
 					% nodeId)
@@ -897,10 +897,10 @@ class ConnectionWatchdog(threading.Thread):
 				self._releaseNodeTimeoutLock()
 				return
 
-			instance = nodeTuple[4]
-			nodeType = nodeTuple[3]
-			username = nodeTuple[2]
-			hostname = nodeTuple[1]
+			instance = nodeObj.instance
+			nodeType = nodeObj.nodeType
+			username = nodeObj.username
+			hostname = nodeObj.hostname
 
 			self.logger.error("[%s]: Node '%s' with username '%s' on "
 				% (self.fileName, instance, username)

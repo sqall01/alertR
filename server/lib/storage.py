@@ -14,7 +14,7 @@ import time
 import socket
 import struct
 import hashlib
-from localObjects import SensorDataType
+from localObjects import Node, SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -213,8 +213,7 @@ class _Storage():
 
 	# gets the node from the database when its id is given
 	#
-	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a node object or None
 	def getNodeById(self, nodeId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
@@ -406,6 +405,24 @@ class Sqlite(_Storage):
 		return uniqueID
 
 
+	# Internal function that converts a tuple that is fetched from the
+	# database by "SELECT * FROM nodes" to an node object.
+	#
+	# returns a node object
+	def _convertNodeTupleToObj(self, nodeTuple):
+		node = Node()
+		node.id = nodeTuple[0]
+		node.hostname = nodeTuple[1]
+		node.username = nodeTuple[2]
+		node.nodeType = nodeTuple[3]
+		node.instance = nodeTuple[4]
+		node.connected = nodeTuple[5]
+		node.version = nodeTuple[6]
+		node.rev = nodeTuple[7]
+		node.persistent = nodeTuple[8]
+		return node
+
+
 	# internal function that gets the id of a node when a username is given
 	def _getNodeId(self, username):
 
@@ -423,8 +440,7 @@ class Sqlite(_Storage):
 
 	# Internal function that gets the node from the database given by its id.
 	#
-	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a node object or None
 	def _getNodeById(self, nodeId, logger=None):
 
 		# Set logger instance to use.
@@ -444,9 +460,12 @@ class Sqlite(_Storage):
 			return None
 
 		if len(result) == 1:
-			return result[0]
-		else:
-			return None
+			try:
+				return self._convertNodeTupleToObj(result[0])
+			except Exception as e:
+				logger.exception("[%s]: Not able to convert " % self.fileName
+					+ "node data for id %d to object." % nodeId)
+		return None
 
 
 	# internal function that gets the sensor id of a sensor when the id
@@ -2684,18 +2703,17 @@ class Sqlite(_Storage):
 		self._acquireLock(logger)
 
 		# Get node type from database.
-		nodeTuple = self._getNodeById(nodeId, logger)
-		if nodeTuple is None:
+		nodeObj = self._getNodeById(nodeId, logger)
+		if nodeObj is None:
 			logger.error("[%s]: Not able to get node with id %d."
 				% (self.fileName, nodeId))
 
 			self._releaseLock(logger)
 
 			return False
-		nodeType = nodeTuple[3]
 
 		# Delete all corresponding alert entries from database.
-		if nodeType == "alert":
+		if nodeObj.type == "alert":
 
 			if not self._deleteAlertsForNodeId(nodeId, logger):
 				self._releaseLock(logger)
@@ -2703,7 +2721,7 @@ class Sqlite(_Storage):
 				return False
 
 		# Delete all corresponding manager entries from database.
-		elif nodeType == "manager":
+		elif nodeObj.type == "manager":
 
 			if not self._deleteManagerForNodeId(nodeId, logger):
 				self._releaseLock(logger)
@@ -2711,7 +2729,7 @@ class Sqlite(_Storage):
 				return False
 
 		# Delete all corresponding sensor entries from database.
-		elif nodeType == "sensor":
+		elif nodeObj.type == "sensor":
 
 			if not self._deleteSensorsForNodeId(nodeId, logger):
 				self._releaseLock(logger)
@@ -2721,7 +2739,7 @@ class Sqlite(_Storage):
 		# Return if we do not know how to handle the node.
 		else:
 			logger.exception("[%s]: Unknown node type '%s' for node "
-				% (self.fileName, nodeType)
+				% (self.fileName, nodeObj.type)
 				+ "with id %d."
 				% nodeId)
 
@@ -3073,8 +3091,7 @@ class Sqlite(_Storage):
 
 	# gets the node from the database when its id is given
 	#
-	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a node object or None
 	def getNodeById(self, nodeId, logger=None):
 
 		# Set logger instance to use.
@@ -3087,8 +3104,7 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a tuple of (nodeId, hostname, username, nodeType, instance,
-		# connected, version, rev, persistent) or None
+		# return a node object or None
 		return result
 
 
@@ -3604,6 +3620,24 @@ class Mysql(_Storage):
 		return uniqueID
 
 
+	# Internal function that converts a tuple that is fetched from the
+	# database by "SELECT * FROM nodes" to an node object.
+	#
+	# returns a node object
+	def _convertNodeTupleToObj(self, nodeTuple):
+		node = Node()
+		node.id = nodeTuple[0]
+		node.hostname = nodeTuple[1]
+		node.username = nodeTuple[2]
+		node.nodeType = nodeTuple[3]
+		node.instance = nodeTuple[4]
+		node.connected = nodeTuple[5]
+		node.version = nodeTuple[6]
+		node.rev = nodeTuple[7]
+		node.persistent = nodeTuple[8]
+		return node
+
+
 	# internal function that gets the id of a node when a username is given
 	def _getNodeId(self, username):
 
@@ -3621,8 +3655,7 @@ class Mysql(_Storage):
 
 	# Internal function that gets the node from the database given by its id.
 	#
-	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a node object or None
 	def _getNodeById(self, nodeId, logger=None):
 
 		# Set logger instance to use.
@@ -3642,9 +3675,12 @@ class Mysql(_Storage):
 			return None
 
 		if len(result) == 1:
-			return result[0]
-		else:
-			return None
+			try:
+				return self._convertNodeTupleToObj(result[0])
+			except Exception as e:
+				logger.exception("[%s]: Not able to convert " % self.fileName
+					+ "node data for id %d to object." % nodeId)
+		return None
 
 
 	# internal function that gets the sensor id of a sensor when the id
@@ -6331,8 +6367,8 @@ class Mysql(_Storage):
 			return False
 
 		# Get node type from database.
-		nodeTuple = self._getNodeById(nodeId, logger)
-		if nodeTuple is None:
+		nodeObj = self._getNodeById(nodeId, logger)
+		if nodeObj is None:
 			logger.error("[%s]: Not able to get node with id %d."
 				% (self.fileName, nodeId))
 
@@ -6342,10 +6378,9 @@ class Mysql(_Storage):
 			self._releaseLock(logger)
 
 			return False
-		nodeType = nodeTuple[3]
 
 		# Delete all corresponding alert entries from database.
-		if nodeType == "alert":
+		if nodeObj.type == "alert":
 
 			if not self._deleteAlertsForNodeId(nodeId, logger):
 
@@ -6357,7 +6392,7 @@ class Mysql(_Storage):
 				return False
 
 		# Delete all corresponding manager entries from database.
-		elif nodeType == "manager":
+		elif nodeObj.type == "manager":
 
 			if not self._deleteManagerForNodeId(nodeId, logger):
 
@@ -6369,7 +6404,7 @@ class Mysql(_Storage):
 				return False
 
 		# Delete all corresponding sensor entries from database.
-		elif nodeType == "sensor":
+		elif nodeObj.type == "sensor":
 
 			if not self._deleteSensorsForNodeId(nodeId, logger):
 
@@ -6383,7 +6418,7 @@ class Mysql(_Storage):
 		# Return if we do not know how to handle the node.
 		else:
 			logger.exception("[%s]: Unknown node type '%s' for node "
-				% (self.fileName, nodeType)
+				% (self.fileName, nodeObj.type)
 				+ "with id %d."
 				% nodeId)
 
@@ -6900,8 +6935,7 @@ class Mysql(_Storage):
 
 	# gets the node from the database when its id is given
 	#
-	# return a tuple of (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a node object or None
 	def getNodeById(self, nodeId, logger=None):
 
 		# Set logger instance to use.
@@ -6928,8 +6962,7 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a tuple of (nodeId, hostname, username, nodeType, instance,
-		# connected, version, rev, persistent) or None
+		# return a node object or None
 		return result
 
 

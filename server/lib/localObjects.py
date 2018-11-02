@@ -15,7 +15,22 @@ class SensorDataType:
 	FLOAT = 2
 
 
-# This class represents a single sensor of a client.
+# This class represents a single node of the system..
+class Node:
+
+	def __init__(self):
+		self.id = None
+		self.hostname = None
+		self.username = None
+		self.nodeType = None
+		self.instance = None
+		self.connected = None
+		self.version = None
+		self.rev = None
+		self.persistent = None
+		
+
+# This class represents a single sensor of a node..
 class Sensor:
 
 	def __init__(self):
