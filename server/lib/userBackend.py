@@ -454,6 +454,14 @@ class CSVBackend(_userBackend):
 	# return True or False
 	def changeNodeTypeAndInstance(self, username, nodeType, instance):
 
+		# NOTE: Changing the node type and instance while the server is
+		# running can corrupt the database. If it is done while the server
+		# is not running, it will only change the entries in the user backend.
+		# The database still contains the old node type and instance and
+		# all entries regarding the client. However, when the client connects
+		# with the new node type and instance, the database is directly
+		# updated. Therefore, we do not have to do it manually here.
+
 		self.logger.info("[%s]: Changing node type and instance from user."
 			% self.fileName)
 
