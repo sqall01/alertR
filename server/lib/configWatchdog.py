@@ -102,10 +102,10 @@ class ConfigWatchdog(threading.Thread):
 
 		# Check the username of each node if it still exists and delete if
 		# it does not.
-		for node in nodesList:
-			nodeId = node[0]
-			username = node[2]
-			nodeType = node[3]
+		for nodeObj in nodesList:
+			nodeId = nodeObj.id
+			username = nodeObj.username
+			nodeType = nodeObj.nodeType
 
 			# Ignore server node.
 			if nodeType == "server":

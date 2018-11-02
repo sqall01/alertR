@@ -220,9 +220,7 @@ class _Storage():
 
 	# Gets all nodes from the database.
 	#
-	# return a list of tuples of
-	# (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a list of node objects or None
 	def getNodes(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
@@ -3110,9 +3108,7 @@ class Sqlite(_Storage):
 
 	# Gets all nodes from the database.
 	#
-	# return a list of tuples of
-	# (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a list of node objects or None
 	def getNodes(self, logger=None):
 		
 		# Set logger instance to use.
@@ -3121,11 +3117,15 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
+		nodes = list()
 		try:
 
 			# Get all nodes information.
 			self.cursor.execute("SELECT * FROM nodes")
-			nodesInformation = self.cursor.fetchall()
+			nodeTuples = self.cursor.fetchall()
+			for nodeTuple in nodeTuples:
+				node = self._convertNodeTupleToObj(nodeTuple)
+				nodes.append(node)
 
 		except Exception as e:
 
@@ -3138,9 +3138,8 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# list(tuples of (nodeId, hostname, username, nodeType,
-		# instance, connected, version, rev, persistent))
-		return nodesInformation
+		# list(node objects)
+		return nodes
 
 
 	# gets all information that the server has at the current moment
@@ -6968,9 +6967,7 @@ class Mysql(_Storage):
 
 	# Gets all nodes from the database.
 	#
-	# return a list of tuples of
-	# (nodeId, hostname, username, nodeType, instance,
-	# connected, version, rev, persistent) or None
+	# return a list of node objects or None
 	def getNodes(self, logger=None):
 		
 		# Set logger instance to use.
@@ -6990,11 +6987,15 @@ class Mysql(_Storage):
 
 			return None
 
+		nodes = list()
 		try:
 
 			# Get all nodes information.
 			self.cursor.execute("SELECT * FROM nodes")
-			nodesInformation = self.cursor.fetchall()
+			nodeTuples = self.cursor.fetchall()
+			for nodeTuple in nodeTuples:
+				node = self._convertNodeTupleToObj(nodeTuple)
+				nodes.append(node)
 
 		except Exception as e:
 
@@ -7013,9 +7014,8 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# list(tuples of (nodeId, hostname, username, nodeType,
-		# instance, connected, version, rev, persistent))
-		return nodesInformation
+		# list(node objects)
+		return nodes
 
 
 	# gets all information that the server has at the current moment
