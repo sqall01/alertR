@@ -116,7 +116,7 @@ class SurveyExecuter(threading.Thread):
 				raise ValueError("Server response code not 200 (was %d)."
 					% response.status)
 
-			data = response.read()
+			data = response.read().strip()
 			if data != "ok":
 				raise ValueError("Server responded with error: %s." % data)
 
