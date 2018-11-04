@@ -3,6 +3,7 @@
 Features:
 
 * Make TLS/SSL Options configurable.
+* Migrated survey to use requests and connect to 443 (instead of 444).
 
 ## 0.503-5
 

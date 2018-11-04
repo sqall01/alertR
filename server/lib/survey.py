@@ -7,41 +7,15 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+from localObjects import ErrorCodes
 import socket
 import ssl
-import httplib
-import urllib
 import time
 import threading
 import os
 import json
 import logging
-
-
-# HTTPSConnection like class that verifies server certificates
-class VerifiedHTTPSConnection(httplib.HTTPSConnection):
-	# needs socket and ssl lib
-	def __init__(self, host, port=None, servercert_file=None,
-		key_file=None, cert_file=None, strict=None,
-		timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-		httplib.HTTPSConnection.__init__(self, host, port, key_file,
-			cert_file, strict, timeout)
-		self.servercert_file = servercert_file
-
-	# overwrites the original version of httplib (python 2.6)
-	def connect(self):
-		"Connect to a host on a given (SSL) port."
-
-		sock = socket.create_connection((self.host, self.port), self.timeout)
-		if self._tunnel_host:
-			self.sock = sock
-			self._tunnel()
-
-		# the only thing that has to be changed in the original function from
-		# httplib (tell ssl.wrap_socket to verify server certificate)
-		self.sock = ssl.wrap_socket(sock, self.key_file,
-			self.cert_file, cert_reqs=ssl.CERT_REQUIRED,
-			ca_certs=self.servercert_file, server_side=False)
+import requests
 
 
 # this class participates in the alertR survey (if it is activated)
@@ -67,10 +41,7 @@ class SurveyExecuter(threading.Thread):
 
 		# fixed values for survey
 		self.surveyInterval = 604800 # week
-		self.host = "survey.alertr.de"
-		self.port = "444"
-		self.caFile = os.path.dirname(os.path.abspath(
-			__file__)) + "/../config/survey.alertr.de.crt"
+		self.host = "https://alertr.de/submit.php"
 
 
 	# gather and send survey data
@@ -88,6 +59,7 @@ class SurveyExecuter(threading.Thread):
 				+ "the database.")
 			return False
 		surveyData = dict()
+		surveyData["type"] = "survey";
 		surveyData["nodes"] = surveyNodes
 
 		surveyUpdate = dict()
@@ -98,27 +70,26 @@ class SurveyExecuter(threading.Thread):
 
 		surveyData["uniqueID"] = self.storage.getUniqueID()
 
-		# send survey data to server
-		conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+		# Send survey data to server.
+		r = None
 		try:
+			payload = {"data": json.dumps(surveyData)}
+			r = requests.post(self.host, verify=True, data=payload)
 
-			headers = {"Connection": "keep-alive",
-				"Content-type": "application/x-www-form-urlencoded",
-				"Accept": "text/plain"}
-			data = urllib.urlencode({
-				'data': json.dumps(surveyData)})
-
-			conn.request("POST", "/submit.php", data, headers)
-			response = conn.getresponse()
-
-			# check if server responded correctly
-			if response.status != 200:
+			# Check if server responded correctly.
+			if r.status_code != 200:
 				raise ValueError("Server response code not 200 (was %d)."
 					% response.status)
 
-			data = response.read().strip()
-			if data != "ok":
-				raise ValueError("Server responded with error: %s." % data)
+			data = r.json()
+			if data["code"] != ErrorCodes.NO_ERROR:
+				msg = ""
+				if "msg" in data.keys():
+					msg = data["msg"]
+				raise ValueError("Server responded with error code '%d' and "
+					% data["code"]
+					+ "message: '%s'."
+					% msg)
 
 		except Exception as e:
 			self.logger.exception("[%s]: Sending survey data failed."

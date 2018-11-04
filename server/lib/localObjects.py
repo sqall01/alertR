@@ -8,6 +8,15 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 
+# This class contains the error codes used by the alertr.de server.
+class ErrorCodes:
+	NO_ERROR = 0
+	DATABASE_ERROR = 1
+	AUTH_ERROR = 2
+	ILLEGAL_MSG_ERROR = 3
+	SESSION_EXPIRED = 4
+
+
 # This enum class gives the different data types of a sensor.
 class SensorDataType:
 	NONE = 0
