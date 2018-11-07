@@ -605,6 +605,12 @@ class ConnectionWatchdog(threading.Thread):
 				+ "ids from database.")
 		else:
 
+			# TODO
+			# Debug code
+			outputStr = "\nConnected in DB:"
+			dbConnected = set()
+			sessionConnected = set()
+
 			# Check if node marked as connected got a connection
 			# to the server.
 			for nodeId in nodeIds:
@@ -613,6 +619,17 @@ class ConnectionWatchdog(threading.Thread):
 				# Skip node id of this server instance.
 				if nodeId == self.serverNodeId:
 					continue
+
+
+
+				# TODO
+				# Debug code to find bug with clients connected
+				# but not shown as connected.
+				node = self.storage.getNodeById(nodeId)
+				outputStr += "\n" + node.username
+				dbConnected.add(node.username)
+
+
 
 				# Skip node ids that have an active connection
 				# to this server.
@@ -641,6 +658,12 @@ class ConnectionWatchdog(threading.Thread):
 
 				sendManagerUpdates = True
 
+
+			# TODO
+			# Debug code
+			outputStr += "\n\nConnected sessions:"
+
+
 			# Check if all connections to the server are marked as connected
 			# in the database.
 			for serverSession in self.serverSessions:
@@ -651,7 +674,18 @@ class ConnectionWatchdog(threading.Thread):
 					or not serverSession.clientComm.clientInitialized):
 					continue
 
-				if not serverSession.clientComm.nodeId in nodeIds:
+				
+
+				# TODO
+				# Debug code to find bug with clients connected
+				# but not shown as connected.
+				outputStr += "\n" + serverSession.clientComm.username
+				sessionConnected.add(serverSession.clientComm.username)
+
+
+
+				nodeId = serverSession.clientComm.nodeId
+				if not nodeId in nodeIds:
 
 					# If server session was found but not marked as connected
 					# in database => mark node as connected in database.
@@ -661,6 +695,16 @@ class ConnectionWatchdog(threading.Thread):
 					if not self.storage.markNodeAsConnected(nodeId):
 						self.logger.error("[%s]: Could not " % self.fileName
 							+ "mark node as connected in database.")
+
+
+
+			# TODO
+			# Debug code
+			self.logger.critical("[%s]: %s" % (self.fileName, outputStr))
+			if len(sessionConnected) != len(dbConnected):
+				outputStr = "\nDifference detected"
+				self.logger.critical("[%s]: %s" % (self.fileName, outputStr))
+
 
 		# Wake up manager update executer and force to send an update to
 		# all managers.
