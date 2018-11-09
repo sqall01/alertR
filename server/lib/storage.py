@@ -14,7 +14,7 @@ import time
 import socket
 import struct
 import hashlib
-from localObjects import Node, SensorDataType
+from localObjects import Node, SensorAlert, SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -150,9 +150,7 @@ class _Storage():
 
 	# gets all sensor alerts in the database
 	#
-	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
-	# alertDelay, state, description, dataJson, changeState, hasLatestData,
-	# dataType, sensorData)
+	# return a list of sensorAlert objects
 	# or None
 	def getSensorAlerts(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -903,6 +901,35 @@ class Sqlite(_Storage):
 		self.conn.commit()
 
 		return True
+
+
+	# Internal function that gets all alert levels for a specific
+	# sensor given by sensorId
+	#
+	# return list of alertLevel
+	# or None
+	def _getSensorAlertLevels(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsAlertLevels "
+				+ "WHERE sensorId = ?", (sensorId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for sensor with id %d." % sensorId)
+
+			# return None if action failed
+			return None
+
+		# return list of alertLevel
+		return map(lambda x: x[0], result)
 
 
 	# Internal function that inserts sensor data according to its type.
@@ -2451,26 +2478,12 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
-		try:
-			self.cursor.execute("SELECT alertLevel "
-				+ "FROM sensorsAlertLevels "
-				+ "WHERE sensorId = ?", (sensorId, ))
-			result = self.cursor.fetchall()
-
-		except Exception as e:
-
-			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "alert levels for sensor with id %d." % sensorId)
-
-			self._releaseLock(logger)
-
-			# return None if action failed
-			return None
+		result = self._getSensorAlertLevels(sensorId, logger)
 
 		self._releaseLock(logger)
 
 		# return list of alertLevel
-		return map(lambda x: x[0], result)
+		return result
 
 
 	# gets all alert levels for a specific alert given by alertId
@@ -2575,9 +2588,7 @@ class Sqlite(_Storage):
 
 	# gets all sensor alerts in the database
 	#
-	# return a list of tuples (sensorAlertId, sensorId, nodeId, timeReceived,
-	# alertDelay, state, description, dataJson, changeState, hasLatestData,
-	# dataType, sensorData)
+	# return a list of sensorAlert objects
 	# or None
 	def getSensorAlerts(self, logger=None):
 
@@ -2609,14 +2620,56 @@ class Sqlite(_Storage):
 
 			# Extract for each sensor alert the corresponding data.
 			for resultTuple in result:
-				if resultTuple[10] == SensorDataType.NONE:
-					returnList.append( resultTuple + (None, ) )
 
-				elif resultTuple[10] == SensorDataType.INT:
+				sensorAlert = SensorAlert()
+				sensorAlert.sensorAlertId = result[0]
+				sensorAlert.sensorId = result[1]
+				sensorAlert.nodeId = result[2]
+				sensorAlert.timeReceived = result[3]
+				sensorAlert.alertDelay = result[4]
+				sensorAlert.state = result[5]
+				sensorAlert.description = result[6]
+				sensorAlert.changeState = (result[8] == 1)
+				sensorAlert.hasLatestData = (result[9] == 1)
+				sensorAlert.dataType = result[10]
+				sensorAlert.rulesActivated = False
+
+				# Set optional data for sensor alert.
+				sensorAlert.hasOptionalData = False
+				sensorAlert.optionalData = None
+				if dataJson != "":
+					try:
+						sensorAlert.optionalData = json.loads(dataJson)
+						sensorAlert.hasOptionalData = True
+					except Exception as e:
+						self.logger.exception("[%s]: Optional data from "
+							% self.fileName
+							+ "database not a valid json string. "
+							+ "Ignoring data.")
+
+				# Set alert levels for sensor alert.
+				alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId)
+				if alertLevels is None
+					logger.error("[%s]: Not able to get alert levels for "
+						% self.fileName
+						+ "sensor alert with id %d."
+						% sensorAlert.sensorAlertId)
+
+					self._releaseLock(logger)
+
+					return None
+
+				sensorAlert.alertLevels = alertLevels
+
+				# Extract sensor alert data.
+				if sensorAlert.dataType == SensorDataType.NONE:
+					sensorAlert.sensorData = None
+
+				elif sensorAlert.dataType == SensorDataType.INT:
 					self.cursor.execute("SELECT data "
 						+ "FROM sensorAlertsDataInt "
 						+ "WHERE sensorAlertId = ?",
-						(resultTuple[0], ))
+						(sensorAlert.sensorAlertId, ))
 					subResult = self.cursor.fetchall()
 
 					if len(subResult) != 1:
@@ -2626,14 +2679,13 @@ class Sqlite(_Storage):
 						self._releaseLock(logger)
 
 						return None
+					sensorAlert.sensorData = subResult[0]
 
-					returnList.append( resultTuple + subResult[0] )
-
-				elif resultTuple[10] == SensorDataType.FLOAT:
+				elif sensorAlert.dataType == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
 						+ "FROM sensorAlertsDataFloat "
 						+ "WHERE sensorAlertId = ?",
-						(resultTuple[0], ))
+						(sensorAlert.sensorAlertId, ))
 					subResult = self.cursor.fetchall()
 
 					if len(subResult) != 1:
@@ -2643,17 +2695,18 @@ class Sqlite(_Storage):
 						self._releaseLock(logger)
 
 						return None
-
-					returnList.append( resultTuple + subResult[0] )
+					sensorAlert.sensorData = subResult[0]
 
 				else:
-					logger.exception("[%s]: Not able to get sensor alerts. "
+					logger.error("[%s]: Not able to get sensor alerts. "
 						% self.fileName
 						+ "Data type in database unknown.")
 
 					self._releaseLock(logger)
 
 					return None
+
+				returnList.append(sensorAlert)
 
 		except Exception as e:
 			logger.exception("[%s]: Not able to get sensor alerts."
@@ -2665,9 +2718,7 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a list of tuples (sensorAlertId, sensorId, nodeId,
-		# timeReceived, alertDelay, state, description, dataJson, changeState,
-		# hasLatestData, dataType, sensorData)
+		# return a list of sensorAlert objects
 		return returnList
 
 
@@ -4119,6 +4170,35 @@ class Mysql(_Storage):
 		self.conn.commit()
 
 		return True
+
+
+	# Internal function that gets all alert levels for a specific
+	# sensor given by sensorId
+	#
+	# return list of alertLevel
+	# or None
+	def _getSensorAlertLevels(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM sensorsAlertLevels "
+				+ "WHERE sensorId = %s", (sensorId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for sensor with id %d." % sensorId)
+
+			# return None if action failed
+			return None
+
+		# return list of alertLevel
+		return map(lambda x: x[0], result)
 
 
 	# Internal function that inserts sensor data according to its type.
@@ -5594,7 +5674,7 @@ class Mysql(_Storage):
 
 			self._releaseLock(logger)
 
-			return False
+			return None
 
 		# get all sensors on this node
 		sensorCount = None
@@ -6020,26 +6100,9 @@ class Mysql(_Storage):
 
 			self._releaseLock(logger)
 
-			return False
-
-		try:
-			self.cursor.execute("SELECT alertLevel "
-				+ "FROM sensorsAlertLevels "
-				+ "WHERE sensorId = %s", (sensorId, ))
-			result = self.cursor.fetchall()
-
-		except Exception as e:
-
-			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "alert levels for sensor with id %d." % sensorId)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock(logger)
-
-			# return None if action failed
 			return None
+
+		result = self._getSensorAlertLevels(sensorId, logger)
 
 		# close connection to the database
 		self._closeConnection()
@@ -6047,7 +6110,7 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		# return list of alertLevel
-		return map(lambda x: x[0], result)
+		return result
 
 
 	# gets all alert levels for a specific alert given by alertId
@@ -6071,7 +6134,7 @@ class Mysql(_Storage):
 
 			self._releaseLock(logger)
 
-			return False
+			return None
 
 		try:
 			self.cursor.execute("SELECT alertLevel "
@@ -6098,7 +6161,7 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		# return list of alertLevels
-		return map(lambda x: x[0], result) # TODO check if works was originally list(result)
+		return map(lambda x: x[0], result)
 
 
 	# adds a sensor alert to the database when the id of a node is given,
@@ -6234,14 +6297,56 @@ class Mysql(_Storage):
 
 			# Extract for each sensor alert the corresponding data.
 			for resultTuple in result:
+
+				sensorAlert = SensorAlert()
+				sensorAlert.sensorAlertId = result[0]
+				sensorAlert.sensorId = result[1]
+				sensorAlert.nodeId = result[2]
+				sensorAlert.timeReceived = result[3]
+				sensorAlert.alertDelay = result[4]
+				sensorAlert.state = result[5]
+				sensorAlert.description = result[6]
+				sensorAlert.changeState = (result[8] == 1)
+				sensorAlert.hasLatestData = (result[9] == 1)
+				sensorAlert.dataType = result[10]
+				sensorAlert.rulesActivated = False
+
+				# Set optional data for sensor alert.
+				sensorAlert.hasOptionalData = False
+				sensorAlert.optionalData = None
+				if dataJson != "":
+					try:
+						sensorAlert.optionalData = json.loads(dataJson)
+						sensorAlert.hasOptionalData = True
+					except Exception as e:
+						self.logger.exception("[%s]: Optional data from "
+							% self.fileName
+							+ "database not a valid json string. "
+							+ "Ignoring data.")
+
+				# Set alert levels for sensor alert.
+				alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId)
+				if alertLevels is None
+					logger.error("[%s]: Not able to get alert levels for "
+						% self.fileName
+						+ "sensor alert with id %d."
+						% sensorAlert.sensorAlertId)
+
+					self._releaseLock(logger)
+
+					return None
+
+				sensorAlert.alertLevels = alertLevels
+
+				# Extract sensor alert data.
 				if resultTuple[10] == SensorDataType.NONE:
-					returnList.append( resultTuple + (None, ) )
+					sensorAlert.sensorData = None
 
 				elif resultTuple[10] == SensorDataType.INT:
 					self.cursor.execute("SELECT data "
 						+ "FROM sensorAlertsDataInt "
 						+ "WHERE sensorAlertId = %s",
-						(resultTuple[0], ))
+						(sensorAlert.sensorAlertId, ))
 					subResult = self.cursor.fetchall()
 
 					if len(subResult) != 1:
@@ -6254,14 +6359,13 @@ class Mysql(_Storage):
 						self._releaseLock(logger)
 
 						return None
-
-					returnList.append( resultTuple + subResult[0] )
+					sensorAlert.sensorData = subResult[0]
 
 				elif resultTuple[10] == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
 						+ "FROM sensorAlertsDataFloat "
 						+ "WHERE sensorAlertId = %s",
-						(resultTuple[0], ))
+						(sensorAlert.sensorAlertId, ))
 					subResult = self.cursor.fetchall()
 
 					if len(subResult) != 1:
@@ -6274,8 +6378,7 @@ class Mysql(_Storage):
 						self._releaseLock(logger)
 
 						return None
-
-					returnList.append( resultTuple + subResult[0] )
+					sensorAlert.sensorData = subResult[0]
 
 				else:
 					logger.exception("[%s]: Not able to get sensor alerts. "
@@ -6288,6 +6391,8 @@ class Mysql(_Storage):
 					self._releaseLock(logger)
 
 					return None
+
+				returnList.append(sensorAlert)
 
 		except Exception as e:
 			logger.exception("[%s]: Not able to get sensor alerts."
@@ -6305,9 +6410,7 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a list of tuples (sensorAlertId, sensorId, nodeId,
-		# timeReceived, alertDelay, state, description, dataJson, changeState,
-		# hasLatestData, dataType, sensorData)
+		# return a list of sensorAlert objects
 		return returnList
 
 

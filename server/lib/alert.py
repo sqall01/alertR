@@ -1237,20 +1237,11 @@ class SensorAlertExecuter(threading.Thread):
 					% sensorAlert.sensorAlertId)
 				continue
 
-			# get all alert levels for this sensor (list of integers)
-			sensorAlertLevels = self.storage.getSensorAlertLevels(
-				sensorAlert.sensorId)
-
-			if sensorAlertLevels is None:
-				self.logger.error("[%s]: No alert levels " % self.fileName
-					+ "for sensor in database. Can not trigger alert.")
-				continue
-
 			# get all alert levels that are triggered
 			# because of this sensor alert (used as a pre filter)
 			triggeredAlertLevels = list()
 			for configuredAlertLevel in self.alertLevels:
-				for sensorAlertLevel in sensorAlertLevels:
+				for sensorAlertLevel in sensorAlert.alertLevels:
 					if (configuredAlertLevel.level == sensorAlertLevel):
 						# check if alert system is active
 						# or alert level triggers always
@@ -1570,46 +1561,8 @@ class SensorAlertExecuter(threading.Thread):
 				self.managerUpdateExecuter = \
 					self.globalData.managerUpdateExecuter
 
-			# get a list of all sensor alerts from database
-			# list is a list of tuples (sensorAlertId, sensorId, nodeId,
-			# timeReceived, alertDelay, state, description, dataJson,
-			# changeState, hasLatestData, dataType, sensorData)
-			sensorAlertTuples = self.storage.getSensorAlerts()
-
-			# convert list of tuples into sensor alert objects
-			sensorAlertList = list()
-			for sensorAlertTuple in sensorAlertTuples:
-				temp = SensorAlert()
-				temp.rulesActivated = False
-				temp.sensorAlertId = sensorAlertTuple[0]
-				temp.sensorId = sensorAlertTuple[1]
-				temp.nodeId = sensorAlertTuple[2]
-				temp.timeReceived = sensorAlertTuple[3]
-				temp.alertDelay = sensorAlertTuple[4]
-				temp.state = sensorAlertTuple[5]
-				temp.description = sensorAlertTuple[6]
-				temp.changeState = (sensorAlertTuple[8] == 1)
-				temp.hasLatestData = (sensorAlertTuple[9] == 1)
-				temp.dataType = sensorAlertTuple[10]
-				temp.sensorData = sensorAlertTuple[11]
-
-				# get json data string and convert it
-				temp.hasOptionalData = False
-				temp.optionalData = None
-				dataJson = sensorAlertTuple[7]
-				if dataJson != "":
-					temp.hasOptionalData = True
-					try:
-						temp.optionalData = json.loads(dataJson)
-					except Exception as e:
-						self.logger.exception("[%s]: Optional data from "
-							% self.fileName
-							+ "database not a valid json string. "
-							+ "Ignoring data.")
-
-						temp.hasOptionalData = False
-
-				sensorAlertList.append(temp)
+			# Get a list of all sensor alert objects.
+			sensorAlertList = self.storage.getSensorAlerts()
 
 			# check if no sensor alerts are to handle and exist in database
 			if (not sensorAlertsToHandle
