@@ -150,7 +150,7 @@ class SensorDev(_PollingSensor):
 
 		# Initialize the data the sensor holds.
 		if self.sensorDataType == SensorDataType.NONE:
-			pass
+			self.hasLatestData = False
 		elif self.sensorDataType == SensorDataType.INT:
 			self.sensorData = 0
 			self.nextData = self.sensorData + 1
