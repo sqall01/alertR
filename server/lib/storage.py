@@ -14,6 +14,7 @@ import time
 import socket
 import struct
 import hashlib
+import json
 from localObjects import Node, SensorAlert, SensorDataType
 
 
@@ -2340,7 +2341,7 @@ class Sqlite(_Storage):
 				dataType = result[0][1]
 
 				if dataType == SensorDataType.NONE:
-					logger.exception("[%s]: Sensor with remote id %d holds "
+					logger.error("[%s]: Sensor with remote id %d holds "
 						% (self.fileName, dataTuple[0])
 						+ "no data. Ignoring it.")
 
@@ -2622,21 +2623,22 @@ class Sqlite(_Storage):
 			for resultTuple in result:
 
 				sensorAlert = SensorAlert()
-				sensorAlert.sensorAlertId = result[0]
-				sensorAlert.sensorId = result[1]
-				sensorAlert.nodeId = result[2]
-				sensorAlert.timeReceived = result[3]
-				sensorAlert.alertDelay = result[4]
-				sensorAlert.state = result[5]
-				sensorAlert.description = result[6]
-				sensorAlert.changeState = (result[8] == 1)
-				sensorAlert.hasLatestData = (result[9] == 1)
-				sensorAlert.dataType = result[10]
+				sensorAlert.sensorAlertId = resultTuple[0]
+				sensorAlert.sensorId = resultTuple[1]
+				sensorAlert.nodeId = resultTuple[2]
+				sensorAlert.timeReceived = resultTuple[3]
+				sensorAlert.alertDelay = resultTuple[4]
+				sensorAlert.state = resultTuple[5]
+				sensorAlert.description = resultTuple[6]
+				sensorAlert.changeState = (resultTuple[8] == 1)
+				sensorAlert.hasLatestData = (resultTuple[9] == 1)
+				sensorAlert.dataType = resultTuple[10]
 				sensorAlert.rulesActivated = False
 
 				# Set optional data for sensor alert.
 				sensorAlert.hasOptionalData = False
 				sensorAlert.optionalData = None
+				dataJson = resultTuple[7]
 				if dataJson != "":
 					try:
 						sensorAlert.optionalData = json.loads(dataJson)
@@ -2648,8 +2650,9 @@ class Sqlite(_Storage):
 							+ "Ignoring data.")
 
 				# Set alert levels for sensor alert.
-				alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId)
-				if alertLevels is None
+				alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId,
+					logger)
+				if alertLevels is None:
 					logger.error("[%s]: Not able to get alert levels for "
 						% self.fileName
 						+ "sensor alert with id %d."
@@ -5897,7 +5900,7 @@ class Mysql(_Storage):
 				dataType = result[0][1]
 
 				if dataType == SensorDataType.NONE:
-					logger.exception("[%s]: Sensor with remote id %d holds "
+					logger.error("[%s]: Sensor with remote id %d holds "
 						% (self.fileName, dataTuple[0])
 						+ "no data. Ignoring it.")
 
@@ -6299,21 +6302,22 @@ class Mysql(_Storage):
 			for resultTuple in result:
 
 				sensorAlert = SensorAlert()
-				sensorAlert.sensorAlertId = result[0]
-				sensorAlert.sensorId = result[1]
-				sensorAlert.nodeId = result[2]
-				sensorAlert.timeReceived = result[3]
-				sensorAlert.alertDelay = result[4]
-				sensorAlert.state = result[5]
-				sensorAlert.description = result[6]
-				sensorAlert.changeState = (result[8] == 1)
-				sensorAlert.hasLatestData = (result[9] == 1)
-				sensorAlert.dataType = result[10]
+				sensorAlert.sensorAlertId = resultTuple[0]
+				sensorAlert.sensorId = resultTuple[1]
+				sensorAlert.nodeId = resultTuple[2]
+				sensorAlert.timeReceived = resultTuple[3]
+				sensorAlert.alertDelay = resultTuple[4]
+				sensorAlert.state = resultTuple[5]
+				sensorAlert.description = resultTuple[6]
+				sensorAlert.changeState = (resultTuple[8] == 1)
+				sensorAlert.hasLatestData = (resultTuple[9] == 1)
+				sensorAlert.dataType = resultTuple[10]
 				sensorAlert.rulesActivated = False
 
 				# Set optional data for sensor alert.
 				sensorAlert.hasOptionalData = False
 				sensorAlert.optionalData = None
+				dataJson = resultTuple[7]
 				if dataJson != "":
 					try:
 						sensorAlert.optionalData = json.loads(dataJson)
@@ -6325,8 +6329,9 @@ class Mysql(_Storage):
 							+ "Ignoring data.")
 
 				# Set alert levels for sensor alert.
-				alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId)
-				if alertLevels is None
+				alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId,
+					logger)
+				if alertLevels is None:
 					logger.error("[%s]: Not able to get alert levels for "
 						% self.fileName
 						+ "sensor alert with id %d."
