@@ -1147,6 +1147,21 @@ class ClientCommunication:
 				logger=self.logger)
 
 			if alertLevels is None:
+				self.logger.error("[%s]: Not able to get alert levels for "
+					% self.fileName
+					+ "sensor with id %d in database (%s:%d)."
+					% (sensorId, self.clientAddress, self.clientPort))
+
+				# send error message back
+				try:
+					utcTimestamp = int(time.time())
+					message = {"serverTime": utcTimestamp,
+						"message": "status",
+						"error": "not able to get alert levels for sensor"}
+					self.sslSocket.send(json.dumps(message))
+				except Exception as e:
+					pass
+
 				return None
 
 			tempDict = {"sensorId": sensorId,
@@ -1227,9 +1242,9 @@ class ClientCommunication:
 			alertId = alertsInformation[i][0]
 
 			# Create list of alert levels of this alert.
-			dbAlertLevels = self.storage.getAlertAlertLevels(alertId,
+			alertLevels = self.storage.getAlertAlertLevels(alertId,
 				logger=self.logger)
-			if dbAlertLevels is None:
+			if alertLevels is None:
 				self.logger.error("[%s]: Not able to get alert levels for "
 					% self.fileName
 					+ "alert with id %d in database (%s:%d)."
@@ -1246,10 +1261,6 @@ class ClientCommunication:
 					pass
 
 				return None
-
-			alertLevels = list()
-			for tempAlertLevel in dbAlertLevels:
-				alertLevels.append(tempAlertLevel[0])
 
 			tempDict = {"alertId": alertId,
 				"nodeId": alertsInformation[i][1],
