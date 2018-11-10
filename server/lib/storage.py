@@ -15,7 +15,7 @@ import socket
 import struct
 import hashlib
 import json
-from localObjects import Node, SensorAlert, SensorDataType
+from localObjects import Node, Sensor, SensorAlert, SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -196,16 +196,6 @@ class _Storage():
 	# return list of sensor objects
 	# or None
 	def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
-		raise NotImplemented("Function not implemented yet.")
-
-
-	# gets all information of a sensor by its given id
-	#
-	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# dataType)
-	# or None
-	def getSensorInformation(self, sensorId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -3199,54 +3189,6 @@ class Sqlite(_Storage):
 
 		# return list of sensor objects
 		return sensorList
-
-
-	# gets all information of a sensor by its given id
-	#
-	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# dataType)
-	# or None
-	def getSensorInformation(self, sensorId, logger=None):
-
-		# Set logger instance to use.
-		if not logger:
-			logger = self.logger
-
-		self._acquireLock(logger)
-
-		try:
-			self.cursor.execute("SELECT * "
-				+ "FROM sensors "
-				+ "WHERE id = ?", (sensorId, ))
-
-			result = self.cursor.fetchall()
-		except Exception as e:
-
-			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "sensor information from sensor id.")
-
-			self._releaseLock(logger)
-
-			return None
-
-		# check if it is the only result
-		if len(result) != 1:
-
-			logger.error("[%s]: Sensor id is not unique in "
-				% self.fileName
-				+ "database.")
-
-			self._releaseLock(logger)
-
-			return None
-
-		self._releaseLock(logger)
-
-		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# dataType)
-		return result[0]
 
 
 	# gets the node from the database when its id is given
@@ -7202,74 +7144,6 @@ class Mysql(_Storage):
 
 		# return list of sensor objects
 		return sensorList
-
-
-	# gets all information of a sensor by its given id
-	#
-	# return a tuple of (sensorId, nodeId,
-	# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-	# dataType)
-	# or None
-	def getSensorInformation(self, sensorId, logger=None):
-
-		# Set logger instance to use.
-		if not logger:
-			logger = self.logger
-
-		self._acquireLock(logger)
-
-		# connect to the database
-		try:
-			self._openConnection(logger)
-		except Exception as e:
-			logger.exception("[%s]: Not able to connect to database."
-				% self.fileName)
-
-			self._releaseLock(logger)
-
-			return None
-
-		try:
-			self.cursor.execute("SELECT * "
-				+ "FROM sensors "
-				+ "WHERE id = %s", (sensorId, ))
-
-			result = self.cursor.fetchall()
-		except Exception as e:
-
-			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "sensor information from sensor id.")
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock(logger)
-
-			return None
-
-		# check if it is the only result
-		if len(result) != 1:
-
-			logger.error("[%s]: Sensor id is not unique in "
-				% self.fileName
-				+ "database.")
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock(logger)
-
-			return None
-
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock(logger)
-
-		# return a tuple of (sensorId, nodeId,
-		# remoteSensorId, description, state, lastStateUpdated, alertDelay,
-		# dataType)
-		return result[0]
 
 
 	# gets the node from the database when its id is given

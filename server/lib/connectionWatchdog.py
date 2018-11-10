@@ -287,20 +287,16 @@ class ConnectionWatchdog(threading.Thread):
 			# Sensor is no longer timed out.
 			self.timeoutSensorIds.remove(sensorId)
 
-			# Get a tuple of (sensorId, nodeId,
-			# remoteSensorId, description, state,
-			# lastStateUpdated, alertDelay, dataType) for timed out sensor.
-			sensorTuple = self.storage.getSensorInformation(
-				sensorId)
+			sensorObj = self.storage.getSensorById(sensorId)
 
 			# Check if the sensor could be found in the database.
-			if sensorTuple is None:
+			if sensorObj is None:
 				self.logger.error("[%s]: Could not get " % self.fileName
 					+ "sensor with id %d from database."
 					% sensorId)
 				continue
 
-			nodeId = sensorTuple[1]
+			nodeId = sensorObj.nodeId
 			nodeObj = self.storage.getNodeById(nodeId)
 			# Since a user can be deleted during runtime, check if the
 			# node still existed in the database.
@@ -314,8 +310,8 @@ class ConnectionWatchdog(threading.Thread):
 			username = nodeObj.username
 			nodeType = nodeObj.nodeType
 			instance = nodeObj.instance
-			description = sensorTuple[3]
-			lastStateUpdated = sensorTuple[5]
+			description = sensorObj.description
+			lastStateUpdated = sensorObj.lastStateUpdated
 
 			self.logger.critical("[%s]: Sensor " % self.fileName
 				+ "with description '%s' from host '%s' has "
@@ -418,18 +414,14 @@ class ConnectionWatchdog(threading.Thread):
 					sensorsField = list()
 					for sensorId in set(self.timeoutSensorIds):
 
-						# Get a tuple of (sensorId, nodeId,
-						# remoteSensorId, description, state,
-						# lastStateUpdated, alertDelay, dataType)
-						# for timed out sensor.
-						sensorTuple = self.storage.getSensorInformation(
-							sensorId)
+						# Get sensor object.
+						sensorObj = self.storage.getSensorById(sensorId)
 
 						# Since a user can be deleted during runtime, check if
 						# the node/sensor still existed in the database. Since
 						# the node does not exist anymore, remove the sensor
 						# from the timeout list.
-						if sensorTuple is None:
+						if sensorObj is None:
 							self.logger.error("[%s]: Could not get "
 								% self.fileName
 								+ "sensor with id %d from database."
@@ -439,7 +431,7 @@ class ConnectionWatchdog(threading.Thread):
 							continue
 
 						# Get sensor details.
-						nodeId = sensorTuple[1]
+						nodeId = sensorObj.nodeId
 						nodeObj = self.storage.getNodeById(nodeId)
 						# Since a user can be deleted during runtime, check if
 						# the node still existed in the database. Since the
@@ -458,8 +450,8 @@ class ConnectionWatchdog(threading.Thread):
 						username = nodeObj.username
 						nodeType = nodeObj.nodeType
 						instance = nodeObj.instance
-						description = sensorTuple[3]
-						lastStateUpdated = sensorTuple[5]
+						description = sensorObj.description
+						lastStateUpdated = sensorObj.lastStateUpdated
 						lastStateUpdateStr = time.strftime("%D %H:%M:%S",
 							time.localtime(lastStateUpdated))
 						if hostname is None:
