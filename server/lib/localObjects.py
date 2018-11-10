@@ -24,7 +24,7 @@ class SensorDataType:
 	FLOAT = 2
 
 
-# This class represents a single node of the system..
+# This class represents a single node of the system.
 class Node:
 
 	def __init__(self):
@@ -39,7 +39,18 @@ class Node:
 		self.persistent = None
 		
 
-# This class represents a single sensor of a node..
+# This class represents a single alert of a node.
+class Alert:
+
+	def __init__(self):
+		self.nodeId = None
+		self.alertId = None
+		self.remoteAlertId = None
+		self.alertLevels = list()
+		self.description = None
+
+
+# This class represents a single sensor of a node.
 class Sensor:
 
 	def __init__(self):
@@ -53,6 +64,15 @@ class Sensor:
 		self.alertDelay = None
 		self.dataType = None
 		self.data = None
+
+
+# This class represents a single manager of a node.
+class Manager:
+
+	def __init__(self):
+		self.nodeId = None
+		self.managerId = None
+		self.description = None
 
 
 # This class represents a single alert level that is configured.

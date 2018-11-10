@@ -15,7 +15,8 @@ import socket
 import struct
 import hashlib
 import json
-from localObjects import Node, Sensor, SensorAlert, SensorDataType
+from localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
+	SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -125,7 +126,7 @@ class _Storage():
 		raise NotImplemented("Function not implemented yet.")
 
 
-	# gets the alert id of a alert when the id of a node is given
+	# gets the alert id of an alert when the id of a node is given
 	# and the remote alert id that is used by the node internally
 	#
 	# return alertId or None
@@ -196,6 +197,20 @@ class _Storage():
 	# return list of sensor objects
 	# or None
 	def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets the alert from the database when its id is given
+	#
+	# return an alert object or None
+	def getAlertById(self, alertId, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets the manager from the database when its id is given
+	#
+	# return a manager object or None
+	def getManagerById(self, managerId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -431,6 +446,85 @@ class Sqlite(_Storage):
 			raise ValueError("Node id was not found.")
 
 
+	# Internal function that gets the alert from the database given
+	# by its id.
+	#
+	# return an alert object or None
+	def _getAlertById(self, alertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		alert = None
+		try:
+			self.cursor.execute("SELECT * FROM alerts "
+				+ "WHERE id = ?", (alertId, ))
+
+			result = self.cursor.fetchall()
+
+			if len(result) == 1:
+				alert = Alert()
+				alert.alertId = result[0][0]
+				alert.nodeId = result[0][1]
+				alert.remoteAlertId = result[0][2]
+				alert.description = result[0][3]
+
+				# Set alert levels for alert.
+				alertLevels = self._getAlertAlertLevels(alert.alertId,
+					logger)
+				if alertLevels is None:
+					logger.error("[%s]: Not able to get alert levels for "
+						% self.fileName
+						+ "alert with id %d."
+						% alert.alertId)
+
+					return None
+				alert.alertLevels = alertLevels
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "alert with id %d." % managerId)
+
+			return None
+
+		return alert
+
+
+	# Internal function that gets the manager from the database given
+	# by its id.
+	#
+	# return a manager object or None
+	def _getManagerById(self, managerId, logger=None):
+		
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		manager = None
+		try:
+			self.cursor.execute("SELECT * FROM managers "
+				+ "WHERE id = ?", (managerId, ))
+
+			result = self.cursor.fetchall()
+
+			if len(result) == 1:
+				manager = Manager()
+				manager.managerId = result[0][0]
+				manager.nodeId = result[0][1]
+				manager.description = result[0][2]
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "manager with id %d." % managerId)
+
+			return None
+
+		return manager
+
+
 	# Internal function that gets the node from the database given by its id.
 	#
 	# return a node object or None
@@ -458,6 +552,7 @@ class Sqlite(_Storage):
 			except Exception as e:
 				logger.exception("[%s]: Not able to convert " % self.fileName
 					+ "node data for id %d to object." % nodeId)
+
 		return None
 
 
@@ -497,8 +592,6 @@ class Sqlite(_Storage):
 						+ "sensor with id %d."
 						% sensor.sensorId)
 
-					self._releaseLock(logger)
-
 					return None
 				sensor.alertLevels = alertLevels
 
@@ -518,8 +611,6 @@ class Sqlite(_Storage):
 							% (self.fileName, sensor.sensorId)
 							+ "was not found.")
 
-						self._releaseLock(logger)
-
 						return None
 					sensor.data = subResult[0]
 
@@ -535,8 +626,6 @@ class Sqlite(_Storage):
 							% (self.fileName, sensor.sensorId)
 							+ "was not found.")
 
-						self._releaseLock(logger)
-
 						return None
 					sensor.data = subResult[0]
 
@@ -544,8 +633,6 @@ class Sqlite(_Storage):
 					logger.error("[%s]: Not able to get sensor with id %d. "
 						% (self.fileName, sensor.sensorId)
 						+ "Data type in database unknown.")
-
-					self._releaseLock(logger)
 
 					return None
 				
@@ -1867,7 +1954,7 @@ class Sqlite(_Storage):
 		# add/update all alerts
 		for alert in alerts:
 
-			# check if a alert with the same remote id for this node
+			# check if an alert with the same remote id for this node
 			# already exists in the database
 			self.cursor.execute("SELECT id FROM alerts "
 				+ "WHERE nodeId = ? AND remoteAlertId = ?",
@@ -2533,7 +2620,7 @@ class Sqlite(_Storage):
 		return sensorId
 
 
-	# gets the alert id of a alert when the id of a node is given
+	# gets the alert id of an alert when the id of a node is given
 	# and the remote alert id that is used by the node internally
 	#
 	# return alertId or None
@@ -3191,6 +3278,44 @@ class Sqlite(_Storage):
 		return sensorList
 
 
+	# gets the alert from the database when its id is given
+	#
+	# return an alert object or None
+	def getAlertById(self, alertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		result = self._getAlertById(alertId, logger)
+
+		self._releaseLock(logger)
+
+		# return an alert object or None
+		return result
+
+
+	# gets the manager from the database when its id is given
+	#
+	# return a manager object or None
+	def getManagerById(self, managerId, logger=None):
+		
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		result = self._getManagerById(managerId, logger)
+
+		self._releaseLock(logger)
+
+		# return a manager object or None
+		return result
+
+
 	# gets the node from the database when its id is given
 	#
 	# return a node object or None
@@ -3775,6 +3900,85 @@ class Mysql(_Storage):
 			raise ValueError("Node id was not found.")
 
 
+	# Internal function that gets the alert from the database given
+	# by its id.
+	#
+	# return an alert object or None
+	def _getAlertById(self, alertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		alert = None
+		try:
+			self.cursor.execute("SELECT * FROM alerts "
+				+ "WHERE id = %s", (alertId, ))
+
+			result = self.cursor.fetchall()
+
+			if len(result) == 1:
+				alert = Alert()
+				alert.alertId = result[0][0]
+				alert.nodeId = result[0][1]
+				alert.remoteAlertId = result[0][2]
+				alert.description = result[0][3]
+
+				# Set alert levels for alert.
+				alertLevels = self._getAlertAlertLevels(alert.alertId,
+					logger)
+				if alertLevels is None:
+					logger.error("[%s]: Not able to get alert levels for "
+						% self.fileName
+						+ "alert with id %d."
+						% alert.alertId)
+
+					return None
+				alert.alertLevels = alertLevels
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "alert with id %d." % managerId)
+
+			return None
+
+		return alert
+
+
+	# Internal function that gets the manager from the database given
+	# by its id.
+	#
+	# return a manager object or None
+	def _getManagerById(self, managerId, logger=None):
+		
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		manager = None
+		try:
+			self.cursor.execute("SELECT * FROM managers "
+				+ "WHERE id = %s", (managerId, ))
+
+			result = self.cursor.fetchall()
+
+			if len(result) == 1:
+				manager = Manager()
+				manager.managerId = result[0][0]
+				manager.nodeId = result[0][1]
+				manager.description = result[0][2]
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "manager with id %d." % managerId)
+
+			return None
+
+		return manager
+
+
 	# Internal function that gets the node from the database given by its id.
 	#
 	# return a node object or None
@@ -3802,6 +4006,7 @@ class Mysql(_Storage):
 			except Exception as e:
 				logger.exception("[%s]: Not able to convert " % self.fileName
 					+ "node data for id %d to object." % nodeId)
+
 		return None
 
 
@@ -3841,8 +4046,6 @@ class Mysql(_Storage):
 						+ "sensor with id %d."
 						% sensor.sensorId)
 
-					self._releaseLock(logger)
-
 					return None
 				sensor.alertLevels = alertLevels
 
@@ -3862,8 +4065,6 @@ class Mysql(_Storage):
 							% (self.fileName, sensor.sensorId)
 							+ "was not found.")
 
-						self._releaseLock(logger)
-
 						return None
 					sensor.data = subResult[0]
 
@@ -3879,8 +4080,6 @@ class Mysql(_Storage):
 							% (self.fileName, sensor.sensorId)
 							+ "was not found.")
 
-						self._releaseLock(logger)
-
 						return None
 					sensor.data = subResult[0]
 
@@ -3888,8 +4087,6 @@ class Mysql(_Storage):
 					logger.error("[%s]: Not able to get sensor with id %d. "
 						% (self.fileName, sensor.sensorId)
 						+ "Data type in database unknown.")
-
-					self._releaseLock(logger)
 
 					return None
 				
@@ -5337,7 +5534,7 @@ class Mysql(_Storage):
 		# add/update all alerts
 		for alert in alerts:
 
-			# check if a alert with the same remote id for this node
+			# check if an alert with the same remote id for this node
 			# already exists in the database
 			self.cursor.execute("SELECT id FROM alerts "
 				+ "WHERE nodeId = %s AND remoteAlertId = %s",
@@ -6204,7 +6401,7 @@ class Mysql(_Storage):
 		return sensorId
 
 
-	# gets the alert id of a alert when the id of a node is given
+	# gets the alert id of an alert when the id of a node is given
 	# and the remote alert id that is used by the node internally
 	#
 	# return alertId or None
@@ -7144,6 +7341,72 @@ class Mysql(_Storage):
 
 		# return list of sensor objects
 		return sensorList
+
+
+	# gets the alert from the database when its id is given
+	#
+	# return an alert object or None
+	def getAlertById(self, alertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection(logger)
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return None
+
+		result = self._getAlertById(alertId, logger)
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		# return an alert object or None
+		return result
+
+
+	# gets the manager from the database when its id is given
+	#
+	# return a manager object or None
+	def getManagerById(self, managerId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection(logger)
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return None
+
+		result = self._getManagerById(managerId, logger)
+
+		# close connection to the database
+		self._closeConnection()
+
+		self._releaseLock(logger)
+
+		# return a manager object or None
+		return result
 
 
 	# gets the node from the database when its id is given
