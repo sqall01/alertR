@@ -480,7 +480,7 @@ class Sqlite(_Storage):
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "alert with id %d." % managerId)
+				+ "alert with id %d." % alertId)
 
 			return None
 
@@ -3940,7 +3940,7 @@ class Mysql(_Storage):
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "alert with id %d." % managerId)
+				+ "alert with id %d." % alertId)
 
 			return None
 
