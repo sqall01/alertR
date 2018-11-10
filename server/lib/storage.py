@@ -159,7 +159,7 @@ class _Storage():
 
 	# gets all alert levels for the alert clients from the database
 	#
-	# return list of tuples of (alertLevel)
+	# return list alertLevels as integer
 	# or None
 	def getAllAlertsAlertLevels(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -167,7 +167,7 @@ class _Storage():
 
 	# gets all alert levels for the sensors from the database
 	#
-	# return list of tuples of (alertLevel)
+	# return list alertLevels as integer
 	# or None
 	def getAllSensorsAlertLevels(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -193,8 +193,7 @@ class _Storage():
 	# gets the information of all sensors which last state updates
 	# are older than the given time
 	#
-	# return list of tuples of (sensorId, nodeId,
-	# lastStateUpdated, description)
+	# return list of sensor objects
 	# or None
 	def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -214,6 +213,13 @@ class _Storage():
 	#
 	# return a node object or None
 	def getNodeById(self, nodeId, logger=None):
+		raise NotImplemented("Function not implemented yet.")
+
+
+	# gets the sensor from the database when its id is given
+	#
+	# return a sensor object or None
+	def getSensorById(self, sensorId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
 
@@ -463,6 +469,104 @@ class Sqlite(_Storage):
 				logger.exception("[%s]: Not able to convert " % self.fileName
 					+ "node data for id %d to object." % nodeId)
 		return None
+
+
+	# Internal function that gets the sensor from the database given by its id.
+	#
+	# return a sensor object or None
+	def _getSensorById(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		sensor = None
+		try:
+			self.cursor.execute("SELECT * FROM sensors "
+				+ "WHERE id = ?", (sensorId, ))
+
+			result = self.cursor.fetchall()
+
+			if len(result) == 1:
+				sensor = Sensor()
+				sensor.sensorId = result[0][0]
+				sensor.nodeId = result[0][1]
+				sensor.remoteSensorId = result[0][2]
+				sensor.description = result[0][3]
+				sensor.state = result[0][4]
+				sensor.lastStateUpdated = result[0][5]
+				sensor.alertDelay = result[0][6]
+				sensor.dataType = result[0][7]
+
+				# Set alert levels for sensor.
+				alertLevels = self._getSensorAlertLevels(sensor.sensorId,
+					logger)
+				if alertLevels is None:
+					logger.error("[%s]: Not able to get alert levels for "
+						% self.fileName
+						+ "sensor with id %d."
+						% sensor.sensorId)
+
+					self._releaseLock(logger)
+
+					return None
+				sensor.alertLevels = alertLevels
+
+				# Extract sensor data.
+				if sensor.dataType == SensorDataType.NONE:
+					sensor.data = None
+
+				elif sensor.dataType == SensorDataType.INT:
+					self.cursor.execute("SELECT data "
+						+ "FROM sensorsDataInt "
+						+ "WHERE sensorId = ?",
+						(sensor.sensorId, ))
+					subResult = self.cursor.fetchall()
+
+					if len(subResult) != 1:
+						logger.error("[%s]: Sensor data for sensor with id %d "
+							% (self.fileName, sensor.sensorId)
+							+ "was not found.")
+
+						self._releaseLock(logger)
+
+						return None
+					sensor.data = subResult[0]
+
+				elif sensor.dataType == SensorDataType.FLOAT:
+					self.cursor.execute("SELECT data "
+						+ "FROM sensorsDataFloat "
+						+ "WHERE sensorId = ?",
+						(sensor.sensorId, ))
+					subResult = self.cursor.fetchall()
+
+					if len(subResult) != 1:
+						logger.error("[%s]: Sensor data for sensor with id %d "
+							% (self.fileName, sensor.sensorId)
+							+ "was not found.")
+
+						self._releaseLock(logger)
+
+						return None
+					sensor.data = subResult[0]
+
+				else:
+					logger.error("[%s]: Not able to get sensor with id %d. "
+						% (self.fileName, sensor.sensorId)
+						+ "Data type in database unknown.")
+
+					self._releaseLock(logger)
+
+					return None
+				
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "sensor with id %d." % sensorId)
+
+			return None
+
+		return sensor
 
 
 	# internal function that gets the sensor id of a sensor when the id
@@ -2857,7 +2961,7 @@ class Sqlite(_Storage):
 
 	# gets all alert levels for the alert clients from the database
 	#
-	# return list of tuples of (alertLevel)
+	# return list alertLevels as integer
 	# or None
 	def getAllAlertsAlertLevels(self, logger=None):
 
@@ -2884,13 +2988,13 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return list of tuples of (alertLevel)
-		return result
+		# return list alertLevels as integer
+		return map(lambda x: x[0], result)
 
 
 	# gets all alert levels for the sensors from the database
 	#
-	# return list of tuples of (alertLevel)
+	# return list alertLevels as integer
 	# or None
 	def getAllSensorsAlertLevels(self, logger=None):
 
@@ -2917,8 +3021,8 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return list of tuples of (alertLevel)
-		return result
+		# return list alertLevels as integer
+		return map(lambda x: x[0], result)
 
 
 	# gets all nodes from the database that are connected to the server
@@ -3057,8 +3161,7 @@ class Sqlite(_Storage):
 	# gets the information of all sensors which last state updates
 	# are older than the given time
 	#
-	# return list of tuples of (sensorId, nodeId,
-	# lastStateUpdated, description)
+	# return list of sensor objects
 	# or None
 	def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
 
@@ -3068,19 +3171,25 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
+		sensorList = list()
 		try:
-			self.cursor.execute("SELECT id, "
-				+ "nodeId, "
-				+ "lastStateUpdated, "
-				+ "description "
+			self.cursor.execute("SELECT id "
 				+ "FROM sensors "
 				+ "WHERE lastStateUpdated < ?", (oldestTimeUpdated, ))
 
-			result = self.cursor.fetchall()
+			results = self.cursor.fetchall()
+
+			for resultTuple in results:
+				sensorId = resultTuple[0]
+				sensor = self._getSensorById(sensorId, logger)
+				if sensor is not None:
+					sensorList.append(sensor)
+
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "nodes from database which sensors were not updated.")
+				+ "sensors from database which update was older than %d."
+				% oldestTimeUpdated)
 
 			self._releaseLock(logger)
 
@@ -3088,9 +3197,8 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return list of tuples of (sensorId, nodeId,
-		# lastStateUpdated, description)
-		return result
+		# return list of sensor objects
+		return sensorList
 
 
 	# gets all information of a sensor by its given id
@@ -3157,6 +3265,25 @@ class Sqlite(_Storage):
 		self._releaseLock(logger)
 
 		# return a node object or None
+		return result
+
+
+	# gets the sensor from the database when its id is given
+	#
+	# return a sensor object or None
+	def getSensorById(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		result = self._getSensorById(sensorId, logger)
+
+		self._releaseLock(logger)
+
+		# return a sensor object or None
 		return result
 
 
@@ -3734,6 +3861,104 @@ class Mysql(_Storage):
 				logger.exception("[%s]: Not able to convert " % self.fileName
 					+ "node data for id %d to object." % nodeId)
 		return None
+
+
+	# Internal function that gets the sensor from the database given by its id.
+	#
+	# return a sensor object or None
+	def _getSensorById(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		sensor = None
+		try:
+			self.cursor.execute("SELECT * FROM sensors "
+				+ "WHERE id = %s", (sensorId, ))
+
+			result = self.cursor.fetchall()
+
+			if len(result) == 1:
+				sensor = Sensor()
+				sensor.sensorId = result[0][0]
+				sensor.nodeId = result[0][1]
+				sensor.remoteSensorId = result[0][2]
+				sensor.description = result[0][3]
+				sensor.state = result[0][4]
+				sensor.lastStateUpdated = result[0][5]
+				sensor.alertDelay = result[0][6]
+				sensor.dataType = result[0][7]
+
+				# Set alert levels for sensor.
+				alertLevels = self._getSensorAlertLevels(sensor.sensorId,
+					logger)
+				if alertLevels is None:
+					logger.error("[%s]: Not able to get alert levels for "
+						% self.fileName
+						+ "sensor with id %d."
+						% sensor.sensorId)
+
+					self._releaseLock(logger)
+
+					return None
+				sensor.alertLevels = alertLevels
+
+				# Extract sensor data.
+				if sensor.dataType == SensorDataType.NONE:
+					sensor.data = None
+
+				elif sensor.dataType == SensorDataType.INT:
+					self.cursor.execute("SELECT data "
+						+ "FROM sensorsDataInt "
+						+ "WHERE sensorId = %s",
+						(sensor.sensorId, ))
+					subResult = self.cursor.fetchall()
+
+					if len(subResult) != 1:
+						logger.error("[%s]: Sensor data for sensor with id %d "
+							% (self.fileName, sensor.sensorId)
+							+ "was not found.")
+
+						self._releaseLock(logger)
+
+						return None
+					sensor.data = subResult[0]
+
+				elif sensor.dataType == SensorDataType.FLOAT:
+					self.cursor.execute("SELECT data "
+						+ "FROM sensorsDataFloat "
+						+ "WHERE sensorId = %s",
+						(sensor.sensorId, ))
+					subResult = self.cursor.fetchall()
+
+					if len(subResult) != 1:
+						logger.error("[%s]: Sensor data for sensor with id %d "
+							% (self.fileName, sensor.sensorId)
+							+ "was not found.")
+
+						self._releaseLock(logger)
+
+						return None
+					sensor.data = subResult[0]
+
+				else:
+					logger.error("[%s]: Not able to get sensor with id %d. "
+						% (self.fileName, sensor.sensorId)
+						+ "Data type in database unknown.")
+
+					self._releaseLock(logger)
+
+					return None
+				
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "sensor with id %d." % sensorId)
+
+			return None
+
+		return sensor
 
 
 	# internal function that gets the sensor id of a sensor when the id
@@ -6337,6 +6562,9 @@ class Mysql(_Storage):
 						+ "sensor alert with id %d."
 						% sensorAlert.sensorAlertId)
 
+					# close connection to the database
+					self._closeConnection()
+
 					self._releaseLock(logger)
 
 					return None
@@ -6344,10 +6572,10 @@ class Mysql(_Storage):
 				sensorAlert.alertLevels = alertLevels
 
 				# Extract sensor alert data.
-				if resultTuple[10] == SensorDataType.NONE:
+				if sensorAlert.dataType == SensorDataType.NONE:
 					sensorAlert.sensorData = None
 
-				elif resultTuple[10] == SensorDataType.INT:
+				elif sensorAlert.dataType == SensorDataType.INT:
 					self.cursor.execute("SELECT data "
 						+ "FROM sensorAlertsDataInt "
 						+ "WHERE sensorAlertId = %s",
@@ -6366,7 +6594,7 @@ class Mysql(_Storage):
 						return None
 					sensorAlert.sensorData = subResult[0]
 
-				elif resultTuple[10] == SensorDataType.FLOAT:
+				elif sensorAlert.dataType == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
 						+ "FROM sensorAlertsDataFloat "
 						+ "WHERE sensorAlertId = %s",
@@ -6617,7 +6845,7 @@ class Mysql(_Storage):
 
 	# gets all alert levels for the alert clients from the database
 	#
-	# return list of tuples of (alertLevel)
+	# return list alertLevels as integer
 	# or None
 	def getAllAlertsAlertLevels(self, logger=None):
 
@@ -6661,13 +6889,13 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return list of tuples of (alertLevel)
-		return list(result)
+		# return list alertLevels as integer
+		return map(lambda x: x[0], result)
 
 
 	# gets all alert levels for the sensors from the database
 	#
-	# return list of tuples of (alertLevel)
+	# return list alertLevels as integer
 	# or None
 	def getAllSensorsAlertLevels(self, logger=None):
 
@@ -6711,8 +6939,8 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return list of tuples of (alertLevel)
-		return list(result)
+		# return list alertLevels as integer
+		return map(lambda x: x[0], result)
 
 
 	# gets all nodes from the database that are connected to the server
@@ -6919,8 +7147,7 @@ class Mysql(_Storage):
 	# gets the information of all sensors which last state updates
 	# are older than the given time
 	#
-	# return list of tuples of (sensorId, nodeId,
-	# lastStateUpdated, description)
+	# return list of sensor objects
 	# or None
 	def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
 
@@ -6941,19 +7168,25 @@ class Mysql(_Storage):
 
 			return None
 
+		sensorList = list()
 		try:
-			self.cursor.execute("SELECT id, "
-				+ "nodeId, "
-				+ "lastStateUpdated, "
-				+ "description "
+			self.cursor.execute("SELECT id "
 				+ "FROM sensors "
 				+ "WHERE lastStateUpdated < %s", (oldestTimeUpdated, ))
 
-			result = self.cursor.fetchall()
+			results = self.cursor.fetchall()
+
+			for resultTuple in results:
+				sensorId = resultTuple[0]
+				sensor = self._getSensorById(sensorId, logger)
+				if sensor is not None:
+					sensorList.append(sensor)
+
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "nodes from database which sensors were not updated.")
+				+ "sensors from database which update was older than %d."
+				% oldestTimeUpdated)
 
 			# close connection to the database
 			self._closeConnection()
@@ -6967,9 +7200,8 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return list of tuples of (sensorId, nodeId,
-		# lastStateUpdated, description)
-		return list(result)
+		# return list of sensor objects
+		return sensorList
 
 
 	# gets all information of a sensor by its given id
@@ -7070,6 +7302,36 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		# return a node object or None
+		return result
+
+
+	# gets the sensor from the database when its id is given
+	#
+	# return a sensor object or None
+	def getSensorById(self, sensorId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		self._acquireLock(logger)
+
+		# connect to the database
+		try:
+			self._openConnection(logger)
+		except Exception as e:
+			logger.exception("[%s]: Not able to connect to database."
+				% self.fileName)
+
+			self._releaseLock(logger)
+
+			return None
+
+		result = self._getSensorById(sensorId, logger)
+
+		self._releaseLock(logger)
+
+		# return a sensor object or None
 		return result
 
 
