@@ -167,9 +167,9 @@ class ConnectionWatchdog(threading.Thread):
 
 		# Generate an alert for every timed out sensor
 		# (self.logger + internal "sensor timeout" sensor).
-		for sensorTuple in sensorsTimeoutList:
-			sensorId = sensorTuple[0]
-			nodeId = sensorTuple[1]
+		for sensorObj in sensorsTimeoutList:
+			sensorId = sensorObj.sensorId
+			nodeId = sensorObj.nodeId
 			nodeObj = self.storage.getNodeById(nodeId)
 			# Since a user can be deleted during runtime, check if the
 			# node still existed in the database.
@@ -183,8 +183,8 @@ class ConnectionWatchdog(threading.Thread):
 			username = nodeObj.username
 			nodeType = nodeObj.nodeType
 			instance = nodeObj.instance
-			lastStateUpdated = sensorTuple[2]
-			description = sensorTuple[3]
+			lastStateUpdated = sensorObj.lastStateUpdated
+			description = sensorObj.description
 			if hostname is None:
 				self.logger.error("[%s]: Could not " % self.fileName
 					+ "get hostname for node from database.")
@@ -277,9 +277,8 @@ class ConnectionWatchdog(threading.Thread):
 
 			# Skip if an old timed out sensor is still timed out.
 			found = False
-			for sensorTimeoutTuple in sensorsTimeoutList:
-				timedOutSensorId = sensorTimeoutTuple[0]
-				if sensorId == timedOutSensorId:
+			for sensorObj in sensorsTimeoutList:
+				if sensorId == sensorObj.sensorId:
 					found = True
 					break
 			if found:
@@ -1059,9 +1058,7 @@ class ConnectionWatchdog(threading.Thread):
 			# Process nodes that timed out but reconnected.
 			self._processOldNodeTimeouts()
 
-			# Get all sensors that have timed out.
-			# Data: list of tuples of (sensorId, nodeId,
-			# lastStateUpdated, description)
+			# Get list of sensor objects that have timed out.
 			utcTimestamp = int(time.time())
 			sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(
 				utcTimestamp - int(1.5 * self.gracePeriodTimeout))

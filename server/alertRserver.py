@@ -1317,7 +1317,7 @@ if __name__ == '__main__':
 		for alertLevelInDb in alertLevelsInDb:
 			found = False
 			for alertLevel in globalData.alertLevels:
-				if alertLevelInDb[0] == alertLevel.level:
+				if alertLevelInDb == alertLevel.level:
 					found = True
 					break
 			if found:
@@ -1335,7 +1335,7 @@ if __name__ == '__main__':
 		for alertLevelInDb in alertLevelsInDb:
 			found = False
 			for alertLevel in globalData.alertLevels:
-				if alertLevelInDb[0] == alertLevel.level:
+				if alertLevelInDb == alertLevel.level:
 					found = True
 					break
 			if found:
