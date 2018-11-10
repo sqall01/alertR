@@ -1313,19 +1313,18 @@ class SensorAlertExecuter(threading.Thread):
 				# manager update executer
 				if self.managerUpdateExecuter != None:
 
-					# Returns a tuple of (dataType, data) or None.
-					sensorDataTuple = self.storage.getSensorData(
+					# Returns a sensor data object or None.
+					sensorDataObj = self.storage.getSensorData(
 						sensorAlert.sensorId)
 
-					if sensorDataTuple is None:
+					if sensorDataObj is None:
 						self.logger.error("[%s]: Unable to get sensor data "
 							% self.fileName
 							+ "from database. Skipping manager notification.")
 					else:
 						managerStateTuple = (sensorAlert.sensorId,
 							sensorAlert.state,
-							sensorDataTuple[0],
-							sensorDataTuple[1])
+							sensorDataObj)
 						self.managerUpdateExecuter.queueStateChange.append(
 							managerStateTuple)
 

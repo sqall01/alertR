@@ -16,7 +16,7 @@ import struct
 import hashlib
 import json
 from localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
-	SensorDataType
+	SensorData, SensorDataType
 
 
 # internal abstract class for new storage backends
@@ -262,7 +262,7 @@ class _Storage():
 
 	# Gets the data of a sensor given by id.
 	#
-	# return a tuple of (dataType, data) or None
+	# return a sensor data object or None
 	def getSensorData(self, sensorId, logger=None):
 		raise NotImplemented("Function not implemented yet.")
 
@@ -3577,7 +3577,7 @@ class Sqlite(_Storage):
 
 	# Gets the data of a sensor given by id.
 	#
-	# return a tuple of (dataType, data) or None
+	# return a sensor data object or None
 	def getSensorData(self, sensorId, logger=None):
 
 		# Set logger instance to use.
@@ -3612,9 +3612,10 @@ class Sqlite(_Storage):
 
 			return None
 
-		data = None
+		data = SensorData()
+		data.dataType = dataType
 		if dataType == SensorDataType.NONE:
-			data = ( dataType, None )
+			data.data = None
 
 		elif dataType == SensorDataType.INT:
 			try:
@@ -3631,7 +3632,7 @@ class Sqlite(_Storage):
 
 					return None
 
-				data = ( dataType, result[0][0] )
+				data.data = result[0][0]
 
 			except Exception as e:
 
@@ -3658,7 +3659,7 @@ class Sqlite(_Storage):
 
 					return None
 
-				data = ( dataType, result[0][0] )
+				data.data = result[0][0]
 
 			except Exception as e:
 
@@ -3672,7 +3673,7 @@ class Sqlite(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a tuple of (dataType, data) or None
+		# return a sensor data object or None
 		return data
 
 
@@ -7770,7 +7771,7 @@ class Mysql(_Storage):
 
 	# Gets the data of a sensor given by id.
 	#
-	# return a tuple of (dataType, data) or None
+	# return a sensor data object or None
 	def getSensorData(self, sensorId, logger=None):
 
 		# Set logger instance to use.
@@ -7822,9 +7823,10 @@ class Mysql(_Storage):
 
 			return None
 
-		data = None
+		data = SensorData()
+		data.dataType = dataType
 		if dataType == SensorDataType.NONE:
-			data = ( dataType, None )
+			data.data = None
 
 		elif dataType == SensorDataType.INT:
 			try:
@@ -7844,7 +7846,7 @@ class Mysql(_Storage):
 
 					return None
 
-				data = ( dataType, result[0][0] )
+				data.data = result[0][0]
 
 			except Exception as e:
 
@@ -7877,7 +7879,7 @@ class Mysql(_Storage):
 
 					return None
 
-				data = ( dataType, result[0][0] )
+				data.data = result[0][0]
 
 			except Exception as e:
 
@@ -7897,7 +7899,7 @@ class Mysql(_Storage):
 
 		self._releaseLock(logger)
 
-		# return a tuple of (dataType, data) or None
+		# return a sensor data object or None
 		return data
 
 

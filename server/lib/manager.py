@@ -120,8 +120,7 @@ class ManagerUpdateExecuter(threading.Thread):
 				managerStateTuple = self.queueStateChange.popleft()
 				sensorId = managerStateTuple[0]
 				state = managerStateTuple[1]
-				dataType = managerStateTuple[2]
-				sensorData = managerStateTuple[3]
+				sensorDataObj = managerStateTuple[2]
 
 				for serverSession in self.serverSessions:
 					# ignore sessions which do not exist yet
@@ -146,9 +145,9 @@ class ManagerUpdateExecuter(threading.Thread):
 					stateChangeProcess.sendManagerStateChangeState \
 						= state
 					stateChangeProcess.sendManagerStateChangeDataType \
-						= dataType
+						= sensorDataObj.dataType
 					stateChangeProcess.sendManagerStateChangeData \
-						= sensorData
+						= sensorDataObj.data
 					stateChangeProcess.start()
 
 

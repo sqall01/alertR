@@ -154,3 +154,11 @@ class SensorAlert:
 		# The sensor data type and data that is connected to this sensor alert.
 		self.dataType = None
 		self.sensorData = None
+
+
+# This class represents sensor data.
+class SensorData:
+
+	def __init__(self):
+		self.dataType = None
+		self.data = None

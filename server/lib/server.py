@@ -17,7 +17,7 @@ import os
 import base64
 import random
 import json
-from localObjects import SensorDataType, Sensor
+from localObjects import SensorDataType, Sensor, SensorData
 from internalSensors import AlertSystemActiveSensor
 
 BUFSIZE = 4096
@@ -3010,11 +3010,14 @@ class ClientCommunication:
 				% (self.clientAddress, self.clientPort))
 			return False
 
+		sensorDataObj = SensorData()
+		sensorDataObj.dataType = sensor.dataType
+		sensorDataObj.data = sensor.data
+
 		# add state change to queue and wake up manager update executer
 		managerStateTuple = (sensor.sensorId,
 			sensor.state,
-			sensor.dataType,
-			sensor.data)
+			sensorDataObj)
 		self.managerUpdateExecuter.queueStateChange.append(managerStateTuple)
 		self.managerUpdateExecuter.managerUpdateEvent.set()
 
