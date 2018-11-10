@@ -1076,17 +1076,12 @@ class ClientCommunication:
 	# Internal function that builds the alert system state message.
 	def _buildAlertSystemStateMessage(self):
 
-		# get a list from database of
-		# list[0] = list(tuples of (type, value))
-		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
-		# instance, connected, version, rev, persistent))
-		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-		# description, state, lastStateUpdated, alertDelay, dataType))
-		# list[3] = list(tuples of (managerId, nodeId, description))
-		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
-		# description))
-		# list[5] = list(tuples of (sensorId, sensorDataInt))
-		# list[6] = list(tuples of (sensorId, sensorDataFloat))
+		# Get a list from database of
+		# list[0] = list(option objects)
+		# list[1] = list(node objects)
+		# list[2] = list(sensor objects)
+		# list[3] = list(manager objects)
+		# list[4] = list(alert objects)
 		# or None
 		alertSystemInformation = self.storage.getAlertSystemInformation(
 			logger=self.logger)
@@ -1107,172 +1102,76 @@ class ClientCommunication:
 				pass
 
 			return None
-		optionsInformation = alertSystemInformation[0]
-		nodesInformation = alertSystemInformation[1]
-		sensorsInformation = alertSystemInformation[2]
-		managersInformation = alertSystemInformation[3]
-		alertsInformation = alertSystemInformation[4]
-		sensorsDataInt = alertSystemInformation[5]
-		sensorsDataFloat = alertSystemInformation[6]
+		optionList = alertSystemInformation[0]
+		nodesList = alertSystemInformation[1]
+		sensorList = alertSystemInformation[2]
+		managerList = alertSystemInformation[3]
+		alertList = alertSystemInformation[4]
 
-		# generating options list
+		# Generating options list.
 		options = list()
-		for i in range(len(optionsInformation)):
-			tempDict = {"type": optionsInformation[i][0],
-				"value": optionsInformation[i][1]}
+		for optionObj in optionList:
+			tempDict = {"type": optionObj.type,
+				"value": optionObj.value}
 			options.append(tempDict)
 
-		# generating nodes list
+		# Generating nodes list.
 		nodes = list()
-		for i in range(len(nodesInformation)):
-			tempDict = {"nodeId": nodesInformation[i][0],
-				"hostname": nodesInformation[i][1],
-				"username": nodesInformation[i][2],
-				"nodeType": nodesInformation[i][3],
-				"instance": nodesInformation[i][4],
-				"connected": nodesInformation[i][5],
-				"version": nodesInformation[i][6],
-				"rev": nodesInformation[i][7],
-				"persistent": nodesInformation[i][8]}
+		for nodeObj in nodesList:
+			tempDict = {"nodeId": nodeObj.id,
+				"hostname": nodeObj.hostname,
+				"username": nodeObj.username,
+				"nodeType": nodeObj.nodeType,
+				"instance": nodeObj.instance,
+				"version": nodeObj.version,
+				"rev": nodeObj.rev}
+			if nodeObj.connected:
+				tempDict["connected"] = 1
+			else:
+				tempDict["connected"] = 0
+			if nodeObj.persistent:
+				tempDict["persistent"] = 1
+			else:
+				tempDict["persistent"] = 0
 			nodes.append(tempDict)
 
-		# generating sensors list
+		# Generating sensors list.
 		sensors = list()
-		for i in range(len(sensorsInformation)):
-
-			sensorId = sensorsInformation[i][0]
-
-			# create list of alert levels of this sensor
-			alertLevels = self.storage.getSensorAlertLevels(sensorId,
-				logger=self.logger)
-
-			if alertLevels is None:
-				self.logger.error("[%s]: Not able to get alert levels for "
-					% self.fileName
-					+ "sensor with id %d in database (%s:%d)."
-					% (sensorId, self.clientAddress, self.clientPort))
-
-				# send error message back
-				try:
-					utcTimestamp = int(time.time())
-					message = {"serverTime": utcTimestamp,
-						"message": "status",
-						"error": "not able to get alert levels for sensor"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
-
-				return None
-
-			tempDict = {"sensorId": sensorId,
-				"nodeId": sensorsInformation[i][1],
-				"remoteSensorId": sensorsInformation[i][2],
-				"description": sensorsInformation[i][3],
-				"state": sensorsInformation[i][4],
-				"lastStateUpdated": sensorsInformation[i][5],
-				"alertDelay": sensorsInformation[i][6],
-				"alertLevels": alertLevels,
-				"dataType": sensorsInformation[i][7]}
-
-			# Add sensor data corresponding to type to the dictionary.
-			if sensorsInformation[i][7] == SensorDataType.INT:
-				found = False
-				for sensorDataTuple in sensorsDataInt:
-					if sensorId == sensorDataTuple[0]:
-						tempDict["data"] = sensorDataTuple[1]
-						found = True
-						break
-				if not found:
-					self.logger.error("[%s]: Not able to find data for sensor "
-						% self.fileName
-						+ "with id %d in database (%s:%d)."
-						% (sensorId, self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						utcTimestamp = int(time.time())
-						message = {"serverTime": utcTimestamp,
-							"message": "status",
-							"error": "not able to find data for sensor"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return None
-
-			elif sensorsInformation[i][7] == SensorDataType.FLOAT:
-				found = False
-				for sensorDataTuple in sensorsDataFloat:
-					if sensorId == sensorDataTuple[0]:
-						tempDict["data"] = sensorDataTuple[1]
-						found = True
-						break
-				if not found:
-					self.logger.error("[%s]: Not able to find data for sensor "
-						% self.fileName
-						+ "with id %d in database (%s:%d)."
-						% (sensorId, self.clientAddress, self.clientPort))
-
-					# send error message back
-					try:
-						utcTimestamp = int(time.time())
-						message = {"serverTime": utcTimestamp,
-							"message": "status",
-							"error": "not able to find data for sensor"}
-						self.sslSocket.send(json.dumps(message))
-					except Exception as e:
-						pass
-
-					return None
+		for sensorObj in sensorList:
+			tempDict = {"sensorId": sensorObj.sensorId,
+				"nodeId": sensorObj.nodeId,
+				"remoteSensorId": sensorObj.remoteSensorId,
+				"description": sensorObj.description,
+				"state": sensorObj.state,
+				"lastStateUpdated": sensorObj.lastStateUpdated,
+				"alertDelay": sensorObj.alertDelay,
+				"alertLevels": sensorObj.alertLevels,
+				"dataType": sensorObj.dataType,
+				"data": sensorObj.data}
 
 			sensors.append(tempDict)
 
-		# generating managers list
+		# Generating managers list.
 		managers = list()
-		for i in range(len(managersInformation)):
-			tempDict = {"managerId": managersInformation[i][0],
-				"nodeId": managersInformation[i][1],
-				"description": managersInformation[i][2]}
+		for managerObj in managerList:
+			tempDict = {"managerId": managerObj.managerId,
+				"nodeId": managerObj.nodeId,
+				"description": managerObj.description}
 			managers.append(tempDict)
 
-		# generating alerts list
+		# Generating alerts list.
 		alerts = list()
-		for i in range(len(alertsInformation)):
-
-			alertId = alertsInformation[i][0]
-
-			# Create list of alert levels of this alert.
-			alertLevels = self.storage.getAlertAlertLevels(alertId,
-				logger=self.logger)
-			if alertLevels is None:
-				self.logger.error("[%s]: Not able to get alert levels for "
-					% self.fileName
-					+ "alert with id %d in database (%s:%d)."
-					% (alertId, self.clientAddress, self.clientPort))
-
-				# send error message back
-				try:
-					utcTimestamp = int(time.time())
-					message = {"serverTime": utcTimestamp,
-						"message": "status",
-						"error": "not able to get alert levels for alert"}
-					self.sslSocket.send(json.dumps(message))
-				except Exception as e:
-					pass
-
-				return None
-
-			tempDict = {"alertId": alertId,
-				"nodeId": alertsInformation[i][1],
-				"remoteAlertId": alertsInformation[i][2],
-				"description": alertsInformation[i][3],
-				"alertLevels": alertLevels}
+		for alertObj in alertList:
+			tempDict = {"alertId": alertObj.alertId,
+				"nodeId": alertObj.nodeId,
+				"remoteAlertId": alertObj.remoteAlertId,
+				"description": alertObj.description,
+				"alertLevels": alertObj.alertLevels}
 			alerts.append(tempDict)
 
-		# generating alertLevels list
+		# Generating alertLevels list.
 		alertLevels = list()
 		for i in range(len(self.alertLevels)):
-
 			tempDict = {"alertLevel": self.alertLevels[i].level,
 				"name": self.alertLevels[i].name,
 				"triggerAlways": (1 if self.alertLevels[i].triggerAlways
@@ -1294,6 +1193,7 @@ class ClientCommunication:
 		message = {"serverTime": utcTimestamp,
 			"message": "status",
 			"payload": payload}
+
 		return json.dumps(message)
 
 

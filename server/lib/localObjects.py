@@ -160,5 +160,13 @@ class SensorAlert:
 class SensorData:
 
 	def __init__(self):
+		self.sensorId = None
 		self.dataType = None
 		self.data = None
+
+
+class Option:
+
+	def __init__(self):
+		self.type = None
+		self.value = None

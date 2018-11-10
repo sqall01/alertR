@@ -16,7 +16,7 @@ import struct
 import hashlib
 import json
 from localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
-	SensorData, SensorDataType
+	SensorData, SensorDataType, Option
 
 
 # internal abstract class for new storage backends
@@ -238,16 +238,11 @@ class _Storage():
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
-	# list[0] = list(tuples of (type, value))
-	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
-	# instance, connected, version, rev, persistent))
-	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-	# description, state, lastStateUpdated, alertDelay, dataType))
-	# list[3] = list(tuples of (managerId, nodeId, description))
-	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
-	# description))
-	# list[5] = list(tuples of (id, sensorId, sensorDataInt))
-	# list[6] = list(tuples of (id, sensorId, sensorDataFloat))
+	# list[0] = list(option objects)
+	# list[1] = list(node objects)
+	# list[2] = list(sensor objects)
+	# list[3] = list(manager objects)
+	# list[4] = list(alert objects)
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 		raise NotImplemented("Function not implemented yet.")
@@ -424,10 +419,10 @@ class Sqlite(_Storage):
 		node.username = nodeTuple[2]
 		node.nodeType = nodeTuple[3]
 		node.instance = nodeTuple[4]
-		node.connected = nodeTuple[5]
+		node.connected = (nodeTuple[5] == 1)
 		node.version = nodeTuple[6]
 		node.rev = nodeTuple[7]
-		node.persistent = nodeTuple[8]
+		node.persistent = (nodeTuple[8] == 1)
 		return node
 
 
@@ -612,7 +607,7 @@ class Sqlite(_Storage):
 							+ "was not found.")
 
 						return None
-					sensor.data = subResult[0]
+					sensor.data = subResult[0][0]
 
 				elif sensor.dataType == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
@@ -627,7 +622,7 @@ class Sqlite(_Storage):
 							+ "was not found.")
 
 						return None
-					sensor.data = subResult[0]
+					sensor.data = subResult[0][0]
 
 				else:
 					logger.error("[%s]: Not able to get sensor with id %d. "
@@ -2863,7 +2858,7 @@ class Sqlite(_Storage):
 						self._releaseLock(logger)
 
 						return None
-					sensorAlert.sensorData = subResult[0]
+					sensorAlert.sensorData = subResult[0][0]
 
 				elif sensorAlert.dataType == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
@@ -2879,7 +2874,7 @@ class Sqlite(_Storage):
 						self._releaseLock(logger)
 
 						return None
-					sensorAlert.sensorData = subResult[0]
+					sensorAlert.sensorData = subResult[0][0]
 
 				else:
 					logger.error("[%s]: Not able to get sensor alerts. "
@@ -3393,16 +3388,11 @@ class Sqlite(_Storage):
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
-	# list[0] = list(tuples of (type, value))
-	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
-	# instance, connected, version, rev, persistent))
-	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-	# description, state, lastStateUpdated, alertDelay, dataType))
-	# list[3] = list(tuples of (managerId, nodeId, description))
-	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
-	# description))
-	# list[5] = list(tuples of (sensorId, sensorDataInt))
-	# list[6] = list(tuples of (sensorId, sensorDataFloat))
+	# list[0] = list(option objects)
+	# list[1] = list(node objects)
+	# list[2] = list(sensor objects)
+	# list[3] = list(manager objects)
+	# list[4] = list(alert objects)
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 
@@ -3414,57 +3404,71 @@ class Sqlite(_Storage):
 
 		try:
 
-			# get all options information
+			# Get all options.
+			optionList = list()
 			self.cursor.execute("SELECT type, "
 				+ "value "
 				+ "FROM options")
-			result = self.cursor.fetchall()
-			optionsInformation = result
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				optionObj = Option()
+				optionObj.type = resultTuple[0]
+				optionObj.value = resultTuple[1]
+				optionList.append(optionObj)
 
-			# get all nodes information
+			# Get all nodes.
+			nodeList = list()
 			self.cursor.execute("SELECT * FROM nodes")
-			result = self.cursor.fetchall()
-			nodesInformation = result
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				nodeObj = self._convertNodeTupleToObj(resultTuple)
+				nodeList.append(nodeObj)
 
-			# get all sensors information
-			self.cursor.execute("SELECT * FROM sensors")
-			result = self.cursor.fetchall()
-			sensorsInformation = result
+			# Get all sensors.
+			sensorList = list()
+			self.cursor.execute("SELECT id FROM sensors")
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				sensorObj = self._getSensorById(resultTuple[0], logger)
+				if sensorObj is None:
+					raise ValueError("Can not retrieve sensor with id %d."
+						% resultTuple[0])
+				sensorList.append(sensorObj)
 
-			# get all managers information
-			self.cursor.execute("SELECT * FROM managers")
-			result = self.cursor.fetchall()
-			managersInformation = result
+			# Get all managers.
+			managerList = list()
+			self.cursor.execute("SELECT id FROM managers")
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				managerObj = self._getManagerById(resultTuple[0], logger)
+				if managerObj is None:
+					raise ValueError("Can not retrieve manager with id %d."
+						% resultTuple[0])
+				managerList.append(managerObj)
 
-			# get all alerts information
-			self.cursor.execute("SELECT * FROM alerts")
-			result = self.cursor.fetchall()
-			alertsInformation = result
+			# Get all alerts.
+			alertList = list()
+			self.cursor.execute("SELECT id FROM alerts")
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				alertObj = self._getAlertById(resultTuple[0], logger)
+				if alertObj is None:
+					raise ValueError("Can not retrieve alert with id %d."
+						% resultTuple[0])
+				alertList.append(alertObj)
 
-			# get all sensors data int information
-			self.cursor.execute("SELECT * FROM sensorsDataInt")
-			result = self.cursor.fetchall()
-			sensorsDataIntInformation = result
-
-			# get all sensors data float information
-			self.cursor.execute("SELECT * FROM sensorsDataFloat")
-			result = self.cursor.fetchall()
-			sensorsDataFloatInformation = result
-
-			# generate a list with all nodes information
+			# Generate a list with system information.
 			alertSystemInformation = list()
-			alertSystemInformation.append(optionsInformation)
-			alertSystemInformation.append(nodesInformation)
-			alertSystemInformation.append(sensorsInformation)
-			alertSystemInformation.append(managersInformation)
-			alertSystemInformation.append(alertsInformation)
-			alertSystemInformation.append(sensorsDataIntInformation)
-			alertSystemInformation.append(sensorsDataFloatInformation)
+			alertSystemInformation.append(optionList)
+			alertSystemInformation.append(nodeList)
+			alertSystemInformation.append(sensorList)
+			alertSystemInformation.append(managerList)
+			alertSystemInformation.append(alertList)
 
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "all nodes information from database.")
+				+ "complete system information from database.")
 
 			self._releaseLock(logger)
 
@@ -3473,17 +3477,11 @@ class Sqlite(_Storage):
 		self._releaseLock(logger)
 
 		# return a list of
-		# list[0] = list(tuples of (type, value))
-		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
-		# instance, connected, version, rev, persistent))
-		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-		# description, state, lastStateUpdated, alertDelay, dataType))
-		# list[3] = list(tuples of (managerId, nodeId, description))
-		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
-		# description))
-		# list[5] = list(tuples of (sensorId, sensorDataInt))
-		# list[6] = list(tuples of (sensorId, sensorDataFloat))
-		# or None
+		# list[0] = list(option objects)
+		# list[1] = list(node objects)
+		# list[2] = list(sensor objects)
+		# list[3] = list(manager objects)
+		# list[4] = list(alert objects)
 		return alertSystemInformation
 
 
@@ -3613,6 +3611,7 @@ class Sqlite(_Storage):
 			return None
 
 		data = SensorData()
+		data.sensorId = sensorId
 		data.dataType = dataType
 		if dataType == SensorDataType.NONE:
 			data.data = None
@@ -3633,6 +3632,7 @@ class Sqlite(_Storage):
 					return None
 
 				data.data = result[0][0]
+
 
 			except Exception as e:
 
@@ -3879,10 +3879,10 @@ class Mysql(_Storage):
 		node.username = nodeTuple[2]
 		node.nodeType = nodeTuple[3]
 		node.instance = nodeTuple[4]
-		node.connected = nodeTuple[5]
+		node.connected = (nodeTuple[5] == 1)
 		node.version = nodeTuple[6]
 		node.rev = nodeTuple[7]
-		node.persistent = nodeTuple[8]
+		node.persistent = (nodeTuple[8] == 1)
 		return node
 
 
@@ -4067,7 +4067,7 @@ class Mysql(_Storage):
 							+ "was not found.")
 
 						return None
-					sensor.data = subResult[0]
+					sensor.data = subResult[0][0]
 
 				elif sensor.dataType == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
@@ -4082,7 +4082,7 @@ class Mysql(_Storage):
 							+ "was not found.")
 
 						return None
-					sensor.data = subResult[0]
+					sensor.data = subResult[0][0]
 
 				else:
 					logger.error("[%s]: Not able to get sensor with id %d. "
@@ -6732,7 +6732,7 @@ class Mysql(_Storage):
 						self._releaseLock(logger)
 
 						return None
-					sensorAlert.sensorData = subResult[0]
+					sensorAlert.sensorData = subResult[0][0]
 
 				elif sensorAlert.dataType == SensorDataType.FLOAT:
 					self.cursor.execute("SELECT data "
@@ -6751,7 +6751,7 @@ class Mysql(_Storage):
 						self._releaseLock(logger)
 
 						return None
-					sensorAlert.sensorData = subResult[0]
+					sensorAlert.sensorData = subResult[0][0]
 
 				else:
 					logger.exception("[%s]: Not able to get sensor alerts. "
@@ -7529,16 +7529,11 @@ class Mysql(_Storage):
 	# gets all information that the server has at the current moment
 	#
 	# return a list of
-	# list[0] = list(tuples of (type, value))
-	# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
-	# instance, connected, version, rev, persistent))
-	# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-	# description, state, lastStateUpdated, alertDelay, dataType))
-	# list[3] = list(tuples of (managerId, nodeId, description))
-	# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
-	# description))
-	# list[5] = list(tuples of (sensorId, sensorDataInt))
-	# list[6] = list(tuples of (sensorId, sensorDataFloat))
+	# list[0] = list(option objects)
+	# list[1] = list(node objects)
+	# list[2] = list(sensor objects)
+	# list[3] = list(manager objects)
+	# list[4] = list(alert objects)
 	# or None
 	def getAlertSystemInformation(self, logger=None):
 
@@ -7561,57 +7556,71 @@ class Mysql(_Storage):
 
 		try:
 
-			# get all options information
+			# Get all options.
+			optionList = list()
 			self.cursor.execute("SELECT type, "
 				+ "value "
 				+ "FROM options")
-			result = self.cursor.fetchall()
-			optionsInformation = result
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				optionObj = Option()
+				optionObj.type = resultTuple[0]
+				optionObj.value = resultTuple[1]
+				optionList.append(optionObj)
 
-			# get all nodes information
+			# Get all nodes.
+			nodeList = list()
 			self.cursor.execute("SELECT * FROM nodes")
-			result = self.cursor.fetchall()
-			nodesInformation = result
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				nodeObj = self._convertNodeTupleToObj(resultTuple)
+				nodeList.append(nodeObj)
 
-			# get all sensors information
-			self.cursor.execute("SELECT * FROM sensors")
-			result = self.cursor.fetchall()
-			sensorsInformation = result
+			# Get all sensors.
+			sensorList = list()
+			self.cursor.execute("SELECT id FROM sensors")
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				sensorObj = self._getSensorById(resultTuple[0], logger)
+				if sensorObj is None:
+					raise ValueError("Can not retrieve sensor with id %d."
+						% resultTuple[0])
+				sensorList.append(sensorObj)
 
-			# get all managers information
-			self.cursor.execute("SELECT * FROM managers")
-			result = self.cursor.fetchall()
-			managersInformation = result
+			# Get all managers.
+			managerList = list()
+			self.cursor.execute("SELECT id FROM managers")
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				managerObj = self._getManagerById(resultTuple[0], logger)
+				if managerObj is None:
+					raise ValueError("Can not retrieve manager with id %d."
+						% resultTuple[0])
+				managerList.append(managerObj)
 
-			# get all alerts information
-			self.cursor.execute("SELECT * FROM alerts")
-			result = self.cursor.fetchall()
-			alertsInformation = result
+			# Get all alerts.
+			alertList = list()
+			self.cursor.execute("SELECT id FROM alerts")
+			results = self.cursor.fetchall()
+			for resultTuple in results:
+				alertObj = self._getAlertById(resultTuple[0], logger)
+				if alertObj is None:
+					raise ValueError("Can not retrieve alert with id %d."
+						% resultTuple[0])
+				alertList.append(alertObj)
 
-			# get all sensors data int information
-			self.cursor.execute("SELECT * FROM sensorsDataInt")
-			result = self.cursor.fetchall()
-			sensorsDataIntInformation = result
-
-			# get all sensors data float information
-			self.cursor.execute("SELECT * FROM sensorsDataFloat")
-			result = self.cursor.fetchall()
-			sensorsDataFloatInformation = result
-
-			# generate a list with all nodes information
+			# Generate a list with system information.
 			alertSystemInformation = list()
-			alertSystemInformation.append(optionsInformation)
-			alertSystemInformation.append(nodesInformation)
-			alertSystemInformation.append(sensorsInformation)
-			alertSystemInformation.append(managersInformation)
-			alertSystemInformation.append(alertsInformation)
-			alertSystemInformation.append(sensorsDataIntInformation)
-			alertSystemInformation.append(sensorsDataFloatInformation)
+			alertSystemInformation.append(optionList)
+			alertSystemInformation.append(nodeList)
+			alertSystemInformation.append(sensorList)
+			alertSystemInformation.append(managerList)
+			alertSystemInformation.append(alertList)
 
 		except Exception as e:
 
 			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "all nodes information from database.")
+				+ "complete system information from database.")
 
 			# close connection to the database
 			self._closeConnection()
@@ -7626,16 +7635,11 @@ class Mysql(_Storage):
 		self._releaseLock(logger)
 
 		# return a list of
-		# list[0] = list(tuples of (type, value))
-		# list[1] = list(tuples of (nodeId, hostname, username, nodeType,
-		# instance, connected, version, rev, persistent))
-		# list[2] = list(tuples of (sensorId, nodeId, remoteSensorId,
-		# description, state, lastStateUpdated, alertDelay, dataType))
-		# list[3] = list(tuples of (managerId, nodeId, description))
-		# list[4] = list(tuples of (alertId, nodeId, remoteAlertId,
-		# description))
-		# list[5] = list(tuples of (sensorId, sensorDataInt))
-		# list[6] = list(tuples of (sensorId, sensorDataFloat))
+		# list[0] = list(option objects)
+		# list[1] = list(node objects)
+		# list[2] = list(sensor objects)
+		# list[3] = list(manager objects)
+		# list[4] = list(alert objects)
 		# or None
 		return alertSystemInformation
 
@@ -7824,6 +7828,7 @@ class Mysql(_Storage):
 			return None
 
 		data = SensorData()
+		data.sensorId = sensorId
 		data.dataType = dataType
 		if dataType == SensorDataType.NONE:
 			data.data = None
