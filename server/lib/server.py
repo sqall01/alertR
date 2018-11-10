@@ -3666,7 +3666,7 @@ class ClientCommunication:
 			elif (command == "SENSORALERT"
 				and self.nodeType == "sensor"):
 
-				self.logger.info("[%s]: Received sensor alert "
+				self.logger.debug("[%s]: Received sensor alert "
 					% self.fileName
 					+ "message (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -3689,7 +3689,7 @@ class ClientCommunication:
 			elif (command == "STATECHANGE"
 				and self.nodeType == "sensor"):
 
-				self.logger.info("[%s]: Received state change "
+				self.logger.debug("[%s]: Received state change "
 					% self.fileName
 					+ "message (%s:%d)."
 					% (self.clientAddress, self.clientPort))
@@ -3730,7 +3730,7 @@ class ClientCommunication:
 			elif (command == "OPTION"
 				and self.nodeType == "manager"):
 
-				self.logger.info("[%s]: Received option message (%s:%d)."
+				self.logger.debug("[%s]: Received option message (%s:%d)."
 					% (self.fileName, self.clientAddress, self.clientPort))
 
 				if not self._optionHandler(message):
