@@ -1081,6 +1081,35 @@ class Sqlite(_Storage):
 
 
 	# Internal function that gets all alert levels for a specific
+	# alert given by alertId
+	#
+	# return list of alertLevels
+	# or None
+	def _getAlertAlertLevels(self, alertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM alertsAlertLevels "
+				+ "WHERE alertId = ?", (alertId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for alert with id %d." % alertId)
+
+			# return None if action failed
+			return None
+
+		# return list of alertLevels
+		return map(lambda x: x[0], result)
+
+
+	# Internal function that gets all alert levels for a specific
 	# sensor given by sensorId
 	#
 	# return list of alertLevel
@@ -2675,26 +2704,12 @@ class Sqlite(_Storage):
 
 		self._acquireLock(logger)
 
-		try:
-			self.cursor.execute("SELECT alertLevel "
-				+ "FROM alertsAlertLevels "
-				+ "WHERE alertId = ?", (alertId, ))
-			result = self.cursor.fetchall()
-
-		except Exception as e:
-
-			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "alert levels for alert with id %d." % alertId)
-
-			self._releaseLock(logger)
-
-			# return None if action failed
-			return None
+		result = self._getAlertAlertLevels(alertId, logger)
 
 		self._releaseLock(logger)
 
 		# return list of alertLevels
-		return map(lambda x: x[0], result)
+		return result
 
 
 	# adds a sensor alert to the database when the id of a node is given,
@@ -4538,6 +4553,35 @@ class Mysql(_Storage):
 		self.conn.commit()
 
 		return True
+
+
+	# Internal function that gets all alert levels for a specific
+	# alert given by alertId
+	#
+	# return list of alertLevels
+	# or None
+	def _getAlertAlertLevels(self, alertId, logger=None):
+
+		# Set logger instance to use.
+		if not logger:
+			logger = self.logger
+
+		try:
+			self.cursor.execute("SELECT alertLevel "
+				+ "FROM alertsAlertLevels "
+				+ "WHERE alertId = %s", (alertId, ))
+			result = self.cursor.fetchall()
+
+		except Exception as e:
+
+			logger.exception("[%s]: Not able to get " % self.fileName
+				+ "alert levels for alert with id %d." % alertId)
+
+			# return None if action failed
+			return None
+
+		# return list of alertLevels
+		return map(lambda x: x[0], result)
 
 
 	# Internal function that gets all alert levels for a specific
@@ -6504,24 +6548,7 @@ class Mysql(_Storage):
 
 			return None
 
-		try:
-			self.cursor.execute("SELECT alertLevel "
-				+ "FROM alertsAlertLevels "
-				+ "WHERE alertId = %s", (alertId, ))
-			result = self.cursor.fetchall()
-
-		except Exception as e:
-
-			logger.exception("[%s]: Not able to get " % self.fileName
-				+ "alert levels for alert with id %d." % alertId)
-
-			# close connection to the database
-			self._closeConnection()
-
-			self._releaseLock(logger)
-
-			# return None if action failed
-			return None
+		result = self._getAlertAlertLevels(sensorId, logger)
 
 		# close connection to the database
 		self._closeConnection()
