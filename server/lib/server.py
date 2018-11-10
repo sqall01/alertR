@@ -46,7 +46,9 @@ class ClientCommunication:
 		self.connectionWatchdog = self.globalData.connectionWatchdog
 		self.serverSessions = self.globalData.serverSessions
 
-		# Time the last message was received by the server
+		# Time the last message was received by the server. Since the 
+		# connection counts as a message, set it to the current time
+		# (otherwise the connectionWatchdog might close the connection).
 		self.lastRecv = int(time.time())
 
 		# username that is used by the client to authorize itself
