@@ -88,7 +88,7 @@ class GlobalData:
 		self.gracePeriodTimeout = 90
 
 		# The time a reminder of timed out sensors is raised.
-		self.timeoutReminderTime = 1800.0
+		self.timeoutReminderTime = 86400
 
 		# this is the interval in seconds in which the managers
 		# are sent updates of the clients (at least)
