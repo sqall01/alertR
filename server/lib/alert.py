@@ -1387,8 +1387,10 @@ class SensorAlertExecuter(threading.Thread):
 
 				# generate integer list of alert levels that have triggered
 				# (needed for sensor alert message)
+				sensorAlert.triggeredAlertLevels = list()
 				for triggeredAlertLevel in triggeredAlertLevels:
-					sensorAlert.alertLevels.append(triggeredAlertLevel.level)
+					sensorAlert.triggeredAlertLevels.append(
+						triggeredAlertLevel.level)
 
 				# send sensor alert to all manager and alert clients
 				for serverSession in self.serverSessions:
@@ -1470,6 +1472,7 @@ class SensorAlertExecuter(threading.Thread):
 				ruleSensorAlert.sensorId = -1
 				ruleSensorAlert.changeState = False
 				ruleSensorAlert.alertLevels.append(alertLevel.level)
+				ruleSensorAlert.triggeredAlertLevels.append(alertLevel.level)
 				ruleSensorAlert.state = 1
 				ruleSensorAlert.description = \
 					"Rule of Alert Level: '%s'" % alertLevel.name

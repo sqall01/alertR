@@ -141,9 +141,12 @@ class SensorAlert:
 		# Does this sensor alert change the state of the sensor?
 		self.changeState = None
 
-		# List of alert levels (Integer) that are triggered
-		# by this sensor alert.
+		# List of alert levels (Integer) that this sensor alert belongs to.
 		self.alertLevels = list()
+
+		# List of alert levels (Integer) that are currently triggered
+		# by this sensor alert.
+		self.triggeredAlertLevels = list()
 
 		# Are rules for this sensor alert activated (true or false)?
 		self.rulesActivated = None
