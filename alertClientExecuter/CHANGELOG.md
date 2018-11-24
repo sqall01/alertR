@@ -1,3 +1,10 @@
+## 0.501-2
+
+Features:
+
+* Removed fixed TLS version.
+
+
 ## 0.501-1
 
 Features:
