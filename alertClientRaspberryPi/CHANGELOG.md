@@ -1,3 +1,10 @@
+## 0.502
+
+Features:
+
+* Added `gpioResetStateTime` option that can reset the triggered alert to normal state after given time.
+
+
 ## 0.501-1
 
 Features:

@@ -169,11 +169,18 @@ if __name__ == '__main__':
 				alert.gpioPinStateTriggered = GPIO.HIGH
 			else:
 				alert.gpioPinStateTriggered = GPIO.LOW
+			alert.gpioResetStateTime = int(
+				item.find("gpio").attrib["gpioResetStateTime"])
 
 			# these options are needed by the server to
 			# differentiate between the registered alerts
 			alert.id = int(item.find("general").attrib["id"])
 			alert.description = str(item.find("general").attrib["description"])
+
+			if alert.gpioResetStateTime < 0:
+				raise ValueError("gpioResetStateTime of alert %d has to be "
+					% alert.id
+					+ "greater or equal to 0.")
 
 			alert.alertLevels = list()
 			for alertLevelXml in item.iterfind("alertLevel"):

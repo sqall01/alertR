@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.501">
+<config version="0.502">
 
 	<!--
 		in this section general options are configured
@@ -173,11 +173,18 @@
 					(1 or 0)
 				gpioPinStateTriggered - the state that the gpio pin is set
 					to when an alert is triggered (1 or 0)
+				gpioResetStateTime - The time in seconds after the GPIO
+					pin was set to "triggered" it is reseted to the "normal"
+					state. For example, if it is set to 30 then the
+					GPIO pin is set to "normal" 30 seconds after it was
+					set to "triggered" via a sensor alert.
+					If set to 0 the reset is deactivated.
 			-->
 			<gpio
 				gpioPin="26"
 				gpioPinStateNormal="0"
-				gpioPinStateTriggered="1" />
+				gpioPinStateTriggered="1"
+				gpioResetStateTime="0" />
 
 		</alert>
 
@@ -213,11 +220,18 @@
 					(1 or 0)
 				gpioPinStateTriggered - the state that the gpio pin is set
 					to when an alert is triggered (1 or 0)
+				gpioResetStateTime - The time in seconds after the GPIO
+					pin was set to "triggered" it is reseted to the "normal"
+					state. For example, if it is set to 30 then the
+					GPIO pin is set to "normal" 30 seconds after it was
+					set to "triggered" via a sensor alert.
+					If set to 0 the reset is deactivated.
 			-->
 			<gpio
 				gpioPin="24"
 				gpioPinStateNormal="0"
-				gpioPinStateTriggered="1" />
+				gpioPinStateTriggered="1"
+				gpioResetStateTime="0" />
 
 		</alert>
 
