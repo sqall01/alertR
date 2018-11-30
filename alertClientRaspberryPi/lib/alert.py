@@ -45,6 +45,9 @@ class RaspberryPiGPIOAlert(_Alert):
 	def __init__(self):
 		_Alert.__init__(self)
 
+		# File nme of this file (used for logging).
+		self.fileName = os.path.basename(__file__)
+
 		# this flag is used to signalize if the alert is triggered or not
 		self.triggered = None
 
@@ -106,6 +109,11 @@ class RaspberryPiGPIOAlert(_Alert):
 				self.gpioResetStateThreadStop = False
 				self.gpioResetStateThreadLock.release()
 				return
+
+		logging.info("[%s]: Resetting alert with id %d to normal state "
+			% (self.fileName, self.id)
+			+ "after %d seconds."
+			% self.gpioResetStateTime)
 
 		self._setState(False)
 
