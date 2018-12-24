@@ -54,6 +54,7 @@ class PushAlert(_Alert):
 
 		self.globalData = globalData
 		self.pushRetryTimeout = self.globalData.pushRetryTimeout
+		self.pushRetries = self.globalData.pushRetries
 
 		# These are the message settings.
 		self._channel = None
@@ -136,6 +137,7 @@ class PushAlert(_Alert):
 
 		# Send message to push server.
 		ctr = 0
+		errorCode = ErrorCodes.NO_ERROR
 		while True:
 
 			ctr += 1
@@ -193,6 +195,9 @@ class PushAlert(_Alert):
 				% (self.channel, self.pushRetryTimeout))
 
 			time.sleep(self.pushRetryTimeout)
+
+		# Return last error code (used by the testPushConfiguration.py script).
+		return errorCode
 
 
 	# this function is called once when the alert client has connected itself

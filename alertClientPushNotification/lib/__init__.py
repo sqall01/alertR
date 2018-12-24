@@ -12,3 +12,4 @@ from smtp import SMTPAlert
 from alert import PushAlert, ErrorCodes
 from update import Updater
 from globalData import GlobalData
+from localObjects import SensorAlert

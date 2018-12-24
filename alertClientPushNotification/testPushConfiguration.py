@@ -8,60 +8,14 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import time
-import socket
-import ssl
-import threading
 import logging
 import os
-import base64
 import xml.etree.cElementTree
-import random
-import json
-import hashlib
 import sys
-import re
-from Crypto.Cipher import AES
 from lib import GlobalData
-from lib import ErrorCodes
-BUFSIZE = 4096
-
-
-# simple class of an ssl tcp client
-class Client:
-
-	def __init__(self, host, port, serverCAFile):
-		self.host = host
-		self.port = port
-		self.serverCAFile = serverCAFile
-		self.socket = None
-		self.sslSocket = None
-
-
-	def connect(self):
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-		self.sslSocket = ssl.wrap_socket(self.socket,
-			ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
-			ssl_version=ssl.PROTOCOL_TLSv1)
-
-		self.sslSocket.connect((self.host, self.port))
-
-
-	def send(self, data):
-		count = self.sslSocket.send(data)
-
-
-	def recv(self, buffsize, timeout=3.0):
-		data = None
-		self.sslSocket.settimeout(timeout)
-		data = self.sslSocket.recv(buffsize)
-		self.sslSocket.settimeout(None)
-		return data
-
-
-	def close(self):
-		# closing SSLSocket will also close the underlying socket
-		self.sslSocket.close()
+from lib import PushAlert
+from lib import SensorAlert
+from lightweightpush import ErrorCodes
 
 
 # Function creates a path location for the given user input.
@@ -74,46 +28,6 @@ def makePath(inputLocation):
 		return os.environ["HOME"] + inputLocation[1:]
 	# Assume we have a given relative path.
 	return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
-
-
-# Create the channel name linked to the username.
-# NOTE: This function is not collision free but will improve collision
-# resistance if multiple parties choose the same channel.
-def generatePrefixedChannel(username, channel):
-	# Create a encryption key from the secret.
-	sha256 = hashlib.sha256()
-	sha256.update(username)
-	prefix = sha256.hexdigest()[0:8]
-	return prefix.lower() + "_" + channel
-
-
-def checkChannel(channel):
-	return bool(re.match(r'^[a-zA-Z0-9-_.~%]+$', channel))
-
-
-# Truncates the message and subject to fit in a notification message.
-def truncToSize(subject, message, sbjMsgSize=1400):
-	len_json_sbj = len(json.dumps(subject))
-	len_sbj = len(subject)
-	len_json_msg = len(json.dumps(message))
-	len_msg = len(message)
-
-	# Consider json encoding (characters like \n need two characters).
-	if (len_json_sbj + len_json_msg) > sbjMsgSize:
-		number_to_remove = (len_json_sbj + len_json_msg + 7) - sbjMsgSize
-		if len_msg > number_to_remove:
-			message = message[0:(len_msg-number_to_remove)]
-			message += "*TRUNC*"
-		elif len_sbj > number_to_remove:
-			subject = subject[0:(len_sbj-number_to_remove)]
-			subject += "*TRUNC*"
-		else:
-			message = "*TRUNC*"
-			number_to_remove = number_to_remove - len_msg + 7
-			subject = subject[0:(len_sbj-number_to_remove)]
-			subject += "*TRUNC*"
-
-	return subject, message
 
 
 if __name__ == '__main__':
@@ -178,11 +92,6 @@ if __name__ == '__main__':
 			alert["templateFile"] = makePath(
 				str(item.find("push").attrib["templateFile"]))
 
-			# Check if channel is allowed.
-			if not checkChannel(alert["channel"]):
-				raise ValueError("Channel '%s' contains illegal characters."
-					% alert["channel"])
-
 			# check if the template file exists
 			if not os.path.isfile(alert["templateFile"]):
 				raise ValueError("Message template file '%s' does not exist."
@@ -208,108 +117,79 @@ if __name__ == '__main__':
 		logging.info("[%s]: Sending message for alert id %d (%s)."
 			% (fileName, alert["id"], alert["description"]))
 
-		client = Client(globalData.pushServerAddress,
-			globalData.pushServerPort,
-			globalData.pushServerCert)
 
-		client.connect()
+
+		globalData.pushRetryTimeout = 5
+		globalData.pushRetries = 1
 
 		subject = "Test message for alert with id %d" % alert["id"]
 		message = "This is a test message for the alert:\n\n" \
 			+ "Id: %d\nDescription: %s\n\nCheers,\nalertR" \
 			% (alert["id"], alert["description"])
 
-		subject, message = truncToSize(subject, message,
-			globalData.pushSbjMsgSize)
-		utc_timestamp = int(time.time())
-		payload = json.dumps( {
-			"sbj": subject,
-			"msg": message,
-			"tt": utc_timestamp,
-			"ts": utc_timestamp,
-			"is_sa": True,
-			"st": 1
-			} )
+		# Initialize alert object.
+		alertObj = PushAlert(globalData)
+		alertObj.id = alert["id"]
+		alertObj.description = alert["description"]
+		alertObj.username = alert["username"]
+		alertObj.password = alert["password"]
+		alertObj.channel = alert["channel"]
+		alertObj.encSecret = alert["encSecret"]
+		alertObj.templateFile = alert["templateFile"]
+		alertObj.alertLevels = list()
+		alertObj.subject = subject
+		alertObj.initializeAlert()
 
-		enc_secret = alert["encSecret"]
+		sensorAlert = SensorAlert()
+		sensorAlert.state = 1
+		sensorAlert.timeReceived = int(time.time())
 
-		# Create a encryption key from the secret.
-		sha256 = hashlib.sha256()
-		sha256.update(enc_secret)
-		key = sha256.digest()
-
-		# Add random bytes in the beginning of
-		# the message to increase randomness.
-		iv = os.urandom(16)
-		internal_iv = os.urandom(4)
-		padded_payload = internal_iv + payload
-
-		padding = len(padded_payload) % 16
-		if padding != 0:
-			for i in range(16 - padding):
-				# Use whitespaces as padding since they are ignored by json.
-				padded_payload += " "
-
-		cipher = AES.new(key, AES.MODE_CBC, iv)
-		encrypted_payload = cipher.encrypt(padded_payload)
-
-		temp = iv + encrypted_payload
-		data_send = base64.b64encode(temp)
-		prefixed_channel = generatePrefixedChannel(alert["username"],
-			alert["channel"])
-
-		data = {"username": alert["username"],
-				"password": alert["password"],
-				"channel": prefixed_channel,
-				"data": data_send,
-				"version": 0.1}
-
-		client.send(json.dumps(data))
-
-		response_str = client.recv(BUFSIZE)
-
-		response = json.loads(response_str)
+		errorCode = alertObj._sendMessage(subject, message, sensorAlert)
 
 		# Process response.
-		if response["Code"] == ErrorCodes.NO_ERROR:
+		if errorCode == ErrorCodes.NO_ERROR:
 			logging.info("[%s]: Message successfully transmitted." % fileName)
-		elif response["Code"] == ErrorCodes.DATABASE_ERROR:
+		elif errorCode == ErrorCodes.DATABASE_ERROR:
 			logging.error("[%s]: Database error on server side. "
 				% fileName
 				+ "Please try again later.")
-		elif response["Code"] == ErrorCodes.AUTH_ERROR:
+		elif errorCode == ErrorCodes.AUTH_ERROR:
 			logging.error("[%s]: Authentication failed. "
 				% fileName
 				+ "Check your credentials.")
-		elif response["Code"] == ErrorCodes.ILLEGAL_MSG_ERROR:
+		elif errorCode == ErrorCodes.ILLEGAL_MSG_ERROR:
 			logging.error("[%s]: Illegal message was sent. "
 				% fileName
 				+ "Please make sure to use the newest version. "
 				+ "If you do, please open an issue on "
 				+ "https://github.com/sqall01/alertR.")
-		elif response["Code"] == ErrorCodes.GOOGLE_MSG_TOO_LARGE:
+		elif errorCode == ErrorCodes.GOOGLE_MSG_TOO_LARGE:
 			logging.error("[%s]: Transmitted message too large. "
 				% fileName
 				+ "Please shorten it.")
-		elif response["Code"] == ErrorCodes.GOOGLE_CONNECTION:
+		elif errorCode == ErrorCodes.GOOGLE_CONNECTION:
 			logging.error("[%s]: Connection error on server side. "
 				% fileName
 				+ "Please try again later.")
-		elif response["Code"] == ErrorCodes.GOOGLE_AUTH:
+		elif errorCode == ErrorCodes.GOOGLE_AUTH:
 			logging.error("[%s]: Authentication error on server side. "
 				% fileName
 				+ "Please try again later.")
-		elif response["Code"] == ErrorCodes.VERSION_MISSMATCH:
+		elif errorCode == ErrorCodes.VERSION_MISSMATCH:
 			logging.error("[%s]: Version mismatch. "
 				% fileName
 				+ "Please update your client.")
-		elif response["Code"] == ErrorCodes.NO_NOTIFICATION_PERMISSION:
+		elif errorCode == ErrorCodes.NO_NOTIFICATION_PERMISSION:
 			logging.error("[%s]: No permission to use notification channel. "
 				% fileName
 				+ "Please update channel configuration.")
+		elif errorCode == ErrorCodes.CLIENT_CONNECTION_ERROR:
+			logging.error("[%s]: Client has problems connecting to service. "
+				% fileName
+				+ "Do you have an Internet connection?.")
 		else:
 			logging.error("[%s]: The following error code occurred: %d."
-				% (fileName, response["Code"])
+				% (fileName, errorCode)
 				+ "Please make sure to use the newest version. "
 				+ "If you do, please open an issue on "
 				+ "https://github.com/sqall01/alertR.")
