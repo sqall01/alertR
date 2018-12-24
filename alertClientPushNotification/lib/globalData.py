@@ -20,7 +20,7 @@ class GlobalData:
 		self.version = 0.501
 
 		# revision of the used client
-		self.rev = 1
+		self.rev = 2
 
 		# name of this client
 		self.name = "AlertR Alert Client Push Notification"
@@ -54,9 +54,5 @@ class GlobalData:
 		self.persistent = None
 
 		# Push server settings.
-		self.pushServerAddress = "push.alertr.de"
-		self.pushServerPort = 14944
-		self.pushServerCert = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/../config/push.alertr.de.crt"
 		self.pushRetryTimeout = 300
-		self.pushSbjMsgSize = 1400
+		self.pushRetries = 576

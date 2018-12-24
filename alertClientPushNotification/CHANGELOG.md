@@ -1,3 +1,10 @@
+## 0.501-2
+
+Features:
+
+* Moved push notification component to lightweightpush pip package.
+
+
 ## 0.501-1
 
 Features:

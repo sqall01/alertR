@@ -8,71 +8,13 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import time
-import socket
-import ssl
 import os
 import logging
 import smtplib
 import threading
-import base64
-import json
-import hashlib
 import re
-from Crypto.Cipher import AES
+from lightweightpush import LightweightPush, ErrorCodes
 from localObjects import SensorDataType
-BUFSIZE = 4096
-
-
-# Push server error codes.
-class ErrorCodes:
-    NO_ERROR = 0
-    DATABASE_ERROR = 1
-    AUTH_ERROR = 2
-    ILLEGAL_MSG_ERROR = 3
-    GOOGLE_MSG_TOO_LARGE = 4
-    GOOGLE_CONNECTION = 5
-    GOOGLE_UNKNOWN = 6
-    GOOGLE_AUTH = 7
-    VERSION_MISSMATCH = 8
-    NO_NOTIFICATION_PERMISSION = 9
-
-
-# Simple class of an ssl tcp client.
-class Client:
-
-	def __init__(self, host, port, serverCAFile):
-		self.host = host
-		self.port = port
-		self.serverCAFile = serverCAFile
-		self.socket = None
-		self.sslSocket = None
-
-
-	def connect(self):
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-		self.sslSocket = ssl.wrap_socket(self.socket,
-			ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
-			ssl_version=ssl.PROTOCOL_TLSv1)
-
-		self.sslSocket.connect((self.host, self.port))
-
-
-	def send(self, data):
-		count = self.sslSocket.send(data)
-
-
-	def recv(self, buffsize, timeout=3.0):
-		data = None
-		self.sslSocket.settimeout(timeout)
-		data = self.sslSocket.recv(buffsize)
-		self.sslSocket.settimeout(None)
-		return data
-
-
-	def close(self):
-		# closing SSLSocket will also close the underlying socket
-		self.sslSocket.close()
 
 
 # Internal class that holds the important attributes
@@ -111,9 +53,6 @@ class PushAlert(_Alert):
 		self.triggered = None
 
 		self.globalData = globalData
-		self.pushServerAddress = self.globalData.pushServerAddress
-		self.pushServerPort = self.globalData.pushServerPort
-		self.pushServerCert = self.globalData.pushServerCert
 		self.pushRetryTimeout = self.globalData.pushRetryTimeout
 
 		# These are the message settings.
@@ -122,26 +61,17 @@ class PushAlert(_Alert):
 		self.subject = None
 		self.templateFile = None
 		self.msgText = None
-		self.key = None
-		self.protocolVersion = 0.1
 		self.username = None
 		self.password = None
-		self.sbjMsgSize = self.globalData.pushSbjMsgSize
+		self.push_service = None
 
 		# Error codes to determine if we can retry to send the message or not.
 		self.retryCodes = [
 			ErrorCodes.DATABASE_ERROR,
 			ErrorCodes.GOOGLE_CONNECTION,
 			ErrorCodes.GOOGLE_UNKNOWN,
-			ErrorCodes.GOOGLE_AUTH, 
-			ErrorCodes.GOOGLE_AUTH
-			]
-		self.notRetryCodes = [
-			ErrorCodes.AUTH_ERROR,
-			ErrorCodes.ILLEGAL_MSG_ERROR,
-			ErrorCodes.GOOGLE_MSG_TOO_LARGE,
-			ErrorCodes.VERSION_MISSMATCH,
-			ErrorCodes.NO_NOTIFICATION_PERMISSION
+			ErrorCodes.GOOGLE_AUTH,
+			ErrorCodes.CLIENT_CONNECTION_ERROR
 			]
 
 
@@ -157,43 +87,6 @@ class PushAlert(_Alert):
 		else:
 			raise ValueError("Channel '%s' contains illegal characters."
 				% value)
-
-
-	# Create the channel name linked to the username.
-	# NOTE: This function is not collision free but will improve collision
-	# resistance if multiple parties choose the same channel.
-	def _generatePrefixedChannel(self, username, channel):
-		# Create a encryption key from the secret.
-		sha256 = hashlib.sha256()
-		sha256.update(username)
-		prefix = sha256.hexdigest()[0:8]
-		return prefix.lower() + "_" + channel
-
-
-	# Internal function that prepares the data
-	# (which is a json string) that is send to the devices.
-	def _prepareMessage(self, payload):
-
-		logging.debug("[%s] Preparing sensorAlert message."
-				% self.fileName)
-
-		# Add random bytes in the beginning of the message to
-		# increase randomness.
-		iv = os.urandom(16)
-		internalIv = os.urandom(4)
-		paddedPayload = internalIv + payload
-
-		padding = len(paddedPayload) % 16
-		if padding != 0:
-			for i in range(16 - padding):
-				# Use whitespaces as padding since they are ignored by json.
-				paddedPayload += " "
-
-		cipher = AES.new(self.key, AES.MODE_CBC, iv)
-		encryptedPayload = cipher.encrypt(paddedPayload)
-
-		temp = iv + encryptedPayload
-		return base64.b64encode(temp)
 
 
 	# Internal function that replaces the wildcards in the message
@@ -239,114 +132,67 @@ class PushAlert(_Alert):
 
 
 	# Internal function that sends the message to the push server.
-	# Returns True for not retrying and False for retrying to send the message.
-	def _sendMessage(self, data):
-
-		logging.debug("[%s] Sending sensorAlert message."
-				% self.fileName)
-
-		prefixedChannel = self._generatePrefixedChannel(self.username,
-			self.channel)
-
-		finalData = {"username": self.username,
-			"password": self.password,
-			"channel": prefixedChannel,
-			"data": data,
-			"version": self.protocolVersion}
+	def _sendMessage(self, subject, msg, sensorAlert):
 
 		# Send message to push server.
-		responseStr = None
-		try:
+		ctr = 0
+		while True:
 
-			logging.info("[%s] Sending message for sensorAlert to server '%s'."
-				% (self.fileName, self.pushServerAddress))
+			ctr += 1
 
-			client = Client(self.pushServerAddress,
-				self.pushServerPort, self.pushServerCert)
-			client.connect()
-			client.send(json.dumps(finalData))
-			responseStr = client.recv(BUFSIZE)
+			logging.info("[%s] Sending message for sensorAlert to server."
+				% self.fileName)
 
-		except Exception as e:
-			logging.exception("[%s]: Unable to send message for "
-				% self.fileName
-				+ "sensorAlert to server '%s'."
-				% self.pushServerAddress)
+			errorCode = self.push_service.send_msg(subject,
+				msg,
+				self.channel,
+				state=sensorAlert.state,
+				time_triggered=sensorAlert.timeReceived,
+				max_retries=1)
 
-			# Return False in order to retry again to send the message.
-			return False
+			if errorCode == ErrorCodes.NO_ERROR:
+				logging.debug("[%s] Sending message successful."
+					% self.fileName)
+				break
 
-		logging.debug("[%s] Received response: '%s'."
-				% (self.fileName, responseStr))
-
-		response = None
-		try:
-			response = json.loads(responseStr)
-			if not "Code" in response.keys():
-				raise ValueError("Response does not have key 'Code'")
-
-		except Exception as e:
-			logging.exception("[%s]: Received illegal message from server "
-				% self.fileName
-				+ "'%s' with content: '%s'."
-				% self.pushServerAddress, responseStr)
-
-			# Return True in order to NOT retry to send the message.
-			return True
-
-		if response["Code"] == ErrorCodes.NO_ERROR:
-
-			logging.info("[%s]: Message for sensorAlert successfully "
-				% self.fileName
-				+ "transmitted.")
-			return True
-
-		elif response["Code"] in self.retryCodes:
-
-			logging.error("[%s]: Received error code %d. "
-				% (self.fileName, response["Code"])
-				+ "We retry to send the message.")
-			return False
-
-		elif response["Code"] in self.notRetryCodes:
-
-			logging.error("[%s]: Received error code %d. "
-				% (self.fileName, response["Code"])
-				+ "We do not retry to send the message.")
-			return True
-
-		logging.error("[%s]: Received unknown error code %d. "
-			% (self.fileName, response["Code"])
-			+ "We do not retry to send the message.")
-
-		# If we reach this point, we have an unknown case and we do not attempt
-		# to resend the message.
-		return True
-
-
-	# Truncates the message and subject to fit in a notification message.
-	def _truncToSize(self, subject, message):
-		lenJsonSbj = len(json.dumps(subject))
-		lenSbj = len(subject)
-		lenJsonMsg = len(json.dumps(message))
-		lenMsg = len(message)
-
-		# Consider json encoding (characters like \n need two characters).
-		if (lenJsonSbj + lenJsonMsg) > self.sbjMsgSize:
-			numberToRemove = (lenJsonSbj + lenJsonMsg + 7) - self.sbjMsgSize
-			if lenMsg > numberToRemove:
-				message = message[0:(lenMsg-numberToRemove)]
-				message += "*TRUNC*"
-			elif lenSbj > numberToRemove:
-				subject = subject[0:(lenSbj-numberToRemove)]
-				subject += "*TRUNC*"
 			else:
-				message = "*TRUNC*"
-				numberToRemove = numberToRemove - lenMsg + 7
-				subject = subject[0:(lenSbj-numberToRemove)]
-				subject += "*TRUNC*"
+				if errorCode == ErrorCodes.AUTH_ERROR:
+					logging.error("[%s] Unable to authenticate at server. "
+						% self.fileName
+						+ " Please check your credentials.")
 
-		return subject, message
+				elif errorCode == ErrorCodes.ILLEGAL_MSG_ERROR:
+					logging.error("[%s] Server replies that message is "
+						% self.fileName
+						+ "malformed.")
+
+				elif errorCode == ErrorCodes.VERSION_MISSMATCH:
+					logging.error("[%s] Used version is no longer used. "
+						% self.fileName
+						+ "Please update your AlertR instance.")
+
+				else:
+					logging.error("[%s] Server responded with error '%d'."
+						% (self.fileName, errorCode))
+
+			# Only retry sending message if we can recover from error.
+			if errorCode not in self.retryCodes:
+				logging.error("[%s]: Do not retry to send message."
+					% self.fileName)
+				break
+
+			if ctr > self.pushRetries:
+				logging.error("[%s]: Tried to send message for %d times. "
+					% (self.fileName, ctr)
+					+ "Giving up.")
+				break
+			
+			logging.info("[%s] Retrying to send notification to "
+				% self.fileName
+				+ "channel '%s' in %d seconds."
+				% (self.channel, self.pushRetryTimeout))
+
+			time.sleep(self.pushRetryTimeout)
 
 
 	# this function is called once when the alert client has connected itself
@@ -357,51 +203,20 @@ class PushAlert(_Alert):
 		# set the state of the alert to "not triggered"
 		self.triggered = False
 
-		# Create an encryption key from the secret.
-		sha256 = hashlib.sha256()
-		sha256.update(self.encSecret)
-		self.key = sha256.digest()
-
 		with open(self.templateFile, 'r') as fp:
 			self.msgText = fp.read()
+
+		self.push_service = LightweightPush(self.username,
+			self.password, self.encSecret)
 
 
 	def triggerAlert(self, sensorAlert):
 
 		tempMsg = self._replaceWildcards(sensorAlert, self.msgText)
 		tempSbj = self._replaceWildcards(sensorAlert, self.subject)
-		oldSize = len(tempMsg) + len(tempSbj)
-		tempSbj, tempMsg = self._truncToSize(tempSbj, tempMsg)
-		newSize = len(tempMsg) + len(tempSbj)
 
-		if oldSize != newSize:
-			logging.info("[%s] Truncated message size from %d to %d."
-				% (self.fileName, oldSize, newSize))
-
-		# Send message to push server.
-		while True:
-
-			# Create payload for the message.
-			payload = json.dumps( {
-				"sbj": tempSbj, # Subject
-				"msg": tempMsg, # Message
-				"tt": sensorAlert.timeReceived, # Time Triggered
-				"ts": int(time.time()), # Time Sent
-				"is_sa": True, # Is SensorAlert
-				"st": sensorAlert.state # State
-				} )
-
-			preparedPayload = self._prepareMessage(payload)
-
-			if self._sendMessage(preparedPayload):
-				break
-
-			logging.info("[%s] Retrying to send notification to channel '%s' "
-					% (self.fileName, self.channel)
-					+ "in %d seconds."
-					% self.pushRetryTimeout)
-
-			time.sleep(self.pushRetryTimeout)
+		threading.Thread(target=self._sendMessage,
+			args=(tempSbj, tempMsg, sensorAlert))
 
 
 	def stopAlert(self, sensorAlert):
