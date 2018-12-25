@@ -220,8 +220,9 @@ class PushAlert(_Alert):
 		tempMsg = self._replaceWildcards(sensorAlert, self.msgText)
 		tempSbj = self._replaceWildcards(sensorAlert, self.subject)
 
-		threading.Thread(target=self._sendMessage,
-			args=(tempSbj, tempMsg, sensorAlert))
+		thread = threading.Thread(target=self._sendMessage,
+									args=(tempSbj, tempMsg, sensorAlert))
+		thread.start()
 
 
 	def stopAlert(self, sensorAlert):
