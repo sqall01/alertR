@@ -153,7 +153,7 @@ class PushAlert(_Alert):
 				max_retries=1)
 
 			if errorCode == ErrorCodes.NO_ERROR:
-				logging.debug("[%s] Sending message successful."
+				logging.info("[%s] Sending message successful."
 					% self.fileName)
 				break
 
