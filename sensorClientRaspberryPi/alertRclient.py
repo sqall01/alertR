@@ -170,7 +170,6 @@ if __name__ == '__main__':
 					"triggerAlert"]).upper() == "TRUE")
 				sensor.triggerAlertNormal = (str(item.find("general").attrib[
 					"triggerAlertNormal"]).upper() == "TRUE")
-				sensor.triggerState = 1
 
 				sensor.alertLevels = list()
 				for alertLevelXml in item.iterfind("alertLevel"):
@@ -180,6 +179,11 @@ if __name__ == '__main__':
 				sensor.gpioPin = int(item.find("gpio").attrib["gpioPin"])
 				sensor.triggerState = int(item.find("gpio").attrib[
 					"triggerState"])
+				sensor.thresStateCtr = int(item.find("gpio").attrib[
+					"stateCounter"])
+
+				if sensor.thresStateCtr <= 0:
+					raise ValueError("State counter has to be greater than 0.")
 
 			elif sensorType == "interrupt".upper():
 
