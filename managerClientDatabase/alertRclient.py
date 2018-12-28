@@ -308,13 +308,15 @@ if __name__ == '__main__':
 		serverThread.start()
 
 		# only start version informer if the update check is activated
-		logging.info("[%s] Starting version informer thread." % fileName)
-		globalData.versionInformer = VersionInformer(updateServer, updatePort,
-			updateLocation, updateCaFile, updateInterval, globalData)
-		# set thread to daemon
-		# => threads terminates when main thread terminates
-		globalData.versionInformer.daemon = True
-		globalData.versionInformer.start()
+		if updateActivated:
+			logging.info("[%s] Starting version informer thread." % fileName)
+			globalData.versionInformer = VersionInformer(updateServer,
+				updatePort, updateLocation, updateCaFile, updateInterval,
+				globalData)
+			# set thread to daemon
+			# => threads terminates when main thread terminates
+			globalData.versionInformer.daemon = True
+			globalData.versionInformer.start()
 
 	logging.info("[%s] Client started." % fileName)
 

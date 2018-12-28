@@ -1,3 +1,10 @@
+## 0.501-2
+
+Features:
+
+* Fixed problem with starting the version fetching process even if updates are deactivated.
+
+
 ## 0.501-1
 
 Features:
