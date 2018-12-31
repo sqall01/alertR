@@ -1,3 +1,10 @@
+## 0.503-0
+
+Features:
+
+* Counter for state reads for the PollingSensor in order to compensate insufficiently isolated wiring.
+
+
 ## 0.502-1
 
 Features:

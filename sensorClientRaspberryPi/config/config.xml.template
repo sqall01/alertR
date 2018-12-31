@@ -5,7 +5,7 @@
 	please rename this template to "config.xml" if you want to use it
 	for the client
 -->
-<config version="0.502">
+<config version="0.503">
 
 	<!--
 		in this section general options are configured
@@ -288,11 +288,31 @@
 					the alert system uses for its communication:
 					state = 0 => not triggered
 					state = 1 => triggered
+				stateCounter - Number of times the state has to be polled with
+					the same value (LOW or HIGH) before it counts as a state
+					change for the sensor (usually the state change occurs
+					directly when the state is read from the GPIO). This can
+					be used if your wiring is not sufficiently isolated
+					and a short change to LOW or HIGH can occur. The client
+					polls the state of the GPIO around every 0.5 seconds and
+					when a short change to LOW/HIGH occurs, the state of
+					the sensor is directly changed (which can lead to a
+					false alarm). When this value is set to a greater number
+					than 1, the polled state of the GPIO has to be the same
+					state (LOW or HIGH) for the configured number of times
+					before it is considered as a valid state change for the
+					sensor. For example, if it is set to 3,
+					the GPIO has to have the state HIGH for three
+					consecutive reads before a sensor alarm is triggered.
+					However, this also means that a delay of around 1.5 seconds
+					occurs before a sensor alarm is triggered (3 times the
+					0.5 seconds of the polling round).
 			-->
 			<gpio
 				type="polling"
 				gpioPin="24"
-				triggerState="1" />
+				triggerState="1"
+				stateCounter="2" />
 
 		</sensor>
 

@@ -143,6 +143,11 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 		# pin number and not the gpio number)
 		self.gpioPin = None
 
+		# The counter of the state reads used to verify that the state
+		# is read x times before it is actually changed.
+		self.currStateCtr = 0
+		self.thresStateCtr = None
+
 
 	def initializeSensor(self):
 		self.hasLatestData = False
@@ -152,6 +157,7 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 		GPIO.setmode(GPIO.BOARD)
 		GPIO.setup(self.gpioPin, GPIO.IN)
 		self.state = GPIO.input(self.gpioPin)
+		self.tempState = self.state
 
 		return True
 
@@ -161,8 +167,15 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
 
 	def updateState(self):
-		# read current state of the gpio
-		self.state = GPIO.input(self.gpioPin)
+
+		# Set state only if threshold of reads with the same state is reached.
+		currState = GPIO.input(self.gpioPin)
+		if currState != self.state:
+			self.currStateCtr += 1
+			if self.currStateCtr >= self.thresStateCtr:
+				self.state = currState
+		else:
+			self.currStateCtr = 0
 
 
 	def forceSendAlert(self):
