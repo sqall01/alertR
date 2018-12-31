@@ -470,6 +470,9 @@ if __name__ == '__main__':
 	# Get new instance information.
 	newInstanceInfo = updater.getInstanceInformation()
 
+	logging.info("[%s]: Newest version available: %.3f-%d." %
+		fileName, updater.newestVersion, updater.newestRev)
+
 	# check if the received version is newer than the current one
 	if (updater.newestVersion > globalData.version or
 		(updater.newestRev > globalData.rev
