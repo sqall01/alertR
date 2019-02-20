@@ -22,14 +22,6 @@ from localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
 # internal abstract class for new storage backends
 class _Storage():
 
-	# creates the database (should only be called if the database
-	# does not exist)
-	#
-	# no return value but raise exception if it fails
-	def createStorage(self, logger=None):
-		raise NotImplemented("Function not implemented yet.")
-
-
 	# checks the version of the server and the version in the database
 	# and clears every compatibility issue
 	#
@@ -348,6 +340,7 @@ class Sqlite(_Storage):
 		# version of server
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
+		self.dbVersion = self.globalData.dbVersion
 
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
@@ -368,7 +361,8 @@ class Sqlite(_Storage):
 			self.conn = sqlite3.connect(self.storagePath,
 				check_same_thread=False)
 			self.cursor = self.conn.cursor()
-			self.createStorage()
+			uniqueID = self._generateUniqueId()
+			self._createStorage(uniqueID)
 		else:
 			self.conn = sqlite3.connect(self.storagePath,
 				check_same_thread=False)
@@ -765,6 +759,11 @@ class Sqlite(_Storage):
 		self.cursor.execute("INSERT INTO internals ("
 			+ "type, "
 			+ "value) VALUES (?, ?)", ("version", self.version))
+
+		# insert db version of server
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (?, ?)", ("dbversion", self.dbVersion))
 
 		# insert unique id
 		self.cursor.execute("INSERT INTO internals ("
@@ -1250,19 +1249,26 @@ class Sqlite(_Storage):
 		# get version from the current database
 		self.cursor.execute("SELECT value FROM internals "
 			+ "WHERE type = ?",
-			("version", ))
+			("dbversion", ))
 		result = self.cursor.fetchall()
 
-		# if the versions are not compatible
-		# => delete old database schema
-		if float(result[0][0]) != self.version:
+		# In case the current database does not have any db version
+		# set it.
+		if result:
+			currDbVersion = int(result[0][0])
+		else:
+			currDbVersion = -1
 
-			logger.info("[%s]: Server version "
+		# If the versions are not compatible
+		# => update database schema.
+		if currDbVersion < self.dbVersion:
+
+			logger.info("[%s]: Needed database version "
 				% self.fileName
-				+ "'%.3f' not compatible "
-				% self.version
-				+ "with database version '%.3f'. "
-				% float(result[0][0])
+				+ "'%d' not compatible "
+				% self.dbVersion
+				+ "with current database layout version '%d'. "
+				% currDbVersion
 				+ "Updating database.")
 
 			# get old uniqueId to keep it
@@ -1278,24 +1284,13 @@ class Sqlite(_Storage):
 			# commit all changes
 			self.conn.commit()
 
-		self._releaseLock(logger)
-
-
-	# creates the database (should only be called if the database
-	# does not exist)
-	#
-	# no return value but raise exception if it fails
-	def createStorage(self, logger=None):
-
-		# Set logger instance to use.
-		if not logger:
-			logger = self.logger
-
-		self._acquireLock(logger)
-
-		uniqueID = self._generateUniqueId()
-
-		self._createStorage(uniqueID)
+		# Raise an exception if database layout version
+		# is newer than the one we need.
+		elif currDbVersion > self.dbVersion:
+			raise ValueError("Current database layout version ('%d') "
+				% currDbVersion
+				+ "newer than the one this server uses ('%d')."
+				% self.dbVersion)
 
 		self._releaseLock(logger)
 
@@ -3714,6 +3709,9 @@ class Mysql(_Storage):
 
 	def __init__(self, host, port, database, username, password, globalData):
 
+		# import the needed package
+		import MySQLdb
+
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
 
@@ -3725,6 +3723,7 @@ class Mysql(_Storage):
 		# version of server
 		self.version = self.globalData.version
 		self.rev = self.globalData.rev
+		self.dbVersion = self.globalData.dbVersion
 
 		# needed mysql parameters
 		self.host = host
@@ -3742,53 +3741,17 @@ class Mysql(_Storage):
 		# connect to the database
 		self._openConnection()
 
-		# check if alert system tables exist already
-		# if not => create them
+		# Check if AlertR tables exist already
+		# if not => create them.
 		self.cursor.execute("SHOW TABLES LIKE 'internals'")
 		internalsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'options'")
-		optionsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'nodes'")
-		nodesResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensors'")
-		sensorsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataInt'")
-		sensorsDataIntResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensorsDataFloat'")
-		sensorsDataFloatResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
-		sensorsAlertLevelsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
-		sensorAlertsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataInt'")
-		sensorAlertsDataIntResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataFloat'")
-		sensorAlertsDataFloatResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'alerts'")
-		alertsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'alertsAlertLevels'")
-		alertsAlertLevelsResult = self.cursor.fetchall()
-		self.cursor.execute("SHOW TABLES LIKE 'managers'")
-		managersResult = self.cursor.fetchall()
 
 		# close connection to the database
 		self._closeConnection()
 
-		# if one table does not exist
-		# => create all tables
-		if (not internalsResult
-			or not optionsResult
-			or not nodesResult
-			or not sensorsResult
-			or not sensorsDataIntResult
-			or not sensorsDataFloatResult
-			or not sensorsAlertLevelsResult
-			or not sensorAlertsResult
-			or not sensorAlertsDataIntResult
-			or not sensorAlertsDataFloatResult
-			or not alertsResult
-			or not alertsAlertLevelsResult
-			or not managersResult):
+		# If table does not exist
+		# => create all tables.
+		if not internalsResult:
 
 			self._openConnection()
 			uniqueID = self._getUniqueID()
@@ -3797,12 +3760,11 @@ class Mysql(_Storage):
 
 			# If we already have a uniqueID, create storage with the same
 			# uniqueID.
-			if uniqueID:
-				self._openConnection()
-				self._createStorage(uniqueID)
-				self._closeConnection()
-			else:
-				self.createStorage()
+			if uniqueID is None:
+				uniqueID = self._generateUniqueId()
+			self._openConnection()
+			self._createStorage(uniqueID)
+			self._closeConnection()
 
 		# check if the versions are compatible
 		else:
@@ -3817,9 +3779,6 @@ class Mysql(_Storage):
 		# Set logger instance to use.
 		if not logger:
 			logger = self.logger
-
-		# import the needed package
-		import MySQLdb
 
 		currentTry = 0
 		while True:
@@ -4240,6 +4199,11 @@ class Mysql(_Storage):
 		self.cursor.execute("INSERT INTO internals ("
 			+ "type, "
 			+ "value) VALUES (%s, %s)", ("version", self.version))
+
+		# insert db version of server
+		self.cursor.execute("INSERT INTO internals ("
+			+ "type, "
+			+ "value) VALUES (%s, %s)", ("dbversion", self.dbVersion))
 
 		# insert unique id
 		self.cursor.execute("INSERT INTO internals ("
@@ -4728,19 +4692,26 @@ class Mysql(_Storage):
 		# get version from the current database
 		self.cursor.execute("SELECT value FROM internals "
 			+ "WHERE type = %s",
-			("version", ))
+			("dbversion", ))
 		result = self.cursor.fetchall()
 
-		# if the versions are not compatible
-		# => delete old database schema
-		if float(result[0][0]) != self.version:
+		# In case the current database does not have any db version
+		# set it.
+		if result:
+			currDbVersion = int(result[0][0])
+		else:
+			currDbVersion = -1
 
-			logger.info("[%s]: Server version "
+		# If the versions are not compatible
+		# => update database schema.
+		if currDbVersion < self.dbVersion:
+
+			logger.info("[%s]: Needed database version "
 				% self.fileName
-				+ "'%.3f' not compatible "
+				+ "'%d' not compatible "
 				% self.version
-				+ "with database version '%.3f'. "
-				% float(result[0][0])
+				+ "with current database layout version '%d'. "
+				% int(result[0][0])
 				+ "Updating database.")
 
 			# get old uniqueId to keep it
@@ -4756,30 +4727,13 @@ class Mysql(_Storage):
 			# commit all changes
 			self.conn.commit()
 
-		# close connection to the database
-		self._closeConnection()
-
-		self._releaseLock(logger)
-
-
-	# creates the database (should only be called if the database
-	# does not exist)
-	#
-	# no return value but raise exception if it fails
-	def createStorage(self, logger=None):
-
-		# Set logger instance to use.
-		if not logger:
-			logger = self.logger
-
-		self._acquireLock(logger)
-
-		# connect to the database
-		self._openConnection(logger)
-
-		uniqueID = self._generateUniqueId()
-
-		self._createStorage(uniqueID)
+		# Raise an exception if database layout version
+		# is newer than the one we need.
+		elif currDbVersion > self.dbVersion:
+			raise ValueError("Current database layout version ('%d') "
+				% currDbVersion
+				+ "newer than the one this server uses ('%d')."
+				% self.dbVersion)
 
 		# close connection to the database
 		self._closeConnection()

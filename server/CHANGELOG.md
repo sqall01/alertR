@@ -1,3 +1,9 @@
+## 0.504-1
+
+Features:
+
+* Introducing database layout version in order to make updates easier.
+
 ## 0.504
 
 Features:
