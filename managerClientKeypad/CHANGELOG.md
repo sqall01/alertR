@@ -1,3 +1,10 @@
+## 0.502-2
+
+Features:
+
+* Replaced sound files.
+
+
 ## 0.502-1
 
 Features:
