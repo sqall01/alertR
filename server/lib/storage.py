@@ -15,6 +15,7 @@ import socket
 import struct
 import hashlib
 import json
+import importlib
 from localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
 	SensorData, SensorDataType, Option
 
@@ -3709,11 +3710,11 @@ class Mysql(_Storage):
 
 	def __init__(self, host, port, database, username, password, globalData):
 
-		# import the needed package
-		import MySQLdb
-
 		# file nme of this file (used for logging)
 		self.fileName = os.path.basename(__file__)
+
+		# Import the needed package.
+		self.MySQLdb = importlib.import_module("MySQLdb")
 
 		self.globalData = globalData
 		self.logger = self.globalData.logger
@@ -3783,8 +3784,11 @@ class Mysql(_Storage):
 		currentTry = 0
 		while True:
 			try:
-				self.conn = MySQLdb.connect(host=self.host, port=self.port,
-					user=self.username,	passwd=self.password, db=self.database)
+				self.conn = self.MySQLdb.connect(host=self.host,
+					port=self.port,
+					user=self.username,
+					passwd=self.password,
+					db=self.database)
 
 				self.cursor = self.conn.cursor()
 				break
@@ -4709,9 +4713,9 @@ class Mysql(_Storage):
 			logger.info("[%s]: Needed database version "
 				% self.fileName
 				+ "'%d' not compatible "
-				% self.version
+				% self.dbVersion
 				+ "with current database layout version '%d'. "
-				% int(result[0][0])
+				% currDbVersion
 				+ "Updating database.")
 
 			# get old uniqueId to keep it
