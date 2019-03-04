@@ -190,6 +190,39 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 		return True
 
 
+	def _createFIFOFile(self):
+
+		# Create FIFO file.
+		while True:
+
+			# check if FIFO file exists
+			# => remove it if it does
+			if os.path.exists(self.fifoFile):
+				try:
+					os.remove(self.fifoFile)
+				except Exception as e:
+					logging.exception("[%s]: Could not delete "
+						% self.fileName
+						+ "FIFO file of sensor with id '%d'."
+						% self.id)
+					time.sleep(5)
+					continue
+
+			# create a new FIFO file
+			try:
+				oldUmask = os.umask(self.umask)
+				os.mkfifo(self.fifoFile)
+				os.umask(oldUmask)
+			except Exception as e:
+				logging.exception("[%s]: Could not create "
+					% self.fileName
+					+ "FIFO file of sensor with id '%d'."
+					% self.id)
+				time.sleep(5)
+				continue
+			break
+
+
 	def initializeSensor(self):
 		self.changeState = True
 		self.hasLatestData = False
@@ -239,35 +272,11 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
 	def run(self):
 
+		self._createFIFOFile()
+
 		while True:
 
-			# check if FIFO file exists
-			# => remove it if it does
-			if os.path.exists(self.fifoFile):
-				try:
-					os.remove(self.fifoFile)
-				except Exception as e:
-					logging.exception("[%s]: Could not delete "
-						% self.fileName
-						+ "FIFO file of sensor with id '%d'."
-						% self.id)
-					time.sleep(10)
-					continue
-
-			# create a new FIFO file
-			try:
-				oldUmask = os.umask(self.umask)
-				os.mkfifo(self.fifoFile)
-				os.umask(oldUmask)
-			except Exception as e:
-				logging.exception("[%s]: Could not create "
-					% self.fileName
-					+ "FIFO file of sensor with id '%d'."
-					% self.id)
-				time.sleep(10)
-				continue
-
-			# read FIFO for data
+			# Read FIFO for data.
 			data = ""
 			try:
 				fifo = open(self.fifoFile, "r")
@@ -278,7 +287,11 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 					% self.fileName
 					+ "FIFO file of sensor with id '%d'."
 					% self.id)
-				time.sleep(10)
+
+				# Create a new FIFO file.
+				self._createFIFOFile()
+
+				time.sleep(5)
 				continue
 
 			logging.debug("[%s]: Received data '%s' from "
