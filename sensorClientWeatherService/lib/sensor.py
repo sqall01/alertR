@@ -895,8 +895,10 @@ class WundergroundDataCollector(threading.Thread):
 					response = conn.getresponse()
 
 					# Extract data.
+					recvData = ""
 					if response.status == 200:
-						jsonData =  json.loads(response.read())
+						recvData = response.read()
+						jsonData =  json.loads(recvData)
 
 						humidity = int(jsonData["current_observation"][
 							"relative_humidity"].replace("%", ""))
@@ -1016,6 +1018,28 @@ class WundergroundDataCollector(threading.Thread):
 						self.collectedData[country][city]["humidity"] \
 							= -998
 						self.collectedData[country][city]["temp"] \
+							= -998
+						self.collectedData[country][city][
+							"forecast"][0]["tempHigh"] = float(-998)
+						self.collectedData[country][city][
+							"forecast"][0]["tempLow"] = float(-998)
+						self.collectedData[country][city][
+							"forecast"][0]["rain"] = -998
+						self.collectedData[country][city][
+							"forecast"][1]["tempHigh"] = float(-998)
+						self.collectedData[country][city][
+							"forecast"][1]["tempLow"] = float(-998)
+						self.collectedData[country][city][
+							"forecast"][1]["rain"] = -998
+						self.collectedData[country][city][
+							"forecast"][2]["tempHigh"] = float(-998)
+						self.collectedData[country][city][
+							"forecast"][2]["tempLow"] = float(-998)
+						self.collectedData[country][city][
+							"forecast"][2]["rain"] = -998
+						self.collectedData[country][city]["humidity"] \
+							= -998
+						self.collectedData[country][city]["temp"] \
 							= float(-998)
 						self.updateLock.release()
 
@@ -1024,11 +1048,31 @@ class WundergroundDataCollector(threading.Thread):
 						% self.fileName
 						+ "for %s in %s."
 						% (city, country))
+					logging.error("[%s]: Received data from server: '%s'."
+						% (self.fileName, recvData))
 					self.updateLock.acquire()
 					self.collectedData[country][city]["humidity"] \
 						= -999
 					self.collectedData[country][city]["temp"] \
 						= float(-999)
+					self.collectedData[country][city][
+						"forecast"][0]["tempHigh"] = float(-999)
+					self.collectedData[country][city][
+						"forecast"][0]["tempLow"] = float(-999)
+					self.collectedData[country][city][
+						"forecast"][0]["rain"] = -999
+					self.collectedData[country][city][
+						"forecast"][1]["tempHigh"] = float(-999)
+					self.collectedData[country][city][
+						"forecast"][1]["tempLow"] = float(-999)
+					self.collectedData[country][city][
+						"forecast"][1]["rain"] = -999
+					self.collectedData[country][city][
+						"forecast"][2]["tempHigh"] = float(-999)
+					self.collectedData[country][city][
+						"forecast"][2]["tempLow"] = float(-999)
+					self.collectedData[country][city][
+						"forecast"][2]["rain"] = -999
 					self.updateLock.release()
 
 			# Sleep until next update cycle.

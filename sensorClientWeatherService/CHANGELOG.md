@@ -1,3 +1,10 @@
+## 0.502-2
+
+Features:
+
+* Added further logging in case of error.
+
+
 ## 0.502-1
 
 Features:
