@@ -2,7 +2,7 @@
 
 Features:
 
-* Added new provider (DarkSky) because of problems with wunderground as provider (deactivation of API?)
+* Added new provider (DarkSky) because of problems with wunderground as provider (deactivation of API?).
 
 
 ## 0.502-2
