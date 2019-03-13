@@ -9,9 +9,10 @@
 
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
-from sensor import WundergroundDataCollector, WundergroundTempPollingSensor, \
-	WundergroundHumidityPollingSensor, WundergroundForecastTempPollingSensor, \
-	WundergroundForecastRainPollingSensor, SensorExecuter
+from sensor import TempPollingSensor, \
+    HumidityPollingSensor, ForecastTempPollingSensor, \
+    ForecastRainPollingSensor, SensorExecuter
 from update import Updater
 from globalData import GlobalData
 from localObjects import Ordering
+from provider import WundergroundDataCollector, DarkskyDataCollector
