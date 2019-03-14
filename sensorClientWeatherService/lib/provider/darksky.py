@@ -27,6 +27,10 @@ class DarkskyDataCollector(DataCollector):
         # collectedData[<lon>][<lat>]["temp"/"humidity"]
         self.collectedData = dict()
 
+        # Number of failed updates we tolerate before we change
+        # the data to signal the problem.
+        self.maxToleratedFails = 100
+
     def addLocation(self, country, city, lon, lat):
 
         # Check if location is already registered.
@@ -93,6 +97,7 @@ class DarkskyDataCollector(DataCollector):
         logging.info("[%s]: Starting DarkSky data collector thread."
             % self.fileName)
 
+        failCtr = 0
         while True:
 
             for locationTuple in self.locations.keys():
@@ -140,6 +145,9 @@ class DarkskyDataCollector(DataCollector):
                             self.collectedData[lon][lat]["forecast"][2]["tempHigh"] = forecastDay2TempHigh
                             self.collectedData[lon][lat]["forecast"][2]["tempLow"] = forecastDay2TempLow
                             self.collectedData[lon][lat]["forecast"][2]["rain"] = forecastDay2Rain
+
+                        # Reset fail count.
+                        failCtr = 0
 
                         logging.info("[%s]: Received new humidity data "
                             % self.fileName
@@ -196,24 +204,27 @@ class DarkskyDataCollector(DataCollector):
                             % (city, country))
 
                     else:
+                        failCtr += 1
                         logging.error("[%s]: Received response code %d "
                             % (self.fileName, r.status_code)
                             + "from DarkSky.")
 
-                        with self.updateLock:
-                            self.collectedData[lon][lat]["humidity"]  = -998
-                            self.collectedData[lon][lat]["temp"]  = -998
-                            self.collectedData[lon][lat]["forecast"][0]["tempHigh"] = float(-998)
-                            self.collectedData[lon][lat]["forecast"][0]["tempLow"] = float(-998)
-                            self.collectedData[lon][lat]["forecast"][0]["rain"] = -998
-                            self.collectedData[lon][lat]["forecast"][1]["tempHigh"] = float(-998)
-                            self.collectedData[lon][lat]["forecast"][1]["tempLow"] = float(-998)
-                            self.collectedData[lon][lat]["forecast"][1]["rain"] = -998
-                            self.collectedData[lon][lat]["forecast"][2]["tempHigh"] = float(-998)
-                            self.collectedData[lon][lat]["forecast"][2]["tempLow"] = float(-998)
-                            self.collectedData[lon][lat]["forecast"][2]["rain"] = -998
+                        if failCtr >= self.maxToleratedFails:
+                            with self.updateLock:
+                                self.collectedData[lon][lat]["humidity"]  = -998
+                                self.collectedData[lon][lat]["temp"]  = -998
+                                self.collectedData[lon][lat]["forecast"][0]["tempHigh"] = float(-998)
+                                self.collectedData[lon][lat]["forecast"][0]["tempLow"] = float(-998)
+                                self.collectedData[lon][lat]["forecast"][0]["rain"] = -998
+                                self.collectedData[lon][lat]["forecast"][1]["tempHigh"] = float(-998)
+                                self.collectedData[lon][lat]["forecast"][1]["tempLow"] = float(-998)
+                                self.collectedData[lon][lat]["forecast"][1]["rain"] = -998
+                                self.collectedData[lon][lat]["forecast"][2]["tempHigh"] = float(-998)
+                                self.collectedData[lon][lat]["forecast"][2]["tempLow"] = float(-998)
+                                self.collectedData[lon][lat]["forecast"][2]["rain"] = -998
 
                 except Exception as e:
+                    failCtr += 1
                     logging.exception("[%s]: Could not get weather data "
                         % self.fileName
                         + "for %s in %s."
@@ -221,18 +232,20 @@ class DarkskyDataCollector(DataCollector):
                     if r is not None:
                         logging.error("[%s]: Received data from server: '%s'."
                             % (self.fileName, r.text))
-                    with self.updateLock:
-                        self.collectedData[lon][lat]["humidity"] = -999
-                        self.collectedData[lon][lat]["temp"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][0]["tempHigh"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][0]["tempLow"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][0]["rain"] = -999
-                        self.collectedData[lon][lat]["forecast"][1]["tempHigh"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][1]["tempLow"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][1]["rain"] = -999
-                        self.collectedData[lon][lat]["forecast"][2]["tempHigh"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][2]["tempLow"] = float(-999)
-                        self.collectedData[lon][lat]["forecast"][2]["rain"] = -999
+
+                    if failCtr >= self.maxToleratedFails:
+                        with self.updateLock:
+                            self.collectedData[lon][lat]["humidity"] = -999
+                            self.collectedData[lon][lat]["temp"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][0]["tempHigh"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][0]["tempLow"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][0]["rain"] = -999
+                            self.collectedData[lon][lat]["forecast"][1]["tempHigh"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][1]["tempLow"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][1]["rain"] = -999
+                            self.collectedData[lon][lat]["forecast"][2]["tempHigh"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][2]["tempLow"] = float(-999)
+                            self.collectedData[lon][lat]["forecast"][2]["rain"] = -999
 
             # Sleep until next update cycle.
             time.sleep(self.interval)
