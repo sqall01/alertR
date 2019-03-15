@@ -31,7 +31,7 @@ class WundergroundDataCollector(DataCollector):
 
         # Number of failed updates we tolerate before we change
         # the data to signal the problem.
-        self.maxToleratedFails = 100
+        self.maxToleratedFails = None
 
     def addLocation(self, country, city, lon, lat):
         tempCountry = country.lower()
@@ -128,6 +128,9 @@ class WundergroundDataCollector(DataCollector):
 
         logging.info("[%s]: Starting Wunderground data collector thread."
             % self.fileName)
+
+        # Tolerate failed updates for at least 12 hours.
+        self.maxToleratedFails = int(43200 / self.interval) + 1
 
         failCtr = 0
         while True:
