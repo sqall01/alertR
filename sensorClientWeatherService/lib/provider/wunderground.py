@@ -39,8 +39,7 @@ class WundergroundDataCollector(DataCollector):
 
         # Check if location is already registered.
         for location in self.locations:
-            if (location[0] == tempCountry
-                and location[1] == tempCity):
+            if location[0] == tempCountry and location[1] == tempCity:
                 return
 
         # check if location is already in locations list
@@ -55,14 +54,10 @@ class WundergroundDataCollector(DataCollector):
             self.collectedData[tempCountry][tempCity]["humidity"] = -1000
             self.collectedData[tempCountry][tempCity]["forecast"] = list()
             for i in range(3):
-                self.collectedData[tempCountry][tempCity][
-                    "forecast"].append(dict())
-                self.collectedData[tempCountry][tempCity][
-                    "forecast"][i]["tempHigh"] = float(-1000)
-                self.collectedData[tempCountry][tempCity][
-                    "forecast"][i]["tempLow"] = float(-1000)
-                self.collectedData[tempCountry][tempCity][
-                    "forecast"][i]["rain"] = -1000
+                self.collectedData[tempCountry][tempCity]["forecast"].append(dict())
+                self.collectedData[tempCountry][tempCity]["forecast"][i]["tempHigh"] = float(-1000)
+                self.collectedData[tempCountry][tempCity]["forecast"][i]["tempLow"] = float(-1000)
+                self.collectedData[tempCountry][tempCity]["forecast"][i]["rain"] = -1000
 
     def getForecastTemperatureLow(self, country, city, lon, lat, day):
         tempCountry = country.lower()
@@ -72,11 +67,8 @@ class WundergroundDataCollector(DataCollector):
         if day < 0 and day > 2:
             return float(-1001)
 
-        self.updateLock.acquire()
-        temp = self.collectedData[tempCountry][tempCity][
-            "forecast"][day]["tempLow"]
-        self.updateLock.release()
-        return temp
+        with self.updateLock:
+            return self.collectedData[tempCountry][tempCity]["forecast"][day]["tempLow"]
 
     def getForecastTemperatureHigh(self, country, city, lon, lat, day):
         tempCountry = country.lower()
@@ -86,11 +78,8 @@ class WundergroundDataCollector(DataCollector):
         if day < 0 and day > 2:
             return float(-1001)
 
-        self.updateLock.acquire()
-        temp = self.collectedData[tempCountry][tempCity][
-            "forecast"][day]["tempHigh"]
-        self.updateLock.release()
-        return temp
+        with self.updateLock:
+            return self.collectedData[tempCountry][tempCity]["forecast"][day]["tempHigh"]
 
     def getForecastRain(self, country, city, lon, lat, day):
         tempCountry = country.lower()
@@ -100,29 +89,22 @@ class WundergroundDataCollector(DataCollector):
         if day < 0 and day > 2:
             return float(-1001)
 
-        self.updateLock.acquire()
-        temp = self.collectedData[tempCountry][tempCity][
-            "forecast"][day]["rain"]
-        self.updateLock.release()
-        return temp
+        with self.updateLock:
+            return self.collectedData[tempCountry][tempCity]["forecast"][day]["rain"]
 
     def getTemperature(self, country, city, lon, lat):
         tempCountry = country.lower()
         tempCity = city.lower()
 
-        self.updateLock.acquire()
-        temp = self.collectedData[tempCountry][tempCity]["temp"]
-        self.updateLock.release()
-        return temp
+        with self.updateLock:
+            return self.collectedData[tempCountry][tempCity]["temp"]
 
     def getHumidity(self, country, city, lon, lat):
         tempCountry = country.lower()
         tempCity = city.lower()
 
-        self.updateLock.acquire()
-        humidity = self.collectedData[tempCountry][tempCity]["humidity"]
-        self.updateLock.release()
-        return humidity
+        with self.updateLock:
+            return self.collectedData[tempCountry][tempCity]["humidity"]
 
     def run(self):
 
@@ -156,60 +138,39 @@ class WundergroundDataCollector(DataCollector):
                     if r.status_code == 200:
                         jsonData =  r.json()
 
-                        humidity = int(jsonData["current_observation"][
-                            "relative_humidity"].replace("%", ""))
+                        humidity = int(jsonData["current_observation"]["relative_humidity"].replace("%", ""))
                         temp = float(jsonData["current_observation"]["temp_c"])
-                        forecastDay0TempHigh = float(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][0]["high"]["celsius"])
-                        forecastDay0TempLow = float(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][0]["low"]["celsius"])
+                        forecastDay0TempHigh = float(jsonData["forecast"]["simpleforecast"][
+                                                     "forecastday"][0]["high"]["celsius"])
+                        forecastDay0TempLow = float(jsonData["forecast"]["simpleforecast"][
+                                                    "forecastday"][0]["low"]["celsius"])
                         forecastDay0Rain = int(jsonData["forecast"][
-                            "simpleforecast"]["forecastday"][0]["pop"])
-                        forecastDay1TempHigh = float(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][1]["high"]["celsius"])
-                        forecastDay1TempLow = float(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][1]["low"]["celsius"])
-                        forecastDay1Rain = int(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][1]["pop"])
-                        forecastDay2TempHigh = float(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][2]["high"]["celsius"])
-                        forecastDay2TempLow = float(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][2]["low"]["celsius"])
-                        forecastDay2Rain = int(
-                            jsonData["forecast"]["simpleforecast"][
-                            "forecastday"][2]["pop"])
+                                               "simpleforecast"]["forecastday"][0]["pop"])
+                        forecastDay1TempHigh = float(jsonData["forecast"]["simpleforecast"][
+                                                     "forecastday"][1]["high"]["celsius"])
+                        forecastDay1TempLow = float(jsonData["forecast"]["simpleforecast"][
+                                                    "forecastday"][1]["low"]["celsius"])
+                        forecastDay1Rain = int(jsonData["forecast"]["simpleforecast"][
+                                               "forecastday"][1]["pop"])
+                        forecastDay2TempHigh = float(jsonData["forecast"]["simpleforecast"][
+                                                     "forecastday"][2]["high"]["celsius"])
+                        forecastDay2TempLow = float(jsonData["forecast"]["simpleforecast"][
+                                                    "forecastday"][2]["low"]["celsius"])
+                        forecastDay2Rain = int(jsonData["forecast"]["simpleforecast"][
+                                               "forecastday"][2]["pop"])
 
-                        self.updateLock.acquire()
-                        self.collectedData[country][city]["humidity"] \
-                            = humidity
-                        self.collectedData[country][city]["temp"] \
-                            = temp
-                        self.collectedData[country][city][
-                            "forecast"][0]["tempHigh"] = forecastDay0TempHigh
-                        self.collectedData[country][city][
-                            "forecast"][0]["tempLow"] = forecastDay0TempLow
-                        self.collectedData[country][city][
-                            "forecast"][0]["rain"] = forecastDay0Rain
-                        self.collectedData[country][city][
-                            "forecast"][1]["tempHigh"] = forecastDay1TempHigh
-                        self.collectedData[country][city][
-                            "forecast"][1]["tempLow"] = forecastDay1TempLow
-                        self.collectedData[country][city][
-                            "forecast"][1]["rain"] = forecastDay1Rain
-                        self.collectedData[country][city][
-                            "forecast"][2]["tempHigh"] = forecastDay2TempHigh
-                        self.collectedData[country][city][
-                            "forecast"][2]["tempLow"] = forecastDay2TempLow
-                        self.collectedData[country][city][
-                            "forecast"][2]["rain"] = forecastDay2Rain
-                        self.updateLock.release()
+                        with self.updateLock:
+                            self.collectedData[country][city]["humidity"] = humidity
+                            self.collectedData[country][city]["temp"] = temp
+                            self.collectedData[country][city]["forecast"][0]["tempHigh"] = forecastDay0TempHigh
+                            self.collectedData[country][city]["forecast"][0]["tempLow"] = forecastDay0TempLow
+                            self.collectedData[country][city]["forecast"][0]["rain"] = forecastDay0Rain
+                            self.collectedData[country][city]["forecast"][1]["tempHigh"] = forecastDay1TempHigh
+                            self.collectedData[country][city]["forecast"][1]["tempLow"] = forecastDay1TempLow
+                            self.collectedData[country][city]["forecast"][1]["rain"] = forecastDay1Rain
+                            self.collectedData[country][city]["forecast"][2]["tempHigh"] = forecastDay2TempHigh
+                            self.collectedData[country][city]["forecast"][2]["tempLow"] = forecastDay2TempLow
+                            self.collectedData[country][city]["forecast"][2]["rain"] = forecastDay2Rain
 
                         # Reset fail count.
                         failCtr = 0
@@ -275,30 +236,18 @@ class WundergroundDataCollector(DataCollector):
                             + "from Wunderground.")
 
                         if failCtr >= self.maxToleratedFails:
-                            self.updateLock.acquire()
-                            self.collectedData[country][city]["humidity"] \
-                                = -998
-                            self.collectedData[country][city]["temp"] \
-                                = -998
-                            self.collectedData[country][city][
-                                "forecast"][0]["tempHigh"] = float(-998)
-                            self.collectedData[country][city][
-                                "forecast"][0]["tempLow"] = float(-998)
-                            self.collectedData[country][city][
-                                "forecast"][0]["rain"] = -998
-                            self.collectedData[country][city][
-                                "forecast"][1]["tempHigh"] = float(-998)
-                            self.collectedData[country][city][
-                                "forecast"][1]["tempLow"] = float(-998)
-                            self.collectedData[country][city][
-                                "forecast"][1]["rain"] = -998
-                            self.collectedData[country][city][
-                                "forecast"][2]["tempHigh"] = float(-998)
-                            self.collectedData[country][city][
-                                "forecast"][2]["tempLow"] = float(-998)
-                            self.collectedData[country][city][
-                                "forecast"][2]["rain"] = -998
-                            self.updateLock.release()
+                            with self.updateLock:
+                                self.collectedData[country][city]["humidity"] = -998
+                                self.collectedData[country][city]["temp"] = -998
+                                self.collectedData[country][city]["forecast"][0]["tempHigh"] = float(-998)
+                                self.collectedData[country][city]["forecast"][0]["tempLow"] = float(-998)
+                                self.collectedData[country][city]["forecast"][0]["rain"] = -998
+                                self.collectedData[country][city]["forecast"][1]["tempHigh"] = float(-998)
+                                self.collectedData[country][city]["forecast"][1]["tempLow"] = float(-998)
+                                self.collectedData[country][city]["forecast"][1]["rain"] = -998
+                                self.collectedData[country][city]["forecast"][2]["tempHigh"] = float(-998)
+                                self.collectedData[country][city]["forecast"][2]["tempLow"] = float(-998)
+                                self.collectedData[country][city]["forecast"][2]["rain"] = -998
 
                 except Exception as e:
                     failCtr += 1
@@ -307,34 +256,21 @@ class WundergroundDataCollector(DataCollector):
                         + "for %s in %s."
                         % (city, country))
                     if r is not None:
-                        logging.error("[%s]: Received data from server: '%s'."
-							% (self.fileName, r.text))
+                        logging.error("[%s]: Received data from server: '%s'." % (self.fileName, r.text))
 
                     if failCtr >= self.maxToleratedFails:
-                        self.updateLock.acquire()
-                        self.collectedData[country][city]["humidity"] \
-                            = -999
-                        self.collectedData[country][city]["temp"] \
-                            = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][0]["tempHigh"] = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][0]["tempLow"] = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][0]["rain"] = -999
-                        self.collectedData[country][city][
-                            "forecast"][1]["tempHigh"] = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][1]["tempLow"] = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][1]["rain"] = -999
-                        self.collectedData[country][city][
-                            "forecast"][2]["tempHigh"] = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][2]["tempLow"] = float(-999)
-                        self.collectedData[country][city][
-                            "forecast"][2]["rain"] = -999
-                        self.updateLock.release()
+                        with self.updateLock:
+                            self.collectedData[country][city]["humidity"] = -999
+                            self.collectedData[country][city]["temp"] = float(-999)
+                            self.collectedData[country][city]["forecast"][0]["tempHigh"] = float(-999)
+                            self.collectedData[country][city]["forecast"][0]["tempLow"] = float(-999)
+                            self.collectedData[country][city]["forecast"][0]["rain"] = -999
+                            self.collectedData[country][city]["forecast"][1]["tempHigh"] = float(-999)
+                            self.collectedData[country][city]["forecast"][1]["tempLow"] = float(-999)
+                            self.collectedData[country][city]["forecast"][1]["rain"] = -999
+                            self.collectedData[country][city]["forecast"][2]["tempHigh"] = float(-999)
+                            self.collectedData[country][city]["forecast"][2]["tempLow"] = float(-999)
+                            self.collectedData[country][city]["forecast"][2]["rain"] = -999
 
             # Sleep until next update cycle.
             time.sleep(self.interval)
