@@ -14,40 +14,40 @@ import os
 # values that are needed all over the client
 class GlobalData:
 
-	def __init__(self):
+    def __init__(self):
 
-		# version of the used client (and protocol)
-		self.version = 0.503
+        # version of the used client (and protocol)
+        self.version = 0.503
 
-		# revision of the used client
-		self.rev = 1
+        # revision of the used client
+        self.rev = 1
 
-		# name of this client
-		self.name = "AlertR Sensor Client Executer"
+        # name of this client
+        self.name = "AlertR Sensor Client Executer"
 
-		# the instance of this client
-		self.instance = "sensorClientExecuter"
+        # the instance of this client
+        self.instance = "sensorClientExecuter"
 
-		# interval in which a ping should be send when 
-		# no data was received/send
-		self.pingInterval = 30
+        # interval in which a ping should be send when 
+        # no data was received/send
+        self.pingInterval = 30
 
-		# type of this node/client
-		self.nodeType = "sensor"
+        # type of this node/client
+        self.nodeType = "sensor"
 
-		# path to the configuration file of the client
-		self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-			+ "/../config/config.xml"
+        # path to the configuration file of the client
+        self.configFile = os.path.dirname(os.path.abspath(__file__)) \
+            + "/../config/config.xml"
 
-		# instance of the email alerting object
-		self.smtpAlert = None
+        # instance of the email alerting object
+        self.smtpAlert = None
 
-		# this variable holds the object of the server communication
-		self.serverComm = None
+        # this variable holds the object of the server communication
+        self.serverComm = None
 
-		# list of all sensors that are managed by this client
-		self.sensors = list()
+        # list of all sensors that are managed by this client
+        self.sensors = list()
 
-		# Flag that indicates if this node is registered as persistent
-		# (0 or 1).
-		self.persistent = None
+        # Flag that indicates if this node is registered as persistent
+        # (0 or 1).
+        self.persistent = None

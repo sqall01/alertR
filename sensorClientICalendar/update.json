@@ -1,37 +1,37 @@
 {
 "files": [
-	"alertRclient.py",
-	"alertRupdate.py",
-	"CHANGELOG.md",
-	"config/config.xml.template",
-	"init.d_example/alertRsensorICalendar.service",
-	"init.d_example/alertRsensorICalendar.sh",
-	"lib/__init__.py",
-	"lib/client.py",
-	"lib/globalData.py",
-	"lib/localObjects.py",
-	"lib/sensor.py",
-	"lib/smtp.py",
-	"lib/update.py",
-	"README.md"
-	],
+    "alertRclient.py",
+    "alertRupdate.py",
+    "CHANGELOG.md",
+    "config/config.xml.template",
+    "init.d_example/alertRsensorICalendar.service",
+    "init.d_example/alertRsensorICalendar.sh",
+    "lib/__init__.py",
+    "lib/client.py",
+    "lib/globalData.py",
+    "lib/localObjects.py",
+    "lib/sensor.py",
+    "lib/smtp.py",
+    "lib/update.py",
+    "README.md"
+    ],
 "dependencies": {
-	"pip": [
-			{
-			"import": "requests",
-			"packet": "requests",
-			"version": "2.13.0"
-			},
-			{
-			"import": "icalendar",
-			"packet": "icalendar",
-			"version": "4.0.2"
-			},
-			{
-			"import": "dateutil",
-			"packet": "python-dateutil",
-			"version": "2.7.3"
-			}
-		]
-	}
+    "pip": [
+            {
+            "import": "requests",
+            "packet": "requests",
+            "version": "2.13.0"
+            },
+            {
+            "import": "icalendar",
+            "packet": "icalendar",
+            "version": "4.0.2"
+            },
+            {
+            "import": "dateutil",
+            "packet": "python-dateutil",
+            "version": "2.7.3"
+            }
+        ]
+    }
 }

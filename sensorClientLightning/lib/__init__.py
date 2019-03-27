@@ -10,6 +10,6 @@
 from client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
 from smtp import SMTPAlert
 from sensor import LightningmapSensor, \
-	LightningmapDataCollector, SensorExecuter
+    LightningmapDataCollector, SensorExecuter
 from update import Updater
 from globalData import GlobalData

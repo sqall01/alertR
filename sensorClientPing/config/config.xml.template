@@ -1,255 +1,255 @@
 <?xml version="1.0"?>
 
 <!--
-	this is a template configuration file
-	please rename this template to "config.xml" if you want to use it
-	for the client
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the client
 -->
 <config version="0.502">
 
-	<!--
-		in this section general options are configured
-	-->
-	<general>
+    <!--
+        in this section general options are configured
+    -->
+    <general>
 
-		<!--
-			the settings for the logfile
-			file - absolute path to the logfile
-			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-		-->
-		<log
-			file="/absolute/path/to/logfile.log"
-			level="INFO" />
+        <!--
+            the settings for the logfile
+            file - absolute path to the logfile
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            file="/absolute/path/to/logfile.log"
+            level="INFO" />
 
-		<!--
-			the settings for the server
-			host - location/address of the server
-			port - port that is used by the server
-			caFile - path to the CA file to check the correctness of the
-				used SSL connection
-		-->
-		<server
-			host="server.h4des.org"
-			port="12345"
-			caFile="/absolute/path/to/server_CA.pem" />
+        <!--
+            the settings for the server
+            host - location/address of the server
+            port - port that is used by the server
+            caFile - path to the CA file to check the correctness of the
+                used SSL connection
+        -->
+        <server
+            host="server.h4des.org"
+            port="12345"
+            caFile="/absolute/path/to/server_CA.pem" />
 
-		<!--
-			the settings for a client certificate
-			certificateRequired - sets if it is required for the client
-				to authenticate itself via a certificate or not
-				(if you have the alert system reachable from the internet
-				you should use client certificates)
-				("True" or "False")
-			certFile - path to the certificate file of the client
-				this is used for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-			keyFile - path to the key file of the client that is used
-				for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-		-->
-		<client
-			certificateRequired="True"
-			certFile="/absolute/path/to/client.crt"
-			keyFile="/absolute/path/to/client.key" />
+        <!--
+            the settings for a client certificate
+            certificateRequired - sets if it is required for the client
+                to authenticate itself via a certificate or not
+                (if you have the alert system reachable from the internet
+                you should use client certificates)
+                ("True" or "False")
+            certFile - path to the certificate file of the client
+                this is used for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+            keyFile - path to the key file of the client that is used
+                for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+        -->
+        <client
+            certificateRequired="True"
+            certFile="/absolute/path/to/client.crt"
+            keyFile="/absolute/path/to/client.key" />
 
-		<!--
-			user credentials of this client
-			(WARNING: have to be unique for each client or strange
-			behavior will happen)
-			username - the username
-			password - the password (thanks cpt obvious ...)
-		-->
-		<credentials
-			username="user"
-			password="pass" />
+        <!--
+            user credentials of this client
+            (WARNING: have to be unique for each client or strange
+            behavior will happen)
+            username - the username
+            password - the password (thanks cpt obvious ...)
+        -->
+        <credentials
+            username="user"
+            password="pass" />
 
-	</general>
-
-
-	<!--
-		in this section options for email alerts are configured
-	-->
-	<smtp>
-
-		<!--
-			the general settings of the email notifications
-			activated - are email alerts active? ("True" or "False")
-			fromAddr - email address from which this email should be sent
-			toAddr - email address to which the email should be sent
-		-->
-		<general
-			activated="True"
-			fromAddr="alertSystem@h4des.org"
-			toAddr="youraddress@somehost.de" />
-
-		<!--
-			the server settings of the email notifications
-			host - address of the used smtp server
-				(only 127.0.0.1 supported at the moment)
-			port - port of the used smtp server
-		-->
-		<server
-			host="127.0.0.1"
-			port="25" />
-
-	</smtp>
+    </general>
 
 
-	<!--
-		in this section the options of the update process are configured
-	-->
-	<update>
+    <!--
+        in this section options for email alerts are configured
+    -->
+    <smtp>
 
-		<!--
-			the server settings of the update process (only change these
-				settings if you want to use your own repository and not
-				the alertR master repository on github)
-			host - address of the used web server
-				NOTE: the update process uses HTTPS and does not allow HTTP
-			port - port of the used web server
-			location - the location of the used alertR repository
-			caFile - the location of the CA/certificate file that is used
-				to validate the HTTPS connection
-				NOTE: the given location works for github on Debian like
-				distributions
-		-->
-		<server
-			host="raw.githubusercontent.com"
-			port="443"
-			location="/sqall01/alertR/master/"
-			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+        <!--
+            the general settings of the email notifications
+            activated - are email alerts active? ("True" or "False")
+            fromAddr - email address from which this email should be sent
+            toAddr - email address to which the email should be sent
+        -->
+        <general
+            activated="True"
+            fromAddr="alertSystem@h4des.org"
+            toAddr="youraddress@somehost.de" />
 
-	</update>
+        <!--
+            the server settings of the email notifications
+            host - address of the used smtp server
+                (only 127.0.0.1 supported at the moment)
+            port - port of the used smtp server
+        -->
+        <server
+            host="127.0.0.1"
+            port="25" />
+
+    </smtp>
 
 
-	<!--
-		section of all sensors that are monitored
-	-->
-	<sensors>
+    <!--
+        in this section the options of the update process are configured
+    -->
+    <update>
 
-		<!--
-			a single sensor is configured in a "sensor" element
-			if you need additional sensors just add a new one
-		-->
-		<sensor>
+        <!--
+            the server settings of the update process (only change these
+                settings if you want to use your own repository and not
+                the alertR master repository on github)
+            host - address of the used web server
+                NOTE: the update process uses HTTPS and does not allow HTTP
+            port - port of the used web server
+            location - the location of the used alertR repository
+            caFile - the location of the CA/certificate file that is used
+                to validate the HTTPS connection
+                NOTE: the given location works for github on Debian like
+                distributions
+        -->
+        <server
+            host="raw.githubusercontent.com"
+            port="443"
+            location="/sqall01/alertR/master/"
+            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
 
-			<!--
-				the general configuration of a sensor
-				id - local id of this sensor (has to be unique on this client)
-				description - description of this sensor
-				alertDelay - delay after which (when the alert system is still
-					active) the alert should trigger (this is processed
-					by the server and the value here is only used to register
-					with it at the server)
-				triggerAlert - this flag indicates if this sensor should
-					trigger an alert for example it could be just used to
-					signal the state to the server and not trigger
-					any alert (regardless of if the alert system is
-					active or not)
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this sensor should
-					trigger an alert when it goes back to a normal state (and
-					not only if a triggered state is reached and the flag
-					"triggerAlert" is set). If this flag is not set, this
-					client sends only a state change to the server to inform
-					it about the new state.
-					("True" or "False")
-			-->
-			<general
-				id="0"
-				description="some.server.org reachable"
-				alertDelay="0"
-				triggerAlert="True"
-				triggerAlertNormal="False" />
+    </update>
 
-			<!--
-				the alert level that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels)
-			-->
-			<alertLevel>0</alertLevel>
-			<alertLevel>3</alertLevel>
 
-			<!--
-				the ping specific settings
-				host - host on which the service is running and the watchdog
-					script will get as first argument
-				execute - path to the ping command
-					(default path on Linux is /bin/ping)
-				timeout - the timeout interval in seconds tells the sensor
-					client when the executed script has timed out and
-					therefore a alert has to be triggered
-				intervalToCheck - interval in seconds in which the service
-					should be tested
-			-->
-			<ping
-				host="some.server.org"
-				execute="/bin/ping"
-				timeout="30"
-				intervalToCheck="60" />
+    <!--
+        section of all sensors that are monitored
+    -->
+    <sensors>
 
-		</sensor>
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
 
-		<!--
-			a single sensor is configured in a "sensor" element
-			if you need additional sensors just add a new one
-		-->
-		<sensor>
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="0"
+                description="some.server.org reachable"
+                alertDelay="0"
+                triggerAlert="True"
+                triggerAlertNormal="False" />
 
-			<!--
-				the general configuration of a sensor
-				id - local id of this sensor (has to be unique on this client)
-				description - description of this sensor
-				alertDelay - delay after which (when the alert system is still
-					active) the alert should trigger (this is processed
-					by the server and the value here is only used to register
-					with it at the server)
-				triggerAlert - this flag indicates if this sensor should
-					trigger an alert for example it could be just used to
-					signal the state to the server and not trigger
-					any alert (regardless of if the alert system is
-					active or not)
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this sensor should
-					trigger an alert when it goes back to a normal state (and
-					not only if a triggered state is reached and the flag
-					"triggerAlert" is set). If this flag is not set, this
-					client sends only a state change to the server to inform
-					it about the new state.
-					("True" or "False")
-			-->
-			<general
-				id="1"
-				description="another.server.org reachable"
-				alertDelay="0"
-				triggerAlert="True"
-				triggerAlertNormal="False" />
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>3</alertLevel>
 
-			<!--
-				the alert level that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels)
-			-->
-			<alertLevel>0</alertLevel>
+            <!--
+                the ping specific settings
+                host - host on which the service is running and the watchdog
+                    script will get as first argument
+                execute - path to the ping command
+                    (default path on Linux is /bin/ping)
+                timeout - the timeout interval in seconds tells the sensor
+                    client when the executed script has timed out and
+                    therefore a alert has to be triggered
+                intervalToCheck - interval in seconds in which the service
+                    should be tested
+            -->
+            <ping
+                host="some.server.org"
+                execute="/bin/ping"
+                timeout="30"
+                intervalToCheck="60" />
 
-			<!--
-				the ping specific settings
-				host - host on which the service is running and the watchdog
-					script will get as first argument
-				execute - path to the ping command
-					(default path on Linux is /bin/ping)
-				timeout - the timeout interval in seconds tells the sensor
-					client when the executed script has timed out and
-					therefore a alert has to be triggered
-				intervalToCheck - interval in seconds in which the service
-					should be tested
-			-->
-			<ping
-				host="another.server.org"
-				execute="/bin/ping"
-				timeout="30"
-				intervalToCheck="60" />
+        </sensor>
 
-		</sensor>
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
 
-	</sensors>
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="1"
+                description="another.server.org reachable"
+                alertDelay="0"
+                triggerAlert="True"
+                triggerAlertNormal="False" />
+
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+
+            <!--
+                the ping specific settings
+                host - host on which the service is running and the watchdog
+                    script will get as first argument
+                execute - path to the ping command
+                    (default path on Linux is /bin/ping)
+                timeout - the timeout interval in seconds tells the sensor
+                    client when the executed script has timed out and
+                    therefore a alert has to be triggered
+                intervalToCheck - interval in seconds in which the service
+                    should be tested
+            -->
+            <ping
+                host="another.server.org"
+                execute="/bin/ping"
+                timeout="30"
+                intervalToCheck="60" />
+
+        </sensor>
+
+    </sensors>
 
 </config>

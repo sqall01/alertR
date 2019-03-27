@@ -13,6 +13,6 @@ GPIO.setmode(GPIO.BOARD)
 GPIO.setup(inputPin, GPIO.IN)
 
 while True:
-	test = GPIO.input(inputPin)
-	print test
-	time.sleep(0.2)
+    test = GPIO.input(inputPin)
+    print test
+    time.sleep(0.2)

@@ -28,8 +28,8 @@ TO_ADDR = "targetAddr@somedomain.org"
 
 
 if len(sys.argv) != 3:
-	print "Usage: %s <client IP> <client MAC address>"
-	sys.exit(0)
+    print "Usage: %s <client IP> <client MAC address>"
+    sys.exit(0)
 
 client_ip = sys.argv[1]
 client_mac_address = sys.argv[2]
@@ -37,113 +37,113 @@ client_mac_address = sys.argv[2]
 # check if mac address is whitelisted
 found = False
 with open(os.path.dirname(os.path.abspath(__file__)) + "/mac_address_whitelist.csv", 'rb') as csv_file:
-	csv_reader = csv.reader(csv_file, quoting=csv.QUOTE_ALL)
+    csv_reader = csv.reader(csv_file, quoting=csv.QUOTE_ALL)
 
-	for row in csv_reader:
-		if len(row) != 2:
-			continue
-		if row[0].find('#') != -1:
-			continue
+    for row in csv_reader:
+        if len(row) != 2:
+            continue
+        if row[0].find('#') != -1:
+            continue
 
-		mac_address = row[0]
-		description = row[1]
+        mac_address = row[0]
+        description = row[1]
 
-		if client_mac_address == mac_address.lower():
-			found = True
-			break
+        if client_mac_address == mac_address.lower():
+            found = True
+            break
 
 if not found:
 
-	# only scan unknown host via nmap if activated
-	nm = None
-	if SCAN_VIA_NMAP:
+    # only scan unknown host via nmap if activated
+    nm = None
+    if SCAN_VIA_NMAP:
 
-		# needs pip packet "python-nmap"
-		# => install via "pip install python-nmap"
-		import nmap
+        # needs pip packet "python-nmap"
+        # => install via "pip install python-nmap"
+        import nmap
 
-		nm = nmap.PortScanner()
-		nm.scan(client_ip, arguments="")
+        nm = nmap.PortScanner()
+        nm.scan(client_ip, arguments="")
 
-		# create a string from the nmap scan
-		nmap_result_string = ""
-		for host in nm.all_hosts():
-			for protocol in nm[host].all_protocols():
-				port_list = nm[host][protocol].keys()
-				port_list.sort()
-				for port in port_list:
-					nmap_result_string += "%d/%s/%s; " % (port, protocol,
-						nm[host][protocol][port]['state'])
-		if nmap_result_string == "":
-			nmap_result_string = "None"
+        # create a string from the nmap scan
+        nmap_result_string = ""
+        for host in nm.all_hosts():
+            for protocol in nm[host].all_protocols():
+                port_list = nm[host][protocol].keys()
+                port_list.sort()
+                for port in port_list:
+                    nmap_result_string += "%d/%s/%s; " % (port, protocol,
+                        nm[host][protocol][port]['state'])
+        if nmap_result_string == "":
+            nmap_result_string = "None"
 
-	# only send an email if it is activated
-	if SEND_EMAIL:
+    # only send an email if it is activated
+    if SEND_EMAIL:
 
-		subject = "[alertR] DHCP lease for unknown client"
+        subject = "[alertR] DHCP lease for unknown client"
 
-		message = "DHCP lease for an unknown client was detected.\n\n"
-		message += "IP: %s\n" % client_ip
-		message += "MAC: %s\n" % client_mac_address
-		if not nm is None:
-			message += "\nNmap scan results:\n"
-			for host in nm.all_hosts():
-				for protocol in nm[host].all_protocols():
-					port_list = nm[host][protocol].keys()
-					port_list.sort()
-					for port in port_list:
-						message += "%d/%s - %s - %s\n" % (port, protocol,
-							nm[host][protocol][port]["state"],
-							nm[host][protocol][port]['name'])
+        message = "DHCP lease for an unknown client was detected.\n\n"
+        message += "IP: %s\n" % client_ip
+        message += "MAC: %s\n" % client_mac_address
+        if not nm is None:
+            message += "\nNmap scan results:\n"
+            for host in nm.all_hosts():
+                for protocol in nm[host].all_protocols():
+                    port_list = nm[host][protocol].keys()
+                    port_list.sort()
+                    for port in port_list:
+                        message += "%d/%s - %s - %s\n" % (port, protocol,
+                            nm[host][protocol][port]["state"],
+                            nm[host][protocol][port]['name'])
 
-		email_header = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
-			% (FROM_ADDR, TO_ADDR, subject)
+        email_header = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
+            % (FROM_ADDR, TO_ADDR, subject)
 
-		try:
-			smtp_server = smtplib.SMTP("127.0.0.1", 25)
-			smtp_server.sendmail(FROM_ADDR, TO_ADDR, 
-				email_header + message)
-			smtp_server.quit()
-		except Exception as e:
-			pass
+        try:
+            smtp_server = smtplib.SMTP("127.0.0.1", 25)
+            smtp_server.sendmail(FROM_ADDR, TO_ADDR, 
+                email_header + message)
+            smtp_server.quit()
+        except Exception as e:
+            pass
 
-	# get file lock
-	lock_fd = open(LOCK_FILE, 'w')
-	fcntl.lockf(lock_fd, fcntl.LOCK_EX)
+    # get file lock
+    lock_fd = open(LOCK_FILE, 'w')
+    fcntl.lockf(lock_fd, fcntl.LOCK_EX)
 
-	# send message to alertR
-	with open(FIFO_FILE, 'w') as fifo_file:
+    # send message to alertR
+    with open(FIFO_FILE, 'w') as fifo_file:
 
-		msg_dict = dict()
-		msg_dict["message"] = "sensoralert"
+        msg_dict = dict()
+        msg_dict["message"] = "sensoralert"
 
-		payload_dict = dict()
-		payload_dict["state"] = 1
-		payload_dict["hasOptionalData"] = True
-		payload_dict["dataType"] = 0
-		payload_dict["hasLatestData"] = False
-		payload_dict["changeState"] = False
-		
-		optionalData_dict = dict()
-		if SCAN_VIA_NMAP:
-			optionalData_dict["message"] = "Unknown client with IP: %s " \
-				% client_ip \
-				+ "and MAC: %s and Ports: %s." \
-				% (client_mac_address, nmap_result_string)
-		else:
-			optionalData_dict["message"] = "Unknown client with IP: %s " \
-				% client_ip \
-				+ "and MAC: %s." \
-				% client_mac_address
+        payload_dict = dict()
+        payload_dict["state"] = 1
+        payload_dict["hasOptionalData"] = True
+        payload_dict["dataType"] = 0
+        payload_dict["hasLatestData"] = False
+        payload_dict["changeState"] = False
+        
+        optionalData_dict = dict()
+        if SCAN_VIA_NMAP:
+            optionalData_dict["message"] = "Unknown client with IP: %s " \
+                % client_ip \
+                + "and MAC: %s and Ports: %s." \
+                % (client_mac_address, nmap_result_string)
+        else:
+            optionalData_dict["message"] = "Unknown client with IP: %s " \
+                % client_ip \
+                + "and MAC: %s." \
+                % client_mac_address
 
 
-		payload_dict["optionalData"] = optionalData_dict
-		msg_dict["payload"] = payload_dict
+        payload_dict["optionalData"] = optionalData_dict
+        msg_dict["payload"] = payload_dict
 
-		fifo_file.write(json.dumps(msg_dict))
+        fifo_file.write(json.dumps(msg_dict))
 
-	time.sleep(1)
+    time.sleep(1)
 
-	# release file lock
-	fcntl.lockf(lock_fd, fcntl.LOCK_UN)
-	lock_fd.close()
+    # release file lock
+    fcntl.lockf(lock_fd, fcntl.LOCK_UN)
+    lock_fd.close()

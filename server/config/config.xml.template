@@ -1,902 +1,902 @@
 <?xml version="1.0"?>
 
 <!--
-	this is a template configuration file
-	please rename this template to "config.xml" if you want to use it
-	for the server
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the server
 -->
 <config version="0.504">
 
-	<!--
-		in this section general options are configured
-	-->
-	<general>
-
-		<!--
-			the settings for the logfile
-			dir - absolute path to the directory for the logfiles
-			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-		-->
-		<log
-			dir="/absolute/path/to/logfiles/"
-			level="INFO" />
-
-		<!--
-			the settings for the server
-			certFile - path to the certificate file of the server
-				that is used for the SSL connection
-			keyFile - path to the key file of the server that is used for
-				the SSL connection
-			port - port that is used by the server
-		-->
-		<server
-			certFile="/absolute/path/to/server.crt"
-			keyFile="/absolute/path/to/server.key"
-			port="12345" />
-
-		<!--
-			the settings for a client certificate
-			useClientCertificates - sets if it is required for all clients to
-				authenticate themselves via a certificate or not (if you have
-				the alert system reachable from the internet you should use
-				client certificates)
-				("True" or "False")
-			clientCAFile - path to the CA file that is used to check the
-				client certificates
-				(only processed if "useClientCertificates" is set to "True")
-		-->
-		<client
-			useClientCertificates="True"
-			clientCAFile="/absolute/path/to/some_CA.pem" />
-
-		<!--
-			The settings used for the TLS/SSL connection. In order to be
-			as secure as possible, only allow the highest version that is
-			supported by your hosts. This means that the most secure setting
-			is to set everything to "True". However, since TLSv1.3 is not
-			widely adopted yet (OpenSSL version 1.1.1), you should
-			also allow TLSv1.2.
-			noSSLv2 - Disables the use of SSLv2.
-			noSSLv3 - Disables the use of SSLv3.
-			noTLSv1_0 - Disables the use of TLSv1.0.
-			noTLSv1_1 - Disables the use of TLSv1.1
-				(Needs at least OpenSSL version 1.0.1).
-			noTLSv1_2 - Disables the use of TLSv1.2
-				(Needs at least OpenSSL version 1.0.1).
-		-->
-		<ssl
-			noSSLv2="True"
-			noSSLv3="True"
-			noTLSv1_0="True"
-			noTLSv1_1="True"
-			noTLSv1_2="False" />
-
-		<!--
-			settings for the alertR survey
-			participate - Since alertR has an install and update script which
-				uses Github as repository, no actual data about the usage of
-				alertR exists. In order to get a better understanding of the
-				used alertR instances and the versions that are used, alertR
-				has a voluntary survey. If you participate, alertR will send
-				once a week the version, revision, instances and configured
-				update repository that is used by your installation to the
-				survey server.
-				("True" or "False")
-		-->
-		<survey
-			participate="True" />
-
-	</general>
-
-
-	<!--
-		in this section the options of the update checking are configured
-	-->
-	<update>
-
-		<!--
-			the general settings of the update checking
-			activated - should the server check for updates?
-				("True" or "False")
-			interval - the interval in seconds in which the server checks
-				online for updates
-		-->
-		<general
-			activated="True"
-			interval="86400" />
-
-		<!--
-			the server settings of the update checking (only change these
-				settings if you want to use your own repository and not
-				the alertR master repository on github)
-			host - address of the used web server
-				NOTE: the update checking uses HTTPS and does not allow HTTP
-			port - port of the used web server
-			location - the location of the used alertR repository
-			caFile - the location of the CA/certificate file that is used
-				to validate the HTTPS connection
-				NOTE: the given location works for github on Debian like
-				distributions
-		-->
-		<server
-			host="raw.githubusercontent.com"
-			port="443"
-			location="/sqall01/alertR/master/"
-			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
-
-	</update>
-
-
-	<!--
-		in this section options for the storage are configured
-	-->
-	<storage>
-
-		<!--
-			the settings for the user backend
-			method - choose how the user credentials are stored/checked
-				only valid options: csv
-		-->
-		<userBackend
-			method="csv" />
-
-		<!--
-			the settings for the storage backend
-			method - choose how the data of the alert system is stored
-				only valid options: sqlite, mysql
-			server - the address of the database server
-				(only processed if mysql is used)
-			port - the port of the database server
-				(only processed if mysql is used;
-				default value mysql uses is 3306)
-			database - the name of the database
-				(only processed if mysql/postgresql is used)
-			username - the username for the database server
-				(only processed if mysql/postgresql is used)
-			password - the password for the database server
-				(only processed if mysql/postgresql is used)
-		-->
-		<storageBackend
-			method="sqlite"
-			server="127.0.0.1"
-			port="3306"
-			database="alertr"
-			username="username"
-			password="password" />
-
-	</storage>
-
-
-	<!--
-		section of all alert levels that are configured
-	-->
-	<alertLevels>
-
-		<!--
-			a single alert level is configured in an "alertLevel" element
-			if you need additional alert levels just add a new one
-		-->
-		<alertLevel>
-
-			<!--
-				general settings of the alert level
-				level - level of this alert (has to be unique)
-				name - name of the alert level
-					(for example for what it is used)
-				triggerAlways - this flag indicates if this alert level should
-					trigger always an alert on all alert clients even if the
-					alerting system is not activated
-					("True" or "False")
-				triggerAlertTriggered - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "triggered" state. If set to "False", each
-					received sensor alert message for a "triggered" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "triggered" state sensor
-					alert messages.
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "normal" state. If set to "False", each
-					received sensor alert message for a "normal" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "normal" state sensor alert
-					messages.
-					("True" or "False")
-			-->
-			<general
-				level="0"
-				name="display notification"
-				triggerAlways="False"
-				triggerAlertTriggered="True"
-				triggerAlertNormal="True" />
-
-			<!--
-				rule chain settings for this alert level
-				activated - sets if rules are activated for this alert level
-					("True or "False)
-				NOTE: the rules of the rule chain are event based on sensor
-				triggers. This means that each rule chain has to have at least
-				one sensor (and this sensor is not allowed to be negated by
-				a NOT).
-			-->
-			<rules
-				activated="False">
-			</rules>
-
-		</alertLevel>
-
-
-		<!--
-			a single alert level is configured in an "alertLevel" element
-			if you need additional alert levels just add a new one
-		-->
-		<alertLevel>
-
-			<!--
-				general settings of the alert level
-				level - level of this alert (has to be unique)
-				name - name of the alert level
-					(for example for what it is used)
-				triggerAlways - this flag indicates if this alert level should
-					trigger always an alert on all alert clients even if the
-					alerting system is not activated
-					("True" or "False")
-				triggerAlertTriggered - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "triggered" state. If set to "False", each
-					received sensor alert message for a "triggered" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "triggered" state sensor
-					alert messages.
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "normal" state. If set to "False", each
-					received sensor alert message for a "normal" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "normal" state sensor alert
-					messages.
-					("True" or "False")
-			-->
-			<general
-				level="1"
-				name="alarm sirens"
-				triggerAlways="False"
-				triggerAlertTriggered="True"
-				triggerAlertNormal="False"  />
-
-			<!--
-				rule chain settings for this alert level
-				activated - sets if rules are activated for this alert level
-					("True or "False)
-				NOTE: the rules of the rule chain are event based on sensor
-				triggers. This means that each rule chain has to have at least
-				one sensor (and this sensor is not allowed to be negated by
-				a NOT).
-			-->
-			<rules
-				activated="False">
-			</rules>
-
-		</alertLevel>
-
-
-		<!--
-			a single alert level is configured in an "alertLevel" element
-			if you need additional alert levels just add a new one
-		-->
-		<alertLevel>
-
-			<!--
-				general settings of the alert level
-				level - level of this alert (has to be unique)
-				name - name of the alert level
-					(for example for what it is used)
-				triggerAlways - this flag indicates if this alert level should
-					trigger always an alert on all alert clients even if the
-					alerting system is not activated
-					("True" or "False")
-				triggerAlertTriggered - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "triggered" state. If set to "False", each
-					received sensor alert message for a "triggered" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "triggered" state sensor
-					alert messages.
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "normal" state. If set to "False", each
-					received sensor alert message for a "normal" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "normal" state sensor alert
-					messages.
-					("True" or "False")
-			-->
-			<general
-				level="10"
-				name="pausing xbmc"
-				triggerAlways="True"
-				triggerAlertTriggered="True"
-				triggerAlertNormal="False"  />
-
-			<!--
-				rule chain settings for this alert level
-				activated - sets if rules are activated for this alert level
-					("True or "False)
-				NOTE: the rules of the rule chain are event based on sensor
-				triggers. This means that each rule chain has to have at least
-				one sensor (and this sensor is not allowed to be negated by
-				a NOT).
-			-->
-			<rules
-				activated="False">
-			</rules>
-
-		</alertLevel>
-
-
-		<!--
-			a single alert level is configured in an "alertLevel" element
-			if you need additional alert levels just add a new one
-		-->
-		<alertLevel>
-
-			<!--
-				general settings of the alert level
-				level - level of this alert (has to be unique)
-				name - name of the alert level
-					(for example for what it is used)
-				triggerAlways - this flag indicates if this alert level should
-					trigger always an alert on all alert clients even if the
-					alerting system is not activated
-					("True" or "False")
-				triggerAlertTriggered - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "triggered" state. If set to "False", each
-					received sensor alert message for a "triggered" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "triggered" state sensor
-					alert messages.
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this alert level
-					should issue a sensor alert message to all connected alert
-					clients when a sensor alert was received for a sensor
-					that reached the "normal" state. If set to "False", each
-					received sensor alert message for a "normal" state that
-					has this alert level will just be dropped. When set to
-					"True" the sensor alert message will be processed by
-					this alert level. This flag can be seen as a filter
-					for sensors that should send a sensor alert message
-					for "triggered" and "normal" state but not all alert level
-					of these sensors should handle "normal" state sensor alert
-					messages.
-					("True" or "False")
-			-->
-			<general
-				level="20"
-				name="motion detection"
-				triggerAlways="True"
-				triggerAlertTriggered="True"
-				triggerAlertNormal="False"  />
-
-			<!--
-				rule chain settings for this alert level
-				activated - sets if rules are activated for this alert level
-					("True or "False)
-				NOTE: the rules of the rule chain are event based on sensor
-				triggers. This means that each rule chain has to have at least
-				one sensor (and this sensor is not allowed to be negated by
-				a NOT).
-			-->
-			<rules
-				activated="True">
-
-				<!--
-					one rule of the rule chain
-					order - gives the order in which the rules are evaluated
-						(ascending order)
-					maxTimeAfterPrev - gives the maximum amount of time
-						(in seconds) that can be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a maximum time of 5 seconds, then 5 seconds can
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					minTimeAfterPrev - gives the minimum amount of time
-						(in seconds) that have to be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a minimum time of 2 seconds, then 2 seconds have
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					counterActivated - sets if this rule uses a counter
-					counterLimit - sets the limit of the counter. When it is
-						reached, the rule does not trigger
-					counterWaitTime - sets the time (in seconds) how long
-						the counter have to wait until it can remove a counter
-						token (and therefore can trigger again when the
-						limit is reached)
-				-->
-				<rule
-					order="0"
-					maxTimeAfterPrev="0.0"
-					minTimeAfterPrev="0.0"
-					counterActivated="False"
-					counterLimit="0"
-					counterWaitTime="0" >
-
-					<!--
-						a boolean operator of the rule (possible boolean
-						operators are <and>, <or> and <not>)
-						(NOTE: the <not> operator can only have one rule
-						element in it)
-					-->
-					<and>
-
-						<!--
-						a sensor rule element
-						timeTriggeredFor - the time (in seconds) sets how long
-							this rule element counts as triggered for the
-							rule engine when a sensor alert for it is received
-							(NOTE: do not set this value to low)
-						username - the username of the sensor client that
-							handles this sensor
-						remoteSensorId - the sensor id of the sensor that is
-							configured on the client side
-						-->
-						<sensor
-							timeTriggeredFor="5.0"
-							username="sensordev"
-							remoteSensorId="0" />
-
-						<!--
-						a sensor rule element
-						timeTriggeredFor - the time (in seconds) sets how long
-							this rule element counts as triggered for the
-							rule engine when a sensor alert for it is received
-							(NOTE: do not set this value to low)
-						username - the username of the sensor client that
-							handles this sensor
-						remoteSensorId - the sensor id of the sensor that is
-							configured on the client side
-						-->
-						<sensor
-							timeTriggeredFor="5.0"
-							username="sensordev"
-							remoteSensorId="0" />
-					</and>
-
-				</rule>
-
-				<!--
-					one rule of the rule chain
-					order - gives the order in which the rules are evaluated
-						(ascending order)
-					maxTimeAfterPrev - gives the maximum amount of time
-						(in seconds) that can be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a maximum time of 5 seconds, then 5 seconds can
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					minTimeAfterPrev - gives the minimum amount of time
-						(in seconds) that have to be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a minimum time of 2 seconds, then 2 seconds have
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					counterActivated - sets if this rule uses a counter
-					counterLimit - sets the limit of the counter. When it is
-						reached, the rule does not trigger
-					counterWaitTime - sets the time (in seconds) how long
-						the counter have to wait until it can remove a counter
-						token (and therefore can trigger again when the
-						limit is reached)
-				-->
-				<rule
-					order="1"
-					maxTimeAfterPrev="5.0"
-					minTimeAfterPrev="0.0"
-					counterActivated="False"
-					counterLimit="0"
-					counterWaitTime="0" >
-
-					<!--
-						a boolean operator of the rule (possible boolean
-						operators are <and>, <or> and <not>)
-						(NOTE: the <not> operator can only have one rule
-						element in it)
-					-->
-					<or>
-
-						<!--
-							gives the day of the week
-							time - sets the timezone that is used
-								("utc" or "local")
-							weekday - sets the day of the week
-								(0 = Monday, ..., 6 = Sunday)
-						-->
-						<weekday
-							time="utc"
-							weekday="0" />
-
-						<!--
-							gives the day of the week
-							time - sets the timezone that is used
-								("utc" or "local")
-							weekday - sets the day of the week
-								(0 = Monday, ..., 6 = Sunday)
-						-->
-						<weekday
-							time="utc"
-							weekday="1" />
-
-						<!--
-							gives the day of the week
-							time - sets the timezone that is used
-								("utc" or "local")
-							weekday - sets the day of the week
-								(0 = Monday, ..., 6 = Sunday)
-						-->
-						<weekday
-							time="utc"
-							weekday="2" />
-
-						<!--
-							gives the day of the week
-							time - sets the timezone that is used
-								("utc" or "local")
-							weekday - sets the day of the week
-								(0 = Monday, ..., 6 = Sunday)
-						-->
-						<weekday
-							time="utc"
-							weekday="3" />
-
-						<!--
-							gives the day of the week
-							time - sets the timezone that is used
-								("utc" or "local")
-							weekday - sets the day of the week
-								(0 = Monday, ..., 6 = Sunday)
-						-->
-						<weekday
-							time="utc"
-							weekday="4" />
-
-					</or>
-
-				</rule>
-
-				<!--
-					one rule of the rule chain
-					order - gives the order in which the rules are evaluated
-						(ascending order)
-					maxTimeAfterPrev - gives the maximum amount of time
-						(in seconds) that can be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a maximum time of 5 seconds, then 5 seconds can
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					minTimeAfterPrev - gives the minimum amount of time
-						(in seconds) that have to be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a minimum time of 2 seconds, then 2 seconds have
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					counterActivated - sets if this rule uses a counter
-					counterLimit - sets the limit of the counter. When it is
-						reached, the rule does not trigger
-					counterWaitTime - sets the time (in seconds) how long
-						the counter have to wait until it can remove a counter
-						token (and therefore can trigger again when the
-						limit is reached)
-				-->
-				<rule
-					order="2"
-					maxTimeAfterPrev="5.0"
-					minTimeAfterPrev="0.0"
-					counterActivated="False"
-					counterLimit="0"
-					counterWaitTime="0" >
-
-					<!--
-						a boolean operator of the rule (possible boolean
-						operators are <and>, <or> and <not>)
-						(NOTE: the <not> operator can only have one rule
-						element in it)
-					-->
-					<and>
-
-						<!--
-							gives the hour of the day
-							time - sets the timezone that is used
-								("utc" or "local")
-							start - the start of the valid hour
-								(values: 0 - 23)
-							end - the end of the valid hour
-								(values: 0 - 23)
-								(NOTE: end >= start)
-						-->
-						<hour
-							time="utc"
-							start="15"
-							end="20" />
-
-						<!--
-							gives the minute of the day
-							start - the start of the valid minute
-								(values: 0 - 59)
-							end - the end of the valid minute
-								(values: 0 - 59)
-								(NOTE: end >= start)
-						-->
-						<minute
-							start="0"
-							end="59" />
-
-						<!--
-							gives the second of the day
-							start - the start of the valid second
-								(values: 0 - 59)
-							end - the end of the valid second
-								(values: 0 - 59)
-								(NOTE: end >= start)
-						-->
-						<second
-							start="0"
-							end="20" />
-
-					</and>
-
-				</rule>
-
-				<!--
-					one rule of the rule chain
-					order - gives the order in which the rules are evaluated
-						(ascending order)
-					maxTimeAfterPrev - gives the maximum amount of time
-						(in seconds) that can be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a maximum time of 5 seconds, then 5 seconds can
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					minTimeAfterPrev - gives the minimum amount of time
-						(in seconds) that have to be passed after the previous
-						rule has triggered. For example when the previous rule
-						of the rule chain has trigged and the current rule
-						has a minimum time of 2 seconds, then 2 seconds have
-						be passed before this rule has to be triggered (in
-						order to trigger the whole rule chain)
-						(NOTE: the first rule of the rule chain has no
-						previous rule and therefore this value for it
-						is ignored)
-					counterActivated - sets if this rule uses a counter
-					counterLimit - sets the limit of the counter. When it is
-						reached, the rule does not trigger
-					counterWaitTime - sets the time (in seconds) how long
-						the counter have to wait until it can remove a counter
-						token (and therefore can trigger again when the
-						limit is reached)
-				-->
-				<rule
-					order="3"
-					maxTimeAfterPrev="5.0"
-					minTimeAfterPrev="0.0"
-					counterActivated="True"
-					counterLimit="1"
-					counterWaitTime="82800" >
-
-					<!--
-						a boolean operator of the rule (possible boolean
-						operators are <and>, <or> and <not>)
-						(NOTE: the <not> operator can only have one rule
-						element in it)
-					-->
-					<not>
-
-						<!--
-							a boolean operator of the rule (possible boolean
-							operators are <and>, <or> and <not>)
-							(NOTE: the <not> operator can only have one rule
-							element in it)
-						-->
-						<or>
-
-							<!--
-								gives the day of the month
-								time - sets the timezone that is used
-									("utc" or "local")
-								monthday - sets the day of the month
-									(values: 1 - 31)
-							-->
-							<monthday
-								time="utc"
-								monthday="1" />
-
-							<!--
-								gives the day of the month
-								time - sets the timezone that is used
-									("utc" or "local")
-								monthday - sets the day of the month
-									(values: 1 - 31)
-							-->
-							<monthday
-								time="utc"
-								monthday="2" />
-
-						</or>
-
-					</not>
-
-				</rule>
-
-			</rules>
-
-		</alertLevel>
-
-	</alertLevels>
-
-	<!--
-		In this section options for the internal sensors are configured.
-		Internal sensors are used by the server to react to fail states
-		and to trigger sensorAlerts in the alertR system.
-	-->
-	<internalSensors>
-
-		<!--
-			The sensorTimeout sensor is an internal sensor that triggers when
-			a sensor timed out. The server checks regularly if a sensor
-			has timed out and will trigger a sensorAlert if one does
-			(sensorAlert with state "triggered" when a sensor times out
-			and a sensorAlert with state "normal" if the sensor reconnects).
-			activated - This flags indicates if the internal sensor is
-				activated or not.
-				("True" or "False")
-			description - Description of this sensor.
-		-->
-		<sensorTimeout
-			activated="True"
-			description="Internal: Sensor Timeout">
-
-			<!--
-				The alertLevel that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels).
-			-->
-			<alertLevel>0</alertLevel>
-
-		</sensorTimeout>
-
-		<!--
-			The nodeTimeout sensor is an internal sensor that triggers when
-			a node/client timed out. The server checks regularly if a node
-			has timed out and will trigger a sensorAlert if one does
-			(sensorAlert with state "triggered" when a node times out
-			and a sensorAlert with state "normal" if the node reconnects).
-			NOTE: This check is only performed on "persistent" nodes/clients.
-			"Non-persistent" clients are allowed to disconnect from the system.
-			activated - This flags indicates if the internal sensor is
-				activated or not.
-				("True" or "False")
-			description - Description of this sensor.
-		-->
-		<nodeTimeout
-			activated="True"
-			description="Internal: Node Timeout">
-
-			<!--
-				The alertLevel that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels).
-			-->
-			<alertLevel>0</alertLevel>
-			<alertLevel>1</alertLevel>
-
-		</nodeTimeout>
-
-		<!--
-			The alertSystemActive sensor is an internal sensor that triggers
-			when the alarm system changes its state (activated/deactivated).
-			It allows you to utilize the global alarm system state changes.
-			activated - This flags indicates if the internal sensor is
-				activated or not.
-				("True" or "False")
-			description - Description of this sensor.
-		-->
-		<alertSystemActive
-			activated="True"
-			description="Internal: Alert System Active">
-
-			<!--
-				The alertLevel that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels).
-			-->
-			<alertLevel>0</alertLevel>
-
-		</alertSystemActive>
-
-		<!--
-			The versionInformer sensor is an internal sensor that triggers
-			when a new version is available in the update repository for
-			any node connected to your alarm system.
-			activated - This flags indicates if the internal sensor is
-				activated or not.
-				("True" or "False")
-			description - Description of this sensor.
-		-->
-		<versionInformer
-			activated="True"
-			description="Internal: Version Informer">
-
-			<!--
-				The alertLevel that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels).
-			-->
-			<alertLevel>0</alertLevel>
-
-		</versionInformer>
-
-	</internalSensors>
+    <!--
+        in this section general options are configured
+    -->
+    <general>
+
+        <!--
+            the settings for the logfile
+            dir - absolute path to the directory for the logfiles
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            dir="/absolute/path/to/logfiles/"
+            level="INFO" />
+
+        <!--
+            the settings for the server
+            certFile - path to the certificate file of the server
+                that is used for the SSL connection
+            keyFile - path to the key file of the server that is used for
+                the SSL connection
+            port - port that is used by the server
+        -->
+        <server
+            certFile="/absolute/path/to/server.crt"
+            keyFile="/absolute/path/to/server.key"
+            port="12345" />
+
+        <!--
+            the settings for a client certificate
+            useClientCertificates - sets if it is required for all clients to
+                authenticate themselves via a certificate or not (if you have
+                the alert system reachable from the internet you should use
+                client certificates)
+                ("True" or "False")
+            clientCAFile - path to the CA file that is used to check the
+                client certificates
+                (only processed if "useClientCertificates" is set to "True")
+        -->
+        <client
+            useClientCertificates="True"
+            clientCAFile="/absolute/path/to/some_CA.pem" />
+
+        <!--
+            The settings used for the TLS/SSL connection. In order to be
+            as secure as possible, only allow the highest version that is
+            supported by your hosts. This means that the most secure setting
+            is to set everything to "True". However, since TLSv1.3 is not
+            widely adopted yet (OpenSSL version 1.1.1), you should
+            also allow TLSv1.2.
+            noSSLv2 - Disables the use of SSLv2.
+            noSSLv3 - Disables the use of SSLv3.
+            noTLSv1_0 - Disables the use of TLSv1.0.
+            noTLSv1_1 - Disables the use of TLSv1.1
+                (Needs at least OpenSSL version 1.0.1).
+            noTLSv1_2 - Disables the use of TLSv1.2
+                (Needs at least OpenSSL version 1.0.1).
+        -->
+        <ssl
+            noSSLv2="True"
+            noSSLv3="True"
+            noTLSv1_0="True"
+            noTLSv1_1="True"
+            noTLSv1_2="False" />
+
+        <!--
+            settings for the alertR survey
+            participate - Since alertR has an install and update script which
+                uses Github as repository, no actual data about the usage of
+                alertR exists. In order to get a better understanding of the
+                used alertR instances and the versions that are used, alertR
+                has a voluntary survey. If you participate, alertR will send
+                once a week the version, revision, instances and configured
+                update repository that is used by your installation to the
+                survey server.
+                ("True" or "False")
+        -->
+        <survey
+            participate="True" />
+
+    </general>
+
+
+    <!--
+        in this section the options of the update checking are configured
+    -->
+    <update>
+
+        <!--
+            the general settings of the update checking
+            activated - should the server check for updates?
+                ("True" or "False")
+            interval - the interval in seconds in which the server checks
+                online for updates
+        -->
+        <general
+            activated="True"
+            interval="86400" />
+
+        <!--
+            the server settings of the update checking (only change these
+                settings if you want to use your own repository and not
+                the alertR master repository on github)
+            host - address of the used web server
+                NOTE: the update checking uses HTTPS and does not allow HTTP
+            port - port of the used web server
+            location - the location of the used alertR repository
+            caFile - the location of the CA/certificate file that is used
+                to validate the HTTPS connection
+                NOTE: the given location works for github on Debian like
+                distributions
+        -->
+        <server
+            host="raw.githubusercontent.com"
+            port="443"
+            location="/sqall01/alertR/master/"
+            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+
+    </update>
+
+
+    <!--
+        in this section options for the storage are configured
+    -->
+    <storage>
+
+        <!--
+            the settings for the user backend
+            method - choose how the user credentials are stored/checked
+                only valid options: csv
+        -->
+        <userBackend
+            method="csv" />
+
+        <!--
+            the settings for the storage backend
+            method - choose how the data of the alert system is stored
+                only valid options: sqlite, mysql
+            server - the address of the database server
+                (only processed if mysql is used)
+            port - the port of the database server
+                (only processed if mysql is used;
+                default value mysql uses is 3306)
+            database - the name of the database
+                (only processed if mysql/postgresql is used)
+            username - the username for the database server
+                (only processed if mysql/postgresql is used)
+            password - the password for the database server
+                (only processed if mysql/postgresql is used)
+        -->
+        <storageBackend
+            method="sqlite"
+            server="127.0.0.1"
+            port="3306"
+            database="alertr"
+            username="username"
+            password="password" />
+
+    </storage>
+
+
+    <!--
+        section of all alert levels that are configured
+    -->
+    <alertLevels>
+
+        <!--
+            a single alert level is configured in an "alertLevel" element
+            if you need additional alert levels just add a new one
+        -->
+        <alertLevel>
+
+            <!--
+                general settings of the alert level
+                level - level of this alert (has to be unique)
+                name - name of the alert level
+                    (for example for what it is used)
+                triggerAlways - this flag indicates if this alert level should
+                    trigger always an alert on all alert clients even if the
+                    alerting system is not activated
+                    ("True" or "False")
+                triggerAlertTriggered - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "triggered" state. If set to "False", each
+                    received sensor alert message for a "triggered" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "triggered" state sensor
+                    alert messages.
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "normal" state. If set to "False", each
+                    received sensor alert message for a "normal" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "normal" state sensor alert
+                    messages.
+                    ("True" or "False")
+            -->
+            <general
+                level="0"
+                name="display notification"
+                triggerAlways="False"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <!--
+                rule chain settings for this alert level
+                activated - sets if rules are activated for this alert level
+                    ("True or "False)
+                NOTE: the rules of the rule chain are event based on sensor
+                triggers. This means that each rule chain has to have at least
+                one sensor (and this sensor is not allowed to be negated by
+                a NOT).
+            -->
+            <rules
+                activated="False">
+            </rules>
+
+        </alertLevel>
+
+
+        <!--
+            a single alert level is configured in an "alertLevel" element
+            if you need additional alert levels just add a new one
+        -->
+        <alertLevel>
+
+            <!--
+                general settings of the alert level
+                level - level of this alert (has to be unique)
+                name - name of the alert level
+                    (for example for what it is used)
+                triggerAlways - this flag indicates if this alert level should
+                    trigger always an alert on all alert clients even if the
+                    alerting system is not activated
+                    ("True" or "False")
+                triggerAlertTriggered - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "triggered" state. If set to "False", each
+                    received sensor alert message for a "triggered" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "triggered" state sensor
+                    alert messages.
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "normal" state. If set to "False", each
+                    received sensor alert message for a "normal" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "normal" state sensor alert
+                    messages.
+                    ("True" or "False")
+            -->
+            <general
+                level="1"
+                name="alarm sirens"
+                triggerAlways="False"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False"  />
+
+            <!--
+                rule chain settings for this alert level
+                activated - sets if rules are activated for this alert level
+                    ("True or "False)
+                NOTE: the rules of the rule chain are event based on sensor
+                triggers. This means that each rule chain has to have at least
+                one sensor (and this sensor is not allowed to be negated by
+                a NOT).
+            -->
+            <rules
+                activated="False">
+            </rules>
+
+        </alertLevel>
+
+
+        <!--
+            a single alert level is configured in an "alertLevel" element
+            if you need additional alert levels just add a new one
+        -->
+        <alertLevel>
+
+            <!--
+                general settings of the alert level
+                level - level of this alert (has to be unique)
+                name - name of the alert level
+                    (for example for what it is used)
+                triggerAlways - this flag indicates if this alert level should
+                    trigger always an alert on all alert clients even if the
+                    alerting system is not activated
+                    ("True" or "False")
+                triggerAlertTriggered - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "triggered" state. If set to "False", each
+                    received sensor alert message for a "triggered" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "triggered" state sensor
+                    alert messages.
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "normal" state. If set to "False", each
+                    received sensor alert message for a "normal" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "normal" state sensor alert
+                    messages.
+                    ("True" or "False")
+            -->
+            <general
+                level="10"
+                name="pausing xbmc"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False"  />
+
+            <!--
+                rule chain settings for this alert level
+                activated - sets if rules are activated for this alert level
+                    ("True or "False)
+                NOTE: the rules of the rule chain are event based on sensor
+                triggers. This means that each rule chain has to have at least
+                one sensor (and this sensor is not allowed to be negated by
+                a NOT).
+            -->
+            <rules
+                activated="False">
+            </rules>
+
+        </alertLevel>
+
+
+        <!--
+            a single alert level is configured in an "alertLevel" element
+            if you need additional alert levels just add a new one
+        -->
+        <alertLevel>
+
+            <!--
+                general settings of the alert level
+                level - level of this alert (has to be unique)
+                name - name of the alert level
+                    (for example for what it is used)
+                triggerAlways - this flag indicates if this alert level should
+                    trigger always an alert on all alert clients even if the
+                    alerting system is not activated
+                    ("True" or "False")
+                triggerAlertTriggered - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "triggered" state. If set to "False", each
+                    received sensor alert message for a "triggered" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "triggered" state sensor
+                    alert messages.
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this alert level
+                    should issue a sensor alert message to all connected alert
+                    clients when a sensor alert was received for a sensor
+                    that reached the "normal" state. If set to "False", each
+                    received sensor alert message for a "normal" state that
+                    has this alert level will just be dropped. When set to
+                    "True" the sensor alert message will be processed by
+                    this alert level. This flag can be seen as a filter
+                    for sensors that should send a sensor alert message
+                    for "triggered" and "normal" state but not all alert level
+                    of these sensors should handle "normal" state sensor alert
+                    messages.
+                    ("True" or "False")
+            -->
+            <general
+                level="20"
+                name="motion detection"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False"  />
+
+            <!--
+                rule chain settings for this alert level
+                activated - sets if rules are activated for this alert level
+                    ("True or "False)
+                NOTE: the rules of the rule chain are event based on sensor
+                triggers. This means that each rule chain has to have at least
+                one sensor (and this sensor is not allowed to be negated by
+                a NOT).
+            -->
+            <rules
+                activated="True">
+
+                <!--
+                    one rule of the rule chain
+                    order - gives the order in which the rules are evaluated
+                        (ascending order)
+                    maxTimeAfterPrev - gives the maximum amount of time
+                        (in seconds) that can be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a maximum time of 5 seconds, then 5 seconds can
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    minTimeAfterPrev - gives the minimum amount of time
+                        (in seconds) that have to be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a minimum time of 2 seconds, then 2 seconds have
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    counterActivated - sets if this rule uses a counter
+                    counterLimit - sets the limit of the counter. When it is
+                        reached, the rule does not trigger
+                    counterWaitTime - sets the time (in seconds) how long
+                        the counter have to wait until it can remove a counter
+                        token (and therefore can trigger again when the
+                        limit is reached)
+                -->
+                <rule
+                    order="0"
+                    maxTimeAfterPrev="0.0"
+                    minTimeAfterPrev="0.0"
+                    counterActivated="False"
+                    counterLimit="0"
+                    counterWaitTime="0" >
+
+                    <!--
+                        a boolean operator of the rule (possible boolean
+                        operators are <and>, <or> and <not>)
+                        (NOTE: the <not> operator can only have one rule
+                        element in it)
+                    -->
+                    <and>
+
+                        <!--
+                        a sensor rule element
+                        timeTriggeredFor - the time (in seconds) sets how long
+                            this rule element counts as triggered for the
+                            rule engine when a sensor alert for it is received
+                            (NOTE: do not set this value to low)
+                        username - the username of the sensor client that
+                            handles this sensor
+                        remoteSensorId - the sensor id of the sensor that is
+                            configured on the client side
+                        -->
+                        <sensor
+                            timeTriggeredFor="5.0"
+                            username="sensordev"
+                            remoteSensorId="0" />
+
+                        <!--
+                        a sensor rule element
+                        timeTriggeredFor - the time (in seconds) sets how long
+                            this rule element counts as triggered for the
+                            rule engine when a sensor alert for it is received
+                            (NOTE: do not set this value to low)
+                        username - the username of the sensor client that
+                            handles this sensor
+                        remoteSensorId - the sensor id of the sensor that is
+                            configured on the client side
+                        -->
+                        <sensor
+                            timeTriggeredFor="5.0"
+                            username="sensordev"
+                            remoteSensorId="0" />
+                    </and>
+
+                </rule>
+
+                <!--
+                    one rule of the rule chain
+                    order - gives the order in which the rules are evaluated
+                        (ascending order)
+                    maxTimeAfterPrev - gives the maximum amount of time
+                        (in seconds) that can be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a maximum time of 5 seconds, then 5 seconds can
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    minTimeAfterPrev - gives the minimum amount of time
+                        (in seconds) that have to be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a minimum time of 2 seconds, then 2 seconds have
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    counterActivated - sets if this rule uses a counter
+                    counterLimit - sets the limit of the counter. When it is
+                        reached, the rule does not trigger
+                    counterWaitTime - sets the time (in seconds) how long
+                        the counter have to wait until it can remove a counter
+                        token (and therefore can trigger again when the
+                        limit is reached)
+                -->
+                <rule
+                    order="1"
+                    maxTimeAfterPrev="5.0"
+                    minTimeAfterPrev="0.0"
+                    counterActivated="False"
+                    counterLimit="0"
+                    counterWaitTime="0" >
+
+                    <!--
+                        a boolean operator of the rule (possible boolean
+                        operators are <and>, <or> and <not>)
+                        (NOTE: the <not> operator can only have one rule
+                        element in it)
+                    -->
+                    <or>
+
+                        <!--
+                            gives the day of the week
+                            time - sets the timezone that is used
+                                ("utc" or "local")
+                            weekday - sets the day of the week
+                                (0 = Monday, ..., 6 = Sunday)
+                        -->
+                        <weekday
+                            time="utc"
+                            weekday="0" />
+
+                        <!--
+                            gives the day of the week
+                            time - sets the timezone that is used
+                                ("utc" or "local")
+                            weekday - sets the day of the week
+                                (0 = Monday, ..., 6 = Sunday)
+                        -->
+                        <weekday
+                            time="utc"
+                            weekday="1" />
+
+                        <!--
+                            gives the day of the week
+                            time - sets the timezone that is used
+                                ("utc" or "local")
+                            weekday - sets the day of the week
+                                (0 = Monday, ..., 6 = Sunday)
+                        -->
+                        <weekday
+                            time="utc"
+                            weekday="2" />
+
+                        <!--
+                            gives the day of the week
+                            time - sets the timezone that is used
+                                ("utc" or "local")
+                            weekday - sets the day of the week
+                                (0 = Monday, ..., 6 = Sunday)
+                        -->
+                        <weekday
+                            time="utc"
+                            weekday="3" />
+
+                        <!--
+                            gives the day of the week
+                            time - sets the timezone that is used
+                                ("utc" or "local")
+                            weekday - sets the day of the week
+                                (0 = Monday, ..., 6 = Sunday)
+                        -->
+                        <weekday
+                            time="utc"
+                            weekday="4" />
+
+                    </or>
+
+                </rule>
+
+                <!--
+                    one rule of the rule chain
+                    order - gives the order in which the rules are evaluated
+                        (ascending order)
+                    maxTimeAfterPrev - gives the maximum amount of time
+                        (in seconds) that can be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a maximum time of 5 seconds, then 5 seconds can
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    minTimeAfterPrev - gives the minimum amount of time
+                        (in seconds) that have to be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a minimum time of 2 seconds, then 2 seconds have
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    counterActivated - sets if this rule uses a counter
+                    counterLimit - sets the limit of the counter. When it is
+                        reached, the rule does not trigger
+                    counterWaitTime - sets the time (in seconds) how long
+                        the counter have to wait until it can remove a counter
+                        token (and therefore can trigger again when the
+                        limit is reached)
+                -->
+                <rule
+                    order="2"
+                    maxTimeAfterPrev="5.0"
+                    minTimeAfterPrev="0.0"
+                    counterActivated="False"
+                    counterLimit="0"
+                    counterWaitTime="0" >
+
+                    <!--
+                        a boolean operator of the rule (possible boolean
+                        operators are <and>, <or> and <not>)
+                        (NOTE: the <not> operator can only have one rule
+                        element in it)
+                    -->
+                    <and>
+
+                        <!--
+                            gives the hour of the day
+                            time - sets the timezone that is used
+                                ("utc" or "local")
+                            start - the start of the valid hour
+                                (values: 0 - 23)
+                            end - the end of the valid hour
+                                (values: 0 - 23)
+                                (NOTE: end >= start)
+                        -->
+                        <hour
+                            time="utc"
+                            start="15"
+                            end="20" />
+
+                        <!--
+                            gives the minute of the day
+                            start - the start of the valid minute
+                                (values: 0 - 59)
+                            end - the end of the valid minute
+                                (values: 0 - 59)
+                                (NOTE: end >= start)
+                        -->
+                        <minute
+                            start="0"
+                            end="59" />
+
+                        <!--
+                            gives the second of the day
+                            start - the start of the valid second
+                                (values: 0 - 59)
+                            end - the end of the valid second
+                                (values: 0 - 59)
+                                (NOTE: end >= start)
+                        -->
+                        <second
+                            start="0"
+                            end="20" />
+
+                    </and>
+
+                </rule>
+
+                <!--
+                    one rule of the rule chain
+                    order - gives the order in which the rules are evaluated
+                        (ascending order)
+                    maxTimeAfterPrev - gives the maximum amount of time
+                        (in seconds) that can be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a maximum time of 5 seconds, then 5 seconds can
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    minTimeAfterPrev - gives the minimum amount of time
+                        (in seconds) that have to be passed after the previous
+                        rule has triggered. For example when the previous rule
+                        of the rule chain has trigged and the current rule
+                        has a minimum time of 2 seconds, then 2 seconds have
+                        be passed before this rule has to be triggered (in
+                        order to trigger the whole rule chain)
+                        (NOTE: the first rule of the rule chain has no
+                        previous rule and therefore this value for it
+                        is ignored)
+                    counterActivated - sets if this rule uses a counter
+                    counterLimit - sets the limit of the counter. When it is
+                        reached, the rule does not trigger
+                    counterWaitTime - sets the time (in seconds) how long
+                        the counter have to wait until it can remove a counter
+                        token (and therefore can trigger again when the
+                        limit is reached)
+                -->
+                <rule
+                    order="3"
+                    maxTimeAfterPrev="5.0"
+                    minTimeAfterPrev="0.0"
+                    counterActivated="True"
+                    counterLimit="1"
+                    counterWaitTime="82800" >
+
+                    <!--
+                        a boolean operator of the rule (possible boolean
+                        operators are <and>, <or> and <not>)
+                        (NOTE: the <not> operator can only have one rule
+                        element in it)
+                    -->
+                    <not>
+
+                        <!--
+                            a boolean operator of the rule (possible boolean
+                            operators are <and>, <or> and <not>)
+                            (NOTE: the <not> operator can only have one rule
+                            element in it)
+                        -->
+                        <or>
+
+                            <!--
+                                gives the day of the month
+                                time - sets the timezone that is used
+                                    ("utc" or "local")
+                                monthday - sets the day of the month
+                                    (values: 1 - 31)
+                            -->
+                            <monthday
+                                time="utc"
+                                monthday="1" />
+
+                            <!--
+                                gives the day of the month
+                                time - sets the timezone that is used
+                                    ("utc" or "local")
+                                monthday - sets the day of the month
+                                    (values: 1 - 31)
+                            -->
+                            <monthday
+                                time="utc"
+                                monthday="2" />
+
+                        </or>
+
+                    </not>
+
+                </rule>
+
+            </rules>
+
+        </alertLevel>
+
+    </alertLevels>
+
+    <!--
+        In this section options for the internal sensors are configured.
+        Internal sensors are used by the server to react to fail states
+        and to trigger sensorAlerts in the alertR system.
+    -->
+    <internalSensors>
+
+        <!--
+            The sensorTimeout sensor is an internal sensor that triggers when
+            a sensor timed out. The server checks regularly if a sensor
+            has timed out and will trigger a sensorAlert if one does
+            (sensorAlert with state "triggered" when a sensor times out
+            and a sensorAlert with state "normal" if the sensor reconnects).
+            activated - This flags indicates if the internal sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <sensorTimeout
+            activated="True"
+            description="Internal: Sensor Timeout">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+
+        </sensorTimeout>
+
+        <!--
+            The nodeTimeout sensor is an internal sensor that triggers when
+            a node/client timed out. The server checks regularly if a node
+            has timed out and will trigger a sensorAlert if one does
+            (sensorAlert with state "triggered" when a node times out
+            and a sensorAlert with state "normal" if the node reconnects).
+            NOTE: This check is only performed on "persistent" nodes/clients.
+            "Non-persistent" clients are allowed to disconnect from the system.
+            activated - This flags indicates if the internal sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <nodeTimeout
+            activated="True"
+            description="Internal: Node Timeout">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>1</alertLevel>
+
+        </nodeTimeout>
+
+        <!--
+            The alertSystemActive sensor is an internal sensor that triggers
+            when the alarm system changes its state (activated/deactivated).
+            It allows you to utilize the global alarm system state changes.
+            activated - This flags indicates if the internal sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <alertSystemActive
+            activated="True"
+            description="Internal: Alert System Active">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+
+        </alertSystemActive>
+
+        <!--
+            The versionInformer sensor is an internal sensor that triggers
+            when a new version is available in the update repository for
+            any node connected to your alarm system.
+            activated - This flags indicates if the internal sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <versionInformer
+            activated="True"
+            description="Internal: Version Informer">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+
+        </versionInformer>
+
+    </internalSensors>
 
 </config>

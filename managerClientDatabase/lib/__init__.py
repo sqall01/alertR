@@ -12,7 +12,7 @@ from localServer import LocalServerSession, ThreadedUnixStreamServer
 from storage import Mysql
 from smtp import SMTPAlert
 from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
-	ServerEventHandler
+    ServerEventHandler
 from update import Updater
 from globalData import GlobalData
 from versionInformer import VersionInformer

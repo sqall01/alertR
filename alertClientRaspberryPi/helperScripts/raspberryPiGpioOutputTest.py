@@ -11,8 +11,8 @@ import sys
 outputPin = 18
 
 def signalHandler(signum, frame):
-	GPIO.cleanup()
-	sys.exit(0)
+    GPIO.cleanup()
+    sys.exit(0)
 
 signal.signal(signal.SIGINT, signalHandler)
 

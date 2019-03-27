@@ -10,7 +10,7 @@
 from client import ServerCommunication, ConnectionWatchdog, Receiver
 from smtp import SMTPAlert
 from serverObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, \
-	ServerEventHandler
+    ServerEventHandler
 from screen import ScreenUpdater, Console
 from update import Updater
 from globalData import GlobalData

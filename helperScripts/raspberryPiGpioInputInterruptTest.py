@@ -16,6 +16,6 @@ GPIO.setup(inputPin, GPIO.IN, pull_up_down=pulledUpDown)
 
 counter = 0
 while True:
-	GPIO.wait_for_edge(inputPin, edge)
-	counter += 1
-	print "Trigger no.: " + str(counter)
+    GPIO.wait_for_edge(inputPin, edge)
+    counter += 1
+    print "Trigger no.: " + str(counter)

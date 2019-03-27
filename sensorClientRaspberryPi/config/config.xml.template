@@ -1,410 +1,410 @@
 <?xml version="1.0"?>
 
 <!--
-	this is a template configuration file
-	please rename this template to "config.xml" if you want to use it
-	for the client
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the client
 -->
 <config version="0.503">
 
-	<!--
-		in this section general options are configured
-	-->
-	<general>
+    <!--
+        in this section general options are configured
+    -->
+    <general>
 
-		<!--
-			the settings for the logfile
-			file - absolute path to the logfile
-			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-		-->
-		<log
-			file="/absolute/path/to/logfile.log"
-			level="INFO" />
+        <!--
+            the settings for the logfile
+            file - absolute path to the logfile
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            file="/absolute/path/to/logfile.log"
+            level="INFO" />
 
-		<!--
-			the settings for the server
-			host - location/address of the server
-			port - port that is used by the server
-			caFile - path to the CA file to check the correctness of the
-				used SSL connection
-		-->
-		<server
-			host="server.h4des.org"
-			port="12345"
-			caFile="/absolute/path/to/server_CA.pem" />
+        <!--
+            the settings for the server
+            host - location/address of the server
+            port - port that is used by the server
+            caFile - path to the CA file to check the correctness of the
+                used SSL connection
+        -->
+        <server
+            host="server.h4des.org"
+            port="12345"
+            caFile="/absolute/path/to/server_CA.pem" />
 
-		<!--
-			the settings for a client certificate
-			certificateRequired - sets if it is required for the client
-				to authenticate itself via a certificate or not
-				(if you have the alert system reachable from the internet
-				you should use client certificates)
-				("True" or "False")
-			certFile - path to the certificate file of the client
-				this is used for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-			keyFile - path to the key file of the client that is used
-				for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-		-->
-		<client
-			certificateRequired="True"
-			certFile="/absolute/path/to/client.crt"
-			keyFile="/absolute/path/to/client.key" />
+        <!--
+            the settings for a client certificate
+            certificateRequired - sets if it is required for the client
+                to authenticate itself via a certificate or not
+                (if you have the alert system reachable from the internet
+                you should use client certificates)
+                ("True" or "False")
+            certFile - path to the certificate file of the client
+                this is used for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+            keyFile - path to the key file of the client that is used
+                for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+        -->
+        <client
+            certificateRequired="True"
+            certFile="/absolute/path/to/client.crt"
+            keyFile="/absolute/path/to/client.key" />
 
-		<!--
-			user credentials of this client
-			(WARNING: have to be unique for each client or strange
-			behavior will happen)
-			username - the username
-			password - the password (thanks cpt obvious ...)
-		-->
-		<credentials
-			username="user"
-			password="pass" />
+        <!--
+            user credentials of this client
+            (WARNING: have to be unique for each client or strange
+            behavior will happen)
+            username - the username
+            password - the password (thanks cpt obvious ...)
+        -->
+        <credentials
+            username="user"
+            password="pass" />
 
-	</general>
-
-
-	<!--
-		in this section options for email alerts are configured
-	-->
-	<smtp>
-
-		<!--
-			the general settings of the email notifications
-			activated - are email alerts active? ("True" or "False")
-			fromAddr - email address from which this email should be sent
-			toAddr - email address to which the email should be sent
-		-->
-		<general
-			activated="True"
-			fromAddr="alertSystem@h4des.org"
-			toAddr="youraddress@somehost.de" />
-
-		<!--
-			the server settings of the email notifications
-			host - address of the used smtp server
-				(only 127.0.0.1 supported at the moment)
-			port - port of the used smtp server
-		-->
-		<server
-			host="127.0.0.1"
-			port="25" />
-
-	</smtp>
+    </general>
 
 
-	<!--
-		in this section the options of the update process are configured
-	-->
-	<update>
+    <!--
+        in this section options for email alerts are configured
+    -->
+    <smtp>
 
-		<!--
-			the server settings of the update process (only change these
-				settings if you want to use your own repository and not
-				the alertR master repository on github)
-			host - address of the used web server
-				NOTE: the update process uses HTTPS and does not allow HTTP
-			port - port of the used web server
-			location - the location of the used alertR repository
-			caFile - the location of the CA/certificate file that is used
-				to validate the HTTPS connection
-				NOTE: the given location works for github on Debian like
-				distributions
-		-->
-		<server
-			host="raw.githubusercontent.com"
-			port="443"
-			location="/sqall01/alertR/master/"
-			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+        <!--
+            the general settings of the email notifications
+            activated - are email alerts active? ("True" or "False")
+            fromAddr - email address from which this email should be sent
+            toAddr - email address to which the email should be sent
+        -->
+        <general
+            activated="True"
+            fromAddr="alertSystem@h4des.org"
+            toAddr="youraddress@somehost.de" />
 
-	</update>
+        <!--
+            the server settings of the email notifications
+            host - address of the used smtp server
+                (only 127.0.0.1 supported at the moment)
+            port - port of the used smtp server
+        -->
+        <server
+            host="127.0.0.1"
+            port="25" />
 
-
-	<!--
-		section of all sensors that are monitored
-	-->
-	<sensors>
-
-		<!--
-			a single sensor is configured in a "sensor" element
-			if you need additional sensors just add a new one
-		-->
-		<sensor>
-
-			<!--
-				the general configuration of a sensor
-				id - local id of this sensor (has to be unique on this client)
-				description - description of this sensor
-				alertDelay - delay after which (when the alert system is still
-					active) the alert should trigger (this is processed
-					by the server and the value here is only used to register
-					with it at the server)
-				triggerAlert - this flag indicates if this sensor should
-					trigger an alert for example it could be just used to
-					signal the state to the server and not trigger
-					any alert (regardless of if the alert system is
-					active or not)
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this sensor should
-					trigger an alert when it goes back to a normal state (and
-					not only if a triggered state is reached and the flag
-					"triggerAlert" is set). If this flag is not set, this
-					client sends only a state change to the server to inform
-					it about the new state.
-					("True" or "False")
-			-->
-			<general
-				id="0"
-				description="office window top"
-				alertDelay="0"
-				triggerAlert="False"
-				triggerAlertNormal="False" />
-
-			<!--
-				the alert level that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels)
-			-->
-			<alertLevel>0</alertLevel>
-			<alertLevel>3</alertLevel>
-
-			<!--
-				Raspberry Pi gpio specific settings for the sensor
-				type - Sets the type of the sensor, either an interrupt driven
-					sensor which uses edge detection, or a polling sensor
-					which just polls the state of the gpio pin,
-					or a ds18b20 temperature sensor.
-					Only valid options: interrupt, polling, ds18b20.
-					This example: interrupt
-				gpioPin - raspberry pi gpio pin that is used by this sensor
-					NOTE: python uses the actual
-					pin number and not the gpio number
-				edge - sets the edge detection that is used by the sensor
-					edge = 0 => falling edge
-					edge = 1 => rising edge
-				pulledUpOrDown - sets the setting of the gpio if it is pulled
-					up or down
-					it is needed to lower a false positive detection rate
-					pulledUpOrDown = 0 => pulled down
-					pulledUpOrDown = 1 => pulled up
-				delayBetweenTriggers - sets the delay in seconds that is
-					waited until a sensor can trigger again
-					this is used to solve problems with the edge detection
-					when the signal is bouncing after the taster/switch has
-					been triggered
-				timeSensorTriggered - sets the time in seconds how long a
-					sensor should be seen as triggered by the alert system
-				edgeCountBeforeTrigger - the count of interrupts that has to
-					occur before an alert is triggered this is used to relax
-					the edge detection a little bit for example an interrupt
-					is triggered when an falling/rising edge is detected, if
-					your wiring is not good enough isolated
-					it can happen that electro magnetic radiation (because of
-					a starting vacuum cleaner for example) causes a
-					falling/rising edge
-					this option abuses the bouncing of the wiring, this means
-					that the radiation for example only triggers one
-					rising/falling edge and your normal wiring could cause
-					like four detected edges when it is triggered because of
-					the signal bouncing so you could use this circumstance to
-					determine correct triggers from false triggers by setting
-					a threshold of edges that have to be reached before an
-					alert is executed
-					(this can be tested with the interrupt helper script from
-					the repository)
-			-->
-			<gpio
-				type="interrupt"
-				gpioPin="26"
-				edge="0"
-				pulledUpOrDown="1"
-				delayBetweenTriggers="10"
-				timeSensorTriggered="5"
-				edgeCountBeforeTrigger="4" />
-
-		</sensor>
+    </smtp>
 
 
-		<!--
-			a single sensor is configured in a "sensor" element
-			if you need additional sensors just add a new one
-		-->
-		<sensor>
+    <!--
+        in this section the options of the update process are configured
+    -->
+    <update>
 
-			<!--
-				the general configuration of a sensor
-				id - local id of this sensor (has to be unique on this client)
-				description - description of this sensor
-				alertDelay - delay after which (when the alert system is still
-					active) the alert should trigger (this is processed
-					by the server and the value here is only used to register
-					with it at the server)
-				triggerAlert - this flag indicates if this sensor should
-					trigger an alert for example it could be just used to
-					signal the state to the server and not trigger
-					any alert (regardless of if the alert system is
-					active or not)
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this sensor should
-					trigger an alert when it goes back to a normal state (and
-					not only if a triggered state is reached and the flag
-					"triggerAlert" is set). If this flag is not set, this
-					client sends only a state change to the server to inform
-					it about the new state.
-					("True" or "False")
-			-->
-			<general
-				id="1"
-				description="office window bottom"
-				alertDelay="0"
-				triggerAlert="True"
-				triggerAlertNormal="False" />
+        <!--
+            the server settings of the update process (only change these
+                settings if you want to use your own repository and not
+                the alertR master repository on github)
+            host - address of the used web server
+                NOTE: the update process uses HTTPS and does not allow HTTP
+            port - port of the used web server
+            location - the location of the used alertR repository
+            caFile - the location of the CA/certificate file that is used
+                to validate the HTTPS connection
+                NOTE: the given location works for github on Debian like
+                distributions
+        -->
+        <server
+            host="raw.githubusercontent.com"
+            port="443"
+            location="/sqall01/alertR/master/"
+            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
 
-			<!--
-				the alert level that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels)
-			-->
-			<alertLevel>0</alertLevel>
-
-			<!--
-				Raspberry Pi gpio specific settings for the sensor
-				type - Sets the type of the sensor, either an interrupt driven
-					sensor which uses edge detection, or a polling sensor
-					which just polls the state of the gpio pin,
-					or a ds18b20 temperature sensor.
-					Only valid options: interrupt, polling, ds18b20.
-					This example: polling
-				gpioPin - raspberry pi gpio pin that is used by this sensor
-					NOTE: python uses the actual
-					pin number and not the gpio number
-				triggerState - on which internal state the alert should
-					trigger (either 0 or 1). Some sensors trigger with an
-					internal state of 1 (i.e., a pull-up when a switch is
-					opened), and some with an
-					internal state of 0. In order to decide if the sensor has
-					triggered this has to be set to the correct value.
-					Regardless on which internal state the sensor will trigger,
-					the alert system uses for its communication:
-					state = 0 => not triggered
-					state = 1 => triggered
-				stateCounter - Number of times the state has to be polled with
-					the same value (LOW or HIGH) before it counts as a state
-					change for the sensor (usually the state change occurs
-					directly when the state is read from the GPIO). This can
-					be used if your wiring is not sufficiently isolated
-					and a short change to LOW or HIGH can occur. The client
-					polls the state of the GPIO around every 0.5 seconds and
-					when a short change to LOW/HIGH occurs, the state of
-					the sensor is directly changed (which can lead to a
-					false alarm). When this value is set to a greater number
-					than 1, the polled state of the GPIO has to be the same
-					state (LOW or HIGH) for the configured number of times
-					before it is considered as a valid state change for the
-					sensor. For example, if it is set to 3,
-					the GPIO has to have the state HIGH for three
-					consecutive reads before a sensor alarm is triggered.
-					However, this also means that a delay of around 1.5 seconds
-					occurs before a sensor alarm is triggered (3 times the
-					0.5 seconds of the polling round).
-			-->
-			<gpio
-				type="polling"
-				gpioPin="24"
-				triggerState="1"
-				stateCounter="2" />
-
-		</sensor>
+    </update>
 
 
-		<!--
-			a single sensor is configured in a "sensor" element
-			if you need additional sensors just add a new one
-		-->
-		<sensor>
+    <!--
+        section of all sensors that are monitored
+    -->
+    <sensors>
 
-			<!--
-				the general configuration of a sensor
-				id - local id of this sensor (has to be unique on this client)
-				description - description of this sensor
-				alertDelay - delay after which (when the alert system is still
-					active) the alert should trigger (this is processed
-					by the server and the value here is only used to register
-					with it at the server)
-				triggerAlert - this flag indicates if this sensor should
-					trigger an alert for example it could be just used to
-					signal the state to the server and not trigger
-					any alert (regardless of if the alert system is
-					active or not)
-					("True" or "False")
-				triggerAlertNormal - this flag indicates if this sensor should
-					trigger an alert when it goes back to a normal state (and
-					not only if a triggered state is reached and the flag
-					"triggerAlert" is set). If this flag is not set, this
-					client sends only a state change to the server to inform
-					it about the new state.
-					("True" or "False")
-			-->
-			<general
-				id="2"
-				description="temperature bedroom"
-				alertDelay="0"
-				triggerAlert="True"
-				triggerAlertNormal="True" />
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
 
-			<!--
-				the alert level that is triggered by the sensor
-				(a sensor must have one but can have multiple alert levels)
-			-->
-			<alertLevel>0</alertLevel>
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="0"
+                description="office window top"
+                alertDelay="0"
+                triggerAlert="False"
+                triggerAlertNormal="False" />
 
-			<!--
-				Raspberry Pi gpio specific settings for the sensor
-				type - Sets the type of the sensor, either an interrupt driven
-					sensor which uses edge detection, or a polling sensor
-					which just polls the state of the gpio pin,
-					or a ds18b20 temperature sensor.
-					Only valid options: interrupt, polling, ds18b20.
-					This example: ds18b20
-				sensorName - The name of the ds18b20 sensor that should be
-					parsed. Normally, the name looks like this
-					"10-0008020b7c5d". On a Raspberry Pi, the sensor names
-					can be found in the directory "/sys/bus/w1/devices/".
-				interval - Gives the interval in seconds in which the data
-					of the sensor should be sent to the server.
-					NOTE: Sending the data to often (i.e., every second)
-					will increase the latency of your alarm system because
-					of collisions in the network communication.
-				hasThreshold - This flag indicates if the temperature sensor
-					has a threshold which should not be reached. If it is
-					deactivated, then the sensor is only used to send
-					temperature data to the server.
-					("True" or "False")
-				threshold - Float number which gives the threshold of the
-					sensor that should not be reached and therefore triggers
-					a sensor alert if it is reached and if it is back to
-					normal (if activated in the "general" section
-					of this sensor).
-				ordering - The order that should be used to check the
-					threshold value.
-					Valid options are: LT, EQ, GT.
-					LT: lower than - triggers a sensor alert if the temperature
-					is lower than the threshold.
-					EQ: equal - triggers a sensor alert if the temperature
-					is equal to the threshold.
-					GT: greater than - triggers a sensor alert if the
-					temperature is greater than the threshold.
-			-->
-			<gpio
-				type="ds18b20"
-				sensorName="10-0008020b7c5d"
-				interval="30"
-				hasThreshold="True"
-				threshold="15.0"
-				ordering="LT" />
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>3</alertLevel>
 
-		</sensor>
+            <!--
+                Raspberry Pi gpio specific settings for the sensor
+                type - Sets the type of the sensor, either an interrupt driven
+                    sensor which uses edge detection, or a polling sensor
+                    which just polls the state of the gpio pin,
+                    or a ds18b20 temperature sensor.
+                    Only valid options: interrupt, polling, ds18b20.
+                    This example: interrupt
+                gpioPin - raspberry pi gpio pin that is used by this sensor
+                    NOTE: python uses the actual
+                    pin number and not the gpio number
+                edge - sets the edge detection that is used by the sensor
+                    edge = 0 => falling edge
+                    edge = 1 => rising edge
+                pulledUpOrDown - sets the setting of the gpio if it is pulled
+                    up or down
+                    it is needed to lower a false positive detection rate
+                    pulledUpOrDown = 0 => pulled down
+                    pulledUpOrDown = 1 => pulled up
+                delayBetweenTriggers - sets the delay in seconds that is
+                    waited until a sensor can trigger again
+                    this is used to solve problems with the edge detection
+                    when the signal is bouncing after the taster/switch has
+                    been triggered
+                timeSensorTriggered - sets the time in seconds how long a
+                    sensor should be seen as triggered by the alert system
+                edgeCountBeforeTrigger - the count of interrupts that has to
+                    occur before an alert is triggered this is used to relax
+                    the edge detection a little bit for example an interrupt
+                    is triggered when an falling/rising edge is detected, if
+                    your wiring is not good enough isolated
+                    it can happen that electro magnetic radiation (because of
+                    a starting vacuum cleaner for example) causes a
+                    falling/rising edge
+                    this option abuses the bouncing of the wiring, this means
+                    that the radiation for example only triggers one
+                    rising/falling edge and your normal wiring could cause
+                    like four detected edges when it is triggered because of
+                    the signal bouncing so you could use this circumstance to
+                    determine correct triggers from false triggers by setting
+                    a threshold of edges that have to be reached before an
+                    alert is executed
+                    (this can be tested with the interrupt helper script from
+                    the repository)
+            -->
+            <gpio
+                type="interrupt"
+                gpioPin="26"
+                edge="0"
+                pulledUpOrDown="1"
+                delayBetweenTriggers="10"
+                timeSensorTriggered="5"
+                edgeCountBeforeTrigger="4" />
 
-	</sensors>
+        </sensor>
+
+
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
+
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="1"
+                description="office window bottom"
+                alertDelay="0"
+                triggerAlert="True"
+                triggerAlertNormal="False" />
+
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+
+            <!--
+                Raspberry Pi gpio specific settings for the sensor
+                type - Sets the type of the sensor, either an interrupt driven
+                    sensor which uses edge detection, or a polling sensor
+                    which just polls the state of the gpio pin,
+                    or a ds18b20 temperature sensor.
+                    Only valid options: interrupt, polling, ds18b20.
+                    This example: polling
+                gpioPin - raspberry pi gpio pin that is used by this sensor
+                    NOTE: python uses the actual
+                    pin number and not the gpio number
+                triggerState - on which internal state the alert should
+                    trigger (either 0 or 1). Some sensors trigger with an
+                    internal state of 1 (i.e., a pull-up when a switch is
+                    opened), and some with an
+                    internal state of 0. In order to decide if the sensor has
+                    triggered this has to be set to the correct value.
+                    Regardless on which internal state the sensor will trigger,
+                    the alert system uses for its communication:
+                    state = 0 => not triggered
+                    state = 1 => triggered
+                stateCounter - Number of times the state has to be polled with
+                    the same value (LOW or HIGH) before it counts as a state
+                    change for the sensor (usually the state change occurs
+                    directly when the state is read from the GPIO). This can
+                    be used if your wiring is not sufficiently isolated
+                    and a short change to LOW or HIGH can occur. The client
+                    polls the state of the GPIO around every 0.5 seconds and
+                    when a short change to LOW/HIGH occurs, the state of
+                    the sensor is directly changed (which can lead to a
+                    false alarm). When this value is set to a greater number
+                    than 1, the polled state of the GPIO has to be the same
+                    state (LOW or HIGH) for the configured number of times
+                    before it is considered as a valid state change for the
+                    sensor. For example, if it is set to 3,
+                    the GPIO has to have the state HIGH for three
+                    consecutive reads before a sensor alarm is triggered.
+                    However, this also means that a delay of around 1.5 seconds
+                    occurs before a sensor alarm is triggered (3 times the
+                    0.5 seconds of the polling round).
+            -->
+            <gpio
+                type="polling"
+                gpioPin="24"
+                triggerState="1"
+                stateCounter="2" />
+
+        </sensor>
+
+
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
+
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="2"
+                description="temperature bedroom"
+                alertDelay="0"
+                triggerAlert="True"
+                triggerAlertNormal="True" />
+
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+
+            <!--
+                Raspberry Pi gpio specific settings for the sensor
+                type - Sets the type of the sensor, either an interrupt driven
+                    sensor which uses edge detection, or a polling sensor
+                    which just polls the state of the gpio pin,
+                    or a ds18b20 temperature sensor.
+                    Only valid options: interrupt, polling, ds18b20.
+                    This example: ds18b20
+                sensorName - The name of the ds18b20 sensor that should be
+                    parsed. Normally, the name looks like this
+                    "10-0008020b7c5d". On a Raspberry Pi, the sensor names
+                    can be found in the directory "/sys/bus/w1/devices/".
+                interval - Gives the interval in seconds in which the data
+                    of the sensor should be sent to the server.
+                    NOTE: Sending the data to often (i.e., every second)
+                    will increase the latency of your alarm system because
+                    of collisions in the network communication.
+                hasThreshold - This flag indicates if the temperature sensor
+                    has a threshold which should not be reached. If it is
+                    deactivated, then the sensor is only used to send
+                    temperature data to the server.
+                    ("True" or "False")
+                threshold - Float number which gives the threshold of the
+                    sensor that should not be reached and therefore triggers
+                    a sensor alert if it is reached and if it is back to
+                    normal (if activated in the "general" section
+                    of this sensor).
+                ordering - The order that should be used to check the
+                    threshold value.
+                    Valid options are: LT, EQ, GT.
+                    LT: lower than - triggers a sensor alert if the temperature
+                    is lower than the threshold.
+                    EQ: equal - triggers a sensor alert if the temperature
+                    is equal to the threshold.
+                    GT: greater than - triggers a sensor alert if the
+                    temperature is greater than the threshold.
+            -->
+            <gpio
+                type="ds18b20"
+                sensorName="10-0008020b7c5d"
+                interval="30"
+                hasThreshold="True"
+                threshold="15.0"
+                ordering="LT" />
+
+        </sensor>
+
+    </sensors>
 
 </config>

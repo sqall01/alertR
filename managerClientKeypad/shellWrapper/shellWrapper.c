@@ -8,8 +8,8 @@
 
 int main() {
 
-	char *pathToScript[] = {PYTHON27, PATHTOSCRIPT, NULL};
+    char *pathToScript[] = {PYTHON27, PATHTOSCRIPT, NULL};
 
-	execve(PYTHON27, pathToScript, NULL);
+    execve(PYTHON27, pathToScript, NULL);
 
 }

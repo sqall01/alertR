@@ -1,173 +1,173 @@
 <?xml version="1.0"?>
 
 <!--
-	this is a template configuration file
-	please rename this template to "config.xml" if you want to use it
-	for the client
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the client
 -->
 <config version="0.501">
 
-	<!--
-		in this section general options are configured
-	-->
-	<general>
+    <!--
+        in this section general options are configured
+    -->
+    <general>
 
-		<!--
-			the settings for the logfile
-			file - absolute path to the logfile
-			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-		-->
-		<log
-			file="/absolute/path/to/logfile.log"
-			level="INFO" />
+        <!--
+            the settings for the logfile
+            file - absolute path to the logfile
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            file="/absolute/path/to/logfile.log"
+            level="INFO" />
 
-		<!--
-			the settings for the server
-			host - location/address of the server
-			port - port that is used by the server
-			caFile - path to the CA file to check the correctness of the
-				used SSL connection
-		-->
-		<server
-			host="server.h4des.org"
-			port="12345"
-			caFile="/absolute/path/to/server_CA.pem" />
+        <!--
+            the settings for the server
+            host - location/address of the server
+            port - port that is used by the server
+            caFile - path to the CA file to check the correctness of the
+                used SSL connection
+        -->
+        <server
+            host="server.h4des.org"
+            port="12345"
+            caFile="/absolute/path/to/server_CA.pem" />
 
-		<!--
-			the settings for a client certificate
-			certificateRequired - sets if it is required for the client
-				to authenticate itself via a certificate or not
-				(if you have the alert system reachable from the internet
-				you should use client certificates)
-				("True" or "False")
-			certFile - path to the certificate file of the client
-				this is used for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-			keyFile - path to the key file of the client that is used
-				for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-		-->
-		<client
-			certificateRequired="True"
-			certFile="/absolute/path/to/client.crt"
-			keyFile="/absolute/path/to/client.key" />
+        <!--
+            the settings for a client certificate
+            certificateRequired - sets if it is required for the client
+                to authenticate itself via a certificate or not
+                (if you have the alert system reachable from the internet
+                you should use client certificates)
+                ("True" or "False")
+            certFile - path to the certificate file of the client
+                this is used for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+            keyFile - path to the key file of the client that is used
+                for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+        -->
+        <client
+            certificateRequired="True"
+            certFile="/absolute/path/to/client.crt"
+            keyFile="/absolute/path/to/client.key" />
 
-		<!--
-			user credentials of this client
-			(WARNING: have to be unique for each client or strange
-			behavior will happen)
-			username - the username
-			password - the password (thanks cpt obvious ...)
-		-->
-		<credentials
-			username="user"
-			password="pass" />
+        <!--
+            user credentials of this client
+            (WARNING: have to be unique for each client or strange
+            behavior will happen)
+            username - the username
+            password - the password (thanks cpt obvious ...)
+        -->
+        <credentials
+            username="user"
+            password="pass" />
 
-		<!--
-			Connection settings.
-			persistent - Flag that indicates if this client is considered
-				to have a persistant connection to the server. This means
-				that if this client disconnects from the server, the server
-				will consider this as a fail state and will invoke an alarm.
-				("True" or "False")
-		-->
-		<connection
-			persistent="True" />
+        <!--
+            Connection settings.
+            persistent - Flag that indicates if this client is considered
+                to have a persistant connection to the server. This means
+                that if this client disconnects from the server, the server
+                will consider this as a fail state and will invoke an alarm.
+                ("True" or "False")
+        -->
+        <connection
+            persistent="True" />
 
-	</general>
-
-
-	<!--
-		in this section options for email alerts are configured
-	-->
-	<smtp>
-
-		<!--
-			the general settings of the email notifications
-			activated - are email alerts active? ("True" or "False")
-			fromAddr - email address from which this email should be sent
-			toAddr - email address to which the email should be sent
-		-->
-		<general
-			activated="True"
-			fromAddr="alertSystem@h4des.org"
-			toAddr="youraddress@somehost.de" />
-
-		<!--
-			the server settings of the email notifications
-			host - address of the used smtp server
-				(only 127.0.0.1 supported at the moment)
-			port - port of the used smtp server
-		-->
-		<server
-			host="127.0.0.1"
-			port="25" />
-
-	</smtp>
+    </general>
 
 
-	<!--
-		in this section the options of the update process are configured
-	-->
-	<update>
+    <!--
+        in this section options for email alerts are configured
+    -->
+    <smtp>
 
-		<!--
-			the server settings of the update process (only change these
-				settings if you want to use your own repository and not
-				the alertR master repository on github)
-			host - address of the used web server
-				NOTE: the update process uses HTTPS and does not allow HTTP
-			port - port of the used web server
-			location - the location of the used alertR repository
-			caFile - the location of the CA/certificate file that is used
-				to validate the HTTPS connection
-				NOTE: the given location works for github on Debian like
-				distributions
-		-->
-		<server
-			host="raw.githubusercontent.com"
-			port="443"
-			location="/sqall01/alertR/master/"
-			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+        <!--
+            the general settings of the email notifications
+            activated - are email alerts active? ("True" or "False")
+            fromAddr - email address from which this email should be sent
+            toAddr - email address to which the email should be sent
+        -->
+        <general
+            activated="True"
+            fromAddr="alertSystem@h4des.org"
+            toAddr="youraddress@somehost.de" />
 
-	</update>
+        <!--
+            the server settings of the email notifications
+            host - address of the used smtp server
+                (only 127.0.0.1 supported at the moment)
+            port - port of the used smtp server
+        -->
+        <server
+            host="127.0.0.1"
+            port="25" />
+
+    </smtp>
 
 
-	<!--
-		section of manager specific settings
-	-->
-	<manager>
+    <!--
+        in this section the options of the update process are configured
+    -->
+    <update>
 
-		<!--
-			the general settings of the manager client
-			description - description of the client
-		-->
-		<general
-			description="test manager" />
+        <!--
+            the server settings of the update process (only change these
+                settings if you want to use your own repository and not
+                the alertR master repository on github)
+            host - address of the used web server
+                NOTE: the update process uses HTTPS and does not allow HTTP
+            port - port of the used web server
+            location - the location of the used alertR repository
+            caFile - the location of the CA/certificate file that is used
+                to validate the HTTPS connection
+                NOTE: the given location works for github on Debian like
+                distributions
+        -->
+        <server
+            host="raw.githubusercontent.com"
+            port="443"
+            location="/sqall01/alertR/master/"
+            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
 
-		<!--
-			console specific settings
-			timeShowSensorAlert - the time in seconds the received sensor
-				alerts should be displayed in a list before they are removed
-			maxCountShowSensorAlert - the maximum count of sensor
-				alerts that should be displayed 
-			maxCountShowSensorsPerPage - the maximum count of sensors
-				that should be displayed per page
-			maxCountShowAlertsPerPage - the maximum count of alert
-				clients that should be displayed per page
-			maxCountShowManagersPerPage - the maximum count of manager
-				clients that should be displayed per page
-			maxCountShowAlertLevelsPerPage - the maximum count of alert
-				levels that should be displayed per page
-		-->
-		<console
-			timeShowSensorAlert="3600"
-			maxCountShowSensorAlert="15"
-			maxCountShowSensorsPerPage="7"
-			maxCountShowAlertsPerPage="4"
-			maxCountShowManagersPerPage="4"
-			maxCountShowAlertLevelsPerPage="2" />
+    </update>
 
-	</manager>
+
+    <!--
+        section of manager specific settings
+    -->
+    <manager>
+
+        <!--
+            the general settings of the manager client
+            description - description of the client
+        -->
+        <general
+            description="test manager" />
+
+        <!--
+            console specific settings
+            timeShowSensorAlert - the time in seconds the received sensor
+                alerts should be displayed in a list before they are removed
+            maxCountShowSensorAlert - the maximum count of sensor
+                alerts that should be displayed 
+            maxCountShowSensorsPerPage - the maximum count of sensors
+                that should be displayed per page
+            maxCountShowAlertsPerPage - the maximum count of alert
+                clients that should be displayed per page
+            maxCountShowManagersPerPage - the maximum count of manager
+                clients that should be displayed per page
+            maxCountShowAlertLevelsPerPage - the maximum count of alert
+                levels that should be displayed per page
+        -->
+        <console
+            timeShowSensorAlert="3600"
+            maxCountShowSensorAlert="15"
+            maxCountShowSensorsPerPage="7"
+            maxCountShowAlertsPerPage="4"
+            maxCountShowManagersPerPage="4"
+            maxCountShowAlertLevelsPerPage="2" />
+
+    </manager>
 
 </config>

@@ -19,161 +19,161 @@ from userBackend import CSVBackend
 # at runtime.
 class ConfigWatchdog(threading.Thread):
 
-	def __init__(self, globalData, configCheckInterval):
-		threading.Thread.__init__(self)
+    def __init__(self, globalData, configCheckInterval):
+        threading.Thread.__init__(self)
 
-		# Get global configured data
-		self.globalData = globalData
-		self.logger = self.globalData.logger
-		self.userBackend = self.globalData.userBackend
-		self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
-		self.storage = self.globalData.storage
-		self.serverSessions = self.globalData.serverSessions
+        # Get global configured data
+        self.globalData = globalData
+        self.logger = self.globalData.logger
+        self.userBackend = self.globalData.userBackend
+        self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
+        self.storage = self.globalData.storage
+        self.serverSessions = self.globalData.serverSessions
 
-		# File name of this file (used for logging)
-		self.fileName = os.path.basename(__file__)
+        # File name of this file (used for logging)
+        self.fileName = os.path.basename(__file__)
 
-		# Get value for the configured check interval.
-		self.configCheckInterval = configCheckInterval
+        # Get value for the configured check interval.
+        self.configCheckInterval = configCheckInterval
 
-		# Set exit flag as false
-		self.exitFlag = False
+        # Set exit flag as false
+        self.exitFlag = False
 
-		# Set which configuration files should be checked.
-		self.CSVUsersCheck = False
-		self.CSVUsersHash  = ""
-		self.CSVUsersFile = self.globalData.userBackendCsvFile
-		self.CSVUsersLastCheck = 0.0
-		if isinstance(self.userBackend, CSVBackend):
-			self.CSVUsersCheck = True
-
-
-	def _createHash(self, fileLocation):
-		md5 = hashlib.md5()
-		with open(fileLocation, 'rb') as fp:
-			while True:
-				data = fp.read(4096)
-				if not data:
-					break
-				md5.update(data)
-
-		return md5.hexdigest()
+        # Set which configuration files should be checked.
+        self.CSVUsersCheck = False
+        self.CSVUsersHash  = ""
+        self.CSVUsersFile = self.globalData.userBackendCsvFile
+        self.CSVUsersLastCheck = 0.0
+        if isinstance(self.userBackend, CSVBackend):
+            self.CSVUsersCheck = True
 
 
-	# This function synchronizes the existing usernames with
-	# existing connections. When a connection still exists with
-	# a username which does not exist anymore, it is closed.
-	def _syncUsernamesAndConnections(self):
+    def _createHash(self, fileLocation):
+        md5 = hashlib.md5()
+        with open(fileLocation, 'rb') as fp:
+            while True:
+                data = fp.read(4096)
+                if not data:
+                    break
+                md5.update(data)
 
-		for serverSession in self.serverSessions:
-
-			# Check if client communication object exists.
-			if serverSession.clientComm is None:
-				continue
-
-			username = serverSession.clientComm.username
-			if username is None:
-				continue
-
-			# Close connection to the client if the username
-			# does no longer exist.
-			if not self.userBackend.userExists(username):
-
-				self.logger.info("[%s]: Username '%s' does not exist anymore. "
-					% (self.fileName, username)
-					+ "Closing connection to client.")
-
-				serverSession.closeConnection()
+        return md5.hexdigest()
 
 
-	# This function synchronizes the existing usernames with
-	# the entries in the database. When an entry still exists for
-	# a username which does not exist anymore, delete it.
-	#
-	# return True or False
-	def _syncUsernamesAndDatabase(self):
+    # This function synchronizes the existing usernames with
+    # existing connections. When a connection still exists with
+    # a username which does not exist anymore, it is closed.
+    def _syncUsernamesAndConnections(self):
 
-		nodesList = self.storage.getNodes(self.logger)
+        for serverSession in self.serverSessions:
 
-		if nodesList is None:
-			self.logger.error("[%s]: Not able to retrieve nodes from database."
-				% self.fileName)
-			return
+            # Check if client communication object exists.
+            if serverSession.clientComm is None:
+                continue
 
-		# Check the username of each node if it still exists and delete if
-		# it does not.
-		for nodeObj in nodesList:
-			nodeId = nodeObj.id
-			username = nodeObj.username
-			nodeType = nodeObj.nodeType
+            username = serverSession.clientComm.username
+            if username is None:
+                continue
 
-			# Ignore server node.
-			if nodeType == "server":
-				continue
+            # Close connection to the client if the username
+            # does no longer exist.
+            if not self.userBackend.userExists(username):
 
-			if not self.userBackend.userExists(username):
+                self.logger.info("[%s]: Username '%s' does not exist anymore. "
+                    % (self.fileName, username)
+                    + "Closing connection to client.")
 
-				self.logger.info("[%s]: Username '%s' does not exist anymore. "
-					% (self.fileName, username)
-					+ "Removing node from database.")
-
-				if not self.storage.deleteNode(nodeId, self.logger):
-
-					self.logger.error("[%s]: Not able to delete node with id "
-						% self.fileName
-						+ "'%d'."
-						% nodeId)
+                serverSession.closeConnection()
 
 
-	def run(self):
+    # This function synchronizes the existing usernames with
+    # the entries in the database. When an entry still exists for
+    # a username which does not exist anymore, delete it.
+    #
+    # return True or False
+    def _syncUsernamesAndDatabase(self):
 
-		# Synchronize database with usernames in backend once in the
-		# beginning in order to catch changes that were made while
-		# the server was not running.
-		self._syncUsernamesAndDatabase()
+        nodesList = self.storage.getNodes(self.logger)
 
-		if self.CSVUsersCheck and os.path.isfile(self.CSVUsersFile):
-			self.CSVUsersHash = self._createHash(self.CSVUsersFile)
-			self.CSVUsersLastCheck = int(time.time())
+        if nodesList is None:
+            self.logger.error("[%s]: Not able to retrieve nodes from database."
+                % self.fileName)
+            return
 
-		while True:
-			# Wait 5 seconds before checking time of last received data.
-			for i in range(5):
-				if self.exitFlag:
-					self.logger.info("[%s]: Exiting ConfigWatchdog."
-						% self.fileName)
-					return
-				time.sleep(1)
+        # Check the username of each node if it still exists and delete if
+        # it does not.
+        for nodeObj in nodesList:
+            nodeId = nodeObj.id
+            username = nodeObj.username
+            nodeType = nodeObj.nodeType
 
-			# Check CSV users file if we are using it.
-			if self.CSVUsersCheck:
-				diffTime = int(time.time()) - self.CSVUsersLastCheck
-				if diffTime > self.configCheckInterval:
+            # Ignore server node.
+            if nodeType == "server":
+                continue
 
-					self.logger.debug("[%s]: Checking changes of "
-						% self.fileName
-						+ "CSV users file.")
+            if not self.userBackend.userExists(username):
 
-					newHash = self._createHash(self.CSVUsersFile)
-					self.CSVUsersLastCheck = int(time.time())
+                self.logger.info("[%s]: Username '%s' does not exist anymore. "
+                    % (self.fileName, username)
+                    + "Removing node from database.")
 
-					# Reload CSV users file if it has changed.
-					if self.CSVUsersHash != newHash:
+                if not self.storage.deleteNode(nodeId, self.logger):
 
-						self.logger.info("[%s]: CSV users file changed."
-							% self.fileName)
+                    self.logger.error("[%s]: Not able to delete node with id "
+                        % self.fileName
+                        + "'%d'."
+                        % nodeId)
 
-						self.CSVUsersHash = newHash
-						self.userBackend.readUserdata()
 
-						# Close connections to clients which usernames
-						# are no longer valid.
-						self._syncUsernamesAndConnections()
+    def run(self):
 
-						# Synchronize usernames that are no longer valid
-						# with our database.
-						if self._syncUsernamesAndDatabase():
-							# Wake up manager update executer if
-							# we removed a node.
-							self.managerUpdateExecuter.forceStatusUpdate = True
-							self.managerUpdateExecuter.managerUpdateEvent.set()
+        # Synchronize database with usernames in backend once in the
+        # beginning in order to catch changes that were made while
+        # the server was not running.
+        self._syncUsernamesAndDatabase()
+
+        if self.CSVUsersCheck and os.path.isfile(self.CSVUsersFile):
+            self.CSVUsersHash = self._createHash(self.CSVUsersFile)
+            self.CSVUsersLastCheck = int(time.time())
+
+        while True:
+            # Wait 5 seconds before checking time of last received data.
+            for i in range(5):
+                if self.exitFlag:
+                    self.logger.info("[%s]: Exiting ConfigWatchdog."
+                        % self.fileName)
+                    return
+                time.sleep(1)
+
+            # Check CSV users file if we are using it.
+            if self.CSVUsersCheck:
+                diffTime = int(time.time()) - self.CSVUsersLastCheck
+                if diffTime > self.configCheckInterval:
+
+                    self.logger.debug("[%s]: Checking changes of "
+                        % self.fileName
+                        + "CSV users file.")
+
+                    newHash = self._createHash(self.CSVUsersFile)
+                    self.CSVUsersLastCheck = int(time.time())
+
+                    # Reload CSV users file if it has changed.
+                    if self.CSVUsersHash != newHash:
+
+                        self.logger.info("[%s]: CSV users file changed."
+                            % self.fileName)
+
+                        self.CSVUsersHash = newHash
+                        self.userBackend.readUserdata()
+
+                        # Close connections to clients which usernames
+                        # are no longer valid.
+                        self._syncUsernamesAndConnections()
+
+                        # Synchronize usernames that are no longer valid
+                        # with our database.
+                        if self._syncUsernamesAndDatabase():
+                            # Wake up manager update executer if
+                            # we removed a node.
+                            self.managerUpdateExecuter.forceStatusUpdate = True
+                            self.managerUpdateExecuter.managerUpdateEvent.set()

@@ -9,6 +9,6 @@
 
 # This enum class gives the different data types of a sensor.
 class SensorDataType:
-	NONE = 0
-	INT = 1
-	FLOAT = 2
+    NONE = 0
+    INT = 1
+    FLOAT = 2

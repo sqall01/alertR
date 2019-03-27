@@ -14,9 +14,9 @@ from storage import Sqlite, Mysql
 from alert import SensorAlertExecuter
 from localObjects import SensorDataType, Sensor, AlertLevel
 from internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, \
-	AlertSystemActiveSensor, VersionInformerSensor
+    AlertSystemActiveSensor, VersionInformerSensor
 from ruleObjects import RuleStart, RuleElement, RuleBoolean, RuleSensor, \
-	RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
+    RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
 from userBackend import CSVBackend
 from manager import ManagerUpdateExecuter
 from update import Updater

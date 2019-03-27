@@ -1,217 +1,217 @@
 <?xml version="1.0"?>
 
 <!--
-	this is a template configuration file
-	please rename this template to "config.xml" if you want to use it
-	for the client
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the client
 -->
 <config version="0.501">
 
-	<!--
-		in this section general options are configured
-	-->
-	<general>
+    <!--
+        in this section general options are configured
+    -->
+    <general>
 
-		<!--
-			the settings for the logfile
-			file - absolute path to the logfile
-			level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-		-->
-		<log
-			file="/absolute/path/to/logfile.log"
-			level="INFO" />
+        <!--
+            the settings for the logfile
+            file - absolute path to the logfile
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            file="/absolute/path/to/logfile.log"
+            level="INFO" />
 
-		<!--
-			the settings for the server
-			host - location/address of the server
-			port - port that is used by the server
-			caFile - path to the CA file to check the correctness of the
-				used SSL connection
-		-->
-		<server
-			host="server.h4des.org"
-			port="12345"
-			caFile="/absolute/path/to/server_CA.pem" />
+        <!--
+            the settings for the server
+            host - location/address of the server
+            port - port that is used by the server
+            caFile - path to the CA file to check the correctness of the
+                used SSL connection
+        -->
+        <server
+            host="server.h4des.org"
+            port="12345"
+            caFile="/absolute/path/to/server_CA.pem" />
 
-		<!--
-			the settings for a client certificate
-			certificateRequired - sets if it is required for the client
-				to authenticate itself via a certificate or not
-				(if you have the alert system reachable from the internet
-				you should use client certificates)
-				("True" or "False")
-			certFile - path to the certificate file of the client
-				this is used for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-			keyFile - path to the key file of the client that is used
-				for the SSL connection
-				(only processed if "certificateRequired" is set to "True")
-		-->
-		<client
-			certificateRequired="True"
-			certFile="/absolute/path/to/client.crt"
-			keyFile="/absolute/path/to/client.key" />
+        <!--
+            the settings for a client certificate
+            certificateRequired - sets if it is required for the client
+                to authenticate itself via a certificate or not
+                (if you have the alert system reachable from the internet
+                you should use client certificates)
+                ("True" or "False")
+            certFile - path to the certificate file of the client
+                this is used for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+            keyFile - path to the key file of the client that is used
+                for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+        -->
+        <client
+            certificateRequired="True"
+            certFile="/absolute/path/to/client.crt"
+            keyFile="/absolute/path/to/client.key" />
 
-		<!--
-			user credentials of this client
-			(WARNING: have to be unique for each client or strange
-			behavior will happen)
-			username - the username
-			password - the password (thanks cpt obvious ...)
-		-->
-		<credentials
-			username="user"
-			password="pass" />
+        <!--
+            user credentials of this client
+            (WARNING: have to be unique for each client or strange
+            behavior will happen)
+            username - the username
+            password - the password (thanks cpt obvious ...)
+        -->
+        <credentials
+            username="user"
+            password="pass" />
 
-		<!--
-			Connection settings.
-			persistent - Flag that indicates if this client is considered
-				to have a persistant connection to the server. This means
-				that if this client disconnects from the server, the server
-				will consider this as a fail state and will invoke an alarm.
-				("True" or "False")
-		-->
-		<connection
-			persistent="True" />
+        <!--
+            Connection settings.
+            persistent - Flag that indicates if this client is considered
+                to have a persistant connection to the server. This means
+                that if this client disconnects from the server, the server
+                will consider this as a fail state and will invoke an alarm.
+                ("True" or "False")
+        -->
+        <connection
+            persistent="True" />
 
-	</general>
-
-
-	<!--
-		in this section options for email alerts are configured
-	-->
-	<smtp>
-
-		<!--
-			the general settings of the email notifications
-			activated - are email alerts active? ("True" or "False")
-			fromAddr - email address from which this email should be sent
-			toAddr - email address to which the email should be sent
-		-->
-		<general
-			activated="True"
-			fromAddr="alertSystem@h4des.org"
-			toAddr="youraddress@somehost.de" />
-
-		<!--
-			the server settings of the email notifications
-			host - address of the used smtp server
-				(only 127.0.0.1 supported at the moment)
-			port - port of the used smtp server
-		-->
-		<server
-			host="127.0.0.1"
-			port="25" />
-
-	</smtp>
+    </general>
 
 
-	<!--
-		in this section the options of the update process are configured
-	-->
-	<update>
+    <!--
+        in this section options for email alerts are configured
+    -->
+    <smtp>
 
-		<!--
-			the general settings of the update checking
-			activated - should the server check for updates?
-				("True" or "False")
-			interval - the interval in seconds in which the server checks
-				online for updates
-		-->
-		<general
-			activated="True"
-			interval="86400" />
+        <!--
+            the general settings of the email notifications
+            activated - are email alerts active? ("True" or "False")
+            fromAddr - email address from which this email should be sent
+            toAddr - email address to which the email should be sent
+        -->
+        <general
+            activated="True"
+            fromAddr="alertSystem@h4des.org"
+            toAddr="youraddress@somehost.de" />
 
-		<!--
-			the server settings of the update process (only change these
-				settings if you want to use your own repository and not
-				the alertR master repository on github)
-			host - address of the used web server
-				NOTE: the update process uses HTTPS and does not allow HTTP
-			port - port of the used web server
-			location - the location of the used alertR repository
-			caFile - the location of the CA/certificate file that is used
-				to validate the HTTPS connection
-				NOTE: the given location works for github on Debian like
-				distributions
-		-->
-		<server
-			host="raw.githubusercontent.com"
-			port="443"
-			location="/sqall01/alertR/master/"
-			caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+        <!--
+            the server settings of the email notifications
+            host - address of the used smtp server
+                (only 127.0.0.1 supported at the moment)
+            port - port of the used smtp server
+        -->
+        <server
+            host="127.0.0.1"
+            port="25" />
 
-	</update>
+    </smtp>
 
 
-	<!--
-		section of manager specific settings
-	-->
-	<manager>
+    <!--
+        in this section the options of the update process are configured
+    -->
+    <update>
 
-		<!--
-			the general settings of the manager client
-			description - description of the client
-		-->
-		<general
-			description="test manager" />
+        <!--
+            the general settings of the update checking
+            activated - should the server check for updates?
+                ("True" or "False")
+            interval - the interval in seconds in which the server checks
+                online for updates
+        -->
+        <general
+            activated="True"
+            interval="86400" />
 
-		<!--
-			storage specific settings
-			method - chose how the data of the alert system is stored
-				only valid options: mysql
-			server - the address of the database server
-				(only processed if mysql is used)
-			port - the port of the database server
-				(only processed if mysql is used;
-				default value mysql uses is 3306)
-			database - the name of the database
-				(only processed if mysql is used)
-			username - the username for the database server
-				(only processed if mysql is used)
-			password - the password for the database server
-				(only processed if mysql is used)
-		-->
-		<storage 
-			method="mysql"
-			server="127.0.0.1"
-			port="3306"
-			database="alertr_mobile_manager"
-			username="username"
-			password="password" />
+        <!--
+            the server settings of the update process (only change these
+                settings if you want to use your own repository and not
+                the alertR master repository on github)
+            host - address of the used web server
+                NOTE: the update process uses HTTPS and does not allow HTTP
+            port - port of the used web server
+            location - the location of the used alertR repository
+            caFile - the location of the CA/certificate file that is used
+                to validate the HTTPS connection
+                NOTE: the given location works for github on Debian like
+                distributions
+        -->
+        <server
+            host="raw.githubusercontent.com"
+            port="443"
+            location="/sqall01/alertR/master/"
+            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
 
-		<!--
-			local unix server instance settings
-			activated - flag that indicates if the local unix server instance
-				should be started or not (the local unix server instance
-				is used as a communication channel for external applications
-				like web sites, etc.)
-				("True" or "False")
-			unixSocketFile - the location plus name of the socket file
-				that is created for the local unix server instance
-				(only processed if the local server instance is activated)
-		-->
-		<server
-			activated="False"
-			unixSocketFile="/tmp/local.socket" />
+    </update>
 
-		<!--
-			options for the manager
-			sensorAlertLifeSpan - gives the amount of days a sensor alert is
-				kept in the database before it is removed. If set to '0', the
-				sensor alert is deleted directly before written to the
-				database.
-			eventsLifeSpan - gives the amount of days a event is
-				kept in the database before it is removed. If set to '0', the
-				event is deleted directly before written to the
-				database. An event is anything that has happened on the
-				alert system for example a sensor alert, a state change
-				of an sensor, an option change etc.
-		-->
-		<options
-			sensorAlertLifeSpan="1"
-			eventsLifeSpan="100" />
 
-	</manager>
+    <!--
+        section of manager specific settings
+    -->
+    <manager>
+
+        <!--
+            the general settings of the manager client
+            description - description of the client
+        -->
+        <general
+            description="test manager" />
+
+        <!--
+            storage specific settings
+            method - chose how the data of the alert system is stored
+                only valid options: mysql
+            server - the address of the database server
+                (only processed if mysql is used)
+            port - the port of the database server
+                (only processed if mysql is used;
+                default value mysql uses is 3306)
+            database - the name of the database
+                (only processed if mysql is used)
+            username - the username for the database server
+                (only processed if mysql is used)
+            password - the password for the database server
+                (only processed if mysql is used)
+        -->
+        <storage 
+            method="mysql"
+            server="127.0.0.1"
+            port="3306"
+            database="alertr_mobile_manager"
+            username="username"
+            password="password" />
+
+        <!--
+            local unix server instance settings
+            activated - flag that indicates if the local unix server instance
+                should be started or not (the local unix server instance
+                is used as a communication channel for external applications
+                like web sites, etc.)
+                ("True" or "False")
+            unixSocketFile - the location plus name of the socket file
+                that is created for the local unix server instance
+                (only processed if the local server instance is activated)
+        -->
+        <server
+            activated="False"
+            unixSocketFile="/tmp/local.socket" />
+
+        <!--
+            options for the manager
+            sensorAlertLifeSpan - gives the amount of days a sensor alert is
+                kept in the database before it is removed. If set to '0', the
+                sensor alert is deleted directly before written to the
+                database.
+            eventsLifeSpan - gives the amount of days a event is
+                kept in the database before it is removed. If set to '0', the
+                event is deleted directly before written to the
+                database. An event is anything that has happened on the
+                alert system for example a sensor alert, a state change
+                of an sensor, an option change etc.
+        -->
+        <options
+            sensorAlertLifeSpan="1"
+            eventsLifeSpan="100" />
+
+    </manager>
 
 </config>
