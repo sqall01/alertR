@@ -79,7 +79,7 @@ class SurveyExecuter(threading.Thread):
             # Check if server responded correctly.
             if r.status_code != 200:
                 raise ValueError("Server response code not 200 (was %d)."
-                    % response.status)
+                    % r.status_code)
 
             data = r.json()
             if data["code"] != ErrorCodes.NO_ERROR:
