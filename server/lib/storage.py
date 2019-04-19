@@ -2952,7 +2952,7 @@ class Sqlite(_Storage):
             return False
 
         # Delete all corresponding alert entries from database.
-        if nodeObj.type == "alert":
+        if nodeObj.nodeType == "alert":
 
             if not self._deleteAlertsForNodeId(nodeId, logger):
                 self._releaseLock(logger)
@@ -2960,7 +2960,7 @@ class Sqlite(_Storage):
                 return False
 
         # Delete all corresponding manager entries from database.
-        elif nodeObj.type == "manager":
+        elif nodeObj.nodeType == "manager":
 
             if not self._deleteManagerForNodeId(nodeId, logger):
                 self._releaseLock(logger)
@@ -2968,7 +2968,7 @@ class Sqlite(_Storage):
                 return False
 
         # Delete all corresponding sensor entries from database.
-        elif nodeObj.type == "sensor":
+        elif nodeObj.nodeType == "sensor":
 
             if not self._deleteSensorsForNodeId(nodeId, logger):
                 self._releaseLock(logger)
@@ -2978,7 +2978,7 @@ class Sqlite(_Storage):
         # Return if we do not know how to handle the node.
         else:
             logger.exception("[%s]: Unknown node type '%s' for node "
-                % (self.fileName, nodeObj.type)
+                % (self.fileName, nodeObj.nodeType)
                 + "with id %d."
                 % nodeId)
 
@@ -6840,7 +6840,7 @@ class Mysql(_Storage):
             return False
 
         # Delete all corresponding alert entries from database.
-        if nodeObj.type == "alert":
+        if nodeObj.nodeType == "alert":
 
             if not self._deleteAlertsForNodeId(nodeId, logger):
 
@@ -6852,7 +6852,7 @@ class Mysql(_Storage):
                 return False
 
         # Delete all corresponding manager entries from database.
-        elif nodeObj.type == "manager":
+        elif nodeObj.nodeType == "manager":
 
             if not self._deleteManagerForNodeId(nodeId, logger):
 
@@ -6864,7 +6864,7 @@ class Mysql(_Storage):
                 return False
 
         # Delete all corresponding sensor entries from database.
-        elif nodeObj.type == "sensor":
+        elif nodeObj.nodeType == "sensor":
 
             if not self._deleteSensorsForNodeId(nodeId, logger):
 
@@ -6878,7 +6878,7 @@ class Mysql(_Storage):
         # Return if we do not know how to handle the node.
         else:
             logger.exception("[%s]: Unknown node type '%s' for node "
-                % (self.fileName, nodeObj.type)
+                % (self.fileName, nodeObj.nodeType)
                 + "with id %d."
                 % nodeId)
 
