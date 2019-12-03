@@ -121,7 +121,7 @@ class ServerCommunication:
 
         self.client.close()
 
-    # this internal function that tries to initiate a transaction with
+    # internal function that tries to initiate a transaction with
     # the server (and acquires a lock if it is told to do so)
     def _initiateTransaction(self, messageType, messageSize, acquireLock: bool=False):
 
