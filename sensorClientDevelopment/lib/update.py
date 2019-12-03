@@ -1,15 +1,13 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import socket
-import ssl
-import httplib
+import requests
 import threading
 import os
 import time
@@ -20,6 +18,8 @@ import tempfile
 import shutil
 import stat
 import math
+from .globalData import GlobalData
+from typing import Dict, Any
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -29,37 +29,10 @@ class _FileUpdateType:
     MODIFY = 3
 
 
-# HTTPSConnection like class that verifies server certificates
-class VerifiedHTTPSConnection(httplib.HTTPSConnection):
-    # needs socket and ssl lib
-    def __init__(self, host, port=None, servercert_file=None, 
-        key_file=None, cert_file=None, strict=None, 
-        timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-        httplib.HTTPSConnection.__init__(self, host, port, key_file, 
-            cert_file, strict, timeout)
-        self.servercert_file = servercert_file
-
-    # overwrites the original version of httplib (python 2.6)
-    def connect(self):
-        "Connect to a host on a given (SSL) port."
-
-        sock = socket.create_connection((self.host, self.port), self.timeout)
-        if self._tunnel_host:
-            self.sock = sock
-            self._tunnel()
-
-        # the only thing that has to be changed in the original function from
-        # httplib (tell ssl.wrap_socket to verify server certificate)
-        self.sock = ssl.wrap_socket(sock, self.key_file, 
-            self.cert_file, cert_reqs=ssl.CERT_REQUIRED, 
-            ca_certs=self.servercert_file)
-
-
 # this class processes all actions concerning the update process
 class Updater:
 
-    def __init__(self, host, port, serverPath, caFile, globalData,
-        localInstanceInfo, retrieveInfo=True):
+    def __init__(self, url: str, globalData: GlobalData, localInstanceInfo: Dict[str, Any], retrieveInfo: bool=True):
 
         # used for logging
         self.fileName = os.path.basename(__file__)
@@ -74,14 +47,12 @@ class Updater:
         self.instance = self.globalData.instance
 
         # location of this instance
-        self.instanceLocation = os.path.dirname(os.path.abspath(__file__)) \
-            + "/../"
+        self.instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
 
         # set update server configuration
-        self.host = host
-        self.port = port
-        self.serverPath = serverPath
-        self.caFile = caFile
+        if not url.lower().startswith("https"):
+            raise ValueError("Only 'https' is allowed.")
+        self.url = url
 
         # needed to keep track of the newest version
         self.newestVersion = self.version
@@ -101,18 +72,15 @@ class Updater:
                 raise ValueError("Not able to get newest "
                     + "repository information.")
 
-
     # internal function that acquires the lock
     def _acquireLock(self):
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.updaterLock.acquire()
 
-
     # internal function that releases the lock
     def _releaseLock(self):
         logging.debug("[%s]: Release lock." % self.fileName)
         self.updaterLock.release()
-
 
     # internal function that checks which files are new and which files have
     # to be updated
@@ -192,7 +160,6 @@ class Updater:
             % counterDelete)
 
         return filesToUpdate
-
 
     # internal function that checks the needed permissions to
     # perform the update
@@ -287,7 +254,6 @@ class Updater:
 
         return True
 
-
     # internal function that creates sub directories in the target directory
     # for the given file location
     #
@@ -348,7 +314,6 @@ class Updater:
 
         return True
 
-
     # Internal function that deletes sub directories in the target directory
     # for the given file location if they are empty.
     #
@@ -391,7 +356,6 @@ class Updater:
 
         return True
 
-
     # internal function that downloads the given file into a temporary file
     # and checks if the given hash is correct
     #
@@ -412,45 +376,36 @@ class Updater:
 
             return None
 
-
-        # download file from server
-        conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+        # Download file from server.
         try:
+            url = self.url + "/" + self.repoInstanceLocation + "/" + fileLocation
+            with requests.get(url, verify=True, stream=True) as r:
 
-            conn.request("GET", self.serverPath + "/"
-                + self.repoInstanceLocation + "/" + fileLocation)
-            response = conn.getresponse()
-
-            # check if server responded correctly
-            # => download file
-            if response.status == 200:
+                # Check if server responded correctly
+                # => download file
+                r.raise_for_status()
 
                 # get the size of the response
                 fileSize = -1
+                maxChunks = 0
                 try:
-                    headers = response.getheaders()
-                    for header in headers:
-                        if header[0] == "content-length":
-                            fileSize = int(header[1])
-                            break
+                    fileSize = int(r.headers.get('content-type'))
                 except:
                     fileSize = -1
 
-                # check if the file size was part of the header
+                # Check if the file size was part of the header
                 # and we can output the status of the download
                 showStatus = False
                 if fileSize > 0:
                     showStatus = True
-                    maxChunks = int(math.ceil(float(fileSize)
-                        / float(self.chunkSize)))
+                    maxChunks = int(math.ceil(float(fileSize) / float(self.chunkSize)))
 
-                # actually download file
+                # Actually download file.
                 chunkCount = 0
                 printedPercentage = 0
-                while True:
-                    chunk = response.read(self.chunkSize)
+                for chunk in r.iter_content(chunk_size=self.chunkSize):
                     if not chunk:
-                        break
+                        continue
                     fileHandle.write(chunk)
 
                     # output status of the download
@@ -459,7 +414,7 @@ class Updater:
                         if chunkCount > maxChunks:
                             showStatus = False
 
-                            logging.warning("[%s]: Concent information of "
+                            logging.warning("[%s]: Content information of "
                                     % self.fileName
                                     + "received header flawed. Stopping "
                                     + "to show download status.")
@@ -467,17 +422,11 @@ class Updater:
                             continue
 
                         else:
-                            percentage = int((float(chunkCount)
-                                / float(maxChunks)) * 100)
+                            percentage = int((float(chunkCount) / float(maxChunks)) * 100)
                             if (percentage / 10) > printedPercentage:
                                 printedPercentage = percentage / 10
 
-                                logging.info("[%s]: Download: %d%%"
-                                    % (self.fileName, printedPercentage * 10))
-
-            else:
-                raise ValueError("Server response code not 200 (was %d)."
-                    % response.status)
+                                logging.info("[%s]: Download: %d%%" % (self.fileName, printedPercentage * 10))
 
         except Exception as e:
             logging.exception("[%s]: Downloading file '%s' from the "
@@ -485,7 +434,6 @@ class Updater:
                 + "server failed.")
 
             return None
-
 
         # calculate sha256 hash of the downloaded file
         fileHandle.seek(0)
@@ -512,7 +460,6 @@ class Updater:
 
         return fileHandle
 
-
     # internal function that calculates the sha256 hash of the file
     def _sha256File(self, fileHandle):
         fileHandle.seek(0)
@@ -524,20 +471,15 @@ class Updater:
             sha256.update(data)
         return sha256.hexdigest()
 
-
     # Internal function that gets the newest instance information from the
     # online repository
     #
     # return True or False
-    def _getInstanceInformation(self, conn=None):
-
-        if conn is None:
-            conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+    def _getInstanceInformation(self):
 
         try:
-            if self._getRepositoryInformation(conn) is False:
-                raise ValueError("Not able to get newest "
-                    + "repository information.")
+            if self._getRepositoryInformation() is False:
+                raise ValueError("Not able to get newest repository information.")
 
         except Exception as e:
             logging.exception("[%s]: Retrieving newest repository "
@@ -552,20 +494,10 @@ class Updater:
         # get instance information string from the server
         instanceInfoString = ""
         try:
-
-            conn.request("GET", self.serverPath + "/"
-                + self.repoInstanceLocation + "/instanceInfo.json")
-            response = conn.getresponse()
-
-            # check if server responded correctly
-            if response.status == 200:
-                instanceInfoString = response.read()
-
-            else:
-                raise ValueError("Server response code not 200 (was %d)."
-                    % response.status)
-
-            conn.close()
+            url = self.url + "/" + self.repoInstanceLocation + "/instanceInfo.json"
+            with requests.get(url, verify=True) as r:
+                r.raise_for_status()
+                instanceInfoString = r.text
 
         except Exception as e:
             logging.exception("[%s]: Getting version information failed."
@@ -594,15 +526,11 @@ class Updater:
 
         return True
 
-
     # Internal function that gets the newest repository information from the
     # online repository.
     #
     # return True or False
-    def _getRepositoryInformation(self, conn=None):
-
-        if conn is None:
-            conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+    def _getRepositoryInformation(self):
 
         logging.debug("[%s]: Downloading repository information."
             % self.fileName)
@@ -610,26 +538,16 @@ class Updater:
         # get repository information from the server
         repoInfoString = ""
         try:
-
-            conn.request("GET", self.serverPath + "/repoInfo.json")
-            response = conn.getresponse()
-
-            # check if server responded correctly
-            if response.status == 200:
-                repoInfoString = response.read()
-
-            else:
-                raise ValueError("Server response code not 200 (was %d)."
-                    % response.status)
-
-            conn.close()
+            url = self.url + "/repoInfo.json"
+            with requests.get(url, verify=True) as r:
+                r.raise_for_status()
+                repoInfoString = r.text
 
         except Exception as e:
             logging.exception("[%s]: Getting repository information failed."
                 % self.fileName)
 
             return False
-
 
         # parse repository information string
         try:
@@ -660,20 +578,15 @@ class Updater:
 
         return True
 
-
     # internal function that gets the newest version information from the
     # online repository
     #
     # return True or False
-    def _getNewestVersionInformation(self, conn=None):
-
-        if conn is None:
-            conn = VerifiedHTTPSConnection(self.host, self.port, self.caFile)
+    def _getNewestVersionInformation(self):
 
         try:
-            if self._getInstanceInformation(conn) is False:
-                raise ValueError("Not able to get newest "
-                    + "instance information.")
+            if self._getInstanceInformation() is False:
+                raise ValueError("Not able to get newest instance information.")
 
         except Exception as e:
             logging.exception("[%s]: Retrieving newest instance "
@@ -716,7 +629,6 @@ class Updater:
 
         return True
 
-
     # This function returns the instance information data.
     def getInstanceInformation(self):
 
@@ -734,7 +646,6 @@ class Updater:
 
         return self.instanceInfo
 
-
     # This function returns the repository information data.
     def getRepositoryInformation(self):
 
@@ -751,7 +662,6 @@ class Updater:
         self._releaseLock()
 
         return self.repoInfo
-
 
     # function that updates this instance of the AlertR infrastructure
     def updateInstance(self):
@@ -788,7 +698,6 @@ class Updater:
 
             return False
 
-
         # download all files that have to be updated
         downloadedFileHandles = dict()
         for fileToUpdate in filesToUpdate.keys():
@@ -819,7 +728,6 @@ class Updater:
                 else:
 
                     downloadedFileHandles[fileToUpdate] = downloadedFileHandle
-
 
         # copy all files to the correct location
         for fileToUpdate in filesToUpdate.keys():
@@ -906,7 +814,6 @@ class Updater:
 
                     return False
 
-        
         # close all temporary file handles
         # => temporary file is automatically deleted
         for fileHandle in downloadedFileHandles.keys():

@@ -1,19 +1,18 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import time
-import random
 import os
 import logging
 import threading
-from client import AsynchronousSender
-from localObjects import SensorDataType, SensorAlert, StateChange
+from .client import AsynchronousSender
+from .localObjects import SensorDataType, SensorAlert, StateChange
 
 
 # Internal class that holds the important attributes
@@ -90,7 +89,6 @@ class _PollingSensor:
         # should ignore state changes and thereby not generate sensor alerts.
         self.handlesStateMsgs = False
 
-
     # this function returns the current state of the sensor
     def getState(self):
         raise NotImplementedError("Function not implemented yet.")
@@ -100,13 +98,11 @@ class _PollingSensor:
     def updateState(self):
         raise NotImplementedError("Function not implemented yet.")
 
-
     # This function initializes the sensor.
     #
     # Returns True or False depending on the success of the initialization.
     def initializeSensor(self):
         raise NotImplementedError("Function not implemented yet.")
-
 
     # This function decides if a sensor alert for this sensor should be sent
     # to the server. It is checked regularly and can be used to force
@@ -116,7 +112,6 @@ class _PollingSensor:
     # or None.
     def forceSendAlert(self):
         raise NotImplementedError("Function not implemented yet.")
-
 
     # This function decides if an update for this sensor should be sent
     # to the server. It is checked regularly and can be used to force an update
@@ -142,7 +137,6 @@ class SensorDev(_PollingSensor):
         # Field in which the next send data is added.
         self.nextData = None
 
-
     def initializeSensor(self):
         self.changeState = True
         self.hasLatestData = True
@@ -160,22 +154,17 @@ class SensorDev(_PollingSensor):
 
         return True
 
-
     def getState(self):
         return self.state
-
 
     def updateState(self):
         self.state = self.consoleInputState
 
-
     def forceSendAlert(self):
         return None
 
-
     def forceSendState(self):
         return None
-
 
     def toggleConsoleState(self):
 
@@ -208,14 +197,11 @@ class SensorExecuter(threading.Thread):
         # Flag indicates if the thread is initialized.
         self._isInitialized = False
 
-
     def isInitialized(self):
         return self._isInitialized
 
-
     def run(self):
         self.execute()
-
 
     def execute(self):
 

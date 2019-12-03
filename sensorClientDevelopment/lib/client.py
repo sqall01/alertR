@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -13,19 +13,17 @@ import ssl
 import threading
 import logging
 import os
-import base64
-import xml.etree.cElementTree
 import random
 import json
-from localObjects import SensorDataType
+from .localObjects import SensorDataType
+from .globalData import GlobalData
 BUFSIZE = 4096
 
 
 # simple class of an ssl tcp client
 class Client:
 
-    def __init__(self, host, port, serverCAFile, clientCertFile,
-        clientKeyFile):
+    def __init__(self, host: str, port: int, serverCAFile: str, clientCertFile: str, clientKeyFile: str):
         self.host = host
         self.port = port
         self.serverCAFile = serverCAFile
@@ -33,7 +31,6 @@ class Client:
         self.clientKeyFile = clientKeyFile
         self.socket = None
         self.sslSocket = None
-
 
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,10 +47,8 @@ class Client:
 
         self.sslSocket.connect((self.host, self.port))
 
-
     def send(self, data):
         count = self.sslSocket.send(data)
-
 
     def recv(self, buffsize, timeout=20.0):
         data = None
@@ -61,7 +56,6 @@ class Client:
         data = self.sslSocket.recv(buffsize)
         self.sslSocket.settimeout(None)
         return data
-
 
     def close(self):
         # closing SSLSocket will also close the underlying socket
@@ -71,8 +65,8 @@ class Client:
 # this class handles the communication with the server
 class ServerCommunication:
 
-    def __init__(self, host, port, serverCAFile, username, password,
-        clientCertFile, clientKeyFile, globalData):
+    def __init__(self, host: str, port: int, serverCAFile: str, username: str, password: str, clientCertFile: str,
+                 clientKeyFile: str, globalData: GlobalData):
         self.host = host
         self.port = port
         self.username = username
@@ -109,18 +103,15 @@ class ServerCommunication:
         # transaction with the server
         self.transactionInitiation = False
 
-
     # internal function that acquires the lock
     def _acquireLock(self):
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.connectionLock.acquire()
 
-
     # internal function that releases the lock
     def _releaseLock(self):
         logging.debug("[%s]: Release lock." % self.fileName)
         self.connectionLock.release()
-
 
     # this internal function cleans up the session before releasing the
     # lock and exiting/closing the session
@@ -130,11 +121,9 @@ class ServerCommunication:
 
         self.client.close()
 
-
     # this internal function that tries to initiate a transaction with
     # the server (and acquires a lock if it is told to do so)
-    def _initiateTransaction(self, messageType, messageSize,
-        acquireLock=False):
+    def _initiateTransaction(self, messageType, messageSize, acquireLock: bool=False):
 
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the server
@@ -277,7 +266,6 @@ class ServerCommunication:
 
         return True
 
-
     # Internal function that builds the client authentication message.
     def _buildAuthenticationMessage(self, regMessageSize):
 
@@ -293,7 +281,6 @@ class ServerCommunication:
             "payload": payload}
         return json.dumps(message)
 
-
     # Internal function that builds the ping message.
     def _buildPingMessage(self):
 
@@ -303,7 +290,6 @@ class ServerCommunication:
             "message": "ping",
             "payload": payload}
         return json.dumps(message)
-
 
     # Internal function that builds the client registration message.
     def _buildRegistrationMessage(self):
@@ -341,7 +327,6 @@ class ServerCommunication:
 
         return json.dumps(message)
 
-
     # Internal function that builds the sensor alert message.
     def _buildSensorAlertMessage(self, sensorAlert):
 
@@ -367,7 +352,6 @@ class ServerCommunication:
             "message": "sensoralert",
             "payload": payload}
         return json.dumps(message)
-
 
     # Internal function that builds the sensor state message.
     def _buildSensorsStateMessage(self):
@@ -399,7 +383,6 @@ class ServerCommunication:
             "payload": payload}
         return json.dumps(message)
 
-
     # Internal function that builds the state change message.
     def _buildStateChangeMessage(self, stateChange):
 
@@ -422,7 +405,6 @@ class ServerCommunication:
             "message": "statechange",
             "payload": payload}
         return json.dumps(message)
-
 
     # internal function to verify the server/client version and authenticate
     def _verifyVersionAndAuthenticate(self, regMessageSize):
@@ -542,7 +524,6 @@ class ServerCommunication:
 
         return True
 
-
     # Internal function to register the node.
     def _registerNode(self, regMessage):
 
@@ -614,7 +595,6 @@ class ServerCommunication:
 
         return True
 
-
     # function that initializes the communication to the server
     # for example checks the version and authenticates the client
     def initializeCommunication(self):
@@ -671,10 +651,8 @@ class ServerCommunication:
 
         return True
 
-
     def isConnected(self):
         return self._isConnected
-
 
     # this function reconnects the client to the server
     def reconnect(self):
@@ -690,7 +668,6 @@ class ServerCommunication:
 
         return self.initializeCommunication()
 
-
     # this function closes the connection to the server
     def close(self):
 
@@ -700,7 +677,6 @@ class ServerCommunication:
         self._cleanUpSessionForClosing()
 
         self._releaseLock()
-
 
     # this function sends a keep alive (PING request) to the server
     # to keep the connection alive and to check if the connection
@@ -815,7 +791,6 @@ class ServerCommunication:
 
         return True
 
-
     # this function sends the current sensor states to the server
     def sendSensorsState(self):
 
@@ -922,7 +897,6 @@ class ServerCommunication:
         self._releaseLock()
 
         return True
-
 
     # this function sends a sensor alert to the server
     def sendSensorAlert(self, sensorAlert):
@@ -1035,7 +1009,6 @@ class ServerCommunication:
         self._releaseLock()
 
         return True
-
 
     # this function sends a changed state of a sensor to the server
     def sendStateChange(self, stateChange):
@@ -1176,7 +1149,6 @@ class ConnectionWatchdog(threading.Thread):
         # internal counter to get the current count of connection retries
         self.connectionRetries = 1
 
-
     def run(self):
 
         # check every 5 seconds if the client is still connected
@@ -1275,7 +1247,6 @@ class ConnectionWatchdog(threading.Thread):
                             % self.fileName + "Retrying in 5 seconds.")
                         time.sleep(5)
 
-
     # sets the exit flag to shut down the thread
     def exit(self):
         self.exitFlag = True
@@ -1311,7 +1282,6 @@ class AsynchronousSender(threading.Thread):
         # this option is used when the thread should
         # send a full sensors state update
         self.sendSensorsState = False
-
 
     def run(self):
 

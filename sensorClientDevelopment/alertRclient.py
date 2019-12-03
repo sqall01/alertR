@@ -1,21 +1,20 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import sys
 import os
-from lib import ServerCommunication, ConnectionWatchdog
-from lib import SMTPAlert
-from lib import SensorDataType, SensorDev, SensorExecuter
-from lib import GlobalData
+from .lib import ServerCommunication, ConnectionWatchdog
+from .lib import SMTPAlert
+from .lib import SensorDataType, SensorDev, SensorExecuter
+from .lib import GlobalData
 import logging
 import time
-import socket
 import random
 import xml.etree.ElementTree
 
@@ -127,6 +126,10 @@ if __name__ == '__main__':
         smtpActivated = (str(
             configRoot.find("smtp").find("general").attrib[
             "activated"]).upper() == "TRUE")
+        smtpServer = ""
+        smtpPort = -1
+        smtpFromAddr = ""
+        smtpToAddr = ""
         if smtpActivated is True:
             smtpServer = str(
                 configRoot.find("smtp").find("server").attrib["host"])
@@ -194,8 +197,7 @@ if __name__ == '__main__':
 
     # check if smtp is activated => generate object to send eMail alerts
     if smtpActivated is True:
-        globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort,
-            smtpFromAddr, smtpToAddr)
+        globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort, smtpFromAddr, smtpToAddr)
     else:
         globalData.smtpAlert = None
 
@@ -283,15 +285,13 @@ if __name__ == '__main__':
                 dataString += " -> Next Data: %.3f" % sensor.nextData
 
             if sensor.consoleInputState == sensor.triggerState:
-                print("Sensor Id: %d - Triggered (%s)"
-                    % (sensor.id, dataString))
+                print("Sensor Id: %d - Triggered (%s)" % (sensor.id, dataString))
             else:
-                print("Sensor Id: %d - Not Triggered (%s)"
-                    % (sensor.id, dataString))
+                print("Sensor Id: %d - Not Triggered (%s)" % (sensor.id, dataString))
 
         try:
             localSensorId = int(
-                raw_input("Please enter sensor ID to toggle: "))
+                input("Please enter sensor ID to toggle: "))
         except KeyboardInterrupt:
             break
         except:
