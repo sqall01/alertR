@@ -15,8 +15,11 @@ import logging
 import os
 import random
 import json
+from typing import Optional
 from .localObjects import SensorDataType
 from .globalData import GlobalData
+from .localObjects import SensorAlert, StateChange
+from .smtp import SMTPAlert
 BUFSIZE = 4096
 
 
@@ -47,10 +50,10 @@ class Client:
 
         self.sslSocket.connect((self.host, self.port))
 
-    def send(self, data):
+    def send(self, data: str) -> str:
         count = self.sslSocket.send(data.encode('ascii'))
 
-    def recv(self, buffsize, timeout=20.0):
+    def recv(self, buffsize: int, timeout=20.0):
         data = None
         self.sslSocket.settimeout(timeout)
         data = self.sslSocket.recv(buffsize)
@@ -123,7 +126,7 @@ class ServerCommunication:
 
     # internal function that tries to initiate a transaction with
     # the server (and acquires a lock if it is told to do so)
-    def _initiateTransaction(self, messageType, messageSize, acquireLock: bool=False):
+    def _initiateTransaction(self, messageType: str, messageSize: int, acquireLock: bool=False) -> bool:
 
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the server
@@ -137,8 +140,9 @@ class ServerCommunication:
             # transaction with the server
             if self.transactionInitiation:
 
-                logging.warning("[%s]: Transaction initiation " % self.fileName
-                    + "already tried by another thread. Backing off.")
+                logging.warning("[%s]: Transaction initiation "
+                                % self.fileName
+                                + "already tried by another thread. Backing off.")
 
                 # check if locks should be handled or not
                 if acquireLock:
@@ -155,7 +159,7 @@ class ServerCommunication:
             else:
 
                 logging.debug("[%s]: Got exclusive " % self.fileName
-                    + "transaction initiation state.")
+                              + "transaction initiation state.")
 
                 # set transaction initiation flag to true
                 # to signal other threads that a transaction is already
@@ -173,7 +177,7 @@ class ServerCommunication:
 
             # send RTS (request to send) message
             logging.debug("[%s]: Sending RTS %d message."
-                % (self.fileName, transactionId))
+                          % (self.fileName, transactionId))
             try:
                 payload = {"type": "rts",
                     "id": transactionId}
@@ -184,8 +188,9 @@ class ServerCommunication:
                     "payload": payload}
                 self.client.send(json.dumps(message))
             except Exception as e:
-                logging.exception("[%s]: Sending RTS " % self.fileName
-                    + "failed.")
+                logging.exception("[%s]: Sending RTS "
+                                  % self.fileName
+                                  + "failed.")
 
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the server
@@ -208,7 +213,7 @@ class ServerCommunication:
                 # (only log error)
                 if "error" in message.keys():
                     logging.error("[%s]: Error received: '%s'"
-                        % (self.fileName, message["error"]))
+                                  % (self.fileName, message["error"]))
                 # if no error => extract values from message
                 else:
                     receivedTransactionId = message["payload"]["id"]
@@ -217,8 +222,9 @@ class ServerCommunication:
                         str(message["payload"]["type"]).upper()
 
             except Exception as e:
-                logging.exception("[%s]: Receiving CTS " % self.fileName
-                    + "failed.")
+                logging.exception("[%s]: Receiving CTS "
+                                  % self.fileName
+                                  + "failed.")
 
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the server
@@ -236,8 +242,9 @@ class ServerCommunication:
                 and receivedMessageType == messageType
                 and receivedPayloadType == "CTS"):
 
-                logging.debug("[%s]: Initiate transaction " % self.fileName
-                    + "succeeded.")
+                logging.debug("[%s]: Initiate transaction "
+                              % self.fileName
+                              + "succeeded.")
 
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the server
@@ -249,8 +256,9 @@ class ServerCommunication:
             # => release lock and backoff for a random time then retry again
             else:
 
-                logging.warning("[%s]: Initiate transaction " % self.fileName
-                    + "failed. Backing off.")
+                logging.warning("[%s]: Initiate transaction "
+                                % self.fileName
+                                + "failed. Backing off.")
 
                 # check if locks should be handled or not
                 if acquireLock:
@@ -267,7 +275,7 @@ class ServerCommunication:
         return True
 
     # Internal function that builds the client authentication message.
-    def _buildAuthenticationMessage(self, regMessageSize):
+    def _buildAuthenticationMessage(self, regMessageSize: int) -> str:
 
         payload = {"type": "request",
             "version": self.version,
@@ -292,7 +300,7 @@ class ServerCommunication:
         return json.dumps(message)
 
     # Internal function that builds the client registration message.
-    def _buildRegistrationMessage(self):
+    def _buildRegistrationMessage(self) -> str:
 
         # build sensors list for the message
         sensors = list()
@@ -328,7 +336,7 @@ class ServerCommunication:
         return json.dumps(message)
 
     # Internal function that builds the sensor alert message.
-    def _buildSensorAlertMessage(self, sensorAlert):
+    def _buildSensorAlertMessage(self, sensorAlert: SensorAlert) -> str:
 
         payload = {"type": "request",
             "clientSensorId": sensorAlert.clientSensorId,
@@ -354,7 +362,7 @@ class ServerCommunication:
         return json.dumps(message)
 
     # Internal function that builds the sensor state message.
-    def _buildSensorsStateMessage(self):
+    def _buildSensorsStateMessage(self) -> str:
 
         # build sensors list for the message
         sensors = list()
@@ -384,12 +392,12 @@ class ServerCommunication:
         return json.dumps(message)
 
     # Internal function that builds the state change message.
-    def _buildStateChangeMessage(self, stateChange):
+    def _buildStateChangeMessage(self, stateChange: StateChange) -> str:
 
         logging.debug("[%s]: Building state change message for sensor "
-            % self.fileName
-            + "with id %d and message state %d."
-            % (stateChange.clientSensorId, stateChange.state))
+                      % self.fileName
+                      + "with id %d and message state %d."
+                      % (stateChange.clientSensorId, stateChange.state))
 
         payload = {"type": "request",
             "clientSensorId": stateChange.clientSensorId,
@@ -407,19 +415,20 @@ class ServerCommunication:
         return json.dumps(message)
 
     # internal function to verify the server/client version and authenticate
-    def _verifyVersionAndAuthenticate(self, regMessageSize):
+    def _verifyVersionAndAuthenticate(self, regMessageSize: int) -> bool:
 
         authMessage = self._buildAuthenticationMessage(regMessageSize)
 
         # send user credentials and version
         try:
             logging.debug("[%s]: Sending user credentials and version."
-                % self.fileName)
+                          % self.fileName)
             self.client.send(authMessage)
 
         except Exception as e:
-            logging.exception("[%s]: Sending user credentials " % self.fileName
-                + "and version failed.")
+            logging.exception("[%s]: Sending user credentials "
+                              % self.fileName
+                              + "and version failed.")
             return False
 
         # get authentication response from server
@@ -429,13 +438,14 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'."
-                    % (self.fileName, message["error"]))
+                              % (self.fileName, message["error"]))
                 return False
 
             if str(message["message"]).upper() != "initialization".upper():
                 logging.error("[%s]: Wrong authentication message: "
-                    % self.fileName
-                    + "'%s'." % message["message"])
+                              % self.fileName
+                              + "'%s'."
+                              % message["message"])
 
                 # send error message back
                 try:
@@ -452,7 +462,7 @@ class ServerCommunication:
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
                 logging.error("[%s]: response expected."
-                    % self.fileName)
+                              % self.fileName)
 
                 # send error message back
                 try:
@@ -469,12 +479,12 @@ class ServerCommunication:
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
                 logging.error("[%s]: Result not ok: '%s'."
-                    % (self.fileName, message["payload"]["result"]))
+                              % (self.fileName, message["payload"]["result"]))
                 return False
 
         except Exception as e:
             logging.exception("[%s]: Receiving initialization response failed."
-                % self.fileName)
+                              % self.fileName)
             return False
 
         # verify version
@@ -483,16 +493,16 @@ class ServerCommunication:
             rev = int(message["payload"]["rev"])
 
             logging.debug("[%s]: Received server version: '%.3f-%d'."
-                % (self.fileName, version, rev))
+                          % (self.fileName, version, rev))
 
             # check if used protocol version is compatible
             if int(self.version * 10) != int(version * 10):
 
                 logging.error("[%s]: Version not compatible. " % self.fileName
-                    + "Client has version: '%.3f-%d' "
-                    % (self.version, self.rev)
-                    + "and server has '%.3f-%d"
-                    % (version, rev))
+                              + "Client has version: '%.3f-%d' "
+                              % (self.version, self.rev)
+                              + "and server has '%.3f-%d"
+                              % (version, rev))
 
                 # send error message back
                 try:
@@ -525,17 +535,18 @@ class ServerCommunication:
         return True
 
     # Internal function to register the node.
-    def _registerNode(self, regMessage):
+    def _registerNode(self, regMessage: str) -> bool:
 
         # Send registration message.
         try:
             logging.debug("[%s]: Sending registration message."
-                % self.fileName)
+                          % self.fileName)
             self.client.send(regMessage)
 
         except Exception as e:
-            logging.exception("[%s]: Sending registration " % self.fileName
-                + "message.")
+            logging.exception("[%s]: Sending registration "
+                              % self.fileName
+                              + "message.")
             return False
 
         # get registration response from server
@@ -545,13 +556,13 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'."
-                    % (self.fileName, message["error"]))
+                              % (self.fileName, message["error"]))
                 return False
 
             if str(message["message"]).upper() != "initialization".upper():
                 logging.error("[%s]: Wrong registration message: "
-                    % self.fileName
-                    + "'%s'." % message["message"])
+                              % self.fileName
+                              + "'%s'." % message["message"])
 
                 # send error message back
                 try:
@@ -568,7 +579,7 @@ class ServerCommunication:
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
                 logging.error("[%s]: response expected."
-                    % self.fileName)
+                              % self.fileName)
 
                 # send error message back
                 try:
@@ -585,19 +596,19 @@ class ServerCommunication:
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
                 logging.error("[%s]: Result not ok: '%s'."
-                    % (self.fileName, message["payload"]["result"]))
+                              % (self.fileName, message["payload"]["result"]))
                 return False
 
         except Exception as e:
             logging.exception("[%s]: Receiving registration response failed."
-                % self.fileName)
+                              % self.fileName)
             return False
 
         return True
 
     # function that initializes the communication to the server
     # for example checks the version and authenticates the client
-    def initializeCommunication(self):
+    def initializeCommunication(self) -> bool:
 
         self._acquireLock()
 
@@ -608,7 +619,7 @@ class ServerCommunication:
             self.client.connect()
         except Exception as e:
             logging.exception("[%s]: Connecting to server failed."
-                % self.fileName)
+                              % self.fileName)
             try:
                 self.client.close()
             except:
@@ -623,8 +634,9 @@ class ServerCommunication:
 
         # First check version and authenticate.
         if not self._verifyVersionAndAuthenticate(len(regMessage)):
-            logging.error("[%s]: Version verification and " % self.fileName
-                + "authentication failed.")
+            logging.error("[%s]: Version verification and "
+                          % self.fileName
+                          + "authentication failed.")
             self.client.close()
 
             self._releaseLock()
@@ -634,7 +646,7 @@ class ServerCommunication:
         # Second register node.
         if not self._registerNode(regMessage):
             logging.error("[%s]: Registration failed."
-                % self.fileName)
+                          % self.fileName)
             self.client.close()
 
             self._releaseLock()
@@ -651,11 +663,11 @@ class ServerCommunication:
 
         return True
 
-    def isConnected(self):
+    def isConnected(self) -> bool:
         return self._isConnected
 
     # this function reconnects the client to the server
-    def reconnect(self):
+    def reconnect(self) -> bool:
 
         logging.info("[%s] Reconnecting to server." % self.fileName)
 
@@ -681,13 +693,13 @@ class ServerCommunication:
     # this function sends a keep alive (PING request) to the server
     # to keep the connection alive and to check if the connection
     # is still alive
-    def sendKeepalive(self):
+    def sendKeepalive(self) -> bool:
 
         # Check if client is connected to server.
         if not self._isConnected:
             logging.error("[%s]: Not able to send ping. "
-                + "Client is not connected to the server."
-                % self.fileName)
+                          % self.fileName
+                          + "Client is not connected to the server.")
             return False
 
         pingMessage = self._buildPingMessage()
@@ -706,8 +718,7 @@ class ServerCommunication:
             self.client.send(pingMessage)
 
         except Exception as e:
-            logging.exception("[%s]: Sending ping to server failed."
-                % self.fileName)
+            logging.exception("[%s]: Sending ping to server failed." % self.fileName)
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -721,7 +732,7 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'."
-                    % (self.fileName, message["error"]))
+                              % (self.fileName, message["error"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -729,8 +740,9 @@ class ServerCommunication:
 
             if str(message["message"]).upper() != "PING":
                 logging.error("[%s]: Wrong ping message: "
-                    % self.fileName
-                    + "'%s'." % message["message"])
+                              % self.fileName
+                              + "'%s'."
+                              % message["message"])
 
                 # send error message back
                 try:
@@ -750,7 +762,7 @@ class ServerCommunication:
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
                 logging.error("[%s]: response expected."
-                    % self.fileName)
+                              % self.fileName)
 
                 # send error message back
                 try:
@@ -770,7 +782,7 @@ class ServerCommunication:
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
                 logging.error("[%s]: Result not ok: '%s'."
-                    % (self.fileName, message["payload"]["result"]))
+                              % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -778,7 +790,7 @@ class ServerCommunication:
 
         except Exception as e:
             logging.exception("[%s]: Receiving ping response failed."
-                % self.fileName)
+                              % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
@@ -792,13 +804,13 @@ class ServerCommunication:
         return True
 
     # this function sends the current sensor states to the server
-    def sendSensorsState(self):
+    def sendSensorsState(self) -> bool:
 
         # Check if client is connected to server.
         if not self._isConnected:
             logging.error("[%s]: Not able to send status update. "
-                + "Client is not connected to the server."
-                % self.fileName)
+                          % self.fileName
+                          + "Client is not connected to the server.")
             return False
 
         sensorStateMessage = self._buildSensorsStateMessage()
@@ -831,7 +843,7 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'."
-                    % (self.fileName, message["error"]))
+                              % (self.fileName, message["error"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -839,8 +851,9 @@ class ServerCommunication:
 
             if str(message["message"]).upper() != "STATUS":
                 logging.error("[%s]: Wrong status message: "
-                    % self.fileName
-                    + "'%s'." % message["message"])
+                              % self.fileName
+                              + "'%s'."
+                              % message["message"])
 
                 # send error message back
                 try:
@@ -859,8 +872,7 @@ class ServerCommunication:
 
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
-                logging.error("[%s]: response expected."
-                    % self.fileName)
+                logging.error("[%s]: response expected." % self.fileName)
 
                 # send error message back
                 try:
@@ -880,7 +892,7 @@ class ServerCommunication:
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
                 logging.error("[%s]: Result not ok: '%s'."
-                    % (self.fileName, message["payload"]["result"]))
+                              % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -888,7 +900,7 @@ class ServerCommunication:
 
         except Exception as e:
             logging.exception("[%s]: Receiving status response failed."
-                % self.fileName)
+                              % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
@@ -899,13 +911,13 @@ class ServerCommunication:
         return True
 
     # this function sends a sensor alert to the server
-    def sendSensorAlert(self, sensorAlert):
+    def sendSensorAlert(self, sensorAlert: SensorAlert) -> bool:
 
         # Check if client is connected to server.
         if not self._isConnected:
             logging.error("[%s]: Not able to send sensor alert. "
-                + "Client is not connected to the server."
-                % self.fileName)
+                          % self.fileName
+                          + "Client is not connected to the server.")
             return False
 
         sensorAlertMessage = self._buildSensorAlertMessage(sensorAlert)
@@ -921,12 +933,12 @@ class ServerCommunication:
         # send sensor alert message
         try:
             logging.debug("[%s]: Sending sensor alert message."
-                % self.fileName)
+                          % self.fileName)
             self.client.send(sensorAlertMessage)
 
         except Exception as e:
             logging.exception("[%s]: Sending sensor alert message failed."
-                % self.fileName)
+                              % self.fileName)
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -940,7 +952,7 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'."
-                    % (self.fileName, message["error"]))
+                              % (self.fileName, message["error"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -948,8 +960,9 @@ class ServerCommunication:
 
             if str(message["message"]).upper() != "SENSORALERT":
                 logging.error("[%s]: Wrong sensor alert message: "
-                    % self.fileName
-                    + "'%s'." % message["message"])
+                              % self.fileName
+                              + "'%s'."
+                              % message["message"])
 
                 # send error message back
                 try:
@@ -969,7 +982,7 @@ class ServerCommunication:
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
                 logging.error("[%s]: response expected."
-                    % self.fileName)
+                              % self.fileName)
 
                 # send error message back
                 try:
@@ -997,27 +1010,27 @@ class ServerCommunication:
 
         except Exception as e:
             logging.exception("[%s]: Receiving sensor alert response failed."
-                % self.fileName)
+                              % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
             return False
 
         logging.debug("[%s]: Received sensor alert response message."
-            % self.fileName)
+                      % self.fileName)
 
         self._releaseLock()
 
         return True
 
     # this function sends a changed state of a sensor to the server
-    def sendStateChange(self, stateChange):
+    def sendStateChange(self, stateChange: StateChange) -> bool:
 
         # Check if client is connected to server.
         if not self._isConnected:
             logging.error("[%s]: Not able to send state change. "
-                + "Client is not connected to the server."
-                % self.fileName)
+                          % self.fileName
+                          + "Client is not connected to the server.")
             return False
 
         stateChangeMessage = self._buildStateChangeMessage(stateChange)
@@ -1032,13 +1045,11 @@ class ServerCommunication:
 
         # send state change message
         try:
-            logging.debug("[%s]: Sending state change message."
-                % self.fileName)
+            logging.debug("[%s]: Sending state change message." % self.fileName)
             self.client.send(stateChangeMessage)
 
         except Exception as e:
-            logging.exception("[%s]: Sending state change message failed."
-                % self.fileName)
+            logging.exception("[%s]: Sending state change message failed." % self.fileName)
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -1052,7 +1063,7 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'."
-                    % (self.fileName, message["error"]))
+                              % (self.fileName, message["error"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -1060,8 +1071,9 @@ class ServerCommunication:
 
             if str(message["message"]).upper() != "STATECHANGE":
                 logging.error("[%s]: Wrong state change message: "
-                    % self.fileName
-                    + "'%s'." % message["message"])
+                              % self.fileName
+                              + "'%s'."
+                              % message["message"])
 
                 # send error message back
                 try:
@@ -1081,7 +1093,7 @@ class ServerCommunication:
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
                 logging.error("[%s]: response expected."
-                    % self.fileName)
+                              % self.fileName)
 
                 # send error message back
                 try:
@@ -1101,7 +1113,7 @@ class ServerCommunication:
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
                 logging.error("[%s]: Result not ok: '%s'."
-                    % (self.fileName, message["payload"]["result"]))
+                              % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -1109,14 +1121,14 @@ class ServerCommunication:
 
         except Exception as e:
             logging.exception("[%s]: Receiving state change response failed."
-                % self.fileName)
+                              % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
             return False
 
         logging.debug("[%s]: Received state change response message."
-            % self.fileName)
+                      % self.fileName)
 
         self._releaseLock()
 
@@ -1127,7 +1139,7 @@ class ServerCommunication:
 # => reconnects it if necessary
 class ConnectionWatchdog(threading.Thread):
 
-    def __init__(self, connection, pingInterval, smtpAlert):
+    def __init__(self, connection: ServerCommunication, pingInterval: int, smtpAlert: Optional[SMTPAlert]):
         threading.Thread.__init__(self)
 
         # the object that handles the communication with the server
@@ -1154,13 +1166,13 @@ class ConnectionWatchdog(threading.Thread):
         # check every 5 seconds if the client is still connected
         # and the time of the last received data
         # from the server lies too far in the past
-        while 1:
+        while True:
 
             # wait 5 seconds before checking time of last received data
             for i in range(5):
                 if self.exitFlag:
                     logging.info("[%s]: Exiting ConnectionWatchdog."
-                        % self.fileName)
+                                 % self.fileName)
                     return
                 time.sleep(1)
 
@@ -1168,7 +1180,7 @@ class ConnectionWatchdog(threading.Thread):
             if not self.connection.isConnected():
 
                 logging.error("[%s]: Connection to server has died. "
-                    % self.fileName)
+                              % self.fileName)
 
                 # reconnect to the server
                 while True:
@@ -1176,10 +1188,8 @@ class ConnectionWatchdog(threading.Thread):
                     # check if 5 unsuccessful attempts are made to connect
                     # to the server and if smtp alert is activated
                     # => send eMail alert
-                    if (self.smtpAlert is not None
-                        and (self.connectionRetries % 5) == 0):
-                        self.smtpAlert.sendCommunicationAlert(
-                            self.connectionRetries)
+                    if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
+                        self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
 
                     # try to connect to the server
                     if self.connection.reconnect():
@@ -1189,16 +1199,17 @@ class ConnectionWatchdog(threading.Thread):
                             self.smtpAlert.sendCommunicationAlertClear()
 
                         logging.info("[%s] Reconnecting successful "
-                            % self.fileName
-                            + "after %d attempts."
-                            % self.connectionRetries)
+                                     % self.fileName
+                                     + "after %d attempts."
+                                     % self.connectionRetries)
 
                         self.connectionRetries = 1
                         break
                     self.connectionRetries +=1
 
                     logging.error("[%s]: Reconnecting failed. "
-                        % self.fileName + "Retrying in 5 seconds.")
+                                  % self.fileName
+                                  + "Retrying in 5 seconds.")
                     time.sleep(5)
 
                 continue
@@ -1208,12 +1219,12 @@ class ConnectionWatchdog(threading.Thread):
             utcTimestamp = int(time.time())
             if (utcTimestamp - self.connection.lastRecv) > self.pingInterval:
                 logging.debug("[%s]: Ping interval exceeded."
-                        % self.fileName)
+                              % self.fileName)
 
                 # check if PING failed
                 if not self.connection.sendKeepalive():
                     logging.error("[%s]: Connection to server has died. "
-                        % self.fileName)
+                                  % self.fileName)
 
                     # reconnect to the server
                     while True:
@@ -1221,10 +1232,8 @@ class ConnectionWatchdog(threading.Thread):
                         # check if 5 unsuccessful attempts are made to connect
                         # to the server and if smtp alert is activated
                         # => send eMail alert
-                        if (self.smtpAlert is not None
-                            and (self.connectionRetries % 5) == 0):
-                            self.smtpAlert.sendCommunicationAlert(
-                                self.connectionRetries)
+                        if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
+                            self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
 
                         # try to connect to the server
                         if self.connection.reconnect():
@@ -1235,16 +1244,17 @@ class ConnectionWatchdog(threading.Thread):
                                 self.smtpAlert.sendCommunicationAlertClear()
 
                             logging.info("[%s] Reconnecting successful "
-                                % self.fileName
-                                + "after %d attempts."
-                                % self.connectionRetries)
+                                         % self.fileName
+                                         + "after %d attempts."
+                                         % self.connectionRetries)
 
                             self.connectionRetries = 1
                             break
                         self.connectionRetries +=1
 
                         logging.error("[%s]: Reconnecting failed. "
-                            % self.fileName + "Retrying in 5 seconds.")
+                                      % self.fileName
+                                      + "Retrying in 5 seconds.")
                         time.sleep(5)
 
     # sets the exit flag to shut down the thread
@@ -1290,17 +1300,19 @@ class AsynchronousSender(threading.Thread):
 
             # check if the server communication object is available
             if self.serverComm is None:
-                logging.error("[%s]: Sending sensor " % self.fileName
-                        + "alert to the server failed. No server "
-                        + "communication object available.")
+                logging.error("[%s]: Sending sensor "
+                              % self.fileName
+                              + "alert to the server failed. No server "
+                              + "communication object available.")
                 return
 
             # send sensor alert
             if not self.serverComm.sendSensorAlert(
                 self.sendSensorAlertSensorAlert):
 
-                logging.error("[%s]: Sending sensor " % self.fileName
-                    + "alert to the server failed.")
+                logging.error("[%s]: Sending sensor "
+                              % self.fileName
+                              + "alert to the server failed.")
                 return
 
         # check if a sensor alert should be sent to the server
@@ -1308,17 +1320,19 @@ class AsynchronousSender(threading.Thread):
 
             # check if the server communication object is available
             if self.serverComm is None:
-                logging.error("[%s]: Sending sensor " % self.fileName
-                        + "state change to the server failed. No server "
-                        + "communication object available.")
+                logging.error("[%s]: Sending sensor "
+                              % self.fileName
+                              + "state change to the server failed. No server "
+                              + "communication object available.")
                 return
 
             # send sensor state change
             if not self.serverComm.sendStateChange(
                 self.sendStateChangeStateChange):
 
-                logging.error("[%s]: Sending sensor " % self.fileName
-                    + "state change to the server failed.")
+                logging.error("[%s]: Sending sensor "
+                              % self.fileName
+                              + "state change to the server failed.")
                 return
 
         # check if a full sensors state should be sent to the server
@@ -1326,13 +1340,15 @@ class AsynchronousSender(threading.Thread):
 
             # check if the server communication object is available
             if self.serverComm is None:
-                logging.error("[%s]: Sending sensors " % self.fileName
-                        + "state to the server failed. No server "
-                        + "communication object available.")
+                logging.error("[%s]: Sending sensors "
+                              % self.fileName
+                              + "state to the server failed. No server "
+                              + "communication object available.")
                 return
 
             # send sensors state to the server
             if not self.serverComm.sendSensorsState():
-                logging.error("[%s]: Sending sensors " % self.fileName
-                    + "state to the server failed.")
+                logging.error("[%s]: Sending sensors "
+                              % self.fileName
+                              + "state to the server failed.")
                 return
