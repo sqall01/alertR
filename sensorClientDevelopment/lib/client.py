@@ -48,14 +48,14 @@ class Client:
         self.sslSocket.connect((self.host, self.port))
 
     def send(self, data):
-        count = self.sslSocket.send(data)
+        count = self.sslSocket.send(data.encode('ascii'))
 
     def recv(self, buffsize, timeout=20.0):
         data = None
         self.sslSocket.settimeout(timeout)
         data = self.sslSocket.recv(buffsize)
         self.sslSocket.settimeout(None)
-        return data
+        return data.decode("ascii")
 
     def close(self):
         # closing SSLSocket will also close the underlying socket
