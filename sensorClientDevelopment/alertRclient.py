@@ -9,10 +9,10 @@
 
 import sys
 import os
-from .lib import ServerCommunication, ConnectionWatchdog
-from .lib import SMTPAlert
-from .lib import SensorDataType, SensorDev, SensorExecuter
-from .lib import GlobalData
+from lib import ServerCommunication, ConnectionWatchdog
+from lib import SMTPAlert
+from lib import SensorDataType, SensorDev, SensorExecuter
+from lib import GlobalData
 import logging
 import time
 import random
