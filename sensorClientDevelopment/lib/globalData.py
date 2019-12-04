@@ -18,26 +18,26 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.503 # type: float
+        self.version = 0.503  # type: float
 
         # revision of the used client
-        self.rev = 0 # type: int
+        self.rev = 0  # type: int
 
         # name of this client
-        self.name = "AlertR Sensor Client Development" # type: str
+        self.name = "AlertR Sensor Client Development"  # type: str
 
         # the instance of this client
-        self.instance = "sensorClientDevelopment" # type: str
+        self.instance = "sensorClientDevelopment"  # type: str
 
         # interval in which a ping should be send when
         # no data was received/send
-        self.pingInterval = 30 # type: int
+        self.pingInterval = 30  # type: int
 
         # type of this node/client
-        self.nodeType = "sensor" # type: str
+        self.nodeType = "sensor"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml" # type: str
+        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
 
         # instance of the email alerting object
         self.smtpAlert = None
@@ -50,4 +50,4 @@ class GlobalData:
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent = None # type: Optional[bool]
+        self.persistent = None  # type: Optional[bool]
