@@ -1,19 +1,19 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import time
-import random
 import os
 import logging
-import subprocess
-from client import AsynchronousSender
-from localObjects import SensorDataType, SensorAlert, StateChange
+from ..client import AsynchronousSender
+from ..localObjects import SensorAlert, StateChange
+from ..globalData import GlobalData
+from typing import Optional, List
 
 
 # Internal class that holds the important attributes
@@ -25,40 +25,40 @@ class _PollingSensor:
 
         # Id of this sensor on this client. Will be handled as
         # "remoteSensorId" by the server.
-        self.id = None
+        self.id = None # type: Optional[int]
 
         # Description of this sensor.
-        self.description = None
+        self.description = None # type: Optional[str]
 
         # Delay in seconds this sensor has before a sensor alert is
         # issued by the server.
-        self.alertDelay = None
+        self.alertDelay = None # type: Optional[int]
 
         # Local state of the sensor (either 1 or 0). This state is translated
         # (with the help of "triggerState") into 1 = "triggered" / 0 = "normal"
         # when it is send to the server.
-        self.state = None
+        self.state = None # type: Optional[int]
 
         # State the sensor counts as triggered (either 1 or 0).
-        self.triggerState = None
+        self.triggerState = None # type: Optional[int]
 
         # A list of alert levels this sensor belongs to.
-        self.alertLevels = list()
+        self.alertLevels = list() # type: List[int]
 
         # Flag that indicates if this sensor should trigger a sensor alert
         # for the state "triggered" (true or false).
-        self.triggerAlert = None
+        self.triggerAlert = None # type: Optional[bool]
 
         # Flag that indicates if this sensor should trigger a sensor alert
         # for the state "normal" (true or false).
-        self.triggerAlertNormal = None
+        self.triggerAlertNormal = None # type: Optional[bool]
 
         # The type of data the sensor holds (i.e., none at all, integer, ...).
         # Type is given by the enum class "SensorDataType".
-        self.sensorDataType = None
+        self.sensorDataType = None # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None
+        self.sensorData = None # type: Optional[int, float]
 
         # Flag indicates if this sensor alert also holds
         # the data the sensor has. For example, the data send
@@ -68,7 +68,7 @@ class _PollingSensor:
         # if the data contained by this message is also the
         # current data of the sensor and can be used for example
         # to update the data the sensor has.
-        self.hasLatestData = None
+        self.hasLatestData = None # type: Optional[bool]
 
         # Flag that indicates if a sensor alert that is send to the server
         # should also change the state of the sensor accordingly. This flag
@@ -79,20 +79,19 @@ class _PollingSensor:
         # the sensor can still issue a sensor alert for the "normal"
         # state of the host that connected back, but the sensor
         # can still has the state "triggered".
-        self.changeState = None
+        self.changeState = None # type: Optional[bool]
 
         # Optional data that can be transfered when a sensor alert is issued.
-        self.hasOptionalData = False
+        self.hasOptionalData = False # type: bool
         self.optionalData = None
 
         # Flag indicates if the sensor changes its state directly
         # by using forceSendAlert() and forceSendState() and the SensorExecuter
         # should ignore state changes and thereby not generate sensor alerts.
-        self.handlesStateMsgs = False
-
+        self.handlesStateMsgs = False # type: bool
 
     # this function returns the current state of the sensor
-    def getState(self):
+    def getState(self) -> int:
         raise NotImplementedError("Function not implemented yet.")
 
 
@@ -100,13 +99,11 @@ class _PollingSensor:
     def updateState(self):
         raise NotImplementedError("Function not implemented yet.")
 
-
     # This function initializes the sensor.
     #
     # Returns True or False depending on the success of the initialization.
-    def initializeSensor(self):
+    def initializeSensor(self) -> bool:
         raise NotImplementedError("Function not implemented yet.")
-
 
     # This function decides if a sensor alert for this sensor should be sent
     # to the server. It is checked regularly and can be used to force
@@ -114,9 +111,8 @@ class _PollingSensor:
     #
     # Returns an object of class SensorAlert if a sensor alert should be sent
     # or None.
-    def forceSendAlert(self):
+    def forceSendAlert(self) -> Optional[SensorAlert]:
         raise NotImplementedError("Function not implemented yet.")
-
 
     # This function decides if an update for this sensor should be sent
     # to the server. It is checked regularly and can be used to force an update
@@ -124,149 +120,14 @@ class _PollingSensor:
     #
     # Returns an object of class StateChange if a sensor alert should be sent
     # or None.
-    def forceSendState(self):
+    def forceSendState(self) -> Optional[StateChange]:
         raise NotImplementedError("Function not implemented yet.")
-
-
-# class that controls one watchdog of a challenge
-class PingWatchdogSensor(_PollingSensor):
-
-    def __init__(self):
-        _PollingSensor.__init__(self)
-
-        # Set sensor to not hold any data.
-        self.sensorDataType = SensorDataType.NONE
-
-        # used for logging
-        self.fileName = os.path.basename(__file__)
-
-        # gives the time that the process has to execute
-        self.timeout = None
-
-        # gives the interval in seconds in which the process
-        # should be checked
-        self.intervalToCheck = None
-
-        # gives the command/path that should be executed
-        self.execute = None
-
-        # gives the host of the service
-        self.host = None
-
-        # time when the process was executed
-        self.timeExecute = None
-
-        # the process itself
-        self.process = None
-
-
-    def initializeSensor(self):
-        self.changeState = True
-        self.hasLatestData = False
-        self.hasOptionalData = True
-        self.timeExecute = 0.0
-        self.state = 1 - self.triggerState
-
-        self.optionalData = {"host": self.host}
-
-        return True
-
-
-    def getState(self):
-        return self.state
-
-
-    def updateState(self):
-
-        # check if a process is executed
-        # => if none no process is executed
-        if self.process is None:
-
-            # check if the interval in which the service should be checked
-            # is exceeded
-            utcTimestamp = int(time.time())
-            if (utcTimestamp - self.timeExecute) > self.intervalToCheck:
-
-                logging.debug("[%s]: Executing process " % self.fileName
-                            + "'%s'." % self.description)
-                self.process = subprocess.Popen([self.execute,
-                    "-c3", str(self.host)])
-                self.timeExecute = utcTimestamp
-
-        # => process is still running
-        else:
-
-            # check if process is not finished yet
-            if self.process.poll() is None:
-
-                # check if process has timed out
-                utcTimestamp = int(time.time())
-                if (utcTimestamp - self.timeExecute) > self.timeout:
-
-                    self.state = self.triggerState
-
-                    logging.error("[%s]: Process " % self.fileName
-                            + "'%s' has timed out." % self.description)
-
-                    # terminate process
-                    self.process.terminate()
-
-                    # give the process one second to terminate
-                    time.sleep(1)
-
-                    # check if the process has terminated
-                    # => if not kill it
-                    exitCode = self.process.poll()
-                    if exitCode != -15:
-                        try:
-                            logging.error("[%s]: Could not " % self.fileName
-                            + "terminate '%s'. Killing it." % self.description)
-
-                            self.process.kill()
-                            exitCode = self.process.poll()
-                        except:
-                            pass
-                    self.optionalData["exitCode"] = exitCode
-
-                    # set process to None so it can be newly started
-                    # in the next state update
-                    self.process = None
-
-                    self.optionalData["reason"] = "processtimeout"
-
-            # process has finished
-            else:
-
-                # check if the process has exited with code 0
-                # => everything works fine
-                exitCode = self.process.poll()
-                if exitCode == 0:
-                    self.state = 1 - self.triggerState
-                    self.optionalData["reason"] = "reachable"
-                # process did not exited correctly
-                # => something is wrong with the ctf service
-                else:
-                    self.state = self.triggerState
-                    self.optionalData["reason"] = "notreachable"
-                self.optionalData["exitCode"] = exitCode
-
-                # set process to none so it can be newly started
-                # in the next state update
-                self.process = None
-
-
-    def forceSendAlert(self):
-        return None
-
-
-    def forceSendState(self):
-        return None
 
 
 # this class polls the sensor states and triggers alerts and state changes
 class SensorExecuter:
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
         self.fileName = os.path.basename(__file__)
         self.globalData = globalData
         self.connection = self.globalData.serverComm
@@ -275,10 +136,8 @@ class SensorExecuter:
         # Flag indicates if the thread is initialized.
         self._isInitialized = False
 
-
-    def isInitialized(self):
+    def isInitialized(self) -> bool:
         return self._isInitialized
-
 
     def execute(self):
 
