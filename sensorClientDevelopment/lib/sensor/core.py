@@ -26,40 +26,40 @@ class _PollingSensor:
 
         # Id of this sensor on this client. Will be handled as
         # "remoteSensorId" by the server.
-        self.id = None # type: Optional[int]
+        self.id = None  # type: Optional[int]
 
         # Description of this sensor.
-        self.description = None # type: Optional[str]
+        self.description = None  # type: Optional[str]
 
         # Delay in seconds this sensor has before a sensor alert is
         # issued by the server.
-        self.alertDelay = None # type: Optional[int]
+        self.alertDelay = None  # type: Optional[int]
 
         # Local state of the sensor (either 1 or 0). This state is translated
         # (with the help of "triggerState") into 1 = "triggered" / 0 = "normal"
         # when it is send to the server.
-        self.state = None # type: Optional[int]
+        self.state = None  # type: Optional[int]
 
         # State the sensor counts as triggered (either 1 or 0).
-        self.triggerState = None # type: Optional[int]
+        self.triggerState = None  # type: Optional[int]
 
         # A list of alert levels this sensor belongs to.
-        self.alertLevels = list() # type: List[int]
+        self.alertLevels = list()  # type: List[int]
 
         # Flag that indicates if this sensor should trigger a sensor alert
         # for the state "triggered" (true or false).
-        self.triggerAlert = None # type: Optional[bool]
+        self.triggerAlert = None  # type: Optional[bool]
 
         # Flag that indicates if this sensor should trigger a sensor alert
         # for the state "normal" (true or false).
-        self.triggerAlertNormal = None # type: Optional[bool]
+        self.triggerAlertNormal = None  # type: Optional[bool]
 
         # The type of data the sensor holds (i.e., none at all, integer, ...).
         # Type is given by the enum class "SensorDataType".
-        self.sensorDataType = None # type: Optional[int]
+        self.sensorDataType = None  # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None # type: Optional[int, float]
+        self.sensorData = None  # type: Optional[int, float]
 
         # Flag indicates if this sensor alert also holds
         # the data the sensor has. For example, the data send
@@ -69,7 +69,7 @@ class _PollingSensor:
         # if the data contained by this message is also the
         # current data of the sensor and can be used for example
         # to update the data the sensor has.
-        self.hasLatestData = None # type: Optional[bool]
+        self.hasLatestData = None  # type: Optional[bool]
 
         # Flag that indicates if a sensor alert that is send to the server
         # should also change the state of the sensor accordingly. This flag
@@ -80,21 +80,20 @@ class _PollingSensor:
         # the sensor can still issue a sensor alert for the "normal"
         # state of the host that connected back, but the sensor
         # can still has the state "triggered".
-        self.changeState = None # type: Optional[bool]
+        self.changeState = None  # type: Optional[bool]
 
-        # Optional data that can be transfered when a sensor alert is issued.
-        self.hasOptionalData = False # type: bool
+        # Optional data that can be transferred when a sensor alert is issued.
+        self.hasOptionalData = False  # type: bool
         self.optionalData = None
 
         # Flag indicates if the sensor changes its state directly
         # by using forceSendAlert() and forceSendState() and the SensorExecuter
         # should ignore state changes and thereby not generate sensor alerts.
-        self.handlesStateMsgs = False # type: bool
+        self.handlesStateMsgs = False  # type: bool
 
     # this function returns the current state of the sensor
     def getState(self) -> int:
         raise NotImplementedError("Function not implemented yet.")
-
 
     # this function updates the state variable of the sensor
     def updateState(self):

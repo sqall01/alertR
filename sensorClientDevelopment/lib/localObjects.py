@@ -23,24 +23,24 @@ class SensorAlert:
     def __init__(self):
 
         # Sensor id of the local sensor.
-        self.clientSensorId = None # type: Optional[int]
+        self.clientSensorId = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        self.state = None # type: Optional[int]
+        self.state = None  # type: Optional[int]
 
         # The optional data of the sensor alert (if it has any).
-        self.hasOptionalData = None # type: Optional[bool]
+        self.hasOptionalData = None  # type: Optional[bool]
         self.optionalData = None
 
         # Does this sensor alert change the state of the sensor?
-        self.changeState = None # type: Optional[bool]
+        self.changeState = None  # type: Optional[bool]
 
         # Does this sensor alert hold the latest data of the sensor?
-        self.hasLatestData = None # type: Optional[bool]
+        self.hasLatestData = None  # type: Optional[bool]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None # type: Optional[int]
-        self.sensorData = None # type: Optional[int, float]
+        self.dataType = None  # type: Optional[int]
+        self.sensorData = None  # type: Optional[int, float]
 
 
 # This class represents a state change of the sensor.
@@ -49,11 +49,11 @@ class StateChange:
     def __init__(self):
 
         # Sensor id of the local sensor.
-        self.clientSensorId = None # type: Optional[int]
+        self.clientSensorId = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        self.state = None # type: Optional[int]
+        self.state = None  # type: Optional[int]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None # type: Optional[int]
-        self.sensorData = None # type: Optional[int, float]
+        self.dataType = None  # type: Optional[int]
+        self.sensorData = None  # type: Optional[int, float]
