@@ -113,7 +113,7 @@ class Updater:
             # => check if file has to be updated
             if os.path.exists(self.instanceLocation + clientFile):
 
-                f = open(self.instanceLocation + clientFile, 'r')
+                f = open(self.instanceLocation + clientFile, 'rb')
                 sha256Hash = self._sha256File(f)
                 f.close()
 
@@ -781,7 +781,7 @@ class Updater:
                 return False
 
             # check if the hash of the copied file is correct
-            f = open(self.instanceLocation + "/" + fileToUpdate, 'r')
+            f = open(self.instanceLocation + "/" + fileToUpdate, 'rb')
             sha256Hash = self._sha256File(f)
             f.close()
             if sha256Hash != self.newestFiles[fileToUpdate]:
