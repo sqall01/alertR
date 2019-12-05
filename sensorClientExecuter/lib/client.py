@@ -50,7 +50,7 @@ class Client:
 
         self.sslSocket.connect((self.host, self.port))
 
-    def send(self, data: str) -> str:
+    def send(self, data: str):
         count = self.sslSocket.send(data.encode('ascii'))
 
     def recv(self, buffsize: int, timeout=20.0):

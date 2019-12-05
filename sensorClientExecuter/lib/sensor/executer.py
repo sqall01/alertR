@@ -360,6 +360,8 @@ class ExecuterSensor(_PollingSensor):
 
                     # Parse output.
                     output, err = self.process.communicate()
+                    output = output.decode("ascii")
+                    err = err.decode("ascii")
                     if not self._parseOutput(output):
 
                         logging.error("[%s] Not able to parse output "
