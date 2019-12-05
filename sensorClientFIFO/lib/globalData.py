@@ -1,13 +1,14 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
+from typing import Optional
 
 
 # this class is a global configuration class that holds 
@@ -17,27 +18,26 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.502
+        self.version = 0.503  # type: float
 
         # revision of the used client
-        self.rev = 2
+        self.rev = 0  # type: int
 
         # name of this client
-        self.name = "AlertR Sensor Client FIFO"
+        self.name = "AlertR Sensor Client FIFO"  # type: str
 
         # the instance of this client
-        self.instance = "sensorClientFIFO"
+        self.instance = "sensorClientFIFO"  # type: str
 
         # interval in which a ping should be send when
         # no data was received/send
-        self.pingInterval = 30
+        self.pingInterval = 30  # type: int
 
         # type of this node/client
-        self.nodeType = "sensor"
+        self.nodeType = "sensor"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-            + "/../config/config.xml"
+        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
 
         # instance of the email alerting object
         self.smtpAlert = None
@@ -50,4 +50,4 @@ class GlobalData:
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent = None
+        self.persistent = None  # type: Optional[bool]

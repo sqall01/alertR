@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -19,23 +19,23 @@ import importlib
 
 
 def outputUpdateFailed():
-    print
-    print "UPDATE PROCESS FAILED!"
-    print "To see the reason take a look at the update",
-    print "process output.",
-    print "You can change the log level in the configuration",
-    print "file to 'DEBUG'",
-    print "and repeat the update process to get more detailed",
-    print "information."
+    print("")
+    print("UPDATE PROCESS FAILED!")
+    print("To see the reason take a look at the update ", end="")
+    print("process output. ", end="")
+    print("You can change the log level in the configuration ", end="")
+    print("file to 'DEBUG' ", end="")
+    print("and repeat the update process to get more detailed ", end="")
+    print("information.")
 
 # This function asks the user for confirmation directly.
 def userAsk():
 
     while True:
         try:
-            localInput = raw_input("(y/n): ")
+            localInput = input("(y/n): ")
         except KeyboardInterrupt:
-            print "Bye."
+            print("Bye.")
             sys.exit(0)
         except:
             continue
@@ -45,16 +45,16 @@ def userAsk():
         elif localInput.strip().upper() == "N":
             return False
         else:
-            print "Invalid input."
+            print("Invalid input.")
 
 # This function asks the user for confirmation (if wanted).
 def userConfirmation(options):
-    if options.yes is False:
+    if options is None or options.yes is False:
         if userAsk() is False:
-            print "Bye."
+            print("Bye.")
             sys.exit(0)
     else:
-        print "NOTE: Skipping confirmation."
+        print("NOTE: Skipping confirmation.")
 
 # This function checks if new dependencies exist and if they are met.
 def checkDependencies(oldDependencies, newDependencies):
@@ -122,16 +122,15 @@ def checkDependencies(oldDependencies, newDependencies):
                 logging.error("[%s]: Module '%s' not installed."
                     % (fileName, importName))
 
-                print 
-                print "The needed module '%s' is not installed." % importName,
-                print "You can install the module by executing",
-                print "'pip install %s'" % packet,
-                print "(if you do not have installed pip, you can install it",
-                print "on Debian like systems by executing",
-                print "'apt-get install python-pip')."
+                print("")
+                print("The needed module '%s' is not installed. " % importName, end="")
+                print("You can install the module by executing ", end="")
+                print("'pip install %s' " % packet, end="")
+                print("(if you do not have installed pip, you can install it ", end="")
+                print("on Debian like systems by executing ", end="")
+                print("'apt-get install python-pip').")
 
                 return False
-
 
             # if a version string is given in the instance information
             # => check if the installed version satisfies the needed version
@@ -169,34 +168,31 @@ def checkDependencies(oldDependencies, newDependencies):
 
                 # if the version check failed, ask the user for confirmation
                 if versionCheckFailed is True:
+                    print("")
+                    print("Could not automatically verify the installed ", end="")
+                    print("version of the module '%s'. " % importName, end="")
+                    print("You have to verify the version yourself.")
+                    print("")
+                    print("Installed version: %s" % temp.__version__)
+                    print("Needed version: %s" % version)
+                    print("")
+                    print("Do you have a version installed that satisfies ", end="")
+                    print("the needed version?")
 
-                    print 
-                    print "Could not automatically verify the installed",
-                    print "version of the module '%s'."  % importName,
-                    print "You have to verify the version yourself."
-                    print
-                    print "Installed version: %s" % temp.__version__
-                    print "Needed version: %s" % version
-                    print
-                    print "Do you have a version installed that satisfies",
-                    print "the needed version?"
-
-                    if not userConfirmation():
+                    if not userConfirmation(None):
                         versionCorrect = False
 
                 # if the version is not correct => abort the next checks
                 if versionCorrect is False:
-
-                    print 
-                    print "The needed version '%s'" % version,
-                    print "of module '%s' is not satisfied" % importName,
-                    print "(you have version '%s'" % temp.__version__,
-                    print "installed)."
-                    print "Please update your installed version of the pip",
-                    print "packet '%s'." % packet
+                    print("")
+                    print("The needed version '%s' " % version, end="")
+                    print("of module '%s' is not satisfied " % importName, end="")
+                    print("(you have version '%s' " % temp.__version__, end="")
+                    print("installed).")
+                    print("Please update your installed version of the pip ", end="")
+                    print("packet '%s'." % packet)
 
                     return False
-
 
     # check if all other dependencies are met
     if "other" in newDependencies.keys():
@@ -248,20 +244,30 @@ def checkDependencies(oldDependencies, newDependencies):
             # (this can happen for example if the module has no
             # __version__ string or can only be imported as 'root')
             if other["manual"] is True:
+                print("")
+                print("Can not automatically verify the installed ", end="")
+                print("version of the module '%s'. " % importName, end="")
+                print("You have to verify the version and if ", end="")
+                print("it is installed yourself.")
+                print("")
+                print("Needed version: %s" % version)
+                print("")
+                print("Do you have a version installed that satisfies ", end="")
+                print("the needed version?")
 
-                print 
-                print "Can not automatically verify the installed",
-                print "version of the module '%s'."  % importName,
-                print "You have to verify the version and if",
-                print "it is installed yourself."
-                print
-                print "Needed version: %s" % version
-                print
-                print "Do you have a version installed that satisfies",
-                print "the needed version?"
-
-                if not userConfirmation():
+                versionCorrect = True
+                if not userConfirmation(None):
                     versionCorrect = False
+
+                # if the version is not correct => abort the next checks
+                if versionCorrect is False:
+
+                    print("")
+                    print("The needed version '%s' " % version, end="")
+                    print("of module '%s' is not satisfied." % importName)
+                    print("Please update your installed version.")
+
+                    return False
 
             # check the installed module automatically
             else:
@@ -280,10 +286,10 @@ def checkDependencies(oldDependencies, newDependencies):
                     logging.error("[%s]: Module '%s' not installed."
                         % (fileName, importName))
 
-                    print 
-                    print "The needed module '%s' is not" % importName,
-                    print "installed. You need to install it before",
-                    print "you can use this AlertR instance."
+                    print("")
+                    print("The needed module '%s' is not " % importName, end="")
+                    print("installed. You need to install it before ", end="")
+                    print("you can use this AlertR instance.")
 
                     return False
 
@@ -327,17 +333,16 @@ def checkDependencies(oldDependencies, newDependencies):
                     # if the version check failed, ask the user
                     # for confirmation
                     if versionCheckFailed is True:
-
-                        print 
-                        print "Could not automatically verify the installed",
-                        print "version of the module '%s'."  % importName,
-                        print "You have to verify the version yourself."
-                        print
-                        print "Installed version: %s" % temp.__version__
-                        print "Needed version: %s" % version
-                        print
-                        print "Do you have a version installed that satisfies",
-                        print "the needed version?"
+                        print("")
+                        print("Could not automatically verify the installed ", end="")
+                        print("version of the module '%s'. " % importName, end="")
+                        print("You have to verify the version yourself.")
+                        print("")
+                        print("Installed version: %s" % temp.__version__)
+                        print("Needed version: %s" % version)
+                        print("")
+                        print("Do you have a version installed that satisfies ", end="")
+                        print("the needed version?")
 
                         if not userConfirmation():
                             versionCorrect = False
@@ -345,12 +350,12 @@ def checkDependencies(oldDependencies, newDependencies):
                     # if the version is not correct => abort the next checks
                     if versionCorrect is False:
 
-                        print 
-                        print "The needed version '%s'" % version,
-                        print "of module '%s' is not satisfied" % importName,
-                        print "(you have version '%s'" % temp.__version__,
-                        print "installed)."
-                        print "Please update your installed version."
+                        print("")
+                        print("The needed version '%s' " % version, end="")
+                        print("of module '%s' is not satisfied " % importName, end="")
+                        print("(you have version '%s' " % temp.__version__, end="")
+                        print("installed).")
+                        print("Please update your installed version.")
 
                         return False
 
@@ -373,7 +378,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if options.update is False:
-        print "Use --help to get all available options."
+        print("Use --help to get all available options.")
         sys.exit(0)
 
 
@@ -413,8 +418,8 @@ if __name__ == '__main__':
             datefmt='%m/%d/%Y %H:%M:%S', level=loglevel)
 
     except Exception as e:
-        print "Config could not be parsed."
-        print e
+        print("Config could not be parsed.")
+        print(e)
         sys.exit(1)
 
     # parse the rest of the config with initialized logging
@@ -429,14 +434,8 @@ if __name__ == '__main__':
                 % globalData.version)
 
         # parse update options
-        updateServer = str(
-            configRoot.find("update").find("server").attrib["host"])
-        updatePort = int(
-            configRoot.find("update").find("server").attrib["port"])
-        updateLocation = str(
-            configRoot.find("update").find("server").attrib["location"])
-        updateCaFile = str(
-            configRoot.find("update").find("server").attrib["caFile"])
+        updateUrl = str(
+            configRoot.find("update").find("server").attrib["url"])
 
     except Exception as e:
         logging.exception("[%s]: Could not parse config." % fileName)
@@ -458,11 +457,9 @@ if __name__ == '__main__':
 
     # create an updater process
     try:
-        updater = Updater(updateServer, updatePort, updateLocation,
-            updateCaFile, globalData, localInstanceInfo)
+        updater = Updater(updateUrl, globalData, localInstanceInfo)
     except:
-        logging.exception("[%s]: Not able to create update object."
-            % fileName)
+        logging.exception("[%s]: Not able to create update object." % fileName)
         outputUpdateFailed()
         sys.exit(1)
 
@@ -503,34 +500,34 @@ if __name__ == '__main__':
         # if the update changes the protocol
         # => notify user and ask for confirmation
         if protocolUpdate is True:
-            print
-            print "WARNING: You are about to make an update that changes", 
-            print "the used network protocol.",
-            print "This means that after you have updated this AlertR",
-            print "instance you also have to update your AlertR server and",
-            print "all your AlertR clients in order to have a working",
-            print "system again."
-            print "Are you sure you want to continue and update this",
-            print "AlertR instance?"
+            print("")
+            print("WARNING: You are about to make an update that changes ", end="")
+            print("the used network protocol. ", end="")
+            print("This means that after you have updated this AlertR ", end="")
+            print("instance you also have to update your AlertR server and ", end="")
+            print("all your AlertR clients in order to have a working ", end="")
+            print("system again.")
+            print("Are you sure you want to continue and update this ", end="")
+            print("AlertR instance?")
             userConfirmation(options)
 
         # if the update needs changes in the configuration file
         # => notify user and ask for confirmation
         if configUpdate is True:
-            print
-            print "WARNING: You are about to make an update that needs", 
-            print "changes in the configuration file.",
-            print "This means that you have to manually update your used",
-            print "configuration file before you can use this AlertR",
-            print "instance again."
-            print "Are you sure you want to continue and update this",
-            print "AlertR instance?"
+            print("")
+            print("WARNING: You are about to make an update that needs ", end="")
+            print("changes in the configuration file. ", end="")
+            print("This means that you have to manually update your used ", end="")
+            print("configuration file before you can use this AlertR ", end="")
+            print("instance again.")
+            print("Are you sure you want to continue and update this ", end="")
+            print("AlertR instance?")
             userConfirmation(options)
 
-        print
-        print "Please make sure that this AlertR instance is stopped before",
-        print "continuing the update process."
-        print "Are you sure this AlertR instance is not running?"
+        print("")
+        print("Please make sure that this AlertR instance is stopped before ", end="")
+        print("continuing the update process.")
+        print("Are you sure this AlertR instance is not running?")
         userConfirmation(options)
 
         if updater.updateInstance() is False:
@@ -554,31 +551,30 @@ if __name__ == '__main__':
 
         logging.info("[%s]: Update finished." % fileName)
 
-        print
-        print "UPDATE FINISHED!"
+        print("")
+        print("UPDATE FINISHED!")
 
         # if the update changes the protocol
         # => output a reminder
         if protocolUpdate is True:
-            print "NOTE: Please make sure you update all your AlertR",
-            print "instances before you restart this instance."
+            print("NOTE: Please make sure you update all your AlertR ", end="")
+            print("instances before you restart this instance.")
 
         # if the update needs changes in the configuration file
         # => output a reminder
         if configUpdate is True:
-            print "NOTE: Please make sure you manually update the",
-            print "configuration file of this AlertR instance before",
-            print "you restart this instance."
+            print("NOTE: Please make sure you manually update the ", end="")
+            print("configuration file of this AlertR instance before ", end="")
+            print("you restart this instance.")
 
-        if (protocolUpdate is False
-            and configUpdate is False):
-            print "NOTE: Please start this AlertR instance now."
+        if protocolUpdate is False and configUpdate is False:
+            print("NOTE: Please start this AlertR instance now.")
 
     else:
         logging.info("[%s]: No new version available." % fileName)
 
-        print
-        print "SKIPPING UPDATE!"
-        print "No new version is available in the configured repository."
+        print("")
+        print("SKIPPING UPDATE!")
+        print("No new version is available in the configured repository.")
 
         sys.exit(0)
