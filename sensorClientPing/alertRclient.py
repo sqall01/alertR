@@ -15,7 +15,6 @@ from lib import PingSensor, SensorExecuter
 from lib import GlobalData
 import logging
 import time
-import socket
 import random
 import xml.etree.ElementTree
 
