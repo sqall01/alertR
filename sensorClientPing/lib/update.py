@@ -367,7 +367,7 @@ class Updater:
 
         # create temporary file
         try:
-            fileHandle = tempfile.TemporaryFile()
+            fileHandle = tempfile.TemporaryFile(mode='w+b')
 
         except Exception as e:
 
