@@ -20,7 +20,7 @@
             {
             "import": "requests",
             "packet": "requests",
-            "version": "2.13.0"
+            "version": "2.20.0"
             },
             {
             "import": "icalendar",
@@ -31,6 +31,11 @@
             "import": "dateutil",
             "packet": "python-dateutil",
             "version": "2.7.3"
+            },
+            {
+            "import": "pytz",
+            "packet": "pytz",
+            "version": "2019.3"
             }
         ]
     }
