@@ -366,15 +366,24 @@ if __name__ == '__main__':
 
     # parsing command line options
     parser = optparse.OptionParser()
-    parser.add_option("-y", "--yes", dest="yes", action="store_true",
-        help="Do not ask me for confirmation. I know what I am doing.",
-        default=False)
-    parser.add_option("-u", "--update", dest="update", action="store_true",
-        help="Start update process now.",
-        default=False)
-    parser.add_option("-f", "--force", dest="force", action="store_true",
-        help="Do not check the version. Just update all files.",
-        default=False)
+    parser.add_option("-y",
+                      "--yes",
+                      dest="yes",
+                      action="store_true",
+                      help="Do not ask me for confirmation. I know what I am doing.",
+                      default=False)
+    parser.add_option("-u",
+                      "--update",
+                      dest="update",
+                      action="store_true",
+                      help="Start update process now.",
+                      default=False)
+    parser.add_option("-f",
+                      "--force",
+                      dest="force",
+                      action="store_true",
+                      help="Do not check the version or dependencies. Just update all files.",
+                      default=False)
     (options, args) = parser.parse_args()
 
     if options.update is False:
@@ -483,7 +492,7 @@ if __name__ == '__main__':
         logging.info("[%s]: Checking the dependencies." % fileName)
         newDependencies = newInstanceInfo["dependencies"]
         oldDependencies = localInstanceInfo["dependencies"]
-        if not checkDependencies(oldDependencies, newDependencies):
+        if not options.force and not checkDependencies(oldDependencies, newDependencies):
             logging.error("[%s]: Update failed due to dependencies."
                 % fileName)
             outputUpdateFailed()

@@ -222,7 +222,7 @@ if __name__ == '__main__':
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-            and (connectionRetries % 5) == 0):
+           and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
         if globalData.serverComm.initializeCommunication() is True:
