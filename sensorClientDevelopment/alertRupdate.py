@@ -492,7 +492,7 @@ if __name__ == '__main__':
         logging.info("[%s]: Checking the dependencies." % fileName)
         newDependencies = newInstanceInfo["dependencies"]
         oldDependencies = localInstanceInfo["dependencies"]
-        if not options.force and not checkDependencies(oldDependencies, newDependencies):
+        if options.force is not True and not checkDependencies(oldDependencies, newDependencies):
             logging.error("[%s]: Update failed due to dependencies."
                 % fileName)
             outputUpdateFailed()
