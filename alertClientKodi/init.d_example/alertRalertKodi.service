@@ -1,12 +1,12 @@
 # example unit file when systemd is used
 
 [Unit]
-Description=alertR Alert Client XBMC
+Description=AlertR Alert Client Kodi
 
 [Service]
 Type=simple
-ExecStart=/etc/init.d/alertRalertXBMC.sh start
-ExecStop=/etc/init.d/alertRalertXBMC.sh stop
+ExecStart=/etc/init.d/alertRalertKodi.sh start
+ExecStop=/etc/init.d/alertRalertKodi.sh stop
 RemainAfterExit=yes
 
 [Install]

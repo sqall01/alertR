@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="0.501">
+<config version="0.502">
 
     <!--
         in this section general options are configured
@@ -114,21 +114,12 @@
         <!--
             the server settings of the update process (only change these
                 settings if you want to use your own repository and not
-                the alertR master repository on github)
-            host - address of the used web server
+                the AlertR master repository on github)
+            url - URL to AlertR repository
                 NOTE: the update process uses HTTPS and does not allow HTTP
-            port - port of the used web server
-            location - the location of the used alertR repository
-            caFile - the location of the CA/certificate file that is used
-                to validate the HTTPS connection
-                NOTE: the given location works for github on Debian like
-                distributions
         -->
         <server
-            host="raw.githubusercontent.com"
-            port="443"
-            location="/sqall01/alertR/master/"
-            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+            url="https://raw.githubusercontent.com/sqall01/alertR/master/" />
 
     </update>
 
@@ -164,9 +155,9 @@
             <alertLevel>6</alertLevel>
 
             <!--
-                xbmc specific settings for the notification
-                host - the address of the xbmc json rpc service
-                port - port of the xbmc json rpc service
+                kodi specific settings for the notification
+                host - the address of the kodi json rpc service
+                port - port of the kodi json rpc service
                 triggerDelay - how many seconds should be elapsed before
                     the alert could be triggered again
                 pausePlayer - should the player be paused
@@ -179,7 +170,7 @@
                     (only possible if one was sent by the sensor,
                     else only a generic message is shown)
             -->
-            <xbmc
+            <kodi
                 host="localhost"
                 port="8080"
                 triggerDelay="10"
