@@ -7,8 +7,5 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .client import ServerCommunication, ConnectionWatchdog, Receiver
-from .smtp import SMTPAlert
-from .alert import ExecuterAlert
-from .update import Updater
-from .globalData import GlobalData
+from .core import AsynchronousAlertExecuter
+from .executer import ExecuterAlert
