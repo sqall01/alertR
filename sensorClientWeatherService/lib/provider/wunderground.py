@@ -1,15 +1,25 @@
-from core import DataCollector
+#!/usr/bin/python3
+
+# written by sqall
+# twitter: https://twitter.com/sqall01
+# blog: https://h4des.org
+# github: https://github.com/sqall01
+#
+# Licensed under the GNU Affero General Public License, version 3.
+
+from .core import DataCollector
+from ..globalData import GlobalData
 import threading
 import logging
 import requests
-import json
 import time
+from typing import Optional
 
 
 # Class that collects data from Wunderground.
 class WundergroundDataCollector(DataCollector):
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
         super(WundergroundDataCollector, self).__init__(globalData)
 
         self.updateLock = threading.Semaphore(1)
@@ -17,10 +27,10 @@ class WundergroundDataCollector(DataCollector):
         self.host = "http://api.wunderground.com"
 
         # Api key of wunderground.
-        self.apiKey = None
+        self.apiKey = None  # type: Optional[str]
 
         # Interval in seconds in which the data is fetched.
-        self.interval = None
+        self.interval = None  # type: Optional[int]
 
         # List of tuples in the form [(country, city), ...]
         self.locations = list()
@@ -31,9 +41,9 @@ class WundergroundDataCollector(DataCollector):
 
         # Number of failed updates we tolerate before we change
         # the data to signal the problem.
-        self.maxToleratedFails = None
+        self.maxToleratedFails = None  # type: Optional[int]
 
-    def addLocation(self, country, city, lon, lat):
+    def addLocation(self, country: str, city: str, lon: str, lat: str):
         tempCountry = country.lower()
         tempCity = city.lower()
 
@@ -43,12 +53,12 @@ class WundergroundDataCollector(DataCollector):
                 return
 
         # check if location is already in locations list
-        self.locations.append( (tempCountry, tempCity) )
+        self.locations.append((tempCountry, tempCity))
 
         # Add locations to data collection.
-        if not tempCountry in self.collectedData.keys():
+        if tempCountry not in self.collectedData.keys():
             self.collectedData[tempCountry] = dict()
-        if not tempCity in self.collectedData[tempCountry].keys():
+        if tempCity not in self.collectedData[tempCountry].keys():
             self.collectedData[tempCountry][tempCity] = dict()
             self.collectedData[tempCountry][tempCity]["temp"] = float(-1000)
             self.collectedData[tempCountry][tempCity]["humidity"] = -1000
@@ -59,7 +69,7 @@ class WundergroundDataCollector(DataCollector):
                 self.collectedData[tempCountry][tempCity]["forecast"][i]["tempLow"] = float(-1000)
                 self.collectedData[tempCountry][tempCity]["forecast"][i]["rain"] = -1000
 
-    def getForecastTemperatureLow(self, country, city, lon, lat, day):
+    def getForecastTemperatureLow(self, country: str, city: str, lon: str, lat: str, day: int) -> float:
         tempCountry = country.lower()
         tempCity = city.lower()
 
@@ -70,7 +80,7 @@ class WundergroundDataCollector(DataCollector):
         with self.updateLock:
             return self.collectedData[tempCountry][tempCity]["forecast"][day]["tempLow"]
 
-    def getForecastTemperatureHigh(self, country, city, lon, lat, day):
+    def getForecastTemperatureHigh(self, country: str, city: str, lon: str, lat: str, day: int) -> float:
         tempCountry = country.lower()
         tempCity = city.lower()
 
@@ -81,25 +91,25 @@ class WundergroundDataCollector(DataCollector):
         with self.updateLock:
             return self.collectedData[tempCountry][tempCity]["forecast"][day]["tempHigh"]
 
-    def getForecastRain(self, country, city, lon, lat, day):
+    def getForecastRain(self, country: str, city: str, lon: str, lat: str, day: int) -> int:
         tempCountry = country.lower()
         tempCity = city.lower()
 
         # Sanity check day.
         if day < 0 and day > 2:
-            return float(-1001)
+            return -1001
 
         with self.updateLock:
             return self.collectedData[tempCountry][tempCity]["forecast"][day]["rain"]
 
-    def getTemperature(self, country, city, lon, lat):
+    def getTemperature(self, country: str, city: str, lon: str, lat: str) -> float:
         tempCountry = country.lower()
         tempCity = city.lower()
 
         with self.updateLock:
             return self.collectedData[tempCountry][tempCity]["temp"]
 
-    def getHumidity(self, country, city, lon, lat):
+    def getHumidity(self, country: str, city: str, lon: str, lat: str) -> int:
         tempCountry = country.lower()
         tempCity = city.lower()
 
@@ -108,8 +118,7 @@ class WundergroundDataCollector(DataCollector):
 
     def run(self):
 
-        logging.info("[%s]: Starting Wunderground data collector thread."
-            % self.fileName)
+        logging.info("[%s]: Starting Wunderground data collector thread." % self.fileName)
 
         # Tolerate failed updates for at least 12 hours.
         self.maxToleratedFails = int(43200 / self.interval) + 1
@@ -123,20 +132,26 @@ class WundergroundDataCollector(DataCollector):
                 city = locationTuple[1]
 
                 logging.debug("[%s]: Getting weather data from "
-                    % self.fileName
-                    + "Wunderground for %s in %s."
-                    % (city, country))
+                              % self.fileName
+                              + "Wunderground for %s in %s."
+                              % (city, country))
 
                 r = None
                 try:
                     # Get weather data from Wunderground
-                    url = self.host + "/api/" + self.apiKey + "/geolookup/conditions/forecast/q/" \
-                          + country + "/" + city + "json"
+                    url = self.host \
+                          + "/api/" \
+                          + self.apiKey \
+                          + "/geolookup/conditions/forecast/q/" \
+                          + country \
+                          + "/" \
+                          + city \
+                          + "json"
                     r = requests.get(url)
 
                     # Extract data.
                     if r.status_code == 200:
-                        jsonData =  r.json()
+                        jsonData = r.json()
 
                         humidity = int(jsonData["current_observation"]["relative_humidity"].replace("%", ""))
                         temp = float(jsonData["current_observation"]["temp_c"])
@@ -176,64 +191,64 @@ class WundergroundDataCollector(DataCollector):
                         failCtr = 0
 
                         logging.info("[%s]: Received new humidity data "
-                            % self.fileName
-                            + "from Wunderground: %d%% for %s in %s."
-                            % (humidity, city, country))
+                                     % self.fileName
+                                     + "from Wunderground: %d%% for %s in %s."
+                                     % (humidity, city, country))
 
                         logging.info("[%s]: Received new temperature data "
-                            % self.fileName
-                            + "from Wunderground: %.1f degrees Celsius "
-                            % temp
-                            + "for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground: %.1f degrees Celsius "
+                                     % temp
+                                     + "for %s in %s."
+                                     % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
-                            % self.fileName
-                            + "from Wunderground for day 0: min %.1f max %.1f "
-                            % (forecastDay0TempLow, forecastDay0TempHigh)
-                            + "degrees Celsius for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground for day 0: min %.1f max %.1f "
+                                     % (forecastDay0TempLow, forecastDay0TempHigh)
+                                     + "degrees Celsius for %s in %s."
+                                     % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
-                            % self.fileName
-                            + "from Wunderground for day 0: %d%% "
-                            % forecastDay0Rain
-                            + "chance of rain for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground for day 0: %d%% "
+                                     % forecastDay0Rain
+                                     + "chance of rain for %s in %s."
+                                     % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
-                            % self.fileName
-                            + "from Wunderground for day 1: min %.1f max %.1f "
-                            % (forecastDay1TempLow, forecastDay1TempHigh)
-                            + "degrees Celsius for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground for day 1: min %.1f max %.1f "
+                                     % (forecastDay1TempLow, forecastDay1TempHigh)
+                                     + "degrees Celsius for %s in %s."
+                                     % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
-                            % self.fileName
-                            + "from Wunderground for day 1: %d%% "
-                            % forecastDay1Rain
-                            + "chance of rain for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground for day 1: %d%% "
+                                     % forecastDay1Rain
+                                     + "chance of rain for %s in %s."
+                                     % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
-                            % self.fileName
-                            + "from Wunderground for day 2: min %.1f max %.1f "
-                            % (forecastDay2TempLow, forecastDay2TempHigh)
-                            + "degrees Celsius for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground for day 2: min %.1f max %.1f "
+                                     % (forecastDay2TempLow, forecastDay2TempHigh)
+                                     + "degrees Celsius for %s in %s."
+                                     % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
-                            % self.fileName
-                            + "from Wunderground for day 2: %d%% "
-                            % forecastDay2Rain
-                            + "chance of rain for %s in %s."
-                            % (city, country))
+                                     % self.fileName
+                                     + "from Wunderground for day 2: %d%% "
+                                     % forecastDay2Rain
+                                     + "chance of rain for %s in %s."
+                                     % (city, country))
 
                     else:
                         failCtr += 1
                         logging.error("[%s]: Received response code %d "
-                            % (self.fileName, r.status_code)
-                            + "from Wunderground.")
+                                      % (self.fileName, r.status_code)
+                                      + "from Wunderground.")
 
                         if failCtr >= self.maxToleratedFails:
                             with self.updateLock:
@@ -252,9 +267,9 @@ class WundergroundDataCollector(DataCollector):
                 except Exception as e:
                     failCtr += 1
                     logging.exception("[%s]: Could not get weather data "
-                        % self.fileName
-                        + "for %s in %s."
-                        % (city, country))
+                                      % self.fileName
+                                      + "for %s in %s."
+                                      % (city, country))
                     if r is not None:
                         logging.error("[%s]: Received data from server: '%s'." % (self.fileName, r.text))
 

@@ -1,11 +1,14 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
+
+from typing import Optional
+
 
 # This enum class gives the different data types of a sensor.
 class SensorDataType:
@@ -28,24 +31,24 @@ class SensorAlert:
     def __init__(self):
 
         # Sensor id of the local sensor.
-        self.clientSensorId = None
+        self.clientSensorId = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        self.state = None
+        self.state = None  # type: Optional[int]
 
         # The optional data of the sensor alert (if it has any).
-        self.hasOptionalData = None
+        self.hasOptionalData = None  # type: Optional[bool]
         self.optionalData = None
 
         # Does this sensor alert change the state of the sensor?
-        self.changeState = None
+        self.changeState = None  # type: Optional[bool]
 
         # Does this sensor alert hold the latest data of the sensor?
-        self.hasLatestData = None
+        self.hasLatestData = None  # type: Optional[bool]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None
-        self.sensorData = None
+        self.dataType = None  # type: Optional[int]
+        self.sensorData = None  # type: Optional[int, float]
 
 
 # This class represents a state change of the sensor.
@@ -54,11 +57,11 @@ class StateChange:
     def __init__(self):
 
         # Sensor id of the local sensor.
-        self.clientSensorId = None
+        self.clientSensorId = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        self.state = None
+        self.state = None  # type: Optional[int]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None
-        self.sensorData = None
+        self.dataType = None  # type: Optional[int]
+        self.sensorData = None  # type: Optional[int, float]

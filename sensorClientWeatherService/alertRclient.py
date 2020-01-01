@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -11,9 +11,8 @@ import sys
 import os
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
-from lib import TempPollingSensor, \
-    HumidityPollingSensor, ForecastTempPollingSensor, \
-    ForecastRainPollingSensor, SensorExecuter
+from lib import TempPollingSensor, HumidityPollingSensor, ForecastTempPollingSensor, ForecastRainPollingSensor
+from lib import SensorExecuter
 from lib import WundergroundDataCollector, DarkskyDataCollector
 from lib import GlobalData
 from lib import Ordering
@@ -45,15 +44,12 @@ if __name__ == '__main__':
     # parse config file, get logfile configurations
     # and initialize logging
     try:
-        configRoot = xml.etree.ElementTree.parse(
-            globalData.configFile).getroot()
+        configRoot = xml.etree.ElementTree.parse(globalData.configFile).getroot()
 
-        logfile = makePath(
-            str(configRoot.find("general").find("log").attrib["file"]))
+        logfile = makePath(str(configRoot.find("general").find("log").attrib["file"]))
 
         # parse chosen log level
-        tempLoglevel = str(
-            configRoot.find("general").find("log").attrib["level"])
+        tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
         tempLoglevel = tempLoglevel.upper()
         if tempLoglevel == "DEBUG":
             loglevel = logging.DEBUG
@@ -70,8 +66,9 @@ if __name__ == '__main__':
 
         # initialize logging
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-            datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
-            level=loglevel)
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            filename=logfile,
+                            level=loglevel)
 
     except Exception as e:
         print("Config could not be parsed.")
@@ -85,31 +82,26 @@ if __name__ == '__main__':
         version = float(configRoot.attrib["version"])
         if version != globalData.version:
             raise ValueError("Config version '%.3f' not "
-                % version
-                + "compatible with client version '%.3f'."
-                % globalData.version)
+                             % version
+                             + "compatible with client version '%.3f'."
+                             % globalData.version)
 
         # parse server configurations
         server = str(configRoot.find("general").find("server").attrib["host"])
-        serverPort = int(
-            configRoot.find("general").find("server").attrib["port"])
+        serverPort = int(configRoot.find("general").find("server").attrib["port"])
 
         # get server certificate file and check if it does exist
-        serverCAFile = os.path.abspath(makePath(
-            str(configRoot.find("general").find("server").attrib["caFile"])))
+        serverCAFile = os.path.abspath(makePath(str(configRoot.find("general").find("server").attrib["caFile"])))
         if os.path.exists(serverCAFile) is False:
             raise ValueError("Server CA does not exist.")
 
         # get client certificate and keyfile (if required)
-        certificateRequired = (str(
-            configRoot.find("general").find("client").attrib[
-            "certificateRequired"]).upper() == "TRUE")
+        certificateRequired = (str(configRoot.find("general").find(
+                               "client").attrib["certificateRequired"]).upper() == "TRUE")
 
         if certificateRequired is True:
-            clientCertFile = os.path.abspath(makePath(str(
-            configRoot.find("general").find("client").attrib["certFile"])))
-            clientKeyFile = os.path.abspath(makePath(str(
-            configRoot.find("general").find("client").attrib["keyFile"])))
+            clientCertFile = os.path.abspath(makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
+            clientKeyFile = os.path.abspath(makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
             if (os.path.exists(clientCertFile) is False
                 or os.path.exists(clientKeyFile) is False):
                 raise ValueError("Client certificate or key does not exist.")
@@ -118,27 +110,23 @@ if __name__ == '__main__':
             clientKeyFile = None
 
         # get user credentials
-        username = str(
-            configRoot.find("general").find("credentials").attrib["username"])
-        password = str(
-            configRoot.find("general").find("credentials").attrib["password"])
+        username = str(configRoot.find("general").find("credentials").attrib["username"])
+        password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Set connection settings.
         globalData.persistent = 1 # Consider sensor client always persistent
 
         # parse smtp options if activated
-        smtpActivated = (str(
-            configRoot.find("smtp").find("general").attrib[
-            "activated"]).upper() == "TRUE")
+        smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
+        smtpServer = ""
+        smtpPort = -1
+        smtpFromAddr = ""
+        smtpToAddr = ""
         if smtpActivated is True:
-            smtpServer = str(
-                configRoot.find("smtp").find("server").attrib["host"])
-            smtpPort = int(
-                configRoot.find("smtp").find("server").attrib["port"])
-            smtpFromAddr = str(
-                configRoot.find("smtp").find("general").attrib["fromAddr"])
-            smtpToAddr = str(
-                configRoot.find("smtp").find("general").attrib["toAddr"])
+            smtpServer = str(configRoot.find("smtp").find("server").attrib["host"])
+            smtpPort = int(configRoot.find("smtp").find("server").attrib["port"])
+            smtpFromAddr = str(configRoot.find("smtp").find("general").attrib["fromAddr"])
+            smtpToAddr = str(configRoot.find("smtp").find("general").attrib["toAddr"])
 
         # Parse data collector settings.
         tempConf = configRoot.find("sensors")
@@ -158,8 +146,7 @@ if __name__ == '__main__':
         # parse all sensors
         for item in configRoot.find("sensors").iterfind("sensor"):
 
-            sensorType = str(item.find("weather").attrib[
-                "type"]).upper()
+            sensorType = str(item.find("weather").attrib["type"]).upper()
 
             if sensorType == "temperature".upper():
 
@@ -168,14 +155,10 @@ if __name__ == '__main__':
                 # these options are needed by the server to
                 # differentiate between the registered sensors
                 sensor.id = int(item.find("general").attrib["id"])
-                sensor.description = str(item.find("general").attrib[
-                    "description"])
-                sensor.alertDelay = int(item.find("general").attrib[
-                    "alertDelay"])
-                sensor.triggerAlert = (str(item.find("general").attrib[
-                    "triggerAlert"]).upper() == "TRUE")
-                sensor.triggerAlertNormal = (str(item.find("general").attrib[
-                    "triggerAlertNormal"]).upper() == "TRUE")
+                sensor.description = str(item.find("general").attrib["description"])
+                sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
+                sensor.triggerAlert = (str(item.find("general").attrib["triggerAlert"]).upper() == "TRUE")
+                sensor.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
                 sensor.triggerState = 1
 
                 sensor.alertLevels = list()
@@ -183,20 +166,13 @@ if __name__ == '__main__':
                     sensor.alertLevels.append(int(alertLevelXml.text))
 
                 # Temperature specific settings.
-                sensor.country = str(item.find("weather").attrib[
-                    "country"])
-                sensor.city = str(item.find("weather").attrib[
-                    "city"])
-                sensor.lon = str(item.find("weather").attrib[
-                    "lon"])
-                sensor.lat = str(item.find("weather").attrib[
-                    "lat"])
-                sensor.hasThreshold = (str(item.find("weather").attrib[
-                    "hasThreshold"]).upper() == "TRUE")
-                sensor.threshold = float(
-                    item.find("weather").attrib["threshold"])
-                orderingStr = str(
-                    item.find("weather").attrib["ordering"]).upper()
+                sensor.country = str(item.find("weather").attrib["country"])
+                sensor.city = str(item.find("weather").attrib["city"])
+                sensor.lon = str(item.find("weather").attrib["lon"])
+                sensor.lat = str(item.find("weather").attrib["lat"])
+                sensor.hasThreshold = (str(item.find("weather").attrib["hasThreshold"]).upper() == "TRUE")
+                sensor.threshold = float(item.find("weather").attrib["threshold"])
+                orderingStr = str(item.find("weather").attrib["ordering"]).upper()
                 if orderingStr == "LT":
                     sensor.ordering = Ordering.LT
                 elif orderingStr == "EQ":
@@ -204,12 +180,10 @@ if __name__ == '__main__':
                 elif orderingStr == "GT":
                     sensor.ordering = Ordering.GT
                 else:
-                    raise ValueError("Type of ordering '%s' not valid."
-                        % orderingStr)
+                    raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
                 # Register location in data collector.
-                sensorDataCollector.addLocation(sensor.country,
-                    sensor.city, sensor.lon, sensor.lat)
+                sensorDataCollector.addLocation(sensor.country, sensor.city, sensor.lon, sensor.lat)
                 sensor.dataCollector = sensorDataCollector
 
             elif sensorType == "humidity".upper():
@@ -219,14 +193,10 @@ if __name__ == '__main__':
                 # these options are needed by the server to
                 # differentiate between the registered sensors
                 sensor.id = int(item.find("general").attrib["id"])
-                sensor.description = str(item.find("general").attrib[
-                    "description"])
-                sensor.alertDelay = int(item.find("general").attrib[
-                    "alertDelay"])
-                sensor.triggerAlert = (str(item.find("general").attrib[
-                    "triggerAlert"]).upper() == "TRUE")
-                sensor.triggerAlertNormal = (str(item.find("general").attrib[
-                    "triggerAlertNormal"]).upper() == "TRUE")
+                sensor.description = str(item.find("general").attrib["description"])
+                sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
+                sensor.triggerAlert = (str(item.find("general").attrib["triggerAlert"]).upper() == "TRUE")
+                sensor.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
                 sensor.triggerState = 1
 
                 sensor.alertLevels = list()
@@ -234,20 +204,13 @@ if __name__ == '__main__':
                     sensor.alertLevels.append(int(alertLevelXml.text))
 
                 # Temperature specific settings
-                sensor.country = str(item.find("weather").attrib[
-                    "country"])
-                sensor.city = str(item.find("weather").attrib[
-                    "city"])
-                sensor.lon = str(item.find("weather").attrib[
-                    "lon"])
-                sensor.lat = str(item.find("weather").attrib[
-                    "lat"])
-                sensor.hasThreshold = (str(item.find("weather").attrib[
-                    "hasThreshold"]).upper() == "TRUE")
-                sensor.threshold = int(
-                    item.find("weather").attrib["threshold"])
-                orderingStr = str(
-                    item.find("weather").attrib["ordering"]).upper()
+                sensor.country = str(item.find("weather").attrib["country"])
+                sensor.city = str(item.find("weather").attrib["city"])
+                sensor.lon = str(item.find("weather").attrib["lon"])
+                sensor.lat = str(item.find("weather").attrib["lat"])
+                sensor.hasThreshold = (str(item.find("weather").attrib["hasThreshold"]).upper() == "TRUE")
+                sensor.threshold = int(item.find("weather").attrib["threshold"])
+                orderingStr = str(item.find("weather").attrib["ordering"]).upper()
                 if orderingStr == "LT":
                     sensor.ordering = Ordering.LT
                 elif orderingStr == "EQ":
@@ -255,12 +218,10 @@ if __name__ == '__main__':
                 elif orderingStr == "GT":
                     sensor.ordering = Ordering.GT
                 else:
-                    raise ValueError("Type of ordering '%s' not valid."
-                        % orderingStr)
+                    raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
                 # Register location in data collector.
-                sensorDataCollector.addLocation(sensor.country,
-                    sensor.city, sensor.lon, sensor.lat)
+                sensorDataCollector.addLocation(sensor.country, sensor.city, sensor.lon, sensor.lat)
                 sensor.dataCollector = sensorDataCollector
 
             elif sensorType == "forecasttemp".upper():
@@ -270,14 +231,10 @@ if __name__ == '__main__':
                 # these options are needed by the server to
                 # differentiate between the registered sensors
                 sensor.id = int(item.find("general").attrib["id"])
-                sensor.description = str(item.find("general").attrib[
-                    "description"])
-                sensor.alertDelay = int(item.find("general").attrib[
-                    "alertDelay"])
-                sensor.triggerAlert = (str(item.find("general").attrib[
-                    "triggerAlert"]).upper() == "TRUE")
-                sensor.triggerAlertNormal = (str(item.find("general").attrib[
-                    "triggerAlertNormal"]).upper() == "TRUE")
+                sensor.description = str(item.find("general").attrib["description"])
+                sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
+                sensor.triggerAlert = (str(item.find("general").attrib["triggerAlert"]).upper() == "TRUE")
+                sensor.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
                 sensor.triggerState = 1
 
                 sensor.alertLevels = list()
@@ -285,20 +242,13 @@ if __name__ == '__main__':
                     sensor.alertLevels.append(int(alertLevelXml.text))
 
                 # Temperature specific settings
-                sensor.country = str(item.find("weather").attrib[
-                    "country"])
-                sensor.city = str(item.find("weather").attrib[
-                    "city"])
-                sensor.lon = str(item.find("weather").attrib[
-                    "lon"])
-                sensor.lat = str(item.find("weather").attrib[
-                    "lat"])
-                sensor.hasThreshold = (str(item.find("weather").attrib[
-                    "hasThreshold"]).upper() == "TRUE")
-                sensor.threshold = float(
-                    item.find("weather").attrib["threshold"])
-                orderingStr = str(
-                    item.find("weather").attrib["ordering"]).upper()
+                sensor.country = str(item.find("weather").attrib["country"])
+                sensor.city = str(item.find("weather").attrib["city"])
+                sensor.lon = str(item.find("weather").attrib["lon"])
+                sensor.lat = str(item.find("weather").attrib["lat"])
+                sensor.hasThreshold = (str(item.find("weather").attrib["hasThreshold"]).upper() == "TRUE")
+                sensor.threshold = float(item.find("weather").attrib["threshold"])
+                orderingStr = str(item.find("weather").attrib["ordering"]).upper()
                 if orderingStr == "LT":
                     sensor.ordering = Ordering.LT
                 elif orderingStr == "EQ":
@@ -306,28 +256,22 @@ if __name__ == '__main__':
                 elif orderingStr == "GT":
                     sensor.ordering = Ordering.GT
                 else:
-                    raise ValueError("Type of ordering '%s' not valid."
-                        % orderingStr)
+                    raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
-                sensor.kind = str(item.find("weather").attrib[
-                    "kind"]).upper()
-                sensor.day = int(item.find("weather").attrib[
-                    "day"])
+                sensor.kind = str(item.find("weather").attrib["kind"]).upper()
+                sensor.day = int(item.find("weather").attrib["day"])
 
                 # Sanity check of kind option.
                 if (sensor.kind != "high".upper()
                     and sensor.kind != "low".upper()):
-                    raise ValueError("Kind of sensor '%s' not valid."
-                        % sensor.kind)
+                    raise ValueError("Kind of sensor '%s' not valid." % sensor.kind)
 
                 # Sanity check of day option.
                 if sensor.day < 0 and sensor.day > 2:
-                    raise ValueError("Day of sensor '%d' not valid."
-                        % sensor.day)
+                    raise ValueError("Day of sensor '%d' not valid." % sensor.day)
 
                 # Register location in data collector.
-                sensorDataCollector.addLocation(sensor.country,
-                    sensor.city, sensor.lon, sensor.lat)
+                sensorDataCollector.addLocation(sensor.country, sensor.city, sensor.lon, sensor.lat)
                 sensor.dataCollector = sensorDataCollector
 
             elif sensorType == "forecastrain".upper():
@@ -337,14 +281,10 @@ if __name__ == '__main__':
                 # these options are needed by the server to
                 # differentiate between the registered sensors
                 sensor.id = int(item.find("general").attrib["id"])
-                sensor.description = str(item.find("general").attrib[
-                    "description"])
-                sensor.alertDelay = int(item.find("general").attrib[
-                    "alertDelay"])
-                sensor.triggerAlert = (str(item.find("general").attrib[
-                    "triggerAlert"]).upper() == "TRUE")
-                sensor.triggerAlertNormal = (str(item.find("general").attrib[
-                    "triggerAlertNormal"]).upper() == "TRUE")
+                sensor.description = str(item.find("general").attrib["description"])
+                sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
+                sensor.triggerAlert = (str(item.find("general").attrib["triggerAlert"]).upper() == "TRUE")
+                sensor.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
                 sensor.triggerState = 1
 
                 sensor.alertLevels = list()
@@ -352,20 +292,13 @@ if __name__ == '__main__':
                     sensor.alertLevels.append(int(alertLevelXml.text))
 
                 # Temperature specific settings
-                sensor.country = str(item.find("weather").attrib[
-                    "country"])
-                sensor.city = str(item.find("weather").attrib[
-                    "city"])
-                sensor.lon = str(item.find("weather").attrib[
-                    "lon"])
-                sensor.lat = str(item.find("weather").attrib[
-                    "lat"])
-                sensor.hasThreshold = (str(item.find("weather").attrib[
-                    "hasThreshold"]).upper() == "TRUE")
-                sensor.threshold = int(
-                    item.find("weather").attrib["threshold"])
-                orderingStr = str(
-                    item.find("weather").attrib["ordering"]).upper()
+                sensor.country = str(item.find("weather").attrib["country"])
+                sensor.city = str(item.find("weather").attrib["city"])
+                sensor.lon = str(item.find("weather").attrib["lon"])
+                sensor.lat = str(item.find("weather").attrib["lat"])
+                sensor.hasThreshold = (str(item.find("weather").attrib["hasThreshold"]).upper() == "TRUE")
+                sensor.threshold = int(item.find("weather").attrib["threshold"])
+                orderingStr = str(item.find("weather").attrib["ordering"]).upper()
                 if orderingStr == "LT":
                     sensor.ordering = Ordering.LT
                 elif orderingStr == "EQ":
@@ -373,42 +306,36 @@ if __name__ == '__main__':
                 elif orderingStr == "GT":
                     sensor.ordering = Ordering.GT
                 else:
-                    raise ValueError("Type of ordering '%s' not valid."
-                        % orderingStr)
+                    raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
-                sensor.day = int(item.find("weather").attrib[
-                    "day"])
+                sensor.day = int(item.find("weather").attrib["day"])
 
                 # Sanity check of day option.
                 if sensor.day < 0 and sensor.day > 2:
-                    raise ValueError("Day of sensor '%d' not valid."
-                        % sensor.day)
+                    raise ValueError("Day of sensor '%d' not valid." % sensor.day)
 
                 # Register location in data collector.
-                sensorDataCollector.addLocation(sensor.country,
-                    sensor.city, sensor.lon, sensor.lat)
+                sensorDataCollector.addLocation(sensor.country, sensor.city, sensor.lon, sensor.lat)
                 sensor.dataCollector = sensorDataCollector
 
             else:
-                raise ValueError("Type of sensor '%s' not valid."
-                    % sensorType)
+                raise ValueError("Type of sensor '%s' not valid." % sensorType)
 
             # check if description is empty
             if len(sensor.description) == 0:
-                raise ValueError("Description of sensor %d is empty."
-                    % sensor.id)
+                raise ValueError("Description of sensor %d is empty." % sensor.id)
 
             # check if the id of the sensor is unique
             for registeredSensor in globalData.sensors:
                 if registeredSensor.id == sensor.id:
-                    raise ValueError("Id of sensor %d "
-                        % sensor.id + "is already taken.")
+                    raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
             if (not sensor.triggerAlert
                 and sensor.triggerAlertNormal):
                     raise ValueError("'triggerAlert' for sensor %d "
-                        % sensor.id + "has to be activated when "
-                        + "'triggerAlertNormal' is activated.")
+                                     % sensor.id
+                                     + "has to be activated when "
+                                     + "'triggerAlertNormal' is activated.")
 
             globalData.sensors.append(sensor)
 
@@ -420,15 +347,9 @@ if __name__ == '__main__':
 
     # check if smtp is activated => generate object to send eMail alerts
     if smtpActivated is True:
-        globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort,
-            smtpFromAddr, smtpToAddr)
+        globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort, smtpFromAddr, smtpToAddr)
     else:
         globalData.smtpAlert = None
-
-    # initialize logging
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-        datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
-        level=loglevel)
 
     # check if sensors were found => if not exit
     if not globalData.sensors:
@@ -446,14 +367,18 @@ if __name__ == '__main__':
     logging.info("[%s] Initializing sensors." % fileName)
     for sensor in globalData.sensors:
         if not sensor.initializeSensor():
-            logging.critical("[%s]: Not able to initialize sensor."
-                % fileName)
+            logging.critical("[%s]: Not able to initialize sensor." % fileName)
             sys.exit(1)
 
     # generate object for the communication to the server and connect to it
-    globalData.serverComm = ServerCommunication(server, serverPort,
-        serverCAFile, username, password, clientCertFile, clientKeyFile,
-        globalData)
+    globalData.serverComm = ServerCommunication(server,
+                                                serverPort,
+                                                serverCAFile,
+                                                username,
+                                                password,
+                                                clientCertFile,
+                                                clientKeyFile,
+                                                globalData)
     connectionRetries = 1
     logging.info("[%s] Connecting to server." % fileName)
     while True:
@@ -461,7 +386,7 @@ if __name__ == '__main__':
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-            and (connectionRetries % 5) == 0):
+           and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
         if globalData.serverComm.initializeCommunication() is True:
@@ -475,16 +400,17 @@ if __name__ == '__main__':
         connectionRetries += 1
 
         logging.critical("[%s]: Connecting to server failed. " % fileName
-            + "Try again in 5 seconds.")
+                         + "Try again in 5 seconds.")
         time.sleep(5)
 
     # when connected => generate watchdog object to monitor the
     # server connection
     logging.info("[%s] Starting watchdog thread." % fileName)
     watchdog = ConnectionWatchdog(globalData.serverComm,
-        globalData.pingInterval, globalData.smtpAlert)
+                                  globalData.pingInterval,
+                                  globalData.smtpAlert)
     # set thread to daemon
-    # => thread terminates when main thread terminates
+    # => threads terminates when main thread terminates
     watchdog.daemon = True
     watchdog.start()
 
