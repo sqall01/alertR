@@ -1,4 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
+# written by sqall
+# twitter: https://twitter.com/sqall01
+# blog: https://h4des.org
+# github: https://github.com/sqall01
+#
+# Licensed under the GNU Affero General Public License, version 3.
 
 # http://raspberrypiguide.de/howtos/raspberry-pi-gpio-how-to/
 
@@ -19,15 +26,15 @@ signal.signal(signal.SIGINT, signalHandler)
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(outputPin, GPIO.OUT)
 
-print "low"
+print("low")
 GPIO.output(outputPin, GPIO.LOW)
 time.sleep(5)
 
-print "high"
+print("high")
 GPIO.output(outputPin, GPIO.HIGH)
 time.sleep(5)
 
-print "low"
+print("low")
 GPIO.output(outputPin, GPIO.LOW)
 
 GPIO.cleanup()
