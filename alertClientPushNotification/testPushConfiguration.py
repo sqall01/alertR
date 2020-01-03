@@ -14,7 +14,7 @@ import xml.etree.cElementTree
 import sys
 from lib import GlobalData
 from lib import PushAlert
-from lib import SensorAlert
+from lib.localObjects import SensorAlert
 from lightweightpush import ErrorCodes
 
 
@@ -40,12 +40,10 @@ if __name__ == '__main__':
 
     try:
         # parse config file
-        configRoot = xml.etree.ElementTree.parse(instanceLocation +
-            "/config/config.xml").getroot()
+        configRoot = xml.etree.ElementTree.parse(instanceLocation + "/config/config.xml").getroot()
 
         # parse chosen log level
-        tempLoglevel = str(
-            configRoot.find("general").find("log").attrib["level"])
+        tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
         tempLoglevel = tempLoglevel.upper()
         if tempLoglevel == "DEBUG":
             loglevel = logging.DEBUG
