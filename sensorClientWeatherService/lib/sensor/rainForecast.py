@@ -48,7 +48,7 @@ class ForecastRainPollingSensor(_PollingSensor):
         # (lower than, equal, greater than).
         self.ordering = None
 
-    def initializeSensor(self):
+    def initializeSensor(self) -> bool:
         self.hasLatestData = False
         self.changeState = False
         self.state = 1 - self.triggerState
@@ -66,7 +66,7 @@ class ForecastRainPollingSensor(_PollingSensor):
 
         return True
 
-    def getState(self):
+    def getState(self) -> int:
         return self.state
 
     def updateState(self):

@@ -102,8 +102,7 @@ if __name__ == '__main__':
         if certificateRequired is True:
             clientCertFile = os.path.abspath(makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
             clientKeyFile = os.path.abspath(makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
-            if (os.path.exists(clientCertFile) is False
-                or os.path.exists(clientKeyFile) is False):
+            if os.path.exists(clientCertFile) is False or os.path.exists(clientKeyFile) is False:
                 raise ValueError("Client certificate or key does not exist.")
         else:
             clientCertFile = None
@@ -330,8 +329,7 @@ if __name__ == '__main__':
                 if registeredSensor.id == sensor.id:
                     raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
-            if (not sensor.triggerAlert
-                and sensor.triggerAlertNormal):
+            if not sensor.triggerAlert and sensor.triggerAlertNormal:
                     raise ValueError("'triggerAlert' for sensor %d "
                                      % sensor.id
                                      + "has to be activated when "
@@ -392,7 +390,7 @@ if __name__ == '__main__':
         if globalData.serverComm.initializeCommunication() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
-            if not globalData.smtpAlert is None:
+            if globalData.smtpAlert is not None:
                 globalData.smtpAlert.sendCommunicationAlertClear()
 
             connectionRetries = 1

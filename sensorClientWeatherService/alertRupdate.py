@@ -28,6 +28,7 @@ def outputUpdateFailed():
     print("and repeat the update process to get more detailed ", end="")
     print("information.")
 
+
 # This function asks the user for confirmation directly.
 def userAsk():
 
@@ -37,7 +38,7 @@ def userAsk():
         except KeyboardInterrupt:
             print("Bye.")
             sys.exit(0)
-        except:
+        except Exception as e:
             continue
 
         if localInput.strip().upper() == "Y":
@@ -47,14 +48,16 @@ def userAsk():
         else:
             print("Invalid input.")
 
+
 # This function asks the user for confirmation (if wanted).
-def userConfirmation(options):
-    if options is None or options.yes is False:
+def userConfirmation(arg_options):
+    if arg_options is None or arg_options.yes is False:
         if userAsk() is False:
             print("Bye.")
             sys.exit(0)
     else:
         print("NOTE: Skipping confirmation.")
+
 
 # This function checks if new dependencies exist and if they are met.
 def checkDependencies(oldDependencies, newDependencies):
@@ -83,9 +86,7 @@ def checkDependencies(oldDependencies, newDependencies):
                     if importName != oldImportName:
                         continue
 
-                    logging.debug("[%s]: Checking dependency of module '%s' "
-                        % (fileName, importName)
-                        + "has changed.")
+                    logging.debug("[%s]: Checking dependency of module '%s' has changed." % (fileName, importName))
 
                     # Only get version if it exists.
                     oldVersion = None
@@ -99,9 +100,9 @@ def checkDependencies(oldDependencies, newDependencies):
                         break
 
                     logging.info("[%s]: Dependency of module '%s' "
-                        % (fileName, importName)
-                        + "has changed the version from '%s' to '%s'."
-                        % (oldVersion, version))
+                                 % (fileName, importName)
+                                 + "has changed the version from '%s' to '%s'."
+                                 % (oldVersion, version))
 
             # Skip check if we already have the correct version in the
             # old installation as dependency.
@@ -112,15 +113,13 @@ def checkDependencies(oldDependencies, newDependencies):
             temp = None
             try:
 
-                logging.info("[%s]: Checking module '%s'."
-                    % (fileName, importName))
+                logging.info("[%s]: Checking module '%s'." % (fileName, importName))
 
                 temp = importlib.import_module(importName)
 
             except Exception as e:
                 
-                logging.error("[%s]: Module '%s' not installed."
-                    % (fileName, importName))
+                logging.error("[%s]: Module '%s' not installed." % (fileName, importName))
 
                 print("")
                 print("The needed module '%s' is not installed. " % importName, end="")
@@ -134,21 +133,24 @@ def checkDependencies(oldDependencies, newDependencies):
 
             # if a version string is given in the instance information
             # => check if the installed version satisfies the needed version
-            if not version is None:
+            if version is not None:
 
-                installedVersion = temp.__version__.split(".")
-                neededVersion = version.split(".")
-
-                maxLength = 0
-                if len(installedVersion) > len(neededVersion):
-                    maxLength = len(installedVersion)
-                else:
-                    maxLength = len(neededVersion)
-
-                # check the needed version and the installed version
-                versionCorrect = True
+                versionCorrect = False
                 versionCheckFailed = False
+                installedVersion = "Information Not Available"
+
+                # Try to extract version from package.
                 try:
+                    installedVersion = temp.__version__.split(".")
+                    neededVersion = version.split(".")
+
+                    maxLength = 0
+                    if len(installedVersion) > len(neededVersion):
+                        maxLength = len(installedVersion)
+                    else:
+                        maxLength = len(neededVersion)
+
+                    # check the needed version and the installed version
                     for i in range(maxLength):
                         if int(installedVersion[i]) > int(neededVersion[i]):
                             versionCorrect = True
@@ -158,12 +160,7 @@ def checkDependencies(oldDependencies, newDependencies):
                             break
 
                 except Exception as e:
-
-                    logging.error("[%s]: Could not verify installed version "
-                        % fileName
-                        + "of module '%s'."
-                        % importName)
-
+                    logging.error("[%s]: Could not verify installed version of module '%s'." % (fileName, importName))
                     versionCheckFailed = True
 
                 # if the version check failed, ask the user for confirmation
@@ -173,21 +170,23 @@ def checkDependencies(oldDependencies, newDependencies):
                     print("version of the module '%s'. " % importName, end="")
                     print("You have to verify the version yourself.")
                     print("")
-                    print("Installed version: %s" % temp.__version__)
+                    print("Installed version: %s" % installedVersion)
                     print("Needed version: %s" % version)
                     print("")
                     print("Do you have a version installed that satisfies ", end="")
                     print("the needed version?")
 
-                    if not userConfirmation(None):
+                    if not userAsk():
                         versionCorrect = False
+                    else:
+                        versionCorrect = True
 
                 # if the version is not correct => abort the next checks
                 if versionCorrect is False:
                     print("")
                     print("The needed version '%s' " % version, end="")
                     print("of module '%s' is not satisfied " % importName, end="")
-                    print("(you have version '%s' " % temp.__version__, end="")
+                    print("(you have version '%s' " % installedVersion, end="")
                     print("installed).")
                     print("Please update your installed version of the pip ", end="")
                     print("packet '%s'." % packet)
@@ -215,9 +214,7 @@ def checkDependencies(oldDependencies, newDependencies):
                     if importName != oldImportName:
                         continue
 
-                    logging.debug("[%s]: Checking dependency of module '%s' "
-                        % (fileName, importName)
-                        + "has changed.")
+                    logging.debug("[%s]: Checking dependency of module '%s' has changed." % (fileName, importName))
 
                     # Only get version if it exists.
                     oldVersion = None
@@ -231,73 +228,45 @@ def checkDependencies(oldDependencies, newDependencies):
                         break
 
                     logging.info("[%s]: Dependency of module '%s' "
-                        % (fileName, importName)
-                        + "has changed the version from '%s' to '%s'."
-                        % (oldVersion, version))
+                                 % (fileName, importName)
+                                 + "has changed the version from '%s' to '%s'."
+                                 % (oldVersion, version))
 
             # Skip check if we already have the correct version in the
             # old installation as dependency.
             if skipCheck:
                 continue
 
-            # check if the version has to be checked manually
-            # (this can happen for example if the module has no
-            # __version__ string or can only be imported as 'root')
-            if other["manual"] is True:
+            # try to import needed module
+            temp = None
+            try:
+
+                logging.info("[%s]: Checking module '%s'." % (fileName, importName))
+
+                temp = importlib.import_module(importName)
+
+            except Exception as e:
+
+                logging.error("[%s]: Module '%s' not installed." % (fileName, importName))
+
                 print("")
-                print("Can not automatically verify the installed ", end="")
-                print("version of the module '%s'. " % importName, end="")
-                print("You have to verify the version and if ", end="")
-                print("it is installed yourself.")
-                print("")
-                print("Needed version: %s" % version)
-                print("")
-                print("Do you have a version installed that satisfies ", end="")
-                print("the needed version?")
+                print("The needed module '%s' is not " % importName, end="")
+                print("installed. You need to install it before ", end="")
+                print("you can use this AlertR instance.")
 
-                versionCorrect = True
-                if not userConfirmation(None):
-                    versionCorrect = False
+                return False
 
-                # if the version is not correct => abort the next checks
-                if versionCorrect is False:
+            # if a version string is given in the instance information
+            # => check if the installed version satisfies the
+            # needed version
+            if version is not None:
 
-                    print("")
-                    print("The needed version '%s' " % version, end="")
-                    print("of module '%s' is not satisfied." % importName)
-                    print("Please update your installed version.")
+                versionCorrect = False
+                versionCheckFailed = False
+                installedVersion = "Information Not Available"
 
-                    return False
-
-            # check the installed module automatically
-            else:
-
-                # try to import needed module
-                temp = None
+                # Try to extract version from package.
                 try:
-
-                    logging.info("[%s]: Checking module '%s'."
-                        % (fileName, importName))
-
-                    temp = importlib.import_module(importName)
-
-                except Exception as e:
-                    
-                    logging.error("[%s]: Module '%s' not installed."
-                        % (fileName, importName))
-
-                    print("")
-                    print("The needed module '%s' is not " % importName, end="")
-                    print("installed. You need to install it before ", end="")
-                    print("you can use this AlertR instance.")
-
-                    return False
-
-                # if a version string is given in the instance information
-                # => check if the installed version satisfies the
-                # needed version
-                if not version is None:
-
                     installedVersion = temp.__version__.split(".")
                     neededVersion = version.split(".")
 
@@ -308,56 +277,48 @@ def checkDependencies(oldDependencies, newDependencies):
                         maxLength = len(neededVersion)
 
                     # check the needed version and the installed version
-                    versionCorrect = True
-                    versionCheckFailed = False
-                    try:
-                        for i in range(maxLength):
-                            if (int(installedVersion[i]) >
-                                int(neededVersion[i])):
-                                versionCorrect = True
-                                break
-                            elif (int(installedVersion[i]) <
-                                int(neededVersion[i])):
-                                versionCorrect = False
-                                break
-
-                    except Exception as e:
-
-                        logging.error("[%s]: Could not verify installed "
-                            % fileName
-                            + "version of module '%s'."
-                            % importName)
-
-                        versionCheckFailed = True
-
-                    # if the version check failed, ask the user
-                    # for confirmation
-                    if versionCheckFailed is True:
-                        print("")
-                        print("Could not automatically verify the installed ", end="")
-                        print("version of the module '%s'. " % importName, end="")
-                        print("You have to verify the version yourself.")
-                        print("")
-                        print("Installed version: %s" % temp.__version__)
-                        print("Needed version: %s" % version)
-                        print("")
-                        print("Do you have a version installed that satisfies ", end="")
-                        print("the needed version?")
-
-                        if not userConfirmation():
+                    for i in range(maxLength):
+                        if int(installedVersion[i]) > int(neededVersion[i]):
+                            versionCorrect = True
+                            break
+                        elif int(installedVersion[i]) < int(neededVersion[i]):
                             versionCorrect = False
+                            break
 
-                    # if the version is not correct => abort the next checks
-                    if versionCorrect is False:
+                except Exception as e:
+                    logging.error("[%s]: Could not verify installed version of module '%s'." % (fileName, importName))
+                    versionCheckFailed = True
 
-                        print("")
-                        print("The needed version '%s' " % version, end="")
-                        print("of module '%s' is not satisfied " % importName, end="")
-                        print("(you have version '%s' " % temp.__version__, end="")
-                        print("installed).")
-                        print("Please update your installed version.")
+                # if the version check failed, ask the user
+                # for confirmation
+                if versionCheckFailed is True:
+                    print("")
+                    print("Could not automatically verify the installed ", end="")
+                    print("version of the module '%s'. " % importName, end="")
+                    print("You have to verify the version yourself.")
+                    print("")
+                    print("Installed version: %s" % installedVersion)
+                    print("Needed version: %s" % version)
+                    print("")
+                    print("Do you have a version installed that satisfies ", end="")
+                    print("the needed version?")
 
-                        return False
+                    if not userAsk():
+                        versionCorrect = False
+                    else:
+                        versionCorrect = True
+
+                # if the version is not correct => abort the next checks
+                if versionCorrect is False:
+
+                    print("")
+                    print("The needed version '%s' " % version, end="")
+                    print("of module '%s' is not satisfied " % importName, end="")
+                    print("(you have version '%s' " % installedVersion, end="")
+                    print("installed).")
+                    print("Please update your installed version.")
+
+                    return False
 
     return True
 
@@ -390,7 +351,6 @@ if __name__ == '__main__':
         print("Use --help to get all available options.")
         sys.exit(0)
 
-
     protocolUpdate = False
     configUpdate = False
 
@@ -402,12 +362,10 @@ if __name__ == '__main__':
 
     try:
         # parse config file
-        configRoot = xml.etree.ElementTree.parse(instanceLocation +
-            "/config/config.xml").getroot()
+        configRoot = xml.etree.ElementTree.parse(instanceLocation + "/config/config.xml").getroot()
 
         # parse chosen log level
-        tempLoglevel = str(
-            configRoot.find("general").find("log").attrib["level"])
+        tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
         tempLoglevel = tempLoglevel.upper()
         if tempLoglevel == "DEBUG":
             loglevel = logging.DEBUG
@@ -424,7 +382,8 @@ if __name__ == '__main__':
 
         # initialize logging
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
-            datefmt='%m/%d/%Y %H:%M:%S', level=loglevel)
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            level=loglevel)
 
     except Exception as e:
         print("Config could not be parsed.")
@@ -438,31 +397,29 @@ if __name__ == '__main__':
         configVersion = float(configRoot.attrib["version"])
         if configVersion != globalData.version:
             raise ValueError("Config version '%.3f' not "
-                % configVersion
-                + "compatible with client version '%.3f'."
-                % globalData.version)
+                             % configVersion
+                             + "compatible with client version '%.3f'."
+                             % globalData.version)
 
         # parse update options
-        updateUrl = str(
-            configRoot.find("update").find("server").attrib["url"])
+        updateUrl = str(configRoot.find("update").find("server").attrib["url"])
 
     except Exception as e:
         logging.exception("[%s]: Could not parse config." % fileName)
         sys.exit(1)
 
-    logging.info("[%s]: Current version: %.3f-%d." %
-        (fileName, globalData.version, globalData.rev))
+    logging.info("[%s]: Current version: %.3f-%d." % (fileName, globalData.version, globalData.rev))
 
     # Parse local instance information (if it exists, otherwise create one).
     localInstanceInfo = None
     try:
         with open(instanceLocation + "/instanceInfo.json", 'r') as fp:
             localInstanceInfo = json.loads(fp.read())
-    except:
+    except Exception as e:
         localInstanceInfo = {"files": {},
-            "version": globalData.version,
-            "rev": globalData.rev,
-            "dependencies": {}}
+                             "version": globalData.version,
+                             "rev": globalData.rev,
+                             "dependencies": {}}
 
     # create an updater process
     try:
@@ -475,26 +432,23 @@ if __name__ == '__main__':
     # Get new instance information.
     newInstanceInfo = updater.getInstanceInformation()
 
-    logging.info("[%s]: Newest version available: %.3f-%d." %
-        (fileName, updater.newestVersion, updater.newestRev))
+    logging.info("[%s]: Newest version available: %.3f-%d."
+                 % (fileName, updater.newestVersion, updater.newestRev))
 
     # check if the received version is newer than the current one
     if (updater.newestVersion > globalData.version or
-        (updater.newestRev > globalData.rev
-        and updater.newestVersion == globalData.version)
-        or options.force is True):
+       (updater.newestRev > globalData.rev and updater.newestVersion == globalData.version)
+       or options.force is True):
 
         if options.force is True:
-            logging.info("[%s]: Forcing update of AlertR instance."
-                % fileName)
+            logging.info("[%s]: Forcing update of AlertR instance." % fileName)
 
         # Check if we have new dependencies before installing.
         logging.info("[%s]: Checking the dependencies." % fileName)
         newDependencies = newInstanceInfo["dependencies"]
         oldDependencies = localInstanceInfo["dependencies"]
         if options.force is not True and not checkDependencies(oldDependencies, newDependencies):
-            logging.error("[%s]: Update failed due to dependencies."
-                % fileName)
+            logging.error("[%s]: Update failed due to dependencies." % fileName)
             outputUpdateFailed()
             sys.exit(1)
 
@@ -540,9 +494,7 @@ if __name__ == '__main__':
         userConfirmation(options)
 
         if updater.updateInstance() is False:
-
             logging.error("[%s]: Update failed." % fileName)
-
             outputUpdateFailed()
             sys.exit(1)
 
@@ -550,11 +502,8 @@ if __name__ == '__main__':
         try:
             with open(instanceLocation + "/instanceInfo.json", 'w') as fp:
                 fp.write(json.dumps(newInstanceInfo))
-        except:
-            logging.exception("[%s]: Not able to store new "
-                % fileName
-                + "'instanceInfo.json'.")
-
+        except Exception as e:
+            logging.exception("[%s]: Not able to store new 'instanceInfo.json'." % fileName)
             outputUpdateFailed()
             sys.exit(1)
 

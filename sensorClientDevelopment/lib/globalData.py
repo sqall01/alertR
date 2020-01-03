@@ -50,4 +50,4 @@ class GlobalData:
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent = None  # type: Optional[bool]
+        self.persistent = None  # type: Optional[int]
