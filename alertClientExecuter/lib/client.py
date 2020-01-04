@@ -39,8 +39,7 @@ class Client:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # check if a client certificate is required
-        if (self.clientCertFile is None
-           or self.clientKeyFile is None):
+        if self.clientCertFile is None or self.clientKeyFile is None:
             self.sslSocket = ssl.wrap_socket(self.socket,
                                              ca_certs=self.serverCAFile,
                                              cert_reqs=ssl.CERT_REQUIRED)
@@ -56,7 +55,7 @@ class Client:
     def send(self, data: str):
         self.sslSocket.send(data.encode('ascii'))
 
-    def recv(self, buffsize: int, timeout=20.0) -> str:
+    def recv(self, buffsize: int, timeout: float = 20.0) -> str:
         self.sslSocket.settimeout(timeout)
         data = self.sslSocket.recv(buffsize)
         self.sslSocket.settimeout(None)
@@ -70,8 +69,14 @@ class Client:
 # this class handles the communication with the server
 class ServerCommunication:
 
-    def __init__(self, host: str, port: int, serverCAFile: str, username: str, password: str, clientCertFile: str,
-                 clientKeyFile: str, globalData: GlobalData):
+    def __init__(self, host: str,
+                 port: int,
+                 serverCAFile: str,
+                 username: str,
+                 password: str,
+                 clientCertFile: str,
+                 clientKeyFile: str,
+                 globalData: GlobalData):
         self.host = host
         self.port = port
         self.username = username
@@ -104,7 +109,7 @@ class ServerCommunication:
         self.alerts = self.globalData.alerts
 
         # flag that states if the client is connected
-        self.isConnected = False
+        self._isConnected = False
 
         # flag that states if the client is already trying to initiate a
         # transaction with the server
@@ -425,13 +430,13 @@ class ServerCommunication:
     # lock and exiting/closing the session
     def _cleanUpSessionForClosing(self):
         # set client as disconnected
-        self.isConnected = False
+        self._isConnected = False
 
         self.client.close()
 
     # this internal function that tries to initiate a transaction with
     # the server (and acquires a lock if it is told to do so)
-    def _initiateTransaction(self, messageType: str, messageSize: int, acquireLock: bool=False) -> bool:
+    def _initiateTransaction(self, messageType: str, messageSize: int, acquireLock: bool = False) -> bool:
 
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the server
@@ -463,9 +468,7 @@ class ServerCommunication:
             # => start to initiate transaction with server
             else:
 
-                logging.debug("[%s]: Got exclusive "
-                              % self.fileName
-                              + "transaction initiation state.")
+                logging.debug("[%s]: Got exclusive transaction initiation state." % self.fileName)
 
                 # set transaction initiation flag to true
                 # to signal other threads that a transaction is already
@@ -557,9 +560,7 @@ class ServerCommunication:
             # => release lock and backoff for a random time then retry again
             else:
 
-                logging.warning("[%s]: Initiate transaction "
-                                % self.fileName
-                                + "failed. Backing off.")
+                logging.warning("[%s]: Initiate transaction failed. Backing off." % self.fileName)
 
                 # check if locks should be handled or not
                 if acquireLock:
@@ -1006,9 +1007,7 @@ class ServerCommunication:
 
         # First check version and authenticate.
         if not self._verifyVersionAndAuthenticate(len(regMessage)):
-            logging.error("[%s]: Version verification and "
-                          % self.fileName
-                          + "authentication failed.")
+            logging.error("[%s]: Version verification and authentication failed." % self.fileName)
             self.client.close()
 
             self._releaseLock()
@@ -1016,8 +1015,7 @@ class ServerCommunication:
 
         # Second register node.
         if not self._registerNode(regMessage):
-            logging.error("[%s]: Registration failed."
-                          % self.fileName)
+            logging.error("[%s]: Registration failed." % self.fileName)
             self.client.close()
 
             self._releaseLock()
@@ -1027,7 +1025,7 @@ class ServerCommunication:
         self.lastRecv = int(time.time())
 
         # set client as connected
-        self.isConnected = True
+        self._isConnected = True
 
         self._releaseLock()
 
@@ -1238,6 +1236,9 @@ class ServerCommunication:
 
             self.lastRecv = int(time.time())
 
+    def isConnected(self) -> bool:
+        return self._isConnected
+
     # this function reconnects the client to the server
     def reconnect(self) -> bool:
 
@@ -1260,7 +1261,6 @@ class ServerCommunication:
         # clean up session before exiting
         self._cleanUpSessionForClosing()
         self._releaseLock()
-        return
 
     # this function sends a keep alive (PING request) to the server
     # to keep the connection alive and to check if the connection
@@ -1270,8 +1270,7 @@ class ServerCommunication:
         pingMessage = self._buildPingMessage()
 
         # initiate transaction with server and acquire lock
-        if not self._initiateTransaction("ping", len(pingMessage),
-            acquireLock=True):
+        if not self._initiateTransaction("ping", len(pingMessage), acquireLock=True):
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -1342,8 +1341,7 @@ class ServerCommunication:
 
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
-                logging.error("[%s]: Result not ok: '%s'."
-                              % (self.fileName, message["payload"]["result"]))
+                logging.error("[%s]: Result not ok: '%s'." % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -1406,9 +1404,9 @@ class ConnectionWatchdog(threading.Thread):
                 time.sleep(1)
 
             # check if the client is still connected to the server
-            if not self.connection.isConnected:
+            if not self.connection.isConnected():
 
-                logging.error("[%s]: Connection to server has died." % self.fileName)
+                logging.error("[%s]: Connection to server has died. " % self.fileName)
 
                 # reconnect to the server
                 while True:
@@ -1416,10 +1414,8 @@ class ConnectionWatchdog(threading.Thread):
                     # check if 5 unsuccessful attempts are made to connect
                     # to the server and if smtp alert is activated
                     # => send eMail alert
-                    if (self.smtpAlert is not None
-                       and (self.connectionRetries % 5) == 0):
-                        self.smtpAlert.sendCommunicationAlert(
-                            self.connectionRetries)
+                    if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
+                        self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
 
                     # try to connect to the server
                     if self.connection.reconnect():
@@ -1448,7 +1444,7 @@ class ConnectionWatchdog(threading.Thread):
 
                 # check if PING failed
                 if not self.connection.sendKeepalive():
-                    logging.error("[%s]: Connection to server has died. " % self.fileName)
+                    logging.error("[%s]: Connection to server has died." % self.fileName)
 
                     # reconnect to the server
                     while True:
@@ -1456,8 +1452,7 @@ class ConnectionWatchdog(threading.Thread):
                         # check if 5 unsuccessful attempts are made to connect
                         # to the server and if smtp alert is activated
                         # => send eMail alert
-                        if (self.smtpAlert is not None
-                           and (self.connectionRetries % 5) == 0):
+                        if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
                             self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
 
                         # try to connect to the server

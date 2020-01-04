@@ -39,22 +39,23 @@ class Client:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # check if a client certificate is required
-        if (self.clientCertFile is None
-            or self.clientKeyFile is None):
+        if self.clientCertFile is None or self.clientKeyFile is None:
             self.sslSocket = ssl.wrap_socket(self.socket,
-                ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED)
+                                             ca_certs=self.serverCAFile,
+                                             cert_reqs=ssl.CERT_REQUIRED)
         else:
             self.sslSocket = ssl.wrap_socket(self.socket,
-                ca_certs=self.serverCAFile, cert_reqs=ssl.CERT_REQUIRED,
-                certfile=self.clientCertFile, keyfile=self.clientKeyFile)
+                                             ca_certs=self.serverCAFile,
+                                             cert_reqs=ssl.CERT_REQUIRED,
+                                             certfile=self.clientCertFile,
+                                             keyfile=self.clientKeyFile)
 
         self.sslSocket.connect((self.host, self.port))
 
     def send(self, data: str):
-        count = self.sslSocket.send(data.encode('ascii'))
+        self.sslSocket.send(data.encode('ascii'))
 
-    def recv(self, buffsize: int, timeout=20.0):
-        data = None
+    def recv(self, buffsize: int, timeout: float = 20.0) -> str:
         self.sslSocket.settimeout(timeout)
         data = self.sslSocket.recv(buffsize)
         self.sslSocket.settimeout(None)
@@ -68,8 +69,14 @@ class Client:
 # this class handles the communication with the server
 class ServerCommunication:
 
-    def __init__(self, host: str, port: int, serverCAFile: str, username: str, password: str, clientCertFile: str,
-                 clientKeyFile: str, globalData: GlobalData):
+    def __init__(self, host: str,
+                 port: int,
+                 serverCAFile: str,
+                 username: str,
+                 password: str,
+                 clientCertFile: str,
+                 clientKeyFile: str,
+                 globalData: GlobalData):
         self.host = host
         self.port = port
         self.username = username
@@ -83,11 +90,10 @@ class ServerCommunication:
 
         # get global configured data
         self.globalData = globalData
-        self.nodeType = self.globalData.nodeType
-        self.instance = self.globalData.instance
-        self.sensors = self.globalData.sensors
         self.version = self.globalData.version
         self.rev = self.globalData.rev
+        self.nodeType = self.globalData.nodeType
+        self.instance = self.globalData.instance
         self.persistent = self.globalData.persistent
 
         # time the last message was received by the client
@@ -98,6 +104,9 @@ class ServerCommunication:
 
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
+
+        # list of all handled sensors
+        self.sensors = self.globalData.sensors
 
         # flag that states if the client is connected
         self._isConnected = False
@@ -126,7 +135,7 @@ class ServerCommunication:
 
     # internal function that tries to initiate a transaction with
     # the server (and acquires a lock if it is told to do so)
-    def _initiateTransaction(self, messageType: str, messageSize: int, acquireLock: bool=False) -> bool:
+    def _initiateTransaction(self, messageType: str, messageSize: int, acquireLock: bool = False) -> bool:
 
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the server
@@ -158,8 +167,7 @@ class ServerCommunication:
             # => start to initiate transaction with server
             else:
 
-                logging.debug("[%s]: Got exclusive " % self.fileName
-                              + "transaction initiation state.")
+                logging.debug("[%s]: Got exclusive transaction initiation state." % self.fileName)
 
                 # set transaction initiation flag to true
                 # to signal other threads that a transaction is already
@@ -180,17 +188,15 @@ class ServerCommunication:
                           % (self.fileName, transactionId))
             try:
                 payload = {"type": "rts",
-                    "id": transactionId}
+                           "id": transactionId}
                 utcTimestamp = int(time.time())
                 message = {"clientTime": utcTimestamp,
-                    "size": messageSize,
-                    "message": messageType,
-                    "payload": payload}
+                           "size": messageSize,
+                           "message": messageType,
+                           "payload": payload}
                 self.client.send(json.dumps(message))
             except Exception as e:
-                logging.exception("[%s]: Sending RTS "
-                                  % self.fileName
-                                  + "failed.")
+                logging.exception("[%s]: Sending RTS failed." % self.fileName)
 
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the server
@@ -205,6 +211,9 @@ class ServerCommunication:
             # get CTS (clear to send) message
             logging.debug("[%s]: Receiving CTS." % self.fileName)
 
+            receivedTransactionId = -1
+            receivedMessageType = ""
+            receivedPayloadType = ""
             try:
                 data = self.client.recv(BUFSIZE)
                 message = json.loads(data)
@@ -216,15 +225,12 @@ class ServerCommunication:
                                   % (self.fileName, message["error"]))
                 # if no error => extract values from message
                 else:
-                    receivedTransactionId = message["payload"]["id"]
+                    receivedTransactionId = int(message["payload"]["id"])
                     receivedMessageType = str(message["message"])
-                    receivedPayloadType = \
-                        str(message["payload"]["type"]).upper()
+                    receivedPayloadType = str(message["payload"]["type"]).upper()
 
             except Exception as e:
-                logging.exception("[%s]: Receiving CTS "
-                                  % self.fileName
-                                  + "failed.")
+                logging.exception("[%s]: Receiving CTS failed." % self.fileName)
 
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the server
@@ -239,26 +245,21 @@ class ServerCommunication:
             # check if RTS is acknowledged by a CTS
             # => exit transaction initiation loop
             if (receivedTransactionId == transactionId
-                and receivedMessageType == messageType
-                and receivedPayloadType == "CTS"):
+               and receivedMessageType == messageType
+               and receivedPayloadType == "CTS"):
 
-                logging.debug("[%s]: Initiate transaction "
-                              % self.fileName
-                              + "succeeded.")
+                logging.debug("[%s]: Initiate transaction succeeded." % self.fileName)
 
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the server
                 self.transactionInitiation = False
-
                 break
 
             # if RTS was not acknowledged
             # => release lock and backoff for a random time then retry again
             else:
 
-                logging.warning("[%s]: Initiate transaction "
-                                % self.fileName
-                                + "failed. Backing off.")
+                logging.warning("[%s]: Initiate transaction failed. Backing off." % self.fileName)
 
                 # check if locks should be handled or not
                 if acquireLock:
@@ -278,25 +279,25 @@ class ServerCommunication:
     def _buildAuthenticationMessage(self, regMessageSize: int) -> str:
 
         payload = {"type": "request",
-            "version": self.version,
-            "rev": self.rev,
-            "username": self.username,
-            "password": self.password}
+                   "version": self.version,
+                   "rev": self.rev,
+                   "username": self.username,
+                   "password": self.password}
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
-            "size": regMessageSize,
-            "message": "initialization",
-            "payload": payload}
+                   "size": regMessageSize,
+                   "message": "initialization",
+                   "payload": payload}
         return json.dumps(message)
 
     # Internal function that builds the ping message.
-    def _buildPingMessage(self):
+    def _buildPingMessage(self) -> str:
 
         payload = {"type": "request"}
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
-            "message": "ping",
-            "payload": payload}
+                   "message": "ping",
+                   "payload": payload}
         return json.dumps(message)
 
     # Internal function that builds the client registration message.
@@ -323,15 +324,15 @@ class ServerCommunication:
 
         # send registration message
         payload = {"type": "request",
-            "hostname": socket.gethostname(),
-            "nodeType": self.nodeType,
-            "instance": self.instance,
-            "persistent": self.persistent,
-            "sensors": sensors}
+                   "hostname": socket.gethostname(),
+                   "nodeType": self.nodeType,
+                   "instance": self.instance,
+                   "persistent": self.persistent,
+                   "sensors": sensors}
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
-            "message": "initialization",
-            "payload": payload}
+                   "message": "initialization",
+                   "payload": payload}
 
         return json.dumps(message)
 
@@ -339,13 +340,12 @@ class ServerCommunication:
     def _buildSensorAlertMessage(self, sensorAlert: SensorAlert) -> str:
 
         payload = {"type": "request",
-            "clientSensorId": sensorAlert.clientSensorId,
-            "state": sensorAlert.state,
-            "hasOptionalData": sensorAlert.hasOptionalData,
-            "changeState": sensorAlert.changeState,
-            "hasLatestData": sensorAlert.hasLatestData,
-            "dataType": sensorAlert.dataType
-            }
+                   "clientSensorId": sensorAlert.clientSensorId,
+                   "state": sensorAlert.state,
+                   "hasOptionalData": sensorAlert.hasOptionalData,
+                   "changeState": sensorAlert.changeState,
+                   "hasLatestData": sensorAlert.hasLatestData,
+                   "dataType": sensorAlert.dataType}
 
         # Only add optional data field if it should be transfered.
         if sensorAlert.hasOptionalData:
@@ -357,8 +357,8 @@ class ServerCommunication:
 
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
-            "message": "sensoralert",
-            "payload": payload}
+                   "message": "sensoralert",
+                   "payload": payload}
         return json.dumps(message)
 
     # Internal function that builds the sensor state message.
@@ -387,8 +387,8 @@ class ServerCommunication:
         payload = {"type": "request", "sensors": sensors}
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
-            "message": "status",
-            "payload": payload}
+                   "message": "status",
+                   "payload": payload}
         return json.dumps(message)
 
     # Internal function that builds the state change message.
@@ -400,9 +400,9 @@ class ServerCommunication:
                       % (stateChange.clientSensorId, stateChange.state))
 
         payload = {"type": "request",
-            "clientSensorId": stateChange.clientSensorId,
-            "state": stateChange.state,
-            "dataType": stateChange.dataType}
+                   "clientSensorId": stateChange.clientSensorId,
+                   "state": stateChange.state,
+                   "dataType": stateChange.dataType}
 
         # Only add data field if sensor data type is not "none".
         if stateChange.dataType != SensorDataType.NONE:
@@ -410,8 +410,8 @@ class ServerCommunication:
 
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
-            "message": "statechange",
-            "payload": payload}
+                   "message": "statechange",
+                   "payload": payload}
         return json.dumps(message)
 
     # internal function to verify the server/client version and authenticate
@@ -421,8 +421,7 @@ class ServerCommunication:
 
         # send user credentials and version
         try:
-            logging.debug("[%s]: Sending user credentials and version."
-                          % self.fileName)
+            logging.debug("[%s]: Sending user credentials and version." % self.fileName)
             self.client.send(authMessage)
 
         except Exception as e:
@@ -442,17 +441,15 @@ class ServerCommunication:
                 return False
 
             if str(message["message"]).upper() != "initialization".upper():
-                logging.error("[%s]: Wrong authentication message: "
-                              % self.fileName
-                              + "'%s'."
-                              % message["message"])
+                logging.error("[%s]: Wrong authentication message: '%s'."
+                              % (self.fileName, message["message"]))
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "initialization message expected"}
+                               "message": message["message"],
+                               "error": "initialization message expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -461,15 +458,14 @@ class ServerCommunication:
 
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
-                logging.error("[%s]: response expected."
-                              % self.fileName)
+                logging.error("[%s]: response expected." % self.fileName)
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "response expected"}
+                               "message": message["message"],
+                               "error": "response expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -483,8 +479,7 @@ class ServerCommunication:
                 return False
 
         except Exception as e:
-            logging.exception("[%s]: Receiving initialization response failed."
-                              % self.fileName)
+            logging.exception("[%s]: Receiving authentication response failed." % self.fileName)
             return False
 
         # verify version
@@ -508,8 +503,8 @@ class ServerCommunication:
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "version not compatible"}
+                               "message": message["message"],
+                               "error": "version not compatible"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -524,8 +519,8 @@ class ServerCommunication:
             try:
                 utcTimestamp = int(time.time())
                 message = {"clientTime": utcTimestamp,
-                    "message": message["message"],
-                    "error": "version not valid"}
+                           "message": message["message"],
+                           "error": "version not valid"}
                 self.client.send(json.dumps(message))
             except Exception as e:
                 pass
@@ -539,14 +534,11 @@ class ServerCommunication:
 
         # Send registration message.
         try:
-            logging.debug("[%s]: Sending registration message."
-                          % self.fileName)
+            logging.debug("[%s]: Sending registration message." % self.fileName)
             self.client.send(regMessage)
 
         except Exception as e:
-            logging.exception("[%s]: Sending registration "
-                              % self.fileName
-                              + "message.")
+            logging.exception("[%s]: Sending registration message." % self.fileName)
             return False
 
         # get registration response from server
@@ -555,21 +547,19 @@ class ServerCommunication:
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
-                logging.error("[%s]: Error received: '%s'."
-                              % (self.fileName, message["error"]))
+                logging.error("[%s]: Error received: '%s'." % (self.fileName, message["error"]))
                 return False
 
             if str(message["message"]).upper() != "initialization".upper():
-                logging.error("[%s]: Wrong registration message: "
-                              % self.fileName
-                              + "'%s'." % message["message"])
+                logging.error("[%s]: Wrong registration message: '%s'."
+                              % (self.fileName, message["message"]))
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "initialization message expected"}
+                               "message": message["message"],
+                               "error": "initialization message expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -578,15 +568,14 @@ class ServerCommunication:
 
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
-                logging.error("[%s]: response expected."
-                              % self.fileName)
+                logging.error("[%s]: response expected." % self.fileName)
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "response expected"}
+                               "message": message["message"],
+                               "error": "response expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -595,13 +584,11 @@ class ServerCommunication:
 
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
-                logging.error("[%s]: Result not ok: '%s'."
-                              % (self.fileName, message["payload"]["result"]))
+                logging.error("[%s]: Result not ok: '%s'." % (self.fileName, message["payload"]["result"]))
                 return False
 
         except Exception as e:
-            logging.exception("[%s]: Receiving registration response failed."
-                              % self.fileName)
+            logging.exception("[%s]: Receiving registration response failed." % self.fileName)
             return False
 
         return True
@@ -613,20 +600,21 @@ class ServerCommunication:
         self._acquireLock()
 
         # create client instance and connect to the server
-        self.client = Client(self.host, self.port, self.serverCAFile,
-            self.clientCertFile, self.clientKeyFile)
+        self.client = Client(self.host,
+                             self.port,
+                             self.serverCAFile,
+                             self.clientCertFile,
+                             self.clientKeyFile)
         try:
             self.client.connect()
         except Exception as e:
-            logging.exception("[%s]: Connecting to server failed."
-                              % self.fileName)
+            logging.exception("[%s]: Connecting to server failed." % self.fileName)
             try:
                 self.client.close()
             except:
                 pass
 
             self._releaseLock()
-
             return False
 
         # Build registration message.
@@ -634,23 +622,18 @@ class ServerCommunication:
 
         # First check version and authenticate.
         if not self._verifyVersionAndAuthenticate(len(regMessage)):
-            logging.error("[%s]: Version verification and "
-                          % self.fileName
-                          + "authentication failed.")
+            logging.error("[%s]: Version verification and authentication failed." % self.fileName)
             self.client.close()
 
             self._releaseLock()
-
             return False
 
         # Second register node.
         if not self._registerNode(regMessage):
-            logging.error("[%s]: Registration failed."
-                          % self.fileName)
+            logging.error("[%s]: Registration failed." % self.fileName)
             self.client.close()
 
             self._releaseLock()
-
             return False
 
         # update the time the last data was received by the server
@@ -687,7 +670,6 @@ class ServerCommunication:
 
         # clean up session before exiting
         self._cleanUpSessionForClosing()
-
         self._releaseLock()
 
     # this function sends a keep alive (PING request) to the server
@@ -705,8 +687,7 @@ class ServerCommunication:
         pingMessage = self._buildPingMessage()
 
         # initiate transaction with server and acquire lock
-        if not self._initiateTransaction("ping", len(pingMessage),
-            acquireLock=True):
+        if not self._initiateTransaction("ping", len(pingMessage), acquireLock=True):
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -731,25 +712,22 @@ class ServerCommunication:
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
-                logging.error("[%s]: Error received: '%s'."
-                              % (self.fileName, message["error"]))
+                logging.error("[%s]: Error received: '%s'." % (self.fileName, message["error"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
                 return False
 
             if str(message["message"]).upper() != "PING":
-                logging.error("[%s]: Wrong ping message: "
-                              % self.fileName
-                              + "'%s'."
-                              % message["message"])
+                logging.error("[%s]: Wrong ping message: '%s'."
+                              % (self.fileName, message["message"]))
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "ping message expected"}
+                               "message": message["message"],
+                               "error": "ping message expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -761,15 +739,14 @@ class ServerCommunication:
 
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
-                logging.error("[%s]: response expected."
-                              % self.fileName)
+                logging.error("[%s]: response expected." % self.fileName)
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "response expected"}
+                               "message": message["message"],
+                               "error": "response expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -781,16 +758,14 @@ class ServerCommunication:
 
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
-                logging.error("[%s]: Result not ok: '%s'."
-                              % (self.fileName, message["payload"]["result"]))
+                logging.error("[%s]: Result not ok: '%s'." % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
                 return False
 
         except Exception as e:
-            logging.exception("[%s]: Receiving ping response failed."
-                              % self.fileName)
+            logging.exception("[%s]: Receiving ping response failed." % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
@@ -799,6 +774,7 @@ class ServerCommunication:
         logging.debug("[%s]: Received valid ping response." % self.fileName)
         self._releaseLock()
 
+        # update time of the last received data
         self.lastRecv = int(time.time())
 
         return True
@@ -816,8 +792,7 @@ class ServerCommunication:
         sensorStateMessage = self._buildSensorsStateMessage()
 
         # initiate transaction with server and acquire lock
-        if not self._initiateTransaction("status", len(sensorStateMessage),
-            acquireLock=True):
+        if not self._initiateTransaction("status", len(sensorStateMessage), acquireLock=True):
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -859,8 +834,8 @@ class ServerCommunication:
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "status message expected"}
+                               "message": message["message"],
+                               "error": "status message expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -878,8 +853,8 @@ class ServerCommunication:
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "response expected"}
+                               "message": message["message"],
+                               "error": "response expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -899,8 +874,7 @@ class ServerCommunication:
                 return False
 
         except Exception as e:
-            logging.exception("[%s]: Receiving status response failed."
-                              % self.fileName)
+            logging.exception("[%s]: Receiving status response failed." % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
@@ -923,8 +897,7 @@ class ServerCommunication:
         sensorAlertMessage = self._buildSensorAlertMessage(sensorAlert)
 
         # initiate transaction with server and acquire lock
-        if not self._initiateTransaction("sensoralert",
-            len(sensorAlertMessage), acquireLock=True):
+        if not self._initiateTransaction("sensoralert", len(sensorAlertMessage), acquireLock=True):
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -932,13 +905,11 @@ class ServerCommunication:
 
         # send sensor alert message
         try:
-            logging.debug("[%s]: Sending sensor alert message."
-                          % self.fileName)
+            logging.debug("[%s]: Sending sensor alert message." % self.fileName)
             self.client.send(sensorAlertMessage)
 
         except Exception as e:
-            logging.exception("[%s]: Sending sensor alert message failed."
-                              % self.fileName)
+            logging.exception("[%s]: Sending sensor alert message failed." % self.fileName)
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -968,8 +939,8 @@ class ServerCommunication:
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "sensor alert message expected"}
+                               "message": message["message"],
+                               "error": "sensor alert message expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -981,15 +952,14 @@ class ServerCommunication:
 
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
-                logging.error("[%s]: response expected."
-                              % self.fileName)
+                logging.error("[%s]: response expected." % self.fileName)
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "response expected"}
+                               "message": message["message"],
+                               "error": "response expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -1001,23 +971,20 @@ class ServerCommunication:
 
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
-                logging.error("[%s]: Result not ok: '%s'."
-                    % (self.fileName, message["payload"]["result"]))
+                logging.error("[%s]: Result not ok: '%s'." % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
                 return False
 
         except Exception as e:
-            logging.exception("[%s]: Receiving sensor alert response failed."
-                              % self.fileName)
+            logging.exception("[%s]: Receiving sensor alert response failed." % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
             return False
 
-        logging.debug("[%s]: Received sensor alert response message."
-                      % self.fileName)
+        logging.debug("[%s]: Received sensor alert response message." % self.fileName)
 
         self._releaseLock()
 
@@ -1036,8 +1003,7 @@ class ServerCommunication:
         stateChangeMessage = self._buildStateChangeMessage(stateChange)
 
         # initiate transaction with server and acquire lock
-        if not self._initiateTransaction("statechange",
-            len(stateChangeMessage), acquireLock=True):
+        if not self._initiateTransaction("statechange", len(stateChangeMessage), acquireLock=True):
 
             # clean up session before exiting
             self._cleanUpSessionForClosing()
@@ -1062,8 +1028,7 @@ class ServerCommunication:
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
-                logging.error("[%s]: Error received: '%s'."
-                              % (self.fileName, message["error"]))
+                logging.error("[%s]: Error received: '%s'." % (self.fileName, message["error"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
@@ -1079,8 +1044,8 @@ class ServerCommunication:
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "state change message expected"}
+                               "message": message["message"],
+                               "error": "state change message expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -1092,15 +1057,14 @@ class ServerCommunication:
 
             # check if the received type is the correct one
             if str(message["payload"]["type"]).upper() != "RESPONSE":
-                logging.error("[%s]: response expected."
-                              % self.fileName)
+                logging.error("[%s]: response expected." % self.fileName)
 
                 # send error message back
                 try:
                     utcTimestamp = int(time.time())
                     message = {"clientTime": utcTimestamp,
-                        "message": message["message"],
-                        "error": "response expected"}
+                               "message": message["message"],
+                               "error": "response expected"}
                     self.client.send(json.dumps(message))
                 except Exception as e:
                     pass
@@ -1112,23 +1076,20 @@ class ServerCommunication:
 
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() != "OK":
-                logging.error("[%s]: Result not ok: '%s'."
-                              % (self.fileName, message["payload"]["result"]))
+                logging.error("[%s]: Result not ok: '%s'." % (self.fileName, message["payload"]["result"]))
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
                 self._releaseLock()
                 return False
 
         except Exception as e:
-            logging.exception("[%s]: Receiving state change response failed."
-                              % self.fileName)
+            logging.exception("[%s]: Receiving state change response failed." % self.fileName)
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             self._releaseLock()
             return False
 
-        logging.debug("[%s]: Received state change response message."
-                      % self.fileName)
+        logging.debug("[%s]: Received state change response message." % self.fileName)
 
         self._releaseLock()
 
@@ -1171,16 +1132,14 @@ class ConnectionWatchdog(threading.Thread):
             # wait 5 seconds before checking time of last received data
             for i in range(5):
                 if self.exitFlag:
-                    logging.info("[%s]: Exiting ConnectionWatchdog."
-                                 % self.fileName)
+                    logging.info("[%s]: Exiting ConnectionWatchdog." % self.fileName)
                     return
                 time.sleep(1)
 
             # check if the client is still connected to the server
             if not self.connection.isConnected():
 
-                logging.error("[%s]: Connection to server has died. "
-                              % self.fileName)
+                logging.error("[%s]: Connection to server has died. " % self.fileName)
 
                 # reconnect to the server
                 while True:
@@ -1195,21 +1154,17 @@ class ConnectionWatchdog(threading.Thread):
                     if self.connection.reconnect():
                         # if smtp alert is activated
                         # => send email that communication problems are solved
-                        if not self.smtpAlert is None:
+                        if self.smtpAlert is not None:
                             self.smtpAlert.sendCommunicationAlertClear()
 
-                        logging.info("[%s] Reconnecting successful "
-                                     % self.fileName
-                                     + "after %d attempts."
-                                     % self.connectionRetries)
+                        logging.info("[%s] Reconnecting successful after %d attempts."
+                                     % (self.fileName, self.connectionRetries))
 
                         self.connectionRetries = 1
                         break
-                    self.connectionRetries +=1
+                    self.connectionRetries += 1
 
-                    logging.error("[%s]: Reconnecting failed. "
-                                  % self.fileName
-                                  + "Retrying in 5 seconds.")
+                    logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self.fileName)
                     time.sleep(5)
 
                 continue
@@ -1218,13 +1173,11 @@ class ConnectionWatchdog(threading.Thread):
             # past => send ping to check connection
             utcTimestamp = int(time.time())
             if (utcTimestamp - self.connection.lastRecv) > self.pingInterval:
-                logging.debug("[%s]: Ping interval exceeded."
-                              % self.fileName)
+                logging.debug("[%s]: Ping interval exceeded." % self.fileName)
 
                 # check if PING failed
                 if not self.connection.sendKeepalive():
-                    logging.error("[%s]: Connection to server has died. "
-                                  % self.fileName)
+                    logging.error("[%s]: Connection to server has died." % self.fileName)
 
                     # reconnect to the server
                     while True:
@@ -1240,27 +1193,22 @@ class ConnectionWatchdog(threading.Thread):
                             # if smtp alert is activated
                             # => send email that communication
                             # problems are solved
-                            if not self.smtpAlert is None:
+                            if self.smtpAlert is not None:
                                 self.smtpAlert.sendCommunicationAlertClear()
 
-                            logging.info("[%s] Reconnecting successful "
-                                         % self.fileName
-                                         + "after %d attempts."
-                                         % self.connectionRetries)
+                            logging.info("[%s] Reconnecting successful after %d attempts."
+                                         % (self.fileName, self.connectionRetries))
 
                             self.connectionRetries = 1
                             break
-                        self.connectionRetries +=1
+                        self.connectionRetries += 1
 
-                        logging.error("[%s]: Reconnecting failed. "
-                                      % self.fileName
-                                      + "Retrying in 5 seconds.")
+                        logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self.fileName)
                         time.sleep(5)
 
     # sets the exit flag to shut down the thread
     def exit(self):
         self.exitFlag = True
-        return
 
 
 # this class is used to send messages to the server
@@ -1307,8 +1255,7 @@ class AsynchronousSender(threading.Thread):
                 return
 
             # send sensor alert
-            if not self.serverComm.sendSensorAlert(
-                self.sendSensorAlertSensorAlert):
+            if not self.serverComm.sendSensorAlert(self.sendSensorAlertSensorAlert):
 
                 logging.error("[%s]: Sending sensor "
                               % self.fileName
@@ -1327,8 +1274,7 @@ class AsynchronousSender(threading.Thread):
                 return
 
             # send sensor state change
-            if not self.serverComm.sendStateChange(
-                self.sendStateChangeStateChange):
+            if not self.serverComm.sendStateChange(self.sendStateChangeStateChange):
 
                 logging.error("[%s]: Sending sensor "
                               % self.fileName
