@@ -42,6 +42,9 @@ class KodiAlert(_Alert):
         # should the player be paused
         self.pausePlayer = None
 
+        # File location of icon to display.
+        self.icon = ""  # type: str
+
     # this function is called once when the alert client has connected itself
     # to the server
     def initializeAlert(self):
@@ -129,9 +132,10 @@ class KodiAlert(_Alert):
                                           + receivedMessage \
                                           + "\""
 
-                    kodi_obj.GUI.ShowNotification(title="alertR",
-                                                      message=tempMessage,
-                                                      displaytime=self.displayTime)
+                    kodi_obj.GUI.ShowNotification(title="AlertR",
+                                                  message=tempMessage,
+                                                  image=self.icon,
+                                                  displaytime=self.displayTime)
 
             else:
                 logging.error("[%s]: Kodi does not respond." % self.fileName)

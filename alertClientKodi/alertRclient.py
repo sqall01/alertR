@@ -145,6 +145,7 @@ if __name__ == '__main__':
             alert.pausePlayer = (str(item.find("kodi").attrib["pausePlayer"]).upper() == "TRUE")
             alert.triggerDelay = int(item.find("kodi").attrib["triggerDelay"])
             alert.displayReceivedMessage = (str(item.find("kodi").attrib["displayReceivedMessage"]).upper() == "TRUE")
+            alert.icon = makePath("./config/kodi_logo.png")
 
             # these options are needed by the server to
             # differentiate between the registered alerts
