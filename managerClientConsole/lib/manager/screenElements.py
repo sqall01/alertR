@@ -1,69 +1,60 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import logging
-import os
 import time
 import urwid
-from localObjects import SensorDataType
+import types
+from typing import Any, List
+from ..localObjects import Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from .core import ServerEventHandler
 
 
 # this class is an urwid object for a status
 class StatusUrwid:
 
-    def __init__(self, title, statusType, statusValue):
+    def __init__(self, title: str, statusType: str, statusValue: str):
 
         self.title = title
         self.statusType = statusType
         self.statusValue = statusValue
 
-        self.statusTextWidget = urwid.Text(self.statusType + ": "
-            + str(self.statusValue))
+        self.statusTextWidget = urwid.Text(self.statusType + ": " + str(self.statusValue))
         statusBox = urwid.LineBox(self.statusTextWidget, title=self.title)
         paddedStatusBox = urwid.Padding(statusBox, left=0, right=0)
         self.statusUrwidMap = urwid.AttrMap(paddedStatusBox, "neutral")
-
 
     # this function returns the final urwid widget that is used
     # to render the box of a status
     def get(self):
         return self.statusUrwidMap
 
-
     # this functipn updates the status type
-    def updateStatusType(self, statusType):
+    def updateStatusType(self, statusType: str):
         self.statusType = statusType
-        self.statusTextWidget.set_text(self.statusType + ": "
-            + str(self.statusValue))
-
+        self.statusTextWidget.set_text(self.statusType + ": " + str(self.statusValue))
 
     # this functipn updates the status value
-    def updateStatusValue(self, statusValue):
+    def updateStatusValue(self, statusValue: str):
         self.statusValue = statusValue
-        self.statusTextWidget.set_text(self.statusType + ": "
-            + str(self.statusValue))
-
+        self.statusTextWidget.set_text(self.statusType + ": " + str(self.statusValue))
 
     # this function changes the color of this urwid object to red
     def turnRed(self):
         self.statusUrwidMap.set_attr_map({None: "redColor"})
 
-
     # this function changes the color of this urwid object to green
     def turnGreen(self):
         self.statusUrwidMap.set_attr_map({None: "greenColor"})
 
-
     # this function changes the color of this urwid object to gray
     def turnGray(self):
         self.statusUrwidMap.set_attr_map({None: "grayColor"})
-
 
     # this function changes the color of this urwid object to the
     # neutral color scheme
@@ -74,7 +65,11 @@ class StatusUrwid:
 # this class is an urwid object for a sensor
 class SensorUrwid:
 
-    def __init__(self, sensor, node, connectionTimeout, serverEventHandler):
+    def __init__(self,
+                 sensor: Sensor,
+                 node: Node,
+                 connectionTimeout: int,
+                 serverEventHandler: ServerEventHandler):
 
         # is needed to decide when a sensor has timed out
         self.connectionTimeout = connectionTimeout
@@ -90,20 +85,17 @@ class SensorUrwid:
             sensorPileList.append(self.dataWidget)
 
         self.sensorPile = urwid.Pile(sensorPileList)
-        sensorBox = urwid.LineBox(self.sensorPile,
-            title="Host: " + node.hostname)
+        sensorBox = urwid.LineBox(self.sensorPile, title="Host: " + node.hostname)
         paddedSensorBox = urwid.Padding(sensorBox, left=1, right=1)
 
         # check if node is connected and set the color accordingly
         # and consider the state of the sensor (1 = triggered)
         if node.connected == 0:
-            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox,
-                "disconnected")
+            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "disconnected")
             self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
 
         # check if the node is connected and no sensor alert is triggered
-        elif (node.connected == 1
-            and sensor.state != 1):
+        elif node.connected == 1 and sensor.state != 1:
             self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "connected")
             self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
@@ -114,11 +106,9 @@ class SensorUrwid:
 
         # check if sensor has timed out and change color accordingly
         # and consider the state of the sensor (1 = triggered)
-        if (sensor.lastStateUpdated < (self.serverEventHandler.serverTime
-            - (2 * self.connectionTimeout))
-            and sensor.state != 1):
-            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox,
-                "timedout")
+        if (sensor.lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout))
+           and sensor.state != 1):
+            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "timedout")
             self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
         # store reference to sensor object and node object
@@ -132,57 +122,48 @@ class SensorUrwid:
         # if the data type has changed and the urwid object has to be adjusted.
         self.lastDataType = self.sensor.dataType
 
-
     # this function returns the final urwid widget that is used
     # to render the box of a sensor
-    def get(self):
+    def get(self) -> urwid.AttrMap:
         return self.sensorUrwidMap
 
-
     # this function updates the description of the object
-    def updateDescription(self, description):
+    def updateDescription(self, description: str):
         self.descriptionWidget.set_text("Desc.: " + description)
-
 
     # this function updates the connected status of the object
     # (and changes color arcordingly)
-    def updateConnected(self, connected):
+    def updateConnected(self, connected: int):
 
         # change color according to connection state
         # and consider the state of the sensor (1 = triggered)
-        if (connected == 0
-            and self.sensor.state != 1):
+        if connected == 0 and self.sensor.state != 1:
             self.sensorUrwidMap.set_attr_map({None: "disconnected"})
             self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
-        elif (connected == 1
-            and self.sensor.state != 1):
+        elif connected == 1 and self.sensor.state != 1:
             self.sensorUrwidMap.set_attr_map({None: "connected"})
             self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
         # check if sensor has timed out and change color accordingly
         # and consider the state of the sensor (1 = triggered)
-        if (self.sensor.lastStateUpdated < (self.serverEventHandler.serverTime
-            - (2 * self.connectionTimeout))
-            and self.sensor.state != 1):
+        if (self.sensor.lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout))
+           and self.sensor.state != 1):
             self.sensorUrwidMap.set_attr_map({None: "timedout"})
             self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
-
 
     # this function updates the last update status of the object
     # (and changes color arcordingly)
-    def updateLastUpdated(self, lastStateUpdated):
+    def updateLastUpdated(self, lastStateUpdated: int):
 
         # check if sensor has timed out and change color accordingly
-        if (lastStateUpdated < (self.serverEventHandler.serverTime
-            - (2 * self.connectionTimeout))
-            and self.sensor.state != 1):
+        if (lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout))
+           and self.sensor.state != 1):
             self.sensorUrwidMap.set_attr_map({None: "timedout"})
             self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
-
     # this function updates the state of the object
     # (and changes color arcordingly)
-    def updateState(self, state):
+    def updateState(self, state: int):
 
         # check if the node is connected and change the color accordingly
         if self.node.connected == 0:
@@ -196,24 +177,21 @@ class SensorUrwid:
                 self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
                 # check if the sensor timed out and change 
                 # the color accordingly
-                if (self.sensor.lastStateUpdated
-                    < (self.serverEventHandler.serverTime
-                    - (2 * self.connectionTimeout))):
+                if self.sensor.lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout)):
                     self.sensorUrwidMap.set_attr_map({None: "timedout"})
                     self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
+
             elif state == 1:
                 self.sensorUrwidMap.set_attr_map({None: "sensoralert"})
                 self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
-
     # this function updates the data of the object
-    def updateData(self, data, dataType):
+    def updateData(self, data: Any, dataType: SensorDataType):
         self.dataWidget.set_text("Data: " + str(data))
 
         # If the data type has changed and the new data type is "none",
         # remove the data widget.
-        if (self.lastDataType != dataType
-            and dataType == SensorDataType.NONE):
+        if self.lastDataType != dataType and dataType == SensorDataType.NONE:
             for pileTuple in self.sensorPile.contents:
                 if self.dataWidget == pileTuple[0]:
                     self.sensorPile.contents.remove(pileTuple)
@@ -221,23 +199,18 @@ class SensorUrwid:
 
         # If the data type has changed and the new data type is not "none",
         # add the data widget.
-        elif (self.lastDataType != dataType
-            and dataType != SensorDataType.NONE):
-            self.sensorPile.contents.append( (self.dataWidget,
-                self.sensorPile.options()) )
+        elif self.lastDataType != dataType and dataType != SensorDataType.NONE:
+            self.sensorPile.contents.append((self.dataWidget, self.sensorPile.options()))
 
         # Needed to check if the data type has changed.
         self.lastDataType = dataType
 
-
     # this function updates all internal widgets and checks if
     # the sensor/node still exists
-    def updateCompleteWidget(self):
+    def updateCompleteWidget(self) -> bool:
 
         # check if sensor/node still exists
-        if (self.sensor is None
-            or self.node is None):
-
+        if self.sensor is None or self.node is None:
             # return false if object no longer exists
             return False
 
@@ -250,7 +223,6 @@ class SensorUrwid:
         # return true if object was updated
         return True
 
-
     # this functions sets the color when the connection to the server
     # has failed
     def setConnectionFail(self):
@@ -261,7 +233,7 @@ class SensorUrwid:
 # this class is an urwid object for a detailed sensor output
 class SensorDetailedUrwid:
 
-    def __init__(self, sensor, node, alertLevels):
+    def __init__(self, sensor: Sensor, node: Node, alertLevels: List[AlertLevel]):
 
         self.node = node
         self.sensor = sensor
@@ -298,15 +270,12 @@ class SensorDetailedUrwid:
         # use ListBox here because it handles all the
         # scrolling part automatically
         detailedList = urwid.ListBox(content)
-        detailedFrame = urwid.Frame(detailedList,
-            footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
-        self.detailedBox = urwid.LineBox(detailedFrame,
-            title="Sensor: " + self.sensor.description)
-
+        detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+        self.detailedBox = urwid.LineBox(detailedFrame, title="Sensor: " + self.sensor.description)
 
     # this function creates the detailed output of all alert level objects
     # in a list
-    def _createAlertLevelsWidgetList(self, alertLevels):
+    def _createAlertLevelsWidgetList(self, alertLevels: List[AlertLevel]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -322,10 +291,9 @@ class SensorDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a alert level object
     # in a list
-    def _createAlertLevelWidgetList(self, alertLevel):
+    def _createAlertLevelWidgetList(self, alertLevel: AlertLevel) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -356,10 +324,9 @@ class SensorDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a node object
     # in a list
-    def _createNodeWidgetList(self, node):
+    def _createNodeWidgetList(self, node: Node) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -390,14 +357,11 @@ class SensorDetailedUrwid:
 
         temp.append(urwid.Text("Connected:"))
         if node.connected == 0:
-            temp.append(urwid.AttrMap(urwid.Text("False"),
-                "disconnected"))
+            temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected"))
         elif node.connected == 1:
-            temp.append(urwid.AttrMap(urwid.Text("True"),
-                "neutral"))
+            temp.append(urwid.AttrMap(urwid.Text("True"), "neutral"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Persistent Connection:"))
@@ -405,20 +369,17 @@ class SensorDetailedUrwid:
             temp.append(urwid.Text("False"))
         elif node.persistent == 1:
             if node.connected == 0:
-                temp.append(urwid.AttrMap(urwid.Text("True"),
-                    "disconnected"))
+                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected"))
             else:
                 temp.append(urwid.Text("True"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
 
         return temp
 
-
     # this function creates the detailed output of a sensor object
     # in a list
-    def _createSensorWidgetList(self, sensor):
+    def _createSensorWidgetList(self, sensor: Sensor) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -440,14 +401,11 @@ class SensorDetailedUrwid:
 
         temp.append(urwid.Text("State:"))
         if sensor.state == 0:
-            temp.append(urwid.AttrMap(urwid.Text("Normal"),
-                "neutral"))
+            temp.append(urwid.AttrMap(urwid.Text("Normal"), "neutral"))
         elif sensor.state == 1:
-            temp.append(urwid.AttrMap(urwid.Text("Triggered"),
-                "sensoralert"))
+            temp.append(urwid.AttrMap(urwid.Text("Triggered"), "sensoralert"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Data Type:"))
@@ -469,29 +427,24 @@ class SensorDetailedUrwid:
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Last Updated (Server Time):"))
-        lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S",
-            time.localtime(sensor.lastStateUpdated)))
+        lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S", time.localtime(sensor.lastStateUpdated)))
         temp.append(lastUpdatedWidget)
 
         return temp
 
-
     # this function returns the final urwid widget that is used
     # to render this object
-    def get(self):
+    def get(self) -> urwid.LineBox:
         return self.detailedBox
 
-
     # this function updates all internal widgets
-    def updateCompleteWidget(self, alertLevels):
-
+    def updateCompleteWidget(self, alertLevels: List[AlertLevel]):
         self.updateNodeDetails()
         self.updateSensorDetails()
         self.updateAlertLevelsDetails(alertLevels)
 
-
     # this function updates the alert levels information shown
-    def updateAlertLevelsDetails(self, alertLevels):
+    def updateAlertLevelsDetails(self, alertLevels: List[AlertLevel]):
 
         # crate new sensor pile content
         temp = self._createAlertLevelsWidgetList(alertLevels)
@@ -503,7 +456,6 @@ class SensorDetailedUrwid:
         # empty pile widget contents and replace it with the new widgets
         del self.alertLevelsPileWidget.contents[:]
         self.alertLevelsPileWidget.contents.extend(temp)
-
 
     # this function updates the node information shown
     def updateNodeDetails(self):
@@ -518,7 +470,6 @@ class SensorDetailedUrwid:
         # empty pile widget contents and replace it with the new widgets
         del self.nodePileWidget.contents[:]
         self.nodePileWidget.contents.extend(temp)
-
 
     # this function updates the sensor information shown
     def updateSensorDetails(self):
@@ -538,7 +489,7 @@ class SensorDetailedUrwid:
 # this class is an urwid object for an alert
 class AlertUrwid:
 
-    def __init__(self, alert, node):
+    def __init__(self, alert: Alert, node: Node):
 
         # store reference to alert object and node object
         self.alert = alert
@@ -552,34 +503,30 @@ class AlertUrwid:
         alertPileList.append(self.descriptionWidget)
 
         alertPile = urwid.Pile(alertPileList)
-        alertBox = urwid.LineBox(alertPile,
-            title="Host: " + node.hostname)
+        alertBox = urwid.LineBox(alertPile, title="Host: " + node.hostname)
         paddedAlertBox = urwid.Padding(alertBox, left=1, right=1)
 
         # check if node is connected and set the color accordingly
         if self.node.connected == 0:
-            self.alertUrwidMap = urwid.AttrMap(paddedAlertBox,
-                "disconnected")
+            self.alertUrwidMap = urwid.AttrMap(paddedAlertBox, "disconnected")
             self.alertUrwidMap.set_focus_map({None: "disconnected_focus"})
+
         else:
             self.alertUrwidMap = urwid.AttrMap(paddedAlertBox, "connected")
             self.alertUrwidMap.set_focus_map({None: "connected_focus"})
 
-
     # this function returns the final urwid widget that is used
     # to render the box of an alert
-    def get(self):
+    def get(self) -> urwid.AttrMap:
         return self.alertUrwidMap
 
-
     # this function updates the description of the object
-    def updateDescription(self, description):
+    def updateDescription(self, description: str):
         self.descriptionWidget.set_text("Desc.: " + description)
-
 
     # this function updates the connected status of the object
     # (and changes color arcordingly)
-    def updateConnected(self, connected):
+    def updateConnected(self, connected: int):
 
         # change color according to connection state
         if connected == 0:
@@ -589,15 +536,12 @@ class AlertUrwid:
             self.alertUrwidMap.set_attr_map({None: "connected"})
             self.alertUrwidMap.set_focus_map({None: "connected_focus"})
 
-
     # this function updates all internal widgets and checks if
     # the alert/node still exists
-    def updateCompleteWidget(self):
+    def updateCompleteWidget(self) -> bool:
 
         # check if alert/node still exists
-        if (self.alert is None
-            or self.node is None):
-
+        if self.alert is None or self.node is None:
             # return false if object no longer exists
             return False
 
@@ -606,7 +550,6 @@ class AlertUrwid:
 
         # return true if object was updated
         return True
-
 
     # this functions sets the color when the connection to the server
     # has failed
@@ -618,7 +561,7 @@ class AlertUrwid:
 # this class is an urwid object for a detailed alert output
 class AlertDetailedUrwid:
 
-    def __init__(self, alert, node, alertLevels):
+    def __init__(self, alert: Alert, node: Node, alertLevels: List[AlertLevel]):
 
         self.node = node
         self.alert = alert
@@ -655,15 +598,12 @@ class AlertDetailedUrwid:
         # use ListBox here because it handles all the
         # scrolling part automatically
         detailedList = urwid.ListBox(content)
-        detailedFrame = urwid.Frame(detailedList,
-            footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
-        self.detailedBox = urwid.LineBox(detailedFrame,
-            title="Alert: " + self.alert.description)
-
+        detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+        self.detailedBox = urwid.LineBox(detailedFrame, title="Alert: " + self.alert.description)
 
     # this function creates the detailed output of all alert level objects
     # in a list
-    def _createAlertLevelsWidgetList(self, alertLevels):
+    def _createAlertLevelsWidgetList(self, alertLevels: List[AlertLevel]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -679,10 +619,9 @@ class AlertDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a alert level object
     # in a list
-    def _createAlertLevelWidgetList(self, alertLevel):
+    def _createAlertLevelWidgetList(self, alertLevel: AlertLevel) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -713,10 +652,9 @@ class AlertDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a alert object
     # in a list
-    def _createAlertWidgetList(self, alert):
+    def _createAlertWidgetList(self, alert: Alert) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -733,10 +671,9 @@ class AlertDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a node object
     # in a list
-    def _createNodeWidgetList(self, node):
+    def _createNodeWidgetList(self, node: Node) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -767,45 +704,40 @@ class AlertDetailedUrwid:
 
         temp.append(urwid.Text("Connected:"))
         if node.connected == 0:
-            temp.append(urwid.AttrMap(urwid.Text("False"),
-                "disconnected"))
+            temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected"))
         elif node.connected == 1:
-            temp.append(urwid.AttrMap(urwid.Text("True"),
-                "neutral"))
+            temp.append(urwid.AttrMap(urwid.Text("True"), "neutral"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Persistent Connection:"))
         if node.persistent == 0:
             temp.append(urwid.Text("False"))
+
         elif node.persistent == 1:
             if node.connected == 0:
-                temp.append(urwid.AttrMap(urwid.Text("True"),
-                    "disconnected"))
+                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected"))
+
             else:
                 temp.append(urwid.Text("True"))
+
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
 
         return temp
 
-
     # this function returns the final urwid widget that is used
     # to render this object
-    def get(self):
+    def get(self) -> urwid.LineBox:
         return self.detailedBox
 
-
     # this function updates all internal widgets
-    def updateCompleteWidget(self, alertLevels):
+    def updateCompleteWidget(self, alertLevels: List[AlertLevel]):
 
         self.updateNodeDetails()
         self.updateAlertDetails()
         self.updateAlertLevelsDetails(alertLevels)
-
 
     # this function updates the node information shown
     def updateAlertDetails(self):
@@ -821,9 +753,8 @@ class AlertDetailedUrwid:
         del self.alertPileWidget.contents[:]
         self.alertPileWidget.contents.extend(temp)
 
-
     # this function updates the alert levels information shown
-    def updateAlertLevelsDetails(self, alertLevels):
+    def updateAlertLevelsDetails(self, alertLevels: List[AlertLevel]):
 
         # crate new sensor pile content
         temp = self._createAlertLevelsWidgetList(alertLevels)
@@ -835,7 +766,6 @@ class AlertDetailedUrwid:
         # empty pile widget contents and replace it with the new widgets
         del self.alertLevelsPileWidget.contents[:]
         self.alertLevelsPileWidget.contents.extend(temp)
-
 
     # this function updates the node information shown
     def updateNodeDetails(self):
@@ -855,7 +785,7 @@ class AlertDetailedUrwid:
 # this class is an urwid object for a manager
 class ManagerUrwid:
 
-    def __init__(self, manager, node):
+    def __init__(self, manager: Manager, node: Node):
 
         # store reference to manager object and node object
         self.manager = manager
@@ -865,57 +795,50 @@ class ManagerUrwid:
         self.manager.managerUrwid = self
 
         managerPileList = list()
-        self.descriptionWidget = urwid.Text("Desc.: "
-            + self.manager.description)
+        self.descriptionWidget = urwid.Text("Desc.: " + self.manager.description)
         managerPileList.append(self.descriptionWidget)
 
         managerPile = urwid.Pile(managerPileList)
-        managerBox = urwid.LineBox(managerPile,
-            title="Host: " + node.hostname)
+        managerBox = urwid.LineBox(managerPile, title="Host: " + node.hostname)
         paddedManagerBox = urwid.Padding(managerBox, left=1, right=1)
 
         # check if node is connected and set the color accordingly
         if self.node.connected == 0:
-            self.managerUrwidMap = urwid.AttrMap(paddedManagerBox,
-                "disconnected")
+            self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "disconnected")
             self.managerUrwidMap.set_focus_map({None: "disconnected_focus"})
+
         else:
             self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "connected")
             self.managerUrwidMap.set_focus_map({None: "connected_focus"})
 
-
     # this function returns the final urwid widget that is used
     # to render the box of a manager
-    def get(self):
+    def get(self) -> urwid.AttrMap:
         return self.managerUrwidMap
 
-
     # this function updates the description of the object
-    def updateDescription(self, description):
+    def updateDescription(self, description: str):
         self.descriptionWidget.set_text("Desc.: " + description)
-
 
     # this function updates the connected status of the object
     # (and changes color arcordingly)
-    def updateConnected(self, connected):
+    def updateConnected(self, connected: int):
 
         # change color according to connection state
         if connected == 0:
             self.managerUrwidMap.set_attr_map({None: "disconnected"})
             self.managerUrwidMap.set_focus_map({None: "disconnected_focus"})
+
         else:
             self.managerUrwidMap.set_attr_map({None: "connected"})
             self.managerUrwidMap.set_focus_map({None: "connected_focus"})
-
 
     # this function updates all internal widgets and checks if
     # the manager/node still exists
     def updateCompleteWidget(self):
 
         # check if manager/node still exists
-        if (self.manager is None
-            or self.node is None):
-
+        if self.manager is None or self.node is None:
             # return false if object no longer exists
             return False
 
@@ -924,7 +847,6 @@ class ManagerUrwid:
 
         # return true if object was updated
         return True
-
 
     # this functions sets the color when the connection to the server
     # has failed
@@ -936,7 +858,7 @@ class ManagerUrwid:
 # this class is an urwid object for a detailed manager output
 class ManagerDetailedUrwid:
 
-    def __init__(self, manager, node):
+    def __init__(self, manager: Manager, node: Node):
 
         self.node = node
         self.manager = manager
@@ -961,15 +883,12 @@ class ManagerDetailedUrwid:
         # use ListBox here because it handles all the
         # scrolling part automatically
         detailedList = urwid.ListBox(content)
-        detailedFrame = urwid.Frame(detailedList,
-            footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
-        self.detailedBox = urwid.LineBox(detailedFrame,
-            title="Manager: " + self.manager.description)
-
+        detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+        self.detailedBox = urwid.LineBox(detailedFrame, title="Manager: " + self.manager.description)
 
     # this function creates the detailed output of a alert object
     # in a list
-    def _createManagerWidgetList(self, manager):
+    def _createManagerWidgetList(self, manager: Manager) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -982,10 +901,9 @@ class ManagerDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a node object
     # in a list
-    def _createNodeWidgetList(self, node):
+    def _createNodeWidgetList(self, node: Node) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1016,48 +934,40 @@ class ManagerDetailedUrwid:
 
         temp.append(urwid.Text("Connected:"))
         if node.connected == 0:
-            temp.append(urwid.AttrMap(urwid.Text("False"),
-                "disconnected"))
+            temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected"))
         elif node.connected == 1:
-            temp.append(urwid.AttrMap(urwid.Text("True"),
-                "neutral"))
+            temp.append(urwid.AttrMap(urwid.Text("True"), "neutral"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Persistent Connection:"))
         if node.persistent == 0:
             temp.append(urwid.Text("False"))
+
         elif node.persistent == 1:
             if node.connected == 0:
-                temp.append(urwid.AttrMap(urwid.Text("True"),
-                    "disconnected"))
+                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected"))
+
             else:
                 temp.append(urwid.Text("True"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
 
         return temp
 
-
     # this function returns the final urwid widget that is used
     # to render this object
-    def get(self):
+    def get(self) -> urwid.LineBox:
         return self.detailedBox
-
 
     # this function updates all internal widgets
     def updateCompleteWidget(self):
-
         self.updateNodeDetails()
         self.updateManagerDetails()
 
-
     # this function updates the node information shown
     def updateManagerDetails(self):
-
         # crate new sensor pile content
         temp = self._createManagerWidgetList(self.manager)
         
@@ -1069,10 +979,8 @@ class ManagerDetailedUrwid:
         del self.managerPileWidget.contents[:]
         self.managerPileWidget.contents.extend(temp)
 
-
     # this function updates the node information shown
     def updateNodeDetails(self):
-
         # crate new sensor pile content
         temp = self._createNodeWidgetList(self.node)
         
@@ -1088,7 +996,7 @@ class ManagerDetailedUrwid:
 # this class is an urwid object for an alert level
 class AlertLevelUrwid:
 
-    def __init__(self, alertLevel):
+    def __init__(self, alertLevel: AlertLevel):
 
         # store reference to alert level object
         self.alertLevel = alertLevel
@@ -1098,63 +1006,52 @@ class AlertLevelUrwid:
         self.alertLevel.alertLevelUrwid = self
 
         alertLevelPileList = list()
-        self.nameWidget = urwid.Text("Name: "
-            + self.alertLevel.name)
+        self.nameWidget = urwid.Text("Name: " + self.alertLevel.name)
         alertLevelPileList.append(self.nameWidget)
 
         alertLevelPile = urwid.Pile(alertLevelPileList)
-        alertLevelBox = urwid.LineBox(alertLevelPile, title="Level: %d" %
-            self.alertLevel.level)
+        alertLevelBox = urwid.LineBox(alertLevelPile, title="Level: %d" % self.alertLevel.level)
         paddedAlertLevelBox = urwid.Padding(alertLevelBox, left=1, right=1)
 
         # set the color of the urwid object
-        self.alertLevelUrwidMap = urwid.AttrMap(paddedAlertLevelBox,
-            "greenColor")
+        self.alertLevelUrwidMap = urwid.AttrMap(paddedAlertLevelBox, "greenColor")
         self.alertLevelUrwidMap.set_focus_map({None: "greenColor_focus"})
-
 
     # this function returns the final urwid widget that is used
     # to render the box of an alert level
-    def get(self):
+    def get(self) -> urwid.AttrMap:
         return self.alertLevelUrwidMap
 
-
     # this function updates the description of the object
-    def updateName(self, name):
+    def updateName(self, name: str):
         self.nameWidget.set_text("Name: " + name)
-
 
     # this function changes the color of this urwid object to red
     def turnRed(self):
         self.alertLevelUrwidMap.set_attr_map({None: "redColor"})
         self.alertLevelUrwidMap.set_focus_map({None: "redColor_focus"})
 
-
     # this function changes the color of this urwid object to green
     def turnGreen(self):
         self.alertLevelUrwidMap.set_attr_map({None: "greenColor"})
         self.alertLevelUrwidMap.set_focus_map({None: "greenColor_focus"})
-
 
     # this function changes the color of this urwid object to gray
     def turnGray(self):
         self.alertLevelUrwidMap.set_attr_map({None: "grayColor"})
         self.alertLevelUrwidMap.set_focus_map({None: "grayColor_focus"})
 
-
     # this function changes the color of this urwid object to the
     # neutral color scheme
     def turnNeutral(self):
         self.alertLevelUrwidMap.set_attr_map({None: "neutral"})
-
 
     # this function updates all internal widgets and checks if
     # the alert level still exists
     def updateCompleteWidget(self):
 
         # check if alert level still exists
-        if (self.alertLevel is None):
-
+        if self.alertLevel is None:
             # return false if object no longer exists
             return False
 
@@ -1164,9 +1061,7 @@ class AlertLevelUrwid:
         # return true if object was updated
         return True
 
-
-    # this functions sets the color when the connection to the server
-    # has failed
+    # this functions sets the color when the connection to the server has failed.
     def setConnectionFail(self):
         self.alertLevelUrwidMap.set_attr_map({None: "connectionfail"})
         self.alertLevelUrwidMap.set_focus_map({None: "connectionfail_focus"})
@@ -1175,7 +1070,7 @@ class AlertLevelUrwid:
 # this class is an urwid object for a detailed alert level output
 class AlertLevelDetailedUrwid:
 
-    def __init__(self, alertLevel, sensors, alerts):
+    def __init__(self, alertLevel: AlertLevel, sensors: List[Sensor], alerts: List[Alert]):
 
         self.alertLevel = alertLevel
 
@@ -1215,15 +1110,12 @@ class AlertLevelDetailedUrwid:
         # use ListBox here because it handles all the
         # scrolling part automatically
         detailedList = urwid.ListBox(content)
-        detailedFrame = urwid.Frame(detailedList,
-            footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
-        self.detailedBox = urwid.LineBox(detailedFrame,
-            title="Alert Level: " + self.alertLevel.name)
-
+        detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
+        self.detailedBox = urwid.LineBox(detailedFrame, title="Alert Level: " + self.alertLevel.name)
 
     # this function creates the detailed output of a alert level object
     # in a list
-    def _createAlertLevelWidgetList(self, alertLevel):
+    def _createAlertLevelWidgetList(self, alertLevel: AlertLevel) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1254,10 +1146,9 @@ class AlertLevelDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of all alert objects
     # in a list
-    def _createAlertsWidgetList(self, alerts):
+    def _createAlertsWidgetList(self, alerts: List[Alert]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -1273,10 +1164,9 @@ class AlertLevelDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a alert object
     # in a list
-    def _createAlertWidgetList(self, alert):
+    def _createAlertWidgetList(self, alert: Alert) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1293,10 +1183,9 @@ class AlertLevelDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of all sensor objects
     # in a list
-    def _createSensorsWidgetList(self, sensors):
+    def _createSensorsWidgetList(self, sensors: List[Sensor]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -1312,10 +1201,9 @@ class AlertLevelDetailedUrwid:
 
         return temp
 
-
     # this function creates the detailed output of a sensor object
     # in a list
-    def _createSensorWidgetList(self, sensor):
+    def _createSensorWidgetList(self, sensor: Sensor) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1337,14 +1225,11 @@ class AlertLevelDetailedUrwid:
 
         temp.append(urwid.Text("State:"))
         if sensor.state == 0:
-            temp.append(urwid.AttrMap(urwid.Text("Normal"),
-                "neutral"))
+            temp.append(urwid.AttrMap(urwid.Text("Normal"), "neutral"))
         elif sensor.state == 1:
-            temp.append(urwid.AttrMap(urwid.Text("Triggered"),
-                "sensoralert"))
+            temp.append(urwid.AttrMap(urwid.Text("Triggered"), "sensoralert"))
         else:
-            temp.append(urwid.AttrMap(urwid.Text("Undefined"),
-                "redColor"))
+            temp.append(urwid.AttrMap(urwid.Text("Undefined"), "redColor"))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Data Type:"))
@@ -1366,26 +1251,21 @@ class AlertLevelDetailedUrwid:
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Last Updated (Server Time):"))
-        lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S",
-            time.localtime(sensor.lastStateUpdated)))
+        lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S", time.localtime(sensor.lastStateUpdated)))
         temp.append(lastUpdatedWidget)
 
         return temp
 
-
     # this function returns the final urwid widget that is used
     # to render this object
-    def get(self):
+    def get(self) -> urwid.LineBox:
         return self.detailedBox
 
-
     # this function updates all internal widgets
-    def updateCompleteWidget(self, sensors, alerts):
-
+    def updateCompleteWidget(self, sensors: List[Sensor], alerts: List[Alert]):
         self.updateAlertLevelDetails()
         self.updateSensorsDetails(sensors)
         self.updateAlertsDetails(alerts)
-
 
     # this function updates the alert level information shown
     def updateAlertLevelDetails(self):
@@ -1401,9 +1281,8 @@ class AlertLevelDetailedUrwid:
         del self.alertLevelPileWidget.contents[:]
         self.alertLevelPileWidget.contents.extend(temp)
 
-
     # this function updates the node information shown
-    def updateAlertsDetails(self, alerts):
+    def updateAlertsDetails(self, alerts: List[Alert]):
 
         # crate new sensor pile content
         temp = self._createAlertsWidgetList(alerts)
@@ -1416,9 +1295,8 @@ class AlertLevelDetailedUrwid:
         del self.alertsPileWidget.contents[:]
         self.alertsPileWidget.contents.extend(temp)
 
-
     # this function updates the sensor information shown
-    def updateSensorsDetails(self, sensors):
+    def updateSensorsDetails(self, sensors: List[Sensor]):
 
         # crate new sensor pile content
         temp = self._createSensorsWidgetList(sensors)
@@ -1435,7 +1313,7 @@ class AlertLevelDetailedUrwid:
 # this class is an urwid object for a sensor alert
 class SensorAlertUrwid:
 
-    def __init__(self, sensorAlert, description, timeShowSensorAlert):
+    def __init__(self, sensorAlert: SensorAlert, description: str, timeShowSensorAlert: int):
 
         self.sensorAlert = sensorAlert
         self.description = description
@@ -1453,20 +1331,16 @@ class SensorAlertUrwid:
             alertLevelsString += str(alertLevel)
 
         # generate the internal urwid widgets
-        stringReceivedTime = time.strftime("%D %H:%M:%S",
-            time.localtime(self.timeReceived))  
-        self.textWidget = urwid.Text(stringReceivedTime + " - " +
-            self.description + " (" + alertLevelsString + ")")
-        
+        stringReceivedTime = time.strftime("%D %H:%M:%S", time.localtime(self.timeReceived))
+        self.textWidget = urwid.Text(stringReceivedTime + " - " + self.description + " (" + alertLevelsString + ")")
 
     # this function returns the final urwid widget that is used
     # to render the sensor alert
-    def get(self):
+    def get(self) -> urwid.Text:
         return self.textWidget
 
-
     # this function checks if the sensor alert widget is too old
-    def sensorAlertOutdated(self):
+    def sensorAlertOutdated(self) -> bool:
         # check if the sensor alert is older than the configured time to
         # show the sensor alerts in the list
         utcTimestamp = int(time.time())
@@ -1478,13 +1352,11 @@ class SensorAlertUrwid:
 # This class is an urwid object for the search field.
 class SearchViewUrwid:
 
-    def __init__(self, callbackFunction):
+    def __init__(self, callbackFunction: types.FunctionType):
         self.edit = urwid.Edit()
         editList = urwid.ListBox([self.edit])
-        editFrame = urwid.Frame(editList,
-            footer=urwid.Text("Keys: ESC - Back, Enter - Search"))
-        self.editBox = urwid.LineBox(editFrame,
-            title="Search")
+        editFrame = urwid.Frame(editList, footer=urwid.Text("Keys: ESC - Back, Enter - Search"))
+        self.editBox = urwid.LineBox(editFrame, title="Search")
 
         self.callbackFunction = callbackFunction
 
@@ -1493,21 +1365,17 @@ class SearchViewUrwid:
         # Used to show the search results while typing.
         urwid.connect_signal(self.edit, "change", self.callbackFunction, "")
 
-
     def __del__(self):
 
         # Disconnect callback function.
         if self.edit is not None and self.callbackFunction is not None:
-            urwid.disconnect_signal(self.edit,
-                "change", self.callbackFunction, "")
-
+            urwid.disconnect_signal(self.edit, "change", self.callbackFunction, "")
 
     # This function returns the final urwid widget that is used
     # to render this object.
-    def get(self):
+    def get(self) -> urwid.LineBox:
         return self.editBox
 
-
     # Returns entered text.
-    def getText(self):
+    def getText(self) -> str:
         return self.edit.edit_text

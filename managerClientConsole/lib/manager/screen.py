@@ -7,14 +7,13 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, \
+from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, \
     AlertUrwid, AlertDetailedUrwid, ManagerUrwid, ManagerDetailedUrwid, \
     AlertLevelUrwid, AlertLevelDetailedUrwid, SensorAlertUrwid, \
     SearchViewUrwid
 import threading
 import logging
 import os
-import time
 import urwid
 
 
@@ -171,14 +170,10 @@ class Console:
         self.serverEventHandler = self.serverComm.serverEventHandler
         self.timeShowSensorAlert = self.globalData.timeShowSensorAlert
         self.maxCountShowSensorAlert = self.globalData.maxCountShowSensorAlert
-        self.maxCountShowSensorsPerPage = \
-            self.globalData.maxCountShowSensorsPerPage
-        self.maxCountShowAlertsPerPage = \
-            self.globalData.maxCountShowAlertsPerPage
-        self.maxCountShowManagersPerPage = \
-            self.globalData.maxCountShowManagersPerPage
-        self.maxCountShowAlertLevelsPerPage = \
-            self.globalData.maxCountShowAlertLevelsPerPage
+        self.maxCountShowSensorsPerPage = self.globalData.maxCountShowSensorsPerPage
+        self.maxCountShowAlertsPerPage = self.globalData.maxCountShowAlertsPerPage
+        self.maxCountShowManagersPerPage = self.globalData.maxCountShowManagersPerPage
+        self.maxCountShowAlertLevelsPerPage = self.globalData.maxCountShowAlertLevelsPerPage
 
         # lock that is being used so only one thread can update the screen
         self.consoleLock = threading.BoundedSemaphore(1)
@@ -1369,9 +1364,7 @@ class Console:
                     self.activeSensorUrwidObjects[i])
 
             # create grid object for the sensors
-            self.sensorsGrid = urwid.GridFlow(
-                map(lambda x: x.get(), self.shownSensorUrwidObjects),
-                40, 1, 1, 'left')
+            self.sensorsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownSensorUrwidObjects), 40, 1, 1, 'left')
 
         else:
             # create empty grid object for the sensors
