@@ -910,7 +910,8 @@ class ServerCommunication:
         # sending sensor alert response
         logging.debug("[%s]: Sending sensor alert response message." % self.fileName)
         try:
-            payload = {"type": "response", "result": "ok"}
+            payload = {"type": "response",
+                       "result": "ok"}
             utcTimestamp = int(time.time())
             message = {"clientTime": utcTimestamp,
                        "message": "sensoralert",
