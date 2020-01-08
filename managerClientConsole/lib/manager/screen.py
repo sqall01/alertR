@@ -1,20 +1,22 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, \
-    AlertUrwid, AlertDetailedUrwid, ManagerUrwid, ManagerDetailedUrwid, \
-    AlertLevelUrwid, AlertLevelDetailedUrwid, SensorAlertUrwid, \
-    SearchViewUrwid
 import threading
 import logging
 import os
 import urwid
+from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, AlertUrwid, AlertDetailedUrwid, \
+                            ManagerUrwid, ManagerDetailedUrwid, AlertLevelUrwid, AlertLevelDetailedUrwid, \
+                            SensorAlertUrwid, SearchViewUrwid
+from ..globalData import GlobalData
+from ..localObjects import Sensor, Alert, AlertLevel
+from typing import Any, List
 
 
 class FocusedElement:
@@ -28,7 +30,7 @@ class FocusedElement:
 # to process actions concurrently and do not block the console thread
 class ScreenActionExecuter(threading.Thread):
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
         threading.Thread.__init__(self)
 
         # file nme of this file (used for logging)
@@ -44,7 +46,6 @@ class ScreenActionExecuter(threading.Thread):
         self.optionType = None
         self.optionValue = None
 
-
     def run(self):
 
         # check if an option message should be send to the server
@@ -52,23 +53,21 @@ class ScreenActionExecuter(threading.Thread):
 
             # check if the server communication object is available
             if self.serverComm is None:
-                logging.error("[%s]: Sending option " % self.fileName
-                        + "change to server failed. No server communication "
-                        + "object available.")
+                logging.error("[%s]: Sending option "
+                              % self.fileName
+                              + "change to server failed. No server communication object available.")
                 return
 
             # send option change to server
-            if not self.serverComm.sendOption(self.optionType,
-                self.optionValue):
-                logging.error("[%s]: Sending option " % self.fileName
-                    + "change to server failed.")
+            if not self.serverComm.sendOption(self.optionType, self.optionValue):
+                logging.error("[%s]: Sending option change to server failed." % self.fileName)
                 return
 
 
 # this class handles the screen updates
 class ScreenUpdater(threading.Thread):
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
         threading.Thread.__init__(self)
 
         # get global configured data
@@ -88,10 +87,9 @@ class ScreenUpdater(threading.Thread):
         # set exit flag as false
         self.exitFlag = False
 
-
     def run(self):
 
-        while 1:
+        while True:
             if self.exitFlag:
                 return
 
@@ -102,8 +100,8 @@ class ScreenUpdater(threading.Thread):
 
             # if reference to console object does not exist
             # => get it from global data or if it does not exist continue loop
-            if self.console == None:
-                if self.globalData.console != None:
+            if self.console is None:
+                if self.globalData.console is not None:
                     self.console = self.globalData.console
                 else:
                     continue            
@@ -111,11 +109,9 @@ class ScreenUpdater(threading.Thread):
             # check if a sensor alert was received
             # => update screen with sensor alert
             if len(self.sensorAlerts) != 0:
-                logging.info("[%s]: Updating screen with sensor alert."
-                    % self.fileName)
+                logging.info("[%s]: Updating screen with sensor alert." % self.fileName)
                 if not self.console.updateScreen("sensoralert"):
-                    logging.error("[%s]: Updating screen " % self.fileName
-                        + "with sensor alert failed.")
+                    logging.error("[%s]: Updating screen with sensor alert failed." % self.fileName)
 
                 # do not use the old status information from the server
                 # to update the screen => wait for new status update
@@ -128,8 +124,8 @@ class ScreenUpdater(threading.Thread):
 
             # if reference to server communication object does not exist
             # => get it from global data or if it does not exist continue loop 
-            if self.serverComm == None:
-                if self.globalData.serverComm != None:
+            if self.serverComm is None:
+                if self.globalData.serverComm is not None:
                     self.serverComm = self.globalData.serverComm
                 else:
                     continue
@@ -137,23 +133,19 @@ class ScreenUpdater(threading.Thread):
             # check if the client is not connected to the server
             # => update screen to connection failure
             if not self.serverComm.isConnected:
-                logging.debug("[%s]: Updating screen " % self.fileName
-                    + "for connection failure.")
+                logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
                 if not self.console.updateScreen("connectionfail"):
-                    logging.error("[%s]: Updating screen failed."
-                        % self.fileName)
-
+                    logging.error("[%s]: Updating screen failed." % self.fileName)
 
     # sets the exit flag to shut down the thread
     def exit(self):
         self.exitFlag = True
-        return
 
 
 # this class handles the complete screen/console
 class Console:
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
         self.fileName = os.path.basename(__file__)
 
         # get global configured data
@@ -314,7 +306,6 @@ class Console:
         # The keyword that is currently searched for.
         self.searchKeyword = ""
 
-
     # set the focus to the sensors
     def _focusSensors(self):
         logging.debug("[%s]: Focus sensors." % self.fileName)
@@ -341,9 +332,8 @@ class Console:
 
         try:
             self.sensorsGrid.focus_position = 0
-        except IndexError: # raised if no element in element group
+        except IndexError:  # raised if no element in element group
             pass
-
 
     # set the focus to the alerts
     def _focusAlerts(self):
@@ -371,9 +361,8 @@ class Console:
 
         try:
             self.alertsGrid.focus_position = 0
-        except IndexError: # raised if no element in element group
+        except IndexError:  # raised if no element in element group
             pass
-
 
     # set the focus to the managers
     def _focusManagers(self):
@@ -401,9 +390,8 @@ class Console:
 
         try:
             self.managersGrid.focus_position = 0
-        except IndexError: # raised if no element in element group
+        except IndexError:  # raised if no element in element group
             pass
-
 
     # set the focus to the alert levels
     def _focusAlertLevels(self):
@@ -431,9 +419,8 @@ class Console:
 
         try:
             self.alertLevelsGrid.focus_position = 0
-        except IndexError: # raised if no element in element group
+        except IndexError:  # raised if no element in element group
             pass
-
 
     # close the detailed view
     def _closeDetailedView(self):
@@ -441,13 +428,11 @@ class Console:
         self.inDetailView = False
         self.detailedView = None
 
-
     # Close the search view.
     def _closeSearchView(self):
         self.mainLoop.widget = self.mainFrame
         self.inSearchView = False
         self.searchView = None
-
 
     # Shows the results of the search.
     def _showSearchResult(self):
@@ -456,12 +441,10 @@ class Console:
 
             # Filter for all sensor urwid objects that contain the keyword
             # (case-insensitive).
-            foundSensors = filter(
-                lambda obj : keyword in obj.sensor.description.lower(),
-                self.sensorUrwidObjects)
+            foundSensors = filter(lambda obj: keyword in obj.sensor.description.lower(), self.sensorUrwidObjects)
 
             logging.debug("[%s]: Found %d sensors for keyword '%s'."
-                % (self.fileName, len(foundSensors), keyword))
+                          % (self.fileName, len(foundSensors), keyword))
 
             # Display currently found objects.
             self.activeSensorUrwidObjects = foundSensors
@@ -471,12 +454,10 @@ class Console:
 
             # Filter for all alert urwid objects that contain the keyword
             # (case-insensitive).
-            foundAlerts = filter(
-                lambda obj : keyword in obj.alert.description.lower(),
-                self.alertUrwidObjects)
+            foundAlerts = filter(lambda obj: keyword in obj.alert.description.lower(), self.alertUrwidObjects)
 
             logging.debug("[%s]: Found %d alerts for keyword '%s'."
-                % (self.fileName, len(foundAlerts), keyword))
+                          % (self.fileName, len(foundAlerts), keyword))
 
             # Display currently found objects.
             self.activeAlertUrwidObjects = foundAlerts
@@ -486,12 +467,10 @@ class Console:
 
             # Filter for all manager urwid objects that contain the keyword
             # (case-insensitive).
-            foundManagers = filter(
-                lambda obj : keyword in obj.manager.description.lower(),
-                self.managerUrwidObjects)
+            foundManagers = filter(lambda obj: keyword in obj.manager.description.lower(), self.managerUrwidObjects)
 
             logging.debug("[%s]: Found %d managers for keyword '%s'."
-                % (self.fileName, len(foundManagers), keyword))
+                          % (self.fileName, len(foundManagers), keyword))
 
             # Display currently found objects.
             self.activeManagerUrwidObjects = foundManagers
@@ -501,25 +480,21 @@ class Console:
 
             # Filter for all alert level urwid objects that contain the keyword
             # (case-insensitive).
-            foundAlertLevels = filter(
-                lambda obj : keyword in obj.alertLevel.name.lower(),
-                self.alertLevelUrwidObjects)
+            foundAlertLevels = filter(lambda obj: keyword in obj.alertLevel.name.lower(), self.alertLevelUrwidObjects)
 
             logging.debug("[%s]: Found %d alert levels for keyword '%s'."
-                % (self.fileName, len(foundAlertLevels), keyword))
+                          % (self.fileName, len(foundAlertLevels), keyword))
 
             # Display currently found objects.
             self.activeAlertLevelUrwidObjects = foundAlertLevels
             self._showAlertLevelsAtPageIndex(0)
-
 
     # switches focus to the next element group
     def _switchFocusedElementGroup(self):
         if self.currentFocused == FocusedElement.sensors:
             self.currentFocused = FocusedElement.alerts
             self._focusAlerts()
-            self.alertsKeyBindings.set_text(
-                "Keys: b - Previous Page, n - Next Page, s - Search")
+            self.alertsKeyBindings.set_text("Keys: b - Previous Page, n - Next Page, s - Search")
             self.managersKeyBindings.set_text("Keys: None")
             self.alertLevelsKeyBindings.set_text("Keys: None")
             self.sensorsKeyBindings.set_text("Keys: None")
@@ -528,8 +503,7 @@ class Console:
             self.currentFocused = FocusedElement.managers
             self._focusManagers()
             self.alertsKeyBindings.set_text("Keys: None")
-            self.managersKeyBindings.set_text(
-                "Keys: b - Previous Page, n - Next Page, s - Search")
+            self.managersKeyBindings.set_text("Keys: b - Previous Page, n - Next Page, s - Search")
             self.alertLevelsKeyBindings.set_text("Keys: None")
             self.sensorsKeyBindings.set_text("Keys: None")
 
@@ -538,8 +512,7 @@ class Console:
             self._focusAlertLevels()
             self.alertsKeyBindings.set_text("Keys: None")
             self.managersKeyBindings.set_text("Keys: None")
-            self.alertLevelsKeyBindings.set_text(
-                "Keys: b - Previous Page, n - Next Page, s - Search")
+            self.alertLevelsKeyBindings.set_text("Keys: b - Previous Page, n - Next Page, s - Search")
             self.sensorsKeyBindings.set_text("Keys: None")
 
         else:
@@ -548,13 +521,11 @@ class Console:
             self.alertsKeyBindings.set_text("Keys: None")
             self.managersKeyBindings.set_text("Keys: None")
             self.alertLevelsKeyBindings.set_text("Keys: None")
-            self.sensorsKeyBindings.set_text(
-                "Keys: b - Previous Page, n - Next Page, s - Search")
-
+            self.sensorsKeyBindings.set_text("Keys: b - Previous Page, n - Next Page, s - Search")
 
     # this function moves the focus to the next element depending
     # to the currently focused element group
-    def _moveFocus(self, key):
+    def _moveFocus(self, key: str):
 
         # get current focused element group
         if self.currentFocused == FocusedElement.sensors:
@@ -601,41 +572,37 @@ class Console:
         elif key == "left":
             tempPos = currPos - 1
             if (tempPos >= 0
-                and currPos % cellsPerRow != 0):
+               and currPos % cellsPerRow != 0):
                 currentElements.focus_position = tempPos
 
         # move focus to the element right in the grid
         elif key == "right":
             tempPos = currPos + 1
             if (tempPos < len(currentElements.contents)
-                and (currPos+1) % cellsPerRow != 0):
+               and (currPos+1) % cellsPerRow != 0):
                 currentElements.focus_position = tempPos
-
 
     # internal function that acquires the lock
     def _acquireLock(self):
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.consoleLock.acquire()
 
-
     # internal function that releases the lock
     def _releaseLock(self):
         logging.debug("[%s]: Release lock." % self.fileName)
         self.consoleLock.release()
 
-
     # Callback function for the search field that is called whenever
     # the state of the field changes (a user presses a new key).
     # This function searches instantly for the entered keyword and
     # shows the result.
-    def _callbackSearchFieldChange(self, editElement, state, userData):
+    def _callbackSearchFieldChange(self, editElement, state: str, userData):
         self.searchKeyword = state.lower()
         self._showSearchResult()
 
-
     # get a list of alert level objects that belong to the given
     # object (object has to have attribute alertLevels)
-    def _getAlertLevelsOfObj(self, obj):
+    def _getAlertLevelsOfObj(self, obj: Any) -> List[AlertLevel]:
 
         # get all alert levels the focused sensor belongs to
         currentAlertLevels = list()
@@ -645,10 +612,9 @@ class Console:
 
         return currentAlertLevels
 
-
     # get a list of alert objects that belong to the given
     # alert level
-    def _getAlertsOfAlertLevel(self, alertLevel):
+    def _getAlertsOfAlertLevel(self, alertLevel: AlertLevel) -> List[Alert]:
 
         # get all alerts that belong to the focused alert level
         currentAlerts = list()
@@ -658,10 +624,9 @@ class Console:
 
         return currentAlerts
 
-
     # get a list of sensor objects that belong to the given
     # alert level
-    def _getSensorsOfAlertLevel(self, alertLevel):
+    def _getSensorsOfAlertLevel(self, alertLevel: AlertLevel) -> List[Sensor]:
 
         # get all sensors that belong to the focused alert level
         currentSensors = list()
@@ -671,16 +636,14 @@ class Console:
 
         return currentSensors
 
-
     # internal function that shows the alert urwid objects given
     # by a page index
-    def _showAlertsAtPageIndex(self, pageIndex):
+    def _showAlertsAtPageIndex(self, pageIndex: int):
 
         # calculate how many pages the alert urwid objects have
         activeLength = len(self.activeAlertUrwidObjects)
-        alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
-        if ((activeLength % self.maxCountShowAlertsPerPage)
-            != 0):
+        alertPageCount = int(activeLength / self.maxCountShowAlertsPerPage)
+        if (activeLength % self.maxCountShowAlertsPerPage) != 0:
             alertPageCount += 1
 
         # check if the index to show is within the page range
@@ -689,8 +652,7 @@ class Console:
         elif pageIndex < 0:
             pageIndex = alertPageCount - 1
 
-        logging.debug("[%s]: Update shown alerts with page index: %d."
-            % (self.fileName, pageIndex))
+        logging.debug("[%s]: Update shown alerts with page index: %d." % (self.fileName, pageIndex))
 
         # get all alert urwid objects that should be shown on the new page
         del self.shownAlertUrwidObjects[:]
@@ -704,13 +666,11 @@ class Console:
         # delete all old shown alert objects and replace them by the new ones
         del self.alertsGrid.contents[:]
         for newShownAlert in self.shownAlertUrwidObjects:
-            self.alertsGrid.contents.append((newShownAlert.get(),
-                self.alertsGrid.options()))
+            self.alertsGrid.contents.append((newShownAlert.get(), self.alertsGrid.options()))
 
         # update alerts page footer
         tempText = "Page %d / %d " % (pageIndex + 1, alertPageCount)
         self.alertsFooter.set_text(tempText)
-
 
     # internal function that shows the next page of alert objects
     def _showAlertsNextPage(self):
@@ -719,11 +679,10 @@ class Console:
 
         # calculate how many pages the alert urwid objects have
         activeLength = len(self.activeAlertUrwidObjects)
-        alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
+        alertPageCount = int(activeLength / self.maxCountShowAlertsPerPage)
         if alertPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowAlertsPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowAlertsPerPage) != 0:
             alertPageCount += 1
 
         # calculate next page that should be shown
@@ -734,7 +693,6 @@ class Console:
         # update shown alerts
         self._showAlertsAtPageIndex(self.currentAlertPage)
 
-
     # internal function that shows the previous page of alert objects
     def _showAlertsPreviousPage(self):
 
@@ -742,11 +700,10 @@ class Console:
 
         # calculate how many pages the alert urwid objects have
         activeLength = len(self.activeAlertUrwidObjects)
-        alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
+        alertPageCount = int(activeLength / self.maxCountShowAlertsPerPage)
         if alertPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowAlertsPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowAlertsPerPage) != 0:
             alertPageCount += 1
 
         # calculate next page that should be shown
@@ -757,17 +714,14 @@ class Console:
         # update shown alerts
         self._showAlertsAtPageIndex(self.currentAlertPage)
 
-
     # internal function that shows the alert level urwid objects given
     # by a page index
-    def _showAlertLevelsAtPageIndex(self, pageIndex):
+    def _showAlertLevelsAtPageIndex(self, pageIndex: int):
 
         # calculate how many pages the alert level urwid objects have
         activeLength = len(self.activeAlertLevelUrwidObjects)
-        alertLevelPageCount = (activeLength 
-            / self.maxCountShowAlertLevelsPerPage)
-        if ((activeLength % self.maxCountShowAlertLevelsPerPage) 
-            != 0):
+        alertLevelPageCount = int(activeLength / self.maxCountShowAlertLevelsPerPage)
+        if (activeLength % self.maxCountShowAlertLevelsPerPage) != 0:
             alertLevelPageCount += 1
 
         # check if the index to show is within the page range
@@ -776,31 +730,26 @@ class Console:
         elif pageIndex < 0:
             pageIndex = alertLevelPageCount - 1
 
-        logging.debug("[%s]: Update shown alert levels with page index: %d."
-            % (self.fileName, pageIndex))
+        logging.debug("[%s]: Update shown alert levels with page index: %d." % (self.fileName, pageIndex))
 
         # get all alert level urwid objects
         # that should be shown on the new page
         del self.shownAlertLevelUrwidObjects[:]
         for i in range(self.maxCountShowAlertLevelsPerPage):
-            tempItemIndex = i + (pageIndex
-                * self.maxCountShowAlertLevelsPerPage)
+            tempItemIndex = i + (pageIndex * self.maxCountShowAlertLevelsPerPage)
             if tempItemIndex >= activeLength:
                 break
-            self.shownAlertLevelUrwidObjects.append(
-                self.activeAlertLevelUrwidObjects[tempItemIndex])
+            self.shownAlertLevelUrwidObjects.append(self.activeAlertLevelUrwidObjects[tempItemIndex])
 
         # delete all old shown alert level objects
         # and replace them by the new ones
         del self.alertLevelsGrid.contents[:]
         for newShownAlertLevel in self.shownAlertLevelUrwidObjects:
-            self.alertLevelsGrid.contents.append((newShownAlertLevel.get(),
-                self.alertLevelsGrid.options()))
+            self.alertLevelsGrid.contents.append((newShownAlertLevel.get(), self.alertLevelsGrid.options()))
 
         # update alert levels page footer
         tempText = "Page %d / %d " % (pageIndex + 1, alertLevelPageCount)
         self.alertLevelsFooter.set_text(tempText)
-
 
     # internal function that shows the next page of alert level objects
     def _showAlertLevelsNextPage(self):
@@ -809,12 +758,10 @@ class Console:
 
         # calculate how many pages the alert level urwid objects have
         activeLength = len(self.activeAlertLevelUrwidObjects)
-        alertLevelPageCount = (activeLength
-            / self.maxCountShowAlertLevelsPerPage)
+        alertLevelPageCount = int(activeLength / self.maxCountShowAlertLevelsPerPage)
         if alertLevelPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowAlertLevelsPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowAlertLevelsPerPage) != 0:
             alertLevelPageCount += 1
 
         # calculate next page that should be shown
@@ -825,7 +772,6 @@ class Console:
         # update shown alert levels
         self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
-
     # internal function that shows the previous page of alert level objects
     def _showAlertLevelsPreviousPage(self):
 
@@ -833,12 +779,10 @@ class Console:
 
         # calculate how many pages the alert level urwid objects have
         activeLength = len(self.activeAlertLevelUrwidObjects)
-        alertLevelPageCount = (activeLength
-            / self.maxCountShowAlertLevelsPerPage)
+        alertLevelPageCount = int(activeLength / self.maxCountShowAlertLevelsPerPage)
         if alertLevelPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowAlertLevelsPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowAlertLevelsPerPage) != 0:
             alertLevelPageCount += 1
 
         # calculate next page that should be shown
@@ -849,9 +793,8 @@ class Console:
         # update shown alert levels
         self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
-
     # creates an overlayed view with the detailed about the focused object
-    def _showDetailedView(self):
+    def _showDetailedView(self) -> bool:
 
         # get current focused element
         if self.currentFocused == FocusedElement.sensors:
@@ -861,7 +804,7 @@ class Console:
             if len(currentElements.contents) != 0:
                 currPos = currentElements.focus_position
             else:
-                return
+                return False
 
             # search for element for detailed view
             currentElement = None
@@ -871,17 +814,13 @@ class Console:
                     currentElement = temp
                     break
             if currentElement is None:
-                logging.error("[%s] Not able to find sensor element "
-                    % self.fileName
-                    + "for detailed view.")
+                logging.error("[%s] Not able to find sensor element for detailed view." % self.fileName)
                 return True
 
             # get all alert levels the focused sensor belongs to
-            currentAlertLevels = self._getAlertLevelsOfObj(
-                currentElement.sensor)
+            currentAlertLevels = self._getAlertLevelsOfObj(currentElement.sensor)
 
-            self.detailedView = SensorDetailedUrwid(currentElement.sensor,
-                currentElement.node, currentAlertLevels)
+            self.detailedView = SensorDetailedUrwid(currentElement.sensor, currentElement.node, currentAlertLevels)
 
         elif self.currentFocused == FocusedElement.alerts:
             currentElements = self.alertsGrid
@@ -890,7 +829,7 @@ class Console:
             if len(currentElements.contents) != 0:
                 currPos = currentElements.focus_position
             else:
-                return
+                return False
 
             # search for element for detailed view
             currentElement = None
@@ -900,17 +839,13 @@ class Console:
                     currentElement = temp
                     break
             if currentElement is None:
-                logging.error("[%s] Not able to find alert element "
-                    % self.fileName
-                    + "for detailed view.")
+                logging.error("[%s] Not able to find alert element for detailed view." % self.fileName)
                 return True
 
             # get all alert levels the focused alert belongs to
-            currentAlertLevels = self._getAlertLevelsOfObj(
-                currentElement.alert)
+            currentAlertLevels = self._getAlertLevelsOfObj(currentElement.alert)
 
-            self.detailedView = AlertDetailedUrwid(currentElement.alert,
-                currentElement.node, currentAlertLevels)
+            self.detailedView = AlertDetailedUrwid(currentElement.alert, currentElement.node, currentAlertLevels)
 
         elif self.currentFocused == FocusedElement.managers:
             currentElements = self.managersGrid
@@ -919,7 +854,7 @@ class Console:
             if len(currentElements.contents) != 0:
                 currPos = currentElements.focus_position
             else:
-                return
+                return False
 
             # search for element for detailed view
             currentElement = None
@@ -929,13 +864,10 @@ class Console:
                     currentElement = temp
                     break
             if currentElement is None:
-                logging.error("[%s] Not able to find manager element "
-                    % self.fileName
-                    + "for detailed view.")
+                logging.error("[%s] Not able to find manager element for detailed view." % self.fileName)
                 return True
 
-            self.detailedView = ManagerDetailedUrwid(currentElement.manager,
-                currentElement.node)
+            self.detailedView = ManagerDetailedUrwid(currentElement.manager, currentElement.node)
 
         else:
             currentElements = self.alertLevelsGrid
@@ -944,7 +876,7 @@ class Console:
             if len(currentElements.contents) != 0:
                 currPos = currentElements.focus_position
             else:
-                return
+                return False
 
             # search for element for detailed view
             currentElement = None
@@ -954,40 +886,37 @@ class Console:
                     currentElement = temp
                     break
             if currentElement is None:
-                logging.error("[%s] Not able to find alert level element "
-                    % self.fileName
-                    + "for detailed view.")
+                logging.error("[%s] Not able to find alert level element for detailed view." % self.fileName)
                 return True
 
             # get all sensors that belong to the focused alert level
-            currentSensors = self._getSensorsOfAlertLevel(
-                currentElement.alertLevel)
+            currentSensors = self._getSensorsOfAlertLevel(currentElement.alertLevel)
 
             # get all alerts that belong to the focused alert level
-            currentAlerts = self._getAlertsOfAlertLevel(
-                currentElement.alertLevel)
+            currentAlerts = self._getAlertsOfAlertLevel(currentElement.alertLevel)
 
-            self.detailedView = AlertLevelDetailedUrwid(
-                currentElement.alertLevel,
-                currentSensors, currentAlerts)
+            self.detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel, currentSensors, currentAlerts)
 
         # show detailed view as an overlay
-        overlayView = urwid.Overlay(self.detailedView.get(), self.mainFrame,
-            align="center", width=("relative", 80), min_width=80,
-            valign="middle", height=("relative", 80), min_height=50)
+        overlayView = urwid.Overlay(self.detailedView.get(),
+                                    self.mainFrame,
+                                    align="center",
+                                    width=("relative", 80),
+                                    min_width=80,
+                                    valign="middle",
+                                    height=("relative", 80),
+                                    min_height=50)
         self.mainLoop.widget = overlayView
         self.inDetailView = True
 
-
     # internal function that shows the manager urwid objects given
     # by a page index
-    def _showManagersAtPageIndex(self, pageIndex):
+    def _showManagersAtPageIndex(self, pageIndex: int):
 
         # calculate how many pages the manager urwid objects have
         activeLength = len(self.activeManagerUrwidObjects)
-        managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
-        if ((activeLength % self.maxCountShowManagersPerPage)
-            != 0):
+        managerPageCount = int(activeLength / self.maxCountShowManagersPerPage)
+        if (activeLength % self.maxCountShowManagersPerPage) != 0:
             managerPageCount += 1
 
         # check if the index to show is within the page range
@@ -996,8 +925,7 @@ class Console:
         elif pageIndex < 0:
             pageIndex = managerPageCount - 1
 
-        logging.debug("[%s]: Update shown managers with page index: %d."
-            % (self.fileName, pageIndex))
+        logging.debug("[%s]: Update shown managers with page index: %d." % (self.fileName, pageIndex))
 
         # get all manager urwid objects that should be shown on the new page
         del self.shownManagerUrwidObjects[:]
@@ -1011,13 +939,11 @@ class Console:
         # delete all old shown manager objects and replace them by the new ones
         del self.managersGrid.contents[:]
         for newShownManager in self.shownManagerUrwidObjects:
-            self.managersGrid.contents.append((newShownManager.get(),
-                self.managersGrid.options()))
+            self.managersGrid.contents.append((newShownManager.get(), self.managersGrid.options()))
 
         # update managers page footer
         tempText = "Page %d / %d " % (pageIndex + 1, managerPageCount)
         self.managersFooter.set_text(tempText)
-
 
     # internal function that shows the next page of manager objects
     def _showManagersNextPage(self):
@@ -1026,11 +952,10 @@ class Console:
 
         # calculate how many pages the manager urwid objects have
         activeLength = len(self.activeManagerUrwidObjects)
-        managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
+        managerPageCount = int(activeLength / self.maxCountShowManagersPerPage)
         if managerPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowManagersPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowManagersPerPage) != 0:
             managerPageCount += 1
 
         # calculate next page that should be shown
@@ -1041,7 +966,6 @@ class Console:
         # update shown managers
         self._showManagersAtPageIndex(self.currentManagerPage)
 
-
     # internal function that shows the previous page of manager objects
     def _showManagersPreviousPage(self):
 
@@ -1049,11 +973,10 @@ class Console:
 
         # calculate how many pages the manager urwid objects have
         activeLength = len(self.activeManagerUrwidObjects)
-        managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
+        managerPageCount = int(activeLength / self.maxCountShowManagersPerPage)
         if managerPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowManagersPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowManagersPerPage) != 0:
             managerPageCount += 1
 
         # calculate next page that should be shown
@@ -1064,28 +987,31 @@ class Console:
         # update shown managers
         self._showManagersAtPageIndex(self.currentManagerPage)
 
-
     # Creates an overlayed view with the search field.
     def _showSearchView(self):
 
         self.searchView = SearchViewUrwid(self._callbackSearchFieldChange)
 
         # show search view as an overlay
-        overlayView = urwid.Overlay(self.searchView.get(), self.mainFrame,
-            align="center", width=("relative", 80), min_width=80,
-            valign="middle", height=("relative", 5), min_height=5)
+        overlayView = urwid.Overlay(self.searchView.get(),
+                                    self.mainFrame,
+                                    align="center",
+                                    width=("relative", 80),
+                                    min_width=80,
+                                    valign="middle",
+                                    height=("relative", 5),
+                                    min_height=5)
         self.mainLoop.widget = overlayView
         self.inSearchView = True
 
-
     # internal function that shows the sensor urwid objects given
     # by a page index
-    def _showSensorsAtPageIndex(self, pageIndex):
+    def _showSensorsAtPageIndex(self, pageIndex: int):
 
         # calculate how many pages the sensor urwid objects have
         activeLength = len(self.activeSensorUrwidObjects)
-        sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
-        if ((activeLength % self.maxCountShowSensorsPerPage) != 0):
+        sensorPageCount = int(activeLength / self.maxCountShowSensorsPerPage)
+        if (activeLength % self.maxCountShowSensorsPerPage) != 0:
             sensorPageCount += 1
 
         # check if the index to show is within the page range
@@ -1094,8 +1020,7 @@ class Console:
         elif pageIndex < 0:
             pageIndex = sensorPageCount - 1
 
-        logging.debug("[%s]: Update shown sensors with page index: %d."
-            % (self.fileName, pageIndex))
+        logging.debug("[%s]: Update shown sensors with page index: %d." % (self.fileName, pageIndex))
 
         # get all sensor urwid objects that should be shown on the new page
         del self.shownSensorUrwidObjects[:]
@@ -1109,13 +1034,11 @@ class Console:
         # delete all old shown sensor objects and replace them by the new ones
         del self.sensorsGrid.contents[:]
         for newShownSensor in self.shownSensorUrwidObjects:
-            self.sensorsGrid.contents.append((newShownSensor.get(),
-                self.sensorsGrid.options()))
+            self.sensorsGrid.contents.append((newShownSensor.get(), self.sensorsGrid.options()))
 
         # update sensors page footer
         tempText = "Page %d / %d " % (pageIndex + 1, sensorPageCount)
         self.sensorsFooter.set_text(tempText)
-
 
     # internal function that shows the next page of sensor objects
     def _showSensorsNextPage(self):
@@ -1124,11 +1047,10 @@ class Console:
 
         # calculate how many pages the sensor urwid objects have
         activeLength = len(self.activeSensorUrwidObjects)
-        sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
+        sensorPageCount = int(activeLength / self.maxCountShowSensorsPerPage)
         if sensorPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowSensorsPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowSensorsPerPage) != 0:
             sensorPageCount += 1
 
         # calculate next page that should be shown
@@ -1139,7 +1061,6 @@ class Console:
         # update shown sensors
         self._showSensorsAtPageIndex(self.currentSensorPage)
 
-
     # internal function that shows the previous page of sensor objects
     def _showSensorsPreviousPage(self):
 
@@ -1147,11 +1068,10 @@ class Console:
 
         # calculate how many pages the sensor urwid objects have
         activeLength = len(self.activeSensorUrwidObjects)
-        sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
+        sensorPageCount = int(activeLength / self.maxCountShowSensorsPerPage)
         if sensorPageCount == 0:
             return
-        if ((activeLength % self.maxCountShowSensorsPerPage)
-            != 0):
+        if (activeLength % self.maxCountShowSensorsPerPage) != 0:
             sensorPageCount += 1
 
         # calculate next page that should be shown
@@ -1161,7 +1081,6 @@ class Console:
 
         # update shown sensors
         self._showSensorsAtPageIndex(self.currentSensorPage)
-
 
     # Resets the search result and display all elements again.
     def _resetSearchResult(self):
@@ -1185,28 +1104,25 @@ class Console:
                 self.alertLevelUrwidObjects)
             self._showAlertLevelsAtPageIndex(0)
 
-
     # this function is called to update the screen
-    def updateScreen(self, status):
+    def updateScreen(self, status: str) -> bool:
 
         # write status to the callback file descriptor
-        if self.screenFd != None:
+        if self.screenFd is not None:
 
             self._acquireLock()
 
-            os.write(self.screenFd, status)
+            os.write(self.screenFd, status.encode("ascii"))
             return True
         return False
 
-
     # this function is called if a key/mouse input was made
-    def handleKeypress(self, key):
+    def handleKeypress(self, key: str) -> bool:
 
         # check if key 1 is pressed => send alert system activation to server 
         if key in ["1"]:
             if not self.inDetailView:
-                logging.info("[%s]: Activating alert system."
-                    % self.fileName)
+                logging.info("[%s]: Activating alert system." % self.fileName)
 
                 # send option message to server via a thread to not block
                 # the urwid console thread
@@ -1222,8 +1138,7 @@ class Console:
         # check if key 2 is pressed => send alert system deactivation to server
         elif key in ["2"]:
             if not self.inDetailView:
-                logging.info("[%s]: Deactivating alert system."
-                    % self.fileName)
+                logging.info("[%s]: Deactivating alert system." % self.fileName)
 
                 # send option message to server via a thread to not block
                 # the urwid console thread
@@ -1315,8 +1230,8 @@ class Console:
         # Open overlayed view with search field.
         elif key in ["s", "S"]:
             self._showSearchView()
-        return True
 
+        return True
 
     # this function initializes the urwid objects and displays
     # them (it starts also the urwid main loop and will not
@@ -1333,18 +1248,13 @@ class Console:
                     nodeSensorBelongs = node
                     break
             if nodeSensorBelongs is None:
-                raise ValueError(
-                    "Could not find a node the sensor belongs to.")
-            elif (nodeSensorBelongs.nodeType != "sensor"
-                and nodeSensorBelongs.nodeType != "server"):
-                raise ValueError(
-                    'Node the sensor belongs to is not of type "sensor" '
-                    + 'or "server".')
+                raise ValueError("Could not find a node the sensor belongs to.")
+            elif nodeSensorBelongs.nodeType != "sensor" and nodeSensorBelongs.nodeType != "server":
+                raise ValueError('Node the sensor belongs to is not of type "sensor" or "server".')
 
             # create new sensor urwid object
             # (also links urwid object to sensor object)
-            sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
-                self.connectionTimeout, self.serverEventHandler)
+            sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs, self.connectionTimeout, self.serverEventHandler)
 
             # Append the final sensor urwid object to the list
             # of sensor objects.
@@ -1360,8 +1270,7 @@ class Console:
                 # be shown
                 if i >= len(self.activeSensorUrwidObjects):
                     break
-                self.shownSensorUrwidObjects.append(
-                    self.activeSensorUrwidObjects[i])
+                self.shownSensorUrwidObjects.append(self.activeSensorUrwidObjects[i])
 
             # create grid object for the sensors
             self.sensorsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownSensorUrwidObjects), 40, 1, 1, 'left')
@@ -1372,22 +1281,21 @@ class Console:
 
         # calculate how many pages the sensor urwid objects have
         activeLength = len(self.activeSensorUrwidObjects)
-        sensorPageCount = (activeLength / self.maxCountShowSensorsPerPage)
-        if ((activeLength % self.maxCountShowSensorsPerPage)
-            != 0):
+        sensorPageCount = int(activeLength / self.maxCountShowSensorsPerPage)
+        if (activeLength % self.maxCountShowSensorsPerPage) != 0:
             sensorPageCount += 1
 
         # generate footer text for sensors box
         tempText = "Page 1 / %d " % sensorPageCount 
         self.sensorsFooter = urwid.Text(tempText, align='center')
-        self.sensorsKeyBindings = urwid.Text(
-            "Keys: b - Previous Page, n - Next Page, s - Search",
-            align='center')
+        self.sensorsKeyBindings = urwid.Text("Keys: b - Previous Page, n - Next Page, s - Search", align='center')
 
         # build box around the sensor grid with title
         self.sensorsBox = urwid.LineBox(urwid.Pile([self.sensorsGrid,
-            urwid.Divider(), self.sensorsFooter, self.sensorsKeyBindings]),
-            title="Sensors")
+                                                    urwid.Divider(),
+                                                    self.sensorsFooter,
+                                                    self.sensorsKeyBindings]),
+                                        title="Sensors")
 
         # generate all manager urwid objects
         for manager in self.managers:
@@ -1399,12 +1307,9 @@ class Console:
                     nodeManagerBelongs = node
                     break
             if nodeManagerBelongs is None:
-                raise ValueError(
-                    "Could not find a node the manager belongs to.")
+                raise ValueError("Could not find a node the manager belongs to.")
             elif nodeManagerBelongs.nodeType != "manager":
-                raise ValueError(
-                    'Node the manager belongs to is not of '
-                    + 'type "manager"')
+                raise ValueError('Node the manager belongs to is not of type "manager"')
 
             # create new manager urwid object
             # (also links urwid object to manager object)
@@ -1424,34 +1329,32 @@ class Console:
                 # be shown
                 if i >= len(self.activeManagerUrwidObjects):
                     break
-                self.shownManagerUrwidObjects.append(
-                    self.activeManagerUrwidObjects[i])
+                self.shownManagerUrwidObjects.append(self.activeManagerUrwidObjects[i])
 
             # create grid object for the managers
             self.managersGrid = urwid.GridFlow(
-                map(lambda x: x.get(), self.shownManagerUrwidObjects),
-                40, 1, 1, 'left')
+                map(lambda x: x.get(), self.shownManagerUrwidObjects), 40, 1, 1, 'left')
         else:
             # create empty grid object for the managers
             self.managersGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
         # calculate how many pages the manager urwid objects have
         activeLength = len(self.activeManagerUrwidObjects)
-        managerPageCount = (activeLength / self.maxCountShowManagersPerPage)
-        if ((activeLength % self.maxCountShowManagersPerPage)
-            != 0):
+        managerPageCount = int(activeLength / self.maxCountShowManagersPerPage)
+        if (activeLength % self.maxCountShowManagersPerPage) != 0:
             managerPageCount += 1
 
         # generate footer text for sensors box
         tempText = "Page 1 / %d " % managerPageCount 
         self.managersFooter = urwid.Text(tempText, align='center')
-        self.managersKeyBindings = urwid.Text(
-            "Keys: None", align='center')
+        self.managersKeyBindings = urwid.Text("Keys: None", align='center')
 
         # build box around the manager grid with title
         self.managersBox = urwid.LineBox(urwid.Pile([self.managersGrid,
-            urwid.Divider(), self.managersFooter, self.managersKeyBindings]),
-            title="Manager Clients")
+                                                     urwid.Divider(),
+                                                     self.managersFooter,
+                                                     self.managersKeyBindings]),
+                                         title="Manager Clients")
 
         self.leftDisplayPart = urwid.Pile([self.sensorsBox, self.managersBox])
 
@@ -1465,12 +1368,9 @@ class Console:
                     nodeAlertBelongs = node
                     break
             if nodeAlertBelongs is None:
-                raise ValueError(
-                    "Could not find a node the alert belongs to.")
+                raise ValueError("Could not find a node the alert belongs to.")
             elif nodeAlertBelongs.nodeType != "alert":
-                raise ValueError(
-                    'Node the alert belongs to is not of '
-                    + 'type "alert"')                   
+                raise ValueError('Node the alert belongs to is not of type "alert"')
 
             # create new alert urwid object
             # (also links urwid object to alert object)
@@ -1494,30 +1394,28 @@ class Console:
                     self.activeAlertUrwidObjects[i])
 
             # create grid object for the alerts
-            self.alertsGrid = urwid.GridFlow(
-                map(lambda x: x.get(), self.shownAlertUrwidObjects),
-                40, 1, 1, 'left')
+            self.alertsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownAlertUrwidObjects), 40, 1, 1, 'left')
         else:
             # create empty grid object for the alerts
             self.alertsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
         # calculate how many pages the alert urwid objects have
         activeLength = len(self.activeAlertUrwidObjects)
-        alertPageCount = (activeLength / self.maxCountShowAlertsPerPage)
-        if ((activeLength % self.maxCountShowAlertsPerPage)
-            != 0):
+        alertPageCount = int(activeLength / self.maxCountShowAlertsPerPage)
+        if (activeLength % self.maxCountShowAlertsPerPage) != 0:
             alertPageCount += 1
 
         # generate footer text for sensors box
         tempText = "Page 1 / %d " % alertPageCount 
         self.alertsFooter = urwid.Text(tempText, align='center')
-        self.alertsKeyBindings = urwid.Text(
-            "Keys: None", align='center')
+        self.alertsKeyBindings = urwid.Text("Keys: None", align='center')
 
         # build box around the alert grid with title
         self.alertsBox = urwid.LineBox(urwid.Pile([self.alertsGrid,
-            urwid.Divider(), self.alertsFooter, self.alertsKeyBindings]),
-            title="Alert Clients")
+                                                   urwid.Divider(),
+                                                   self.alertsFooter,
+                                                   self.alertsKeyBindings]),
+                                       title="Alert Clients")
 
         # generate all alert level urwid objects
         for alertLevel in self.alertLevels:
@@ -1544,31 +1442,28 @@ class Console:
                     self.activeAlertLevelUrwidObjects[i])
 
             # create grid object for the alert levels
-            self.alertLevelsGrid = urwid.GridFlow(
-                map(lambda x: x.get(), self.shownAlertLevelUrwidObjects),
-                40, 1, 1, 'left')
+            self.alertLevelsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownAlertLevelUrwidObjects), 40, 1, 1, 'left')
         else:
             # create empty grid object for the alert levels
             self.alertLevelsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
 
         # calculate how many pages the alert level urwid objects have
         activeLength = len(self.activeAlertLevelUrwidObjects)
-        alertLevelPageCount = (activeLength
-            / self.maxCountShowAlertLevelsPerPage)
-        if ((activeLength % self.maxCountShowAlertLevelsPerPage) != 0):
+        alertLevelPageCount = int(activeLength / self.maxCountShowAlertLevelsPerPage)
+        if (activeLength % self.maxCountShowAlertLevelsPerPage) != 0:
             alertLevelPageCount += 1
 
         # generate footer text for sensors box
         tempText = "Page 1 / %d " % alertLevelPageCount 
         self.alertLevelsFooter = urwid.Text(tempText, align='center')
-        self.alertLevelsKeyBindings = urwid.Text(
-            "Keys: None", align='center')
+        self.alertLevelsKeyBindings = urwid.Text("Keys: None", align='center')
 
         # build box around the alert level grid with title
         self.alertLevelsBox = urwid.LineBox(urwid.Pile([self.alertLevelsGrid,
-            urwid.Divider(), self.alertLevelsFooter,
-            self.alertLevelsKeyBindings]),
-            title="Alert Levels")
+                                                        urwid.Divider(),
+                                                        self.alertLevelsFooter,
+                                                        self.alertLevelsKeyBindings]),
+                                            title="Alert Levels")
 
         # create empty sensor alerts pile
         emptySensorAlerts = list()
@@ -1578,54 +1473,44 @@ class Console:
         self.sensorAlertsPile = urwid.Pile(emptySensorAlerts)
 
         # build box around the sensor alerts grid with title
-        sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile,
-            title="List of Triggered Sensor Alerts")
+        sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile, title="List of Triggered Sensor Alerts")
 
         # generate widget to show the status of the alert system
         for option in self.options:
             if option.type == "alertSystemActive":
                 if option.value == 0:
-                    self.alertSystemActive = \
-                        StatusUrwid("alert system status",
-                            "Status", "Deactivated")
+                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
                     self.alertSystemActive.turnRed()
                 else:
-                    self.alertSystemActive = \
-                        StatusUrwid("alert system status",
-                            "Status", "Activated")
+                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
                     self.alertSystemActive.turnGreen()
-        if self.alertSystemActive == None:
-            logging.error("[%s]: No alert system status option."
-                % self.fileName)
+        if self.alertSystemActive is None:
+            logging.error("[%s]: No alert system status option." % self.fileName)
             return
 
         # generate widget to show the status of the connection
-        self.connectionStatus = StatusUrwid("connection status",
-            "Status", "Online")
+        self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
         self.connectionStatus.turnNeutral()
 
         # generate a column for the status widgets
-        statusColumn = urwid.Columns([self.alertSystemActive.get(),
-            self.connectionStatus.get()])
+        statusColumn = urwid.Columns([self.alertSystemActive.get(), self.connectionStatus.get()])
 
         # generate right part of the display
-        self.rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox,
-            self.alertsBox, self.alertLevelsBox])
+        self.rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox, self.alertsBox, self.alertLevelsBox])
 
         # generate final body object
-        self.finalBody = urwid.Columns([self.leftDisplayPart,
-            self.rightDisplayPart])
+        self.finalBody = urwid.Columns([self.leftDisplayPart, self.rightDisplayPart])
         fillerBody = urwid.Filler(self.finalBody, "top")
 
         # generate header and footer
         header = urwid.Text("AlertR Console Manager", align="center")
         footer = urwid.Text("Keys: "
-            + "1 - Activate, "
-            + "2 - Deactivate, "
-            + "ESC - Back/Quit, "
-            + "TAB - Next Elements, "
-            + "Up/Down/Left/Right - Move Cursor, "
-            + "Enter - Select Element")
+                            + "1 - Activate, "
+                            + "2 - Deactivate, "
+                            + "ESC - Back/Quit, "
+                            + "TAB - Next Elements, "
+                            + "Up/Down/Left/Right - Move Cursor, "
+                            + "Enter - Select Element")
 
         # build frame for final rendering
         self.mainFrame = urwid.Frame(fillerBody, footer=footer, header=header)
@@ -1655,8 +1540,7 @@ class Console:
         self.currentFocused = FocusedElement.sensors
 
         # create urwid main loop for the rendering
-        self.mainLoop = urwid.MainLoop(self.mainFrame, palette=palette,
-            unhandled_input=self.handleKeypress)
+        self.mainLoop = urwid.MainLoop(self.mainFrame, palette=palette, unhandled_input=self.handleKeypress)
 
         # create a file descriptor callback to give other
         # threads the ability to communicate with the urwid thread
@@ -1665,19 +1549,17 @@ class Console:
         # rut urwid loop
         self.mainLoop.run()
 
-
     # this function will be called from the urwid main loop
     # when the file descriptor of the callback
     # gets data written to it and updates the screen elements
-    def screenCallback(self, receivedData):
+    def screenCallback(self, receivedData: str) -> bool:
 
         # if received data equals "status" or "sensoralert"
         # update the whole screen (in case of a sensor alert it can happen
         # that also a normal state change was received before and is forgotten
         # if a normal status update is not made)
         if receivedData == "status" or receivedData == "sensoralert":
-            logging.debug("[%s]: Status update received. "  % self.fileName
-                + "Updating screen elements.")
+            logging.debug("[%s]: Status update received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
             self.connectionStatus.updateStatusValue("Online")
@@ -1709,8 +1591,7 @@ class Console:
                             # list of objects
                             # to delete all references to object
                             # => object will be deleted by garbage collector
-                            self.sensorAlertUrwidObjects.remove(
-                                sensorAlertUrwid)
+                            self.sensorAlertUrwidObjects.remove(sensorAlertUrwid)
 
             # update the information of all sensor urwid widgets
             for sensorUrwidObject in self.sensorUrwidObjects:
@@ -1740,29 +1621,23 @@ class Console:
                     # if the detailed view is shown and this sensor
                     # was removed
                     # => close detailed view
-                    if (self.inDetailView
-                        and not self.detailedView.sensor in self.sensors):
-
+                    if self.inDetailView and self.detailedView.sensor not in self.sensors:
                         self._closeDetailedView()
 
                 # if the detailed view is shown of a sensor
                 # => update the information shown for the corresponding sensor
                 else:
                     if (self.inDetailView
-                        and self.currentFocused == FocusedElement.sensors
-                        and self.detailedView.sensor 
-                        == sensorUrwidObject.sensor):
+                       and self.currentFocused == FocusedElement.sensors
+                       and self.detailedView.sensor == sensorUrwidObject.sensor):
 
-                        objAlertLevels = self._getAlertLevelsOfObj(
-                            sensorUrwidObject.sensor)
-
-                        self.detailedView.updateCompleteWidget(
-                            objAlertLevels)
+                        objAlertLevels = self._getAlertLevelsOfObj(sensorUrwidObject.sensor)
+                        self.detailedView.updateCompleteWidget(objAlertLevels)
 
             # add all sensors that were newly added
             for sensor in self.sensors:
                 # check if a new sensor was added
-                if sensor.sensorUrwid == None:
+                if sensor.sensorUrwid is None:
                     # get node the sensor belongs to
                     nodeSensorBelongs = None
                     for node in self.nodes:
@@ -1770,18 +1645,17 @@ class Console:
                             nodeSensorBelongs = node
                             break
                     if nodeSensorBelongs is None:
+                        raise ValueError("Could not find a node the sensor belongs to.")
+                    elif nodeSensorBelongs.nodeType != "sensor" and nodeSensorBelongs.nodeType != "server":
                         raise ValueError(
-                            "Could not find a node the sensor belongs to.")
-                    elif (nodeSensorBelongs.nodeType != "sensor"
-                        and nodeSensorBelongs.nodeType != "server"):
-                        raise ValueError(
-                            'Node the sensor belongs to is not of '
-                            + 'type "sensor" or "server".')
+                            'Node the sensor belongs to is not of type "sensor" or "server".')
 
                     # create new sensor urwid object
                     # (also links urwid object to sensor object)
-                    sensorUrwid = SensorUrwid(sensor, nodeSensorBelongs,
-                        self.connectionTimeout, self.serverEventHandler)
+                    sensorUrwid = SensorUrwid(sensor,
+                                              nodeSensorBelongs,
+                                              self.connectionTimeout,
+                                              self.serverEventHandler)
 
                     # Append the final sensor urwid object to the list
                     # of sensor objects.
@@ -1789,17 +1663,13 @@ class Console:
 
                     # Add it to active sensor urwid objects if sensors
                     # are not focused.
-                    if (self.currentFocused != FocusedElement.sensors):
-
+                    if self.currentFocused != FocusedElement.sensors:
                         self.activeSensorUrwidObjects.append(sensorUrwid)
 
                     # Add it to active sensor urwid objects if we do not
                     # search anything or the keyword does match the sensor.
                     else:
-                        if (self.searchKeyword == ""
-                            or self.searchKeyword
-                                in sensorUrwid.sensor.description.lower()):
-
+                        if self.searchKeyword == "" or self.searchKeyword in sensorUrwid.sensor.description.lower():
                             self.activeSensorUrwidObjects.append(sensorUrwid)
 
                     # update shown sensors
@@ -1833,29 +1703,23 @@ class Console:
                     # if the detailed view is shown and this alert
                     # was removed
                     # => close detailed view
-                    if (self.inDetailView
-                        and not self.detailedView.alert in self.alerts):
-
+                    if self.inDetailView and self.detailedView.alert not in self.alerts:
                         self._closeDetailedView()
 
                 # if the detailed view is shown of an alert
                 # => update the information shown for the corresponding alert
                 else:
                     if (self.inDetailView
-                        and self.currentFocused == FocusedElement.alerts
-                        and self.detailedView.alert 
-                        == alertUrwidObject.alert):
+                       and self.currentFocused == FocusedElement.alerts
+                       and self.detailedView.alert == alertUrwidObject.alert):
 
-                        objAlertLevels = self._getAlertLevelsOfObj(
-                            alertUrwidObject.alert)
-
-                        self.detailedView.updateCompleteWidget(
-                            objAlertLevels)
+                        objAlertLevels = self._getAlertLevelsOfObj(alertUrwidObject.alert)
+                        self.detailedView.updateCompleteWidget(objAlertLevels)
 
             # add all alerts that were newly added
             for alert in self.alerts:
                 # check if a new alert was added
-                if alert.alertUrwid == None:
+                if alert.alertUrwid is None:
                     # get node the alert belongs to
                     nodeAlertBelongs = None
                     for node in self.nodes:
@@ -1863,12 +1727,9 @@ class Console:
                             nodeAlertBelongs = node
                             break
                     if nodeAlertBelongs is None:
-                        raise ValueError(
-                            "Could not find a node the alert belongs to.")
+                        raise ValueError("Could not find a node the alert belongs to.")
                     elif nodeAlertBelongs.nodeType != "alert":
-                        raise ValueError(
-                            'Node the alert belongs to is not of '
-                            + 'type "alert"')
+                        raise ValueError('Node the alert belongs to is not of type "alert".')
 
                     # create new alert urwid object
                     # (also links urwid object to alert object)
@@ -1880,17 +1741,13 @@ class Console:
 
                     # Add it to active alert urwid objects if alerts
                     # are not focused.
-                    if (self.currentFocused != FocusedElement.alerts):
-
+                    if self.currentFocused != FocusedElement.alerts:
                         self.activeAlertUrwidObjects.append(alertUrwid)
 
                     # Add it to active alert urwid objects if we do not
                     # search anything or the keyword does match the alert.
                     else:
-                        if (self.searchKeyword == ""
-                            or self.searchKeyword
-                                in alertUrwid.alert.description.lower()):
-
+                        if self.searchKeyword == "" or self.searchKeyword in alertUrwid.alert.description.lower():
                             self.activeAlertUrwidObjects.append(alertUrwid)
 
                     # update shown alerts
@@ -1906,8 +1763,7 @@ class Console:
                     # remove manager urwid object from the list of the
                     # current shown objects if it is shown
                     if managerUrwidObject in self.shownManagerUrwidObjects:
-                        self.shownManagerUrwidObjects.remove(
-                            managerUrwidObject)
+                        self.shownManagerUrwidObjects.remove(managerUrwidObject)
 
                         # update shown managers
                         self._showManagersAtPageIndex(self.currentManagerPage)
@@ -1915,8 +1771,7 @@ class Console:
                     # Remove manager urwid object from the list of the
                     # currently active objects.
                     if managerUrwidObject in self.activeManagerUrwidObjects:
-                        self.activeManagerUrwidObjects.remove(
-                            managerUrwidObject)
+                        self.activeManagerUrwidObjects.remove(managerUrwidObject)
 
                     # remove manager urwid object from list of objects
                     # to delete all references to object
@@ -1926,25 +1781,22 @@ class Console:
                     # if the detailed view is shown and this manager
                     # was removed
                     # => close detailed view
-                    if (self.inDetailView
-                        and not self.detailedView.manager in self.managers):
-
+                    if self.inDetailView and self.detailedView.manager not in self.managers:
                         self._closeDetailedView()
 
                 # if the detailed view is shown of a manager
                 # => update the information shown for the corresponding manager
                 else:
                     if (self.inDetailView
-                        and self.currentFocused == FocusedElement.managers
-                        and self.detailedView.manager 
-                        == managerUrwidObject.manager):
+                       and self.currentFocused == FocusedElement.managers
+                       and self.detailedView.manager == managerUrwidObject.manager):
 
                         self.detailedView.updateCompleteWidget()
 
             # add all managers that were newly added
             for manager in self.managers:
                 # check if a new manager was added
-                if manager.managerUrwid == None:
+                if manager.managerUrwid is None:
                     # get node the manager belongs to
                     nodeManagerBelongs = None
                     for node in self.nodes:
@@ -1952,12 +1804,9 @@ class Console:
                             nodeManagerBelongs = node
                             break
                     if nodeManagerBelongs is None:
-                        raise ValueError(
-                            "Could not find a node the manager belongs to.")
+                        raise ValueError("Could not find a node the manager belongs to.")
                     elif nodeManagerBelongs.nodeType != "manager":
-                        raise ValueError(
-                            'Node the manager belongs to is not of '
-                            + 'type "manager"')
+                        raise ValueError('Node the manager belongs to is not of type "manager".')
 
                     # create new manager urwid object
                     # (also links urwid object to manager object)
@@ -1969,17 +1818,14 @@ class Console:
 
                     # Add it to active manager urwid objects if managers
                     # are not focused.
-                    if (self.currentFocused != FocusedElement.managers):
+                    if self.currentFocused != FocusedElement.managers:
 
                         self.activeManagerUrwidObjects.append(managerUrwid)
 
                     # Add it to active manager urwid objects if we do not
                     # search anything or the keyword does match the manager.
                     else:
-                        if (self.searchKeyword == ""
-                            or self.searchKeyword
-                                in managerUrwid.manager.description.lower()):
-
+                        if self.searchKeyword == "" or self.searchKeyword in managerUrwid.manager.description.lower():
                             self.activeManagerUrwidObjects.append(managerUrwid)
 
                     # update shown managers
@@ -1994,21 +1840,16 @@ class Console:
 
                     # remove alert level urwid object from the list of the
                     # current shown objects if it is shown
-                    if (alertLevelUrwidObject
-                        in self.shownAlertLevelUrwidObjects):
-                        self.shownAlertLevelUrwidObjects.remove(
-                            alertLevelUrwidObject)
+                    if alertLevelUrwidObject in self.shownAlertLevelUrwidObjects:
+                        self.shownAlertLevelUrwidObjects.remove(alertLevelUrwidObject)
 
                         # update shown alert levels
-                        self._showAlertLevelsAtPageIndex(
-                            self.currentAlertLevelPage)
+                        self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
                     # Remove alert level urwid object from the list of the
                     # currently active objects.
-                    if (alertLevelUrwidObject
-                        in self.activeAlertLevelUrwidObjects):
-                        self.activeAlertLevelUrwidObjects.remove(
-                            alertLevelUrwidObject)
+                    if alertLevelUrwidObject in self.activeAlertLevelUrwidObjects:
+                        self.activeAlertLevelUrwidObjects.remove(alertLevelUrwidObject)
 
                     # remove alert level urwid object from list of objects
                     # to delete all references to object
@@ -2018,36 +1859,29 @@ class Console:
                     # if the detailed view is shown and this alert level
                     # was removed
                     # => close detailed view
-                    if (self.inDetailView
-                        and not self.detailedView.alertLevel
-                        in self.alertLevels):
-
+                    if self.inDetailView and self.detailedView.alertLevel not in self.alertLevels:
                         self._closeDetailedView()
 
                 # if the detailed view is shown of a manager
                 # => update the information shown for the corresponding manager
                 else:
                     if (self.inDetailView
-                        and self.currentFocused == FocusedElement.alertLevels
-                        and self.detailedView.alertLevel 
-                        == alertLevelUrwidObject.alertLevel):
+                       and self.currentFocused == FocusedElement.alertLevels
+                       and self.detailedView.alertLevel == alertLevelUrwidObject.alertLevel):
 
                         # get all sensors that belong to the focused
                         # alert level
-                        currentSensors = self._getSensorsOfAlertLevel(
-                            alertLevelUrwidObject.alertLevel)
+                        currentSensors = self._getSensorsOfAlertLevel(alertLevelUrwidObject.alertLevel)
 
                         # get all alerts that belong to the focused alert level
-                        currentAlerts = self._getAlertsOfAlertLevel(
-                            alertLevelUrwidObject.alertLevel)
+                        currentAlerts = self._getAlertsOfAlertLevel(alertLevelUrwidObject.alertLevel)
 
-                        self.detailedView.updateCompleteWidget(currentSensors,
-                            currentAlerts)
+                        self.detailedView.updateCompleteWidget(currentSensors, currentAlerts)
 
             # add all alert levels that were newly added
             for alertLevel in self.alertLevels:
                 # check if a new alert level was added
-                if alertLevel.alertLevelUrwid == None:
+                if alertLevel.alertLevelUrwid is None:
                     # create new alert level urwid object
                     # (also links urwid object to alert level object)
                     alertLevelUrwid = AlertLevelUrwid(alertLevel)
@@ -2058,30 +1892,23 @@ class Console:
 
                     # Add it to active alert level urwid objects if
                     # alert levels are not focused.
-                    if (self.currentFocused != FocusedElement.alertLevels):
+                    if self.currentFocused != FocusedElement.alertLevels:
 
-                        self.activeAlertLevelUrwidObjects.append(
-                            alertLevelUrwid)
+                        self.activeAlertLevelUrwidObjects.append(alertLevelUrwid)
 
                     # Add it to active alert level urwid objects if we do not
                     # search anything or the keyword does match the
                     # alert level.
                     else:
-                        if (self.searchKeyword == ""
-                            or self.searchKeyword
-                                in alertLevelUrwid.alertLevel.name.lower()):
-
-                            self.activeAlertLevelUrwidObjects.append(
-                                alertLevelUrwid)
+                        if self.searchKeyword == "" or self.searchKeyword in alertLevelUrwid.alertLevel.name.lower():
+                            self.activeAlertLevelUrwidObjects.append(alertLevelUrwid)
 
                     # update shown alert levels
-                    self._showAlertLevelsAtPageIndex(
-                        self.currentAlertLevelPage)
+                    self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
         # check if the connection to the server failed
         if receivedData == "connectionfail":
-            logging.debug("[%s]: Status connection failed "  % self.fileName
-                + "received. Updating screen elements.")
+            logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
             self.connectionStatus.updateStatusValue("Offline")
@@ -2109,8 +1936,7 @@ class Console:
         # check if a sensor alert was received from the server
         if receivedData == "sensoralert":
 
-            logging.debug("[%s]: Sensor alert "  % self.fileName
-                + "received. Updating screen elements.")
+            logging.debug("[%s]: Sensor alert received. Updating screen elements." % self.fileName)
 
             # output all sensor alerts
             for sensorAlert in self.sensorAlerts:
@@ -2126,11 +1952,9 @@ class Console:
                             # Only update sensor state information if the flag
                             # was set in the received message.
                             if sensorAlert.changeState:
-                                sensor.sensorUrwid.updateState(
-                                    sensorAlert.state)
+                                sensor.sensorUrwid.updateState(sensorAlert.state)
 
-                            sensor.sensorUrwid.updateLastUpdated(
-                                sensorAlert.timeReceived)
+                            sensor.sensorUrwid.updateLastUpdated(sensorAlert.timeReceived)
 
                             # get description for the sensor alert to add
                             description = sensor.description
@@ -2156,15 +1980,13 @@ class Console:
 
                 # check if more sensor alerts are shown than are received
                 # => there still exists empty sensor alerts
-                #=> remove them first
-                if (len(self.sensorAlertsPile.contents)
-                    > len(self.sensorAlertUrwidObjects)):
+                # => remove them first
+                if len(self.sensorAlertsPile.contents) > len(self.sensorAlertUrwidObjects):
 
                     # search for an empty sensor alert and remove it
                     for pileTuple in self.sensorAlertsPile.contents:
                         if self.emtpySensorAlert == pileTuple[0]:
-                            self.sensorAlertsPile.contents.remove(
-                                pileTuple)
+                            self.sensorAlertsPile.contents.remove(pileTuple)
                             break
 
                 # remove the first sensor alert object
@@ -2181,13 +2003,11 @@ class Console:
                             # from list of objects
                             # to delete all references to object
                             # => object will be deleted by garbage collector
-                            self.sensorAlertUrwidObjects.remove(
-                                sensorAlertWidgetToRemove)
+                            self.sensorAlertUrwidObjects.remove(sensorAlertWidgetToRemove)
                             break
 
                 # create new sensor alert urwid object
-                sensorAlertUrwid = SensorAlertUrwid(sensorAlert,
-                    description, self.timeShowSensorAlert)
+                sensorAlertUrwid = SensorAlertUrwid(sensorAlert, description, self.timeShowSensorAlert)
 
                 # add sensor alert urwid object to the list of
                 # sensor alerts urwid objects
@@ -2195,8 +2015,7 @@ class Console:
 
                 # insert sensor alert as first element in the list
                 # => new sensor alerts will be displayed on top
-                self.sensorAlertsPile.contents.insert(0,
-                    (sensorAlertUrwid.get(), self.sensorAlertsPile.options()))
+                self.sensorAlertsPile.contents.insert(0, (sensorAlertUrwid.get(), self.sensorAlertsPile.options()))
 
                 # remove sensor alert from the list of sensor alerts
                 self.sensorAlerts.remove(sensorAlert)
