@@ -441,7 +441,7 @@ class Console:
 
             # Filter for all sensor urwid objects that contain the keyword
             # (case-insensitive).
-            foundSensors = filter(lambda obj: keyword in obj.sensor.description.lower(), self.sensorUrwidObjects)
+            foundSensors = [obj for obj in self.sensorUrwidObjects if keyword in obj.sensor.description.lower()]
 
             logging.debug("[%s]: Found %d sensors for keyword '%s'."
                           % (self.fileName, len(foundSensors), keyword))
@@ -454,7 +454,7 @@ class Console:
 
             # Filter for all alert urwid objects that contain the keyword
             # (case-insensitive).
-            foundAlerts = filter(lambda obj: keyword in obj.alert.description.lower(), self.alertUrwidObjects)
+            foundAlerts = [obj for obj in self.alertUrwidObjects if keyword in obj.alert.description.lower()]
 
             logging.debug("[%s]: Found %d alerts for keyword '%s'."
                           % (self.fileName, len(foundAlerts), keyword))
@@ -467,7 +467,7 @@ class Console:
 
             # Filter for all manager urwid objects that contain the keyword
             # (case-insensitive).
-            foundManagers = filter(lambda obj: keyword in obj.manager.description.lower(), self.managerUrwidObjects)
+            foundManagers = [obj for obj in self.managerUrwidObjects if keyword in obj.manager.description.lower()]
 
             logging.debug("[%s]: Found %d managers for keyword '%s'."
                           % (self.fileName, len(foundManagers), keyword))
@@ -480,7 +480,7 @@ class Console:
 
             # Filter for all alert level urwid objects that contain the keyword
             # (case-insensitive).
-            foundAlertLevels = filter(lambda obj: keyword in obj.alertLevel.name.lower(), self.alertLevelUrwidObjects)
+            foundAlertLevels = [obj for obj in self.alertLevelUrwidObjects if keyword in obj.alertLevel.name.lower()]
 
             logging.debug("[%s]: Found %d alert levels for keyword '%s'."
                           % (self.fileName, len(foundAlertLevels), keyword))
@@ -549,10 +549,10 @@ class Console:
 
         # use the half of the total width for calculations
         # (current design splits window in to halfs)
-        calcTotalWidth = (self.mainLoop.screen.get_cols_rows()[0]-1) / 2
+        calcTotalWidth = int((self.mainLoop.screen.get_cols_rows()[0]-1) / 2)
 
         # calculate the cells that are displayed per row
-        cellsPerRow = calcTotalWidth / calcCellWidth
+        cellsPerRow = int(calcTotalWidth / calcCellWidth)
         if cellsPerRow == 0:
             cellsPerRow += 1
 
@@ -1273,7 +1273,11 @@ class Console:
                 self.shownSensorUrwidObjects.append(self.activeSensorUrwidObjects[i])
 
             # create grid object for the sensors
-            self.sensorsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownSensorUrwidObjects), 40, 1, 1, 'left')
+            self.sensorsGrid = urwid.GridFlow([x.get() for x in self.shownSensorUrwidObjects],
+                                              40,
+                                              1,
+                                              1,
+                                              'left')
 
         else:
             # create empty grid object for the sensors
@@ -1332,8 +1336,11 @@ class Console:
                 self.shownManagerUrwidObjects.append(self.activeManagerUrwidObjects[i])
 
             # create grid object for the managers
-            self.managersGrid = urwid.GridFlow(
-                map(lambda x: x.get(), self.shownManagerUrwidObjects), 40, 1, 1, 'left')
+            self.managersGrid = urwid.GridFlow([x.get() for x in self.shownManagerUrwidObjects],
+                                               40,
+                                               1,
+                                               1,
+                                               'left')
         else:
             # create empty grid object for the managers
             self.managersGrid = urwid.GridFlow([], 40, 1, 1, 'left')
@@ -1394,7 +1401,11 @@ class Console:
                     self.activeAlertUrwidObjects[i])
 
             # create grid object for the alerts
-            self.alertsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownAlertUrwidObjects), 40, 1, 1, 'left')
+            self.alertsGrid = urwid.GridFlow([x.get() for x in self.shownAlertUrwidObjects],
+                                             40,
+                                             1,
+                                             1,
+                                             'left')
         else:
             # create empty grid object for the alerts
             self.alertsGrid = urwid.GridFlow([], 40, 1, 1, 'left')
@@ -1442,7 +1453,11 @@ class Console:
                     self.activeAlertLevelUrwidObjects[i])
 
             # create grid object for the alert levels
-            self.alertLevelsGrid = urwid.GridFlow(map(lambda x: x.get(), self.shownAlertLevelUrwidObjects), 40, 1, 1, 'left')
+            self.alertLevelsGrid = urwid.GridFlow([x.get() for x in self.shownAlertLevelUrwidObjects],
+                                                  40,
+                                                  1,
+                                                  1,
+                                                  'left')
         else:
             # create empty grid object for the alert levels
             self.alertLevelsGrid = urwid.GridFlow([], 40, 1, 1, 'left')

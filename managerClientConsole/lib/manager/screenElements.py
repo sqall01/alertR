@@ -451,7 +451,7 @@ class SensorDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.alertLevelsPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.alertLevelsPileWidget.contents[:]
@@ -465,7 +465,7 @@ class SensorDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.nodePileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.nodePileWidget.contents[:]
@@ -479,7 +479,7 @@ class SensorDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.sensorPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.sensorPileWidget.contents[:]
@@ -747,7 +747,7 @@ class AlertDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.alertPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.alertPileWidget.contents[:]
@@ -761,7 +761,7 @@ class AlertDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.alertLevelsPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.alertLevelsPileWidget.contents[:]
@@ -775,7 +775,7 @@ class AlertDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.nodePileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.nodePileWidget.contents[:]
@@ -973,7 +973,7 @@ class ManagerDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.managerPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.managerPileWidget.contents[:]
@@ -986,7 +986,7 @@ class ManagerDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.nodePileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.nodePileWidget.contents[:]
@@ -1275,7 +1275,7 @@ class AlertLevelDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.alertLevelPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.alertLevelPileWidget.contents[:]
@@ -1289,7 +1289,7 @@ class AlertLevelDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.alertsPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.alertsPileWidget.contents[:]
@@ -1303,7 +1303,7 @@ class AlertLevelDetailedUrwid:
         
         # create a list of tuples for the pile widget
         pileOptions = self.sensorsPileWidget.options()
-        temp = map(lambda x: (x, pileOptions), temp)
+        temp = [(x, pileOptions) for x in temp]
 
         # empty pile widget contents and replace it with the new widgets
         del self.sensorsPileWidget.contents[:]
