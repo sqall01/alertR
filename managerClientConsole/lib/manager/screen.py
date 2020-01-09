@@ -1567,13 +1567,15 @@ class Console:
     # this function will be called from the urwid main loop
     # when the file descriptor of the callback
     # gets data written to it and updates the screen elements
-    def screenCallback(self, receivedData: str) -> bool:
+    def screenCallback(self, received_data: bytes) -> bool:
+
+        received_str = received_data.decode("ascii")
 
         # if received data equals "status" or "sensoralert"
         # update the whole screen (in case of a sensor alert it can happen
         # that also a normal state change was received before and is forgotten
         # if a normal status update is not made)
-        if receivedData == "status" or receivedData == "sensoralert":
+        if received_str == "status" or received_str == "sensoralert":
             logging.debug("[%s]: Status update received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
@@ -1922,7 +1924,7 @@ class Console:
                     self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
         # check if the connection to the server failed
-        if receivedData == "connectionfail":
+        if received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
@@ -1949,7 +1951,7 @@ class Console:
                 alertLevelUrwidObject.setConnectionFail()
 
         # check if a sensor alert was received from the server
-        if receivedData == "sensoralert":
+        if received_str == "sensoralert":
 
             logging.debug("[%s]: Sensor alert received. Updating screen elements." % self.fileName)
 

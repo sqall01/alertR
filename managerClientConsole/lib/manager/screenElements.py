@@ -269,7 +269,7 @@ class SensorDetailedUrwid:
 
         # use ListBox here because it handles all the
         # scrolling part automatically
-        detailedList = urwid.ListBox(content)
+        detailedList = urwid.ListBox(urwid.SimpleListWalker(content))
         detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
         self.detailedBox = urwid.LineBox(detailedFrame, title="Sensor: " + self.sensor.description)
 
@@ -597,7 +597,7 @@ class AlertDetailedUrwid:
 
         # use ListBox here because it handles all the
         # scrolling part automatically
-        detailedList = urwid.ListBox(content)
+        detailedList = urwid.ListBox(urwid.SimpleListWalker(content))
         detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
         self.detailedBox = urwid.LineBox(detailedFrame, title="Alert: " + self.alert.description)
 
@@ -882,7 +882,7 @@ class ManagerDetailedUrwid:
 
         # use ListBox here because it handles all the
         # scrolling part automatically
-        detailedList = urwid.ListBox(content)
+        detailedList = urwid.ListBox(urwid.SimpleListWalker(content))
         detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
         self.detailedBox = urwid.LineBox(detailedFrame, title="Manager: " + self.manager.description)
 
@@ -1109,7 +1109,7 @@ class AlertLevelDetailedUrwid:
 
         # use ListBox here because it handles all the
         # scrolling part automatically
-        detailedList = urwid.ListBox(content)
+        detailedList = urwid.ListBox(urwid.SimpleListWalker(content))
         detailedFrame = urwid.Frame(detailedList, footer=urwid.Text("Keys: ESC - Back, Up/Down - Scrolling"))
         self.detailedBox = urwid.LineBox(detailedFrame, title="Alert Level: " + self.alertLevel.name)
 
@@ -1354,7 +1354,7 @@ class SearchViewUrwid:
 
     def __init__(self, callbackFunction: types.FunctionType):
         self.edit = urwid.Edit()
-        editList = urwid.ListBox([self.edit])
+        editList = urwid.ListBox(urwid.SimpleListWalker([self.edit]))
         editFrame = urwid.Frame(editList, footer=urwid.Text("Keys: ESC - Back, Enter - Search"))
         self.editBox = urwid.LineBox(editFrame, title="Search")
 
