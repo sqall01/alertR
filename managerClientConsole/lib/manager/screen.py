@@ -110,6 +110,7 @@ class ScreenUpdater(threading.Thread):
             # => update screen with sensor alert
             if len(self.sensorAlerts) != 0:
                 logging.info("[%s]: Updating screen with sensor alert." % self.fileName)
+
                 if not self.console.updateScreen("sensoralert"):
                     logging.error("[%s]: Updating screen with sensor alert failed." % self.fileName)
 
@@ -127,6 +128,7 @@ class ScreenUpdater(threading.Thread):
             if self.serverComm is None:
                 if self.globalData.serverComm is not None:
                     self.serverComm = self.globalData.serverComm
+
                 else:
                     continue
 
@@ -134,6 +136,7 @@ class ScreenUpdater(threading.Thread):
             # => update screen to connection failure
             if not self.serverComm.isConnected:
                 logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
+
                 if not self.console.updateScreen("connectionfail"):
                     logging.error("[%s]: Updating screen failed." % self.fileName)
 
