@@ -1,13 +1,14 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
+from typing import Optional
 
 
 # this class is a global configuration class that holds 
@@ -17,33 +18,32 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.502
+        self.version = 0.503  # type: float
 
         # revision of the used client
-        self.rev = 2
+        self.rev = 0  # type: int
 
         # name of this client
-        self.name = "AlertR Manager Client Keypad"
+        self.name = "AlertR Manager Client Keypad"  # type: str
 
         # the instance of this client
-        self.instance = "managerClientKeypad"
+        self.instance = "managerClientKeypad"  # type: str
 
         # interval in which a ping should be send when 
         # no data was received/send     
-        self.pingInterval = 30
+        self.pingInterval = 30  # type: int
 
         # type of this node/client
-        self.nodeType = "manager"
+        self.nodeType = "manager"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-            + "/../config/config.xml"
+        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
 
         # this flags indicate if email alerts via smtp are active
         self.smtpAlert = None
 
         # this holds the description of this client
-        self.description = None
+        self.description = None  # type: Optional[str]
 
         # this is a list of all option objects that are received
         self.options = list()
@@ -75,7 +75,7 @@ class GlobalData:
 
         # this is the time in seconds when the screen should be locked
         # (if it was unlocked by the user)
-        self.unlockedScreenTimeout = 20
+        self.unlockedScreenTimeout = 20  # type: int
 
         # this is an instance of the console object that handles
         # the screen
@@ -88,7 +88,7 @@ class GlobalData:
         # the time given in seconds which are used by the time delayed
         # activation of the alert system (this option is given to the user
         # in the menu)
-        self.timeDelayedActivation = None
+        self.timeDelayedActivation = None  # type: Optional[int]
 
         # the object that is used to output audio (if activated)
         self.audioOutput = None
@@ -99,4 +99,4 @@ class GlobalData:
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent = None
+        self.persistent = None  # type: Optional[int]

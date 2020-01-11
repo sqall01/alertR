@@ -1,220 +1,24 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
 import logging
-import time
-
-
-# this class represents an option of the server
-class Option:
-
-    def __init__(self):
-        self.type = None
-        self.value = None
-
-
-# this class represents an node/client of the alert system
-# which can be either a sensor, alert or manager
-class Node:
-
-    def __init__(self):
-        self.nodeId = None
-        self.hostname = None
-        self.nodeType = None
-        self.instance = None
-        self.connected = None
-        self.version = None
-        self.rev = None
-        self.username = None
-        self.persistent = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-        # used for urwid only:
-        # reference to the sensor urwid object
-        self.sensorUrwid = None
-
-        # used for urwid only:
-        # reference to the alert urwid object
-        self.alertUrwid = None
-
-
-    # This function copies all attributes of the given node to this object.
-    def deepCopy(self, node):
-        self.nodeId = node.nodeId
-        self.hostname = node.hostname
-        self.nodeType = node.nodeType
-        self.instance = node.instance
-        self.connected = node.connected
-        self.version = node.version
-        self.rev = node.rev
-        self.username = node.username
-        self.persistent = node.persistent
-
-
-# this class represents a sensor client of the alert system
-class Sensor:
-
-    def __init__(self):
-        self.nodeId = None
-        self.sensorId = None
-        self.remoteSensorId = None
-        self.alertDelay = None
-        self.alertLevels = list()
-        self.description = None
-        self.lastStateUpdated = None
-        self.state = None
-        self.dataType = None
-        self.data = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-        # used for urwid only:
-        # reference to the sensor urwid object
-        self.sensorUrwid = None
-
-
-    # This function copies all attributes of the given sensor to this object.
-    def deepCopy(self, sensor):
-        self.nodeId = sensor.nodeId
-        self.sensorId = sensor.sensorId
-        self.remoteSensorId = sensor.remoteSensorId
-        self.alertDelay = sensor.alertDelay
-        self.alertLevels = list(sensor.alertLevels)
-        self.description = sensor.description
-        self.lastStateUpdated = sensor.lastStateUpdated
-        self.state = sensor.state
-        self.dataType = sensor.dataType
-        self.data = sensor.data
-
-
-# this class represents a manager client of the alert system
-class Manager:
-
-    def __init__(self):
-        self.nodeId = None
-        self.managerId = None
-        self.description = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-        # used for urwid only:
-        # reference to the manager urwid object
-        self.managerUrwid = None
-
-
-    # This function copies all attributes of the given manager to this object.
-    def deepCopy(self, manager):
-        self.nodeId = manager.nodeId
-        self.managerId = manager.managerId
-        self.description = manager.description
-
-
-# this class represents an alert client of the alert system
-class Alert:
-
-    def __init__(self):
-        self.nodeId = None
-        self.alertId = None
-        self.remoteAlertId = None
-        self.alertLevels = list()
-        self.description = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-        # used for urwid only:
-        # reference to the alert urwid object
-        self.alertUrwid = None
-
-
-    # This function copies all attributes of the given alert to this object.
-    def deepCopy(self, alert):
-        self.nodeId = alert.nodeId
-        self.alertId = alert.alertId
-        self.remoteAlertId = alert.remoteAlertId
-        self.alertLevels = list(alert.alertLevels)
-        self.description = alert.description
-
-
-# this class represents a triggered sensor alert of the alert system
-class SensorAlert:
-
-    def __init__(self):
-
-        # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None
-
-        # If rulesActivated = true => always set to -1.
-        self.sensorId = None
-
-        # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        # If rulesActivated = true => always set to 1.
-        self.state = None
-
-        # Description of the sensor that raised this sensor alert.
-        self.description = None
-
-        # Time this sensor alert was received.
-        self.timeReceived = None
-
-        # List of alert levels (Integer) that are triggered
-        # by this sensor alert.
-        self.alertLevels = list()
-
-        # The optional data of the sensor alert (if it has any).
-        # If rulesActivated = true => always set to false.
-        self.hasOptionalData = None
-        self.optionalData = None
-
-        # Does this sensor alert change the state of the sensor?
-        self.changeState = None
-
-        # Does this sensor alert hold the latest data of the sensor?
-        self.hasLatestData = None
-
-        # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None
-        self.sensorData = None
-
-
-# this class represents an alert level that is configured on the server
-class AlertLevel:
-
-    def __init__(self):
-        self.level = None
-        self.name = None
-        self.triggerAlways = None
-        self.rulesActivated = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-        # used for urwid only:
-        # reference to the alert urwid object
-        self.alertLevelUrwid = None
+from typing import List, Any
+from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import GlobalData
 
 
 # this class handles an incoming server event (sensor alert message,
 # status update, ...)
 class ServerEventHandler:
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
 
         # file name of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -233,14 +37,12 @@ class ServerEventHandler:
         # keep track of the server time
         self.serverTime = 0.0
 
-
     # internal function that checks if all options are checked
-    def _checkAllOptionsAreChecked(self):
+    def _checkAllOptionsAreChecked(self) -> bool:
         for option in self.options:
             if option.checked is False:
                 return False
         return True
-
 
     # internal function that removes all nodes that are not checked
     def _removeNotCheckedNodes(self):
@@ -248,18 +50,18 @@ class ServerEventHandler:
             if node.checked is False:
 
                 # check if node object has a link to the sensor urwid object
-                if not node.sensorUrwid is None:
+                if node.sensorUrwid is not None:
                     # check if sensor urwid object is linked to node object
-                    if not node.sensorUrwid.node is None:
+                    if node.sensorUrwid.node is not None:
                         # used for urwid only:
                         # remove reference from urwid object to node object
                         # (the objects are double linked)
                         node.sensorUrwid.node = None
 
                 # check if node object has a link to the alert urwid object
-                elif not node.alertUrwid is None:
+                elif node.alertUrwid is not None:
                     # check if sensor urwid object is linked to node object
-                    if not node.alertUrwid.node is None:
+                    if node.alertUrwid.node is not None:
                         # used for urwid only:
                         # remove reference from urwid object to node object
                         # (the objects are double linked)
@@ -274,9 +76,9 @@ class ServerEventHandler:
             if sensor.checked is False:
 
                 # check if sensor object has a link to the sensor urwid object
-                if not sensor.sensorUrwid is None:
+                if sensor.sensorUrwid is not None:
                     # check if sensor urwid object is linked to sensor object
-                    if not sensor.sensorUrwid.sensor is None:
+                    if sensor.sensorUrwid.sensor is not None:
                         # used for urwid only:
                         # remove reference from urwid object to sensor object
                         # (the objects are double linked)
@@ -292,9 +94,9 @@ class ServerEventHandler:
 
                 # check if manager object has a link to the 
                 # manager urwid object
-                if not manager.managerUrwid is None:
+                if manager.managerUrwid is not None:
                     # check if manager urwid object is linked to manager object
-                    if not manager.managerUrwid.manager is None:
+                    if manager.managerUrwid.manager is not None:
                         # used for urwid only:
                         # remove reference from urwid object to manager object
                         # (the objects are double linked)
@@ -309,9 +111,9 @@ class ServerEventHandler:
             if alert.checked is False:
 
                 # check if alert object has a link to the alert urwid object
-                if not alert.alertUrwid is None:
+                if alert.alertUrwid is not None:
                     # check if alert urwid object is linked to alert object
-                    if not alert.alertUrwid.alert is None:
+                    if alert.alertUrwid.alert is not None:
                         # used for urwid only:
                         # remove reference from urwid object to alert object
                         # (the objects are double linked)
@@ -327,10 +129,10 @@ class ServerEventHandler:
 
                 # check if alert level object has a link to 
                 # the alert level urwid object
-                if not alertLevel.alertLevelUrwid is None:
+                if alertLevel.alertLevelUrwid is not None:
                     # check if alert level urwid object is 
                     # linked to alert level object
-                    if not alertLevel.alertLevelUrwid.alertLevel is None:
+                    if alertLevel.alertLevelUrwid.alertLevel is not None:
                         # used for urwid only:
                         # remove reference from urwid object to 
                         # alert level object
@@ -341,7 +143,6 @@ class ServerEventHandler:
                 # to delete all references to object
                 # => object will be deleted by garbage collector
                 self.alertLevels.remove(alertLevel)
-
 
     # internal function that marks all nodes as not checked
     def _markAlertSystemObjectsAsNotChecked(self):
@@ -363,10 +164,15 @@ class ServerEventHandler:
         for alertLevel in self.alertLevels:
             alertLevel.checked = False
 
-
     # is called when a status update event was received from the server
-    def receivedStatusUpdate(self, serverTime, options, nodes, sensors,
-        managers, alerts, alertLevels):
+    def receivedStatusUpdate(self,
+                             serverTime: int,
+                             options: List[Option],
+                             nodes: List[Node],
+                             sensors: List[Sensor],
+                             managers: List[Manager],
+                             alerts: List[Alert],
+                             alertLevels: List[AlertLevel]) -> bool:
 
         self.serverTime = serverTime
 
@@ -385,10 +191,8 @@ class ServerEventHandler:
 
                     # check if the type is unique
                     if option.type == recvOption.type:
-                        logging.error("[%s]: Received optionType "
-                            % self.fileName
-                            + "'%s' is not unique." % recvOption.type)
-
+                        logging.error("[%s]: Received optionType '%s' is not unique."
+                                      % (self.fileName, recvOption.type))
                         return False
 
                     continue
@@ -399,6 +203,7 @@ class ServerEventHandler:
                     option.value = recvOption.value
                     found = True
                     break
+
             # when not found => add option to list
             if not found:
                 recvOption.checked = True
@@ -407,8 +212,7 @@ class ServerEventHandler:
         # check if all options are checked
         # => if not, one was removed on the server
         if not self._checkAllOptionsAreChecked():
-            logging.exception("[%s]: Options are inconsistent."
-                % self.fileName)
+            logging.exception("[%s]: Options are inconsistent." % self.fileName)
 
             return False
 
@@ -424,9 +228,7 @@ class ServerEventHandler:
 
                     # check if the nodeId is unique
                     if node.nodeId == recvNode.nodeId:
-                        logging.error("[%s]: Received nodeId " % self.fileName
-                            + "'%d' is not unique." % recvNode.nodeId)
-
+                        logging.error("[%s]: Received nodeId '%d' is not unique." % (self.fileName, recvNode.nodeId))
                         return False
 
                     continue
@@ -437,6 +239,7 @@ class ServerEventHandler:
                     node.deepCopy(recvNode)
                     found = True
                     break
+
             # when not found => add node to list
             if not found:
                 recvNode.checked = True
@@ -454,9 +257,8 @@ class ServerEventHandler:
 
                     # check if the sensorId is unique
                     if sensor.sensorId == recvSensor.sensorId:
-                        logging.error("[%s]: Received sensorId "
-                            % self.fileName
-                            + "'%d' is not unique." % recvSensor.sensorId)
+                        logging.error("[%s]: Received sensorId '%d' is not unique."
+                                      % (self.fileName, recvSensor.sensorId))
 
                         return False
 
@@ -476,10 +278,13 @@ class ServerEventHandler:
 
                     found = True
                     break
+
             # when not found => add sensor to list
             if not found:
                 recvSensor.checked = True
                 self.sensors.append(recvSensor)
+
+        self.sensors.sort(key=lambda x: x.description.lower())
 
         # process received managers
         for recvManager in managers:
@@ -493,10 +298,8 @@ class ServerEventHandler:
 
                     # check if the managerId is unique
                     if manager.managerId == recvManager.managerId:
-                        logging.error("[%s]: Received managerId "
-                            % self.fileName
-                            + "'%d' is not unique." % recvManager.managerId)
-
+                        logging.error("[%s]: Received managerId '%d' is not unique."
+                                      % (self.fileName, recvManager.managerId))
                         return False
 
                     continue
@@ -507,10 +310,13 @@ class ServerEventHandler:
                     manager.deepCopy(recvManager)
                     found = True
                     break
+
             # when not found => add manager to list
             if not found:
                 recvManager.checked = True
                 self.managers.append(recvManager)
+
+        self.managers.sort(key=lambda x: x.description.lower())
 
         # process received alerts
         for recvAlert in alerts:
@@ -524,8 +330,7 @@ class ServerEventHandler:
 
                     # check if the alertId is unique
                     if alert.alertId == recvAlert.alertId:
-                        logging.error("[%s]: Received alertId " % self.fileName
-                            + "'%d' is not unique." % recvAlert.alertId)
+                        logging.error("[%s]: Received alertId '%d' is not unique." % (self.fileName, recvAlert.alertId))
 
                         return False
 
@@ -537,10 +342,13 @@ class ServerEventHandler:
                     alert.deepCopy(recvAlert)
                     found = True
                     break
+
             # when not found => add alert to list
             if not found:
                 recvAlert.checked = True
                 self.alerts.append(recvAlert)
+
+        self.alerts.sort(key=lambda x: x.description.lower())
 
         # process received alertLevels
         for recvAlertLevel in alertLevels:
@@ -554,9 +362,8 @@ class ServerEventHandler:
 
                     # check if the level is unique
                     if alertLevel.level == recvAlertLevel.level:
-                        logging.error("[%s]: Received alertLevel "
-                            % self.fileName
-                            + "'%d' is not unique." % recvAlertLevel.level)
+                        logging.error("[%s]: Received alertLevel '%d' is not unique."
+                                      % (self.fileName, recvAlertLevel.level))
 
                         return False
 
@@ -569,7 +376,6 @@ class ServerEventHandler:
                     alertLevel.name = recvAlertLevel.name
                     alertLevel.triggerAlways = recvAlertLevel.triggerAlways
                     alertLevel.rulesActivated = recvAlertLevel.rulesActivated
-
                     found = True
                     break
 
@@ -578,17 +384,17 @@ class ServerEventHandler:
                 recvAlertLevel.checked = True
                 self.alertLevels.append(recvAlertLevel)
 
+        self.alertLevels.sort(key=lambda x: x.level)
+
         # remove all nodes that are not checked
         self._removeNotCheckedNodes()
 
         return True
 
-
     # is called when a sensor alert event was received from the server
-    def receivedSensorAlert(self, serverTime, sensorAlert):
+    def receivedSensorAlert(self, serverTime: int, sensorAlert: SensorAlert) -> bool:
 
         self.serverTime = serverTime
-        timeReceived = int(time.time())
         self.sensorAlerts.append(sensorAlert)
 
         # If rules are not activated (and therefore the sensor alert was
@@ -611,24 +417,25 @@ class ServerEventHandler:
                         if sensorAlert.dataType == sensor.dataType:
                             sensor.data = sensorAlert.sensorData
                         else:
-                            logging.error("[%s]: Sensor data type different. "
-                                % self.fileName
-                                + "Skipping data assignment.")
+                            logging.error("[%s]: Sensor data type different. Skipping data assignment."
+                                          % self.fileName)
 
                     found = True
                     break
             if not found:
-                logging.error("[%s]: Sensor of sensor alert " % self.fileName
-                    + "not known.")
+                logging.error("[%s]: Sensor of sensor alert not known." % self.fileName)
 
                 return False
 
         return True
 
-
     # is called when a state change event was received from the server
-    def receivedStateChange(self, serverTime, sensorId, state, dataType,
-        sensorData):
+    def receivedStateChange(self,
+                            serverTime: int,
+                            sensorId: int,
+                            state: int,
+                            dataType: SensorDataType,
+                            sensorData: Any) -> bool:
 
         self.serverTime = serverTime
 
@@ -640,8 +447,7 @@ class ServerEventHandler:
                 sensor = tempSensor
                 break
         if not sensor:
-            logging.error("[%s]: Sensor for state change " % self.fileName
-                + "not known.")
+            logging.error("[%s]: Sensor for state change not known." % self.fileName)
 
             return False
 
@@ -652,12 +458,9 @@ class ServerEventHandler:
         if dataType == sensor.dataType:
             sensor.data = sensorData
         else:
-            logging.error("[%s]: Sensor data type different. "
-                % self.fileName
-                + "Skipping data assignment.")
+            logging.error("[%s]: Sensor data type different. Skipping data assignment." % self.fileName)
 
         return True
-
 
     # is called when an incoming server event has to be handled
     def handleEvent(self):
