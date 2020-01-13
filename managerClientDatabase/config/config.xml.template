@@ -112,17 +112,6 @@
     <update>
 
         <!--
-            the general settings of the update checking
-            activated - should the server check for updates?
-                ("True" or "False")
-            interval - the interval in seconds in which the server checks
-                online for updates
-        -->
-        <general
-            activated="True"
-            interval="86400" />
-
-        <!--
             the server settings of the update process (only change these
                 settings if you want to use your own repository and not
                 the AlertR master repository on github)
