@@ -9,9 +9,9 @@
 
 import os
 import logging
-from typing import List, Any
 from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
+from typing import List, Any
 
 
 # this class handles an incoming server event (sensor alert message,
@@ -213,7 +213,6 @@ class ServerEventHandler:
         # => if not, one was removed on the server
         if not self._checkAllOptionsAreChecked():
             logging.exception("[%s]: Options are inconsistent." % self.fileName)
-
             return False
 
         # process received nodes
@@ -331,7 +330,6 @@ class ServerEventHandler:
                     # check if the alertId is unique
                     if alert.alertId == recvAlert.alertId:
                         logging.error("[%s]: Received alertId '%d' is not unique." % (self.fileName, recvAlert.alertId))
-
                         return False
 
                     continue
@@ -364,7 +362,6 @@ class ServerEventHandler:
                     if alertLevel.level == recvAlertLevel.level:
                         logging.error("[%s]: Received alertLevel '%d' is not unique."
                                       % (self.fileName, recvAlertLevel.level))
-
                         return False
 
                     continue
@@ -416,15 +413,16 @@ class ServerEventHandler:
                     if sensorAlert.hasLatestData:
                         if sensorAlert.dataType == sensor.dataType:
                             sensor.data = sensorAlert.sensorData
+
                         else:
                             logging.error("[%s]: Sensor data type different. Skipping data assignment."
                                           % self.fileName)
 
                     found = True
                     break
+
             if not found:
                 logging.error("[%s]: Sensor of sensor alert not known." % self.fileName)
-
                 return False
 
         return True
@@ -448,7 +446,6 @@ class ServerEventHandler:
                 break
         if not sensor:
             logging.error("[%s]: Sensor for state change not known." % self.fileName)
-
             return False
 
         # Change sensor state.
