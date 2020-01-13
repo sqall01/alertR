@@ -147,7 +147,14 @@ If you do not know how to do any of it or do not have the time, you can support 
 [![Donate](https://www.paypalobjects.com/en_US/DE/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TVHGG76JVCSGC)
 
 
-# Bugs and Feedback
+# Licensing and Commercial Use
+
+AlertR is open source and everyone can use it freely. It is licensed under the _GNU Affero General Public License v3.0_ which allows you to also commercially use it. However, if you do, you have to disclose all changes to the Software also as open source. This is also the case if you provide network services with AlertR.
+            
+If you do not wish to open source your changes I can offer this Software under a different license (__Dual Licensing__). Please contact me to talk about the conditions.
+
+
+# Bugs, Feedback and Contact
 <a name="bugs_and_feedback"/>
 
-For questions, bugs and discussion please use the [Github Issues](https://github.com/sqall01/alertR/issues).
+For questions, bugs and discussions please use the [Github Issues](https://github.com/sqall01/alertR/issues). All other means of contacting me can be found on my [personal website](https://pawlowski.dev/).
