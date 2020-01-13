@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -10,201 +10,24 @@
 import os
 import logging
 import time
-from localObjects import SensorDataType
-from events import EventSensorAlert, EventNewVersion
-from events import EventStateChange, EventConnectedChange, EventSensorTimeOut
-from events import EventNewOption, EventNewNode, EventNewSensor
-from events import EventNewAlert, EventNewManager
-from events import EventChangeOption, EventChangeNode, EventChangeSensor
-from events import EventChangeAlert, EventChangeManager
-from events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
-from events import EventDeleteManager
-
-
-# this class represents an option of the server
-class Option:
-
-    def __init__(self):
-        self.type = None
-        self.value = None
-
-
-# this class represents an node/client of the alert system
-# which can be either a sensor, alert or manager
-class Node:
-
-    def __init__(self):
-        self.nodeId = None
-        self.hostname = None
-        self.nodeType = None
-        self.instance = None
-        self.connected = None
-        self.version = None
-        self.rev = None
-        self.username = None
-        self.persistent = None
-
-        # used by mobile manager only:
-        # newest known version
-        self.newestVersion = -1.0
-        self.newestRev = -1
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-
-    # This function copies all attributes of the given node to this object.
-    def deepCopy(self, node):
-        self.nodeId = node.nodeId
-        self.hostname = node.hostname
-        self.nodeType = node.nodeType
-        self.instance = node.instance
-        self.connected = node.connected
-        self.version = node.version
-        self.rev = node.rev
-        self.username = node.username
-        self.persistent = node.persistent
-
-
-# this class represents a sensor client of the alert system
-class Sensor:
-
-    def __init__(self):
-        self.nodeId = None
-        self.sensorId = None
-        self.remoteSensorId = None
-        self.alertDelay = None
-        self.alertLevels = list()
-        self.description = None
-        self.lastStateUpdated = None
-        self.state = None
-        self.dataType = None
-        self.data = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-
-    # This function copies all attributes of the given sensor to this object.
-    def deepCopy(self, sensor):
-        self.nodeId = sensor.nodeId
-        self.sensorId = sensor.sensorId
-        self.remoteSensorId = sensor.remoteSensorId
-        self.alertDelay = sensor.alertDelay
-        self.alertLevels = list(sensor.alertLevels)
-        self.description = sensor.description
-        self.lastStateUpdated = sensor.lastStateUpdated
-        self.state = sensor.state
-        self.dataType = sensor.dataType
-        self.data = sensor.data
-
-
-# this class represents a manager client of the alert system
-class Manager:
-
-    def __init__(self):
-        self.nodeId = None
-        self.managerId = None
-        self.description = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-
-    # This function copies all attributes of the given manager to this object.
-    def deepCopy(self, manager):
-        self.nodeId = manager.nodeId
-        self.managerId = manager.managerId
-        self.description = manager.description
-
-
-# this class represents an alert client of the alert system
-class Alert:
-
-    def __init__(self):
-        self.nodeId = None
-        self.alertId = None
-        self.remoteAlertId = None
-        self.alertLevels = list()
-        self.description = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
-
-    # This function copies all attributes of the given alert to this object.
-    def deepCopy(self, alert):
-        self.nodeId = alert.nodeId
-        self.alertId = alert.alertId
-        self.remoteAlertId = alert.remoteAlertId
-        self.alertLevels = list(alert.alertLevels)
-        self.description = alert.description
-
-
-# this class represents a triggered sensor alert of the alert system
-class SensorAlert:
-
-    def __init__(self):
-
-        # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None
-
-        # If rulesActivated = true => always set to -1.
-        self.sensorId = None
-
-        # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        # If rulesActivated = true => always set to 1.
-        self.state = None
-
-        # Description of the sensor that raised this sensor alert.
-        self.description = None
-
-        # Time this sensor alert was received.
-        self.timeReceived = None
-
-        # List of alert levels (Integer) that are triggered
-        # by this sensor alert.
-        self.alertLevels = list()
-
-        # The optional data of the sensor alert (if it has any).
-        # If rulesActivated = true => always set to false.
-        self.hasOptionalData = None
-        self.optionalData = None
-
-        # Does this sensor alert change the state of the sensor?
-        self.changeState = None
-
-        # Does this sensor alert hold the latest data of the sensor?
-        self.hasLatestData = None
-
-        # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None
-        self.sensorData = None
-
-
-# this class represents an alert level that is configured on the server
-class AlertLevel:
-
-    def __init__(self):
-        self.level = None
-        self.name = None
-        self.triggerAlways = None
-        self.rulesActivated = None
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
+from .events import EventSensorAlert
+from .events import EventStateChange, EventConnectedChange, EventSensorTimeOut
+from .events import EventNewOption, EventNewNode, EventNewSensor
+from .events import EventNewAlert, EventNewManager
+from .events import EventChangeOption, EventChangeNode, EventChangeSensor
+from .events import EventChangeAlert, EventChangeManager
+from .events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
+from .events import EventDeleteManager
+from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import GlobalData
+from typing import List, Any
 
 
 # this class handles an incoming server event (sensor alert message,
 # status update, ...)
 class ServerEventHandler:
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
 
         # file name of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -221,21 +44,18 @@ class ServerEventHandler:
         self.alerts = self.globalData.alerts
         self.alertLevels = self.globalData.alertLevels
         self.sensorAlerts = self.globalData.sensorAlerts
-        self.versionInformer = self.globalData.versionInformer
         self.events = self.globalData.events
         self.connectionTimeout = self.globalData.connectionTimeout
 
         # keep track of the server time
         self.serverTime = 0.0
 
-
     # internal function that checks if all options are checked
-    def _checkAllOptionsAreChecked(self):
+    def _checkAllOptionsAreChecked(self) -> bool:
         for option in self.options:
             if option.checked is False:
                 return False
         return True
-
 
     # internal function that removes all nodes that are not checked
     def _removeNotCheckedNodes(self):
@@ -304,7 +124,6 @@ class ServerEventHandler:
                 # => object will be deleted by garbage collector
                 self.alertLevels.remove(alertLevel)
 
-
     # internal function that marks all nodes as not checked
     def _markAlertSystemObjectsAsNotChecked(self):
         for option in self.options:
@@ -325,10 +144,15 @@ class ServerEventHandler:
         for alertLevel in self.alertLevels:
             alertLevel.checked = False
 
-
     # is called when a status update event was received from the server
-    def receivedStatusUpdate(self, serverTime, options, nodes, sensors,
-        managers, alerts, alertLevels):
+    def receivedStatusUpdate(self,
+                             serverTime: int,
+                             options: List[Option],
+                             nodes: List[Node],
+                             sensors: List[Sensor],
+                             managers: List[Manager],
+                             alerts: List[Alert],
+                             alertLevels: List[AlertLevel]) -> bool:
 
         self.serverTime = serverTime
         timeReceived = int(time.time())
@@ -348,10 +172,8 @@ class ServerEventHandler:
 
                     # check if the type is unique
                     if option.type == recvOption.type:
-                        logging.error("[%s]: Received optionType "
-                            % self.fileName
-                            + "'%s' is not unique." % recvOption.type)
-
+                        logging.error("[%s]: Received optionType '%s' is not unique."
+                                      % (self.fileName, recvOption.type))
                         return False
 
                     continue
@@ -374,6 +196,7 @@ class ServerEventHandler:
 
                     found = True
                     break
+
             # when not found => add option to list
             if not found:
                 recvOption.checked = True
@@ -388,9 +211,7 @@ class ServerEventHandler:
         # check if all options are checked
         # => if not, one was removed on the server
         if not self._checkAllOptionsAreChecked():
-            logging.exception("[%s]: Options are inconsistent."
-                % self.fileName)
-
+            logging.exception("[%s]: Options are inconsistent." % self.fileName)
             return False
 
         # process received nodes
@@ -405,9 +226,7 @@ class ServerEventHandler:
 
                     # check if the nodeId is unique
                     if node.nodeId == recvNode.nodeId:
-                        logging.error("[%s]: Received nodeId " % self.fileName
-                            + "'%d' is not unique." % recvNode.nodeId)
-
+                        logging.error("[%s]: Received nodeId '%d' is not unique." % (self.fileName, recvNode.nodeId))
                         return False
 
                     continue
@@ -475,6 +294,7 @@ class ServerEventHandler:
                     node.deepCopy(recvNode)
                     found = True
                     break
+
             # when not found => add node to list
             if not found:
                 recvNode.checked = True
@@ -494,15 +314,13 @@ class ServerEventHandler:
             # => if not known add it
             found = False
             for sensor in self.sensors:
-
                 # ignore sensors that are already checked
                 if sensor.checked:
 
                     # check if the sensorId is unique
                     if sensor.sensorId == recvSensor.sensorId:
-                        logging.error("[%s]: Received sensorId "
-                            % self.fileName
-                            + "'%d' is not unique." % recvSensor.sensorId)
+                        logging.error("[%s]: Received sensorId '%d' is not unique."
+                                      % (self.fileName, recvSensor.sensorId))
 
                         return False
 
@@ -560,13 +378,12 @@ class ServerEventHandler:
                     if node.nodeId == recvSensor.nodeId:
                         foundNode = node
                         break
-                if foundNode is None:
-                    logging.error("[%s]: Could not find node with id "
-                        % self.fileName
-                        + "'%d' for sensor with id '%d'."
-                        % (recvSensor.nodeId, recvSensor.sensorId))
 
+                if foundNode is None:
+                    logging.error("[%s]: Could not find node with id '%d' for sensor with id '%d'."
+                                  % (self.fileName, recvSensor.nodeId, recvSensor.sensorId))
                     return False
+
                 tempEvent = EventNewSensor(timeReceived)
                 tempEvent.hostname = foundNode.hostname
                 tempEvent.description = recvSensor.description
@@ -585,10 +402,8 @@ class ServerEventHandler:
 
                     # check if the managerId is unique
                     if manager.managerId == recvManager.managerId:
-                        logging.error("[%s]: Received managerId "
-                            % self.fileName
-                            + "'%d' is not unique." % recvManager.managerId)
-
+                        logging.error("[%s]: Received managerId '%d' is not unique."
+                                      % (self.fileName, recvManager.managerId))
                         return False
 
                     continue
@@ -615,6 +430,7 @@ class ServerEventHandler:
                     manager.deepCopy(recvManager)
                     found = True
                     break
+
             # when not found => add manager to list
             if not found:
                 recvManager.checked = True
@@ -626,13 +442,12 @@ class ServerEventHandler:
                     if node.nodeId == recvManager.nodeId:
                         foundNode = node
                         break
-                if foundNode is None:
-                    logging.error("[%s]: Could not find node with id "
-                        % self.fileName
-                        + "'%d' for manager with id '%d'."
-                        % (recvManager.nodeId, recvManager.managerId))
 
+                if foundNode is None:
+                    logging.error("[%s]: Could not find node with id '%d' for manager with id '%d'."
+                                  % (self.fileName, recvManager.nodeId, recvManager.managerId))
                     return False
+
                 tempEvent = EventNewManager(timeReceived)
                 tempEvent.hostname = foundNode.hostname
                 tempEvent.description = recvManager.description
@@ -650,9 +465,7 @@ class ServerEventHandler:
 
                     # check if the alertId is unique
                     if alert.alertId == recvAlert.alertId:
-                        logging.error("[%s]: Received alertId " % self.fileName
-                            + "'%d' is not unique." % recvAlert.alertId)
-
+                        logging.error("[%s]: Received alertId '%d' is not unique." % (self.fileName, recvAlert.alertId))
                         return False
 
                     continue
@@ -697,12 +510,10 @@ class ServerEventHandler:
                         foundNode = node
                         break
                 if foundNode is None:
-                    logging.error("[%s]: Could not find node with id "
-                        % self.fileName
-                        + "'%d' for alert with id '%d'."
-                        % (recvAlert.nodeId, recvAlert.alertId))
-
+                    logging.error("[%s]: Could not find node with id '%d' for alert with id '%d'."
+                                  % (self.fileName, recvAlert.nodeId, recvAlert.alertId))
                     return False
+
                 tempEvent = EventNewAlert(timeReceived)
                 tempEvent.hostname = foundNode.hostname
                 tempEvent.description = recvAlert.description
@@ -720,10 +531,8 @@ class ServerEventHandler:
 
                     # check if the level is unique
                     if alertLevel.level == recvAlertLevel.level:
-                        logging.error("[%s]: Received alertLevel "
-                            % self.fileName
-                            + "'%d' is not unique." % recvAlertLevel.level)
-
+                        logging.error("[%s]: Received alertLevel '%d' is not unique."
+                                      % (self.fileName, recvAlertLevel.level))
                         return False
 
                     continue
@@ -735,7 +544,6 @@ class ServerEventHandler:
                     alertLevel.name = recvAlertLevel.name
                     alertLevel.triggerAlways = recvAlertLevel.triggerAlways
                     alertLevel.rulesActivated = recvAlertLevel.rulesActivated
-
                     found = True
                     break
 
@@ -749,9 +557,8 @@ class ServerEventHandler:
 
         return True
 
-
     # is called when a sensor alert event was received from the server
-    def receivedSensorAlert(self, serverTime, sensorAlert):
+    def receivedSensorAlert(self, serverTime: int, sensorAlert: SensorAlert) -> bool:
 
         self.serverTime = serverTime
         timeReceived = int(time.time())
@@ -791,20 +598,21 @@ class ServerEventHandler:
                         tempStateEvent.description = sensor.description
                         triggeredSensor = sensor
                         break
-                if not triggeredSensor is None:
+
+                if triggeredSensor is not None:
                     for node in self.nodes:
-                        if node.nodeId == sensor.nodeId:
+                        if node.nodeId == triggeredSensor.nodeId:
                             tempStateEvent.hostname = node.hostname
                             self.events.append(tempStateEvent)
                             break
+
                     if tempStateEvent.hostname is None:
-                        logging.error("[%s]: Unable to find corresponding " 
-                            % self.fileName
-                            + "node to sensor for state change event.")
+                        logging.error("[%s]: Unable to find corresponding node to sensor for state change event."
+                                      % self.fileName)
+
                 else:
-                    logging.error("[%s]: Unable to find corresponding " 
-                        % self.fileName
-                        + "sensor to sensor alert for state change event.")
+                    logging.error("[%s]: Unable to find corresponding sensor to sensor alert for state change event."
+                                  % self.fileName)
 
         # If rules are not activated (and therefore the sensor alert was
         # only triggered by one distinct sensor).
@@ -819,31 +627,33 @@ class ServerEventHandler:
                     # was set in the received message.
                     if sensorAlert.changeState:
                         sensor.state = sensorAlert.state
-                    
+
                     # Only update sensor data information if the flag
                     # was set in the received message.
                     if sensorAlert.hasLatestData:
                         if sensorAlert.dataType == sensor.dataType:
                             sensor.data = sensorAlert.sensorData
+
                         else:
-                            logging.error("[%s]: Sensor data type different. "
-                                % self.fileName
-                                + "Skipping data assignment.")
+                            logging.error("[%s]: Sensor data type different. Skipping data assignment."
+                                          % self.fileName)
 
                     found = True
                     break
-            if not found:
-                logging.error("[%s]: Sensor of sensor alert " % self.fileName
-                    + "not known.")
 
+            if not found:
+                logging.error("[%s]: Sensor of sensor alert not known." % self.fileName)
                 return False
 
         return True
 
-
     # is called when a state change event was received from the server
-    def receivedStateChange(self, serverTime, sensorId, state, dataType,
-        sensorData):
+    def receivedStateChange(self,
+                            serverTime: int,
+                            sensorId: int,
+                            state: int,
+                            dataType: SensorDataType,
+                            sensorData: Any) -> bool:
 
         self.serverTime = serverTime
 
@@ -855,9 +665,7 @@ class ServerEventHandler:
                 sensor = tempSensor
                 break
         if not sensor:
-            logging.error("[%s]: Sensor for state change " % self.fileName
-                + "not known.")
-
+            logging.error("[%s]: Sensor for state change not known." % self.fileName)
             return False
 
         # when events are activated
@@ -876,9 +684,8 @@ class ServerEventHandler:
                     self.events.append(tempStateEvent)
                     break
             if not tempStateEvent.hostname:
-                logging.error("[%s]: Unable to find corresponding " 
-                    % self.fileName
-                    + "node to sensor for state change event.")
+                logging.error("[%s]: Unable to find corresponding node to sensor for state change event."
+                              % self.fileName)
 
         # Change sensor state.
         sensor.state = state
@@ -887,12 +694,9 @@ class ServerEventHandler:
         if dataType == sensor.dataType:
             sensor.data = sensorData
         else:
-            logging.error("[%s]: Sensor data type different. "
-                % self.fileName
-                + "Skipping data assignment.")
+            logging.error("[%s]: Sensor data type different. Skipping data assignment." % self.fileName)
 
         return True
-
 
     # is called when an incoming server event has to be handled
     def handleEvent(self):
@@ -902,80 +706,10 @@ class ServerEventHandler:
         if self.sensorAlertLifeSpan == 0:
             del self.sensorAlerts[:]
 
-        # check if version informer instance is set
-        # => if not get it from the global data (is only set if
-        # automatic update checks are activated)
-        if self.versionInformer is None:
-            self.versionInformer = self.globalData.versionInformer
-
-        # => get newest known version from the version informer for each node
-        else:
-            for node in self.nodes:
-
-                found = False
-                for repoInstance in self.versionInformer.repoVersions.keys():
-                    if node.instance.upper() == repoInstance.upper():
-
-                        tempVersion = self.versionInformer.repoVersions[
-                            repoInstance].newestVersion
-                        tempRev = self.versionInformer.repoVersions[
-                            repoInstance].newestRev
-
-                        # check if a newer version is available than the
-                        # currently used (or last known version)
-                        # => create event
-                        if (node.version < tempVersion
-                            and node.newestVersion < tempVersion):
-                            utcTimestamp = int(time.time())
-                            tempEvent = EventNewVersion(utcTimestamp)
-                            tempEvent.usedVersion = node.version
-                            tempEvent.usedRev = node.rev
-                            tempEvent.newVersion = tempVersion
-                            tempEvent.newRev = tempRev
-                            tempEvent.instance = node.instance
-                            tempEvent.hostname = node.hostname
-                            if self.eventsLifeSpan != 0:
-                                self.events.append(tempEvent)
-
-                        # check if a newer revision for this version is
-                        # available than the currently used
-                        # (or last known version)
-                        # => create event
-                        elif node.version == tempVersion:
-                            if (node.rev < tempRev
-                                and node.newestRev < tempRev):
-                                utcTimestamp = int(time.time())
-                                tempEvent = EventNewVersion(utcTimestamp)
-                                tempEvent.usedVersion = node.version
-                                tempEvent.usedRev = node.rev
-                                tempEvent.newVersion = tempVersion
-                                tempEvent.newRev = tempRev
-                                tempEvent.instance = node.instance
-                                tempEvent.hostname = node.hostname
-                                if self.eventsLifeSpan != 0:
-                                    self.events.append(tempEvent)
-
-                        node.newestVersion \
-                            = self.versionInformer.repoVersions[
-                            repoInstance].newestVersion
-                        node.newestRev \
-                            = self.versionInformer.repoVersions[
-                            repoInstance].newestRev
-
-                        found = True
-                        break
-                # if instance was not found in online repository
-                # => unset newest version and revision
-                if not found:
-                    node.newestVersion = -1.0
-                    node.newestRev = -1
-
-
         # check if a sensor has timed out
         # => create an event for it
         for sensor in self.sensors:
-            if (sensor.lastStateUpdated < (self.serverTime
-                - (2 * self.connectionTimeout))):
+            if sensor.lastStateUpdated < (self.serverTime - (2 * self.connectionTimeout)):
 
                 # create sensor time out event
                 # (only add it if node is connected)
@@ -985,12 +719,10 @@ class ServerEventHandler:
                         foundNode = node
                         break
                 if foundNode is None:
-                    logging.error("[%s]: Could not find node with id "
-                        % self.fileName
-                        + "'%d' for sensor with id '%d'."
-                        % (sensor.nodeId, sensor.sensorId))
-
+                    logging.error("[%s]: Could not find node with id '%d' for sensor with id '%d'."
+                                  % (self.fileName, sensor.nodeId, sensor.sensorId))
                     continue
+
                 if foundNode.connected == 1:
                     utcTimestamp = int(time.time())
                     tempEvent = EventSensorTimeOut(utcTimestamp)
@@ -999,14 +731,17 @@ class ServerEventHandler:
                     tempEvent.state = sensor.state
                     self.events.append(tempEvent)
 
-
         # update the local server information
         if not self.storage.updateServerInformation(self.serverTime,
-            self.options, self.nodes, self.sensors, self.alerts,
-            self.managers, self.alertLevels, self.sensorAlerts):
+                                                    self.options,
+                                                    self.nodes,
+                                                    self.sensors,
+                                                    self.alerts,
+                                                    self.managers,
+                                                    self.alertLevels,
+                                                    self.sensorAlerts):
 
-            logging.error("[%s]: Unable to update server information." 
-                    % self.fileName)
+            logging.error("[%s]: Unable to update server information." % self.fileName)
 
         else:
             # empty sensor alerts list to prevent it

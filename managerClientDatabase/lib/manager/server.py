@@ -1,38 +1,44 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import SocketServer
+import socketserver
 import logging
 import os
 import json
 import time
+from ..globalData import GlobalData
 BUFSIZE = 1024
 
 
 # this class is used for the threaded unix stream server and 
 # extends the constructor to pass the global configured data to all threads
-class ThreadedUnixStreamServer(SocketServer.ThreadingMixIn,
-    SocketServer.UnixStreamServer):
+class ThreadedUnixStreamServer(socketserver.ThreadingMixIn,
+                               socketserver.UnixStreamServer):
     
-    def __init__(self, globalData, serverAddress, RequestHandlerClass):
+    def __init__(self, globalData: GlobalData,
+                 serverAddress: str,
+                 RequestHandlerClass: socketserver.BaseRequestHandler):
 
         # get reference to global data object
         self.globalData = globalData
 
-        SocketServer.TCPServer.__init__(self, serverAddress, 
-            RequestHandlerClass)
+        socketserver.TCPServer.__init__(self,
+                                        serverAddress,
+                                        RequestHandlerClass)
 
 
 # this class is used for incoming local client connections (i.e., web page)
-class LocalServerSession(SocketServer.BaseRequestHandler):
+class LocalServerSession(socketserver.BaseRequestHandler):
 
-    def __init__(self, request, clientAddress, server):
+    def __init__(self, request, clientAddress, server: ThreadedUnixStreamServer):
+
+        # TODO type of request and clientAddress
 
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -41,8 +47,7 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
         self.globalData = server.globalData
         self.serverComm = self.globalData.serverComm
 
-        SocketServer.BaseRequestHandler.__init__(self, request, 
-            clientAddress, server)
+        socketserver.BaseRequestHandler.__init__(self, request, clientAddress, server)
 
     def handle(self):
 
@@ -62,25 +67,26 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
                 try:
                     utcTimestamp = int(time.time())
                     message = {"serverTime": utcTimestamp,
-                        "message": incomingMessage["message"],
-                        "error": "only option message valid"}
+                               "message": incomingMessage["message"],
+                               "error": "only option message valid"}
                     self.request.send(json.dumps(message))
+
                 except Exception as e:
                     pass
 
                 return
 
         except Exception as e:
-            logging.exception("[%s]: Received message " % self.fileName
-                + "invalid.")
+            logging.exception("[%s]: Received message invalid." % self.fileName)
 
             # send error message back
             try:
                 utcTimestamp = int(time.time())
                 message = {"serverTime": utcTimestamp,
-                    "message": incomingMessage["message"],
-                    "error": "received json message invalid"}
+                           "message": "unknown",
+                           "error": "received json message invalid"}
                 self.request.send(json.dumps(message))
+
             except Exception as e:
                 pass
 
@@ -91,18 +97,18 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
             optionType = str(incomingMessage["payload"]["optionType"])
             optionValue = float(incomingMessage["payload"]["value"])
             optionDelay = int(incomingMessage["payload"]["timeDelay"])
-        except Exception as e:
 
-            logging.exception("[%s]: Attributes of option " % self.fileName
-                + "message invalid.")
+        except Exception as e:
+            logging.exception("[%s]: Attributes of option message invalid." % self.fileName)
 
             # send error message back
             try:
                 utcTimestamp = int(time.time())
                 message = {"serverTime": utcTimestamp,
-                    "message": incomingMessage["message"],
-                    "error": "received attributes invalid"}
+                           "message": incomingMessage["message"],
+                           "error": "received attributes invalid"}
                 self.request.send(json.dumps(message))
+
             except Exception as e:
                 pass
 
@@ -115,50 +121,44 @@ class LocalServerSession(SocketServer.BaseRequestHandler):
             try:
                 utcTimestamp = int(time.time())
                 message = {"serverTime": utcTimestamp,
-                    "message": incomingMessage["message"],
-                    "error": "only option type 'alertSystemActive' allowed"}
+                           "message": incomingMessage["message"],
+                           "error": "only option type 'alertSystemActive' allowed"}
                 self.request.send(json.dumps(message))
+
             except Exception as e:
                 pass
 
             return
 
         # send option message to server
-        if self.serverComm.sendOption(optionType, optionValue,
-            optionDelay):
+        if self.serverComm.sendOption(optionType, optionValue, optionDelay):
 
             # send response to client
             try:
                 utcTimestamp = int(time.time())
                 message = {"serverTime": utcTimestamp,
-                    "message": incomingMessage["message"],
-                    "payload": 
-                        {"type": "response",
-                        "result": "ok"}
-                    }
+                           "message": incomingMessage["message"],
+                           "payload": {"type": "response",
+                                       "result": "ok"}}
                 self.request.send(json.dumps(message))
+
             except Exception as e:
-                logging.exception("[%s]: Sending response " % self.fileName
-                    + "message failed.")
+                logging.exception("[%s]: Sending response message failed." % self.fileName)
 
             return
 
         else:
-
-            logging.error("[%s]: Sending message to server failed." 
-            % self.fileName)
+            logging.error("[%s]: Sending message to server failed." % self.fileName)
 
             # send error message back
             try:
                 utcTimestamp = int(time.time())
                 message = {"serverTime": utcTimestamp,
-                    "message": incomingMessage["message"],
-                    "error": "sending message to server failed"}
+                           "message": incomingMessage["message"],
+                           "error": "sending message to server failed"}
                 self.request.send(json.dumps(message))
+
             except Exception as e:
                 pass
 
             return
-
-        logging.info("[%s]: Client disconnected." 
-            % self.fileName)
