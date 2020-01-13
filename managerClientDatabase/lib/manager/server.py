@@ -12,6 +12,7 @@ import logging
 import os
 import json
 import time
+import socket
 from ..globalData import GlobalData
 BUFSIZE = 1024
 
@@ -36,9 +37,10 @@ class ThreadedUnixStreamServer(socketserver.ThreadingMixIn,
 # this class is used for incoming local client connections (i.e., web page)
 class LocalServerSession(socketserver.BaseRequestHandler):
 
-    def __init__(self, request, clientAddress, server: ThreadedUnixStreamServer):
-
-        # TODO type of request and clientAddress
+    def __init__(self,
+                 request: socket,
+                 clientAddress: str,
+                 server: ThreadedUnixStreamServer):
 
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
