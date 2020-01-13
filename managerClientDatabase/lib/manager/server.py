@@ -56,7 +56,8 @@ class LocalServerSession(socketserver.BaseRequestHandler):
         logging.info("[%s]: Client connected." % self.fileName)
 
         # get received data
-        data = self.request.recv(BUFSIZE).strip()
+        data_raw = self.request.recv(BUFSIZE)
+        data = data_raw.decode("ascii")
 
         # convert data to json
         try:
@@ -71,7 +72,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "only option message valid"}
-                    self.request.send(json.dumps(message))
+                    self.request.send(json.dumps(message).encode('ascii'))
 
                 except Exception as e:
                     pass
@@ -87,7 +88,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                 message = {"serverTime": utcTimestamp,
                            "message": "unknown",
                            "error": "received json message invalid"}
-                self.request.send(json.dumps(message))
+                self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception as e:
                 pass
@@ -109,7 +110,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received attributes invalid"}
-                self.request.send(json.dumps(message))
+                self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception as e:
                 pass
@@ -125,7 +126,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "only option type 'alertSystemActive' allowed"}
-                self.request.send(json.dumps(message))
+                self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception as e:
                 pass
@@ -142,7 +143,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                            "message": incomingMessage["message"],
                            "payload": {"type": "response",
                                        "result": "ok"}}
-                self.request.send(json.dumps(message))
+                self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception as e:
                 logging.exception("[%s]: Sending response message failed." % self.fileName)
@@ -158,7 +159,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "sending message to server failed"}
-                self.request.send(json.dumps(message))
+                self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception as e:
                 pass
