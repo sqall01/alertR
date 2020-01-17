@@ -124,7 +124,7 @@ def checkDependencies(oldDependencies, newDependencies):
                 print("")
                 print("The needed module '%s' is not installed. " % importName, end="")
                 print("You can install the module by executing ", end="")
-                print("'pip install %s' " % packet, end="")
+                print("'pip3 install %s' " % packet, end="")
                 print("(if you do not have installed pip, you can install it ", end="")
                 print("on Debian like systems by executing ", end="")
                 print("'apt-get install python-pip').")
