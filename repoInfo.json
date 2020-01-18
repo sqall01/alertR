@@ -90,7 +90,7 @@
 	"sensorClientWeatherService": {
 		"location": "sensorClientWeatherService/",
 		"name": "AlertR Sensor Client Weather Service",
-		"desc": "This client is specialized to fetch data from a weather service provider (Wunderground.com) and provide the AlertR system with this information.",
+		"desc": "This client is specialized to fetch data from a weather service provider (wunderground.com or darksky.net) and provide the AlertR system with this information.",
 		"type": "sensor"
 		},
 	"sensorClientPing": {
