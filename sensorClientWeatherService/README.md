@@ -1,7 +1,7 @@
 AlertR Sensor Client Weather Service
 ======
 
-This client is specialized to fetch data from a weather service provider (Wunderground.com) and provide the AlertR system with this information.
+This client is specialized to fetch data from a weather service provider (wunderground.com or darksky.net) and provide the AlertR system with this information.
 
 
 How to use it?
