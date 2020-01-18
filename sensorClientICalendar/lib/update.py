@@ -149,7 +149,7 @@ class Updater:
     # perform the update
     #
     # return True or False
-    def _checkFilePermissions(self, filesToUpdate: Dict[str: int]) -> bool:
+    def _checkFilePermissions(self, filesToUpdate: Dict[str, int]) -> bool:
 
         # check permissions for each file that is affected by this update
         for clientFile in filesToUpdate.keys():
