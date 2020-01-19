@@ -127,7 +127,7 @@ def checkDependencies(oldDependencies, newDependencies):
                 print("'pip3 install %s' " % packet, end="")
                 print("(if you do not have installed pip, you can install it ", end="")
                 print("on Debian like systems by executing ", end="")
-                print("'apt-get install python-pip').")
+                print("'apt-get install python3-pip').")
 
                 return False
 
