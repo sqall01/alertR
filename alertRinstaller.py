@@ -7,7 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import requests
 import os
 import sys
 import time
@@ -34,6 +33,9 @@ loglevel = logging.INFO
 url = "https://raw.githubusercontent.com/sqall01/alertR/master/"
 
 ################ GLOBAL CONFIGURATION DATA ################
+
+# Minimum version of requests required.
+requests_min_version = "2.20.0"
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -71,7 +73,7 @@ class Updater:
         self.newestFiles = None
         self.lastChecked = 0
         self.repoInstanceLocation = None
-        self.localInstanceInfo = {}
+        self.localInstanceInfo = {"files": {}}
 
         # size of the download chunks
         self.chunkSize = 4096
@@ -689,26 +691,6 @@ class Updater:
         return True
 
 
-# this function asks the user for confirmation
-def userConfirmation():
-
-    while True:
-        try:
-            localInput = input("(y/n): ")
-        except KeyboardInterrupt:
-            print("Bye.")
-            sys.exit(0)
-        except:
-            continue
-
-        if localInput.strip().upper() == "Y":
-            return True
-        elif localInput.strip().upper() == "N":
-            return False
-        else:
-            print("Invalid input.")
-
-
 # this function checks if the dependencies are satisfied
 def check_dependencies(dependencies: Dict[str, Any]) -> bool:
 
@@ -741,7 +723,7 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
                 print("'pip3 install %s' " % packet, end="")
                 print("(if you do not have installed pip, you can install it ", end="")
                 print("on Debian like systems by executing ", end="")
-                print("'apt-get install python-pip').")
+                print("'apt-get install python3-pip').")
                 return False
 
             # if a version string is given in the instance information
@@ -791,7 +773,7 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
                     print("Do you have a version installed that satisfies ", end="")
                     print("the needed version?")
 
-                    if not userConfirmation():
+                    if not user_confirmation():
                         versionCorrect = False
 
                     else:
@@ -883,7 +865,7 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
                     print("Do you have a version installed that satisfies ", end="")
                     print("the needed version?")
 
-                    if not userConfirmation():
+                    if not user_confirmation():
                         versionCorrect = False
 
                     else:
@@ -902,9 +884,77 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
     return True
 
 
-# TODO completely rewritten, test if it works
+def check_requests_available() -> bool:
+    """
+    Checks if the module "requests" is available in the correct version.
+
+    :return: True if available
+    """
+
+    import_name = "requests"
+    version = requests_min_version
+
+    # try to import needed module
+    temp = None
+    try:
+        logging.info("[%s]: Checking module '%s' installed." % (fileName, import_name))
+        temp = importlib.import_module(import_name)
+
+    except Exception as e:
+        logging.error("[%s]: Module '%s' not installed." % (fileName, import_name))
+        return False
+
+    version_correct = False
+    version_check_failed = False
+    installed_version = "Information Not Available"
+
+    # Try to extract version from package.
+    try:
+        installed_version = temp.__version__.split(".")
+        needed_version = version.split(".")
+
+        max_length = 0
+        if len(installed_version) > len(needed_version):
+            max_length = len(installed_version)
+
+        else:
+            max_length = len(needed_version)
+
+        # Check the needed version and the installed version
+        for i in range(max_length):
+            if int(installed_version[i]) > int(needed_version[i]):
+                version_correct = True
+                break
+
+            elif int(installed_version[i]) < int(needed_version[i]):
+                version_correct = False
+                break
+
+    except Exception as e:
+        logging.error("[%s]: Could not verify installed version of module '%s'." % (fileName, import_name))
+        version_check_failed = True
+
+    if version_check_failed:
+        print("")
+        print("Could not automatically verify the installed version of the module '%s'." % import_name)
+        print("You have to verify the version yourself.")
+        print("")
+        print("Installed version: %s" % installed_version)
+        print("Needed version: %s" % version)
+        print("")
+        print("Do you have a version installed that satisfies the needed version?")
+
+        if not user_confirmation():
+            version_correct = False
+
+        else:
+            version_correct = True
+
+    return version_correct
+
+
 # this function lists all available instances
-def list_all_instances(url):
+def list_all_instances(url: str) -> bool:
 
     # Use "server" as temporary instance for updater class to retrieve repository information.
     updater_obj = Updater(url, "server", "", retrieveInfo=False)
@@ -923,9 +973,9 @@ def list_all_instances(url):
 
     for instance in temp:
 
-        # Overwrite instance and last checked value to force update of instance information.
+        # Overwrite instance and instance information to force update of instance information.
         updater_obj.instance = instance
-        updater_obj.lastChecked = 0
+        updater_obj.instanceInfo = None
         instance_info = updater_obj.getInstanceInformation()
 
         print(repo_info["instances"][instance]["name"])
@@ -949,7 +999,7 @@ def list_all_instances(url):
                 packet = pip["packet"]
                 print("%d: %s (pip packet: %s)" % (idx, import_name, packet), end="")
                 if "version" in pip.keys():
-                    print("(lowest version: %s)" % pip["version"])
+                    print(" (lowest version: %s)" % pip["version"])
                 else:
                     print("")
                 idx += 1
@@ -983,6 +1033,26 @@ def output_failure_and_exit():
     sys.exit(1)
 
 
+# this function asks the user for confirmation
+def user_confirmation() -> bool:
+
+    while True:
+        try:
+            localInput = input("(y/n): ")
+        except KeyboardInterrupt:
+            print("Bye.")
+            sys.exit(0)
+        except:
+            continue
+
+        if localInput.strip().upper() == "Y":
+            return True
+        elif localInput.strip().upper() == "N":
+            return False
+        else:
+            print("Invalid input.")
+
+
 if __name__ == '__main__':
 
     # initialize logging
@@ -997,35 +1067,35 @@ if __name__ == '__main__':
 
     parser.formatter = optparse.TitledHelpFormatter()
 
-    parser.description = "Downloads an alertR instance from the online repository."
+    parser.description = "Downloads an AlertR instance from the online repository."
 
-    parser.epilog = "Example command to install the alertR server instance: " \
+    parser.epilog = "Example command to install the AlertR server instance: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "'python %s -i server -t /home/alertr/' " % sys.argv[0] \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "Example command to list all available alertR instances: " \
+                    + "Example command to list all available AlertR instances: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "'python %s -l' " % sys.argv[0] \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "For more detailed examples how to install an alertR instance " \
+                    + "For more detailed examples how to install an AlertR instance " \
                     + "please visit: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "https://github.com/sqall01/alertR/wiki/Installation"
 
     installationGroup = optparse.OptionGroup(parser,
-                                             "Arguments needed to install an alertR instance")
+                                             "Arguments needed to install an AlertR instance")
     installationGroup.add_option("-i",
                                  "--instance",
                                  dest="instance",
                                  action="store",
                                  help="Instance that should be installed (use --list to get a list "
-                                      + "of all available alertR instances). (Required)",
+                                      + "of all available AlertR instances). (Required)",
                                  default=None)
     installationGroup.add_option("-t",
                                  "--target",
                                  dest="targetDirectory",
                                  action="store",
-                                 help="The target directory into which the chosen alertR instance"
+                                 help="The target directory into which the chosen AlertR instance"
                                       + " should be installed. (Required)",
                                  default=None)
     installationGroup.add_option("-f",
@@ -1041,7 +1111,7 @@ if __name__ == '__main__':
                          "--list",
                          dest="list",
                          action="store_true",
-                         help="List all available alertR instances in the repository.",
+                         help="List all available AlertR instances in the repository.",
                          default=False)
 
     parser.add_option_group(installationGroup)
@@ -1049,7 +1119,20 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    # list all available instances in the used alertR repository
+    # Import requests if it is available.
+    if check_requests_available():
+        import requests
+
+    else:
+        print("")
+        print("The installation process needs the module 'requests' at least in version '%s' installed."
+              % requests_min_version)
+        print("You can install the module by executing 'pip3 install requests'.")
+        print("If you do not have installed pip, you can install it on Debian like systems by executing ", end="")
+        print("'apt-get install python3-pip'.")
+        sys.exit(1)
+
+    # list all available instances in the used AlertR repository
     if options.list:
         if list_all_instances(url) is False:
             print("")
@@ -1057,7 +1140,7 @@ if __name__ == '__main__':
             sys.exit(1)
         sys.exit(0)
 
-    # install the chosen alertR instance
+    # install the chosen AlertR instance
     elif options.instance is not None and options.targetDirectory is not None:
 
         instance = options.instance
@@ -1094,16 +1177,15 @@ if __name__ == '__main__':
                 instance = repo_key
                 found = True
                 break
-
         # check if chosen instance exists
         if not found:
             print("")
             print("Chosen AlertR instance '%s' does not exist in repository." % instance)
             sys.exit(1)
 
-        # Overwrite instance and last checked value to force update of instance information.
+        # Overwrite instance and instance information to force update of instance information.
         updater_obj.instance = instance
-        updater_obj.lastChecked = 0
+        updater_obj.instanceInfo = None
         instance_info = updater_obj.getInstanceInformation()
 
         if instance_info is None:
