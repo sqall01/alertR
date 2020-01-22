@@ -1,3 +1,10 @@
+## 0.502-3
+
+Features:
+
+* Update "force" switch now ignores dependency check.
+
+
 ## 0.502-1
 
 Features:
