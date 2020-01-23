@@ -924,9 +924,13 @@ class ServerCommunication:
 
         # trigger all alerts that have the same alert level
         atLeastOnceTriggered = False
+        alertLevelsStr = ", ".join(map(str, sensorAlert.alertLevels))
         for alert in self.alerts:
             for alertLevel in sensorAlert.alertLevels:
                 if alertLevel in alert.alertLevels:
+                    logging.info("[%s]: Trigger Alert with id '%d' with state '%s' for AlertLevels '%s'."
+                                 % (self.fileName, alert.id, str(sensorAlert.state), alertLevelsStr))
+
                     atLeastOnceTriggered = True
                     # trigger alert in an own thread to not block this one
                     alertTriggerProcess = AsynchronousAlertExecuter(alert)
@@ -940,7 +944,6 @@ class ServerCommunication:
 
         # Write to log file if no alert was triggered for received sensorAlert.
         if not atLeastOnceTriggered:
-            alertLevelsStr = ", ".join(map(str, sensorAlert.alertLevels))
             logging.info("[%s]: No alert triggered for alertLevels: %s."
                          % (self.fileName, alertLevelsStr))
 
@@ -969,6 +972,8 @@ class ServerCommunication:
 
         # stop all alerts
         for alert in self.alerts:
+            logging.info("[%s]: Turning Alert with id '%d' off." % (self.fileName, alert.id))
+
             # stop alert in an own thread to not block this one
             alertStopProcess = AsynchronousAlertExecuter(alert)
             # set thread to daemon
