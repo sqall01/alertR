@@ -12,6 +12,7 @@ import os
 import logging
 import dbus
 from .core import _Alert, SensorAlert
+from typing import Optional
 
 
 # this class represents an alert that sends notifications via dbus
@@ -37,79 +38,70 @@ class DbusAlert(_Alert):
         # File location of icon to display.
         self.icon = None  # type: Optional[str]
 
-    # this function is called once when the alert client has connected itself
-    # to the server
-    def initializeAlert(self):
-
-        # set the time of the trigger
-        self.triggered = 0.0
-
-    # this function is called when this alert is triggered
-    def triggerAlert(self, sensorAlert: SensorAlert):
+    def _process_alert(self, sensor_alert: SensorAlert):
 
         # only execute if the last triggered alert was more than
         # the configured trigger delay ago
-        utcTimestamp = int(time.time())
-        if (utcTimestamp - self.triggered) > self.triggerDelay:
+        utc_timestamp = int(time.time())
+        if (utc_timestamp - self.triggered) > self.triggerDelay:
 
             # set the time the alert was triggered
-            self.triggered = utcTimestamp
+            self.triggered = utc_timestamp
 
             # extract the received message if it was received and should be
             # displayed
-            receivedMessage = None
-            if (self.displayReceivedMessage
-                and sensorAlert.hasOptionalData):
+            received_message = None
+            if self.displayReceivedMessage and sensor_alert.hasOptionalData:
 
-                if "message" in sensorAlert.optionalData.keys():
-                    receivedMessage = sensorAlert.optionalData["message"]
+                if "message" in sensor_alert.optionalData.keys():
+                    received_message = sensor_alert.optionalData["message"]
 
-            title = ("alertR (%s)" % time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self.triggered)))
-            appName = "alertR alertClientDbus"
+            title = ("AlertR (%s)" % time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self.triggered)))
+            app_name = "AlertR alertClientDbus"
             replacesId = 0  # not needed, every notification stands for its own
 
             # differentiate between a generic displayed notification and
             # a notification which also shows the received message
-            if receivedMessage is None:
+            if received_message is None:
 
                 # differentiate between a sensor alert triggered by
                 # a sensor going back in normal state or in alert state
-                if sensorAlert.state == 1:
-                    tempMessage = "\"" + sensorAlert.description + "\" triggered."
+                if sensor_alert.state == 1:
+                    temp_message = "\"" + sensor_alert.description + "\" triggered."
                 else:
-                    tempMessage = "\"" + sensorAlert.description + "\" back to normal."
+                    temp_message = "\"" + sensor_alert.description + "\" back to normal."
 
             else:
 
                 # differentiate between a sensor alert triggered by
                 # a sensor going back in normal state or in alert state
-                if sensorAlert.state == 1:
-                    tempMessage = ("\""
-                                  + sensorAlert.description
-                                  + "\" triggered.\n"
-                                  + "Received message: \""
-                                  + receivedMessage
-                                  + "\"")
+                if sensor_alert.state == 1:
+                    temp_message = ("\""
+                                   + sensor_alert.description
+                                   + "\" triggered.\n"
+                                   + "Received message: \""
+                                   + received_message
+                                   + "\"")
                 else:
-                    tempMessage = ("\""
-                                  + sensorAlert.description
-                                  + "\" back to normal.\n"
-                                  + "Received message: \""
-                                  + receivedMessage
-                                  + "\"")
+                    temp_message = ("\""
+                                   + sensor_alert.description
+                                   + "\" back to normal.\n"
+                                   + "Received message: \""
+                                   + received_message
+                                   + "\"")
 
             # send notification via dbus to notification system
             try:
-                busName = 'org.freedesktop.Notifications'
-                objectPath = '/org/freedesktop/Notifications'
-                sessionBus = dbus.SessionBus()
-                dbusObject = sessionBus.get_object(busName, objectPath)
-                interface = dbus.Interface(dbusObject, busName)
-                interface.Notify(appName,
+                bus_name = 'org.freedesktop.Notifications'
+                object_path = '/org/freedesktop/Notifications'
+                session_bus = dbus.SessionBus()
+                dbus_object = session_bus.get_object(bus_name, object_path)
+                interface = dbus.Interface(dbus_object, bus_name)
+                interface.Notify(app_name,
                                  replacesId,
                                  self.icon,
                                  title,
-                                 tempMessage,
+                                 temp_message,
                                  [],
                                  [],
                                  self.displayTime)
@@ -117,6 +109,34 @@ class DbusAlert(_Alert):
                 logging.exception("[%s]: Could not send notification via dbus." % self.fileName)
                 return
 
-    # this function is called when the alert is stopped
-    def stopAlert(self, sensorAlert: SensorAlert):
+    def initialize(self):
+        """
+        Is called when Alert Client is started to initialize the Alert object.
+        """
+
+        # set the time of the trigger
+        self.triggered = 0.0
+
+    # this function is called when this alert is triggered
+    def alert_triggered(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 1.
+
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
+        self._process_alert(sensor_alert)
+
+    def alert_normal(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 0.
+
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
+        self._process_alert(sensor_alert)
+
+    def alert_off(self):
+        """
+        Is called when Alert Client receives a "sensoralertsoff" message which is
+        sent as soon as AlertR alarm status is deactivated.
+        """
         pass
