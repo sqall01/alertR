@@ -45,31 +45,23 @@ class KodiAlert(_Alert):
         # File location of icon to display.
         self.icon = ""  # type: str
 
-    # this function is called once when the alert client has connected itself
-    # to the server
-    def initializeAlert(self):
-
-        # set the time of the trigger
-        self.triggered = 0.0
-
-    # this function is called when this alert is triggered
-    def triggerAlert(self, sensorAlert: SensorAlert):
+    def _process_alert(self, sensor_alert: SensorAlert):
 
         # only execute if the last triggered alert was more than
         # the configured trigger delay ago
-        utcTimestamp = int(time.time())
-        if (utcTimestamp - self.triggered) > self.triggerDelay:
+        utc_timestamp = int(time.time())
+        if (utc_timestamp - self.triggered) > self.triggerDelay:
 
             # set the time the alert was triggered
-            self.triggered = utcTimestamp
+            self.triggered = utc_timestamp
 
             # extract the received message if it was received and should be
             # displayed
-            receivedMessage = None
-            if self.displayReceivedMessage and sensorAlert.hasOptionalData:
+            received_message = None
+            if self.displayReceivedMessage and sensor_alert.hasOptionalData:
 
-                if "message" in sensorAlert.optionalData.keys():
-                    receivedMessage = sensorAlert.optionalData["message"]
+                if "message" in sensor_alert.optionalData.keys():
+                    received_message = sensor_alert.optionalData["message"]
 
             # connect to the kodi json rpc service
             try:
@@ -88,58 +80,85 @@ class KodiAlert(_Alert):
                 return
 
             # check if kodi instance respond
-            if not response is None and response["result"] == "pong":
+            if response is not None and response["result"] == "pong":
 
                 # get player id of the player instance that plays audio/video
-                playerId = None
+                player_id = None
                 response = kodi_obj.Player.GetActivePlayers()
                 for i in range(len(response["result"])):
                     if response["result"][i]["type"] == "audio" or response["result"][i]["type"] == "video":
-                        playerId = response["result"][i]["playerid"]
+                        player_id = response["result"][i]["playerid"]
 
                 # if audio/video is played => pause it if configured
-                if not playerId is None and self.pausePlayer is True:
-                    kodi_obj.Player.PlayPause(playerid=playerId, play=False)
+                if player_id is not None and self.pausePlayer is True:
+                    kodi_obj.Player.PlayPause(playerid=player_id, play=False)
 
                 # show a message on the display if configured
                 if self.showMessage is True:
 
                     # differentiate between a generic displayed notification
                     # and a notification which also shows the received message
-                    if receivedMessage is None:
+                    if received_message is None:
 
                         # differentiate between a sensor alert triggered by
                         # a sensor going back in normal state or in alert state
-                        if sensorAlert.state == 1:
-                            tempMessage = "\"" + sensorAlert.description + "\" triggered."
+                        if sensor_alert.state == 1:
+                            temp_message = "\"" + sensor_alert.description + "\" triggered."
                         else:
-                            tempMessage = "\"" + sensorAlert.description + "\" back to normal."
+                            temp_message = "\"" + sensor_alert.description + "\" back to normal."
 
                     else:
 
                         # differentiate between a sensor alert triggered by
                         # a sensor going back in normal state or in alert state
-                        if sensorAlert.state == 1:
-                            tempMessage = "\"" \
-                                          + sensorAlert.description \
+                        if sensor_alert.state == 1:
+                            temp_message = "\"" \
+                                          + sensor_alert.description \
                                           + "\" triggered. Received message: \"" \
-                                          + receivedMessage \
+                                          + received_message \
                                           + "\""
                         else:
-                            tempMessage = "\"" \
-                                          + sensorAlert.description \
+                            temp_message = "\"" \
+                                          + sensor_alert.description \
                                           + "\" back to normal. Received message: \"" \
-                                          + receivedMessage \
+                                          + received_message \
                                           + "\""
 
                     kodi_obj.GUI.ShowNotification(title="AlertR",
-                                                  message=tempMessage,
+                                                  message=temp_message,
                                                   image=self.icon,
                                                   displaytime=self.displayTime)
 
             else:
                 logging.error("[%s]: Kodi does not respond." % self.fileName)
 
-    # this function is called when the alert is stopped
-    def stopAlert(self, sensorAlert: SensorAlert):
+    def initialize(self):
+        """
+        Is called when Alert Client is started to initialize the Alert object.
+        """
+
+        # set the time of the trigger
+        self.triggered = 0.0
+
+    def alert_triggered(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 1.
+
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
+        self._process_alert(sensor_alert)
+
+    def alert_normal(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 0.
+
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
+        self._process_alert(sensor_alert)
+
+    def alert_off(self):
+        """
+        Is called when Alert Client receives a "sensoralertsoff" message which is
+        sent as soon as AlertR alarm status is deactivated.
+        """
         pass

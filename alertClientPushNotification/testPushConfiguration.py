@@ -138,7 +138,7 @@ if __name__ == '__main__':
         sensorAlert.state = 1
         sensorAlert.timeReceived = int(time.time())
 
-        errorCode = alertObj._sendMessage(subject, message, sensorAlert)
+        errorCode = alertObj._send_message(subject, message, sensorAlert)
 
         # Process response.
         if errorCode == ErrorCodes.NO_ERROR:

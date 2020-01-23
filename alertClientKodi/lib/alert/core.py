@@ -9,6 +9,7 @@
 
 import os
 import threading
+import logging
 from typing import Optional
 from ..localObjects import SensorAlert
 
@@ -23,13 +24,33 @@ class _Alert(object):
         self.description = None  # type: Optional[str]
         self.alertLevels = list()
 
-    def triggerAlert(self, sensorAlert: SensorAlert):
+    def alert_triggered(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 1.
+
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
         raise NotImplementedError("Function not implemented yet.")
 
-    def stopAlert(self, sensorAlert: SensorAlert):
+    def alert_normal(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 0.
+
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
         raise NotImplementedError("Function not implemented yet.")
 
-    def initializeAlert(self):
+    def alert_off(self):
+        """
+        Is called when Alert Client receives a "sensoralertsoff" message which is
+        sent as soon as AlertR alarm status is deactivated.
+        """
+        raise NotImplementedError("Function not implemented yet.")
+
+    def initialize(self):
+        """
+        Is called when Alert Client is started to initialize the Alert object.
+        """
         raise NotImplementedError("Function not implemented yet.")
 
 
@@ -59,8 +80,16 @@ class AsynchronousAlertExecuter(threading.Thread):
 
         # check if an alert should be triggered
         if self.triggerAlert:
-            self.alert.triggerAlert(self.sensorAlert)
+            if self.sensorAlert.state == 1:
+                self.alert.alert_triggered(self.sensorAlert)
+
+            elif self.sensorAlert.state == 0:
+                self.alert.alert_normal(self.sensorAlert)
+
+            else:
+                logging.error("[%s]: State '%s' of received alert unknown."
+                              % (self.fileName, str(self.sensorAlert.state)))
 
         # check if an alert should be stopped
         elif self.stopAlert:
-            self.alert.stopAlert(self.sensorAlert)
+            self.alert.alert_off()

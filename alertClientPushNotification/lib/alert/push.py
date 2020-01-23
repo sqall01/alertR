@@ -26,9 +26,6 @@ class PushAlert(_Alert):
 
         self.fileName = os.path.basename(__file__)
 
-        # this flag is used to signalize if the alert is triggered or not
-        self.triggered = None
-
         self.globalData = globalData
         self.pushRetryTimeout = self.globalData.pushRetryTimeout
         self.pushRetries = self.globalData.pushRetries
@@ -61,86 +58,96 @@ class PushAlert(_Alert):
         else:
             raise ValueError("Channel '%s' contains illegal characters." % value)
 
-    # Internal function that replaces the wildcards in the message
-    # with the corresponding values.
-    def _replaceWildcards(self, sensorAlert: SensorAlert, message: str) -> str:
+    def _replace_wildcards(self, sensor_alert: SensorAlert, message: str) -> str:
+        """
+        Internal function that replaces the wildcards in the message with the corresponding values.
+
+        :param sensor_alert: sensor alert object.
+        :param message: message template.
+        :return: Generated message.
+        """
 
         # Create a received message text.
-        if sensorAlert.hasOptionalData and "message" in sensorAlert.optionalData.keys():
-            receivedMessage = sensorAlert.optionalData["message"]
+        if sensor_alert.hasOptionalData and "message" in sensor_alert.optionalData.keys():
+            receivedMessage = sensor_alert.optionalData["message"]
         else:
             receivedMessage = "None"
 
-        sensorDescription = sensorAlert.description
+        sensor_description = sensor_alert.description
 
         # convert state to a text
-        if sensorAlert.state == 0:
-            stateMessage = "Normal"
-        elif sensorAlert.state == 1:
-            stateMessage = "Triggered"
+        if sensor_alert.state == 0:
+            state_message = "Normal"
+        elif sensor_alert.state == 1:
+            state_message = "Triggered"
         else:
-            stateMessage = "Undefined"
+            state_message = "Undefined"
 
         # Convert data to a string.
-        if sensorAlert.dataType == SensorDataType.NONE:
-            dataMessage = "None"
-        elif sensorAlert.dataType == SensorDataType.INT or sensorAlert.dataType == SensorDataType.FLOAT:
-            dataMessage = str(sensorAlert.sensorData)
+        if sensor_alert.dataType == SensorDataType.NONE:
+            data_message = "None"
+        elif sensor_alert.dataType == SensorDataType.INT or sensor_alert.dataType == SensorDataType.FLOAT:
+            data_message = str(sensor_alert.sensorData)
         else:
-            dataMessage = "Unknown"
+            data_message = "Unknown"
 
         # Replace wildcards in the message with the actual values.
-        tempMsg = message.replace("$MESSAGE$", receivedMessage)
-        tempMsg = tempMsg.replace("$STATE$", stateMessage)
-        tempMsg = tempMsg.replace("$SENSORDESC$", sensorDescription)
-        tempMsg = tempMsg.replace("$TIMERECEIVED$", time.strftime("%d %b %Y %H:%M:%S",
-                                                                  time.localtime(sensorAlert.timeReceived)))
-        tempMsg = tempMsg.replace("$SENSORDATA$", dataMessage)
+        temp_msg = message.replace("$MESSAGE$", receivedMessage)
+        temp_msg = temp_msg.replace("$STATE$", state_message)
+        temp_msg = temp_msg.replace("$SENSORDESC$", sensor_description)
+        temp_msg = temp_msg.replace("$TIMERECEIVED$", time.strftime("%d %b %Y %H:%M:%S",
+                                                                    time.localtime(sensor_alert.timeReceived)))
+        temp_msg = temp_msg.replace("$SENSORDATA$", data_message)
 
-        return tempMsg
+        return temp_msg
 
-    # Internal function that sends the message to the push server.
-    def _sendMessage(self, subject: str, msg: str, sensorAlert: SensorAlert) -> int:
+    def _send_message(self, subject: str, msg: str, sensor_alert: SensorAlert) -> int:
+        """
+        Internal function that sends the message to the push server.
 
+        :param subject: Subject of the message.
+        :param msg: Message to send.
+        :param sensor_alert: sensor alert object.
+        :return: error code of push service.
+        """
         # Send message to push server.
         ctr = 0
-        errorCode = ErrorCodes.NO_ERROR
+        error_code = ErrorCodes.NO_ERROR
         while True:
 
             ctr += 1
 
             logging.info("[%s] Sending message for sensorAlert to server." % self.fileName)
 
-            errorCode = self.push_service.send_msg(subject,
-                                                   msg,
-                                                   self.channel,
-                                                   state=sensorAlert.state,
-                                                   time_triggered=sensorAlert.timeReceived,
-                                                   max_retries=1)
+            error_code = self.push_service.send_msg(subject,
+                                                    msg,
+                                                    self.channel,
+                                                    state=sensor_alert.state,
+                                                    time_triggered=sensor_alert.timeReceived,
+                                                    max_retries=1)
 
-            if errorCode == ErrorCodes.NO_ERROR:
+            if error_code == ErrorCodes.NO_ERROR:
                 logging.info("[%s] Sending message successful." % self.fileName)
                 break
 
             else:
-                if errorCode == ErrorCodes.AUTH_ERROR:
-                    logging.error("[%s] Unable to authenticate at server. "
-                                  % self.fileName
-                                  + "Please check your credentials.")
+                if error_code == ErrorCodes.AUTH_ERROR:
+                    logging.error("[%s] Unable to authenticate at server. Please check your credentials."
+                                  % self.fileName)
 
-                elif errorCode == ErrorCodes.ILLEGAL_MSG_ERROR:
+                elif error_code == ErrorCodes.ILLEGAL_MSG_ERROR:
                     logging.error("[%s] Server replies that message is malformed." % self.fileName)
 
-                elif errorCode == ErrorCodes.VERSION_MISSMATCH:
+                elif error_code == ErrorCodes.VERSION_MISSMATCH:
                     logging.error("[%s] Used version is no longer used. Please update your AlertR instance."
                                   % self.fileName)
 
                 else:
                     logging.error("[%s] Server responded with error '%d'."
-                                  % (self.fileName, errorCode))
+                                  % (self.fileName, error_code))
 
             # Only retry sending message if we can recover from error.
-            if errorCode not in self.retryCodes:
+            if error_code not in self.retryCodes:
                 logging.error("[%s]: Do not retry to send message." % self.fileName)
                 break
 
@@ -155,32 +162,48 @@ class PushAlert(_Alert):
             time.sleep(self.pushRetryTimeout)
 
         # Return last error code (used by the testPushConfiguration.py script).
-        return errorCode
+        return error_code
 
-    # this function is called once when the alert client has connected itself
-    # to the server (should be use to initialize everything that is needed
-    # for the alert)
-    def initializeAlert(self):
+    def _process_alert(self, sensor_alert: SensorAlert):
+        temp_msg = self._replace_wildcards(sensor_alert, self.msgText)
+        temp_sbj = self._replace_wildcards(sensor_alert, self.subject)
 
-        # set the state of the alert to "not triggered"
-        self.triggered = False
+        thread = threading.Thread(target=self._send_message,
+                                  args=(temp_sbj,
+                                        temp_msg,
+                                        sensor_alert))
+        thread.start()
 
+    def initialize(self):
+        """
+        Is called when Alert Client is started to initialize the Alert object.
+        """
         with open(self.templateFile, 'r') as fp:
             self.msgText = fp.read()
 
         self.push_service = LightweightPush(self.username,
-            self.password, self.encSecret)
+                                            self.password,
+                                            self.encSecret)
 
-    def triggerAlert(self, sensorAlert: SensorAlert):
+    def alert_triggered(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
-        tempMsg = self._replaceWildcards(sensorAlert, self.msgText)
-        tempSbj = self._replaceWildcards(sensorAlert, self.subject)
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
+        self._process_alert(sensor_alert)
 
-        thread = threading.Thread(target=self._sendMessage,
-                                  args=(tempSbj,
-                                  tempMsg,
-                                  sensorAlert))
-        thread.start()
+    def alert_normal(self, sensor_alert: SensorAlert):
+        """
+        Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 
-    def stopAlert(self, sensorAlert: SensorAlert):
+        :param sensor_alert: object that contains the received "sensoralert" message.
+        """
+        self._process_alert(sensor_alert)
+
+    def alert_off(self):
+        """
+        Is called when Alert Client receives a "sensoralertsoff" message which is
+        sent as soon as AlertR alarm status is deactivated.
+        """
         pass
