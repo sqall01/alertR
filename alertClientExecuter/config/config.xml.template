@@ -163,32 +163,69 @@
                 execute="/absolute/path/to/command.sh">
 
                 <!--
-                    The arguments that are used for the command that
-                    is executed when a sensor alert was triggered
-                    (the amount of arguments are variable).
-                    You can use the placeholder "$SENSORALERT$"
-                    in order to pass the received sensor alert as
-                    json string to the command.
+                    Settings how the executer should handle a received sensor alert with the state "triggered"
+                    (state is set to "1" in the message).
+                    activated - should the command be executed for the received message? ("True" or "False")
                 -->
-                <triggerArgument>startArg1</triggerArgument>
-                <triggerArgument>startArg2</triggerArgument>
-                <triggerArgument>$SENSORALERT$</triggerArgument>
-                <triggerArgument>startArg4</triggerArgument>
+                <triggered
+                    activated="True">
+
+                    <!--
+                        The arguments that are used for the command that
+                        is executed when the message was received.
+                        (the amount of arguments are variable).
+                        You can use the placeholder "$SENSORALERT$"
+                        in order to pass the received sensor alert as
+                        json string to the command.
+                    -->
+                    <argument>arg1</argument>
+                    <argument>arg2</argument>
+                    <argument>$SENSORALERT$</argument>
+                    <argument>arg4</argument>
+                </triggered>
 
                 <!--
-                    The arguments that are used for the command that
-                    is executed when a all alerts are stopped
-                    (the amount of arguments are variable).
-                    You can use the placeholder "$SENSORALERT$"
-                    in order to pass the received sensor alert as
-                    json string to the command.
+                    Settings how the executer should handle a received sensor alert with the state "normal"
+                    (state is set to "0" in the message).
+                    activated - should the command be executed for the received message? ("True" or "False")
                 -->
-                <stopArgument>stopArg1</stopArgument>
-                <stopArgument>stopArg2</stopArgument>
+                <normal
+                    activated="True">
+
+                    <!--
+                        The arguments that are used for the command that
+                        is executed when the message was received.
+                        (the amount of arguments are variable).
+                        You can use the placeholder "$SENSORALERT$"
+                        in order to pass the received sensor alert as
+                        json string to the command.
+                    -->
+                    <argument>arg1</argument>
+                    <argument>$SENSORALERT$</argument>
+                    <argument>arg3</argument>
+                </normal>
+
+                <!--
+                    Settings how the executer should handle a received alert off message. This message is sent
+                    to all Alert Clients as soon as the AlertR alarm status is deactivated.
+                    activated - should the command be executed for the received message? ("True" or "False")
+                -->
+                <off
+                    activated="True">
+
+                    <!--
+                        The arguments that are used for the command that
+                        is executed when the message was received.
+                        (the amount of arguments are variable).
+                        IMPORTANT: No placeholder available for these arguments.
+                    -->
+                    <argument>arg1</argument>
+                    <argument>arg2</argument>
+                </off>
+
             </executer>
 
         </alert>
-
 
         <!--
             a single alert is configured in an "alert" element
@@ -218,6 +255,34 @@
             -->
             <executer
                 execute="/absolute/path/to/second/command.sh">
+
+                <!--
+                    Settings how the executer should handle a received sensor alert with the state "triggered"
+                    (state is set to "1" in the message).
+                    activated - should the command be executed for the received message? ("True" or "False")
+                -->
+                <triggered
+                    activated="True">
+                </triggered>
+
+                <!--
+                    Settings how the executer should handle a received sensor alert with the state "normal"
+                    (state is set to "0" in the message).
+                    activated - should the command be executed for the received message? ("True" or "False")
+                -->
+                <normal
+                    activated="True">
+                </normal>
+
+                <!--
+                    Settings how the executer should handle a received alert off message. This message is sent
+                    to all Alert Clients as soon as the AlertR alarm status is deactivated.
+                    activated - should the command be executed for the received message? ("True" or "False")
+                -->
+                <off
+                    activated="False">
+                </off>
+
             </executer>
 
         </alert>
