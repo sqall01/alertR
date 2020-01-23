@@ -220,7 +220,7 @@ if __name__ == '__main__':
     # initialize all alerts
     logging.info("[%s] Initializing alerts." % fileName)
     for alert in globalData.alerts:
-        alert.initializeAlert()
+        alert.initialize()
 
     logging.info("[%s] Client started." % fileName)
 

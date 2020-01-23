@@ -19,53 +19,53 @@ class TemplateAlert(_Alert):
     def __init__(self):
         _Alert.__init__(self)
 
-        # this flag is used to signalize if the alert is triggered or not
-        self.triggered = None  # type: Optional[bool]
+        # State of the alert (0 = "normal"; 1 = "triggered").
+        self.state = None  # type: Optional[int]
 
     # this function is called once when the alert client has connected itself
     # to the server (should be use to initialize everything that is needed
     # for the alert)
-    def initializeAlert(self):
+    def initialize(self):
 
-        # set the state of the alert to "not triggered"
-        self.triggered = False
+        # set the state of the alert to "normal"
+        self.state = 0
 
-        print("initialized")
+        print("Initialize: initialized")
 
         # PLACE YOUR CODE HERE
 
-    def triggerAlert(self, sensorAlert: SensorAlert):
+    def alert_triggered(self, sensor_alert: SensorAlert):
 
-        # only execute if not triggered
-        if not self.triggered:
+        if self.state == 0:
+            # Set state of alert to "triggered"
+            self.state = sensor_alert.state
 
-            # set state of alert to "triggered"
-            self.triggered = True
+        print("Sensor Alert 'Triggered': trigger alert")
 
-            print("trigger alert")
+        # PLACE YOUR CODE HERE
+
+    def alert_normal(self, sensor_alert: SensorAlert):
+
+        if self.state == 1:
+            # Set state of alert to "normal"
+            self.state = sensor_alert.state
+
+        print("Sensor Alert 'Normal': trigger alert")
+
+        # PLACE YOUR CODE HERE
+
+    def alert_off(self):
+
+        # Only execute if the alert was triggered
+        if self.state == 1:
+            # set state of alert to "normal"
+            self.state = 0
+
+            print("Alert Off: stopped 'triggered' alert")
 
             # PLACE YOUR CODE HERE
 
         else:
-
-            print("alert already triggered")
-
-            # PLACE YOUR CODE HERE
-
-    def stopAlert(self, sensorAlert: SensorAlert):
-
-        # only execute if the alert was triggered
-        if self.triggered:
-
-            # set state of alert to "not triggered"
-            self.triggered = False
-
-            print("stopped triggered alert")
-
-            # PLACE YOUR CODE HERE
-
-        else:
-
-            print("alert was not triggered")
+            print("Alert Off: alert was in 'normal' state")
 
             # PLACE YOUR CODE HERE
