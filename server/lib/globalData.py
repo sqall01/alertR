@@ -60,7 +60,7 @@ class GlobalData:
         self.version = 0.504
 
         # revision of the used server
-        self.rev = 1
+        self.rev = 2
 
         # Used database layout version.
         self.dbVersion = 1
