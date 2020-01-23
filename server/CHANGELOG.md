@@ -1,3 +1,15 @@
+## 0.600
+
+Features:
+
+* Migration from Python 2.7 to Python 3.5
+
+## 0.504-2
+
+Features:
+
+* Update "force" switch now ignores dependency check.
+
 ## 0.504-1
 
 Features:
