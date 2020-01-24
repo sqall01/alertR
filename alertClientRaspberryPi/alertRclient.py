@@ -147,26 +147,51 @@ if __name__ == '__main__':
 
             alert = RaspberryPiGPIOAlert()
 
-            # get gpio pin settings
-            alert.gpioPin = int(item.find("gpio").attrib["gpioPin"])
+            # Get gpio pin settings.
+            alert.gpio_pin = int(item.find("gpio").attrib["gpioPin"])
             if int(item.find("gpio").attrib["gpioPinStateNormal"]) == 1:
-                alert.gpioPinStateNormal = GPIO.HIGH
+                alert.gpio_pin_state_normal = GPIO.HIGH
+
             else:
-                alert.gpioPinStateNormal = GPIO.LOW
+                alert.gpio_pin_state_normal = GPIO.LOW
+
             if int(item.find("gpio").attrib["gpioPinStateTriggered"]) == 1:
-                alert.gpioPinStateTriggered = GPIO.HIGH
+                alert.gpio_pin_state_triggered = GPIO.HIGH
+
             else:
-                alert.gpioPinStateTriggered = GPIO.LOW
-            alert.gpioResetStateTime = int(
-                item.find("gpio").attrib["gpioResetStateTime"])
+                alert.gpio_pin_state_triggered = GPIO.LOW
+
+            recv_triggered_activated = str(item.find("gpio").find("triggered").attrib["activated"]).upper() == "TRUE"
+            alert.recv_triggered_activated = recv_triggered_activated
+            if recv_triggered_activated:
+                alert.recv_triggered_state = int(item.find("gpio").find("triggered").attrib["state"])
+
+            recv_normal_activated = str(item.find("gpio").find("normal").attrib["activated"]).upper() == "TRUE"
+            alert.recv_normal_activated = recv_normal_activated
+            if recv_normal_activated:
+                alert.recv_normal_state = int(item.find("gpio").find("normal").attrib["state"])
+
+            recv_off_activated = str(item.find("gpio").find("off").attrib["activated"]).upper() == "TRUE"
+            alert.recv_off_activated = recv_off_activated
+
+            gpio_reset_activated = str(item.find("gpio").find("reset").attrib["activated"]).upper() == "TRUE"
+            alert.gpio_reset_activated = gpio_reset_activated
+            if gpio_reset_activated:
+                alert.gpio_reset_state_time = int(item.find("gpio").find("reset").attrib["time"])
 
             # these options are needed by the server to
             # differentiate between the registered alerts
             alert.id = int(item.find("general").attrib["id"])
             alert.description = str(item.find("general").attrib["description"])
 
-            if alert.gpioResetStateTime < 0:
-                raise ValueError("gpioResetStateTime of alert %d has to be greater or equal to 0." % alert.id)
+            if alert.gpio_reset_activated and alert.gpio_reset_state_time <= 0:
+                raise ValueError("time for reset of Alert %d has to be greater to 0." % alert.id)
+
+            if recv_triggered_activated and alert.recv_triggered_state != 0 and alert.recv_triggered_state != 1:
+                raise ValueError("state for 'triggered' sensor alert of Alert %d has to be 0 or 1." % alert.id)
+
+            if recv_normal_activated and alert.recv_normal_state != 0 and alert.recv_normal_state != 1:
+                raise ValueError("state for 'normal' sensor alert of Alert %d has to be 0 or 1." % alert.id)
 
             alert.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -247,7 +272,7 @@ if __name__ == '__main__':
     # initialize all alerts
     logging.info("[%s] Initializing alerts." % fileName)
     for alert in globalData.alerts:
-        alert.initializeAlert()
+        alert.initialize()
 
     logging.info("[%s] Client started." % fileName)
 

@@ -148,37 +148,85 @@
                 the alert level of the current configured alert
                 (an alert must have one but can have multiple alert levels)
             -->
-            <alertLevel>0</alertLevel>
             <alertLevel>1</alertLevel>
-            <alertLevel>5</alertLevel>
-            <alertLevel>32</alertLevel>
-            <alertLevel>6</alertLevel>
 
             <!--
-                Raspberry Pi gpio specific settings for the alert
-                gpioPin - raspberry pi gpio pin that is used by this alert
+                Raspberry Pi GPIO specific settings for the alert.
+                gpioPin - Raspberry Pi GPIO pin that is used by this alert
                     NOTE: python uses the actual pin number and not
-                    the gpio number
-                gpioPinStateNormal - the state that the gpio pin is set
+                    the GPIO number
+                gpioPinStateNormal - The state that the gpio pin is set
                     to under normal conditions when no alert is triggered
-                    (1 or 0)
-                gpioPinStateTriggered - the state that the gpio pin is set
-                    to when an alert is triggered (1 or 0)
-                gpioResetStateTime - The time in seconds after the GPIO
-                    pin was set to "triggered" it is reseted to the "normal"
-                    state. For example, if it is set to 30 then the
-                    GPIO pin is set to "normal" 30 seconds after it was
-                    set to "triggered" via a sensor alert.
-                    If set to 0 the reset is deactivated.
+                    (1 for HIGH or 0 for LOW).
+                gpioPinStateTriggered - The state that the gpio pin is set
+                    to when an alert is triggered (1 for HIGH or 0 for LOW).
             -->
             <gpio
-                gpioPin="26"
+                gpioPin="24"
                 gpioPinStateNormal="0"
-                gpioPinStateTriggered="1"
-                gpioResetStateTime="0" />
+                gpioPinStateTriggered="1">
+
+                <!--
+                    Settings how the GPIO pin should be set if a sensor alert with the state "triggered" was received.
+                    activated - Should the GPIO pin be set if a sensor alert
+                        with state "triggered" was recieved?
+                        ("True" or "False")
+                    state - The state the pin should be set to. This can either
+                        be "normal" or "triggered".
+                        (0 for "normal" or 1 for "triggered")
+                        NOTE: This will be translated to HIGH and LOW via the
+                        gpioPinStateNormal and gpioPinStateTriggered settings.
+                -->
+                <triggered
+                    activated="True"
+                    state="1" />
+
+                <!--
+                    Settings how the GPIO pin should be set if a sensor alert with the state "normal" was received.
+                    activated - Should the GPIO pin be set if a sensor alert
+                        with state "normal" was recieved?
+                        ("True" or "False")
+                    state - The state the pin should be set to. This can either
+                        be "normal" or "triggered".
+                        (0 for "normal" or 1 for "triggered")
+                        NOTE: This will be translated to HIGH and LOW via the
+                        gpioPinStateNormal and gpioPinStateTriggered settings.
+                -->
+                <normal
+                    activated="True"
+                    state="1" />
+
+                <!--
+                    Settings how the GPIO pin should be set if an alert off message was received.
+                    activated - Should the GPIO pin be reset to the "normal"
+                        state if an alert off message was received?
+                        ("True" or "False")
+                        NOTE: This will be translated to HIGH or LOW via the
+                        gpioPinStateNormal setting.
+                -->
+                <off
+                    activated="True" />
+
+                <!--
+                    Reset of the GPIO pin after it was set to "triggered" state.
+                    activated - Should the GPIO pin be reset after a given time
+                        to "normal" after it was set to "triggered"?
+                        ("True" or "False")
+                        NOTE: This will be translated to HIGH or LOW via the
+                        gpioPinStateNormal setting.
+                    time - The time in seconds after the GPIO
+                        pin was set to "triggered" it is reset to the "normal"
+                        state. For example, if it is set to 30 then the
+                        GPIO pin is set to "normal" 30 seconds after it was
+                        set to "triggered" via a sensor alert.
+                        Has to be larger than 0 if activated.
+                -->
+                <reset
+                    activated="True"
+                    time="30" />
+            </gpio>
 
         </alert>
-
 
         <!--
             a single alert is configured in an "alert" element
@@ -193,36 +241,89 @@
             -->
             <general
                 id="1"
-                description="second template alert" />
+                description="simple switch" />
 
             <!--
                 the alert level of the current configured alert
                 (an alert must have one but can have multiple alert levels)
             -->
-            <alertLevel>1</alertLevel>
+            <alertLevel>2</alertLevel>
 
             <!--
-                Raspberry Pi gpio specific settings for the alert
-                gpioPin - raspberry pi gpio pin that is used by this alert
+                Raspberry Pi GPIO specific settings for the alert.
+                gpioPin - Raspberry Pi GPIO pin that is used by this alert
                     NOTE: python uses the actual pin number and not
-                    the gpio number
-                gpioPinStateNormal - the state that the gpio pin is set
+                    the GPIO number
+                gpioPinStateNormal - The state that the gpio pin is set
                     to under normal conditions when no alert is triggered
-                    (1 or 0)
-                gpioPinStateTriggered - the state that the gpio pin is set
-                    to when an alert is triggered (1 or 0)
-                gpioResetStateTime - The time in seconds after the GPIO
-                    pin was set to "triggered" it is reseted to the "normal"
-                    state. For example, if it is set to 30 then the
-                    GPIO pin is set to "normal" 30 seconds after it was
-                    set to "triggered" via a sensor alert.
-                    If set to 0 the reset is deactivated.
+                    (1 for HIGH or 0 for LOW).
+                gpioPinStateTriggered - The state that the gpio pin is set
+                    to when an alert is triggered (1 for HIGH or 0 for LOW).
             -->
             <gpio
-                gpioPin="24"
+                gpioPin="22"
                 gpioPinStateNormal="0"
-                gpioPinStateTriggered="1"
-                gpioResetStateTime="0" />
+                gpioPinStateTriggered="1">
+
+                <!--
+                    Settings how the GPIO pin should be set if a sensor alert with the state "triggered" was received.
+                    activated - Should the GPIO pin be set if a sensor alert
+                        with state "triggered" was recieved?
+                        ("True" or "False")
+                    state - The state the pin should be set to. This can either
+                        be "normal" or "triggered".
+                        (0 for "normal" or 1 for "triggered")
+                        NOTE: This will be translated to HIGH and LOW via the
+                        gpioPinStateNormal and gpioPinStateTriggered settings.
+                -->
+                <triggered
+                    activated="True"
+                    state="1" />
+
+                <!--
+                    Settings how the GPIO pin should be set if a sensor alert with the state "normal" was received.
+                    activated - Should the GPIO pin be set if a sensor alert
+                        with state "normal" was recieved?
+                        ("True" or "False")
+                    state - The state the pin should be set to. This can either
+                        be "normal" or "triggered".
+                        (0 for "normal" or 1 for "triggered")
+                        NOTE: This will be translated to HIGH and LOW via the
+                        gpioPinStateNormal and gpioPinStateTriggered settings.
+                -->
+                <normal
+                    activated="True"
+                    state="0" />
+
+                <!--
+                    Settings how the GPIO pin should be set if an alert off message was received.
+                    activated - Should the GPIO pin be reset to the "normal"
+                        state if an alert off message was received?
+                        ("True" or "False")
+                        NOTE: This will be translated to HIGH or LOW via the
+                        gpioPinStateNormal setting.
+                -->
+                <off
+                    activated="False" />
+
+                <!--
+                    Reset of the GPIO pin after it was set to "triggered" state.
+                    activated - Should the GPIO pin be reset after a given time
+                        to "normal" after it was set to "triggered"?
+                        ("True" or "False")
+                        NOTE: This will be translated to HIGH or LOW via the
+                        gpioPinStateNormal setting.
+                    time - The time in seconds after the GPIO
+                        pin was set to "triggered" it is reset to the "normal"
+                        state. For example, if it is set to 30 then the
+                        GPIO pin is set to "normal" 30 seconds after it was
+                        set to "triggered" via a sensor alert.
+                        Has to be larger than 0 if activated.
+                -->
+                <reset
+                    activated="False"
+                    time="0" />
+            </gpio>
 
         </alert>
 
