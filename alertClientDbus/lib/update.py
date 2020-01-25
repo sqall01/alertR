@@ -672,7 +672,7 @@ class Updater:
                     return False
 
             # Change permission of files that should not be accessible by others.
-            if fileToUpdate == "config.xml.template":
+            elif fileToUpdate == "config/config.xml.template":
 
                 logging.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 
