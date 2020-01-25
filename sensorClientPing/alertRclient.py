@@ -9,6 +9,7 @@
 
 import sys
 import os
+import stat
 from lib import ServerCommunication, ConnectionWatchdog
 from lib import SMTPAlert
 from lib import PingSensor, SensorExecuter
@@ -75,6 +76,13 @@ if __name__ == '__main__':
     # parse the rest of the config with initialized logging
     try:
 
+        # Check file permission of config file (do not allow it to be accessible by others).
+        config_stat = os.stat(globalData.configFile)
+        if (config_stat.st_mode & stat.S_IROTH
+           or config_stat.st_mode & stat.S_IWOTH
+           or config_stat.st_mode & stat.S_IXOTH):
+            raise ValueError("Config file is accessible by others. Please remove file permissions for others.")
+
         # check if config and client version are compatible
         version = float(configRoot.attrib["version"])
         if version != globalData.version:
@@ -97,9 +105,12 @@ if __name__ == '__main__':
                                "client").attrib["certificateRequired"]).upper() == "TRUE")
 
         if certificateRequired is True:
-            clientCertFile = os.path.abspath(makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
-            clientKeyFile = os.path.abspath(makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
-            if os.path.exists(clientCertFile) is False or os.path.exists(clientKeyFile) is False:
+            clientCertFile = os.path.abspath(
+                             makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
+            clientKeyFile = os.path.abspath(
+                            makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
+            if (os.path.exists(clientCertFile) is False
+               or os.path.exists(clientKeyFile) is False):
                 raise ValueError("Client certificate or key does not exist.")
         else:
             clientCertFile = None

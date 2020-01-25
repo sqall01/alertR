@@ -9,13 +9,13 @@
 
 import sys
 import os
+import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import KodiAlert
 from lib import GlobalData
 import logging
 import time
-import socket
 import random
 import xml.etree.ElementTree
 
@@ -75,6 +75,13 @@ if __name__ == '__main__':
 
     # parse the rest of the config with initialized logging
     try:
+
+        # Check file permission of config file (do not allow it to be accessible by others).
+        config_stat = os.stat(globalData.configFile)
+        if (config_stat.st_mode & stat.S_IROTH
+           or config_stat.st_mode & stat.S_IWOTH
+           or config_stat.st_mode & stat.S_IXOTH):
+            raise ValueError("Config file is accessible by others. Please remove file permissions for others.")
 
         # check if config and client version are compatible
         version = float(configRoot.attrib["version"])
