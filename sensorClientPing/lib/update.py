@@ -671,6 +671,19 @@ class Updater:
                     self._releaseLock()
                     return False
 
+            # Change permission of files that should not be accessible by others.
+            if fileToUpdate == "config.xml.template":
+
+                logging.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
+
+                try:
+                    os.chmod(self.instanceLocation + "/" + fileToUpdate, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
+
+                except Exception as e:
+                    logging.exception("[%s]: Changing permissions of '%s' failed." % (self.fileName, fileToUpdate))
+                    self._releaseLock()
+                    return False
+
         # close all temporary file handles
         # => temporary file is automatically deleted
         for fileHandle in downloadedFileHandles.keys():
