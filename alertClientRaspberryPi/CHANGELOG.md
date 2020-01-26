@@ -3,6 +3,7 @@
 Features:
 
 * Migration from Python 2.7 to Python 3.5
+* Permissions check for config file
 * Added separated sensor alert message handling (distinguish between "triggered" and "normal" state)
 
 
