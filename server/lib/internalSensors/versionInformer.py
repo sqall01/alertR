@@ -7,16 +7,24 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import socket
-import ssl
 import threading
 import os
 import time
-import logging
 import json
 from update import VerifiedHTTPSConnection
 from internalSensors import VersionInformerSensor
 from localObjects import SensorDataType
+
+
+# Class that represents the internal sensor that
+# is responsible to trigger sensor alerts if a
+# node has a new version available in the update repository.
+class VersionInformerSensor(_InternalSensor):
+
+    def __init__(self):
+        _InternalSensor.__init__(self)
+
+        self.dataType = SensorDataType.NONE
 
 
 # this class handles the version information for a given instance

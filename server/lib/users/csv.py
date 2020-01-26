@@ -1,103 +1,18 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import csv
-import logging
 import os
-import StringIO
+import io
 import bcrypt
 import threading
-
-
-# Class that holds user data information.
-class UserData(object):
-
-    def __init__(self, username, pwhash, nodeType, instance):
-        self.username = username
-        self.pwhash = pwhash
-        self.nodeType = nodeType
-        self.instance = instance
-
-
-    def toList(self):
-        return [self.username,
-            self.pwhash,
-            self.nodeType,
-            self.instance]
-
-
-# Internal abstract class for new user backends.
-class _userBackend():
-
-    # This function checks if the user credentials are valid
-    #
-    # return True or False
-    def areUserCredentialsValid(self, username, password):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function checks if the node type and instance of the client
-    # is correct
-    #
-    # return True or False
-    def checkNodeTypeAndInstance(self, username, nodeType, instance):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function checks if the user exists.
-    #
-    # return True or False
-    def userExists(self, username):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function writes the currently cached user data back to the backend.
-    def writeUserdata(self):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function reads the user data from the backend and updates
-    # the current cached one.
-    def readUserdata(self):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function adds the user to the backend and returns if it was
-    # successful.
-    #
-    # return True or False
-    def addUser(self, username, password, nodeType, instance):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function deletes the user from the backend and returns if it was
-    # successful.
-    #
-    # return True or False
-    def deleteUser(self, username):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function changes the password of the user and returns if it was
-    # successful.
-    #
-    # return True or False
-    def changePassword(self, username, password):
-        raise NotImplemented("Function not implemented yet.")
-
-
-    # This function changes the node type and instance of the user
-    # and returns if it was successful.
-    #
-    # return True or False
-    def changeNodeTypeAndInstance(self, username, nodeType, instance):
-        raise NotImplemented("Function not implemented yet.")
+from .core import _userBackend, UserData
 
 
 # User backend that uses a simple csv file.
@@ -118,27 +33,34 @@ class CSVBackend(_userBackend):
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
 
+        self.userCredentials = list()
+
         self.readUserdata()
 
-
-    # Internal function that acquires the lock.
     def _acquireLock(self):
+        """
+        Internal function that acquires the lock.
+        """
         self.logger.debug("[%s]: Acquire lock." % self.fileName)
         self.userDataLock.acquire()
 
-
-    # Internal function that releases the lock.
     def _releaseLock(self):
+        """
+        Internal function that releases the lock.
+        """
         self.logger.debug("[%s]: Release lock." % self.fileName)
         self.userDataLock.release()
 
-
-    # Parses the data in csv version 0.
-    # Does not acquire or release the lock.
     def _parseVersion0(self, csvData):
+        """
+        Parses the data in csv version 0. Does not acquire or release the lock.
+
+        :param csvData:
+        """
         for row in csvData:
             if row[0].find('#') != -1:
                 continue
+
             if len(row) != 4:
                 continue
 
@@ -148,26 +70,23 @@ class CSVBackend(_userBackend):
             instance = row[3].replace(' ', '')
 
             # Check if username has a duplicate.
-            if any(map(lambda x : x.username == username,
-                self.userCredentials)):
-
-                self.logger.error("[%s]: Username '%s' already exists "
-                    % (self.fileName, username)
-                    + "in CSV file.")
-
+            if any([x.username == username for x in self.userCredentials]):
+                self.logger.error("[%s]: Username '%s' already exists in CSV file." % (self.fileName, username))
                 continue
 
             pwhash = bcrypt.hashpw(password, bcrypt.gensalt())
             userData = UserData(username, pwhash, nodeType, instance)
             self.userCredentials.append(userData)
 
-
-    # Parses the data in csv version 1.
-    # Does not acquire or release the lock.
     def _parseVersion1(self, csvData):
+        """
+        Parses the data in csv version 1. Does not acquire or release the lock.
+        :param csvData:
+        """
         for row in csvData:
             if row[0].find('#') != -1:
                 continue
+
             if len(row) != 4:
                 continue
 
@@ -177,39 +96,41 @@ class CSVBackend(_userBackend):
             instance = row[3].replace(' ', '')
 
             # Check if username has a duplicate.
-            if any(map(lambda x : x.username == username,
-                self.userCredentials)):
-
-                self.logger.error("[%s]: Username '%s' already exists "
-                    % (self.fileName, username)
-                    + "in CSV file.")
-
+            if any([x.username == username for x in self.userCredentials]):
+                self.logger.error("[%s]: Username '%s' already exists in CSV file." % (self.fileName, username))
                 continue
 
             userData = UserData(username, pwhash, nodeType, instance)
             self.userCredentials.append(userData)
 
+    def _getVersion(self, csvData) -> int:
+        """
+        Extracts the version from the file.
 
-    # Extracts the version from the file.
-    def _getVersion(self, csvData):
+        :param csvData:
+        :return: version of the CSV file.
+        """
         version = 0
         for row in csvData:
             if len(row) == 1 and row[0].startswith("Version:"):
                 try:
                     version = int(row[0][8:])
+
                 except Exception as e:
-                    self.logger.exception("[%s]: Unable to extract version of "
-                        % self.fileName
-                        + "CSV file")
+                    self.logger.exception("[%s]: Unable to extract version of CSV file." % self.fileName)
+
             break
+
         return version
 
+    def areUserCredentialsValid(self, username: str, password: str) -> bool:
+        """
+        This function checks if the user credentials are valid
 
-    # This function checks if the user credentials are valid.
-    #
-    # return True or False
-    def areUserCredentialsValid(self, username, password):
-
+        :param username: name of the user
+        :param password: password of the user
+        :return True or False
+        """
         self._acquireLock()
 
         # Check all usernames if the given username exist
@@ -223,6 +144,7 @@ class CSVBackend(_userBackend):
                 if bcrypt.checkpw(password, userData.pwhash):
                     self._releaseLock()
                     return True
+
                 else:
                     self._releaseLock()
                     return False
@@ -230,26 +152,25 @@ class CSVBackend(_userBackend):
         self._releaseLock()
         return False
 
+    def checkNodeTypeAndInstance(self, username: str, nodeType: str, instance: str) -> bool:
+        """
+        This function checks if the node type and instance of the client is correct
 
-    # This function checks if the node type and instance of the client
-    # is correct.
-    #
-    # return True or False
-    def checkNodeTypeAndInstance(self, username, nodeType, instance):
-
+        :param username: name of the user
+        :param nodeType: type of the node (alert, manager, sensor, server)
+        :param instance: exact instance of the node
+        :return True or False
+        """
         self._acquireLock()
 
         # check all usernames if the given username exists
         # and then check the given node type and instance
         for userData in self.userCredentials:
-
             if userData.username != username:
                 continue
 
             else:
-                if (userData.nodeType.upper() == nodeType.upper()
-                    and userData.instance.upper() == instance.upper()):
-
+                if userData.nodeType.upper() == nodeType.upper() and userData.instance.upper() == instance.upper():
                     self._releaseLock()
                     return True
 
@@ -260,12 +181,13 @@ class CSVBackend(_userBackend):
         self._releaseLock()
         return False
 
+    def userExists(self, username: str) -> bool:
+        """
+        This function checks if the user exists.
 
-    # This function checks if the user exists.
-    #
-    # return True or False
-    def userExists(self, username):
-
+        :param username: name of the user
+        :return True or False
+        """
         self._acquireLock()
 
         # Check all usernames if the given username exists.
@@ -279,12 +201,11 @@ class CSVBackend(_userBackend):
 
         return found
 
-    # This function reads the user data from the backend and updates
-    # the current cached one.
     def readUserdata(self):
-
-        self.logger.info("[%s]: Reading user data from CSV file."
-            % self.fileName)
+        """
+        This function reads the user data from the backend and updates the current cached one.
+        """
+        self.logger.info("[%s]: Reading user data from CSV file." % self.fileName)
 
         self._acquireLock()
 
@@ -307,17 +228,16 @@ class CSVBackend(_userBackend):
             # Parse the csv file according to the version.
             if version == 0:
                 self._parseVersion0(csvData)
+
             elif version == 1:
                 self._parseVersion1(csvData)
+
             else:
-                self.logger.error("[%s]: Do not know how to parse CSV file "
-                    % self.fileName
-                    + "with version %d."
-                    % version)
+                self.logger.error("[%s]: Do not know how to parse CSV file with version %d."
+                                  % (self.fileName, version))
 
         else:
-            self.logger.error("[%s]: No CSV file found."
-                % self.fileName)
+            self.logger.error("[%s]: No CSV file found." % self.fileName)
 
         self._releaseLock()
 
@@ -325,12 +245,11 @@ class CSVBackend(_userBackend):
         if version != self.csvVersion:
             self.writeUserdata()
 
-
-    # This function writes the currently cached user data back to the backend.
     def writeUserdata(self):
-
-        self.logger.info("[%s]: Writing user data to CSV file."
-            % self.fileName)
+        """
+        This function writes the currently cached user data back to the backend.
+        """
+        self.logger.info("[%s]: Writing user data to CSV file." % self.fileName)
 
         self._acquireLock()
 
@@ -348,10 +267,11 @@ class CSVBackend(_userBackend):
         fileData += "# 'manageUsers.py' instead.\n"
 
         # Create csv data for the file.
-        output = StringIO.StringIO()
+        output = io.StringIO()
         csvWriter = csv.writer(output,
-            delimiter=",",
-            quoting=csv.QUOTE_ALL)
+                               delimiter=",",
+                               quoting=csv.QUOTE_ALL)
+
         for userData in self.userCredentials:
             csvWriter.writerow(userData.toList())
 
@@ -361,29 +281,27 @@ class CSVBackend(_userBackend):
 
         # Write final file.
         with open(self.csvLocation, 'wb') as csvFile:
-            csvFile.write(fileData)
+            csvFile.write(fileData.encode("ascii"))
 
         self._releaseLock()
 
+    def addUser(self, username: str, password: str, nodeType: str, instance: str) -> bool:
+        """
+        This function adds the user to the backend and returns if it was successful.
 
-    # This function adds the user to the backend and returns if it was
-    # successful.
-    #
-    # return True or False
-    def addUser(self, username, password, nodeType, instance):
-
-        self.logger.info("[%s]: Adding user '%s' to backend."
-            % (self.fileName, username))
+        :param username: name of the user
+        :param password: password of the user
+        :param nodeType: type of the node (alert, manager, sensor, server)
+        :param instance: exact instance of the node
+        :return True or False
+        """
+        self.logger.info("[%s]: Adding user '%s' to backend." % (self.fileName, username))
 
         self._acquireLock()
 
         # Check if username has a duplicate.
-        if any(map(lambda x : x.username == username,
-            self.userCredentials)):
-
-            self.logger.error("[%s]: Username '%s' already exists "
-                % (self.fileName, username)
-                + "in CSV file.")
+        if any([x.username == username for x in self.userCredentials]):
+            self.logger.error("[%s]: Username '%s' already exists in CSV file." % (self.fileName, username))
 
             self._releaseLock()
             return False
@@ -393,43 +311,40 @@ class CSVBackend(_userBackend):
         self.userCredentials.append(userData)
 
         self._releaseLock()
-
         return True
 
+    def deleteUser(self, username: str) -> bool:
+        """
+        This function deletes the user from the backend and returns if it was successful.
 
-    # This function deletes the user from the backend and returns if it was
-    # successful.
-    #
-    # return True or False
-    def deleteUser(self, username):
-
-        self.logger.info("[%s]: Deleting user '%s' from backend."
-            % (self.fileName, username))
+        :param username: name of the user
+        :return True or False
+        """
+        self.logger.info("[%s]: Deleting user '%s' from backend." % (self.fileName, username))
 
         self._acquireLock()
 
         for userData in self.userCredentials:
             if userData.username == username:
                 self.userCredentials.remove(userData)
+
                 self._releaseLock()
                 return True
 
-        self.logger.error("[%s]: Not able to find username '%s'."
-            % (self.fileName, username))
+        self.logger.error("[%s]: Not able to find username '%s'." % (self.fileName, username))
 
         self._releaseLock()
-
         return False
 
+    def changePassword(self, username: str, password: str) -> bool:
+        """
+        This function changes the password of the user and returns if it was successful.
 
-    # This function changes the password of the user and returns if it was
-    # successful.
-    #
-    # return True or False
-    def changePassword(self, username, password):
-
-        self.logger.info("[%s]: Changing password from user."
-            % self.fileName)
+        :param username: name of the user
+        :param password: password of the user
+        :return True or False
+        """
+        self.logger.info("[%s]: Changing password from user." % self.fileName)
 
         self._acquireLock()
 
@@ -437,22 +352,24 @@ class CSVBackend(_userBackend):
             if userData.username == username:
                 pwhash = bcrypt.hashpw(password, bcrypt.gensalt())
                 userData.pwhash = pwhash
+
                 self._releaseLock()
                 return True
 
-        self.logger.error("[%s]: Not able to find username '%s'."
-            % (self.fileName, username))
+        self.logger.error("[%s]: Not able to find username '%s'." % (self.fileName, username))
 
         self._releaseLock()
-
         return False
 
+    def changeNodeTypeAndInstance(self, username: str, nodeType: str, instance: str) -> bool:
+        """
+        This function changes the node type and instance of the user and returns if it was successful.
 
-    # This function changes the node type and instance of the user
-    # and returns if it was successful.
-    #
-    # return True or False
-    def changeNodeTypeAndInstance(self, username, nodeType, instance):
+        :param username: name of the user
+        :param nodeType: type of the node (alert, manager, sensor, server)
+        :param instance: exact instance of the node
+        :return True or False
+        """
 
         # NOTE: Changing the node type and instance while the server is
         # running can corrupt the database. If it is done while the server
@@ -462,8 +379,7 @@ class CSVBackend(_userBackend):
         # with the new node type and instance, the database is directly
         # updated. Therefore, we do not have to do it manually here.
 
-        self.logger.info("[%s]: Changing node type and instance from user."
-            % self.fileName)
+        self.logger.info("[%s]: Changing node type and instance from user." % self.fileName)
 
         self._acquireLock()
 
@@ -471,12 +387,11 @@ class CSVBackend(_userBackend):
             if userData.username == username:
                 userData.nodeType = nodeType
                 userData.instance = instance
+
                 self._releaseLock()
                 return True
 
-        self.logger.error("[%s]: Not able to find username '%s'."
-            % (self.fileName, username))
+        self.logger.error("[%s]: Not able to find username '%s'." % (self.fileName, username))
 
         self._releaseLock()
-
         return False

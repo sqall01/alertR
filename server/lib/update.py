@@ -11,7 +11,6 @@ import requests
 import threading
 import os
 import time
-import logging
 import json
 import hashlib
 import tempfile

@@ -7,7 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import logging
 import os
 import threading
 import time
@@ -16,7 +15,7 @@ import struct
 import hashlib
 import json
 import importlib
-from localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
+from .localObjects import Node, Alert, Manager, Sensor, SensorAlert, \
     SensorData, SensorDataType, Option
 
 
