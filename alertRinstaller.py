@@ -48,7 +48,13 @@ class _FileUpdateType:
 # this class processes all actions concerning the update process
 class Updater:
 
-    def __init__(self, url: str, instance: str, targetLocation: str, retrieveInfo: bool = True):
+    def __init__(self,
+                 url: str,
+                 instance: str,
+                 targetLocation: str,
+                 localInstanceInfo: Optional[Dict[str, Any]] = None,
+                 retrieveInfo: bool = True,
+                 timeout: float = 20.0):
 
         # used for logging
         self.fileName = os.path.basename(__file__)
@@ -66,14 +72,21 @@ class Updater:
         if not url.lower().startswith("https"):
             raise ValueError("Only 'https' is allowed.")
         self.url = url
+        self.timeout = timeout
 
         # needed to keep track of the newest version
         self.newestVersion = self.version
         self.newestRev = self.rev
         self.newestFiles = None
         self.lastChecked = 0
-        self.repoInstanceLocation = None
-        self.localInstanceInfo = {"files": {}}
+        self.repoInfo = None  # type: Dict[str, Any]
+        self.repoInstanceLocation = None  # type: Optional[str]
+        self.instanceInfo = None  # type: Dict[str, Any]
+
+        if localInstanceInfo is None:
+            self.localInstanceInfo = {"files": {}}
+        else:
+            self.localInstanceInfo = localInstanceInfo
 
         # size of the download chunks
         self.chunkSize = 4096
@@ -83,22 +96,26 @@ class Updater:
             if not self._getNewestVersionInformation():
                 raise ValueError("Not able to get newest repository information.")
 
-    # internal function that acquires the lock
     def _acquireLock(self):
+        """
+        Internal function that acquires the lock.
+        """
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.updaterLock.acquire()
 
-    # internal function that releases the lock
     def _releaseLock(self):
+        """
+        # Internal function that releases the lock.
+        """
         logging.debug("[%s]: Release lock." % self.fileName)
         self.updaterLock.release()
 
-    # internal function that checks which files are new and which files have
-    # to be updated
-    #
-    # return a dict of files that are affected by this update (and how) or None
     def _checkFilesToUpdate(self) -> Optional[Dict[str, int]]:
+        """
+        Internal function that checks which files are new and which files have to be updated.
 
+        :return: a dict of files that are affected by this update (and how) or None
+        """
         # check if the last version information check was done shortly before
         # or was done at all
         # => if not get the newest version information
@@ -156,12 +173,13 @@ class Updater:
 
         return filesToUpdate
 
-    # internal function that checks the needed permissions to
-    # perform the update
-    #
-    # return True or False
     def _checkFilePermissions(self, filesToUpdate: Dict[str, int]) -> bool:
+        """
+        Internal function that checks the needed permissions to perform the update
 
+        :param filesToUpdate: Dict of files and their modification state
+        :return: True or False
+        """
         # check permissions for each file that is affected by this update
         for clientFile in filesToUpdate.keys():
 
@@ -234,12 +252,14 @@ class Updater:
 
         return True
 
-    # internal function that creates sub directories in the target directory
-    # for the given file location
-    #
-    # return True or False
     def _createSubDirectories(self, fileLocation: str, targetDirectory: str) -> bool:
+        """
+        Internal function that creates sub directories in the target directory for the given file location
 
+        :param fileLocation: location of the file
+        :param targetDirectory: location of the target directory
+        :return: True or False
+        """
         folderStructure = fileLocation.split("/")
         if len(folderStructure) != 1:
 
@@ -280,12 +300,15 @@ class Updater:
 
         return True
 
-    # Internal function that deletes sub directories in the target directory
-    # for the given file location if they are empty.
-    #
-    # return True or False
     def _deleteSubDirectories(self, fileLocation: str, targetDirectory: str) -> bool:
+        """
+        Internal function that deletes sub directories in the target directory for the given file location if
+        they are empty.
 
+        :param fileLocation: location of the file
+        :param targetDirectory: location of the target directory
+        :return: True or False
+        """
         folderStructure = fileLocation.split("/")
         del folderStructure[-1]
 
@@ -314,12 +337,14 @@ class Updater:
 
         return True
 
-    # internal function that downloads the given file into a temporary file
-    # and checks if the given hash is correct
-    #
-    # return None or the handle to the temporary file
     def _downloadFile(self, fileLocation: str, fileHash: str) -> Optional[io.BufferedRandom]:
+        """
+        Internal function that downloads the given file into a temporary file and checks if the given hash is correct
 
+        :param fileLocation: location of the file
+        :param fileHash: hash of the file
+        :return: None or the handle to the temporary file
+        """
         logging.info("[%s]: Downloading file: '%s'" % (self.fileName, fileLocation))
 
         # create temporary file
@@ -333,7 +358,10 @@ class Updater:
         # Download file from server.
         try:
             url = self.url + "/" + self.repoInstanceLocation + "/" + fileLocation
-            with requests.get(url, verify=True, stream=True) as r:
+            with requests.get(url,
+                              verify=True,
+                              stream=True,
+                              timeout=self.timeout) as r:
 
                 # Check if server responded correctly
                 # => download file
@@ -400,8 +428,13 @@ class Updater:
         logging.info("[%s]: Successfully downloaded file: '%s'" % (self.fileName, fileLocation))
         return fileHandle
 
-    # internal function that calculates the sha256 hash of the file
     def _sha256File(self, fileHandle: Union[io.TextIOBase, io.BufferedIOBase]) -> str:
+        """
+        Internal function that calculates the sha256 hash of the file.
+
+        :param fileHandle: file handle for which the hash should be created
+        :return: sha256 hash digest
+        """
         fileHandle.seek(0)
         sha256 = hashlib.sha256()
         while True:
@@ -411,19 +444,20 @@ class Updater:
             sha256.update(data)
         return sha256.hexdigest()
 
-    # Internal function that gets the newest instance information from the
-    # online repository
-    #
-    # return True or False
     def _getInstanceInformation(self) -> bool:
+        """
+        Internal function that gets the newest instance information from the online repository.
 
-        try:
-            if self._getRepositoryInformation() is False:
-                raise ValueError("Not able to get newest repository information.")
+        :return: True or False
+        """
+        if self.repoInfo is None or self.repoInstanceLocation is None:
+            try:
+                if self._getRepositoryInformation() is False:
+                    raise ValueError("Not able to get newest repository information.")
 
-        except Exception as e:
-            logging.exception("[%s]: Retrieving newest repository information failed." % self.fileName)
-            return False
+            except Exception as e:
+                logging.exception("[%s]: Retrieving newest repository information failed." % self.fileName)
+                return False
 
         logging.debug("[%s]: Downloading instance information." % self.fileName)
 
@@ -431,7 +465,9 @@ class Updater:
         instanceInfoString = ""
         try:
             url = self.url + "/" + self.repoInstanceLocation + "/instanceInfo.json"
-            with requests.get(url, verify=True) as r:
+            with requests.get(url,
+                              verify=True,
+                              timeout=self.timeout) as r:
                 r.raise_for_status()
                 instanceInfoString = r.text
 
@@ -458,19 +494,21 @@ class Updater:
 
         return True
 
-    # Internal function that gets the newest repository information from the
-    # online repository.
-    #
-    # return True or False
     def _getRepositoryInformation(self) -> bool:
+        """
+        Internal function that gets the newest repository information from the online repository.
 
+        :return: True or False
+        """
         logging.debug("[%s]: Downloading repository information." % self.fileName)
 
         # get repository information from the server
         repoInfoString = ""
         try:
             url = self.url + "/repoInfo.json"
-            with requests.get(url, verify=True) as r:
+            with requests.get(url,
+                              verify=True,
+                              timeout=self.timeout) as r:
                 r.raise_for_status()
                 repoInfoString = r.text
 
@@ -500,12 +538,12 @@ class Updater:
 
         return True
 
-    # internal function that gets the newest version information from the
-    # online repository
-    #
-    # return True or False
     def _getNewestVersionInformation(self) -> bool:
+        """
+        Internal function that gets the newest version information from the online repository.
 
+        :return: True or False
+        """
         try:
             if self._getInstanceInformation() is False:
                 raise ValueError("Not able to get newest instance information.")
@@ -544,9 +582,12 @@ class Updater:
         self.lastChecked = int(time.time())
         return True
 
-    # This function returns the instance information data.
     def getInstanceInformation(self) -> Dict[str, Any]:
+        """
+        This function returns the instance information data.
 
+        :return: instance information data.
+        """
         self._acquireLock()
         utcTimestamp = int(time.time())
         if (utcTimestamp - self.lastChecked) > 60 or self.instanceInfo is None:
@@ -558,9 +599,12 @@ class Updater:
         self._releaseLock()
         return self.instanceInfo
 
-    # This function returns the repository information data.
     def getRepositoryInformation(self) -> Dict[str, Any]:
+        """
+        This function returns the repository information data.
 
+        :return: repository information data
+        """
         self._acquireLock()
         utcTimestamp = int(time.time())
         if (utcTimestamp - self.lastChecked) > 60 or self.repoInfo is None:
@@ -572,9 +616,12 @@ class Updater:
         self._releaseLock()
         return self.repoInfo
 
-    # function that updates this instance of the AlertR infrastructure
     def updateInstance(self) -> bool:
+        """
+        Function that updates this instance of the AlertR infrastructure.
 
+        :return: Success or failure
+        """
         self._acquireLock()
 
         # check all files that have to be updated
@@ -702,6 +749,24 @@ class Updater:
 
         self._releaseLock()
         return True
+
+    def setInstance(self, instance: str, retrieveInfo: bool = True):
+        """
+        Sets the instance to the newly given instance. Necessary if globalData does not hold the instance we
+        are looking for.
+
+        :param instance: target instance
+        :param retrieveInfo: should we directly retrieve all information from the online repository?
+        """
+        self.instance = instance
+        self.instanceInfo = None
+        self.lastChecked = 0
+        self.repoInfo = None
+        self.repoInstanceLocation = None
+
+        if retrieveInfo:
+            if not self._getNewestVersionInformation():
+                raise ValueError("Not able to get newest repository information.")
 
 
 # this function checks if the dependencies are satisfied
@@ -987,8 +1052,7 @@ def list_all_instances(url: str) -> bool:
     for instance in temp:
 
         # Overwrite instance and instance information to force update of instance information.
-        updater_obj.instance = instance
-        updater_obj.instanceInfo = None
+        updater_obj.setInstance(instance, retrieveInfo=False)
         instance_info = updater_obj.getInstanceInformation()
 
         print(repo_info["instances"][instance]["name"])
@@ -1197,8 +1261,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
         # Overwrite instance and instance information to force update of instance information.
-        updater_obj.instance = instance
-        updater_obj.instanceInfo = None
+        updater_obj.setInstance(instance, retrieveInfo=False)
         instance_info = updater_obj.getInstanceInformation()
 
         if instance_info is None:
