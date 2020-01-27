@@ -10,4 +10,4 @@
 from .alertSystemActive import AlertSystemActiveSensor
 from .nodeTimeout import NodeTimeoutSensor
 from .sensorTimeout import SensorTimeoutSensor
-from .versionInformer import VersionInformerSensor, VersionInformer
+from .versionInformer import VersionInformerSensor

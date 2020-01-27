@@ -31,3 +31,6 @@ class NodeTimeoutSensor(_InternalSensor):
         :return: Copy of the node ids set
         """
         return set(self._timeoutNodeIds)
+
+    def initialize(self):
+        pass

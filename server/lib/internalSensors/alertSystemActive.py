@@ -20,3 +20,6 @@ class AlertSystemActiveSensor(_InternalSensor):
         _InternalSensor.__init__(self)
 
         self.dataType = SensorDataType.NONE
+
+    def initialize(self):
+        pass

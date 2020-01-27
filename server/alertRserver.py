@@ -798,24 +798,8 @@ if __name__ == '__main__':
                 % globalData.version)
 
         # parse update options
-        globalData.logger.debug("[%s]: Parsing update configuration."
-            % fileName)
-        updateActivated = (str(
-            configRoot.find("update").find("general").attrib[
-            "activated"]).upper() == "TRUE")
-        updateServer = None
-        updateLocation = None
-        if updateActivated is True:
-            updateServer = str(
-                configRoot.find("update").find("server").attrib["host"])
-            updatePort = int(
-                configRoot.find("update").find("server").attrib["port"])
-            updateLocation = str(
-                configRoot.find("update").find("server").attrib["location"])
-            updateCaFile = makePath(str(
-                configRoot.find("update").find("server").attrib["caFile"]))
-            updateInterval = int(
-                configRoot.find("update").find("general").attrib["interval"])
+        globalData.logger.debug("[%s]: Parsing update configuration." % fileName)
+        updateUrl = str(configRoot.find("update").find("server").attrib["url"])
 
         # configure user credentials backend
         globalData.logger.debug("[%s]: Parsing user backend configuration."
@@ -1464,19 +1448,21 @@ if __name__ == '__main__':
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append( (sensor.remoteSensorId, initState) )
+            dbInitialStateList.append((sensor.remoteSensorId, initState))
 
         # Parse version informer sensor (if activated).
         item = internalSensorsCfg.find("versionInformer")
-        if (str(item.attrib["activated"]).upper() == "TRUE"):
+        if str(item.attrib["activated"]).upper() == "TRUE":
 
-            sensor = VersionInformerSensor()
+            sensor = VersionInformerSensor(globalData)
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0
             sensor.state = 0
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
+            sensor.repo_url = updateUrl
+            sensor.check_interval = int(item.attrib["interval"])
 
             # Version informer sensor has always this fix internal id
             # (stored as remoteSensorId).
@@ -1500,13 +1486,12 @@ if __name__ == '__main__':
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+            dbInitialStateList.append((sensor.remoteSensorId, 0))
 
         # Add internal sensors to database (updates/deletes also old
         # sensor data in the database).
         if not globalData.storage.addSensors(serverUsername, dbSensors):
-            raise ValueError("Not able to add internal sensors "
-                + "to database.")
+            raise ValueError("Not able to add internal sensors to database.")
 
         # get sensor id for each activated internal sensor from the database
         for sensor in globalData.internalSensors:
@@ -1514,8 +1499,7 @@ if __name__ == '__main__':
             sensor.sensorId = globalData.storage.getSensorId(sensor.nodeId,
                 sensor.remoteSensorId)
             if sensor.sensorId is None:
-                raise ValueError("Not able to get sensor id for "
-                    + "internal sensor from database.")
+                raise ValueError("Not able to get sensor id for internal sensor from database.")
 
         # Set initial states of the internal sensors.
         globalData.storage.updateSensorState(serverNodeId, dbInitialStateList)
@@ -1586,17 +1570,6 @@ if __name__ == '__main__':
     globalData.configWatchdog.daemon = True
     globalData.configWatchdog.start()
 
-    # Only start version informer if update check is available.
-    if updateActivated is True:
-        globalData.logger.info("[%s] Starting version checker thread."
-            % fileName)
-        versionInformer = VersionInformer(updateServer, updatePort,
-            updateLocation, updateCaFile, updateInterval, globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates
-        versionInformer.daemon = True
-        versionInformer.start()
-
     # only start survey executer if user wants to participate
     if surveyActivated:
         globalData.logger.info("[%s] Starting survey executer thread."
@@ -1607,6 +1580,12 @@ if __name__ == '__main__':
         # => threads terminates when main thread terminates
         surveyExecuter.daemon = True
         surveyExecuter.start()
+
+    # Finalize internal sensors
+    # (do it last in order to resolve problems with objects not available during configuration).
+    globalData.logger.info("[%s] Initializing internal sensors." % fileName)
+    for internal_sensor in globalData.internalSensors:
+        internal_sensor.initialize()
 
     globalData.logger.info("[%s] Server started." % fileName)
 

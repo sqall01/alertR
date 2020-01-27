@@ -25,4 +25,8 @@ class _InternalSensor:
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Any
 
-
+    def initialize(self):
+        """
+        Initializes the sensor and is called during start up of server.
+        """
+        raise NotImplemented("Function not implemented yet.")

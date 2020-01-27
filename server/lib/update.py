@@ -34,7 +34,7 @@ class Updater:
 
     def __init__(self, url: str,
                  globalData: GlobalData,
-                 localInstanceInfo: Dict[str, Any],
+                 localInstanceInfo: Optional[Dict[str, Any]],
                  retrieveInfo: bool = True,
                  timeout: float = 20.0):
 
@@ -65,9 +65,13 @@ class Updater:
         self.newestRev = self.rev
         self.newestFiles = None
         self.lastChecked = 0
-        self.localInstanceInfo = localInstanceInfo
         self.repoInfo = None
         self.instanceInfo = None
+
+        if localInstanceInfo is None:
+            self.localInstanceInfo = {"files": {}}
+        else:
+            self.localInstanceInfo = localInstanceInfo
 
         # size of the download chunks
         self.chunkSize = 4096
@@ -729,3 +733,19 @@ class Updater:
 
         self._releaseLock()
         return True
+
+    def setInstance(self, instance: str, retrieveInfo: bool = True):
+        """
+        Sets the instance to the newly given instance. Necessary if globalData does not hold the instance we
+        are looking for.
+
+        :param instance: target instance
+        :param retrieveInfo: should we directly retrieve all information from the online repository?
+        """
+        self.instance = instance
+        self.instanceInfo = None
+        self.lastChecked = 0
+
+        if retrieveInfo:
+            if not self._getNewestVersionInformation():
+                raise ValueError("Not able to get newest repository information.")

@@ -23,3 +23,6 @@ class SensorTimeoutSensor(_InternalSensor):
 
         # A set of ids of the sensors that are timed out.
         self.timeoutSensorIds = set()  # type: Set[int]
+
+    def initialize(self):
+        pass

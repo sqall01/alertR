@@ -10,7 +10,8 @@
 import os
 import threading
 import ssl
-from typing import Optional
+from typing import Optional, List
+from .internalSensors.core import _InternalSensor
 
 
 # Class implements an iterator that iterates over a copy of the
@@ -147,7 +148,7 @@ class GlobalData:
         self.asyncOptionExecuters = list()
 
         # List of the server's internal sensors.
-        self.internalSensors = list()
+        self.internalSensors = list()  # type: List[_InternalSensor]
 
         # Instance of the connection watchdog object.
         self.connectionWatchdog = None

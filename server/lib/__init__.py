@@ -21,4 +21,3 @@ from .manager import ManagerUpdateExecuter
 from .update import Updater
 from .globalData import GlobalData
 from .survey import SurveyExecuter
-from .versionInformer import VersionInformer
