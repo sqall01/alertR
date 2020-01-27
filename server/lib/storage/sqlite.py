@@ -50,8 +50,7 @@ class Sqlite(_Storage):
         # if not create one
         if os.path.exists(self.storagePath) is False:
 
-            self.logger.info("[%s]: No database found. Creating '%s'."
-            % (self.fileName, self.storagePath))
+            self.logger.info("[%s]: No database found. Creating '%s'." % (self.fileName, self.storagePath))
 
             self.conn = sqlite3.connect(self.storagePath,
                                         check_same_thread=False)
@@ -76,13 +75,13 @@ class Sqlite(_Storage):
         :return: Success or Failure
         """
         # check if the username does exist => if not node is not known
-        self.cursor.execute("SELECT id FROM nodes WHERE username = ? ",
-            (username, ))
+        self.cursor.execute("SELECT id FROM nodes WHERE username = ? ", (username, ))
         result = self.cursor.fetchall()
 
         # return if username was found or not
         if len(result) == 0:
             return False
+
         else:
             return True
 
@@ -95,8 +94,8 @@ class Sqlite(_Storage):
         # generate unique id for this installation
         utcTimestamp = int(time.time())
         uniqueString = socket.gethostname() \
-            + struct.pack("d", utcTimestamp) \
-            + os.urandom(200)
+                       + struct.pack("d", utcTimestamp).decode("ascii") \
+                       + os.urandom(200).decode("ascii")
         sha256 = hashlib.sha256()
         sha256.update(uniqueString)
         uniqueID = sha256.hexdigest()
@@ -135,11 +134,10 @@ class Sqlite(_Storage):
         # check if the username does exist
         if self._usernameInDb(username):
             # get id of username
-            self.cursor.execute("SELECT id FROM nodes WHERE username = ? ",
-                (username, ))
+            self.cursor.execute("SELECT id FROM nodes WHERE username = ? ", (username, ))
             result = self.cursor.fetchall()
-
             return result[0][0]
+
         else:
             raise ValueError("Node id was not found.")
 
@@ -159,8 +157,7 @@ class Sqlite(_Storage):
 
         alert = None
         try:
-            self.cursor.execute("SELECT * FROM alerts "
-                + "WHERE id = ?", (alertId, ))
+            self.cursor.execute("SELECT * FROM alerts WHERE id = ?", (alertId, ))
 
             result = self.cursor.fetchall()
 
@@ -172,22 +169,16 @@ class Sqlite(_Storage):
                 alert.description = result[0][3]
 
                 # Set alert levels for alert.
-                alertLevels = self._getAlertAlertLevels(alert.alertId,
-                    logger)
+                alertLevels = self._getAlertAlertLevels(alert.alertId, logger)
                 if alertLevels is None:
-                    logger.error("[%s]: Not able to get alert levels for "
-                        % self.fileName
-                        + "alert with id %d."
-                        % alert.alertId)
-
+                    logger.error("[%s]: Not able to get alert levels for alert with id %d."
+                                 % (self.fileName, alert.alertId))
                     return None
+
                 alert.alertLevels = alertLevels
 
         except Exception as e:
-
-            logger.exception("[%s]: Not able to get " % self.fileName
-                + "alert with id %d." % alertId)
-
+            logger.exception("[%s]: Not able to get alert with id %d." % (self.fileName, alertId))
             return None
 
         return alert
@@ -208,8 +199,7 @@ class Sqlite(_Storage):
 
         manager = None
         try:
-            self.cursor.execute("SELECT * FROM managers "
-                + "WHERE id = ?", (managerId, ))
+            self.cursor.execute("SELECT * FROM managers WHERE id = ?", (managerId, ))
 
             result = self.cursor.fetchall()
 
@@ -220,10 +210,7 @@ class Sqlite(_Storage):
                 manager.description = result[0][2]
 
         except Exception as e:
-
-            logger.exception("[%s]: Not able to get " % self.fileName
-                + "manager with id %d." % managerId)
-
+            logger.exception("[%s]: Not able to get manager with id %d." % (self.fileName, managerId))
             return None
 
         return manager
@@ -243,23 +230,19 @@ class Sqlite(_Storage):
             logger = self.logger
 
         try:
-            self.cursor.execute("SELECT * FROM nodes "
-                + "WHERE id = ?", (nodeId, ))
-
+            self.cursor.execute("SELECT * FROM nodes WHERE id = ?", (nodeId, ))
             result = self.cursor.fetchall()
+
         except Exception as e:
-
-            logger.exception("[%s]: Not able to get " % self.fileName
-                + "node with id %d." % nodeId)
-
+            logger.exception("[%s]: Not able to get node with id %d." % (self.fileName, nodeId))
             return None
 
         if len(result) == 1:
             try:
                 return self._convertNodeTupleToObj(result[0])
+
             except Exception as e:
-                logger.exception("[%s]: Not able to convert " % self.fileName
-                    + "node data for id %d to object." % nodeId)
+                logger.exception("[%s]: Not able to convert node data for id %d to object." % (self.fileName, nodeId))
 
         return None
 
@@ -279,8 +262,7 @@ class Sqlite(_Storage):
 
         sensor = None
         try:
-            self.cursor.execute("SELECT * FROM sensors "
-                + "WHERE id = ?", (sensorId, ))
+            self.cursor.execute("SELECT * FROM sensors WHERE id = ?", (sensorId, ))
 
             result = self.cursor.fetchall()
 
@@ -296,15 +278,12 @@ class Sqlite(_Storage):
                 sensor.dataType = result[0][7]
 
                 # Set alert levels for sensor.
-                alertLevels = self._getSensorAlertLevels(sensor.sensorId,
-                    logger)
+                alertLevels = self._getSensorAlertLevels(sensor.sensorId, logger)
                 if alertLevels is None:
-                    logger.error("[%s]: Not able to get alert levels for "
-                        % self.fileName
-                        + "sensor with id %d."
-                        % sensor.sensorId)
-
+                    logger.error("[%s]: Not able to get alert levels for sensor with id %d."
+                                 % (self.fileName, sensor.sensorId))
                     return None
+
                 sensor.alertLevels = alertLevels
 
                 # Extract sensor data.
@@ -312,45 +291,34 @@ class Sqlite(_Storage):
                     sensor.data = None
 
                 elif sensor.dataType == SensorDataType.INT:
-                    self.cursor.execute("SELECT data "
-                        + "FROM sensorsDataInt "
-                        + "WHERE sensorId = ?",
-                        (sensor.sensorId, ))
+                    self.cursor.execute("SELECT data FROM sensorsDataInt WHERE sensorId = ?", (sensor.sensorId, ))
                     subResult = self.cursor.fetchall()
 
                     if len(subResult) != 1:
-                        logger.error("[%s]: Sensor data for sensor with id %d "
-                            % (self.fileName, sensor.sensorId)
-                            + "was not found.")
-
+                        logger.error("[%s]: Sensor data for sensor with id %d was not found."
+                                     % (self.fileName, sensor.sensorId))
                         return None
+
                     sensor.data = subResult[0][0]
 
                 elif sensor.dataType == SensorDataType.FLOAT:
-                    self.cursor.execute("SELECT data "
-                        + "FROM sensorsDataFloat "
-                        + "WHERE sensorId = ?",
-                        (sensor.sensorId, ))
+                    self.cursor.execute("SELECT data FROM sensorsDataFloat WHERE sensorId = ?", (sensor.sensorId, ))
                     subResult = self.cursor.fetchall()
 
                     if len(subResult) != 1:
-                        logger.error("[%s]: Sensor data for sensor with id %d "
-                            % (self.fileName, sensor.sensorId)
-                            + "was not found.")
-
+                        logger.error("[%s]: Sensor data for sensor with id %d was not found."
+                                     % (self.fileName, sensor.sensorId))
                         return None
+
                     sensor.data = subResult[0][0]
 
                 else:
-                    logger.error("[%s]: Not able to get sensor with id %d. "
-                        % (self.fileName, sensor.sensorId)
-                        + "Data type in database unknown.")
-
+                    logger.error("[%s]: Not able to get sensor with id %d. Data type in database unknown."
+                                 % (self.fileName, sensor.sensorId))
                     return None
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get " % self.fileName
-                + "sensor with id %d." % sensorId)
+            logger.exception("[%s]: Not able to get sensor with id %d." % (self.fileName, sensorId))
             return None
 
         return sensor
@@ -367,16 +335,13 @@ class Sqlite(_Storage):
         :return: sensorId or raised Exception
         """
         # get sensorId from database
-        self.cursor.execute("SELECT id FROM sensors "
-            + "WHERE nodeId = ? "
-            + "AND remoteSensorId = ?", (nodeId, remoteSensorId))
+        self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND remoteSensorId = ?", (nodeId, remoteSensorId))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
             raise ValueError("Sensor does not exist in database.")
 
         sensorId = result[0][0]
-
         return sensorId
 
     def _getAlertId(self,
@@ -391,16 +356,13 @@ class Sqlite(_Storage):
         :return: alertId or raised Exception
         """
         # get alertId from database
-        self.cursor.execute("SELECT id FROM alerts "
-            + "WHERE nodeId = ? "
-            + "AND remoteAlertId = ?", (nodeId, remoteAlertId))
+        self.cursor.execute("SELECT id FROM alerts WHERE nodeId = ? AND remoteAlertId = ?", (nodeId, remoteAlertId))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
             raise ValueError("Alert does not exist in database.")
 
         alertId = result[0][0]
-
         return alertId
 
     def _getManagerId(self,
@@ -412,15 +374,13 @@ class Sqlite(_Storage):
         :return: managerId or raised Exception
         """
         # get managerId from database
-        self.cursor.execute("SELECT id FROM managers "
-            + "WHERE nodeId = ?", (nodeId, ))
+        self.cursor.execute("SELECT id FROM managers WHERE nodeId = ?", (nodeId, ))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
             raise ValueError("Manager does not exist in database.")
 
         managerId = result[0][0]
-
         return managerId
 
     def _getUniqueID(self,
@@ -436,16 +396,15 @@ class Sqlite(_Storage):
             logger = self.logger
 
         # if unique id already cached => return it
-        if not self.globalData.uniqueID is None:
+        if self.globalData.uniqueID is not None:
             return self.globalData.uniqueID
 
         try:
-            self.cursor.execute("SELECT value "
-                + "FROM internals WHERE type=?", ("uniqueID", ))
+            self.cursor.execute("SELECT value FROM internals WHERE type=?", ("uniqueID", ))
             self.globalData.uniqueID = self.cursor.fetchall()[0][0]
+
         except Exception as e:
-            logger.exception("[%s]: Not able to get the unique id."
-                % self.fileName)
+            logger.exception("[%s]: Not able to get the unique id." % self.fileName)
 
         return self.globalData.uniqueID
 
@@ -487,127 +446,127 @@ class Sqlite(_Storage):
         """
         # create internals table
         self.cursor.execute("CREATE TABLE internals ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "type TEXT NOT NULL UNIQUE, "
-            + "value TEXT NOT NULL)")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "type TEXT NOT NULL UNIQUE, "
+                            + "value TEXT NOT NULL)")
 
         # insert version of server
         self.cursor.execute("INSERT INTO internals ("
-            + "type, "
-            + "value) VALUES (?, ?)", ("version", self.version))
+                            + "type, "
+                            + "value) VALUES (?, ?)", ("version", self.version))
 
         # insert db version of server
         self.cursor.execute("INSERT INTO internals ("
-            + "type, "
-            + "value) VALUES (?, ?)", ("dbversion", self.dbVersion))
+                            + "type, "
+                            + "value) VALUES (?, ?)", ("dbversion", self.dbVersion))
 
         # insert unique id
         self.cursor.execute("INSERT INTO internals ("
-            + "type, "
-            + "value) VALUES (?, ?)", ("uniqueID", uniqueID))
+                            + "type, "
+                            + "value) VALUES (?, ?)", ("uniqueID", uniqueID))
 
         # create options table
         self.cursor.execute("CREATE TABLE options ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "type TEXT NOT NULL UNIQUE, "
-            + "value REAL NOT NULL)")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "type TEXT NOT NULL UNIQUE, "
+                            + "value REAL NOT NULL)")
 
         # insert option to activate/deactivate alert system
         # (0 = deactivated, 1 = activated)
         self.cursor.execute("INSERT INTO options ("
-            + "type, "
-            + "value) VALUES (?, ?)", ("alertSystemActive", 0))
+                            + "type, "
+                            + "value) VALUES (?, ?)", ("alertSystemActive", 0))
 
         # create nodes table
         self.cursor.execute("CREATE TABLE nodes ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "hostname TEXT NOT NULL, "
-            + "username TEXT NOT NULL UNIQUE, "
-            + "nodeType TEXT NOT NULL, "
-            + "instance TEXT NOT NULL, "
-            + "connected INTEGER NOT NULL, "
-            + "version REAL NOT NULL, "
-            + "rev INTEGER NOT NULL, "
-            + "persistent INTEGER NOT NULL)")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "hostname TEXT NOT NULL, "
+                            + "username TEXT NOT NULL UNIQUE, "
+                            + "nodeType TEXT NOT NULL, "
+                            + "instance TEXT NOT NULL, "
+                            + "connected INTEGER NOT NULL, "
+                            + "version REAL NOT NULL, "
+                            + "rev INTEGER NOT NULL, "
+                            + "persistent INTEGER NOT NULL)")
 
         # create sensors table
         self.cursor.execute("CREATE TABLE sensors ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "nodeId INTEGER NOT NULL, "
-            + "remoteSensorId INTEGER NOT NULL, "
-            + "description TEXT NOT NULL, "
-            + "state INTEGER NOT NULL, "
-            + "lastStateUpdated INTEGER NOT NULL, "
-            + "alertDelay INTEGER NOT NULL, "
-            + "dataType INTEGER NOT NULL, "
-            + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "nodeId INTEGER NOT NULL, "
+                            + "remoteSensorId INTEGER NOT NULL, "
+                            + "description TEXT NOT NULL, "
+                            + "state INTEGER NOT NULL, "
+                            + "lastStateUpdated INTEGER NOT NULL, "
+                            + "alertDelay INTEGER NOT NULL, "
+                            + "dataType INTEGER NOT NULL, "
+                            + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
         # create sensorsAlertLevels table
         self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
-            + "sensorId INTEGER NOT NULL, "
-            + "alertLevel INTEGER NOT NULL, "
-            + "PRIMARY KEY(sensorId, alertLevel), "
-            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+                            + "sensorId INTEGER NOT NULL, "
+                            + "alertLevel INTEGER NOT NULL, "
+                            + "PRIMARY KEY(sensorId, alertLevel), "
+                            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
         # Create sensorsDataInt table.
         self.cursor.execute("CREATE TABLE sensorsDataInt ("
-            + "sensorId INTEGER NOT NULL PRIMARY KEY, "
-            + "data INTEGER NOT NULL, "
-            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+                            + "sensorId INTEGER NOT NULL PRIMARY KEY, "
+                            + "data INTEGER NOT NULL, "
+                            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
         # Create sensorsDataFloat table.
         self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-            + "sensorId INTEGER NOT NULL PRIMARY KEY, "
-            + "data REAL NOT NULL, "
-            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+                            + "sensorId INTEGER NOT NULL PRIMARY KEY, "
+                            + "data REAL NOT NULL, "
+                            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
         # create sensorAlerts table
         self.cursor.execute("CREATE TABLE sensorAlerts ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "nodeId INTEGER NOT NULL, "
-            + "sensorId INTEGER NOT NULL, "
-            + "state INTEGER NOT NULL, "
-            + "timeReceived INTEGER NOT NULL, "
-            + "dataJson TEXT NOT NULL,"
-            + "changeState INTEGER NOT NULL, "
-            + "hasLatestData INTEGER NOT NULL, "
-            + "dataType INTEGER NOT NULL, "
-            + "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
-            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "nodeId INTEGER NOT NULL, "
+                            + "sensorId INTEGER NOT NULL, "
+                            + "state INTEGER NOT NULL, "
+                            + "timeReceived INTEGER NOT NULL, "
+                            + "dataJson TEXT NOT NULL,"
+                            + "changeState INTEGER NOT NULL, "
+                            + "hasLatestData INTEGER NOT NULL, "
+                            + "dataType INTEGER NOT NULL, "
+                            + "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
+                            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
         # Create sensorAlertsDataInt table.
         self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
-            + "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
-            + "data INTEGER NOT NULL, "
-            + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+                            + "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
+                            + "data INTEGER NOT NULL, "
+                            + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
         # Create sensorAlertsDataFloat table.
         self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
-            + "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
-            + "data REAL NOT NULL, "
-            + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+                            + "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
+                            + "data REAL NOT NULL, "
+                            + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
         # create alerts table
         self.cursor.execute("CREATE TABLE alerts ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "nodeId INTEGER NOT NULL, "
-            + "remoteAlertId INTEGER NOT NULL, "
-            + "description TEXT NOT NULL, "
-            + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "nodeId INTEGER NOT NULL, "
+                            + "remoteAlertId INTEGER NOT NULL, "
+                            + "description TEXT NOT NULL, "
+                            + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
         # create alertsAlertLevels table
         self.cursor.execute("CREATE TABLE alertsAlertLevels ("
-            + "alertId INTEGER NOT NULL, "
-            + "alertLevel INTEGER NOT NULL, "
-            + "PRIMARY KEY(alertId, alertLevel), "
-            + "FOREIGN KEY(alertId) REFERENCES alerts(id))")
+                            + "alertId INTEGER NOT NULL, "
+                            + "alertLevel INTEGER NOT NULL, "
+                            + "PRIMARY KEY(alertId, alertLevel), "
+                            + "FOREIGN KEY(alertId) REFERENCES alerts(id))")
 
         # create managers table
         self.cursor.execute("CREATE TABLE managers ("
-            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + "nodeId INTEGER NOT NULL, "
-            + "description TEXT NOT NULL, "
-            + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + "nodeId INTEGER NOT NULL, "
+                            + "description TEXT NOT NULL, "
+                            + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
         # commit all changes
         self.conn.commit()
@@ -652,31 +611,22 @@ class Sqlite(_Storage):
         try:
             # Get all alert ids that are connected to
             # the node.
-            self.cursor.execute("SELECT id FROM alerts "
-                + "WHERE nodeId = ?", (nodeId, ))
+            self.cursor.execute("SELECT id FROM alerts WHERE nodeId = ?", (nodeId, ))
             result = self.cursor.fetchall()
 
             # Delete all alert alert levels and alerts of
             # this node
             for alertIdResult in result:
 
-                self.cursor.execute("DELETE FROM "
-                    + "alertsAlertLevels "
-                    + "WHERE alertId = ?",
-                    (alertIdResult[0], ))
+                self.cursor.execute("DELETE FROM alertsAlertLevels WHERE alertId = ?", (alertIdResult[0], ))
 
-                self.cursor.execute("DELETE FROM alerts "
-                    + "WHERE id = ?",
-                    (alertIdResult[0], ))
+                self.cursor.execute("DELETE FROM alerts WHERE id = ?", (alertIdResult[0], ))
 
             # Commit all changes.
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to "
-                % self.fileName
-                + "delete alerts for node with id %d."
-                % nodeId)
+            logger.exception("[%s]: Not able to delete alerts for node with id %d." % (self.fileName, nodeId))
 
             return False
 
@@ -697,19 +647,13 @@ class Sqlite(_Storage):
             logger = self.logger
 
         try:
-            self.cursor.execute("DELETE FROM managers "
-                + "WHERE nodeId = ?",
-                (nodeId, ))
+            self.cursor.execute("DELETE FROM managers WHERE nodeId = ?", (nodeId, ))
 
             # Commit all changes.
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to "
-                % self.fileName
-                + "delete manager for node with id %d."
-                % nodeId)
-
+            logger.exception("[%s]: Not able to delete manager for node with id %d." % (self.fileName, nodeId))
             return False
 
         return True
@@ -731,8 +675,7 @@ class Sqlite(_Storage):
         try:
             # Get all sensor ids that are connected to
             # the old sensor.
-            self.cursor.execute("SELECT id FROM sensors "
-                + "WHERE nodeId = ? ", (nodeId, ))
+            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? ", (nodeId, ))
             result = self.cursor.fetchall()
 
             # Delete all sensor alert levels, data and sensors of
@@ -741,9 +684,7 @@ class Sqlite(_Storage):
 
                 # Get all sensor alert ids that are connected to
                 # the this sensor.
-                self.cursor.execute("SELECT id FROM sensorAlerts "
-                    + "WHERE sensorId = ? ",
-                    (sensorIdResult[0], ))
+                self.cursor.execute("SELECT id FROM sensorAlerts WHERE sensorId = ? ", (sensorIdResult[0], ))
                 sensorAlertIdsresult = self.cursor.fetchall()
 
                 # Delete all sensor alert data connected to the corresponding
@@ -753,34 +694,16 @@ class Sqlite(_Storage):
                     if not self._deleteSensorAlert(sensorAlertId, logger):
                         return False
 
-                self.cursor.execute("DELETE FROM "
-                    + "sensorsAlertLevels "
-                    + "WHERE sensorId = ?",
-                    (sensorIdResult[0], ))
-
-                self.cursor.execute("DELETE FROM "
-                    + "sensorsDataInt "
-                    + "WHERE sensorId = ?",
-                    (sensorIdResult[0], ))
-
-                self.cursor.execute("DELETE FROM "
-                    + "sensorsDataFloat "
-                    + "WHERE sensorId = ?",
-                    (sensorIdResult[0], ))
-
-                self.cursor.execute("DELETE FROM sensors "
-                    + "WHERE id = ?",
-                    (sensorIdResult[0], ))
+                self.cursor.execute("DELETE FROM sensorsAlertLevels WHERE sensorId = ?", (sensorIdResult[0], ))
+                self.cursor.execute("DELETE FROM sensorsDataInt WHERE sensorId = ?", (sensorIdResult[0], ))
+                self.cursor.execute("DELETE FROM sensorsDataFloat WHERE sensorId = ?", (sensorIdResult[0], ))
+                self.cursor.execute("DELETE FROM sensors WHERE id = ?", (sensorIdResult[0], ))
 
             # Commit all changes.
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to "
-                % self.fileName
-                + "delete sensors for node with id %d."
-                % nodeId)
-
+            logger.exception("[%s]: Not able to delete sensors for node with id %d." % (self.fileName, nodeId))
             return False
 
         return True
@@ -800,23 +723,12 @@ class Sqlite(_Storage):
             logger = self.logger
 
         try:
-            self.cursor.execute("DELETE FROM sensorAlertsDataInt "
-                + "WHERE sensorAlertId = ?",
-                (sensorAlertId, ))
+            self.cursor.execute("DELETE FROM sensorAlertsDataInt WHERE sensorAlertId = ?", (sensorAlertId, ))
+            self.cursor.execute("DELETE FROM sensorAlertsDataFloat WHERE sensorAlertId = ?", (sensorAlertId, ))
+            self.cursor.execute("DELETE FROM sensorAlerts WHERE id = ?", (sensorAlertId, ))
 
-            self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
-                + "WHERE sensorAlertId = ?",
-                (sensorAlertId, ))
-
-            self.cursor.execute("DELETE FROM sensorAlerts "
-                + "WHERE id = ?",
-                (sensorAlertId, ))
         except Exception as e:
-            logger.exception("[%s]: Not able to delete "
-                % self.fileName
-                + "sensor alert with id %d."
-                % sensorAlertId)
-
+            logger.exception("[%s]: Not able to delete sensor alert with id %d." % (self.fileName, sensorAlertId))
             return False
 
         # commit all changes
@@ -839,14 +751,11 @@ class Sqlite(_Storage):
             logger = self.logger
 
         try:
-            self.cursor.execute("SELECT alertLevel "
-                + "FROM alertsAlertLevels "
-                + "WHERE alertId = ?", (alertId, ))
+            self.cursor.execute("SELECT alertLevel FROM alertsAlertLevels WHERE alertId = ?", (alertId, ))
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get " % self.fileName
-                + "alert levels for alert with id %d." % alertId)
+            logger.exception("[%s]: Not able to get alert levels for alert with id %d." % (self.fileName, alertId))
             return None
 
         # return list of alertLevels
@@ -867,15 +776,11 @@ class Sqlite(_Storage):
             logger = self.logger
 
         try:
-            self.cursor.execute("SELECT alertLevel "
-                + "FROM sensorsAlertLevels "
-                + "WHERE sensorId = ?", (sensorId, ))
+            self.cursor.execute("SELECT alertLevel FROM sensorsAlertLevels WHERE sensorId = ?", (sensorId, ))
             result = self.cursor.fetchall()
 
         except Exception as e:
-
-            logger.exception("[%s]: Not able to get " % self.fileName
-                + "alert levels for sensor with id %d." % sensorId)
+            logger.exception("[%s]: Not able to get alert levels for sensor with id %d." % (self.fileName, sensorId))
 
             # return None if action failed
             return None
@@ -904,37 +809,22 @@ class Sqlite(_Storage):
 
         elif dataType == SensorDataType.INT:
             try:
-                self.cursor.execute("INSERT INTO sensorsDataInt ("
-                    + "sensorId, "
-                    + "data) VALUES (?, ?)",
-                    (sensorId,
-                    data))
-            except Exception as e:
-                logger.exception("[%s]: Not able to "
-                    % self.fileName
-                    + "add sensor's integer data.")
+                self.cursor.execute("INSERT INTO sensorsDataInt (sensorId, data) VALUES (?, ?)",  (sensorId, data))
 
+            except Exception as e:
+                logger.exception("[%s]: Not able to add sensor's integer data." % self.fileName)
                 return False
 
         elif dataType == SensorDataType.FLOAT:
             try:
-                self.cursor.execute("INSERT INTO sensorsDataFloat ("
-                    + "sensorId, "
-                    + "data) VALUES (?, ?)",
-                    (sensorId,
-                    data))
-            except Exception as e:
-                logger.exception("[%s]: Not able to "
-                    % self.fileName
-                    + "add sensor's floating point data.")
+                self.cursor.execute("INSERT INTO sensorsDataFloat (sensorId, data) VALUES (?, ?)", (sensorId, data))
 
+            except Exception as e:
+                logger.exception("[%s]: Not able to add sensor's floating point data." % self.fileName)
                 return False
 
         else:
-            logger.error("[%s]: Data type not known. Not able to "
-                % self.fileName
-                + "add sensor.")
-
+            logger.error("[%s]: Data type not known. Not able to add sensor." % self.fileName)
             return False
 
         return True
@@ -960,36 +850,23 @@ class Sqlite(_Storage):
 
         elif dataType == SensorDataType.INT:
             try:
-                self.cursor.execute("INSERT INTO sensorAlertsDataInt ("
-                    + "sensorAlertId, "
-                    + "data) VALUES (?, ?)",
-                    (sensorAlertId,
-                    data))
+                self.cursor.execute("INSERT INTO sensorAlertsDataInt (sensorAlertId, data) VALUES (?, ?)",
+                                    (sensorAlertId, data))
             except Exception as e:
-                logger.exception("[%s]: Not able to "
-                    % self.fileName
-                    + "add sensorAlert's integer data.")
-
+                logger.exception("[%s]: Not able to add sensorAlert's integer data." % self.fileName)
                 return False
 
         elif dataType == SensorDataType.FLOAT:
             try:
-                self.cursor.execute("INSERT INTO sensorAlertsDataFloat ("
-                    + "sensorAlertId, "
-                    + "data) VALUES (?, ?)",
-                    (sensorAlertId,
-                    data))
-            except Exception as e:
-                logger.exception("[%s]: Not able to "
-                    % self.fileName
-                    + "add sensorAlert's floating point data.")
+                self.cursor.execute("INSERT INTO sensorAlertsDataFloat (sensorAlertId, data) VALUES (?, ?)",
+                                    (sensorAlertId, data))
 
+            except Exception as e:
+                logger.exception("[%s]: Not able to add sensorAlert's floating point data." % self.fileName)
                 return False
 
         else:
-            logger.error("[%s]: Data type not known. Not able to "
-                % self.fileName
-                + "add sensorAlert.")
+            logger.error("[%s]: Data type not known. Not able to add sensorAlert." % self.fileName)
 
             return False
 
@@ -1005,15 +882,14 @@ class Sqlite(_Storage):
         self._acquireLock(logger)
 
         # get version from the current database
-        self.cursor.execute("SELECT value FROM internals "
-            + "WHERE type = ?",
-            ("dbversion", ))
+        self.cursor.execute("SELECT value FROM internals WHERE type = ?", ("dbversion", ))
         result = self.cursor.fetchall()
 
         # In case the current database does not have any db version
         # set it.
         if result:
             currDbVersion = int(result[0][0])
+
         else:
             currDbVersion = -1
 
@@ -1021,13 +897,9 @@ class Sqlite(_Storage):
         # => update database schema.
         if currDbVersion < self.dbVersion:
 
-            logger.info("[%s]: Needed database version "
-                % self.fileName
-                + "'%d' not compatible "
-                % self.dbVersion
-                + "with current database layout version '%d'. "
-                % currDbVersion
-                + "Updating database.")
+            logger.info("[%s]: Needed database version '%d' not compatible with current database layout version '%d'. "
+                        % (self.fileName, self.dbVersion, currDbVersion)
+                        + "Updating database.")
 
             # get old uniqueId to keep it
             uniqueID = self._getUniqueID()
@@ -1045,10 +917,8 @@ class Sqlite(_Storage):
         # Raise an exception if database layout version
         # is newer than the one we need.
         elif currDbVersion > self.dbVersion:
-            raise ValueError("Current database layout version ('%d') "
-                % currDbVersion
-                + "newer than the one this server uses ('%d')."
-                % self.dbVersion)
+            raise ValueError("Current database layout version ('%d') newer than the one this server uses ('%d')."
+                             % (currDbVersion, self.dbVersion))
 
         self._releaseLock(logger)
 
@@ -1072,52 +942,46 @@ class Sqlite(_Storage):
         # => if not add node
         if not self._usernameInDb(username):
 
-            logger.info("[%s]: Node with username '%s' does not exist "
-                % (self.fileName, username)
-                + "in database. Adding it.")
+            logger.info("[%s]: Node with username '%s' does not exist in database. Adding it."
+                        % (self.fileName, username))
 
             try:
                 # NOTE: connection state is changed later on
                 # in the registration process
                 self.cursor.execute("INSERT INTO nodes ("
-                    + "hostname, "
-                    + "username, "
-                    + "nodeType, "
-                    + "instance, "
-                    + "connected, "
-                    + "version, "
-                    + "rev, "
-                    + "persistent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (hostname, username, nodeType, instance, 0, version, rev,
-                    persistent))
+                                    + "hostname, "
+                                    + "username, "
+                                    + "nodeType, "
+                                    + "instance, "
+                                    + "connected, "
+                                    + "version, "
+                                    + "rev, "
+                                    + "persistent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                    (hostname, username, nodeType, instance, 0, version, rev, persistent))
+
             except Exception as e:
-                logger.exception("[%s]: Not able to add node."
-                    % self.fileName)
-
+                logger.exception("[%s]: Not able to add node." % self.fileName)
                 self._releaseLock(logger)
-
                 return False
 
         # if a node with this username exists
         # => check if everything is the same
         else:
-
-            logger.info("[%s]: Node with username '%s' already exists "
-                % (self.fileName, username)
-                + "in database.")
+            logger.info("[%s]: Node with username '%s' already exists in database."
+                        % (self.fileName, username))
 
             nodeId = self._getNodeId(username)
 
             # get hostname, nodeType, version, revision, persistent
             try:
                 self.cursor.execute("SELECT hostname, "
-                    + "nodeType, "
-                    + "instance, "
-                    + "version, "
-                    + "rev, "
-                    + "persistent "
-                    + "FROM nodes WHERE id = ? ",
-                    (nodeId, ))
+                                    + "nodeType, "
+                                    + "instance, "
+                                    + "version, "
+                                    + "rev, "
+                                    + "persistent "
+                                    + "FROM nodes WHERE id = ?",
+                                    (nodeId, ))
                 result = self.cursor.fetchall()
                 dbHostname = result[0][0]
                 dbNodeType = result[0][1]
@@ -1127,195 +991,148 @@ class Sqlite(_Storage):
                 dbPersistent = result[0][5]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get node information."
-                    % self.fileName)
-
+                logger.exception("[%s]: Not able to get node information." % self.fileName)
                 self._releaseLock(logger)
-
                 return False
 
             # change hostname if it had changed
             if dbHostname != hostname:
-
-                logger.info("[%s]: Hostname of node has changed "
-                    % self.fileName
-                    + "from '%s' to '%s'. Updating database."
-                    % (dbHostname, hostname))
+                logger.info("[%s]: Hostname of node has changed from '%s' to '%s'. Updating database."
+                            % (self.fileName, dbHostname, hostname))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
-                        + "hostname = ? "
-                        + "WHERE id = ?",
-                        (hostname, nodeId))
+                                        + "hostname = ? "
+                                        + "WHERE id = ?",
+                                        (hostname, nodeId))
+
                 except Exception as e:
-                    logger.exception("[%s]: Not able to " % self.fileName
-                        + "update hostname of node.")
-
+                    logger.exception("[%s]: Not able to update hostname of node." % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
             # change instance if it had changed
             if dbInstance != instance:
-
-                logger.info("[%s]: Instance of node has changed "
-                    % self.fileName
-                    + "from '%s' to '%s'. Updating database."
-                    % (dbInstance, instance))
+                logger.info("[%s]: Instance of node has changed from '%s' to '%s'. Updating database."
+                            % (self.fileName, dbInstance, instance))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
-                        + "instance = ? "
-                        + "WHERE id = ?",
-                        (instance, nodeId))
+                                        + "instance = ? "
+                                        + "WHERE id = ?",
+                                        (instance, nodeId))
+
                 except Exception as e:
-                    logger.exception("[%s]: Not able to " % self.fileName
-                        + "update instance of node.")
-
+                    logger.exception("[%s]: Not able to update instance of node." % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
             # change version if it had changed
             if dbVersion != version:
-
-                logger.info("[%s]: Version of node has changed "
-                    % self.fileName
-                    + "from '%.3f' to '%.3f'. Updating database."
-                    % (dbVersion, version))
+                logger.info("[%s]: Version of node has changed from '%.3f' to '%.3f'. Updating database."
+                            % (self.fileName, dbVersion, version))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
-                        + "version = ? "
-                        + "WHERE id = ?",
-                        (version, nodeId))
+                                        + "version = ? "
+                                        + "WHERE id = ?",
+                                        (version, nodeId))
+
                 except Exception as e:
-                    logger.exception("[%s]: Not able to " % self.fileName
-                        + "update version of node.")
-
+                    logger.exception("[%s]: Not able to update version of node." % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
             # change revision if it had changed
             if dbRev != rev:
-
-                logger.info("[%s]: Revision of node has changed "
-                    % self.fileName
-                    + "from '%d' to '%d'. Updating database."
-                    % (dbRev, rev))
+                logger.info("[%s]: Revision of node has changed from '%d' to '%d'. Updating database."
+                            % (self.fileName, dbRev, rev))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
-                        + "rev = ? "
-                        + "WHERE id = ?",
-                        (rev, nodeId))
+                                        + "rev = ? "
+                                        + "WHERE id = ?",
+                                        (rev, nodeId))
+
                 except Exception as e:
-                    logger.exception("[%s]: Not able to " % self.fileName
-                        + "update revision of node.")
-
+                    logger.exception("[%s]: Not able to update revision of node." % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
             # change persistent if it had changed
             if dbPersistent != persistent:
-
-                logger.info("[%s]: Persistent flag of node has changed "
-                    % self.fileName
-                    + "from '%d' to '%d'. Updating database."
-                    % (dbPersistent, persistent))
+                logger.info("[%s]: Persistent flag of node has changed from '%d' to '%d'. Updating database."
+                            % (self.fileName, dbPersistent, persistent))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
-                        + "persistent = ? "
-                        + "WHERE id = ?",
-                        (persistent, nodeId))
+                                        + "persistent = ? "
+                                        + "WHERE id = ?",
+                                        (persistent, nodeId))
+
                 except Exception as e:
-                    logger.exception("[%s]: Not able to " % self.fileName
-                        + "update persistent flag of node.")
-
+                    logger.exception("[%s]: Not able to update persistent flag of node." % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
             # if node type has changed
             # => delete sensors/alerts/manager information of old node
             # and change node type
             if dbNodeType != nodeType:
-
-                logger.info("[%s]: Type of node has changed "
-                    % self.fileName
-                    + "from '%s' to '%s'. Updating database."
-                    % (dbNodeType, nodeType))
+                logger.info("[%s]: Type of node has changed from '%s' to '%s'. Updating database."
+                            % (self.fileName, dbNodeType, nodeType))
 
                 # if old node had type "sensor"
                 # => delete all sensors
                 if dbNodeType == "sensor":
-
                     if not self._deleteSensorsForNodeId(nodeId, logger):
                         self._releaseLock(logger)
-
                         return False
 
                 # if old node had type "alert"
                 # => delete all alerts
                 elif dbNodeType == "alert":
-
                     if not self._deleteAlertsForNodeId(nodeId, logger):
                         self._releaseLock(logger)
-
                         return False
 
                 # if old node had type "manager"
                 # => delete all manager information
                 elif dbNodeType == "manager":
-
                     if not self._deleteManagerForNodeId(nodeId, logger):
                         self._releaseLock(logger)
-
                         return False
 
                 # if old node had type "server"
                 # => delete all sensor information
                 elif dbNodeType == "server":
-
                     if not self._deleteSensorsForNodeId(nodeId, logger):
                         self._releaseLock(logger)
-
                         return False
 
                 # node type in database not known
                 else:
-
-                    logger.error("[%s]: Unknown node type "
-                        % self.fileName
-                        + "when deleting old sensors/alerts/manager "
-                        + "information.")
-
+                    logger.error("[%s]: Unknown node type when deleting old sensors/alerts/manager information."
+                                 % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
                 # update node type
                 try:
                     self.cursor.execute("UPDATE nodes SET "
-                        + "nodeType = ? "
-                        + "WHERE id = ?",
-                        (nodeType, nodeId))
+                                        + "nodeType = ? "
+                                        + "WHERE id = ?",
+                                        (nodeType, nodeId))
+
                 except Exception as e:
-                    logger.exception("[%s]: Not able to " % self.fileName
-                        + "update type of node.")
-
+                    logger.exception("[%s]: Not able to update type of node." % self.fileName)
                     self._releaseLock(logger)
-
                     return False
 
         # commit all changes
         self.conn.commit()
 
         self._releaseLock(logger)
-
         return True
 
     def addSensors(self,
