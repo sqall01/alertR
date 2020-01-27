@@ -73,7 +73,7 @@ class Sqlite(_Storage):
         Internal function that checks if the username is known.
 
         :param username:
-        :return:
+        :return: Success or Failure
         """
         # check if the username does exist => if not node is not known
         self.cursor.execute("SELECT id FROM nodes WHERE username = ? ",
@@ -90,7 +90,7 @@ class Sqlite(_Storage):
         """
         Internal function that generates a unique id for this server instance.
 
-        :return:
+        :return: freshly generated unique ID
         """
         # generate unique id for this installation
         utcTimestamp = int(time.time())
@@ -130,7 +130,7 @@ class Sqlite(_Storage):
         Internal function that gets the id of a node when a username is given.
 
         :param username:
-        :return:
+        :return: node id corresponding to username
         """
         # check if the username does exist
         if self._usernameInDb(username):
