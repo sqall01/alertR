@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -14,313 +14,509 @@ import socket
 import struct
 import hashlib
 import json
+import logging
+import sqlite3
+from typing import Any, Optional, List, Union
 from .localObjects import Node, Alert, Manager, Sensor, SensorAlert, SensorData, SensorDataType, Option
 
 
-# internal abstract class for new storage backends
-class _Storage():
+# Internal abstract class for new storage backends.
+class _Storage:
 
-    # checks the version of the server and the version in the database
-    # and clears every compatibility issue
-    #
-    # no return value but raise exception if it fails
-    def checkVersionAndClearConflict(self, logger=None):
+    def checkVersionAndClearConflict(self,
+                                     logger: logging.Logger = None):
+        """
+        Checks the version of the server and the version in the database and clears every compatibility issue.
+        No return value but raise exception if it fails.
+
+        :param logger:
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def addNode(self,
+                username: str,
+                hostname: str,
+                nodeType: str,
+                instance: str,
+                version: float,
+                rev: int,
+                persistent: int,
+                logger: logging.Logger = None) -> bool:
+        """
+        Adds a node if it does not exist or changes the registered values if it does exist.
 
-    # adds a node if it does not exist or changes the registered
-    # values if it does exist
-    #
-    # return True or False
-    def addNode(self, username, hostname, nodeType, instance, version, rev,
-        persistent, logger=None):
+        :param username:
+        :param hostname:
+        :param nodeType:
+        :param instance:
+        :param version:
+        :param rev:
+        :param persistent:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def addSensors(self,
+                   username: str,
+                   sensors,
+                   logger: logging.Logger = None) -> bool:
+        """
+        Adds/updates the data that is given by the node for the sensors to the database.
 
-    # adds/updates the data that is given by the node for the sensors
-    # to the database
-    #
-    # return True or False
-    def addSensors(self, username, sensors, logger=None):
+        :param username:
+        :param sensors:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def addAlerts(self,
+                  username: str,
+                  alerts,
+                  logger: logging.Logger = None) -> bool:
+        """
+        Adds/updates the data that is given by the node for the alerts to the database-
 
-    # adds/updates the data that is given by the node for the alerts
-    # to the database
-    #
-    # return True or False
-    def addAlerts(self, username, alerts, logger=None):
+        :param username:
+        :param alerts:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def addManager(self,
+                   username: str,
+                   manager,
+                   logger: logging.Logger = None) -> bool:
+        """
+        Adds/updates the data that is given by the node for the manager to the database.
 
-    # adds/updates the data that is given by the node for
-    # the manager to the database
-    #
-    # return True or False
-    def addManager(self, username, manager, logger=None):
+        :param username:
+        :param manager:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def addSensorAlert(self,
+                       nodeId: int,
+                       sensorId: int,
+                       state: int,
+                       dataJson: str,
+                       changeState: bool,
+                       hasLatestData: bool,
+                       dataType: int,
+                       sensorData: Any,
+                       logger: logging.Logger = None) -> bool:
+        """
+        Adds a sensor alert to the database when the id of a node is given, the id of the sensor that is used
+        internally by the node and the state.
 
-    # adds a sensor alert to the database when the id of a node is given,
-    # the id of the sensor that is used internally by the node and the state
-    #
-    # return True or False
-    def addSensorAlert(self, nodeId, sensorId, state, dataJson, changeState,
-        hasLatestData, dataType, sensorData, logger=None):
+        :param nodeId:
+        :param sensorId:
+        :param state:
+        :param dataJson:
+        :param changeState:
+        :param hasLatestData:
+        :param dataType:
+        :param sensorData:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getNodeId(self,
+                  username: str,
+                  logger: logging.Logger = None) -> Optional[int]:
+        """
+        Gets the id of the node by a given username (usernames are unique to each node).
 
-    # gets the id of the node by a given username
-    # (usernames are unique to each node)
-    #
-    # return nodeId or None
-    def getNodeId(self, username, logger=None):
+        :param username:
+        :param logger:
+        :return nodeId or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getNodeIds(self,
+                   logger: logging.Logger = None) -> List[TODO]:
+        """
+        Gets the ids of all nodes.
 
-    # Gets the ids of all nodes
-    #
-    # return list of nodeIds
-    def getNodeIds(self, logger=None):
+        :param logger:
+        :return list of nodeIds
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorCount(self,
+                       nodeId: str,
+                       logger: logging.Logger = None) -> Optional[int]:
+        """
+        Gets the count of the sensors of a node in the database.
 
-    # gets the count of the sensors of a node in the database
-    #
-    # return count of sensors or None
-    def getSensorCount(self, nodeId, logger=None):
+        :param nodeId:
+        :param logger:
+        :return count of sensors or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorId(self,
+                    nodeId: str,
+                    remoteSensorId: str,
+                    logger: logging.Logger = None) -> Optional[int]:
+        """
+        Gets the sensor id of a sensor when the id of a node is given and the remote sensor id that
+        is used by the node internally.
 
-    # gets the sensor id of a sensor when the id of a node is given
-    # and the remote sensor id that is used by the node internally
-    #
-    # return sensorId or None
-    def getSensorId(self, nodeId, remoteSensorId, logger=None):
+        :param nodeId:
+        :param remoteSensorId:
+        :param logger:
+        :return sensorId or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSurveyData(self,
+                      logger: logging.Logger = None) -> Optional[List[TODO]]:
+        """
+        Gets all data needed for the survey.
 
-    # gets all data needed for the survey
-    #
-    # return list of tuples of (instance, version, rev)
-    # or None
-    def getSurveyData(self, logger=None):
+        :param logger:
+        :return list of tuples of (instance, version, rev) or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getUniqueID(self,
+                    logger: logging.Logger = None) -> Optional[str]:
+        """
+        Gets the unique id from the database.
 
-    # gets the unique id from the database
-    #
-    # return unique id
-    # or None
-    def getUniqueID(self, logger=None):
+        :param logger:
+        :return unique id or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAlertId(self,
+                   nodeId: int,
+                   remoteAlertId: int,
+                   logger: logging.Logger = None) -> Optional[int]:
+        """
+        Gets the alert id of an alert when the id of a node is given and the remote alert id that is
+        used by the node internally.
 
-    # gets the alert id of an alert when the id of a node is given
-    # and the remote alert id that is used by the node internally
-    #
-    # return alertId or None
-    def getAlertId(self, nodeId, remoteAlertId, logger=None):
+        :param nodeId:
+        :param remoteAlertId:
+        :param logger:
+        :return alertId or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorAlertLevels(self,
+                             sensorId: int,
+                             logger: logging.Logger = None) -> Optional[List[TODO]]:
+        """
+        Gets all alert levels for a specific sensor given by sensorId.
 
-    # gets all alert levels for a specific sensor given by sensorId
-    #
-    # return list of alertLevel
-    # or None
-    def getSensorAlertLevels(self, sensorId, logger=None):
+        :param sensorId:
+        :param logger:
+        :return list of alertLevel or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAlertAlertLevels(self,
+                            alertId: int,
+                            logger: logging.Logger = None) -> Optional[List[TODO]]:
+        """
+        Gets all alert levels for a specific alert given by alertId.
 
-    # gets all alert levels for a specific alert given by alertId
-    #
-    # return list of alertLevels
-    # or None
-    def getAlertAlertLevels(self, alertId, logger=None):
+        :param alertId:
+        :param logger:
+        :return list of alertLevels or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorAlerts(self,
+                        logger: logging.Logger = None) -> Optional[List[TODO]]:
+        """
+        Gets all sensor alerts in the database.
 
-    # gets all sensor alerts in the database
-    #
-    # return a list of sensorAlert objects
-    # or None
-    def getSensorAlerts(self, logger=None):
+        :param logger:
+        :return a list of sensorAlert objects or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAllAlertsAlertLevels(self,
+                                logger: logging.Logger = None) -> Optional[List[int]]:
+        """
+        Gets all alert levels for the alert clients from the database.
 
-    # gets all alert levels for the alert clients from the database
-    #
-    # return list alertLevels as integer
-    # or None
-    def getAllAlertsAlertLevels(self, logger=None):
+        :param logger:
+        :return list alertLevels as integer or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAllSensorsAlertLevels(self,
+                                 logger: logging.Logger = None) -> Optional[List[int]]:
+        """
+        Gets all alert levels for the sensors from the database.
 
-    # gets all alert levels for the sensors from the database
-    #
-    # return list alertLevels as integer
-    # or None
-    def getAllSensorsAlertLevels(self, logger=None):
+        :param logger:
+        :return list alertLevels as integer or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAllConnectedNodeIds(self,
+                               logger: logging.Logger = None) -> Optional[List[int]]:
+        """
+        Gets all nodes from the database that are connected to the server.
 
-    # gets all nodes from the database that are connected to the server
-    #
-    # return list of nodeIds
-    # or None
-    def getAllConnectedNodeIds(self, logger=None):
+        :param logger:
+        :return list of nodeIds or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAllPersistentNodeIds(self,
+                                logger: logging.Logger = None) -> Optional[List[int]]:
+        """
+        Gets all nodes from the database that are registered as persistent to the server.
 
-    # Gets all nodes from the database that are registered as persistent
-    # to the server.
-    #
-    # return list of nodeIds
-    # or None
-    def getAllPersistentNodeIds(self, logger=None):
+        :param logger:
+        :return list of nodeIds or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorsUpdatedOlderThan(self,
+                                   oldestTimeUpdated: int,
+                                   logger: logging.Logger = None) -> Optional[List[TODO]]:
+        """
+        Gets the information of all sensors which last state updates are older than the given time.
 
-    # gets the information of all sensors which last state updates
-    # are older than the given time
-    #
-    # return list of sensor objects
-    # or None
-    def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
+        :param oldestTimeUpdated:
+        :param logger:
+        :return list of sensor objects or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAlertById(self,
+                     alertId: int,
+                     logger: logging.Logger = None) -> Optional[Alert]:
+        """
+        Gets the alert from the database when its id is given.
 
-    # gets the alert from the database when its id is given
-    #
-    # return an alert object or None
-    def getAlertById(self, alertId, logger=None):
+        :param alertId:
+        :param logger:
+        :return an alert object or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getManagerById(self,
+                       managerId: int,
+                       logger: logging.Logger = None) -> Optional[Manager]:
+        """
+        Gets the manager from the database when its id is given.
 
-    # gets the manager from the database when its id is given
-    #
-    # return a manager object or None
-    def getManagerById(self, managerId, logger=None):
+        :param managerId:
+        :param logger:
+        :return a manager object or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getNodeById(self,
+                    nodeId: int,
+                    logger: logging.Logger = None) -> Optional[Node]:
+        """
+        Gets the node from the database when its id is given.
 
-    # gets the node from the database when its id is given
-    #
-    # return a node object or None
-    def getNodeById(self, nodeId, logger=None):
+        :param nodeId:
+        :param logger:
+        :return a node object or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorById(self,
+                      sensorId: int,
+                      logger: logging.Logger = None) -> Optional[Sensor]:
+        """
+        Gets the sensor from the database when its id is given.
 
-    # gets the sensor from the database when its id is given
-    #
-    # return a sensor object or None
-    def getSensorById(self, sensorId, logger=None):
+        :param sensorId:
+        :param logger:
+        :return a sensor object or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getNodes(self,
+                 logger: logging.Logger = None) -> Optional[List[Node]]:
+        """
+        Gets all nodes from the database.
 
-    # Gets all nodes from the database.
-    #
-    # return a list of node objects or None
-    def getNodes(self, logger=None):
+        :param logger:
+        :return a list of node objects or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getAlertSystemInformation(self,
+                                  logger: logging.Logger = None) -> Optional[List[List[Union[Option,
+                                                                                             Node,
+                                                                                             Sensor,
+                                                                                             Manager,
+                                                                                             Alert]]]]:
+        """
+        Gets all information that the server has at the current moment.
 
-    # gets all information that the server has at the current moment
-    #
-    # return a list of
-    # list[0] = list(option objects)
-    # list[1] = list(node objects)
-    # list[2] = list(sensor objects)
-    # list[3] = list(manager objects)
-    # list[4] = list(alert objects)
-    # or None
-    def getAlertSystemInformation(self, logger=None):
+        :param logger:
+        :return a list of
+        :return list[0] = list(option objects)
+        :return list[1] = list(node objects)
+        :return list[2] = list(sensor objects)
+        :return list[3] = list(manager objects)
+        :return list[4] = list(alert objects)
+        :return or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorState(self,
+                       sensorId: int,
+                       logger: logging.Logger = None) -> Optional[TODO]:
+        """
+        Gets the state of a sensor given by id.
 
-    # gets the state of a sensor given by id
-    #
-    # return sensor state or None
-    def getSensorState(self, sensorId, logger=None):
+        :param sensorId:
+        :param logger:
+        :return sensor state or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def getSensorData(self,
+                      sensorId: int,
+                      logger: logging.Logger = None) -> Optional[TODO]:
+        """
+        Gets the data of a sensor given by id.
 
-    # Gets the data of a sensor given by id.
-    #
-    # return a sensor data object or None
-    def getSensorData(self, sensorId, logger=None):
+        :param sensorId:
+        :param logger:
+        :return a sensor data object or None
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def changeOption(self,
+                     optionType: str,
+                     optionValue: float,
+                     logger: logging.Logger = None) -> bool:
+        """
+        Ghange a option in the database.
 
-    # change a option in the database
-    #
-    # return True or False
-    def changeOption(self, optionType, optionValue, logger=None):
+        :param optionType:
+        :param optionValue:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def markNodeAsNotConnected(self,
+                               nodeId: int,
+                               logger: logging.Logger = None) -> bool:
+        """
+        Marks a node given by its id as NOT connected.
 
-    # marks a node given by its id as NOT connected
-    #
-    # return True or False
-    def markNodeAsNotConnected(self, nodeId, logger=None):
+        :param nodeId:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def markNodeAsConnected(self,
+                            nodeId: int,
+                            logger: logging.Logger = None) -> bool:
+        """
+        Marks a node given by its id as connected.
 
-    # marks a node given by its id as connected
-    #
-    # return True or False
-    def markNodeAsConnected(self, nodeId, logger=None):
+        :param nodeId:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def deleteSensorAlert(self,
+                          sensorAlertId: int,
+                          logger: logging.Logger = None) -> bool:
+        """
+        Deletes a sensor alert given by its sensor alert id.
 
-    # Deletes a sensor alert given by its sensor alert id.
-    #
-    # return True or False
-    def deleteSensorAlert(self, sensorAlertId, logger=None):
+        :param sensorAlertId:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def deleteNode(self,
+                   nodeId: int,
+                   logger: logging.Logger = None) -> bool:
+        """
+        Deletes a node given by its node id.
 
-    # Deletes a node given by its node id.
-    #
-    # return True or False
-    def deleteNode(self, nodeId, logger=None):
+        :param nodeId:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def isAlertSystemActive(self,
+                            logger: logging.Logger = None) -> bool:
+        """
+        Checks if the alert system is active or not.
 
-    # checks if the alert system is active or not
-    #
-    # return True or False
-    def isAlertSystemActive(self, logger=None):
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def updateSensorState(self,
+                          nodeId: int,
+                          stateList,
+                          logger: logging.Logger = None) -> bool:
+        """
+        Updates the states of the sensors of a node in the database (given in a tuple of (remoteSensorId, state)).
 
-    # updates the states of the sensors of a node in the database
-    # (given in a tuple of (remoteSensorId, state))
-    #
-    # return True or False
-    def updateSensorState(self, nodeId, stateList, logger=None):
+        :param nodeId:
+        :param stateList:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def updateSensorData(self,
+                         nodeId: int,
+                         dataList,
+                         logger: logging.Logger = None) -> bool:
+        """
+        Updates the data of the sensors of a node in the database (given in a tuple of (remoteSensorId, data)).
 
-    # updates the data of the sensors of a node in the database
-    # (given in a tuple of (remoteSensorId, data))
-    #
-    # return True or False
-    def updateSensorData(self, nodeId, dataList, logger=None):
+        :param nodeId:
+        :param dataList:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def updateSensorTime(self,
+                         sensorId: int,
+                         logger: logging.Logger = None) -> bool:
+        """
+        Updates the time the sensor send an update given by sensorId.
 
-    # Updates the time the sensor send an update given by sensorId.
-    #
-    # return True or False
-    def updateSensorTime(self, sensorId, logger=None):
+        :param sensorId:
+        :param logger:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
+    def close(self,
+              logger: logging.Logger = None):
+        """
+        Closes db for usage.
 
-    # closes db for usage
-    #
-    # no return value
-    def close(self, logger=None):
+        :param logger:
+        """
         raise NotImplemented("Function not implemented yet.")
 
 
@@ -328,9 +524,6 @@ class _Storage():
 class Sqlite(_Storage):
 
     def __init__(self, storagePath, globalData):
-
-        # import the needed package
-        import sqlite3
 
         self.globalData = globalData
         self.logger = self.globalData.logger
@@ -369,7 +562,6 @@ class Sqlite(_Storage):
             # check if the versions are compatible
             self.checkVersionAndClearConflict()
 
-
     # internal function that checks if the username is known
     def _usernameInDb(self, username):
 
@@ -384,7 +576,6 @@ class Sqlite(_Storage):
         else:
             return True
 
-
     # internal function that generates a unique id for this server instance
     def _generateUniqueId(self):
 
@@ -398,7 +589,6 @@ class Sqlite(_Storage):
         uniqueID = sha256.hexdigest()
 
         return uniqueID
-
 
     # Internal function that converts a tuple that is fetched from the
     # database by "SELECT * FROM nodes" to an node object.
@@ -417,7 +607,6 @@ class Sqlite(_Storage):
         node.persistent = (nodeTuple[8] == 1)
         return node
 
-
     # internal function that gets the id of a node when a username is given
     def _getNodeId(self, username):
 
@@ -431,7 +620,6 @@ class Sqlite(_Storage):
             return result[0][0]
         else:
             raise ValueError("Node id was not found.")
-
 
     # Internal function that gets the alert from the database given
     # by its id.
@@ -478,7 +666,6 @@ class Sqlite(_Storage):
 
         return alert
 
-
     # Internal function that gets the manager from the database given
     # by its id.
     #
@@ -511,7 +698,6 @@ class Sqlite(_Storage):
 
         return manager
 
-
     # Internal function that gets the node from the database given by its id.
     #
     # return a node object or None
@@ -541,7 +727,6 @@ class Sqlite(_Storage):
                     + "node data for id %d to object." % nodeId)
 
         return None
-
 
     # Internal function that gets the sensor from the database given by its id.
     #
@@ -632,7 +817,6 @@ class Sqlite(_Storage):
 
         return sensor
 
-
     # internal function that gets the sensor id of a sensor when the id
     # of a node is given and the remote sensor id that is used
     # by the node internally
@@ -652,7 +836,6 @@ class Sqlite(_Storage):
         sensorId = result[0][0]
 
         return sensorId
-
 
     # internal function that gets the alert id of an alert when the id
     # of a node is given and the remote alert id that is used
@@ -674,7 +857,6 @@ class Sqlite(_Storage):
 
         return alertId
 
-
     # internal function that gets the manager id of a manager when the id
     # of a node is given
     #
@@ -692,7 +874,6 @@ class Sqlite(_Storage):
         managerId = result[0][0]
 
         return managerId
-
 
     # internal function that gets the unique id from the database
     #
@@ -718,7 +899,6 @@ class Sqlite(_Storage):
 
         return self.globalData.uniqueID
 
-
     # internal function that acquires the lock
     def _acquireLock(self, logger=None):
 
@@ -729,7 +909,6 @@ class Sqlite(_Storage):
         logger.debug("[%s]: Acquire lock." % self.fileName)
         self.dbLock.acquire()
 
-
     # internal function that releases the lock
     def _releaseLock(self, logger=None):
 
@@ -739,7 +918,6 @@ class Sqlite(_Storage):
 
         logger.debug("[%s]: Release lock." % self.fileName)
         self.dbLock.release()
-
 
     # internal function that creates the database
     # (should only be called if the database does not exist)
@@ -874,7 +1052,6 @@ class Sqlite(_Storage):
         # commit all changes
         self.conn.commit()
 
-
     # Internal function that deletes the database
     # (should only be called if parts of the database do exist)
     #
@@ -898,7 +1075,6 @@ class Sqlite(_Storage):
 
         # commit all changes
         self.conn.commit()
-
 
     # Internal function that deletes all alert data corresponding
     # to the given node id.
@@ -943,7 +1119,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # Internal function that deletes all manager data corresponding
     # to the given node id.
     #
@@ -971,7 +1146,6 @@ class Sqlite(_Storage):
             return False
 
         return True
-
 
     # Internal function that deletes all sensor data corresponding
     # to the given node id.
@@ -1040,7 +1214,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # Internal function thatdeletes a sensor alert given by its
     # sensor alert id.
     #
@@ -1076,7 +1249,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # Internal function that gets all alert levels for a specific
     # alert given by alertId
     #
@@ -1105,7 +1277,6 @@ class Sqlite(_Storage):
         # return list of alertLevels
         return map(lambda x: x[0], result)
 
-
     # Internal function that gets all alert levels for a specific
     # sensor given by sensorId
     #
@@ -1133,7 +1304,6 @@ class Sqlite(_Storage):
 
         # return list of alertLevel
         return map(lambda x: x[0], result)
-
 
     # Internal function that inserts sensor data according to its type.
     #
@@ -1182,7 +1352,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # Internal function that inserts sensor alert data according to its type.
     #
     # Returns true if everything worked fine.
@@ -1230,7 +1399,6 @@ class Sqlite(_Storage):
             return False
 
         return True
-
 
     # checks the version of the server and the version in the database
     # and clears every compatibility issue
@@ -1291,7 +1459,6 @@ class Sqlite(_Storage):
                 % self.dbVersion)
 
         self._releaseLock(logger)
-
 
     # adds a node if it does not exist or changes the registered
     # values if it does exist
@@ -1555,7 +1722,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return True
-
 
     # adds/updates the data that is given by the node for the sensors
     # to the database
@@ -1944,7 +2110,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # adds/updates the data that is given by the node for the alerts
     # to the database
     #
@@ -2214,7 +2379,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # adds/updates the data that is given by the node for
     # the manager to the database
     #
@@ -2322,7 +2486,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # gets the id of the node by a given username
     # (usernames are unique to each node)
     #
@@ -2345,7 +2508,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return nodeId
-
 
     # Gets the ids of all nodes
     #
@@ -2374,7 +2536,6 @@ class Sqlite(_Storage):
 
         return nodeIds
 
-
     # gets the count of the sensors of a node in the database
     #
     # return count of sensors or None
@@ -2400,7 +2561,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return sensorCount
-
 
     # gets all data needed for the survey
     #
@@ -2447,7 +2607,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return uniqueID
-
 
     # updates the states of the sensors of a node in the database
     # (given in a tuple of (remoteSensorId, state))
@@ -2501,7 +2660,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return True
-
 
     # updates the data of the sensors of a node in the database
     # (given in a tuple of (remoteSensorId, data))
@@ -2572,8 +2730,6 @@ class Sqlite(_Storage):
 
         return True
 
-
-
     # Updates the time the sensor send an update given by sensorId.
     #
     # return True or False
@@ -2608,7 +2764,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # gets the sensor id of a sensor when the id of a node is given
     # and the remote sensor id that is used by the node internally
     #
@@ -2635,7 +2790,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return sensorId
-
 
     # gets the alert id of an alert when the id of a node is given
     # and the remote alert id that is used by the node internally
@@ -2664,7 +2818,6 @@ class Sqlite(_Storage):
 
         return alertId
 
-
     # gets all alert levels for a specific sensor given by sensorId
     #
     # return list of alertLevel
@@ -2684,7 +2837,6 @@ class Sqlite(_Storage):
         # return list of alertLevel
         return result
 
-
     # gets all alert levels for a specific alert given by alertId
     #
     # return list of alertLevels
@@ -2703,7 +2855,6 @@ class Sqlite(_Storage):
 
         # return list of alertLevels
         return result
-
 
     # adds a sensor alert to the database when the id of a node is given,
     # the id of the sensor that is used internally by the node and the state
@@ -2769,7 +2920,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return True
-
 
     # gets all sensor alerts in the database
     #
@@ -2908,7 +3058,6 @@ class Sqlite(_Storage):
         # return a list of sensorAlert objects
         return returnList
 
-
     # Deletes a sensor alert given by its sensor alert id.
     #
     # return True or False
@@ -2925,7 +3074,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return result
-
 
     # Deletes a node given by its node id.
     #
@@ -3005,7 +3153,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # checks if the alert system is active or not
     #
     # return True or False
@@ -3037,7 +3184,6 @@ class Sqlite(_Storage):
             return True
         elif alertSystemActive == 0:
             return False
-
 
     # gets all alert levels for the alert clients from the database
     #
@@ -3071,7 +3217,6 @@ class Sqlite(_Storage):
         # return list alertLevels as integer
         return map(lambda x: x[0], result)
 
-
     # gets all alert levels for the sensors from the database
     #
     # return list alertLevels as integer
@@ -3103,7 +3248,6 @@ class Sqlite(_Storage):
 
         # return list alertLevels as integer
         return map(lambda x: x[0], result)
-
 
     # gets all nodes from the database that are connected to the server
     #
@@ -3138,7 +3282,6 @@ class Sqlite(_Storage):
 
         # return list of nodeIds
         return map(lambda x: x[0], result)
-
 
     # Gets all nodes from the database that are registered as persistent
     # to the server.
@@ -3175,7 +3318,6 @@ class Sqlite(_Storage):
         # return list of nodeIds
         return map(lambda x: x[0], result)
 
-
     # marks a node given by its id as NOT connected
     #
     # return True or False
@@ -3206,7 +3348,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # marks a node given by its id as connected
     #
     # return True or False
@@ -3236,7 +3377,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return True
-
 
     # gets the information of all sensors which last state updates
     # are older than the given time
@@ -3280,7 +3420,6 @@ class Sqlite(_Storage):
         # return list of sensor objects
         return sensorList
 
-
     # gets the alert from the database when its id is given
     #
     # return an alert object or None
@@ -3298,7 +3437,6 @@ class Sqlite(_Storage):
 
         # return an alert object or None
         return result
-
 
     # gets the manager from the database when its id is given
     #
@@ -3318,7 +3456,6 @@ class Sqlite(_Storage):
         # return a manager object or None
         return result
 
-
     # gets the node from the database when its id is given
     #
     # return a node object or None
@@ -3337,7 +3474,6 @@ class Sqlite(_Storage):
         # return a node object or None
         return result
 
-
     # gets the sensor from the database when its id is given
     #
     # return a sensor object or None
@@ -3355,7 +3491,6 @@ class Sqlite(_Storage):
 
         # return a sensor object or None
         return result
-
 
     # Gets all nodes from the database.
     #
@@ -3391,7 +3526,6 @@ class Sqlite(_Storage):
 
         # list(node objects)
         return nodes
-
 
     # gets all information that the server has at the current moment
     #
@@ -3492,7 +3626,6 @@ class Sqlite(_Storage):
         # list[4] = list(alert objects)
         return alertSystemInformation
 
-
     # change a option in the database
     #
     # return True or False
@@ -3539,7 +3672,6 @@ class Sqlite(_Storage):
 
         return True
 
-
     # gets the state of a sensor given by id
     #
     # return sensor state or None
@@ -3579,7 +3711,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         return state
-
 
     # Gets the data of a sensor given by id.
     #
@@ -3683,7 +3814,6 @@ class Sqlite(_Storage):
 
         # return a sensor data object or None
         return data
-
 
     # closes db for usage
     #
