@@ -801,48 +801,13 @@ if __name__ == '__main__':
         globalData.logger.debug("[%s]: Parsing update configuration." % fileName)
         updateUrl = str(configRoot.find("update").find("server").attrib["url"])
 
-        # configure user credentials backend
-        globalData.logger.debug("[%s]: Parsing user backend configuration."
-            % fileName)
-        userBackendMethod = str(
-            configRoot.find("storage").find("userBackend").attrib[
-            "method"]).upper()
-        if userBackendMethod == "CSV":
-            globalData.userBackend = CSVBackend(globalData,
-                globalData.userBackendCsvFile)
+        # Configure user credentials backend.
+        globalData.logger.debug("[%s]: Initializing user backend." % fileName)
+        globalData.userBackend = CSVBackend(globalData, globalData.userBackendCsvFile)
 
-        else:
-            raise ValueError("No valid user backend method in config file.")
-
-        # configure storage backend (check which backend is configured)
-        globalData.logger.debug("[%s]: Parsing storage backend configuration."
-            % fileName)
-        userBackendMethod = str(
-            configRoot.find("storage").find("storageBackend").attrib[
-            "method"]).upper()
-        if userBackendMethod == "SQLITE":
-            globalData.storage = Sqlite(globalData.storageBackendSqliteFile,
-                globalData)
-
-        elif userBackendMethod == "MYSQL":
-
-            backendUsername = str(configRoot.find("storage").find(
-                "storageBackend").attrib["username"])
-            backendPassword = str(configRoot.find("storage").find(
-                "storageBackend").attrib["password"])
-            backendServer = str(configRoot.find("storage").find(
-                "storageBackend").attrib["server"])
-            backendPort = int(configRoot.find("storage").find(
-                "storageBackend").attrib["port"])
-            backendDatabase = str(configRoot.find("storage").find(
-                "storageBackend").attrib["database"])
-
-            globalData.storage = Mysql(backendServer, backendPort,
-                backendDatabase, backendUsername, backendPassword,
-                globalData)
-
-        else:
-            raise ValueError("No valid storage backend method in config file.")
+        # Configure storage backend.
+        globalData.logger.debug("[%s]: Initializing storage backend." % fileName)
+        globalData.storage = Sqlite(globalData.storageBackendSqliteFile, globalData)
 
         # Add server as node to the database.
         serverUsername = globalData.storage.getUniqueID()
@@ -1337,7 +1302,7 @@ if __name__ == '__main__':
 
         # Parse sensor timeout sensor (if activated).
         item = internalSensorsCfg.find("sensorTimeout")
-        if (str(item.attrib["activated"]).upper() == "TRUE"):
+        if str(item.attrib["activated"]).upper() == "TRUE":
 
             sensor = SensorTimeoutSensor()
 
@@ -1369,11 +1334,11 @@ if __name__ == '__main__':
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+            dbInitialStateList.append((sensor.remoteSensorId, 0))
 
         # Parse node timeout sensor (if activated).
         item = internalSensorsCfg.find("nodeTimeout")
-        if (str(item.attrib["activated"]).upper() == "TRUE"):
+        if str(item.attrib["activated"]).upper() == "TRUE":
 
             sensor = NodeTimeoutSensor()
 
@@ -1405,11 +1370,11 @@ if __name__ == '__main__':
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append( (sensor.remoteSensorId, 0) )
+            dbInitialStateList.append((sensor.remoteSensorId, 0))
 
         # Parse alert system active sensor (if activated).
         item = internalSensorsCfg.find("alertSystemActive")
-        if (str(item.attrib["activated"]).upper() == "TRUE"):
+        if str(item.attrib["activated"]).upper() == "TRUE":
 
             sensor = AlertSystemActiveSensor()
 

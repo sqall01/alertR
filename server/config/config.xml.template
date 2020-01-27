@@ -108,46 +108,6 @@
 
 
     <!--
-        in this section options for the storage are configured
-    -->
-    <storage>
-
-        <!--
-            the settings for the user backend
-            method - choose how the user credentials are stored/checked
-                only valid options: csv
-        -->
-        <userBackend
-            method="csv" />
-
-        <!--
-            the settings for the storage backend
-            method - choose how the data of the alert system is stored
-                only valid options: sqlite, mysql
-            server - the address of the database server
-                (only processed if mysql is used)
-            port - the port of the database server
-                (only processed if mysql is used;
-                default value mysql uses is 3306)
-            database - the name of the database
-                (only processed if mysql/postgresql is used)
-            username - the username for the database server
-                (only processed if mysql/postgresql is used)
-            password - the password for the database server
-                (only processed if mysql/postgresql is used)
-        -->
-        <storageBackend
-            method="sqlite"
-            server="127.0.0.1"
-            port="3306"
-            database="alertr"
-            username="username"
-            password="password" />
-
-    </storage>
-
-
-    <!--
         section of all alert levels that are configured
     -->
     <alertLevels>
