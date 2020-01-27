@@ -65,8 +65,9 @@ class Updater:
         self.newestRev = self.rev
         self.newestFiles = None
         self.lastChecked = 0
-        self.repoInfo = None
-        self.instanceInfo = None
+        self.repoInfo = None  # type: Dict[str, Any]
+        self.repoInstanceLocation = None  # type: Optional[str]
+        self.instanceInfo = None  # type: Dict[str, Any]
 
         if localInstanceInfo is None:
             self.localInstanceInfo = {"files": {}}
@@ -435,13 +436,14 @@ class Updater:
 
         :return: True or False
         """
-        try:
-            if self._getRepositoryInformation() is False:
-                raise ValueError("Not able to get newest repository information.")
+        if self.repoInfo is None or self.repoInstanceLocation is None:
+            try:
+                if self._getRepositoryInformation() is False:
+                    raise ValueError("Not able to get newest repository information.")
 
-        except Exception as e:
-            self.logger.exception("[%s]: Retrieving newest repository information failed." % self.fileName)
-            return False
+            except Exception as e:
+                self.logger.exception("[%s]: Retrieving newest repository information failed." % self.fileName)
+                return False
 
         self.logger.debug("[%s]: Downloading instance information." % self.fileName)
 
@@ -745,6 +747,8 @@ class Updater:
         self.instance = instance
         self.instanceInfo = None
         self.lastChecked = 0
+        self.repoInfo = None
+        self.repoInstanceLocation = None
 
         if retrieveInfo:
             if not self._getNewestVersionInformation():

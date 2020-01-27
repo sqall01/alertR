@@ -11,7 +11,7 @@ import os
 import threading
 import ssl
 from typing import Optional, List
-from .internalSensors.core import _InternalSensor
+from .internalSensors import _InternalSensor
 
 
 # Class implements an iterator that iterates over a copy of the
