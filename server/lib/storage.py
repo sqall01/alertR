@@ -16,7 +16,8 @@ import hashlib
 import json
 import logging
 import sqlite3
-from typing import Any, Optional, List, Union
+from typing import Any, Optional, List, Union, Tuple, Dict
+from .globalData import GlobalData
 from .localObjects import Node, Alert, Manager, Sensor, SensorAlert, SensorData, SensorDataType, Option
 
 
@@ -59,7 +60,7 @@ class _Storage:
 
     def addSensors(self,
                    username: str,
-                   sensors,
+                   sensors: List[Dict[str, Any]],
                    logger: logging.Logger = None) -> bool:
         """
         Adds/updates the data that is given by the node for the sensors to the database.
@@ -73,7 +74,7 @@ class _Storage:
 
     def addAlerts(self,
                   username: str,
-                  alerts,
+                  alerts: List[Dict[str, Any]],
                   logger: logging.Logger = None) -> bool:
         """
         Adds/updates the data that is given by the node for the alerts to the database-
@@ -87,7 +88,7 @@ class _Storage:
 
     def addManager(self,
                    username: str,
-                   manager,
+                   manager: Dict[str, Any],
                    logger: logging.Logger = None) -> bool:
         """
         Adds/updates the data that is given by the node for the manager to the database.
@@ -139,7 +140,7 @@ class _Storage:
         raise NotImplemented("Function not implemented yet.")
 
     def getNodeIds(self,
-                   logger: logging.Logger = None) -> List[TODO]:
+                   logger: logging.Logger = None) -> List[int]:
         """
         Gets the ids of all nodes.
 
@@ -176,7 +177,7 @@ class _Storage:
         raise NotImplemented("Function not implemented yet.")
 
     def getSurveyData(self,
-                      logger: logging.Logger = None) -> Optional[List[TODO]]:
+                      logger: logging.Logger = None) -> Optional[List[Tuple[str, float, int]]]:
         """
         Gets all data needed for the survey.
 
@@ -212,19 +213,19 @@ class _Storage:
 
     def getSensorAlertLevels(self,
                              sensorId: int,
-                             logger: logging.Logger = None) -> Optional[List[TODO]]:
+                             logger: logging.Logger = None) -> Optional[List[int]]:
         """
         Gets all alert levels for a specific sensor given by sensorId.
 
         :param sensorId:
         :param logger:
-        :return list of alertLevel or None
+        :return list of alertLevels or None
         """
         raise NotImplemented("Function not implemented yet.")
 
     def getAlertAlertLevels(self,
                             alertId: int,
-                            logger: logging.Logger = None) -> Optional[List[TODO]]:
+                            logger: logging.Logger = None) -> Optional[List[int]]:
         """
         Gets all alert levels for a specific alert given by alertId.
 
@@ -235,7 +236,7 @@ class _Storage:
         raise NotImplemented("Function not implemented yet.")
 
     def getSensorAlerts(self,
-                        logger: logging.Logger = None) -> Optional[List[TODO]]:
+                        logger: logging.Logger = None) -> Optional[List[SensorAlert]]:
         """
         Gets all sensor alerts in the database.
 
@@ -286,7 +287,7 @@ class _Storage:
 
     def getSensorsUpdatedOlderThan(self,
                                    oldestTimeUpdated: int,
-                                   logger: logging.Logger = None) -> Optional[List[TODO]]:
+                                   logger: logging.Logger = None) -> Optional[List[Sensor]]:
         """
         Gets the information of all sensors which last state updates are older than the given time.
 
@@ -376,7 +377,7 @@ class _Storage:
 
     def getSensorState(self,
                        sensorId: int,
-                       logger: logging.Logger = None) -> Optional[TODO]:
+                       logger: logging.Logger = None) -> Optional[int]:
         """
         Gets the state of a sensor given by id.
 
@@ -388,7 +389,7 @@ class _Storage:
 
     def getSensorData(self,
                       sensorId: int,
-                      logger: logging.Logger = None) -> Optional[TODO]:
+                      logger: logging.Logger = None) -> Optional[Any]:
         """
         Gets the data of a sensor given by id.
 
@@ -472,7 +473,7 @@ class _Storage:
 
     def updateSensorState(self,
                           nodeId: int,
-                          stateList,
+                          stateList: List[Tuple[int, int]],
                           logger: logging.Logger = None) -> bool:
         """
         Updates the states of the sensors of a node in the database (given in a tuple of (remoteSensorId, state)).
@@ -486,7 +487,7 @@ class _Storage:
 
     def updateSensorData(self,
                          nodeId: int,
-                         dataList,
+                         dataList: List[int, Any],
                          logger: logging.Logger = None) -> bool:
         """
         Updates the data of the sensors of a node in the database (given in a tuple of (remoteSensorId, data)).
@@ -523,7 +524,9 @@ class _Storage:
 # class for using sqlite as storage backend
 class Sqlite(_Storage):
 
-    def __init__(self, storagePath, globalData):
+    def __init__(self,
+                 storagePath: str,
+                 globalData: GlobalData):
 
         self.globalData = globalData
         self.logger = self.globalData.logger
@@ -544,27 +547,33 @@ class Sqlite(_Storage):
 
         # check if database exists
         # if not create one
-        if os.path.exists(self.storagePath) == False:
+        if os.path.exists(self.storagePath) is False:
 
             self.logger.info("[%s]: No database found. Creating '%s'."
             % (self.fileName, self.storagePath))
 
             self.conn = sqlite3.connect(self.storagePath,
-                check_same_thread=False)
+                                        check_same_thread=False)
             self.cursor = self.conn.cursor()
             uniqueID = self._generateUniqueId()
             self._createStorage(uniqueID)
+
         else:
             self.conn = sqlite3.connect(self.storagePath,
-                check_same_thread=False)
+                                        check_same_thread=False)
             self.cursor = self.conn.cursor()
 
             # check if the versions are compatible
             self.checkVersionAndClearConflict()
 
-    # internal function that checks if the username is known
-    def _usernameInDb(self, username):
+    def _usernameInDb(self,
+                      username: str) -> bool:
+        """
+        Internal function that checks if the username is known.
 
+        :param username:
+        :return:
+        """
         # check if the username does exist => if not node is not known
         self.cursor.execute("SELECT id FROM nodes WHERE username = ? ",
             (username, ))
@@ -576,9 +585,12 @@ class Sqlite(_Storage):
         else:
             return True
 
-    # internal function that generates a unique id for this server instance
-    def _generateUniqueId(self):
+    def _generateUniqueId(self) -> str:
+        """
+        Internal function that generates a unique id for this server instance.
 
+        :return:
+        """
         # generate unique id for this installation
         utcTimestamp = int(time.time())
         uniqueString = socket.gethostname() \
@@ -590,11 +602,15 @@ class Sqlite(_Storage):
 
         return uniqueID
 
-    # Internal function that converts a tuple that is fetched from the
-    # database by "SELECT * FROM nodes" to an node object.
-    #
-    # returns a node object
-    def _convertNodeTupleToObj(self, nodeTuple):
+    def _convertNodeTupleToObj(self,
+                               nodeTuple: List[Any]) -> Node:
+        """
+        Internal function that converts a tuple that is fetched from the
+        database by "SELECT * FROM nodes" to an node object.
+
+        :param nodeTuple:
+        :return: a node object
+        """
         node = Node()
         node.id = nodeTuple[0]
         node.hostname = nodeTuple[1]
@@ -607,9 +623,14 @@ class Sqlite(_Storage):
         node.persistent = (nodeTuple[8] == 1)
         return node
 
-    # internal function that gets the id of a node when a username is given
-    def _getNodeId(self, username):
+    def _getNodeId(self,
+                   username: str) -> int:
+        """
+        Internal function that gets the id of a node when a username is given.
 
+        :param username:
+        :return:
+        """
         # check if the username does exist
         if self._usernameInDb(username):
             # get id of username
@@ -621,12 +642,16 @@ class Sqlite(_Storage):
         else:
             raise ValueError("Node id was not found.")
 
-    # Internal function that gets the alert from the database given
-    # by its id.
-    #
-    # return an alert object or None
-    def _getAlertById(self, alertId, logger=None):
+    def _getAlertById(self,
+                      alertId: int,
+                      logger: logging.Logger = None) -> Optional[Alert]:
+        """
+        Internal function that gets the alert from the database given by its id.
 
+        :param alertId:
+        :param logger:
+        :return: an alert object or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -666,12 +691,16 @@ class Sqlite(_Storage):
 
         return alert
 
-    # Internal function that gets the manager from the database given
-    # by its id.
-    #
-    # return a manager object or None
-    def _getManagerById(self, managerId, logger=None):
-        
+    def _getManagerById(self,
+                        managerId: int,
+                        logger: logging.Logger = None) -> Optional[Manager]:
+        """
+        Internal function that gets the manager from the database given by its id.
+
+        :param managerId:
+        :param logger:
+        :return: a manager object or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -698,11 +727,16 @@ class Sqlite(_Storage):
 
         return manager
 
-    # Internal function that gets the node from the database given by its id.
-    #
-    # return a node object or None
-    def _getNodeById(self, nodeId, logger=None):
+    def _getNodeById(self,
+                     nodeId: int,
+                     logger: logging.Logger = None) -> Optional[Node]:
+        """
+        Internal function that gets the node from the database given by its id.
 
+        :param nodeId:
+        :param logger:
+        :return: a node object or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -728,11 +762,16 @@ class Sqlite(_Storage):
 
         return None
 
-    # Internal function that gets the sensor from the database given by its id.
-    #
-    # return a sensor object or None
-    def _getSensorById(self, sensorId, logger=None):
+    def _getSensorById(self,
+                       sensorId: int,
+                       logger: logging.Logger = None) -> Optional[Sensor]:
+        """
+        Internal function that gets the sensor from the database given by its id.
 
+        :param sensorId:
+        :param logger:
+        :return: a sensor object or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -809,21 +848,23 @@ class Sqlite(_Storage):
                     return None
                 
         except Exception as e:
-
             logger.exception("[%s]: Not able to get " % self.fileName
                 + "sensor with id %d." % sensorId)
-
             return None
 
         return sensor
 
-    # internal function that gets the sensor id of a sensor when the id
-    # of a node is given and the remote sensor id that is used
-    # by the node internally
-    #
-    # return sensorId or raised Exception
-    def _getSensorId(self, nodeId, remoteSensorId):
+    def _getSensorId(self,
+                     nodeId: int,
+                     remoteSensorId: int) -> int:
+        """
+        Internal function that gets the sensor id of a sensor when the id
+        of a node is given and the remote sensor id that is used by the node internally.
 
+        :param nodeId:
+        :param remoteSensorId:
+        :return: sensorId or raised Exception
+        """
         # get sensorId from database
         self.cursor.execute("SELECT id FROM sensors "
             + "WHERE nodeId = ? "
@@ -837,13 +878,17 @@ class Sqlite(_Storage):
 
         return sensorId
 
-    # internal function that gets the alert id of an alert when the id
-    # of a node is given and the remote alert id that is used
-    # by the node internally
-    #
-    # return alertId or raised Exception
-    def _getAlertId(self, nodeId, remoteAlertId):
+    def _getAlertId(self,
+                    nodeId: int,
+                    remoteAlertId: int) -> int:
+        """
+        internal function that gets the alert id of an alert when the id
+        of a node is given and the remote alert id that is used by the node internally.
 
+        :param nodeId:
+        :param remoteAlertId:
+        :return: alertId or raised Exception
+        """
         # get alertId from database
         self.cursor.execute("SELECT id FROM alerts "
             + "WHERE nodeId = ? "
@@ -857,12 +902,14 @@ class Sqlite(_Storage):
 
         return alertId
 
-    # internal function that gets the manager id of a manager when the id
-    # of a node is given
-    #
-    # return managerId or raised Exception
-    def _getManagerId(self, nodeId):
+    def _getManagerId(self,
+                      nodeId: int) -> int:
+        """
+        Internal function that gets the manager id of a manager when the id of a node is given.
 
+        :param nodeId:
+        :return: managerId or raised Exception
+        """
         # get managerId from database
         self.cursor.execute("SELECT id FROM managers "
             + "WHERE nodeId = ?", (nodeId, ))
@@ -875,12 +922,14 @@ class Sqlite(_Storage):
 
         return managerId
 
-    # internal function that gets the unique id from the database
-    #
-    # return unique id
-    # or None
-    def _getUniqueID(self, logger=None):
+    def _getUniqueID(self,
+                     logger: logging.Logger = None) -> Optional[str]:
+        """
+        Internal function that gets the unique id from the database.
 
+        :param logger:
+        :return: return unique id or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -899,9 +948,13 @@ class Sqlite(_Storage):
 
         return self.globalData.uniqueID
 
-    # internal function that acquires the lock
-    def _acquireLock(self, logger=None):
+    def _acquireLock(self,
+                     logger: logging.Logger = None):
+        """
+        Internal function that acquires the lock.
 
+        :param logger:
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -909,9 +962,13 @@ class Sqlite(_Storage):
         logger.debug("[%s]: Acquire lock." % self.fileName)
         self.dbLock.acquire()
 
-    # internal function that releases the lock
-    def _releaseLock(self, logger=None):
+    def _releaseLock(self,
+                     logger: logging.Logger = None):
+        """
+        Internal function that releases the lock.
 
+        :param logger:
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -919,12 +976,14 @@ class Sqlite(_Storage):
         logger.debug("[%s]: Release lock." % self.fileName)
         self.dbLock.release()
 
-    # internal function that creates the database
-    # (should only be called if the database does not exist)
-    #
-    # no return value but raise exception if it fails
-    def _createStorage(self, uniqueID):
+    def _createStorage(self,
+                       uniqueID: str):
+        """
+        Internal function that creates the database (should only be called if the database does not exist).
+        No return value but raise exception if it fails.
 
+        :param uniqueID:
+        """
         # create internals table
         self.cursor.execute("CREATE TABLE internals ("
             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -1052,12 +1111,11 @@ class Sqlite(_Storage):
         # commit all changes
         self.conn.commit()
 
-    # Internal function that deletes the database
-    # (should only be called if parts of the database do exist)
-    #
-    # no return value but raise exception if it fails
     def _deleteStorage(self):
-
+        """
+        Internal function that deletes the database (should only be called if parts of the database do exist).
+        No return value but raise exception if it fails.
+        """
         # Delete all tables from the database to clear the old version.
         self.cursor.execute("DROP TABLE IF EXISTS internals")
         self.cursor.execute("DROP TABLE IF EXISTS options")
@@ -1076,12 +1134,16 @@ class Sqlite(_Storage):
         # commit all changes
         self.conn.commit()
 
-    # Internal function that deletes all alert data corresponding
-    # to the given node id.
-    #
-    # Returns true if everything worked fine.
-    def _deleteAlertsForNodeId(self, nodeId, logger=None):
+    def _deleteAlertsForNodeId(self,
+                               nodeId: int,
+                               logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes all alert data corresponding to the given node id.
 
+        :param nodeId:
+        :param logger:
+        :return: Returns true if everything worked fine.
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -1119,12 +1181,16 @@ class Sqlite(_Storage):
 
         return True
 
-    # Internal function that deletes all manager data corresponding
-    # to the given node id.
-    #
-    # Returns true if everything worked fine.
-    def _deleteManagerForNodeId(self, nodeId, logger=None):
+    def _deleteManagerForNodeId(self,
+                                nodeId: int,
+                                logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes all manager data corresponding to the given node id.
 
+        :param nodeId:
+        :param logger:
+        :return: Returns true if everything worked fine.
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -1147,12 +1213,16 @@ class Sqlite(_Storage):
 
         return True
 
-    # Internal function that deletes all sensor data corresponding
-    # to the given node id.
-    #
-    # Returns true if everything worked fine.
-    def _deleteSensorsForNodeId(self, nodeId, logger=None):
+    def _deleteSensorsForNodeId(self,
+                                nodeId: int,
+                                logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes all sensor data corresponding to the given node id.
 
+        :param nodeId:
+        :param logger:
+        :return: Returns true if everything worked fine.
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -1214,12 +1284,16 @@ class Sqlite(_Storage):
 
         return True
 
-    # Internal function thatdeletes a sensor alert given by its
-    # sensor alert id.
-    #
-    # Returns true if everything worked fine.
-    def _deleteSensorAlert(self, sensorAlertId, logger=None):
+    def _deleteSensorAlert(self,
+                           sensorAlertId: int,
+                           logger: logging.Logger = None) -> bool:
+        """
+        Internal function thatdeletes a sensor alert given by its sensor alert id.
 
+        :param sensorAlertId:
+        :param logger:
+        :return: Returns true if everything worked fine.
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -1249,13 +1323,16 @@ class Sqlite(_Storage):
 
         return True
 
-    # Internal function that gets all alert levels for a specific
-    # alert given by alertId
-    #
-    # return list of alertLevels
-    # or None
-    def _getAlertAlertLevels(self, alertId, logger=None):
+    def _getAlertAlertLevels(self,
+                             alertId: int,
+                             logger: logging.Logger = None) -> Optional[List[int]]:
+        """
+        Internal function that gets all alert levels for a specific alert given by alertId.
 
+        :param alertId:
+        :param logger:
+        :return: list of alertLevels or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -1267,23 +1344,23 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-
             logger.exception("[%s]: Not able to get " % self.fileName
                 + "alert levels for alert with id %d." % alertId)
-
-            # return None if action failed
             return None
 
         # return list of alertLevels
         return map(lambda x: x[0], result)
 
-    # Internal function that gets all alert levels for a specific
-    # sensor given by sensorId
-    #
-    # return list of alertLevel
-    # or None
-    def _getSensorAlertLevels(self, sensorId, logger=None):
+    def _getSensorAlertLevels(self,
+                              sensorId: int,
+                              logger: logging.Logger = None) -> Optional[List[int]]:
+        """
+        Internal function that gets all alert levels for a specific sensor given by sensorId.
 
+        :param sensorId:
+        :param logger:
+        :return: list of alertLevel or None
+        """
         # Set logger instance to use.
         if not logger:
             logger = self.logger
@@ -1305,11 +1382,20 @@ class Sqlite(_Storage):
         # return list of alertLevel
         return map(lambda x: x[0], result)
 
-    # Internal function that inserts sensor data according to its type.
-    #
-    # Returns true if everything worked fine.
-    def _insertSensorData(self, sensorId, dataType, data, logger=None):
+    def _insertSensorData(self,
+                          sensorId: int,
+                          dataType: int,
+                          data: Any,
+                          logger: logging.Logger = None) -> bool:
+        """
+        Internal function that inserts sensor data according to its type.
 
+        :param sensorId:
+        :param dataType:
+        :param data:
+        :param logger:
+        :return: true if everything worked fine.
+        """
         # Depending on the data type of the sensor add it to the
         # corresponding table.
         if dataType == SensorDataType.NONE:
@@ -1352,12 +1438,20 @@ class Sqlite(_Storage):
 
         return True
 
-    # Internal function that inserts sensor alert data according to its type.
-    #
-    # Returns true if everything worked fine.
-    def _insertSensorAlertData(self, sensorAlertId, dataType, data,
-        logger=None):
+    def _insertSensorAlertData(self,
+                               sensorAlertId: int,
+                               dataType: int,
+                               data: Any,
+                               logger: logging.Logger = None) -> bool:
+        """
+        Internal function that inserts sensor alert data according to its type.
 
+        :param sensorAlertId:
+        :param dataType:
+        :param data:
+        :param logger:
+        :return: true if everything worked fine.
+        """
         # Depending on the data type of the sensor alert add it to the
         # corresponding table.
         if dataType == SensorDataType.NONE:
@@ -1400,11 +1494,8 @@ class Sqlite(_Storage):
 
         return True
 
-    # checks the version of the server and the version in the database
-    # and clears every compatibility issue
-    #
-    # no return value but raise exception if it fails
-    def checkVersionAndClearConflict(self, logger=None):
+    def checkVersionAndClearConflict(self,
+                                     logger: logging.Logger = None):
 
         # Set logger instance to use.
         if not logger:
@@ -1460,12 +1551,15 @@ class Sqlite(_Storage):
 
         self._releaseLock(logger)
 
-    # adds a node if it does not exist or changes the registered
-    # values if it does exist
-    #
-    # return True or False
-    def addNode(self, username, hostname, nodeType, instance, version, rev,
-        persistent, logger=None):
+    def addNode(self,
+                username: str,
+                hostname: str,
+                nodeType: str,
+                instance: str,
+                version: float,
+                rev: int,
+                persistent: int,
+                logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -1723,11 +1817,10 @@ class Sqlite(_Storage):
 
         return True
 
-    # adds/updates the data that is given by the node for the sensors
-    # to the database
-    #
-    # return True or False
-    def addSensors(self, username, sensors, logger=None):
+    def addSensors(self,
+                   username: str,
+                   sensors: List[Dict[str, Any]],
+                   logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2110,11 +2203,10 @@ class Sqlite(_Storage):
 
         return True
 
-    # adds/updates the data that is given by the node for the alerts
-    # to the database
-    #
-    # return True or False
-    def addAlerts(self, username, alerts, logger=None):
+    def addAlerts(self,
+                  username: str,
+                  alerts: List[Dict[str, Any]],
+                  logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2379,11 +2471,10 @@ class Sqlite(_Storage):
 
         return True
 
-    # adds/updates the data that is given by the node for
-    # the manager to the database
-    #
-    # return True or False
-    def addManager(self, username, manager, logger=None):
+    def addManager(self,
+                   username: str,
+                   manager: Dict[str, Any],
+                   logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2486,11 +2577,9 @@ class Sqlite(_Storage):
 
         return True
 
-    # gets the id of the node by a given username
-    # (usernames are unique to each node)
-    #
-    # return nodeId or None
-    def getNodeId(self, username, logger=None):
+    def getNodeId(self,
+                  username: str,
+                  logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
         if not logger:
@@ -2509,10 +2598,8 @@ class Sqlite(_Storage):
 
         return nodeId
 
-    # Gets the ids of all nodes
-    #
-    # return list of nodeIds
-    def getNodeIds(self, logger=None):
+    def getNodeIds(self,
+                   logger: logging.Logger = None) -> List[int]:
 
         # Set logger instance to use.
         if not logger:
@@ -2536,10 +2623,9 @@ class Sqlite(_Storage):
 
         return nodeIds
 
-    # gets the count of the sensors of a node in the database
-    #
-    # return count of sensors or None
-    def getSensorCount(self, nodeId, logger=None):
+    def getSensorCount(self,
+                       nodeId: str,
+                       logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
         if not logger:
@@ -2562,11 +2648,8 @@ class Sqlite(_Storage):
 
         return sensorCount
 
-    # gets all data needed for the survey
-    #
-    # return list of tuples of (instance, version, rev)
-    # or None
-    def getSurveyData(self, logger=None):
+    def getSurveyData(self,
+                      logger: logging.Logger = None) -> Optional[List[Tuple[str, float, int]]]:
 
         # Set logger instance to use.
         if not logger:
@@ -2590,11 +2673,8 @@ class Sqlite(_Storage):
 
         return surveyData
 
-    # gets the unique id from the database
-    #
-    # return unique id
-    # or None
-    def getUniqueID(self, logger=None):
+    def getUniqueID(self,
+                    logger: logging.Logger = None) -> Optional[str]:
 
         # Set logger instance to use.
         if not logger:
@@ -2608,11 +2688,10 @@ class Sqlite(_Storage):
 
         return uniqueID
 
-    # updates the states of the sensors of a node in the database
-    # (given in a tuple of (remoteSensorId, state))
-    #
-    # return True or False
-    def updateSensorState(self, nodeId, stateList, logger=None):
+    def updateSensorState(self,
+                          nodeId: int,
+                          stateList: List[Tuple[int, int]],
+                          logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2661,11 +2740,10 @@ class Sqlite(_Storage):
 
         return True
 
-    # updates the data of the sensors of a node in the database
-    # (given in a tuple of (remoteSensorId, data))
-    #
-    # return True or False
-    def updateSensorData(self, nodeId, dataList, logger=None):
+    def updateSensorData(self,
+                         nodeId: int,
+                         dataList: List[int, Any],
+                         logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2730,10 +2808,9 @@ class Sqlite(_Storage):
 
         return True
 
-    # Updates the time the sensor send an update given by sensorId.
-    #
-    # return True or False
-    def updateSensorTime(self, sensorId, logger=None):
+    def updateSensorTime(self,
+                         sensorId: int,
+                         logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2764,11 +2841,10 @@ class Sqlite(_Storage):
 
         return True
 
-    # gets the sensor id of a sensor when the id of a node is given
-    # and the remote sensor id that is used by the node internally
-    #
-    # return sensorId or None
-    def getSensorId(self, nodeId, remoteSensorId, logger=None):
+    def getSensorId(self,
+                    nodeId: str,
+                    remoteSensorId: str,
+                    logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
         if not logger:
@@ -2791,11 +2867,10 @@ class Sqlite(_Storage):
 
         return sensorId
 
-    # gets the alert id of an alert when the id of a node is given
-    # and the remote alert id that is used by the node internally
-    #
-    # return alertId or None
-    def getAlertId(self, nodeId, remoteAlertId, logger=None):
+    def getAlertId(self,
+                   nodeId: int,
+                   remoteAlertId: int,
+                   logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
         if not logger:
@@ -2818,11 +2893,9 @@ class Sqlite(_Storage):
 
         return alertId
 
-    # gets all alert levels for a specific sensor given by sensorId
-    #
-    # return list of alertLevel
-    # or None
-    def getSensorAlertLevels(self, sensorId, logger=None):
+    def getSensorAlertLevels(self,
+                             sensorId: int,
+                             logger: logging.Logger = None) -> Optional[List[int]]:
 
         # Set logger instance to use.
         if not logger:
@@ -2837,11 +2910,9 @@ class Sqlite(_Storage):
         # return list of alertLevel
         return result
 
-    # gets all alert levels for a specific alert given by alertId
-    #
-    # return list of alertLevels
-    # or None
-    def getAlertAlertLevels(self, alertId, logger=None):
+    def getAlertAlertLevels(self,
+                            alertId: int,
+                            logger: logging.Logger = None) -> Optional[List[int]]:
 
         # Set logger instance to use.
         if not logger:
@@ -2856,12 +2927,16 @@ class Sqlite(_Storage):
         # return list of alertLevels
         return result
 
-    # adds a sensor alert to the database when the id of a node is given,
-    # the id of the sensor that is used internally by the node and the state
-    #
-    # return True or False
-    def addSensorAlert(self, nodeId, sensorId, state, dataJson, changeState,
-        hasLatestData, dataType, sensorData, logger=None):
+    def addSensorAlert(self,
+                       nodeId: int,
+                       sensorId: int,
+                       state: int,
+                       dataJson: str,
+                       changeState: bool,
+                       hasLatestData: bool,
+                       dataType: int,
+                       sensorData: Any,
+                       logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -2921,11 +2996,8 @@ class Sqlite(_Storage):
 
         return True
 
-    # gets all sensor alerts in the database
-    #
-    # return a list of sensorAlert objects
-    # or None
-    def getSensorAlerts(self, logger=None):
+    def getSensorAlerts(self,
+                        logger: logging.Logger = None) -> Optional[List[SensorAlert]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3058,10 +3130,9 @@ class Sqlite(_Storage):
         # return a list of sensorAlert objects
         return returnList
 
-    # Deletes a sensor alert given by its sensor alert id.
-    #
-    # return True or False
-    def deleteSensorAlert(self, sensorAlertId, logger=None):
+    def deleteSensorAlert(self,
+                          sensorAlertId: int,
+                          logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -3075,10 +3146,9 @@ class Sqlite(_Storage):
 
         return result
 
-    # Deletes a node given by its node id.
-    #
-    # return True or False
-    def deleteNode(self, nodeId, logger=None):
+    def deleteNode(self,
+                   nodeId: int,
+                   logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -3153,10 +3223,8 @@ class Sqlite(_Storage):
 
         return True
 
-    # checks if the alert system is active or not
-    #
-    # return True or False
-    def isAlertSystemActive(self, logger=None):
+    def isAlertSystemActive(self,
+                            logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -3185,11 +3253,8 @@ class Sqlite(_Storage):
         elif alertSystemActive == 0:
             return False
 
-    # gets all alert levels for the alert clients from the database
-    #
-    # return list alertLevels as integer
-    # or None
-    def getAllAlertsAlertLevels(self, logger=None):
+    def getAllAlertsAlertLevels(self,
+                                logger: logging.Logger = None) -> Optional[List[int]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3217,11 +3282,8 @@ class Sqlite(_Storage):
         # return list alertLevels as integer
         return map(lambda x: x[0], result)
 
-    # gets all alert levels for the sensors from the database
-    #
-    # return list alertLevels as integer
-    # or None
-    def getAllSensorsAlertLevels(self, logger=None):
+    def getAllSensorsAlertLevels(self,
+                                 logger: logging.Logger = None) -> Optional[List[int]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3249,11 +3311,8 @@ class Sqlite(_Storage):
         # return list alertLevels as integer
         return map(lambda x: x[0], result)
 
-    # gets all nodes from the database that are connected to the server
-    #
-    # return list of nodeIds
-    # or None
-    def getAllConnectedNodeIds(self, logger=None):
+    def getAllConnectedNodeIds(self,
+                               logger: logging.Logger = None) -> Optional[List[int]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3283,12 +3342,8 @@ class Sqlite(_Storage):
         # return list of nodeIds
         return map(lambda x: x[0], result)
 
-    # Gets all nodes from the database that are registered as persistent
-    # to the server.
-    #
-    # return list of nodeIds
-    # or None
-    def getAllPersistentNodeIds(self, logger=None):
+    def getAllPersistentNodeIds(self,
+                                logger: logging.Logger = None) -> Optional[List[int]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3318,10 +3373,9 @@ class Sqlite(_Storage):
         # return list of nodeIds
         return map(lambda x: x[0], result)
 
-    # marks a node given by its id as NOT connected
-    #
-    # return True or False
-    def markNodeAsNotConnected(self, nodeId, logger=None):
+    def markNodeAsNotConnected(self,
+                               nodeId: int,
+                               logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -3348,10 +3402,9 @@ class Sqlite(_Storage):
 
         return True
 
-    # marks a node given by its id as connected
-    #
-    # return True or False
-    def markNodeAsConnected(self, nodeId, logger=None):
+    def markNodeAsConnected(self,
+                            nodeId: int,
+                            logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -3378,12 +3431,9 @@ class Sqlite(_Storage):
 
         return True
 
-    # gets the information of all sensors which last state updates
-    # are older than the given time
-    #
-    # return list of sensor objects
-    # or None
-    def getSensorsUpdatedOlderThan(self, oldestTimeUpdated, logger=None):
+    def getSensorsUpdatedOlderThan(self,
+                                   oldestTimeUpdated: int,
+                                   logger: logging.Logger = None) -> Optional[List[Sensor]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3420,10 +3470,9 @@ class Sqlite(_Storage):
         # return list of sensor objects
         return sensorList
 
-    # gets the alert from the database when its id is given
-    #
-    # return an alert object or None
-    def getAlertById(self, alertId, logger=None):
+    def getAlertById(self,
+                     alertId: int,
+                     logger: logging.Logger = None) -> Optional[Alert]:
 
         # Set logger instance to use.
         if not logger:
@@ -3438,10 +3487,9 @@ class Sqlite(_Storage):
         # return an alert object or None
         return result
 
-    # gets the manager from the database when its id is given
-    #
-    # return a manager object or None
-    def getManagerById(self, managerId, logger=None):
+    def getManagerById(self,
+                       managerId: int,
+                       logger: logging.Logger = None) -> Optional[Manager]:
         
         # Set logger instance to use.
         if not logger:
@@ -3456,10 +3504,9 @@ class Sqlite(_Storage):
         # return a manager object or None
         return result
 
-    # gets the node from the database when its id is given
-    #
-    # return a node object or None
-    def getNodeById(self, nodeId, logger=None):
+    def getNodeById(self,
+                    nodeId: int,
+                    logger: logging.Logger = None) -> Optional[Node]:
 
         # Set logger instance to use.
         if not logger:
@@ -3474,10 +3521,9 @@ class Sqlite(_Storage):
         # return a node object or None
         return result
 
-    # gets the sensor from the database when its id is given
-    #
-    # return a sensor object or None
-    def getSensorById(self, sensorId, logger=None):
+    def getSensorById(self,
+                      sensorId: int,
+                      logger: logging.Logger = None) -> Optional[Sensor]:
 
         # Set logger instance to use.
         if not logger:
@@ -3492,10 +3538,8 @@ class Sqlite(_Storage):
         # return a sensor object or None
         return result
 
-    # Gets all nodes from the database.
-    #
-    # return a list of node objects or None
-    def getNodes(self, logger=None):
+    def getNodes(self,
+                 logger: logging.Logger = None) -> Optional[List[Node]]:
         
         # Set logger instance to use.
         if not logger:
@@ -3527,16 +3571,12 @@ class Sqlite(_Storage):
         # list(node objects)
         return nodes
 
-    # gets all information that the server has at the current moment
-    #
-    # return a list of
-    # list[0] = list(option objects)
-    # list[1] = list(node objects)
-    # list[2] = list(sensor objects)
-    # list[3] = list(manager objects)
-    # list[4] = list(alert objects)
-    # or None
-    def getAlertSystemInformation(self, logger=None):
+    def getAlertSystemInformation(self,
+                                  logger: logging.Logger = None) -> Optional[List[List[Union[Option,
+                                                                                             Node,
+                                                                                             Sensor,
+                                                                                             Manager,
+                                                                                             Alert]]]]:
 
         # Set logger instance to use.
         if not logger:
@@ -3626,10 +3666,10 @@ class Sqlite(_Storage):
         # list[4] = list(alert objects)
         return alertSystemInformation
 
-    # change a option in the database
-    #
-    # return True or False
-    def changeOption(self, optionType, optionValue, logger=None):
+    def changeOption(self,
+                     optionType: str,
+                     optionValue: float,
+                     logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
         if not logger:
@@ -3672,10 +3712,9 @@ class Sqlite(_Storage):
 
         return True
 
-    # gets the state of a sensor given by id
-    #
-    # return sensor state or None
-    def getSensorState(self, sensorId, logger=None):
+    def getSensorState(self,
+                       sensorId: int,
+                       logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
         if not logger:
@@ -3712,10 +3751,9 @@ class Sqlite(_Storage):
 
         return state
 
-    # Gets the data of a sensor given by id.
-    #
-    # return a sensor data object or None
-    def getSensorData(self, sensorId, logger=None):
+    def getSensorData(self,
+                      sensorId: int,
+                      logger: logging.Logger = None) -> Optional[Any]:
 
         # Set logger instance to use.
         if not logger:
@@ -3815,10 +3853,8 @@ class Sqlite(_Storage):
         # return a sensor data object or None
         return data
 
-    # closes db for usage
-    #
-    # no return value
-    def close(self, logger=None):
+    def close(self,
+              logger: logging.Logger = None):
 
         # Set logger instance to use.
         if not logger:
