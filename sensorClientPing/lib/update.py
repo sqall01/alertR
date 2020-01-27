@@ -35,7 +35,7 @@ class Updater:
 
     def __init__(self, url: str,
                  globalData: GlobalData,
-                 localInstanceInfo: Dict[str, Any],
+                 localInstanceInfo: Optional[Dict[str, Any]],
                  retrieveInfo: bool = True,
                  timeout: float = 20.0):
 
@@ -65,9 +65,14 @@ class Updater:
         self.newestRev = self.rev
         self.newestFiles = None
         self.lastChecked = 0
-        self.localInstanceInfo = localInstanceInfo
-        self.repoInfo = None
-        self.instanceInfo = None
+        self.repoInfo = None  # type: Dict[str, Any]
+        self.repoInstanceLocation = None  # type: Optional[str]
+        self.instanceInfo = None  # type: Dict[str, Any]
+
+        if localInstanceInfo is None:
+            self.localInstanceInfo = {"files": {}}
+        else:
+            self.localInstanceInfo = localInstanceInfo
 
         # size of the download chunks
         self.chunkSize = 4096
@@ -431,13 +436,14 @@ class Updater:
 
         :return: True or False
         """
-        try:
-            if self._getRepositoryInformation() is False:
-                raise ValueError("Not able to get newest repository information.")
+        if self.repoInfo is None or self.repoInstanceLocation is None:
+            try:
+                if self._getRepositoryInformation() is False:
+                    raise ValueError("Not able to get newest repository information.")
 
-        except Exception as e:
-            logging.exception("[%s]: Retrieving newest repository information failed." % self.fileName)
-            return False
+            except Exception as e:
+                logging.exception("[%s]: Retrieving newest repository information failed." % self.fileName)
+                return False
 
         logging.debug("[%s]: Downloading instance information." % self.fileName)
 
@@ -729,3 +735,21 @@ class Updater:
 
         self._releaseLock()
         return True
+
+    def setInstance(self, instance: str, retrieveInfo: bool = True):
+        """
+        Sets the instance to the newly given instance. Necessary if globalData does not hold the instance we
+        are looking for.
+
+        :param instance: target instance
+        :param retrieveInfo: should we directly retrieve all information from the online repository?
+        """
+        self.instance = instance
+        self.instanceInfo = None
+        self.lastChecked = 0
+        self.repoInfo = None
+        self.repoInstanceLocation = None
+
+        if retrieveInfo:
+            if not self._getNewestVersionInformation():
+                raise ValueError("Not able to get newest repository information.")

@@ -133,6 +133,7 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
             # (this means also, that the current temperature value will
             # not be the updated one, but one of the next rounds will have it)
             thread = threading.Thread(target=self._updateData)
+            thread.daemon = True
             thread.start()
 
         self.updateLock.acquire()
