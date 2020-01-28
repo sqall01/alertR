@@ -38,7 +38,7 @@ class Sqlite(_Storage):
         self.dbVersion = self.globalData.dbVersion
 
         # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
+        self.log_tag = os.path.basename(__file__)
 
         # path to the sqlite database
         self.storagePath = storagePath
@@ -50,7 +50,7 @@ class Sqlite(_Storage):
         # if not create one
         if os.path.exists(self.storagePath) is False:
 
-            self.logger.info("[%s]: No database found. Creating '%s'." % (self.fileName, self.storagePath))
+            self.logger.info("[%s]: No database found. Creating '%s'." % (self.log_tag, self.storagePath))
 
             self.conn = sqlite3.connect(self.storagePath,
                                         check_same_thread=False)
@@ -172,13 +172,13 @@ class Sqlite(_Storage):
                 alertLevels = self._getAlertAlertLevels(alert.alertId, logger)
                 if alertLevels is None:
                     logger.error("[%s]: Not able to get alert levels for alert with id %d."
-                                 % (self.fileName, alert.alertId))
+                                 % (self.log_tag, alert.alertId))
                     return None
 
                 alert.alertLevels = alertLevels
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alert with id %d." % (self.fileName, alertId))
+            logger.exception("[%s]: Not able to get alert with id %d." % (self.log_tag, alertId))
             return None
 
         return alert
@@ -210,7 +210,7 @@ class Sqlite(_Storage):
                 manager.description = result[0][2]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get manager with id %d." % (self.fileName, managerId))
+            logger.exception("[%s]: Not able to get manager with id %d." % (self.log_tag, managerId))
             return None
 
         return manager
@@ -234,7 +234,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node with id %d." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to get node with id %d." % (self.log_tag, nodeId))
             return None
 
         if len(result) == 1:
@@ -242,7 +242,7 @@ class Sqlite(_Storage):
                 return self._convertNodeTupleToObj(result[0])
 
             except Exception as e:
-                logger.exception("[%s]: Not able to convert node data for id %d to object." % (self.fileName, nodeId))
+                logger.exception("[%s]: Not able to convert node data for id %d to object." % (self.log_tag, nodeId))
 
         return None
 
@@ -281,7 +281,7 @@ class Sqlite(_Storage):
                 alertLevels = self._getSensorAlertLevels(sensor.sensorId, logger)
                 if alertLevels is None:
                     logger.error("[%s]: Not able to get alert levels for sensor with id %d."
-                                 % (self.fileName, sensor.sensorId))
+                                 % (self.log_tag, sensor.sensorId))
                     return None
 
                 sensor.alertLevels = alertLevels
@@ -296,7 +296,7 @@ class Sqlite(_Storage):
 
                     if len(subResult) != 1:
                         logger.error("[%s]: Sensor data for sensor with id %d was not found."
-                                     % (self.fileName, sensor.sensorId))
+                                     % (self.log_tag, sensor.sensorId))
                         return None
 
                     sensor.data = subResult[0][0]
@@ -307,18 +307,18 @@ class Sqlite(_Storage):
 
                     if len(subResult) != 1:
                         logger.error("[%s]: Sensor data for sensor with id %d was not found."
-                                     % (self.fileName, sensor.sensorId))
+                                     % (self.log_tag, sensor.sensorId))
                         return None
 
                     sensor.data = subResult[0][0]
 
                 else:
                     logger.error("[%s]: Not able to get sensor with id %d. Data type in database unknown."
-                                 % (self.fileName, sensor.sensorId))
+                                 % (self.log_tag, sensor.sensorId))
                     return None
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor with id %d." % (self.fileName, sensorId))
+            logger.exception("[%s]: Not able to get sensor with id %d." % (self.log_tag, sensorId))
             return None
 
         return sensor
@@ -404,7 +404,7 @@ class Sqlite(_Storage):
             self.globalData.uniqueID = self.cursor.fetchall()[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get the unique id." % self.fileName)
+            logger.exception("[%s]: Not able to get the unique id." % self.log_tag)
 
         return self.globalData.uniqueID
 
@@ -419,7 +419,7 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        logger.debug("[%s]: Acquire lock." % self.fileName)
+        logger.debug("[%s]: Acquire lock." % self.log_tag)
         self.dbLock.acquire()
 
     def _releaseLock(self,
@@ -433,7 +433,7 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        logger.debug("[%s]: Release lock." % self.fileName)
+        logger.debug("[%s]: Release lock." % self.log_tag)
         self.dbLock.release()
 
     def _createStorage(self,
@@ -626,7 +626,7 @@ class Sqlite(_Storage):
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete alerts for node with id %d." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to delete alerts for node with id %d." % (self.log_tag, nodeId))
 
             return False
 
@@ -653,7 +653,7 @@ class Sqlite(_Storage):
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete manager for node with id %d." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to delete manager for node with id %d." % (self.log_tag, nodeId))
             return False
 
         return True
@@ -703,7 +703,7 @@ class Sqlite(_Storage):
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete sensors for node with id %d." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to delete sensors for node with id %d." % (self.log_tag, nodeId))
             return False
 
         return True
@@ -728,7 +728,7 @@ class Sqlite(_Storage):
             self.cursor.execute("DELETE FROM sensorAlerts WHERE id = ?", (sensorAlertId, ))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete sensor alert with id %d." % (self.fileName, sensorAlertId))
+            logger.exception("[%s]: Not able to delete sensor alert with id %d." % (self.log_tag, sensorAlertId))
             return False
 
         # commit all changes
@@ -755,7 +755,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alert levels for alert with id %d." % (self.fileName, alertId))
+            logger.exception("[%s]: Not able to get alert levels for alert with id %d." % (self.log_tag, alertId))
             return None
 
         # return list of alertLevels
@@ -780,7 +780,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alert levels for sensor with id %d." % (self.fileName, sensorId))
+            logger.exception("[%s]: Not able to get alert levels for sensor with id %d." % (self.log_tag, sensorId))
 
             # return None if action failed
             return None
@@ -812,7 +812,7 @@ class Sqlite(_Storage):
                 self.cursor.execute("INSERT INTO sensorsDataInt (sensorId, data) VALUES (?, ?)",  (sensorId, data))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add sensor's integer data." % self.fileName)
+                logger.exception("[%s]: Not able to add sensor's integer data." % self.log_tag)
                 return False
 
         elif dataType == SensorDataType.FLOAT:
@@ -820,11 +820,11 @@ class Sqlite(_Storage):
                 self.cursor.execute("INSERT INTO sensorsDataFloat (sensorId, data) VALUES (?, ?)", (sensorId, data))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add sensor's floating point data." % self.fileName)
+                logger.exception("[%s]: Not able to add sensor's floating point data." % self.log_tag)
                 return False
 
         else:
-            logger.error("[%s]: Data type not known. Not able to add sensor." % self.fileName)
+            logger.error("[%s]: Data type not known. Not able to add sensor." % self.log_tag)
             return False
 
         return True
@@ -853,7 +853,7 @@ class Sqlite(_Storage):
                 self.cursor.execute("INSERT INTO sensorAlertsDataInt (sensorAlertId, data) VALUES (?, ?)",
                                     (sensorAlertId, data))
             except Exception as e:
-                logger.exception("[%s]: Not able to add sensorAlert's integer data." % self.fileName)
+                logger.exception("[%s]: Not able to add sensorAlert's integer data." % self.log_tag)
                 return False
 
         elif dataType == SensorDataType.FLOAT:
@@ -862,11 +862,11 @@ class Sqlite(_Storage):
                                     (sensorAlertId, data))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add sensorAlert's floating point data." % self.fileName)
+                logger.exception("[%s]: Not able to add sensorAlert's floating point data." % self.log_tag)
                 return False
 
         else:
-            logger.error("[%s]: Data type not known. Not able to add sensorAlert." % self.fileName)
+            logger.error("[%s]: Data type not known. Not able to add sensorAlert." % self.log_tag)
 
             return False
 
@@ -898,7 +898,7 @@ class Sqlite(_Storage):
         if currDbVersion < self.dbVersion:
 
             logger.info("[%s]: Needed database version '%d' not compatible with current database layout version '%d'. "
-                        % (self.fileName, self.dbVersion, currDbVersion)
+                        % (self.log_tag, self.dbVersion, currDbVersion)
                         + "Updating database.")
 
             # get old uniqueId to keep it
@@ -943,7 +943,7 @@ class Sqlite(_Storage):
         if not self._usernameInDb(username):
 
             logger.info("[%s]: Node with username '%s' does not exist in database. Adding it."
-                        % (self.fileName, username))
+                        % (self.log_tag, username))
 
             try:
                 # NOTE: connection state is changed later on
@@ -960,7 +960,7 @@ class Sqlite(_Storage):
                                     (hostname, username, nodeType, instance, 0, version, rev, persistent))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add node." % self.fileName)
+                logger.exception("[%s]: Not able to add node." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -968,7 +968,7 @@ class Sqlite(_Storage):
         # => check if everything is the same
         else:
             logger.info("[%s]: Node with username '%s' already exists in database."
-                        % (self.fileName, username))
+                        % (self.log_tag, username))
 
             nodeId = self._getNodeId(username)
 
@@ -991,14 +991,14 @@ class Sqlite(_Storage):
                 dbPersistent = result[0][5]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get node information." % self.fileName)
+                logger.exception("[%s]: Not able to get node information." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
             # change hostname if it had changed
             if dbHostname != hostname:
                 logger.info("[%s]: Hostname of node has changed from '%s' to '%s'. Updating database."
-                            % (self.fileName, dbHostname, hostname))
+                            % (self.log_tag, dbHostname, hostname))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
@@ -1007,14 +1007,14 @@ class Sqlite(_Storage):
                                         (hostname, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update hostname of node." % self.fileName)
+                    logger.exception("[%s]: Not able to update hostname of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
             # change instance if it had changed
             if dbInstance != instance:
                 logger.info("[%s]: Instance of node has changed from '%s' to '%s'. Updating database."
-                            % (self.fileName, dbInstance, instance))
+                            % (self.log_tag, dbInstance, instance))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
@@ -1023,14 +1023,14 @@ class Sqlite(_Storage):
                                         (instance, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update instance of node." % self.fileName)
+                    logger.exception("[%s]: Not able to update instance of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
             # change version if it had changed
             if dbVersion != version:
                 logger.info("[%s]: Version of node has changed from '%.3f' to '%.3f'. Updating database."
-                            % (self.fileName, dbVersion, version))
+                            % (self.log_tag, dbVersion, version))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
@@ -1039,14 +1039,14 @@ class Sqlite(_Storage):
                                         (version, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update version of node." % self.fileName)
+                    logger.exception("[%s]: Not able to update version of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
             # change revision if it had changed
             if dbRev != rev:
                 logger.info("[%s]: Revision of node has changed from '%d' to '%d'. Updating database."
-                            % (self.fileName, dbRev, rev))
+                            % (self.log_tag, dbRev, rev))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
@@ -1055,14 +1055,14 @@ class Sqlite(_Storage):
                                         (rev, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update revision of node." % self.fileName)
+                    logger.exception("[%s]: Not able to update revision of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
             # change persistent if it had changed
             if dbPersistent != persistent:
                 logger.info("[%s]: Persistent flag of node has changed from '%d' to '%d'. Updating database."
-                            % (self.fileName, dbPersistent, persistent))
+                            % (self.log_tag, dbPersistent, persistent))
 
                 try:
                     self.cursor.execute("UPDATE nodes SET "
@@ -1071,7 +1071,7 @@ class Sqlite(_Storage):
                                         (persistent, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update persistent flag of node." % self.fileName)
+                    logger.exception("[%s]: Not able to update persistent flag of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1080,7 +1080,7 @@ class Sqlite(_Storage):
             # and change node type
             if dbNodeType != nodeType:
                 logger.info("[%s]: Type of node has changed from '%s' to '%s'. Updating database."
-                            % (self.fileName, dbNodeType, nodeType))
+                            % (self.log_tag, dbNodeType, nodeType))
 
                 # if old node had type "sensor"
                 # => delete all sensors
@@ -1113,7 +1113,7 @@ class Sqlite(_Storage):
                 # node type in database not known
                 else:
                     logger.error("[%s]: Unknown node type when deleting old sensors/alerts/manager information."
-                                 % self.fileName)
+                                 % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1125,7 +1125,7 @@ class Sqlite(_Storage):
                                         (nodeType, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update type of node." % self.fileName)
+                    logger.exception("[%s]: Not able to update type of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1151,7 +1151,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.fileName)
+            logger.exception("[%s]: Not able to get node id." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1177,7 +1177,7 @@ class Sqlite(_Storage):
             if not result:
 
                 logger.info("[%s]: Sensor with client id '%d' does not exist in database. Adding it."
-                            % (self.fileName, int(sensor["clientSensorId"])))
+                            % (self.log_tag, int(sensor["clientSensorId"])))
 
                 # add sensor to database
                 try:
@@ -1199,7 +1199,7 @@ class Sqlite(_Storage):
                                          sensor["dataType"]))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add sensor." % self.fileName)
+                    logger.exception("[%s]: Not able to add sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1215,14 +1215,14 @@ class Sqlite(_Storage):
                                             (sensorId, alertLevel))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add sensor's alert levels." % self.fileName)
+                    logger.exception("[%s]: Not able to add sensor's alert levels." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
                 # Depending on the data type of the sensor add it to the
                 # corresponding table.
                 if not self._insertSensorData(sensorId, sensor["dataType"], sensorData, logger):
-                    logger.error("[%s]: Not able to add data for newly added sensor." % self.fileName)
+                    logger.error("[%s]: Not able to add data for newly added sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1230,7 +1230,7 @@ class Sqlite(_Storage):
             # => check if everything is the same
             else:
                 logger.info("[%s]: Sensor with client id '%d' already exists in database."
-                            % (self.fileName, int(sensor["clientSensorId"])))
+                            % (self.log_tag, int(sensor["clientSensorId"])))
 
                 # get sensorId, description, alertDelay and dataType
                 try:
@@ -1248,14 +1248,14 @@ class Sqlite(_Storage):
                     dbDataType = result[0][2]
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get sensor information." % self.fileName)
+                    logger.exception("[%s]: Not able to get sensor information." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
                 # change description if it had changed
                 if dbDescription != str(sensor["description"]):
                     logger.info("[%s]: Description of sensor has changed from '%s' to '%s'. Updating database."
-                                % (self.fileName, dbDescription, str(sensor["description"])))
+                                % (self.log_tag, dbDescription, str(sensor["description"])))
 
                     try:
                         self.cursor.execute("UPDATE sensors SET "
@@ -1264,14 +1264,14 @@ class Sqlite(_Storage):
                                             (str(sensor["description"]), sensorId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update description of sensor." % self.fileName)
+                        logger.exception("[%s]: Not able to update description of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
                 # change alert delay if it had changed
                 if dbAlertDelay != int(sensor["alertDelay"]):
                     logger.info("[%s]: Alert delay of sensor has changed from '%d' to '%d'. Updating database."
-                                % (self.fileName, dbAlertDelay, int(sensor["alertDelay"])))
+                                % (self.log_tag, dbAlertDelay, int(sensor["alertDelay"])))
 
                     try:
                         self.cursor.execute("UPDATE sensors SET "
@@ -1280,7 +1280,7 @@ class Sqlite(_Storage):
                                             (int(sensor["alertDelay"]), sensorId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update alert delay of sensor." % self.fileName)
+                        logger.exception("[%s]: Not able to update alert delay of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1288,7 +1288,7 @@ class Sqlite(_Storage):
                 # old data).
                 if dbDataType != sensor["dataType"]:
                     logger.info("[%s]: Data type of sensor has changed from '%d' to '%d'. Updating database."
-                                % (self.fileName, dbDataType, sensor["dataType"]))
+                                % (self.log_tag, dbDataType, sensor["dataType"]))
 
                     # Remove old data entry of sensor.
                     try:
@@ -1302,7 +1302,7 @@ class Sqlite(_Storage):
                                             (sensorId, ))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to remove old data entry of sensor." % self.fileName)
+                        logger.exception("[%s]: Not able to remove old data entry of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1314,14 +1314,14 @@ class Sqlite(_Storage):
                                             (int(sensor["dataType"]), sensorId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update data type of sensor." % self.fileName)
+                        logger.exception("[%s]: Not able to update data type of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
                     # Depending on the data type of the sensor add it to the
                     # corresponding table.
                     if not self._insertSensorData(sensorId, sensor["dataType"], sensorData, logger):
-                        logger.error("[%s]: Not able to add data for changed sensor." % self.fileName)
+                        logger.error("[%s]: Not able to add data for changed sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1333,7 +1333,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alert levels of the sensor." % self.fileName)
+                    logger.exception("[%s]: Not able to get alert levels of the sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1351,7 +1351,7 @@ class Sqlite(_Storage):
                         continue
 
                     logger.info("[%s]: Alert level '%d' of sensor does not exist in database. Adding it."
-                                % (self.fileName, alertLevel))
+                                % (self.log_tag, alertLevel))
 
                     # add sensor alert level to database
                     self.cursor.execute("INSERT INTO sensorsAlertLevels ("
@@ -1367,7 +1367,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get updated alert levels of the sensor." % self.fileName)
+                    logger.exception("[%s]: Not able to get updated alert levels of the sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1385,7 +1385,7 @@ class Sqlite(_Storage):
                         continue
 
                     logger.info("[%s]: Alert level '%d' in database does not exist anymore for sensor. Deleting it."
-                                % (self.fileName, dbAlertLevel[0]))
+                                % (self.log_tag, dbAlertLevel[0]))
 
                     self.cursor.execute("DELETE FROM sensorsAlertLevels "
                                         + "WHERE sensorId = ? AND alertLevel = ?",
@@ -1400,7 +1400,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get updated sensors from database." % self.fileName)
+            logger.exception("[%s]: Not able to get updated sensors from database." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1417,7 +1417,7 @@ class Sqlite(_Storage):
                 continue
 
             logger.info("[%s]: Sensor with client id '%d' in database does not exist anymore for the node. Deleting it."
-                        % (self.fileName, dbSensor[1]))
+                        % (self.log_tag, dbSensor[1]))
 
             try:
                 # Delete sensor alertLevels.
@@ -1439,7 +1439,7 @@ class Sqlite(_Storage):
                                     (dbSensor[0], ))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to delete sensor." % self.fileName)
+                logger.exception("[%s]: Not able to delete sensor." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1464,7 +1464,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.fileName)
+            logger.exception("[%s]: Not able to get node id." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1482,7 +1482,7 @@ class Sqlite(_Storage):
             # => add it
             if len(result) == 0:
                 logger.info("[%s]: Alert with client id '%d' does not exist in database. Adding it."
-                            % (self.fileName, int(alert["clientAlertId"])))
+                            % (self.log_tag, int(alert["clientAlertId"])))
 
                 # add alert to database
                 try:
@@ -1495,7 +1495,7 @@ class Sqlite(_Storage):
                                          str(alert["description"])))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add alert." % self.fileName)
+                    logger.exception("[%s]: Not able to add alert." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1504,7 +1504,7 @@ class Sqlite(_Storage):
                     alertId = self._getAlertId(nodeId, int(alert["clientAlertId"]))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alertId." % self.fileName)
+                    logger.exception("[%s]: Not able to get alertId." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1517,7 +1517,7 @@ class Sqlite(_Storage):
                                             (alertId, alertLevel))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add alert alert levels." % self.fileName)
+                    logger.exception("[%s]: Not able to add alert alert levels." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1525,7 +1525,7 @@ class Sqlite(_Storage):
             # => check if everything is the same
             else:
                 logger.info("[%s]: Alert with client id '%d' already exists in database."
-                            % (self.fileName, int(alert["clientAlertId"])))
+                            % (self.log_tag, int(alert["clientAlertId"])))
 
                 # get alertId and description
                 try:
@@ -1539,14 +1539,14 @@ class Sqlite(_Storage):
                     dbDescription = result[0][0]
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alert information." % self.fileName)
+                    logger.exception("[%s]: Not able to get alert information." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
                 # change description if it had changed
                 if dbDescription != str(alert["description"]):
                     logger.info("[%s]: Description of alert has changed from '%s' to '%s'. Updating database."
-                                % (self.fileName, dbDescription, str(alert["description"])))
+                                % (self.log_tag, dbDescription, str(alert["description"])))
 
                     try:
                         self.cursor.execute("UPDATE alerts SET "
@@ -1555,7 +1555,7 @@ class Sqlite(_Storage):
                                             (str(alert["description"]), alertId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update description of alert." % self.fileName)
+                        logger.exception("[%s]: Not able to update description of alert." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1567,7 +1567,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alert levels of the alert." % self.fileName)
+                    logger.exception("[%s]: Not able to get alert levels of the alert." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1585,7 +1585,7 @@ class Sqlite(_Storage):
                         continue
 
                     logger.info("[%s]: Alert level '%d' of alert does not exist in database. Adding it."
-                                % (self.fileName, alertLevel))
+                                % (self.log_tag, alertLevel))
 
                     # add alert alert level to database
                     self.cursor.execute("INSERT INTO alertsAlertLevels ("
@@ -1601,7 +1601,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get updated alert levels of the alert." % self.fileName)
+                    logger.exception("[%s]: Not able to get updated alert levels of the alert." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1619,7 +1619,7 @@ class Sqlite(_Storage):
                         continue
 
                     logger.info("[%s]: Alert level '%d' in database does not exist anymore for alert. Deleting it."
-                                % (self.fileName, dbAlertLevel[0]))
+                                % (self.log_tag, dbAlertLevel[0]))
                     self.cursor.execute("DELETE FROM alertsAlertLevels "
                                         + "WHERE alertId = ? AND alertLevel = ?",
                                         (alertId, dbAlertLevel[0]))
@@ -1633,7 +1633,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get updated alerts from database." % self.fileName)
+            logger.exception("[%s]: Not able to get updated alerts from database." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1650,7 +1650,7 @@ class Sqlite(_Storage):
                 continue
 
             logger.info("[%s]: Alert with client id '%d' in database does not exist anymore for the node. Deleting it."
-                        % (self.fileName, dbAlert[1]))
+                        % (self.log_tag, dbAlert[1]))
 
             try:
                 self.cursor.execute("DELETE FROM alertsAlertLevels "
@@ -1661,7 +1661,7 @@ class Sqlite(_Storage):
                                     (dbAlert[0], ))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to delete alert." % self.fileName)
+                logger.exception("[%s]: Not able to delete alert." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1686,7 +1686,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.fileName)
+            logger.exception("[%s]: Not able to get node id." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1700,7 +1700,7 @@ class Sqlite(_Storage):
         # if the manager does not exist
         # => add it
         if len(result) == 0:
-            logger.info("[%s]: Manager does not exist in database. Adding it." % self.fileName)
+            logger.info("[%s]: Manager does not exist in database. Adding it." % self.log_tag)
 
             # add manager to database
             try:
@@ -1711,14 +1711,14 @@ class Sqlite(_Storage):
                                      str(manager["description"])))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add manager." % self.fileName)
+                logger.exception("[%s]: Not able to add manager." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
         # if the manager does already exist
         # => check if everything is the same
         else:
-            logger.info("[%s]: Manager already exists in database." % self.fileName)
+            logger.info("[%s]: Manager already exists in database." % self.log_tag)
 
             # get managerId and description
             try:
@@ -1731,14 +1731,14 @@ class Sqlite(_Storage):
                 dbDescription = result[0][0]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get manager information." % self.fileName)
+                logger.exception("[%s]: Not able to get manager information." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
             # change description if it had changed
             if dbDescription != str(manager["description"]):
                 logger.info("[%s]: Description of manager has changed from '%s' to '%s'. Updating database."
-                            % (self.fileName, dbDescription, str(manager["description"])))
+                            % (self.log_tag, dbDescription, str(manager["description"])))
 
                 try:
                     self.cursor.execute("UPDATE managers SET "
@@ -1747,7 +1747,7 @@ class Sqlite(_Storage):
                                         (str(manager["description"]), managerId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update description of manager." % self.fileName)
+                    logger.exception("[%s]: Not able to update description of manager." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1771,7 +1771,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.fileName)
+            logger.exception("[%s]: Not able to get node id." % self.log_tag)
 
         self._releaseLock(logger)
         return nodeId
@@ -1794,7 +1794,7 @@ class Sqlite(_Storage):
             nodeIds = [x[0] for x in result]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node ids." % self.fileName)
+            logger.exception("[%s]: Not able to get node ids." % self.log_tag)
 
         self._releaseLock(logger)
         return nodeIds
@@ -1819,7 +1819,7 @@ class Sqlite(_Storage):
             sensorCount = len(result)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor count." % self.fileName)
+            logger.exception("[%s]: Not able to get sensor count." % self.log_tag)
 
         self._releaseLock(logger)
         return sensorCount
@@ -1843,7 +1843,7 @@ class Sqlite(_Storage):
             surveyData = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get survey data." % self.fileName)
+            logger.exception("[%s]: Not able to get survey data." % self.log_tag)
 
         self._releaseLock(logger)
         return surveyData
@@ -1883,7 +1883,7 @@ class Sqlite(_Storage):
                                     + "AND remoteSensorId = ?", (nodeId, stateTuple[0]))
                 result = self.cursor.fetchall()
                 if len(result) != 1:
-                    logger.error("[%s]: Sensor does not exist in database." % self.fileName)
+                    logger.error("[%s]: Sensor does not exist in database." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1896,7 +1896,7 @@ class Sqlite(_Storage):
                                     (stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to update sensor state." % self.fileName)
+                logger.exception("[%s]: Not able to update sensor state." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1928,7 +1928,7 @@ class Sqlite(_Storage):
                 result = self.cursor.fetchall()
 
                 if len(result) != 1:
-                    logger.error("[%s]: Sensor does not exist in database." % self.fileName)
+                    logger.error("[%s]: Sensor does not exist in database." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1937,7 +1937,7 @@ class Sqlite(_Storage):
 
                 if dataType == SensorDataType.NONE:
                     logger.error("[%s]: Sensor with remote id %d holds no data. Ignoring it."
-                                 % (self.fileName, dataTuple[0]))
+                                 % (self.log_tag, dataTuple[0]))
 
                 elif dataType == SensorDataType.INT:
                     self.cursor.execute("UPDATE sensorsDataInt SET "
@@ -1954,7 +1954,7 @@ class Sqlite(_Storage):
                                          sensorId))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to update sensor data." % self.fileName)
+                logger.exception("[%s]: Not able to update sensor data." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1982,7 +1982,7 @@ class Sqlite(_Storage):
                                 (utcTimestamp, sensorId))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to update sensor time." % self.fileName)
+            logger.exception("[%s]: Not able to update sensor time." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -2006,7 +2006,7 @@ class Sqlite(_Storage):
             sensorId = self._getSensorId(nodeId, remoteSensorId)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensorId from database." % self.fileName)
+            logger.exception("[%s]: Not able to get sensorId from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2028,7 +2028,7 @@ class Sqlite(_Storage):
             alertId = self._getAlertId(nodeId, remoteAlertId)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alertId from database." % self.fileName)
+            logger.exception("[%s]: Not able to get alertId from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2119,12 +2119,12 @@ class Sqlite(_Storage):
             sensorAlertId = self.cursor.lastrowid
 
             if not self._insertSensorAlertData(sensorAlertId, dataType, sensorData, logger):
-                logger.error("[%s]: Not able to add data for newly added sensor alert." % self.fileName)
+                logger.error("[%s]: Not able to add data for newly added sensor alert." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
         except Exception as e:
-            logger.exception("[%s]: Not able to add sensor alert." % self.fileName)
+            logger.exception("[%s]: Not able to add sensor alert." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -2188,14 +2188,14 @@ class Sqlite(_Storage):
 
                     except Exception as e:
                         self.logger.exception("[%s]: Optional data from database not a valid json string. "
-                                              % self.fileName
+                                              % self.log_tag
                                               + "Ignoring data.")
 
                 # Set alert levels for sensor alert.
                 alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId, logger)
                 if alertLevels is None:
                     logger.error("[%s]: Not able to get alert levels for sensor alert with id %d."
-                                 % (self.fileName, sensorAlert.sensorAlertId))
+                                 % (self.log_tag, sensorAlert.sensorAlertId))
                     self._releaseLock(logger)
                     return None
 
@@ -2213,7 +2213,7 @@ class Sqlite(_Storage):
                     subResult = self.cursor.fetchall()
 
                     if len(subResult) != 1:
-                        logger.error("[%s]: Sensor alert data was not found." % self.fileName)
+                        logger.error("[%s]: Sensor alert data was not found." % self.log_tag)
                         self._releaseLock(logger)
                         return None
 
@@ -2227,21 +2227,21 @@ class Sqlite(_Storage):
                     subResult = self.cursor.fetchall()
 
                     if len(subResult) != 1:
-                        logger.error("[%s]: Sensor alert data was not found." % self.fileName)
+                        logger.error("[%s]: Sensor alert data was not found." % self.log_tag)
                         self._releaseLock(logger)
                         return None
 
                     sensorAlert.sensorData = subResult[0][0]
 
                 else:
-                    logger.error("[%s]: Not able to get sensor alerts. Data type in database unknown." % self.fileName)
+                    logger.error("[%s]: Not able to get sensor alerts. Data type in database unknown." % self.log_tag)
                     self._releaseLock(logger)
                     return None
 
                 returnList.append(sensorAlert)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor alerts." % self.fileName)
+            logger.exception("[%s]: Not able to get sensor alerts." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2279,7 +2279,7 @@ class Sqlite(_Storage):
         # Get node type from database.
         nodeObj = self._getNodeById(nodeId, logger)
         if nodeObj is None:
-            logger.error("[%s]: Not able to get node with id %d." % (self.fileName, nodeId))
+            logger.error("[%s]: Not able to get node with id %d." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2307,7 +2307,7 @@ class Sqlite(_Storage):
         # Return if we do not know how to handle the node.
         else:
             logger.exception("[%s]: Unknown node type '%s' for node with id %d."
-                             % (self.fileName, nodeObj.nodeType, nodeId))
+                             % (self.log_tag, nodeObj.nodeType, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2319,7 +2319,7 @@ class Sqlite(_Storage):
                                 (nodeId, ))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete node with id %d." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to delete node with id %d." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2344,7 +2344,7 @@ class Sqlite(_Storage):
             alertSystemActive = result[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to check if alert system is active." % self.fileName)
+            logger.exception("[%s]: Not able to check if alert system is active." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -2371,7 +2371,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all alert levels for alert clients." % self.fileName)
+            logger.exception("[%s]: Not able to get all alert levels for alert clients." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2396,7 +2396,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all alert levels for sensors." % self.fileName)
+            logger.exception("[%s]: Not able to get all alert levels for sensors." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2423,7 +2423,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all connected node ids." % self.fileName)
+            logger.exception("[%s]: Not able to get all connected node ids." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2450,7 +2450,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all persistent node ids." % self.fileName)
+            logger.exception("[%s]: Not able to get all persistent node ids." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2476,7 +2476,7 @@ class Sqlite(_Storage):
                                 (0, nodeId))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to mark node '%d' as not connected." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to mark node '%d' as not connected." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2501,7 +2501,7 @@ class Sqlite(_Storage):
                                 (1, nodeId))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to mark node '%d' as connected." % (self.fileName, nodeId))
+            logger.exception("[%s]: Not able to mark node '%d' as connected." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2537,7 +2537,7 @@ class Sqlite(_Storage):
 
         except Exception as e:
             logger.exception("[%s]: Not able to get sensors from database which update was older than %d."
-                             % (self.fileName, oldestTimeUpdated))
+                             % (self.log_tag, oldestTimeUpdated))
             self._releaseLock(logger)
             return None
 
@@ -2634,7 +2634,7 @@ class Sqlite(_Storage):
                 nodes.append(node)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get nodes from database." % self.fileName)
+            logger.exception("[%s]: Not able to get nodes from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2720,7 +2720,7 @@ class Sqlite(_Storage):
             alertSystemInformation.append(alertList)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get complete system information from database." % self.fileName)
+            logger.exception("[%s]: Not able to get complete system information from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2753,7 +2753,7 @@ class Sqlite(_Storage):
                                 (optionType, ))
             result = self.cursor.fetchall()
             if len(result) != 1:
-                logger.error("[%s]: Option was not found." % self.fileName)
+                logger.error("[%s]: Option was not found." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -2764,7 +2764,7 @@ class Sqlite(_Storage):
                                 (optionValue, optionType))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to update option in database." % self.fileName)
+            logger.exception("[%s]: Not able to update option in database." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -2791,14 +2791,14 @@ class Sqlite(_Storage):
                                 (sensorId, ))
             result = self.cursor.fetchall()
             if len(result) != 1:
-                logger.error("[%s]: Sensor was not found." % self.fileName)
+                logger.error("[%s]: Sensor was not found." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 
             state = result[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor state from database." % self.fileName)
+            logger.exception("[%s]: Not able to get sensor state from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2823,14 +2823,14 @@ class Sqlite(_Storage):
                                 (sensorId, ))
             result = self.cursor.fetchall()
             if len(result) != 1:
-                logger.error("[%s]: Sensor was not found." % self.fileName)
+                logger.error("[%s]: Sensor was not found." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 
             dataType = result[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor data type from database." % self.fileName)
+            logger.exception("[%s]: Not able to get sensor data type from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2849,14 +2849,14 @@ class Sqlite(_Storage):
                                     (sensorId, ))
                 result = self.cursor.fetchall()
                 if len(result) != 1:
-                    logger.error("[%s]: Sensor data was not found." % self.fileName)
+                    logger.error("[%s]: Sensor data was not found." % self.log_tag)
                     self._releaseLock(logger)
                     return None
 
                 data.data = result[0][0]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get sensor data from database." % self.fileName)
+                logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 
@@ -2869,14 +2869,14 @@ class Sqlite(_Storage):
                                     (sensorId, ))
                 result = self.cursor.fetchall()
                 if len(result) != 1:
-                    logger.error("[%s]: Sensor data was not found." % self.fileName)
+                    logger.error("[%s]: Sensor data was not found." % self.log_tag)
                     self._releaseLock(logger)
                     return None
 
                 data.data = result[0][0]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get sensor data from database." % self.fileName)
+                logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 

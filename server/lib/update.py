@@ -32,7 +32,8 @@ class _FileUpdateType:
 # this class processes all actions concerning the update process
 class Updater:
 
-    def __init__(self, url: str,
+    def __init__(self,
+                 url: str,
                  globalData: GlobalData,
                  localInstanceInfo: Optional[Dict[str, Any]],
                  retrieveInfo: bool = True,
