@@ -153,8 +153,8 @@ class _Storage:
         raise NotImplemented("Function not implemented yet.")
 
     def getSensorId(self,
-                    nodeId: str,
-                    remoteSensorId: str,
+                    nodeId: int,
+                    remoteSensorId: int,
                     logger: logging.Logger = None) -> Optional[int]:
         """
         Gets the sensor id of a sensor when the id of a node is given and the remote sensor id that
@@ -478,7 +478,7 @@ class _Storage:
 
     def updateSensorData(self,
                          nodeId: int,
-                         dataList: List[int, Any],
+                         dataList: List[Tuple[int, Any]],
                          logger: logging.Logger = None) -> bool:
         """
         Updates the data of the sensors of a node in the database (given in a tuple of (remoteSensorId, data)).

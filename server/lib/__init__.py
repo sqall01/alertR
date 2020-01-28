@@ -7,15 +7,14 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .watchdog import ConnectionWatchdog, ConfigWatchdog
+from .watchdogs import ConnectionWatchdog, ConfigWatchdog
 from .server import ServerSession, ThreadedTCPServer, AsynchronousSender
-from .storage import Sqlite, Mysql
+from .storage import Sqlite
 from .alert import SensorAlertExecuter
 from .localObjects import SensorDataType, Sensor, AlertLevel
-from .internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, \
-    AlertSystemActiveSensor, VersionInformerSensor
-from .ruleObjects import RuleStart, RuleElement, RuleBoolean, RuleSensor, \
-    RuleWeekday, RuleMonthday, RuleHour, RuleMinute, RuleSecond
+from .internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor
+from .rules import RuleStart, RuleElement, RuleBoolean, RuleSensor, RuleWeekday, RuleMonthday, RuleHour, RuleMinute, \
+                   RuleSecond
 from .users import CSVBackend
 from .manager import ManagerUpdateExecuter
 from .update import Updater
