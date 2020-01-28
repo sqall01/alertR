@@ -7,7 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .watchdogs import ConnectionWatchdog, ConfigWatchdog
+from .watchdogs import ConnectionWatchdog, CSVWatchdog
 from .server import ServerSession, ThreadedTCPServer, AsynchronousSender
 from .storage import Sqlite
 from .alert import SensorAlertExecuter

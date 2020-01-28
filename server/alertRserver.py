@@ -9,7 +9,7 @@
 
 import sys
 import os
-from lib import ConnectionWatchdog, ConfigWatchdog
+from lib import ConnectionWatchdog, CSVWatchdog
 from lib import ServerSession, ThreadedTCPServer
 from lib import Sqlite, Mysql
 from lib import SensorDataType, AlertLevel
@@ -1528,8 +1528,8 @@ if __name__ == '__main__':
     # Start a watchdog thread that checks all configuration files.
     globalData.logger.info("[%s] Starting config watchdog thread."
         % fileName)
-    globalData.configWatchdog = ConfigWatchdog(globalData,
-        globalData.configCheckInterval)
+    globalData.configWatchdog = CSVWatchdog(globalData,
+                                            globalData.configCheckInterval)
     # set thread to daemon
     # => threads terminates when main thread terminates
     globalData.configWatchdog.daemon = True
