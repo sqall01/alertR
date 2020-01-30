@@ -24,18 +24,11 @@ from typing import Optional, Dict, Tuple, Any, List
 BUFSIZE = 4096
 
 
-
-# TODO
-# - function types
-# - function comment stubs
-# - send/recv bytes
-
-
 # this class handles the communication with the incoming client connection
 class ClientCommunication:
 
     def __init__(self,
-                 sslSocket,  # TODO type return from ssl.SSLContext.wrap_socket
+                 sslSocket: ssl.SSLSocket,
                  clientAddress: str,
                  clientPort: int,
                  globalData: GlobalData):
@@ -119,21 +112,46 @@ class ClientCommunication:
         self.logger = self.globalData.logger
         self.loggerFileHandler = None
 
-    # internal function that acquires the lock
     def _acquireLock(self):
+        """
+        internal function that acquires the lock
+        """
         self.logger.debug("[%s]: Acquire lock (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
         self.connectionLock.acquire()
 
-    # internal function that releases the lock
     def _releaseLock(self):
+        """
+        internal function that releases the lock
+        """
         self.logger.debug("[%s]: Release lock (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
         self.connectionLock.release()
 
-    # Internal function to check sanity of the alertDelay.
+    def _send(self, data: str):
+        """
+        Wrapper around socket send to handle bytes/string encoding.
+
+        :param data:
+        """
+        self.sslSocket.send(data.encode("ascii"))
+
+    def _recv(self) -> str:
+        """
+        Wrapper around socket recv to handle bytes/string encoding.
+
+        :return:
+        """
+        return self.sslSocket.recv(BUFSIZE).decode("ascii")
+
     def _checkMsgAlertDelay(self,
                             alertDelay: int,
                             messageType: str) -> bool:
+        """
+        Internal function to check sanity of the alertDelay.
 
+        :param alertDelay:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(alertDelay, int):
             isCorrect = False
@@ -145,7 +163,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "alertDelay not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -154,11 +172,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the alertLevels.
     def _checkMsgAlertLevels(self,
                              alertLevels: List[int],
                              messageType: str) -> bool:
+        """
+        Internal function to check sanity of the alertLevels.
 
+        :param alertLevels:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(alertLevels, list):
             isCorrect = False
@@ -173,7 +196,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "alertLevels not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -182,11 +205,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the changeState.
     def _checkMsgChangeState(self,
                              changeState: bool,
                              messageType: str) -> bool:
+        """
+        Internal function to check sanity of the changeState.
 
+        :param changeState:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(changeState, bool):
             isCorrect = False
@@ -198,7 +226,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "changeState not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -207,11 +235,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the clientAlertId.
     def _checkMsgClientAlertId(self,
                                clientAlertId: int,
                                messageType: str) -> bool:
+        """
+        Internal function to check sanity of the clientAlertId.
 
+        :param clientAlertId:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(clientAlertId, int):
             isCorrect = False
@@ -223,7 +256,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "clientAlertId not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -232,11 +265,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the clientSensorId.
     def _checkMsgClientSensorId(self,
                                 clientSensorId: int,
                                 messageType: str) -> bool:
+        """
+        Internal function to check sanity of the clientSensorId.
 
+        :param clientSensorId:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(clientSensorId, int):
             isCorrect = False
@@ -248,7 +286,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "clientSensorId not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -257,11 +295,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the description.
     def _checkMsgDescription(self,
                              description: str,
                              messageType: str) -> bool:
+        """
+        Internal function to check sanity of the description.
 
+        :param description:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(description, str):
             isCorrect = False
@@ -273,7 +316,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "description not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -282,11 +325,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the hasLatestData.
     def _checkMsgHasLatestData(self,
                                hasLatestData: bool,
                                messageType: str) -> bool:
+        """
+        Internal function to check sanity of the hasLatestData.
 
+        :param hasLatestData:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(hasLatestData, bool):
             isCorrect = False
@@ -298,7 +346,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "hasLatestData not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -307,11 +355,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the hostname.
     def _checkMsgHostname(self,
                           hostname: str,
                           messageType: str) -> bool:
+        """
+        Internal function to check sanity of the hostname.
 
+        :param hostname:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(hostname, str):
             isCorrect = False
@@ -323,7 +376,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "hostname not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -332,11 +385,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the instance.
     def _checkMsgInstance(self,
                           instance: str,
                           messageType: str) -> bool:
+        """
+        Internal function to check sanity of the instance.
 
+        :param instance:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(instance, str):
             isCorrect = False
@@ -348,7 +406,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "instance not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -357,11 +415,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the nodeType.
     def _checkMsgNodeType(self,
                           nodeType: str,
                           messageType: str) -> bool:
+        """
+        Internal function to check sanity of the nodeType.
 
+        :param nodeType:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(nodeType, str):
             isCorrect = False
@@ -377,7 +440,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "nodeType not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -386,11 +449,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the optionType.
     def _checkMsgOptionType(self,
                             optionType: str,
                             messageType: str) -> bool:
+        """
+        Internal function to check sanity of the optionType.
 
+        :param optionType:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(optionType, str):
             isCorrect = False
@@ -405,7 +473,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "optionType not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -414,11 +482,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the option timeDelay.
     def _checkMsgOptionTimeDelay(self,
                                  timeDelay: int,
                                  messageType: str) -> bool:
+        """
+        Internal function to check sanity of the option timeDelay.
 
+        :param timeDelay:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(timeDelay, int):
             isCorrect = False
@@ -430,7 +503,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "timeDelay not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -439,11 +512,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the option value.
     def _checkMsgOptionValue(self,
                              value: float,
                              messageType: str) -> bool:
+        """
+        Internal function to check sanity of the option value.
 
+        :param value:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(value, float):
             isCorrect = False
@@ -458,7 +536,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "value not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -467,11 +545,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the persistence.
     def _checkMsgPersistent(self,
                             persistent: int,
                             messageType: str) -> bool:
+        """
+        Internal function to check sanity of the persistence.
 
+        :param persistent:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(persistent, int):
             isCorrect = False
@@ -486,7 +569,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "persistent not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -495,11 +578,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the registration alerts list.
     def _checkMsgRegAlertsList(self,
                                alerts: Dict[str, Any],
                                messageType: str) -> bool:
+        """
+        Internal function to check sanity of the registration alerts list.
 
+        :param alerts:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(alerts, list):
             isCorrect = False
@@ -545,7 +633,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "alerts list not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -554,11 +642,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the registration manager dictionary.
     def _checkMsgRegManagerDict(self,
                                 manager: Dict[str, Any],
                                 messageType: str) -> bool:
+        """
+        Internal function to check sanity of the registration manager dictionary.
 
+        :param manager:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(manager, dict):
             isCorrect = False
@@ -579,7 +672,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "manager dictionary not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -588,11 +681,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the registration sensors list.
     def _checkMsgRegSensorsList(self,
                                 sensors: Dict[str, Any],
                                 messageType: str) -> bool:
+        """
+        Internal function to check sanity of the registration sensors list.
 
+        :param sensors:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(sensors, list):
             isCorrect = False
@@ -675,7 +773,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "sensors list not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -684,12 +782,18 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the sensor data.
     def _checkMsgSensorData(self,
                             data: Any,
                             dataType: int,
                             messageType: str) -> bool:
+        """
+        Internal function to check sanity of the sensor data.
 
+        :param data:
+        :param dataType:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if dataType == SensorDataType.NONE and data is not None:
             isCorrect = False
@@ -707,7 +811,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "data not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -716,11 +820,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the sensor data type.
     def _checkMsgSensorDataType(self,
                                 dataType: int,
                                 messageType: str) -> bool:
+        """
+        Internal function to check sanity of the sensor data type.
 
+        :param dataType:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(dataType, int):
             isCorrect = False
@@ -737,7 +846,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "dataType not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -746,11 +855,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the status sensors list.
     def _checkMsgStatusSensorsList(self,
                                    sensors: List[str, Any],
                                    messageType: str) -> bool:
+        """
+        Internal function to check sanity of the status sensors list.
 
+        :param sensors:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(sensors, list):
             isCorrect = False
@@ -808,7 +922,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "sensors list not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -817,11 +931,16 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to check sanity of the state.
     def _checkMsgState(self,
                        state: int,
                        messageType: str) -> bool:
+        """
+        Internal function to check sanity of the state.
 
+        :param state:
+        :param messageType:
+        :return:
+        """
         isCorrect = True
         if not isinstance(state, int):
             isCorrect = False
@@ -836,7 +955,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": messageType,
                            "error": "state not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -845,9 +964,10 @@ class ClientCommunication:
 
         return True
 
-    # this internal function cleans up the session before releasing the
-    # lock and exiting/closing the session
     def _cleanUpSessionForClosing(self):
+        """
+        this internal function cleans up the session before releasing the lock and exiting/closing the session
+        """
         # mark node as not connected
         self.storage.markNodeAsNotConnected(self.nodeId, logger=self.logger)
 
@@ -860,13 +980,19 @@ class ClientCommunication:
         self.managerUpdateExecuter.managerUpdateEvent.set()
 
     # TODO Diff with clients
-    # this internal function that tries to initiate a transaction with
-    # the client (and acquires a lock if it is told to do so)
     def _initiateTransaction(self,
                              messageType: str,
                              messageSize: int,
                              acquireLock: bool = False) -> bool:
+        """
+        this internal function that tries to initiate a transaction with the client
+        (and acquires a lock if it is told to do so)
 
+        :param messageType:
+        :param messageSize:
+        :param acquireLock:
+        :return:
+        """
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the client
         while True:
@@ -923,7 +1049,7 @@ class ClientCommunication:
                            "size": messageSize,
                            "message": messageType,
                            "payload": payload}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 self.logger.exception("[%s]: Sending RTS failed (%s:%d)."
@@ -943,7 +1069,7 @@ class ClientCommunication:
             self.logger.debug("[%s]: Receiving CTS (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
 
             try:
-                data = self.sslSocket.recv(BUFSIZE)
+                data = self._recv()
                 message = json.loads(data)
 
                 # check if an error was received
@@ -1008,10 +1134,14 @@ class ClientCommunication:
 
         return True
 
-    # Internal function that builds the sensor alert message.
     def _buildSensorAlertMessage(self,
                                  sensorAlert: SensorAlert) -> str:
+        """
+        Internal function that builds the sensor alert message.
 
+        :param sensorAlert:
+        :return:
+        """
         # Differentiate payload of message when rules are activated or not.
         if sensorAlert.rulesActivated:
             payload = {"type": "request",
@@ -1064,8 +1194,12 @@ class ClientCommunication:
                    "payload": payload}
         return json.dumps(message)
 
-    # Internal function that builds the sensor alerts off message.
     def _buildSensorAlertsOffMessage(self) -> str:
+        """
+        Internal function that builds the sensor alerts off message.
+
+        :return:
+        """
         payload = {"type": "request"}
         utcTimestamp = int(time.time())
         message = {"serverTime": utcTimestamp,
@@ -1074,12 +1208,20 @@ class ClientCommunication:
 
         return json.dumps(message)
 
-    # Internal function that builds the state change message.
     def _buildStateChangeMessage(self,
                                  sensorId: int,
                                  state: int,
                                  dataType: int,
                                  data: Any) -> str:
+        """
+        Internal function that builds the state change message.
+
+        :param sensorId:
+        :param state:
+        :param dataType:
+        :param data:
+        :return:
+        """
         payload = {"type": "request",
                    "sensorId": sensorId,
                    "state": state,
@@ -1093,9 +1235,12 @@ class ClientCommunication:
 
         return json.dumps(message)
 
-    # Internal function that builds the alert system state message.
     def _buildAlertSystemStateMessage(self) -> Optional[str]:
+        """
+        Internal function that builds the alert system state message.
 
+        :return:
+        """
         # Get a list from database of
         # list[0] = list(option objects)
         # list[1] = list(node objects)
@@ -1114,7 +1259,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": "status",
                            "error": "not able to get alert system data from database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1217,10 +1362,13 @@ class ClientCommunication:
 
         return json.dumps(message)
 
-    # Internal function to initialize communication with the client
-    # (Authentication, Version verification, Registration).
     def _initializeCommunication(self) -> bool:
+        """
+        Internal function to initialize communication with the client
+        (Authentication, Version verification, Registration).
 
+        :return:
+        """
         # First verify client/server version and authenticate client.
         result, messageSize = self._verifyVersionAndAuthenticate()
         if not result:
@@ -1236,10 +1384,10 @@ class ClientCommunication:
 
         return True
 
-    # Internal function to initialize an own logger instance for this
-    # connection.
     def _initializeLogger(self):
-
+        """
+        Internal function to initialize an own logger instance for this connection.
+        """
         self.logger = logging.getLogger("client_" + self.username)
         fh = logging.FileHandler(self.globalData.logdir + "/client_" + self.username + ".log")
         fh.setLevel(self.globalData.loglevel)
@@ -1254,9 +1402,10 @@ class ClientCommunication:
                 serverSession.setLogger(self.logger)
                 break
 
-    # Internal function to finalize an own logger instance for this
-    # connection.
     def _finalizeLogger(self):
+        """
+        Internal function to finalize an own logger instance for this connection.
+        """
         if self.loggerFileHandler is not None:
             self.logger.debug("[%s]: Closing log file (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
@@ -1265,13 +1414,15 @@ class ClientCommunication:
             self.loggerFileHandler = None
         self.logger = self.globalData.logger
 
-    # Internal function to verify the server/client version
-    # and authenticate the client.
     def _verifyVersionAndAuthenticate(self) -> Tuple[bool, int]:
+        """
+        Internal function to verify the server/client version and authenticate the client.
 
+        :return:
+        """
         # get version and credentials from client
         try:
-            data = self.sslSocket.recv(BUFSIZE)
+            data = self._recv()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -1298,7 +1449,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "message header malformed"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1317,7 +1468,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "initialization message expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1335,7 +1486,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "request expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1353,7 +1504,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "message not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1379,7 +1530,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "version not compatible"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1396,7 +1547,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "version not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1421,7 +1572,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "no user credentials"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1450,7 +1601,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "username already in use"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1468,7 +1619,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "invalid user credentials"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1485,7 +1636,7 @@ class ClientCommunication:
             message = {"serverTime": utcTimestamp,
                        "message": "initialization",
                        "payload": payload}
-            self.sslSocket.send(json.dumps(message))
+            self._send(json.dumps(message))
 
         except Exception as e:
             self.logger.exception("[%s]: Sending authentication response failed (%s:%d)."
@@ -1494,17 +1645,20 @@ class ClientCommunication:
 
         return True, messageSize
 
-    # Internal function to register the client (add it to the database
-    # or check if it is known).
     def _registerClient(self,
                         messageSize: int) -> bool:
+        """
+        Internal function to register the client (add it to the database or check if it is known).
 
+        :param messageSize:
+        :return:
+        """
         # get registration from client
         try:
             data = ""
             lastSize = 0
             while len(data) < messageSize:
-                data += self.sslSocket.recv(BUFSIZE)
+                data += self._recv()
 
                 # Check if the size of the received data has changed.
                 # If not we detected a possible dead lock.
@@ -1542,7 +1696,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "initialization message expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1560,7 +1714,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "request expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1577,7 +1731,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "message not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1625,7 +1779,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "registration message not valid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
             except Exception as e:
                 pass
 
@@ -1644,7 +1798,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "invalid node type or instance"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1671,7 +1825,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "unable to add node to database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1691,7 +1845,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "unable to get node id from database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -1722,7 +1876,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "no sensors in message"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1760,7 +1914,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": message["message"],
                                    "error": "sensor data invalid"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -1790,7 +1944,7 @@ class ClientCommunication:
                             message = {"serverTime": utcTimestamp,
                                        "message": message["message"],
                                        "error": "alert level does not exist"}
-                            self.sslSocket.send(json.dumps(message))
+                            self._send(json.dumps(message))
 
                         except Exception as e:
                             pass
@@ -1825,7 +1979,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "unable to add sensors to database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1854,7 +2008,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": message["message"],
                                    "error": "unable to get sensor id from database"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -1886,7 +2040,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "no alerts in message"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -1924,7 +2078,7 @@ class ClientCommunication:
                                 message = {"serverTime": utcTimestamp,
                                            "message": message["message"],
                                            "error": "alert level does not exist"}
-                                self.sslSocket.send(json.dumps(message))
+                                self._send(json.dumps(message))
 
                             except Exception as e:
                                 pass
@@ -1941,7 +2095,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": message["message"],
                                    "error": "alert data invalid"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -1964,7 +2118,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "unable to add alerts to database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2000,7 +2154,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "no manager in message"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2021,7 +2175,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "manager data invalid"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2044,7 +2198,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "unable to add manager to database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2066,7 +2220,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": message["message"],
                            "error": "node type not known"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2081,7 +2235,7 @@ class ClientCommunication:
             message = {"serverTime": utcTimestamp,
                        "message": "initialization",
                        "payload": payload}
-            self.sslSocket.send(json.dumps(message))
+            self._send(json.dumps(message))
 
         except Exception as e:
             self.logger.exception("[%s]: Sending registration response failed (%s:%d)."
@@ -2090,11 +2244,14 @@ class ClientCommunication:
 
         return True
 
-    # this internal function handles the sent option change from a manager
-    # and updates it in the database
     def _optionHandler(self,
                        incomingMessage: Dict[str, Any]) -> bool:
+        """
+        this internal function handles the sent option change from a manager and updates it in the database
 
+        :param incomingMessage:
+        :return:
+        """
         # extract option type and value from message
         try:
             if not self._checkMsgOptionType(incomingMessage["payload"]["optionType"],
@@ -2128,7 +2285,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received option invalid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2167,7 +2324,7 @@ class ClientCommunication:
             message = {"serverTime": utcTimestamp,
                        "message": "option",
                        "payload": payload}
-            self.sslSocket.send(json.dumps(message))
+            self._send(json.dumps(message))
 
         except Exception as e:
             self.logger.exception("[%s]: Sending option response failed (%s:%d)."
@@ -2176,11 +2333,14 @@ class ClientCommunication:
 
         return True
 
-    # this internal function handles the sent state of the sensors
-    # from a node and updates it in the database
     def _statusHandler(self,
                        incomingMessage: Dict[str, Any]) -> bool:
+        """
+        this internal function handles the sent state of the sensors from a node and updates it in the database
 
+        :param incomingMessage:
+        :return:
+        """
         # extract sensors from message
         try:
             if not self._checkMsgStatusSensorsList(incomingMessage["payload"]["sensors"],
@@ -2201,7 +2361,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received status invalid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2218,7 +2378,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "count of sensors not correct"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2250,7 +2410,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": incomingMessage["message"],
                                    "error": "unknown client sensor id"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -2273,7 +2433,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received sensor state invalid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2296,7 +2456,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "not able to update sensor state in database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2333,7 +2493,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": incomingMessage["message"],
                                    "error": "received sensor data type wrong"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -2362,7 +2522,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received sensor data invalid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2386,7 +2546,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "not able to update sensor data in database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2401,7 +2561,7 @@ class ClientCommunication:
             message = {"serverTime": utcTimestamp,
                        "message": "status",
                        "payload": payload}
-            self.sslSocket.send(json.dumps(message))
+            self._send(json.dumps(message))
 
         except Exception as e:
             self.logger.exception("[%s]: Sending status response failed (%s:%d)."
@@ -2410,11 +2570,15 @@ class ClientCommunication:
 
         return True
 
-    # this internal function handles received sensor alerts
-    # (adds them to the database and wakes up the sensor alert executer)
     def _sensorAlertHandler(self,
                             incomingMessage: Dict[str, Any]) -> bool:
+        """
+        this internal function handles received sensor alerts
+        (adds them to the database and wakes up the sensor alert executer)
 
+        :param incomingMessage:
+        :return:
+        """
         # extract sensor alert values
         sensor = None
         try:
@@ -2481,7 +2645,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "unknown client sensor id"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2499,7 +2663,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "received sensor data type wrong"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2520,7 +2684,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": incomingMessage["message"],
                                    "error": "optionalData not of type dict"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -2543,7 +2707,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received sensor alert invalid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2570,7 +2734,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "not able to update sensor state in database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2594,7 +2758,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "not able to update sensor data in database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2612,7 +2776,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "not able to update sensor time in database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2638,7 +2802,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "not able to add sensor alert to database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2656,7 +2820,7 @@ class ClientCommunication:
             message = {"serverTime": utcTimestamp,
                        "message": "sensoralert",
                        "payload": payload}
-            self.sslSocket.send(json.dumps(message))
+            self._send(json.dumps(message))
 
         except Exception as e:
             self.logger.exception("[%s]: Sending sensor alert response failed (%s:%d)."
@@ -2665,11 +2829,15 @@ class ClientCommunication:
 
         return True
 
-    # this internal function handles received state changes
-    # (updates them in the database and wakes up the manager update executer)
     def _stateChangeHandler(self,
                             incomingMessage: Dict[str, Any]) -> bool:
+        """
+        this internal function handles received state changes
+        (updates them in the database and wakes up the manager update executer)
 
+        :param incomingMessage:
+        :return:
+        """
         # Extract state change values.
         sensor = None
         try:
@@ -2721,7 +2889,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "unknown client sensor id"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2739,7 +2907,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "received sensor data type wrong"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2761,7 +2929,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "received state change invalid"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2795,7 +2963,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "not able to change sensor state in database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2819,7 +2987,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": incomingMessage["message"],
                                "error": "not able to change sensor data in database"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2841,7 +3009,7 @@ class ClientCommunication:
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "error": "not able to get sensor id from database"}
-                self.sslSocket.send(json.dumps(message))
+                self._send(json.dumps(message))
 
             except Exception as e:
                 pass
@@ -2856,7 +3024,7 @@ class ClientCommunication:
             message = {"serverTime": utcTimestamp,
                        "message": "statechange",
                        "payload": payload}
-            self.sslSocket.send(json.dumps(message))
+            self._send(json.dumps(message))
 
         except Exception as e:
             self.logger.exception("[%s]: Sending state change response failed (%s:%d)."
@@ -2874,16 +3042,19 @@ class ClientCommunication:
 
         return True
 
-    # internal function to send the current state of the alert system
-    # to a manager
     def _sendManagerAllInformation(self,
                                    alertSystemStateMessage: str) -> bool:
+        """
+        internal function to send the current state of the alert system to a manager
 
+        :param alertSystemStateMessage:
+        :return:
+        """
         # Sending status message to client.
         try:
             self.logger.debug("[%s]: Sending status message (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
-            self.sslSocket.send(alertSystemStateMessage)
+            self._send(alertSystemStateMessage)
 
         except Exception as e:
             self.logger.exception("[%s]: Sending status message failed (%s:%d)."
@@ -2894,7 +3065,7 @@ class ClientCommunication:
         self.logger.debug("[%s]: Receiving status message response (%s:%d)."
                           % (self.fileName, self.clientAddress, self.clientPort))
         try:
-            data = self.sslSocket.recv(BUFSIZE)
+            data = self._recv()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -2913,7 +3084,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "status message expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2931,7 +3102,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -2953,15 +3124,19 @@ class ClientCommunication:
 
         return True
 
-    # internal function to send a state change to a manager
     def _sendManagerStateChange(self,
                                 stateChangeMessage: str) -> bool:
+        """
+        internal function to send a state change to a manager
 
+        :param stateChangeMessage:
+        :return:
+        """
         # Send state change message.
         try:
             self.logger.debug("[%s]: Sending state change message (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
-            self.sslSocket.send(stateChangeMessage)
+            self._send(stateChangeMessage)
 
         except Exception as e:
             self.logger.exception("[%s]: Sending state change failed (%s:%d)."
@@ -2970,7 +3145,7 @@ class ClientCommunication:
 
         # receive state change response message
         try:
-            data = self.sslSocket.recv(BUFSIZE)
+            data = self._recv()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -2989,7 +3164,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "state change message expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3007,7 +3182,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3029,15 +3204,19 @@ class ClientCommunication:
 
         return True
 
-    # internal function to send a sensor alert off to a alert client
     def _sendAlertSensorAlertsOff(self,
                                   sensorAlertsOffMessage: str) -> bool:
+        """
+        internal function to send a sensor alert off to a alert client
 
+        :param sensorAlertsOffMessage:
+        :return:
+        """
         # Send sensor alert off message.
         try:
             self.logger.debug("[%s]: Sending sensor alerts off message (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
-            self.sslSocket.send(sensorAlertsOffMessage)
+            self._send(sensorAlertsOffMessage)
 
         except Exception as e:
             self.logger.exception("[%s]: Sending sensor alerts off message failed (%s:%d)."
@@ -3049,7 +3228,7 @@ class ClientCommunication:
                           % (self.fileName, self.clientAddress, self.clientPort))
 
         try:
-            data = self.sslSocket.recv(BUFSIZE)
+            data = self._recv()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -3068,7 +3247,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "sensor alerts off message expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3086,7 +3265,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3108,12 +3287,20 @@ class ClientCommunication:
 
         return True
 
-    # function that sends a state change to a manager client
     def sendManagerStateChange(self,
                                sensorId: int,
                                state: int,
                                dataType: int,
                                data: Any) -> bool:
+        """
+        function that sends a state change to a manager client
+
+        :param sensorId:
+        :param state:
+        :param dataType:
+        :param data:
+        :return:
+        """
         stateChangeMessage = self._buildStateChangeMessage(sensorId,
                                                            state,
                                                            dataType,
@@ -3130,9 +3317,12 @@ class ClientCommunication:
         self._releaseLock()
         return returnValue
 
-    # function that sends a sensor alert of to a alert client
     def sendAlertSensorAlertsOff(self) -> bool:
+        """
+        function that sends a sensor alert of to a alert client
 
+        :return:
+        """
         sensorAlertsOffMessage = self._buildSensorAlertsOffMessage()
 
         # initiate transaction with client and acquire lock
@@ -3146,9 +3336,12 @@ class ClientCommunication:
         self._releaseLock()
         return returnValue
 
-    # function that sends a full information update to a manager client
     def sendManagerUpdate(self) -> bool:
+        """
+        function that sends a full information update to a manager client
 
+        :return:
+        """
         alertSystemStateMessage = self._buildAlertSystemStateMessage()
         if not alertSystemStateMessage:
             return False
@@ -3164,9 +3357,14 @@ class ClientCommunication:
         self._releaseLock()
         return returnValue
 
-    # function that sends a sensor alert to an alert/manager client
     def sendSensorAlert(self,
                         sensorAlert: SensorAlert) -> bool:
+        """
+        function that sends a sensor alert to an alert/manager client
+
+        :param sensorAlert:
+        :return:
+        """
         sensorAlertMessage = self._buildSensorAlertMessage(sensorAlert)
 
         # initiate transaction with client and acquire lock
@@ -3179,7 +3377,7 @@ class ClientCommunication:
         try:
             self.logger.debug("[%s]: Sending sensor alert message (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
-            self.sslSocket.send(sensorAlertMessage)
+            self._send(sensorAlertMessage)
 
         except Exception as e:
             self.logger.exception("[%s]: Sending sensor alert message failed (%s:%d)."
@@ -3189,7 +3387,7 @@ class ClientCommunication:
 
         # get sensor alert message response
         try:
-            data = self.sslSocket.recv(BUFSIZE)
+            data = self._recv()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -3209,7 +3407,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "sensor alert message expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3228,7 +3426,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3254,10 +3452,12 @@ class ClientCommunication:
         self._releaseLock()
         return True
 
-    # this function handles the communication with the client
-    # and receives the commands
     def handleCommunication(self):
+        """
+        this function handles the communication with the client and receives the commands
 
+        :return:
+        """
         self._acquireLock()
 
         # set timeout of the socket to configured seconds
@@ -3367,7 +3567,7 @@ class ClientCommunication:
                 # set timeout of the socket to 0.5 seconds
                 self.sslSocket.settimeout(0.5)
 
-                data = self.sslSocket.recv(BUFSIZE)
+                data = self._recv()
                 if not data:
 
                     # clean up session before exiting
@@ -3410,13 +3610,13 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": str(message["message"]),
                                "payload": payload}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                     # After initiating transaction receive actual command.
                     data = ""
                     lastSize = 0
                     while len(data) < messageSize:
-                        data += self.sslSocket.recv(BUFSIZE)
+                        data += self._recv()
 
                         # Check if the size of the received data has changed.
                         # If not we detected a possible dead lock.
@@ -3500,7 +3700,7 @@ class ClientCommunication:
                         message = {"serverTime": utcTimestamp,
                                    "message": message["message"],
                                    "error": "request expected"}
-                        self.sslSocket.send(json.dumps(message))
+                        self._send(json.dumps(message))
 
                     except Exception as e:
                         pass
@@ -3537,7 +3737,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": "ping",
                                "payload": payload}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     self.logger.exception("[%s]: Sending ping response to client failed (%s:%d)."
@@ -3618,7 +3818,7 @@ class ClientCommunication:
                     message = {"serverTime": utcTimestamp,
                                "message": message["message"],
                                "error": "unknown command/message type"}
-                    self.sslSocket.send(json.dumps(message))
+                    self._send(json.dumps(message))
 
                 except Exception as e:
                     pass
@@ -3787,8 +3987,12 @@ class ServerSession(socketserver.BaseRequestHandler):
         except Exception as e:
             pass
 
-    # Overwrites the used logger instance.
     def setLogger(self, logger):
+        """
+        Overwrites the used logger instance.
+
+        :param logger:
+        """
         self.logger = logger
 
 
@@ -3996,7 +4200,7 @@ class AsynchronousOptionExecuter(threading.Thread):
             # Change sensor state and
             # add sensor alert to database for processing
             # if internal sensor is active.
-            if alertSystemActiveSensor: # TODO place alertSystemActiveSensor logic in sensor class
+            if alertSystemActiveSensor:  # TODO place alertSystemActiveSensor logic in sensor class
                 
                 if self.optionValue == 0:
                     state = 0
