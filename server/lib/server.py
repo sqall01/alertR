@@ -16,9 +16,10 @@ import logging
 import os
 import random
 import json
-from .localObjects import SensorDataType, Sensor, SensorData
+from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert
 from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
+from typing import Optional, Dict, Tuple, Any, List
 
 BUFSIZE = 4096
 
@@ -27,15 +28,16 @@ BUFSIZE = 4096
 # TODO
 # - function types
 # - function comment stubs
+# - send/recv bytes
 
 
 # this class handles the communication with the incoming client connection
 class ClientCommunication:
 
     def __init__(self,
-                 sslSocket,
-                 clientAddress,
-                 clientPort,
+                 sslSocket,  # TODO type return from ssl.SSLContext.wrap_socket
+                 clientAddress: str,
+                 clientPort: int,
                  globalData: GlobalData):
         self.sslSocket = sslSocket
         self.clientAddress = clientAddress
@@ -129,8 +131,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the alertDelay.
     def _checkMsgAlertDelay(self,
-                            alertDelay,
-                            messageType):
+                            alertDelay: int,
+                            messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(alertDelay, int):
@@ -154,8 +156,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the alertLevels.
     def _checkMsgAlertLevels(self,
-                             alertLevels,
-                             messageType):
+                             alertLevels: List[int],
+                             messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(alertLevels, list):
@@ -182,8 +184,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the changeState.
     def _checkMsgChangeState(self,
-                             changeState,
-                             messageType):
+                             changeState: bool,
+                             messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(changeState, bool):
@@ -207,8 +209,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the clientAlertId.
     def _checkMsgClientAlertId(self,
-                               clientAlertId,
-                               messageType):
+                               clientAlertId: int,
+                               messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(clientAlertId, int):
@@ -232,8 +234,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the clientSensorId.
     def _checkMsgClientSensorId(self,
-                                clientSensorId,
-                                messageType):
+                                clientSensorId: int,
+                                messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(clientSensorId, int):
@@ -257,8 +259,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the description.
     def _checkMsgDescription(self,
-                             description,
-                             messageType):
+                             description: str,
+                             messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(description, str):
@@ -282,8 +284,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the hasLatestData.
     def _checkMsgHasLatestData(self,
-                               hasLatestData,
-                               messageType):
+                               hasLatestData: bool,
+                               messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(hasLatestData, bool):
@@ -307,8 +309,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the hostname.
     def _checkMsgHostname(self,
-                          hostname,
-                          messageType):
+                          hostname: str,
+                          messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(hostname, str):
@@ -332,8 +334,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the instance.
     def _checkMsgInstance(self,
-                          instance,
-                          messageType):
+                          instance: str,
+                          messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(instance, str):
@@ -357,8 +359,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the nodeType.
     def _checkMsgNodeType(self,
-                          nodeType,
-                          messageType):
+                          nodeType: str,
+                          messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(nodeType, str):
@@ -386,8 +388,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the optionType.
     def _checkMsgOptionType(self,
-                            optionType,
-                            messageType):
+                            optionType: str,
+                            messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(optionType, str):
@@ -414,8 +416,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the option timeDelay.
     def _checkMsgOptionTimeDelay(self,
-                                 timeDelay,
-                                 messageType):
+                                 timeDelay: int,
+                                 messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(timeDelay, int):
@@ -439,8 +441,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the option value.
     def _checkMsgOptionValue(self,
-                             value,
-                             messageType):
+                             value: float,
+                             messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(value, float):
@@ -467,8 +469,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the persistence.
     def _checkMsgPersistent(self,
-                            persistent,
-                            messageType):
+                            persistent: int,
+                            messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(persistent, int):
@@ -495,8 +497,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the registration alerts list.
     def _checkMsgRegAlertsList(self,
-                               alerts,
-                               messageType):
+                               alerts: Dict[str, Any],
+                               messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(alerts, list):
@@ -554,8 +556,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the registration manager dictionary.
     def _checkMsgRegManagerDict(self,
-                                manager,
-                                messageType):
+                                manager: Dict[str, Any],
+                                messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(manager, dict):
@@ -588,8 +590,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the registration sensors list.
     def _checkMsgRegSensorsList(self,
-                                sensors,
-                                messageType):
+                                sensors: Dict[str, Any],
+                                messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(sensors, list):
@@ -684,9 +686,9 @@ class ClientCommunication:
 
     # Internal function to check sanity of the sensor data.
     def _checkMsgSensorData(self,
-                            data,
-                            dataType,
-                            messageType):
+                            data: Any,
+                            dataType: int,
+                            messageType: str) -> bool:
 
         isCorrect = True
         if dataType == SensorDataType.NONE and data is not None:
@@ -716,8 +718,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the sensor data type.
     def _checkMsgSensorDataType(self,
-                                dataType,
-                                messageType):
+                                dataType: int,
+                                messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(dataType, int):
@@ -746,8 +748,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the status sensors list.
     def _checkMsgStatusSensorsList(self,
-                                   sensors,
-                                   messageType):
+                                   sensors: List[str, Any],
+                                   messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(sensors, list):
@@ -817,8 +819,8 @@ class ClientCommunication:
 
     # Internal function to check sanity of the state.
     def _checkMsgState(self,
-                       state,
-                       messageType):
+                       state: int,
+                       messageType: str) -> bool:
 
         isCorrect = True
         if not isinstance(state, int):
@@ -861,9 +863,9 @@ class ClientCommunication:
     # this internal function that tries to initiate a transaction with
     # the client (and acquires a lock if it is told to do so)
     def _initiateTransaction(self,
-                             messageType,
-                             messageSize,
-                             acquireLock: bool = False):
+                             messageType: str,
+                             messageSize: int,
+                             acquireLock: bool = False) -> bool:
 
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the client
@@ -1008,7 +1010,7 @@ class ClientCommunication:
 
     # Internal function that builds the sensor alert message.
     def _buildSensorAlertMessage(self,
-                                 sensorAlert):
+                                 sensorAlert: SensorAlert) -> str:
 
         # Differentiate payload of message when rules are activated or not.
         if sensorAlert.rulesActivated:
@@ -1063,7 +1065,7 @@ class ClientCommunication:
         return json.dumps(message)
 
     # Internal function that builds the sensor alerts off message.
-    def _buildSensorAlertsOffMessage(self):
+    def _buildSensorAlertsOffMessage(self) -> str:
         payload = {"type": "request"}
         utcTimestamp = int(time.time())
         message = {"serverTime": utcTimestamp,
@@ -1074,10 +1076,10 @@ class ClientCommunication:
 
     # Internal function that builds the state change message.
     def _buildStateChangeMessage(self,
-                                 sensorId,
-                                 state,
-                                 dataType,
-                                 data):
+                                 sensorId: int,
+                                 state: int,
+                                 dataType: int,
+                                 data: Any) -> str:
         payload = {"type": "request",
                    "sensorId": sensorId,
                    "state": state,
@@ -1092,7 +1094,7 @@ class ClientCommunication:
         return json.dumps(message)
 
     # Internal function that builds the alert system state message.
-    def _buildAlertSystemStateMessage(self):
+    def _buildAlertSystemStateMessage(self) -> Optional[str]:
 
         # Get a list from database of
         # list[0] = list(option objects)
@@ -1217,7 +1219,7 @@ class ClientCommunication:
 
     # Internal function to initialize communication with the client
     # (Authentication, Version verification, Registration).
-    def _initializeCommunication(self):
+    def _initializeCommunication(self) -> bool:
 
         # First verify client/server version and authenticate client.
         result, messageSize = self._verifyVersionAndAuthenticate()
@@ -1265,7 +1267,7 @@ class ClientCommunication:
 
     # Internal function to verify the server/client version
     # and authenticate the client.
-    def _verifyVersionAndAuthenticate(self):
+    def _verifyVersionAndAuthenticate(self) -> Tuple[bool, int]:
 
         # get version and credentials from client
         try:
@@ -1495,7 +1497,7 @@ class ClientCommunication:
     # Internal function to register the client (add it to the database
     # or check if it is known).
     def _registerClient(self,
-                        messageSize):
+                        messageSize: int) -> bool:
 
         # get registration from client
         try:
@@ -1566,7 +1568,6 @@ class ClientCommunication:
                 return False
 
         except Exception as e:
-
             self.logger.exception("[%s]: Message not valid (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
 
@@ -2092,7 +2093,7 @@ class ClientCommunication:
     # this internal function handles the sent option change from a manager
     # and updates it in the database
     def _optionHandler(self,
-                       incomingMessage):
+                       incomingMessage: Dict[str, Any]) -> bool:
 
         # extract option type and value from message
         try:
@@ -2178,7 +2179,7 @@ class ClientCommunication:
     # this internal function handles the sent state of the sensors
     # from a node and updates it in the database
     def _statusHandler(self,
-                       incomingMessage):
+                       incomingMessage: Dict[str, Any]) -> bool:
 
         # extract sensors from message
         try:
@@ -2412,7 +2413,7 @@ class ClientCommunication:
     # this internal function handles received sensor alerts
     # (adds them to the database and wakes up the sensor alert executer)
     def _sensorAlertHandler(self,
-                            incomingMessage):
+                            incomingMessage: Dict[str, Any]) -> bool:
 
         # extract sensor alert values
         sensor = None
@@ -2667,7 +2668,7 @@ class ClientCommunication:
     # this internal function handles received state changes
     # (updates them in the database and wakes up the manager update executer)
     def _stateChangeHandler(self,
-                            incomingMessage):
+                            incomingMessage: Dict[str, Any]) -> bool:
 
         # Extract state change values.
         sensor = None
@@ -2876,7 +2877,7 @@ class ClientCommunication:
     # internal function to send the current state of the alert system
     # to a manager
     def _sendManagerAllInformation(self,
-                                   alertSystemStateMessage):
+                                   alertSystemStateMessage: str) -> bool:
 
         # Sending status message to client.
         try:
@@ -2954,7 +2955,7 @@ class ClientCommunication:
 
     # internal function to send a state change to a manager
     def _sendManagerStateChange(self,
-                                stateChangeMessage):
+                                stateChangeMessage: str) -> bool:
 
         # Send state change message.
         try:
@@ -3030,7 +3031,7 @@ class ClientCommunication:
 
     # internal function to send a sensor alert off to a alert client
     def _sendAlertSensorAlertsOff(self,
-                                  sensorAlertsOffMessage):
+                                  sensorAlertsOffMessage: str) -> bool:
 
         # Send sensor alert off message.
         try:
@@ -3109,10 +3110,10 @@ class ClientCommunication:
 
     # function that sends a state change to a manager client
     def sendManagerStateChange(self,
-                               sensorId,
-                               state,
-                               dataType,
-                               data):
+                               sensorId: int,
+                               state: int,
+                               dataType: int,
+                               data: Any) -> bool:
         stateChangeMessage = self._buildStateChangeMessage(sensorId,
                                                            state,
                                                            dataType,
@@ -3130,7 +3131,8 @@ class ClientCommunication:
         return returnValue
 
     # function that sends a sensor alert of to a alert client
-    def sendAlertSensorAlertsOff(self):
+    def sendAlertSensorAlertsOff(self) -> bool:
+
         sensorAlertsOffMessage = self._buildSensorAlertsOffMessage()
 
         # initiate transaction with client and acquire lock
@@ -3145,7 +3147,8 @@ class ClientCommunication:
         return returnValue
 
     # function that sends a full information update to a manager client
-    def sendManagerUpdate(self):
+    def sendManagerUpdate(self) -> bool:
+
         alertSystemStateMessage = self._buildAlertSystemStateMessage()
         if not alertSystemStateMessage:
             return False
@@ -3163,7 +3166,7 @@ class ClientCommunication:
 
     # function that sends a sensor alert to an alert/manager client
     def sendSensorAlert(self,
-                        sensorAlert):
+                        sensorAlert: SensorAlert) -> bool:
         sensorAlertMessage = self._buildSensorAlertMessage(sensorAlert)
 
         # initiate transaction with client and acquire lock
@@ -3512,7 +3515,6 @@ class ClientCommunication:
                 command = str(message["message"]).upper()
 
             except Exception as e:
-
                 self.logger.exception("[%s]: Received data not valid: '%s' (%s:%d)."
                                       % (self.fileName, data, self.clientAddress, self.clientPort))
                 # clean up session before exiting
@@ -3632,12 +3634,13 @@ class ClientCommunication:
 
 # this class is used for the threaded tcp server and extends the constructor
 # to pass the global configured data to all threads
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+class ThreadedTCPServer(socketserver.ThreadingMixIn,
+                        socketserver.TCPServer):
 
     def __init__(self,
                  globalData: GlobalData,
-                 serverAddress,
-                 RequestHandlerClass):
+                 serverAddress: str,
+                 RequestHandlerClass: socketserver.BaseRequestHandler):
 
         # get reference to global data object
         self.globalData = globalData
@@ -3651,9 +3654,9 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 class ServerSession(socketserver.BaseRequestHandler):
 
     def __init__(self,
-                 request,
-                 clientAddress,
-                 server):
+                 request: socket,
+                 clientAddress: Tuple[str, int],
+                 server: ThreadedTCPServer):
 
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -3793,7 +3796,9 @@ class ServerSession(socketserver.BaseRequestHandler):
 # in an asynchronous way to avoid blockings
 class AsynchronousSender(threading.Thread):
 
-    def __init__(self, globalData, clientComm):
+    def __init__(self,
+                 globalData: GlobalData,
+                 clientComm: ClientCommunication):
         threading.Thread.__init__(self)
 
         # file nme of this file (used for logging)
@@ -3893,7 +3898,11 @@ class AsynchronousSender(threading.Thread):
 # in an asynchronous way to avoid blockings
 class AsynchronousOptionExecuter(threading.Thread):
 
-    def __init__(self, globalData, optionType, optionValue, optionDelay):
+    def __init__(self,
+                 globalData: GlobalData,
+                 optionType: str,
+                 optionValue: float,
+                 optionDelay: int):
         threading.Thread.__init__(self)
 
         # file nme of this file (used for logging)
