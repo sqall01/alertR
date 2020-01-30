@@ -133,10 +133,19 @@ class ServerCommunication:
 
         self.client.close()
 
-    # internal function that tries to initiate a transaction with
-    # the server (and acquires a lock if it is told to do so)
-    def _initiateTransaction(self, messageType: str, messageSize: int, acquireLock: bool = False) -> bool:
+    def _initiateTransaction(self,
+                             messageType: str,
+                             messageSize: int,
+                             acquireLock: bool = False) -> bool:
+        """
+        this internal function that tries to initiate a transaction with the server
+        (and acquires a lock if it is told to do so)
 
+        :param messageType:
+        :param messageSize:
+        :param acquireLock:
+        :return:
+        """
         # try to get the exclusive state to be allowed to initiate a
         # transaction with the server
         while True:
@@ -195,6 +204,7 @@ class ServerCommunication:
                            "message": messageType,
                            "payload": payload}
                 self.client.send(json.dumps(message))
+
             except Exception as e:
                 logging.exception("[%s]: Sending RTS failed." % self.fileName)
 
