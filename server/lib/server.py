@@ -4118,8 +4118,7 @@ class AsynchronousOptionExecuter(threading.Thread):
         self.logger = self.globalData.logger
         self.storage = self.globalData.storage
         self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
-        self.asyncOptionExecutersLock \
-            = self.globalData.asyncOptionExecutersLock
+        self.asyncOptionExecutersLock = self.globalData.asyncOptionExecutersLock
         self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
         self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
         self.internalSensors = self.globalData.internalSensors
@@ -4198,37 +4197,13 @@ class AsynchronousOptionExecuter(threading.Thread):
                     alertSystemActiveSensor = internalSensor
                     break
 
-            # Change sensor state and
-            # add sensor alert to database for processing
-            # if internal sensor is active.
-            if alertSystemActiveSensor:  # TODO place alertSystemActiveSensor logic in sensor class
-                
-                if self.optionValue == 0:
-                    state = 0
-                else:
-                    state = 1
-
-                if not self.storage.updateSensorState(alertSystemActiveSensor.nodeId,  # nodeId
-                                                      [(alertSystemActiveSensor.remoteSensorId, state)],  # stateList
-                                                      None):  # logger
-
-                    self.logger.error("[%s]: Not able to change sensor state for internal alert system active sensor."
-                                      % self.fileName)
-
-                if self.storage.addSensorAlert(alertSystemActiveSensor.nodeId,  # nodeId
-                                               alertSystemActiveSensor.sensorId,  # sensorId
-                                               state,  # state
-                                               "",  # dataJson
-                                               True,  # changeState
-                                               False,  # hasLatestData
-                                               SensorDataType.NONE,  # sensorData
-                                               None):  # logger
-
-                    self.sensorAlertExecuter.sensorAlertEvent.set()
+            # Change sensor state and add sensor alert to database for processing if internal sensor is active.
+            if alertSystemActiveSensor:
+                if self.optionValue == 0.0:
+                    alertSystemActiveSensor.set_state(0)
 
                 else:
-                    self.logger.error("[%s]: Not able to add sensor alert for internal alert system active sensor."
-                                      % self.fileName)
+                    alertSystemActiveSensor.set_state(1)
 
         # wake up manager update executer
         self.managerUpdateExecuter.forceStatusUpdate = True

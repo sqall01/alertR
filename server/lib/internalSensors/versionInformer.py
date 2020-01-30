@@ -21,7 +21,10 @@ from ..globalData import GlobalData
 # This class handles the version information for a given instance.
 class VersionInformation:
 
-    def __init__(self, instance: str, url: str, global_data: GlobalData):
+    def __init__(self,
+                 instance: str,
+                 url: str,
+                 global_data: GlobalData):
 
         # the updater object is not thread safe
         self._lock = threading.Semaphore(1)
@@ -80,7 +83,8 @@ class VersionInformation:
 # node has a new version available in the update repository.
 class VersionInformerSensor(_InternalSensor):
 
-    def __init__(self, global_data: GlobalData):
+    def __init__(self,
+                 global_data: GlobalData):
         _InternalSensor.__init__(self)
 
         self.dataType = SensorDataType.NONE
