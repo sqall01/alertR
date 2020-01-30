@@ -979,7 +979,6 @@ class ClientCommunication:
         self.managerUpdateExecuter.forceStatusUpdate = True
         self.managerUpdateExecuter.managerUpdateEvent.set()
 
-    # TODO Diff with clients
     def _initiateTransaction(self,
                              messageType: str,
                              messageSize: int,
@@ -1005,8 +1004,9 @@ class ClientCommunication:
             # transaction with the client
             if self.transactionInitiation:
 
-                self.logger.warning("[%s]: Transaction initiation already tried by another thread. Backing off (%s:%d)."
-                                    % (self.fileName, self.clientAddress, self.clientPort))
+                self.logger.warning("[%s]: Transaction initiation "
+                                % self.fileName
+                                + "already tried by another thread. Backing off.")
 
                 # check if locks should be handled or not
                 if acquireLock:
@@ -1041,7 +1041,6 @@ class ClientCommunication:
             self.logger.debug("[%s]: Sending RTS %d message (%s:%d)."
                               % (self.fileName, transactionId, self.clientAddress, self.clientPort))
             try:
-
                 payload = {"type": "rts",
                            "id": transactionId}
                 utcTimestamp = int(time.time())
@@ -1068,6 +1067,9 @@ class ClientCommunication:
             # get CTS (clear to send) message
             self.logger.debug("[%s]: Receiving CTS (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
 
+            receivedTransactionId = -1
+            receivedMessageType = ""
+            receivedPayloadType = ""
             try:
                 data = self._recv()
                 message = json.loads(data)
@@ -1080,7 +1082,7 @@ class ClientCommunication:
 
                 # if no error => extract values from message
                 else:
-                    receivedTransactionId = message["payload"]["id"]
+                    receivedTransactionId = int(message["payload"]["id"])
                     receivedMessageType = str(message["message"])
                     receivedPayloadType = str(message["payload"]["type"]).upper()
 
@@ -1110,7 +1112,6 @@ class ClientCommunication:
                 # set transaction initiation flag as false so other
                 # threads can try to initiate a transaction with the client
                 self.transactionInitiation = False
-
                 break
 
             # if RTS was not acknowledged
