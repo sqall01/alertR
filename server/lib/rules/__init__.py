@@ -7,11 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import RuleElement, RuleStart
-from .boolean import RuleBoolean
-from .hour import RuleHour
-from .minute import RuleMinute
-from .second import RuleSecond
-from .monthday import RuleMonthday
-from .weekday import RuleWeekday
-from .sensor import RuleSensor
+from .elements import RuleElement, RuleStart, RuleBoolean, RuleHour, RuleMinute, RuleSecond, RuleMonthday, RuleWeekday,\
+                      RuleSensor
+from .core import RuleEngine
