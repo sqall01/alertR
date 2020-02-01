@@ -1089,9 +1089,9 @@ class RuleEngine:
                     # when it can not trigger at the current state
                     self.sensorAlertsToHandleWithRules.remove(sensorAlertToHandle)
 
-    def preprocess_sensor_alert(self,
-                                sensorAlert: SensorAlert,
-                                alertLevel: AlertLevel):
+    def add_sensor_alert(self,
+                         sensorAlert: SensorAlert,
+                         alertLevel: AlertLevel):
         """
         Function that pre-processes the given sensor alert for a given alert level to decide if the rule
         engine is responsible to handle it.

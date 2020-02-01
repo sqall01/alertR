@@ -111,7 +111,7 @@ class SensorAlertExecuter(threading.Thread):
                                 # Split sensor alerts into alerts with rules
                                 # (each alert level with a rule is handled as a single sensor alert
                                 # and processed by rule engine)
-                                self.rule_engine.preprocess_sensor_alert(sensor_alert, configured_alert_level)
+                                self.rule_engine.add_sensor_alert(sensor_alert, configured_alert_level)
 
             # check if an alert level to trigger was found
             # if not => just ignore it
