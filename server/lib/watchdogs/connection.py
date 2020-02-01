@@ -66,11 +66,11 @@ class ConnectionWatchdog(threading.Thread):
         for internalSensor in self.internalSensors:
             if isinstance(internalSensor, SensorTimeoutSensor):
                 # Use set of sensor timeout sensor if it is activated.
-                self._timeoutSensorIds = internalSensor._timeoutSensorIds
+                self._timeoutSensorIds = internalSensor.get_ptr_timeout_sensor_ids()
                 self.sensorTimeoutSensor = internalSensor
             elif isinstance(internalSensor, NodeTimeoutSensor):
                 # Use set of node timeout sensor if it is activated.
-                self._timeoutNodeIds = internalSensor._timeoutNodeIds
+                self._timeoutNodeIds = internalSensor.get_ptr_timeout_node_ids()
                 self.nodeTimeoutSensor = internalSensor
 
     def _acquireNodeTimeoutLock(self):
@@ -295,7 +295,7 @@ class ConnectionWatchdog(threading.Thread):
                                           % (self.fileName, sensorObj.nodeId))
                         self.removeNodeTimeout(sensorObj.nodeId)
                         continue
-                    self.logger.error("[%s]: Sensor with description '%s' from host '%s' timed out. "
+                    self.logger.error("[%s]: Sensor with description '%s' from host '%s' still timed out. "
                                       % (self.fileName, sensorObj.description, nodeObj.hostname)
                                       + "Last state received at %s."
                                       % time.strftime("%D %H:%M:%S", time.localtime(sensorObj.lastStateUpdated)))

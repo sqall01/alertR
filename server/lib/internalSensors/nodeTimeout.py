@@ -35,15 +35,23 @@ class NodeTimeoutSensor(_InternalSensor):
 
         # An internal set of ids of the nodes that are timed out.
         # IMPORTANT: ConnectionWatchdog holds a pointer to this object and uses it so the set is always synchronized.
-        self._timeoutNodeIds = set()  # type: Set[int]
+        self._timeout_node_ids = set()  # type: Set[int]
 
-    def getTimeoutNodeIds(self) -> Set[int]:
+    def get_copy_timeout_node_ids(self) -> Set[int]:
         """
         Returns a copy of the internal timed out node ids set.
 
         :return: Copy of the node ids set
         """
-        return set(self._timeoutNodeIds)
+        return set(self._timeout_node_ids)
+
+    def get_ptr_timeout_node_ids(self) -> Set[int]:
+        """
+        Returns a pointer to the internal timed out node ids set.
+
+        :return: Pointer to the node ids set
+        """
+        return self._timeout_node_ids
 
     def initialize(self):
         if self.sensor_alert_executer is None:
@@ -116,7 +124,7 @@ class NodeTimeoutSensor(_InternalSensor):
         # If internal sensor is in state "triggered" and there is no
         # timed out node left, change the state to "normal" with the raised sensor alert.
         change_state = False
-        if self.state == 1 and not self._timeoutNodeIds:
+        if self.state == 1 and not self._timeout_node_ids:
             self.state = 0
             change_state = True
 
@@ -162,9 +170,9 @@ class NodeTimeoutSensor(_InternalSensor):
         process_sensor_alerts = False
 
         # Create message and nodes field for sensor alert.
-        message = "%d node(s) still timed out:" % len(self._timeoutNodeIds)
+        message = "%d node(s) still timed out:" % len(self._timeout_node_ids)
         nodes_field = list()
-        for nodeId in set(self._timeoutNodeIds):
+        for nodeId in set(self._timeout_node_ids):
 
             node_obj = self.storage.getNodeById(nodeId)
             # Since a user can be deleted during runtime, check if

@@ -35,7 +35,24 @@ class SensorTimeoutSensor(_InternalSensor):
         self.storage = None  # Not available in global data during configuration, set in initialize()
 
         # A set of ids of the sensors that are timed out.
-        self._timeoutSensorIds = set()  # type: Set[int]
+        # IMPORTANT: ConnectionWatchdog holds a pointer to this object and uses it so the set is always synchronized.
+        self._timeout_sensor_ids = set()  # type: Set[int]
+
+    def get_copy_timeout_sensor_ids(self) -> Set[int]:
+        """
+        Returns a copy of the internal timed out node ids set.
+
+        :return: Copy of the node ids set
+        """
+        return set(self._timeout_sensor_ids)
+
+    def get_ptr_timeout_sensor_ids(self) -> Set[int]:
+        """
+        Returns a pointer to the internal timed out sensor ids set.
+
+        :return: Pointer to the sensor ids set
+        """
+        return self._timeout_sensor_ids
 
     def initialize(self):
         if self.sensor_alert_executer is None:
@@ -113,7 +130,7 @@ class SensorTimeoutSensor(_InternalSensor):
         # no sensor is timed out at the moment, change the
         # state to "normal" with the raised sensor alert.
         change_state = False
-        if self.state == 1 and not self._timeoutSensorIds:
+        if self.state == 1 and not self._timeout_sensor_ids:
             self.state = 0
             change_state = True
 
@@ -158,9 +175,9 @@ class SensorTimeoutSensor(_InternalSensor):
         process_sensor_alerts = False
 
         # Create message and sensors field for sensor alert.
-        message = "%d sensor(s) still timed out:" % len(self._timeoutSensorIds)
+        message = "%d sensor(s) still timed out:" % len(self._timeout_sensor_ids)
         sensors_field = list()
-        for sensor_id in set(self._timeoutSensorIds):
+        for sensor_id in set(self._timeout_sensor_ids):
 
             # Get sensor object.
             sensor_obj = self.storage.getSensorById(sensor_id)
@@ -172,7 +189,7 @@ class SensorTimeoutSensor(_InternalSensor):
             if sensor_obj is None:
                 self.logger.error("[%s]: Could not get sensor with id %d from database."
                                   % (self.log_tag, sensor_id))
-                self._timeoutSensorIds.remove(sensor_id)
+                self._timeout_sensor_ids.remove(sensor_id)
                 continue
 
             # Get sensor details.
@@ -184,7 +201,7 @@ class SensorTimeoutSensor(_InternalSensor):
             if node_obj is None:
                 self.logger.error("[%s]: Could not get node with id %d from database."
                                   % (self.log_tag, sensor_obj.nodeId))
-                self._timeoutSensorIds.remove(sensor_id)
+                self._timeout_sensor_ids.remove(sensor_id)
                 continue
 
             lastStateUpdateStr = time.strftime("%D %H:%M:%S", time.localtime(sensor_obj.lastStateUpdated))
