@@ -124,7 +124,8 @@ class VersionInformerSensor(_InternalSensor):
             # => log and notify user.
             if update_fail_count >= self.update_max_fails:
 
-                self.logger.error("[%s]: Update checking failed %d times in a row." % (self.fileName, update_fail_count))
+                self.logger.error("[%s]: Update checking failed %d times in a row."
+                                  % (self.fileName, update_fail_count))
 
                 # If sensor is in state "normal" change it to
                 # state "triggered".
