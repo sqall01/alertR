@@ -93,9 +93,9 @@ class Sqlite(_Storage):
         """
         # generate unique id for this installation
         utcTimestamp = int(time.time())
-        uniqueString = socket.gethostname() \
-                       + struct.pack("d", utcTimestamp).decode("ascii") \
-                       + os.urandom(200).decode("ascii")
+        uniqueString = socket.gethostname().encode("ascii") \
+                       + struct.pack("d", utcTimestamp) \
+                       + os.urandom(200)
         sha256 = hashlib.sha256()
         sha256.update(uniqueString)
         uniqueID = sha256.hexdigest()
