@@ -47,6 +47,8 @@ class AlertSystemActiveSensor(_InternalSensor):
 
         :param state: state of sensor (0 or 1)
         """
+        # Set state regardless if we are already in this state. Therefore, we create a sensor alert for each
+        # alert system status change message.
         self.state = state
 
         if not self.storage.updateSensorState(self.nodeId,  # nodeId
