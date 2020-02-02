@@ -74,7 +74,7 @@ class CSVBackend(_userBackend):
                 self.logger.error("[%s]: Username '%s' already exists in CSV file." % (self.fileName, username))
                 continue
 
-            pwhash = bcrypt.hashpw(password, bcrypt.gensalt())
+            pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt())
             userData = UserData(username, pwhash, nodeType, instance)
             self.userCredentials.append(userData)
 
@@ -141,7 +141,7 @@ class CSVBackend(_userBackend):
                 continue
 
             else:
-                if bcrypt.checkpw(password, userData.pwhash):
+                if bcrypt.checkpw(password.encode("ascii"), userData.pwhash.encode("ascii")):
                     self._releaseLock()
                     return True
 
@@ -218,7 +218,7 @@ class CSVBackend(_userBackend):
 
             # Parse csv file and store all user credentials.
             csvData = []
-            with open(self.csvLocation, 'rb') as csvFile:
+            with open(self.csvLocation, 'rt', encoding="ascii") as csvFile:
                 csvReader = csv.reader(csvFile, quoting=csv.QUOTE_ALL)
                 csvData = list(csvReader)
 
@@ -306,7 +306,7 @@ class CSVBackend(_userBackend):
             self._releaseLock()
             return False
 
-        pwhash = bcrypt.hashpw(password, bcrypt.gensalt())
+        pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt()).decode("ascii")
         userData = UserData(username, pwhash, nodeType, instance)
         self.userCredentials.append(userData)
 
@@ -350,7 +350,7 @@ class CSVBackend(_userBackend):
 
         for userData in self.userCredentials:
             if userData.username == username:
-                pwhash = bcrypt.hashpw(password, bcrypt.gensalt())
+                pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt()).decode("ascii")
                 userData.pwhash = pwhash
 
                 self._releaseLock()

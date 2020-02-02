@@ -16,10 +16,10 @@ class UserData(object):
                  pwhash: str,
                  nodeType: str,
                  instance: str):
-        self.username = username
-        self.pwhash = pwhash
-        self.nodeType = nodeType
-        self.instance = instance
+        self.username = username  # type: str
+        self.pwhash = pwhash  # type: str
+        self.nodeType = nodeType  # type: str
+        self.instance = instance  # type: str
 
     def toList(self):
         return [self.username,
