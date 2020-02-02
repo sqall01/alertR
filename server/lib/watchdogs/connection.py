@@ -450,7 +450,7 @@ class ConnectionWatchdog(threading.Thread):
             # Check if client is not persistent and therefore
             # allowed to timeout or disconnect.
             # => Ignore timeout/disconnect.
-            if not nodeObj.persistent:
+            if nodeObj.persistent == 0:
                 self._releaseNodeTimeoutLock()
                 return
 
@@ -512,7 +512,7 @@ class ConnectionWatchdog(threading.Thread):
         # Check if client is not persistent and therefore
         # allowed to timeout or disconnect.
         # => Ignore timeout/disconnect.
-        if not nodeObj.persistent:
+        if nodeObj.persistent == 0:
             self._releaseNodeTimeoutLock()
             return
 

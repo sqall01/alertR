@@ -35,10 +35,10 @@ class Node:
         self.username = None  # type: Optional[str]
         self.nodeType = None  # type: Optional[str]
         self.instance = None  # type: Optional[str]
-        self.connected = None  # type: Optional[bool]
+        self.connected = None  # type: Optional[int]
         self.version = None  # type: Optional[float]
         self.rev = None  # type: Optional[int]
-        self.persistent = None  # type: Optional[bool]
+        self.persistent = None  # type: Optional[int]
         
 
 # This class represents a single alert of a node.

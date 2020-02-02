@@ -1287,20 +1287,10 @@ class ClientCommunication:
                         "username": nodeObj.username,
                         "nodeType": nodeObj.nodeType,
                         "instance": nodeObj.instance,
+                        "connected": nodeObj.connected,
                         "version": nodeObj.version,
-                        "rev": nodeObj.rev}
-
-            if nodeObj.connected:
-                tempDict["connected"] = 1
-
-            else:
-                tempDict["connected"] = 0
-
-            if nodeObj.persistent:
-                tempDict["persistent"] = 1
-
-            else:
-                tempDict["persistent"] = 0
+                        "rev": nodeObj.rev,
+                        "persistent": nodeObj.persistent}
 
             nodes.append(tempDict)
 

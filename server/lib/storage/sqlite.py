@@ -117,10 +117,10 @@ class Sqlite(_Storage):
         node.username = nodeTuple[2]
         node.nodeType = nodeTuple[3]
         node.instance = nodeTuple[4]
-        node.connected = (nodeTuple[5] == 1)
+        node.connected = nodeTuple[5]
         node.version = nodeTuple[6]
         node.rev = nodeTuple[7]
-        node.persistent = (nodeTuple[8] == 1)
+        node.persistent = nodeTuple[8]
         return node
 
     def _getNodeId(self,
