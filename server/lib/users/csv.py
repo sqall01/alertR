@@ -218,7 +218,8 @@ class CSVBackend(_userBackend):
 
             # Parse csv file and store all user credentials.
             csvData = []
-            with open(self.csvLocation, 'rt', encoding="ascii") as csvFile:
+            with open(self.csvLocation, 'rt',
+                      encoding="ascii") as csvFile:
                 csvReader = csv.reader(csvFile, quoting=csv.QUOTE_ALL)
                 csvData = list(csvReader)
 
@@ -280,8 +281,9 @@ class CSVBackend(_userBackend):
         output.close()
 
         # Write final file.
-        with open(self.csvLocation, 'wb') as csvFile:
-            csvFile.write(fileData.encode("ascii"))
+        with open(self.csvLocation, 'wt',
+                  encoding="ascii") as csvFile:
+            csvFile.write(fileData)
 
         self._releaseLock()
 
