@@ -20,9 +20,8 @@ import requests
 class SurveyExecuter(threading.Thread):
 
     def __init__(self,
-                 updateActivated: bool,
-                 updateServer: str,
-                 updateLocation: str,
+                 uses_version_informer_sensor: bool,
+                 updateUrl: str,
                  globalData: GlobalData,
                  timeout: float = 20.0):
         threading.Thread.__init__(self)
@@ -37,9 +36,8 @@ class SurveyExecuter(threading.Thread):
         self.instance = self.globalData.instance
         self.version = self.globalData.version
         self.rev = self.globalData.rev
-        self.updateActivated = updateActivated
-        self.updateServer = updateServer
-        self.updateLocation = updateLocation
+        self.uses_version_informer_sensor = uses_version_informer_sensor
+        self.updateUrl = updateUrl
         self.timeout = timeout
 
         # fixed values for survey
@@ -65,9 +63,9 @@ class SurveyExecuter(threading.Thread):
         surveyData["nodes"] = surveyNodes
 
         surveyUpdate = dict()
-        surveyUpdate["activated"] = self.updateActivated
-        surveyUpdate["server"] = self.updateServer
-        surveyUpdate["location"] = self.updateLocation
+        surveyUpdate["activated"] = self.uses_version_informer_sensor
+        surveyUpdate["server"] = self.updateUrl
+        surveyUpdate["location"] = ""
 
         surveyData["update"] = surveyUpdate
         surveyData["uniqueID"] = self.storage.getUniqueID()

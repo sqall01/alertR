@@ -856,7 +856,7 @@ class ClientCommunication:
         return True
 
     def _checkMsgStatusSensorsList(self,
-                                   sensors: List[str, Any],
+                                   sensors: Dict[str, Any],
                                    messageType: str) -> bool:
         """
         Internal function to check sanity of the status sensors list.
@@ -3840,7 +3840,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn,
 
     def __init__(self,
                  globalData: GlobalData,
-                 serverAddress: str,
+                 serverAddress: Tuple[str, int],
                  RequestHandlerClass: socketserver.BaseRequestHandler):
 
         # get reference to global data object

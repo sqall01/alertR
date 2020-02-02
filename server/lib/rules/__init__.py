@@ -10,3 +10,4 @@
 from .elements import RuleElement, RuleStart, RuleBoolean, RuleHour, RuleMinute, RuleSecond, RuleMonthday, RuleWeekday,\
                       RuleSensor
 from .core import RuleEngine
+from .parsing import parse_rule

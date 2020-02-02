@@ -18,7 +18,7 @@ from .elements import RuleElement
 '''
 TODO
 This is old code of the rule engine which worked when I was using it. It is really really terrible with lots of
-old confusing data structures. It needs a complete rewrite. However, I do not use it currently.
+old confusing data structures. It needs a complete rewrite and test cases. However, I do not use it currently.
 Hence, I have no incentive to refactor this code at the moment.
 '''
 
