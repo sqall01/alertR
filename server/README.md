@@ -1,7 +1,7 @@
 AlertR Server
 ======
 
-This is the server that handles the logic of the alert system. It is mandatory in order to use AlertR. It uses either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.
+This is the server that handles the logic of the alert system. It is mandatory in order to use AlertR. It uses either SQLite as storage backend and a CSV file as user backend.
 
 
 How to use it?
@@ -9,7 +9,7 @@ How to use it?
 
 To use the server you have to configure it first. A commented configuration template file is located inside the "config" folder. Also you have to add username and password for each client that connects to the server in the "users.csv" (also located inside the "config" folder). A username has to be unique for each client that will connect to the server.
 
-As backend you can (at the moment) either choose MySQL (MySQLdb for python) or SQLite (sqlite3 for python).
+As backend it uses SQLite.
 
 The server uses SSL for the communication with the clients. This means you have to generate a certificate and a keyfile for your server. Each client needs the certificate file of the server to validate correctness of the server. In turn the clients are validated by the given user credentials.
 
