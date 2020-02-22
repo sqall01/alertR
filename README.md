@@ -16,6 +16,7 @@ The project is well documented in the [Github Wiki](https://github.com/sqall01/a
 * [Update](#update)
 * [Further Notes](#further_notes)
 * [Supporting AlertR](#supporting_alertr)
+* [Licensing and Commercial Use](#licensing)
 * [Bugs and Feedback](#bugs_and_feedback)
 
 
@@ -148,6 +149,7 @@ If you do not know how to do any of it or do not have the time, you can support 
 
 
 # Licensing and Commercial Use
+<a name="licensing"/>
 
 AlertR is open source and everyone can use it freely. It is licensed under the _GNU Affero General Public License v3.0_ which allows you to also commercially use it. However, if you do, you have to disclose all changes to the Software also as open source. This is also the case if you provide network services with AlertR.
             
