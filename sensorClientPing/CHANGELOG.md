@@ -1,3 +1,11 @@
+## 0.600
+
+Features:
+
+* Migration from Python 2.7 to Python 3.5
+* Permissions check for config file
+
+
 ## 0.502-2
 
 Features:

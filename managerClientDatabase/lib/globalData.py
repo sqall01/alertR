@@ -1,14 +1,15 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
 import collections
+from typing import Optional
 
 
 # this class is a global configuration class that holds 
@@ -18,31 +19,30 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.501
+        self.version = 0.600  # type: float
 
         # revision of the used client
-        self.rev = 3
+        self.rev = 0  # type: int
 
         # name of this client
-        self.name = "AlertR Manger Client Database"
+        self.name = "AlertR Manger Client Database"  # type: str
 
         # the instance of this client
-        self.instance = "managerClientDatabase"
+        self.instance = "managerClientDatabase"  # type: str
 
         # interval in which a ping should be send when 
         # no data was received/send     
-        self.pingInterval = 30
+        self.pingInterval = 30  # type: int
 
         # type of this node/client
-        self.nodeType = "manager"
+        self.nodeType = "manager"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-            + "/../config/config.xml"
+        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
 
         # How often the AlertR client should try to connect to the
         # MySQL server when the connection establishment fails.
-        self.storageBackendMysqlRetries = 5
+        self.storageBackendMysqlRetries = 5  # type: int
 
         # path to the unix socket which is used to communicate
         # with the web page (only set when server is activated
@@ -78,7 +78,7 @@ class GlobalData:
 
         # this is the time in seconds when the sensor should be
         # handled as timed out
-        self.connectionTimeout = 60
+        self.connectionTimeout = 60  # type: int
 
         # this variable holds the object of the server communication
         self.serverComm = None
@@ -86,17 +86,13 @@ class GlobalData:
         # instance of the storage backend
         self.storage = None
 
-        # instance of the version information collector (only active if
-        # automatic update checks are configured)
-        self.versionInformer = None
-
         # the amount of days sensor alerts are kept in the database before
         # they are removed (value 0 will not store any sensor alerts)
-        self.sensorAlertLifeSpan = None
+        self.sensorAlertLifeSpan = None  # type: Optional[int]
 
         # the amount of days events are kept in the database before
         # they are removed (value 0 will not store any events)
-        self.eventsLifeSpan = None
+        self.eventsLifeSpan = None  # type: Optional[int]
 
         # a (thread safe) list of events that are occurred
         # (an event is anything that has happened on the
@@ -106,4 +102,4 @@ class GlobalData:
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent = None
+        self.persistent = None  # type: Optional[int]

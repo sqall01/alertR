@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import csv
@@ -28,7 +28,7 @@ TO_ADDR = "targetAddr@somedomain.org"
 
 
 if len(sys.argv) != 3:
-    print "Usage: %s <client IP> <client MAC address>"
+    print("Usage: %s <client IP> <client MAC address>")
     sys.exit(0)
 
 client_ip = sys.argv[1]
@@ -36,7 +36,7 @@ client_mac_address = sys.argv[2]
 
 # check if mac address is whitelisted
 found = False
-with open(os.path.dirname(os.path.abspath(__file__)) + "/mac_address_whitelist.csv", 'rb') as csv_file:
+with open(os.path.dirname(os.path.abspath(__file__)) + "/mac_address_whitelist.csv", 'rt') as csv_file:
     csv_reader = csv.reader(csv_file, quoting=csv.QUOTE_ALL)
 
     for row in csv_reader:

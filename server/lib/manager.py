@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -10,16 +10,16 @@
 import threading
 import os
 import time
-import logging
 import collections
-from server import AsynchronousSender
+from .server import AsynchronousSender
+from .globalData import GlobalData
 
 
 # this class is woken up if a sensor alert or state change is received
 # and sends updates to all manager clients
 class ManagerUpdateExecuter(threading.Thread):
 
-    def __init__(self, globalData):
+    def __init__(self, globalData: GlobalData):
         threading.Thread.__init__(self)
 
         # get global configured data
@@ -52,7 +52,6 @@ class ManagerUpdateExecuter(threading.Thread):
         # that should be sent to the manager clients
         self.queueStateChange = collections.deque()
 
-
     def run(self):
 
         while True:
@@ -74,9 +73,7 @@ class ManagerUpdateExecuter(threading.Thread):
             # or a status update is forced
             # => send status update to all manager
             utcTimestamp = int(time.time())
-            if (((utcTimestamp - self.managerUpdateInterval)
-                > self.lastStatusUpdateSend)
-                or self.forceStatusUpdate):
+            if (utcTimestamp - self.managerUpdateInterval) > self.lastStatusUpdateSend or self.forceStatusUpdate:
 
                 # update time when last status update was sent
                 self.lastStatusUpdateSend = utcTimestamp
@@ -92,7 +89,7 @@ class ManagerUpdateExecuter(threading.Thread):
                 for serverSession in self.serverSessions:
                     # ignore sessions which do not exist yet
                     # and that are not managers
-                    if serverSession.clientComm == None:
+                    if serverSession.clientComm is None:
                         continue
                     if serverSession.clientComm.nodeType != "manager":
                         continue
@@ -101,8 +98,7 @@ class ManagerUpdateExecuter(threading.Thread):
 
                     # sending status update to manager via a thread
                     # to not block the manager update executer
-                    statusUpdateProcess = AsynchronousSender(self.globalData,
-                        serverSession.clientComm)
+                    statusUpdateProcess = AsynchronousSender(self.globalData, serverSession.clientComm)
                     # set thread to daemon
                     # => threads terminates when main thread terminates
                     statusUpdateProcess.daemon = True
@@ -125,7 +121,7 @@ class ManagerUpdateExecuter(threading.Thread):
                 for serverSession in self.serverSessions:
                     # ignore sessions which do not exist yet
                     # and that are not managers
-                    if serverSession.clientComm == None:
+                    if serverSession.clientComm is None:
                         continue
                     if serverSession.clientComm.nodeType != "manager":
                         continue
@@ -134,24 +130,17 @@ class ManagerUpdateExecuter(threading.Thread):
 
                     # sending status update to manager via a thread
                     # to not block the manager update executer
-                    stateChangeProcess = AsynchronousSender(self.globalData,
-                        serverSession.clientComm)
+                    stateChangeProcess = AsynchronousSender(self.globalData, serverSession.clientComm)
                     # set thread to daemon
                     # => threads terminates when main thread terminates
                     stateChangeProcess.daemon = True
                     stateChangeProcess.sendManagerStateChange = True
-                    stateChangeProcess.sendManagerStateChangeSensorId \
-                        = sensorId
-                    stateChangeProcess.sendManagerStateChangeState \
-                        = state
-                    stateChangeProcess.sendManagerStateChangeDataType \
-                        = sensorDataObj.dataType
-                    stateChangeProcess.sendManagerStateChangeData \
-                        = sensorDataObj.data
+                    stateChangeProcess.sendManagerStateChangeSensorId = sensorId
+                    stateChangeProcess.sendManagerStateChangeState = state
+                    stateChangeProcess.sendManagerStateChangeDataType = sensorDataObj.dataType
+                    stateChangeProcess.sendManagerStateChangeData = sensorDataObj.data
                     stateChangeProcess.start()
-
 
     # sets the exit flag to shut down the thread
     def exit(self):
         self.exitFlag = True
-        return

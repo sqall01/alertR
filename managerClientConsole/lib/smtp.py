@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
@@ -16,12 +16,10 @@ import socket
 # this class handles the eMail alerts that are sent via smtp
 class SMTPAlert:
 
-    def __init__(self, host, port, fromAddr, toAddr):
+    def __init__(self, host: str, port: int, fromAddr: str, toAddr: str):
 
-        if (host != "127.0.0.1" 
-            or port != 25):
-            raise NotImplementedError('Only host "127.0.0.1" and '
-                + 'port "25" is implemented')
+        if host != "127.0.0.1" or port != 25:
+            raise NotImplementedError('Only host "127.0.0.1" and port "25" is implemented')
 
         self.host = host
         self.port = port
@@ -41,7 +39,6 @@ class SMTPAlert:
         # notifications that were already sent (this prevents email flodding)
         self.newestVersion = None
         self.newestRev = None
-
 
     # this function sends an email alert in case of
     # a communication failure
@@ -80,7 +77,6 @@ class SMTPAlert:
         self.communicationAlertSent = True
 
         return True
-
 
     # this function sends an email in case of
     # a communication failure was cleared

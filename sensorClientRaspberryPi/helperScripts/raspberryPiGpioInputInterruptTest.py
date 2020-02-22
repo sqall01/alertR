@@ -1,4 +1,12 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/python3
+
+# written by sqall
+# twitter: https://twitter.com/sqall01
+# blog: https://h4des.org
+# github: https://github.com/sqall01
+#
+# Licensed under the GNU Affero General Public License, version 3.
+
 import RPi.GPIO as GPIO
 import time
 
@@ -18,4 +26,4 @@ counter = 0
 while True:
     GPIO.wait_for_edge(inputPin, edge)
     counter += 1
-    print "Trigger no.: " + str(counter)
+    print("Trigger no.: " + str(counter))

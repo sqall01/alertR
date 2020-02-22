@@ -1,18 +1,31 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-from lib import CSVBackend
-from lib import GlobalData
-from lib import Updater
+# written by sqall
+# twitter: https://twitter.com/sqall01
+# blog: https://h4des.org
+# github: https://github.com/sqall01
+#
+# Licensed under the GNU Affero General Public License, version 3.
+
 import logging
 import xml.etree.ElementTree
 import sys
 import os
 import optparse
 import getpass
+from typing import List, Tuple
+from lib import CSVBackend
+from lib import GlobalData
+from lib import Updater
 
 
-# Function creates a path location for the given user input.
-def makePath(inputLocation):
+def makePath(inputLocation: str) -> str:
+    """
+    Function creates a path location for the given user input.
+
+    :param inputLocation:
+    :return: normalized path
+    """
     # Do nothing if the given location is an absolute path.
     if inputLocation[0] == "/":
         return inputLocation
@@ -22,35 +35,55 @@ def makePath(inputLocation):
     # Assume we have a given relative path.
     return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
 
-# This function asks the user for confirmation directly.
-def userAsk():
 
+def userAsk() -> bool:
+    """
+    This function asks the user for confirmation directly.
+
+    :return: Yes or No
+    """
     while True:
         try:
-            localInput = raw_input("(y/n): ")
+            localInput = input("(y/n): ")
+
         except KeyboardInterrupt:
             print("Bye.")
             sys.exit(0)
-        except:
+
+        except Exception:
             continue
 
         if localInput.strip().upper() == "Y":
             return True
+
         elif localInput.strip().upper() == "N":
             return False
+
         else:
             print("Invalid input.")
 
-# This function asks the user for confirmation (if wanted).
-def userConfirmation(yes):
+
+def userConfirmation(yes: bool) -> bool:
+    """
+    This function asks the user for confirmation (if wanted).
+
+    :param yes:
+    :return: Yes or No
+    """
     if yes is False:
         return userAsk()
+
     print("NOTE: Skipping confirmation.")
     return True
 
-# Function that asks user for node type and instance.
-def chooseNodeTypeAndInstance(updater):
 
+def chooseNodeTypeAndInstance(updater: Updater) -> Tuple[str, str]:
+    """
+    Function that asks user for node type and instance.
+
+    :param updater:
+    :return:
+    """
     nodeType = None
     instance = None
 
@@ -59,12 +92,11 @@ def chooseNodeTypeAndInstance(updater):
     if updater is not None:
         try:
             repoInfo = updater.getRepositoryInformation()
-        except Exception as e:
-            logging.exception("[%s]: Not able to contact online repository."
-                % fileName)
 
-        choiceList = filter(lambda x: x.lower() != "server",
-            repoInfo["instances"].keys())
+        except Exception as e:
+            logging.exception("[%s]: Not able to contact online repository." % fileName)
+
+        choiceList = [x for x in list(repoInfo["instances"].keys()) if x.lower() != "server"]
         choiceList.sort()
 
         alerts = list()
@@ -75,10 +107,13 @@ def chooseNodeTypeAndInstance(updater):
             currType = repoInfo["instances"][instanceIter]["type"]
             if currType == "alert":
                 alerts.append(instanceIter)
+
             elif currType == "manager":
                 managers.append(instanceIter)
+
             elif currType == "sensor":
                 sensors.append(instanceIter)
+
             else:
                 others.append(instanceIter)
         
@@ -86,13 +121,13 @@ def chooseNodeTypeAndInstance(updater):
         # we output them.
         allInstances = list()
 
-        print("#"*100)
+        print("#" * 100)
         print("No.".ljust(5) + "| Option")
-        print("#"*100)
+        print("#" * 100)
 
         ctr = 1
         headline = " Type: alert "
-        print("-"*40 + headline + "-"*(60-len(headline)))
+        print("-" * 40 + headline + "-" * (60-len(headline)))
         for instanceIter in alerts:
             output = "%d." % ctr
             output = output.ljust(5) + "| "
@@ -102,7 +137,7 @@ def chooseNodeTypeAndInstance(updater):
             allInstances.append(instanceIter)
 
         headline = " Type: manager "
-        print("-"*40 + headline + "-"*(60-len(headline)))
+        print("-" * 40 + headline + "-" * (60-len(headline)))
         for instanceIter in managers:
             output = "%d." % ctr
             output = output.ljust(5) + "| "
@@ -112,7 +147,7 @@ def chooseNodeTypeAndInstance(updater):
             allInstances.append(instanceIter)
 
         headline = " Type: sensor "
-        print("-"*40 + headline + "-"*(60-len(headline)))
+        print("-" * 40 + headline + "-" * (60-len(headline)))
         for instanceIter in sensors:
             output = "%d." % ctr
             output = output.ljust(5) + "| "
@@ -122,7 +157,7 @@ def chooseNodeTypeAndInstance(updater):
             allInstances.append(instanceIter)
 
         headline = " Type: other "
-        print("-"*40 + headline + "-"*(60-len(headline)))
+        print("-" * 40 + headline + "-" * (60-len(headline)))
         for instanceIter in others:
             output = "%d." % ctr
             output = output.ljust(5) + "| "
@@ -135,38 +170,59 @@ def chooseNodeTypeAndInstance(updater):
         manualOption = ctr
 
         while True:
-            userOptionStr = raw_input("Please choose an option: ")
+            userOptionStr = input("Please choose an option: ")
             userOption = 0
             try:
                 userOption = int(userOptionStr)
-            except:
+
+            except Exception:
                 pass
+
             if userOption == manualOption:
                 break
-            elif userOption > 0 and userOption < manualOption:
+
+            elif 0 < userOption < manualOption:
                 instance = allInstances[userOption-1]
                 nodeType = repoInfo["instances"][instance]["type"]
                 break
+
             else:
                 print("Invalid option. Please retry.")
 
     # If no node type and instance is chosen until now, ask user.
     if nodeType not in validNodeTypes:
         while True:
-            nodeType = raw_input("Please enter node type:\n").lower()
+            nodeType = input("Please enter node type:\n").lower()
             if nodeType in validNodeTypes:
                 break
+
             else:
-                print("Only valid node types are: "
-                    + "'sensor', 'manager', 'alert'. Please retry.")
+                print("Only valid node types are: 'sensor', 'manager', 'alert'. Please retry.")
+
     if instance is None:
-        instance = raw_input("Please enter instance:\n")
+        instance = input("Please enter instance:\n")
 
-    return (nodeType, instance)
+    return nodeType, instance
 
-# Adds a user to the backend.
-def addUser(userBackend, username, password, nodeType, instance, yes, updater):
 
+def addUser(userBackend: CSVBackend,
+            username: str,
+            password: str,
+            nodeType: str,
+            instance: str,
+            yes: bool,
+            updater: Updater):
+    """
+    Adds a user to the backend.
+
+    :param userBackend:
+    :param username:
+    :param password:
+    :param nodeType:
+    :param instance:
+    :param yes:
+    :param updater:
+    """
     # First ask for confirmation if the server is not running.
     temp = "\nPlease make sure that the AlertR Server is not running "
     temp += "while adding a user.\nOtherwise it can lead to an "
@@ -177,7 +233,7 @@ def addUser(userBackend, username, password, nodeType, instance, yes, updater):
         sys.exit(0)
 
     if username is None:
-        username = raw_input("Please enter username:\n")
+        username = input("Please enter username:\n")
 
     if password is None:
         while True:
@@ -186,6 +242,7 @@ def addUser(userBackend, username, password, nodeType, instance, yes, updater):
             if pw1 == pw2:
                 password = pw1
                 break
+
             else:
                 print("Passwords do not match. Please retry.")
 
@@ -198,28 +255,42 @@ def addUser(userBackend, username, password, nodeType, instance, yes, updater):
     # If no node type and instance is chosen until now, ask user.
     if nodeType not in validNodeTypes:
         while True:
-            nodeType = raw_input("Please enter node type:\n").lower()
+            nodeType = input("Please enter node type:\n").lower()
             if nodeType in validNodeTypes:
                 break
+
             else:
-                print("Only valid node types are: "
-                    + "'sensor', 'manager', 'alert'. Please retry.")
+                print("Only valid node types are: 'sensor', 'manager', 'alert'. Please retry.")
     if instance is None:
-        instance = raw_input("Please enter instance:\n")
+        instance = input("Please enter instance:\n")
 
     if userBackend.addUser(username, password, nodeType, instance):
         userBackend.writeUserdata()
-        logging.info("[%s]: Adding user successful."
-                % fileName)
+        logging.info("[%s]: Adding user successful." % fileName)
+
     else:
-        logging.error("[%s]: Adding user failed."
-                % fileName)
+        logging.error("[%s]: Adding user failed." % fileName)
         sys.exit(1)
 
-# Modifies a user in the backend.
-def modifyUser(userBackend, username, password, nodeType, instance, yes,
-    updater):
 
+def modifyUser(userBackend: CSVBackend,
+               username: str,
+               password: str,
+               nodeType: str,
+               instance: str,
+               yes: bool,
+               updater: Updater):
+    """
+    Modifies a user in the backend.
+
+    :param userBackend:
+    :param username:
+    :param password:
+    :param nodeType:
+    :param instance:
+    :param yes:
+    :param updater:
+    """
     # First ask for confirmation if the server is not running.
     temp = "\nPlease make sure that the AlertR Server is not running "
     temp += "while modifying a user.\nOtherwise it can lead to an "
@@ -234,22 +305,24 @@ def modifyUser(userBackend, username, password, nodeType, instance, yes,
         allUsernames = listUsers(userBackend)
 
         while True:
-            userOptionStr = raw_input("Choose number of username to modify: ")
+            userOptionStr = input("Choose number of username to modify: ")
             userOption = 0
             try:
                 userOption = int(userOptionStr)
-            except:
+
+            except Exception:
                 pass
-            if userOption > 0 and userOption <= len(allUsernames):
+
+            if 0 < userOption <= len(allUsernames):
                 username = allUsernames[userOption-1]
                 break
+
             else:
                 print("Invalid option. Please retry.")
 
     # Check if the username exists.
     if not userBackend.userExists(username):
-        logging.error("[%s]: Username '%s' does not exist."
-                % (fileName, username))
+        logging.error("[%s]: Username '%s' does not exist." % (fileName, username))
         sys.exit(1)
 
     # Ask for value to change if none was given via argument.
@@ -259,13 +332,16 @@ def modifyUser(userBackend, username, password, nodeType, instance, yes,
         print("2. Change instance and node type.")
         userOption = 0
         while True:
-            userOptionStr = raw_input("Please choose an option: ")
+            userOptionStr = input("Please choose an option: ")
             try:
                 userOption = int(userOptionStr)
-            except:
+
+            except Exception:
                 pass
-            if userOption > 0 and userOption < 3:
+
+            if 0 < userOption < 3:
                 break
+
             else:
                 print("Invalid option. Please retry.")
 
@@ -277,6 +353,7 @@ def modifyUser(userBackend, username, password, nodeType, instance, yes,
                 if pw1 == pw2:
                     password = pw1
                     break
+
                 else:
                     print("Passwords do not match. Please retry.")
 
@@ -290,53 +367,57 @@ def modifyUser(userBackend, username, password, nodeType, instance, yes,
             # If no node type and instance is chosen until now, ask user.
             if nodeType not in validNodeTypes:
                 while True:
-                    nodeType = raw_input("Please enter node type:\n").lower()
+                    nodeType = input("Please enter node type:\n").lower()
                     if nodeType in validNodeTypes:
                         break
+
                     else:
-                        print("Only valid node types are: "
-                            + "'sensor', 'manager', 'alert'. Please retry.")
+                        print("Only valid node types are: 'sensor', 'manager', 'alert'. Please retry.")
+
             if instance is None:
-                instance = raw_input("Please enter instance:\n")
+                instance = input("Please enter instance:\n")
 
     # Change password.
     if password is not None:
         if userBackend.changePassword(username, password):
             userBackend.writeUserdata()
-            logging.info("[%s]: Changing password of user successful."
-                    % fileName)
+            logging.info("[%s]: Changing password of user successful." % fileName)
+
         else:
-            logging.error("[%s]: Changing password of user failed."
-                    % fileName)
+            logging.error("[%s]: Changing password of user failed." % fileName)
             sys.exit(1)
 
     # Change node type and instance.
     if (nodeType is None or instance is None) and nodeType != instance:
-        logging.error("[%s]: Node type and instance have to "
-                % fileName
-                + "be modified together." )
+        logging.error("[%s]: Node type and instance have to be modified together." % fileName)
         sys.exit(1)
+
     elif nodeType is not None and instance is not None:
         nodeType = nodeType.lower()
+
         if nodeType not in validNodeTypes:
-            logging.error("[%s]: Node type '%s' invalid."
-                % (fileName, nodeType))
+            logging.error("[%s]: Node type '%s' invalid." % (fileName, nodeType))
             sys.exit(1)
 
         if userBackend.changeNodeTypeAndInstance(username, nodeType, instance):
             userBackend.writeUserdata()
-            logging.info("[%s]: Changing node type and instance "
-                    % fileName
-                    + "of user successful.")
+            logging.info("[%s]: Changing node type and instance of user successful." % fileName)
+
         else:
-            logging.error("[%s]: Changing node type and instance "
-                    % fileName
-                    + "of user failed.")
+            logging.error("[%s]: Changing node type and instance of user failed." % fileName)
             sys.exit(1)
 
-# Deletes a user from the backend.
-def deleteUser(userBackend, username, yes):
 
+def deleteUser(userBackend: CSVBackend,
+               username: str,
+               yes: bool):
+    """
+    Deletes a user from the backend.
+
+    :param userBackend:
+    :param username:
+    :param yes:
+    """
     # First ask for confirmation if the server is not running.
     temp = "\nPlease make sure that the AlertR Server is not running "
     temp += "while deleting a user.\nOtherwise it can lead to an "
@@ -350,36 +431,42 @@ def deleteUser(userBackend, username, yes):
         allUsernames = listUsers(userBackend)
 
         while True:
-            userOptionStr = raw_input("Choose number of username to delete: ")
+            userOptionStr = input("Choose number of username to delete: ")
             userOption = 0
             try:
                 userOption = int(userOptionStr)
-            except:
+
+            except Exception:
                 pass
-            if userOption > 0 and userOption <= len(allUsernames):
+
+            if 0 < userOption <= len(allUsernames):
                 username = allUsernames[userOption-1]
                 break
+
             else:
                 print("Invalid option. Please retry.")
 
     # Check if the username exists.
     if not userBackend.userExists(username):
-        logging.error("[%s]: Username '%s' does not exist."
-                % (fileName, username))
+        logging.error("[%s]: Username '%s' does not exist." % (fileName, username))
         sys.exit(1)
 
     if userBackend.deleteUser(username):
         userBackend.writeUserdata()
-        logging.info("[%s]: Deleting user successful."
-                % fileName)
+        logging.info("[%s]: Deleting user successful." % fileName)
+
     else:
-        logging.error("[%s]: Deleting user failed."
-                % fileName)
+        logging.error("[%s]: Deleting user failed." % fileName)
         sys.exit(1)
 
-# Lists all existing users in the backend.
-def listUsers(userBackend):
 
+def listUsers(userBackend: CSVBackend) -> List[str]:
+    """
+    Lists all existing users in the backend.
+
+    :param userBackend:
+    :return: List of all usernames in the backend
+    """
     # Divide data into node type category
     userDataDict = dict()
     alerts = list()
@@ -390,12 +477,16 @@ def listUsers(userBackend):
         userDataDict[userData.username] = userData
         if userData.nodeType == "alert":
             alerts.append(userData.username)
+
         elif userData.nodeType == "manager":
             managers.append(userData.username)
+
         elif userData.nodeType == "sensor":
             sensors.append(userData.username)
+
         else:
             others.append(userData.username)
+
     alerts.sort()
     managers.sort()
     sensors.sort()
@@ -405,13 +496,13 @@ def listUsers(userBackend):
     # we output them.
     allUsernames = list()
 
-    print("#"*100)
+    print("#" * 100)
     print("No.".ljust(5) + "| " + "Username".ljust(48) + "| Instance")
-    print("#"*100)
+    print("#" * 100)
 
     ctr = 1
     headline = " Type: alert "
-    print("-"*40 + headline + "-"*(60-len(headline)))
+    print("-" * 40 + headline + "-" * (60-len(headline)))
     for username in alerts:
         output = "%d." % ctr
         output = output.ljust(5) + "| "
@@ -423,7 +514,7 @@ def listUsers(userBackend):
         allUsernames.append(username)
 
     headline = " Type: manager "
-    print("-"*40 + headline + "-"*(60-len(headline)))
+    print("-" * 40 + headline + "-" * (60-len(headline)))
     for username in managers:
         output = "%d." % ctr
         output = output.ljust(5) + "| "
@@ -435,7 +526,7 @@ def listUsers(userBackend):
         allUsernames.append(username)
 
     headline = " Type: sensor "
-    print("-"*40 + headline + "-"*(60-len(headline)))
+    print("-" * 40 + headline + "-" * (60-len(headline)))
     for username in sensors:
         output = "%d." % ctr
         output = output.ljust(5) + "| "
@@ -450,7 +541,7 @@ def listUsers(userBackend):
     # Perhaps a new category exists that is not known to this script.
     if others:
         headline = " Type: unknown "
-        print("-"*40 + headline + "-"*(60-len(headline)))
+        print("-" * 40 + headline + "-" * (60-len(headline)))
         for username in others:
             output = "%d." % ctr
             output = output.ljust(5) + "| "
@@ -470,78 +561,72 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
 
     parser.add_option("-a",
-        "--add",
-        dest="add",
-        action="store_true",
-        help="Add a user..",
-        default=False)
+                      "--add",
+                      dest="add",
+                      action="store_true",
+                      help="Add a user..",
+                      default=False)
     parser.add_option("-d",
-        "--delete",
-        dest="delete",
-        action="store_true",
-        help="Delete an existing user.",
-        default=False)
+                      "--delete",
+                      dest="delete",
+                      action="store_true",
+                      help="Delete an existing user.",
+                      default=False)
     parser.add_option("-m",
-        "--modify",
-        dest="modify",
-        action="store_true",
-        help="Modify an existing user.",
-        default=False)
+                      "--modify",
+                      dest="modify",
+                      action="store_true",
+                      help="Modify an existing user.",
+                      default=False)
     parser.add_option("-l",
-        "--list",
-        dest="list",
-        action="store_true",
-        help="List all existing users.",
-        default=False)
+                      "--list",
+                      dest="list",
+                      action="store_true",
+                      help="List all existing users.",
+                      default=False)
 
-    optGroup = optparse.OptionGroup(parser,
-        "Optional arguments available for adding/deleting/modifying a user")
+    optGroup = optparse.OptionGroup(parser, "Optional arguments available for adding/deleting/modifying a user")
     optGroup.add_option("-o",
-        "--offline",
-        dest="offline",
-        action="store_true",
-        help="Do not connect to the online repository in order give a "
-            + "list of choices. (Optional)",
-        default=False)
+                        "--offline",
+                        dest="offline",
+                        action="store_true",
+                        help="Do not connect to the online repository in order give a list of choices. (Optional)",
+                        default=False)
     optGroup.add_option("-u",
-        "--username",
-        dest="username",
-        action="store",
-        help="Username to be added/deleted/modified. (Optional)",
-        default=None)
+                        "--username",
+                        dest="username",
+                        action="store",
+                        help="Username to be added/deleted/modified. (Optional)",
+                        default=None)
     optGroup.add_option("-p",
-        "--password",
-        dest="password",
-        action="store",
-        help="Password for the user to be added/modified. (Optional)",
-        default=None)
+                        "--password",
+                        dest="password",
+                        action="store",
+                        help="Password for the user to be added/modified. (Optional)",
+                        default=None)
     optGroup.add_option("-t",
-        "--type",
-        dest="type",
-        action="store",
-        help="Type of the node to be added/modified. (Optional)",
-        default=None)
+                        "--type",
+                        dest="type",
+                        action="store",
+                        help="Type of the node to be added/modified. (Optional)",
+                        default=None)
     optGroup.add_option("-i",
-        "--instance",
-        dest="instance",
-        action="store",
-        help="Instance of the node to be added/modified. (Optional)",
-        default=None)
+                        "--instance",
+                        dest="instance",
+                        action="store",
+                        help="Instance of the node to be added/modified. (Optional)",
+                        default=None)
     optGroup.add_option("-y",
-        "--yes",
-        dest="yes",
-        action="store_true",
-        help="Do not ask me for confirmation. I know what I am doing. "
-            + "(Optional)",
-        default=False)
+                        "--yes",
+                        dest="yes",
+                        action="store_true",
+                        help="Do not ask me for confirmation. I know what I am doing. (Optional)",
+                        default=False)
     parser.add_option_group(optGroup)
 
     (options, args) = parser.parse_args()
 
-    showHelp = (options.add
-        or options.delete
-        or options.modify
-        or options.list)
+    showHelp = (options.add or options.delete or options.modify or options.list)
     if showHelp is False:
         print("Use --help to get all available options.")
         sys.exit(0)
@@ -556,29 +641,33 @@ if __name__ == '__main__':
 
     # Parse config file.
     try:
-        configRoot = xml.etree.ElementTree.parse(instanceLocation +
-                "/config/config.xml").getroot()
+        configRoot = xml.etree.ElementTree.parse(instanceLocation + "/config/config.xml").getroot()
 
         # Parse chosen log level
-        tempLoglevel = str(
-            configRoot.find("general").find("log").attrib["level"])
+        tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
         tempLoglevel = tempLoglevel.upper()
         if tempLoglevel == "DEBUG":
             loglevel = logging.DEBUG
+
         elif tempLoglevel == "INFO":
             loglevel = logging.INFO
+
         elif tempLoglevel == "WARNING":
             loglevel = logging.WARNING
+
         elif tempLoglevel == "ERROR":
             loglevel = logging.ERROR
+
         elif tempLoglevel == "CRITICAL":
             loglevel = logging.CRITICAL
+
         else:
             raise ValueError("No valid log level in config file.")
 
         # Initialize logging.
-        logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', 
-            datefmt='%m/%d/%Y %H:%M:%S', level=loglevel)
+        logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            level=loglevel)
         globalData.logger = logging.getLogger("server")
 
     except Exception as e:
@@ -588,37 +677,18 @@ if __name__ == '__main__':
 
     # Parse the rest of the config with initialized logging.
     try:
-
         # Check if config and client version are compatible.
         configVersion = float(configRoot.attrib["version"])
         if configVersion != globalData.version:
-            raise ValueError("Config version '%.3f' not "
-                % configVersion
-                + "compatible with client version '%.3f'."
-                % globalData.version)
+            raise ValueError("Config version '%.3f' not compatible with client version '%.3f'."
+                             % (configVersion, globalData.version))
 
         # Parse update options.
-        updateServer = str(
-            configRoot.find("update").find("server").attrib["host"])
-        updatePort = int(
-            configRoot.find("update").find("server").attrib["port"])
-        updateLocation = str(
-            configRoot.find("update").find("server").attrib["location"])
-        updateCaFile = str(
-            configRoot.find("update").find("server").attrib["caFile"])
+        updateUrl = str(configRoot.find("update").find("server").attrib["url"])
 
         # Configure user credentials backend
-        globalData.logger.debug("[%s]: Parsing user backend configuration."
-            % fileName)
-        userBackendMethod = str(
-            configRoot.find("storage").find("userBackend").attrib[
-            "method"]).upper()
-        if userBackendMethod == "CSV":
-            globalData.userBackend = CSVBackend(globalData,
-                globalData.userBackendCsvFile)
-
-        else:
-            raise ValueError("No valid user backend method in config file.")
+        globalData.logger.debug("[%s]: Initializing user backend." % fileName)
+        globalData.userBackend = CSVBackend(globalData, globalData.userBackendCsvFile)
 
     except Exception as e:
         logging.exception("[%s]: Could not parse config." % fileName)
@@ -630,35 +700,41 @@ if __name__ == '__main__':
 
         # Create an updater process.
         try:
-            updater = Updater(updateServer, updatePort, updateLocation,
-                updateCaFile, globalData, None, retrieveInfo=False,
-                timeout=5)
+            updater = Updater(updateUrl,
+                              globalData,
+                              None,
+                              retrieveInfo=False,
+                              timeout=5)
+
         except Exception as e:
-            logging.exception("[%s]: Not able create updater object."
-                % fileName)
+            logging.exception("[%s]: Not able to create updater object." % fileName)
 
     if options.add:
         addUser(globalData.userBackend,
-            options.username,
-            options.password,
-            options.type,
-            options.instance,
-            options.yes,
-            updater)
+                options.username,
+                options.password,
+                options.type,
+                options.instance,
+                options.yes,
+                updater)
+
     elif options.delete:
         deleteUser(globalData.userBackend,
-            options.username,
-            options.yes)
+                   options.username,
+                   options.yes)
+
     elif options.modify:
         modifyUser(globalData.userBackend,
-            options.username,
-            options.password,
-            options.type,
-            options.instance,
-            options.yes,
-            updater)
+                   options.username,
+                   options.password,
+                   options.type,
+                   options.instance,
+                   options.yes,
+                   updater)
+
     elif options.list:
         listUsers(globalData.userBackend)
+
     else:
         logging.error("[%s] Unknown option." % fileName)
         sys.exit(1)

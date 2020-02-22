@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the server
 -->
-<config version="0.504">
+<config version="0.600">
 
     <!--
         in this section general options are configured
@@ -95,76 +95,16 @@
     <update>
 
         <!--
-            the general settings of the update checking
-            activated - should the server check for updates?
-                ("True" or "False")
-            interval - the interval in seconds in which the server checks
-                online for updates
-        -->
-        <general
-            activated="True"
-            interval="86400" />
-
-        <!--
-            the server settings of the update checking (only change these
+            the server settings of the update process (only change these
                 settings if you want to use your own repository and not
-                the alertR master repository on github)
-            host - address of the used web server
-                NOTE: the update checking uses HTTPS and does not allow HTTP
-            port - port of the used web server
-            location - the location of the used alertR repository
-            caFile - the location of the CA/certificate file that is used
-                to validate the HTTPS connection
-                NOTE: the given location works for github on Debian like
-                distributions
+                the AlertR master repository on github)
+            url - URL to AlertR repository
+                NOTE: the update process uses HTTPS and does not allow HTTP
         -->
         <server
-            host="raw.githubusercontent.com"
-            port="443"
-            location="/sqall01/alertR/master/"
-            caFile="/etc/ssl/certs/DigiCert_High_Assurance_EV_Root_CA.pem" />
+            url="https://raw.githubusercontent.com/sqall01/alertR/master/" />
 
     </update>
-
-
-    <!--
-        in this section options for the storage are configured
-    -->
-    <storage>
-
-        <!--
-            the settings for the user backend
-            method - choose how the user credentials are stored/checked
-                only valid options: csv
-        -->
-        <userBackend
-            method="csv" />
-
-        <!--
-            the settings for the storage backend
-            method - choose how the data of the alert system is stored
-                only valid options: sqlite, mysql
-            server - the address of the database server
-                (only processed if mysql is used)
-            port - the port of the database server
-                (only processed if mysql is used;
-                default value mysql uses is 3306)
-            database - the name of the database
-                (only processed if mysql/postgresql is used)
-            username - the username for the database server
-                (only processed if mysql/postgresql is used)
-            password - the password for the database server
-                (only processed if mysql/postgresql is used)
-        -->
-        <storageBackend
-            method="sqlite"
-            server="127.0.0.1"
-            port="3306"
-            database="alertr"
-            username="username"
-            password="password" />
-
-    </storage>
 
 
     <!--
@@ -880,14 +820,15 @@
             The versionInformer sensor is an internal sensor that triggers
             when a new version is available in the update repository for
             any node connected to your alarm system.
-            activated - This flags indicates if the internal sensor is
-                activated or not.
+            activated - This flags indicates if the internal sensor is activated or not.
                 ("True" or "False")
             description - Description of this sensor.
+            interval - The interval in seconds in which the server checks online for updates.
         -->
         <versionInformer
             activated="True"
-            description="Internal: Version Informer">
+            description="Internal: Version Informer"
+            interval="86400">
 
             <!--
                 The alertLevel that is triggered by the sensor

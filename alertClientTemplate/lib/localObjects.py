@@ -1,11 +1,13 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
+
+from typing import Optional, List, Dict, Any
 
 
 # This enum class gives the different data types of a sensor.
@@ -20,54 +22,53 @@ class SensorAlert:
 
     def __init__(self):
         # If rulesActivated = true => always set to -1.
-        self.sensorId = None
+        self.sensorId = None  # type: Optional[int]
 
         # Description of the sensor that raised this sensor alert.
-        self.description = None
+        self.description = None  # type: Optional[str]
 
         # Time this sensor alert was received.
-        self.timeReceived = None
+        self.timeReceived = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
         # If rulesActivated = true => always set to 1.
-        self.state = None
+        self.state = None  # type: Optional[int]
 
         # The optional data of the sensor alert (if it has any).
         # If rulesActivated = true => always set to false.
-        self.hasOptionalData = None
+        self.hasOptionalData = None  # type: Optional[bool]
         self.optionalData = None
 
         # Does this sensor alert change the state of the sensor?
-        self.changeState = None
+        self.changeState = None  # type: Optional[bool]
 
         # List of alert levels (Integer) that are triggered
         # by this sensor alert.
-        self.alertLevels = list()
+        self.alertLevels = list()  # type: List[int]
 
         # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None
+        self.rulesActivated = None  # type: Optional[bool]
 
         # Does this sensor alert hold the latest data of the sensor?
-        self.hasLatestData = None
+        self.hasLatestData = None  # type: Optional[bool]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None
+        self.dataType = None  # type: Optional[int]
         self.sensorData = None
 
-
     # Converts the SensorAlert object into a dictionary.
-    def convertToDict(self):
+    def convertToDict(self) -> Dict[str, Any]:
         sensorAlertDict = {"alertLevels": self.alertLevels,
-            "description": self.description,
-            "rulesActivated": self.rulesActivated,
-            "sensorId": self.sensorId,
-            "state": self.state,
-            "hasOptionalData": self.hasOptionalData,
-            "optionalData": self.optionalData,
-            "dataType": self.dataType,
-            "data": self.sensorData,
-            "hasLatestData": self.hasLatestData,
-            "changeState": self.changeState
+                           "description": self.description,
+                           "rulesActivated": self.rulesActivated,
+                           "sensorId": self.sensorId,
+                           "state": self.state,
+                           "hasOptionalData": self.hasOptionalData,
+                           "optionalData": self.optionalData,
+                           "dataType": self.dataType,
+                           "data": self.sensorData,
+                           "hasLatestData": self.hasLatestData,
+                           "changeState": self.changeState
         }
 
         return sensorAlertDict

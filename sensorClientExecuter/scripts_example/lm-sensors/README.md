@@ -7,7 +7,7 @@ To see all available sensors use the following command:
 
 ```bash
 
-sqall@towel:~$ python lm-sensors.py -p
+sqall@towel:~$ python3 lm-sensors.py -p
 
 Device: acpitz-virtual-0
 Adapter: Virtual device
@@ -65,7 +65,7 @@ To see if everything works correctly, we can manually execute the command with t
 
 ```bash
 
-sqall@towel:~$ python lm-sensors.py -d coretemp-isa-0000 -s "Physical id 0" -k temp1_input
+sqall@towel:~$ python3 lm-sensors.py -d coretemp-isa-0000 -s "Physical id 0" -k temp1_input
 
 {"message": "statechange", "payload": {"dataType": 2, "state": 0, "data": 48.0}}
 
@@ -75,7 +75,7 @@ Note the whitespaces in the sensor name "Physical id 0". Because of them, we hav
 
 The corresponding sensor configuration for the alertR Sensor Client Executer looks like the following:
 
-```bash
+```xml
 
 [...]
 <sensor>
@@ -91,7 +91,7 @@ The corresponding sensor configuration for the alertR Sensor Client Executer loo
 	<alertLevel>0</alertLevel>
 
 	<executer
-		execute="/usr/bin/python"
+		execute="/usr/bin/python3"
 		timeout="5"
 		intervalToCheck="10"
 		parseOutput="True"

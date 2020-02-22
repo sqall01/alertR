@@ -1,0 +1,186 @@
+<?xml version="1.0"?>
+
+<!--
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the client
+-->
+<config version="0.600">
+
+    <!--
+        in this section general options are configured
+    -->
+    <general>
+
+        <!--
+            the settings for the logfile
+            file - absolute path to the logfile
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            file="/absolute/path/to/logfile.log"
+            level="INFO" />
+
+        <!--
+            the settings for the server
+            host - location/address of the server
+            port - port that is used by the server
+            caFile - path to the CA file to check the correctness of the
+                used SSL connection
+        -->
+        <server
+            host="server.h4des.org"
+            port="12345"
+            caFile="/absolute/path/to/server_CA.pem" />
+
+        <!--
+            the settings for a client certificate
+            certificateRequired - sets if it is required for the client
+                to authenticate itself via a certificate or not
+                (if you have the alert system reachable from the internet
+                you should use client certificates)
+                ("True" or "False")
+            certFile - path to the certificate file of the client
+                this is used for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+            keyFile - path to the key file of the client that is used
+                for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+        -->
+        <client
+            certificateRequired="True"
+            certFile="/absolute/path/to/client.crt"
+            keyFile="/absolute/path/to/client.key" />
+
+        <!--
+            user credentials of this client
+            (WARNING: have to be unique for each client or strange
+            behavior will happen)
+            username - the username
+            password - the password (thanks cpt obvious ...)
+        -->
+        <credentials
+            username="user"
+            password="pass" />
+
+        <!--
+            Connection settings.
+            persistent - Flag that indicates if this client is considered
+                to have a persistant connection to the server. This means
+                that if this client disconnects from the server, the server
+                will consider this as a fail state and will invoke an alarm.
+                ("True" or "False")
+        -->
+        <connection
+            persistent="True" />
+
+    </general>
+
+
+    <!--
+        in this section options for email alerts are configured
+    -->
+    <smtp>
+
+        <!--
+            the general settings of the email notifications
+            activated - are email alerts active? ("True" or "False")
+            fromAddr - email address from which this email should be sent
+            toAddr - email address to which the email should be sent
+        -->
+        <general
+            activated="True"
+            fromAddr="alertSystem@h4des.org"
+            toAddr="youraddress@somehost.de" />
+
+        <!--
+            the server settings of the email notifications
+            host - address of the used smtp server
+                (only 127.0.0.1 supported at the moment)
+            port - port of the used smtp server
+        -->
+        <server
+            host="127.0.0.1"
+            port="25" />
+
+    </smtp>
+
+
+    <!--
+        in this section the options of the update process are configured
+    -->
+    <update>
+
+        <!--
+            the server settings of the update process (only change these
+                settings if you want to use your own repository and not
+                the AlertR master repository on github)
+            url - URL to AlertR repository
+                NOTE: the update process uses HTTPS and does not allow HTTP
+        -->
+        <server
+            url="https://raw.githubusercontent.com/sqall01/alertR/master/" />
+
+    </update>
+
+
+    <!--
+        section of all alerts that could be triggered
+    -->
+    <alerts>
+
+        <!--
+            a single alert is configured in an "alert" element
+            if you need additional alerts just add a new one
+        -->
+        <alert>
+
+            <!--
+                the general configuration of an alert
+                id - local id of this alert (has to be unique on this client)
+                description - description of this alert
+            -->
+            <general
+                id="0"
+                description="first template alert" />
+
+            <!--
+                the alert level of the current configured alert
+                (an alert must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>1</alertLevel>
+            <alertLevel>5</alertLevel>
+            <alertLevel>32</alertLevel>
+            <alertLevel>6</alertLevel>
+
+            <!--
+                kodi specific settings for the notification
+                host - the address of the kodi json rpc service
+                port - port of the kodi json rpc service
+                triggerDelay - how many seconds should be elapsed before
+                    the alert could be triggered again
+                pausePlayer - should the player be paused
+                    (only if audio or video is shown)
+                showMessage - should a notification be shown on the display
+                displayTime - how long should the message be shown
+                    (in milliseconds and at least 2000)
+                displayReceivedMessage - should the message that is received
+                    via the sensor alert be displayed
+                    (only possible if one was sent by the sensor,
+                    else only a generic message is shown)
+            -->
+            <kodi
+                host="localhost"
+                port="8080"
+                triggerDelay="10"
+                pausePlayer="True"
+                showMessage="True"
+                displayTime="10000"
+                displayReceivedMessage="True" />
+
+        </alert>
+
+    </alerts>
+
+</config>

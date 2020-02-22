@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=AlertR Alert Client Kodi
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRalertKodi.sh start
+ExecStop=/etc/init.d/alertRalertKodi.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

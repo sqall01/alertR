@@ -3,13 +3,13 @@
 
 
 // change these two lines acording to your configuration
-#define PYTHON27 "/usr/bin/python2.7"
+#define PYTHON3 "/usr/bin/python3"
 #define PATHTOSCRIPT "/home/test/test.py"
 
 int main() {
 
-    char *pathToScript[] = {PYTHON27, PATHTOSCRIPT, NULL};
+    char *pathToScript[] = {PYTHON3, PATHTOSCRIPT, NULL};
 
-    execve(PYTHON27, pathToScript, NULL);
+    execve(PYTHON3, pathToScript, NULL);
 
 }

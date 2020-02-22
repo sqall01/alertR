@@ -39,10 +39,10 @@
 		"desc": "This client handles triggered alerts and is solely for developers. It is a template which handles the communication with the server, but does not do any logic when a configured alert is triggered.",
 		"type": "alert"
 		},
-	"alertClientXBMC": {
-		"location": "alertClientXBMC/",
-		"name": "AlertR Alert Client XBMC",
-		"desc": "This client handles triggered alerts and is written to communicate with XBMC/Kodi. It can show a message notification on the display and can pause video/audio playback (for now). For example, you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.",
+	"alertClientKodi": {
+		"location": "alertClientKodi/",
+		"name": "AlertR Alert Client Kodi",
+		"desc": "This client handles triggered alerts and is written to communicate with Kodi (former XBMC). It can show a message notification on the display and can pause video/audio playback (for now). For example, you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.",
 		"type": "alert"
 		},
 	"managerClientConsole": {
@@ -87,16 +87,10 @@
 		"desc": "This client is build for the integration of already developed scripts or other software into the AlertR infrastructure as a sensor. For each sensor it creates a FIFO file on the file system and monitors it. Other scripts/programs can write into the FIFO file to change the state of the associated sensor. For example, you can use a cronjob to write into the FIFO file at specific times to trigger a sensor event, or use the ISC DHCP server to write into the FIFO file each time a client in a specific subnet requests an IP address.",
 		"type": "sensor"
 		},
-	"sensorClientLightning": {
-		"location": "sensorClientLightning/",
-		"name": "AlertR Sensor Client Lightning",
-		"desc": "DO NOT USE YET",
-		"type": "sensor"
-		},
 	"sensorClientWeatherService": {
 		"location": "sensorClientWeatherService/",
 		"name": "AlertR Sensor Client Weather Service",
-		"desc": "This client is specialized to fetch data from a weather service provider (Wunderground.com) and provide the AlertR system with this information.",
+		"desc": "This client is specialized to fetch data from a weather service provider (wunderground.com or darksky.net) and provide the AlertR system with this information.",
 		"type": "sensor"
 		},
 	"sensorClientPing": {
@@ -114,7 +108,7 @@
 	"server": {
 		"location": "server/",
 		"name": "AlertR Server",
-		"desc": "This is the server that handles the logic of the alert system. It is mandatory in order to use AlertR. It uses either MySQL or SQLite as storage backend. As user backend it uses (at the moment) only a csv file.",
+		"desc": "This is the server that handles the logic of the alert system. It is mandatory in order to use AlertR. It uses either SQLite as storage backend and a CSV file as user backend.",
 		"type": "server"
 		}
 	}

@@ -10,7 +10,9 @@
     "lib/client.py",
     "lib/globalData.py",
     "lib/localObjects.py",
-    "lib/sensor.py",
+    "lib/sensor/__init__.py",
+    "lib/sensor/core.py",
+    "lib/sensor/icalendar.py",
     "lib/smtp.py",
     "lib/update.py",
     "README.md"

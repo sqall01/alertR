@@ -1,13 +1,14 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
+from typing import Optional
 
 
 # this class is a global configuration class that holds 
@@ -17,33 +18,32 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.501
+        self.version = 0.600  # type: float
 
         # revision of the used client
-        self.rev = 2
+        self.rev = 0  # type: int
 
         # name of this client
-        self.name = "AlertR Manager Client Console"
+        self.name = "AlertR Manager Client Console"  # type: str
 
         # the instance of this client
-        self.instance = "managerClientConsole"
+        self.instance = "managerClientConsole"  # type: str
 
         # interval in which a ping should be send when 
         # no data was received/send     
-        self.pingInterval = 30
+        self.pingInterval = 30  # type: int
 
         # type of this node/client
         self.nodeType = "manager"
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) \
-            + "/../config/config.xml"
+        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
 
         # this flags indicate if email alerts via smtp are active
         self.smtpAlert = None
 
         # this holds the description of this client
-        self.description = None
+        self.description = None  # type: Optional[str]
 
         # this is a list of all option objects that are received
         self.options = list()
@@ -75,28 +75,28 @@ class GlobalData:
 
         # this is the time in seconds when the sensor should be
         # displayed as timed out
-        self.connectionTimeout = 60
+        self.connectionTimeout = 60  # type: int
 
         # the time in seconds how long a triggered sensor alert
         # should be displayed in the list
-        self.timeShowSensorAlert = None
+        self.timeShowSensorAlert = None  # type: Optional[int]
 
         # the maximum of sensor alerts that are shown in the list
         # (when the count is above this value, the oldest sensor alert
         # will be removed from the list)
-        self.maxCountShowSensorAlert = None
+        self.maxCountShowSensorAlert = None  # type: Optional[int]
 
         # the maximum number of sensors that is shown per sensor page
-        self.maxCountShowSensorsPerPage = None
+        self.maxCountShowSensorsPerPage = None  # type: Optional[int]
 
         # the maximum number of alerts that is shown per alert page
-        self.maxCountShowAlertsPerPage = None
+        self.maxCountShowAlertsPerPage = None  # type: Optional[int]
 
         # the maximum number of managers that is shown per manager page
-        self.maxCountShowManagersPerPage = None
+        self.maxCountShowManagersPerPage = None  # type: Optional[int]
 
         # the maximum number of alert levels that is shown per alert level page
-        self.maxCountShowAlertLevelsPerPage = None
+        self.maxCountShowAlertLevelsPerPage = None  # type: Optional[int]
 
         # this is an instance of the console object that handles
         # the screen
@@ -104,4 +104,4 @@ class GlobalData:
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent = None
+        self.persistent = None  # type: Optional[int]

@@ -1,21 +1,21 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
-# blog: http://blog.h4des.org
+# blog: https://h4des.org
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
 import sys
 import os
+import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import RaspberryPiGPIOAlert
 from lib import GlobalData
 import logging
 import time
-import socket
 import random
 import signal
 import RPi.GPIO as GPIO
@@ -53,15 +53,12 @@ if __name__ == '__main__':
     # parse config file, get logfile configurations
     # and initialize logging
     try:
-        configRoot = xml.etree.ElementTree.parse(
-            globalData.configFile).getroot()
+        configRoot = xml.etree.ElementTree.parse(globalData.configFile).getroot()
 
-        logfile = makePath(
-            str(configRoot.find("general").find("log").attrib["file"]))
+        logfile = makePath(str(configRoot.find("general").find("log").attrib["file"]))
 
         # parse chosen log level
-        tempLoglevel = str(
-            configRoot.find("general").find("log").attrib["level"])
+        tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
         tempLoglevel = tempLoglevel.upper()
         if tempLoglevel == "DEBUG":
             loglevel = logging.DEBUG
@@ -78,8 +75,9 @@ if __name__ == '__main__':
 
         # initialize logging
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-            datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
-            level=loglevel)
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            filename=logfile,
+                            level=loglevel)
 
     except Exception as e:
         print("Config could not be parsed.")
@@ -89,98 +87,119 @@ if __name__ == '__main__':
     # parse the rest of the config with initialized logging
     try:
 
+        # Check file permission of config file (do not allow it to be accessible by others).
+        config_stat = os.stat(globalData.configFile)
+        if (config_stat.st_mode & stat.S_IROTH
+           or config_stat.st_mode & stat.S_IWOTH
+           or config_stat.st_mode & stat.S_IXOTH):
+            raise ValueError("Config file is accessible by others. Please remove file permissions for others.")
+
         # check if config and client version are compatible
         version = float(configRoot.attrib["version"])
         if version != globalData.version:
             raise ValueError("Config version '%.3f' not "
-                % version
-                + "compatible with client version '%.3f'."
-                % globalData.version)
+                             % version
+                             + "compatible with client version '%.3f'."
+                             % globalData.version)
 
         # parse server configurations
         server = str(configRoot.find("general").find("server").attrib["host"])
-        serverPort = int(
-            configRoot.find("general").find("server").attrib["port"])
+        serverPort = int(configRoot.find("general").find("server").attrib["port"])
 
         # get server certificate file and check if it does exist
-        serverCAFile = os.path.abspath(makePath(
-            str(configRoot.find("general").find("server").attrib["caFile"])))
+        serverCAFile = os.path.abspath(makePath(str(configRoot.find("general").find("server").attrib["caFile"])))
         if os.path.exists(serverCAFile) is False:
             raise ValueError("Server CA does not exist.")
 
         # get client certificate and keyfile (if required)
-        certificateRequired = (str(
-            configRoot.find("general").find("client").attrib[
-            "certificateRequired"]).upper() == "TRUE")
+        certificateRequired = (str(configRoot.find("general").find(
+                               "client").attrib["certificateRequired"]).upper() == "TRUE")
 
         if certificateRequired is True:
-            clientCertFile = os.path.abspath(makePath(str(
-            configRoot.find("general").find("client").attrib["certFile"])))
-            clientKeyFile = os.path.abspath(makePath(str(
-            configRoot.find("general").find("client").attrib["keyFile"])))
+            clientCertFile = os.path.abspath(
+                             makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
+            clientKeyFile = os.path.abspath(
+                            makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
             if (os.path.exists(clientCertFile) is False
-                or os.path.exists(clientKeyFile) is False):
+               or os.path.exists(clientKeyFile) is False):
                 raise ValueError("Client certificate or key does not exist.")
         else:
             clientCertFile = None
             clientKeyFile = None
 
         # get user credentials
-        username = str(
-            configRoot.find("general").find("credentials").attrib["username"])
-        password = str(
-            configRoot.find("general").find("credentials").attrib["password"])
+        username = str(configRoot.find("general").find("credentials").attrib["username"])
+        password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Get connection settings.
-        temp = (str(
-            configRoot.find("general").find("connection").attrib[
-            "persistent"]).upper()  == "TRUE")
+        temp = (str(configRoot.find("general").find("connection").attrib["persistent"]).upper() == "TRUE")
         if temp:
             globalData.persistent = 1
         else:
             globalData.persistent = 0
 
         # parse smtp options if activated
-        smtpActivated = (str(
-            configRoot.find("smtp").find("general").attrib[
-            "activated"]).upper()   == "TRUE")
+        smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
+        smtpServer = ""
+        smtpPort = -1
+        smtpFromAddr = ""
+        smtpToAddr = ""
         if smtpActivated is True:
-            smtpServer = str(
-                configRoot.find("smtp").find("server").attrib["host"])
-            smtpPort = int(
-                configRoot.find("smtp").find("server").attrib["port"])
-            smtpFromAddr = str(
-                configRoot.find("smtp").find("general").attrib["fromAddr"])
-            smtpToAddr = str(
-                configRoot.find("smtp").find("general").attrib["toAddr"])
+            smtpServer = str(configRoot.find("smtp").find("server").attrib["host"])
+            smtpPort = int(configRoot.find("smtp").find("server").attrib["port"])
+            smtpFromAddr = str(configRoot.find("smtp").find("general").attrib["fromAddr"])
+            smtpToAddr = str(configRoot.find("smtp").find("general").attrib["toAddr"])
 
         # parse all alerts
         for item in configRoot.find("alerts").iterfind("alert"):
 
             alert = RaspberryPiGPIOAlert()
 
-            # get gpio pin settings
-            alert.gpioPin = int(item.find("gpio").attrib["gpioPin"])
+            # Get gpio pin settings.
+            alert.gpio_pin = int(item.find("gpio").attrib["gpioPin"])
             if int(item.find("gpio").attrib["gpioPinStateNormal"]) == 1:
-                alert.gpioPinStateNormal = GPIO.HIGH
+                alert.gpio_pin_state_normal = GPIO.HIGH
+
             else:
-                alert.gpioPinStateNormal = GPIO.LOW
+                alert.gpio_pin_state_normal = GPIO.LOW
+
             if int(item.find("gpio").attrib["gpioPinStateTriggered"]) == 1:
-                alert.gpioPinStateTriggered = GPIO.HIGH
+                alert.gpio_pin_state_triggered = GPIO.HIGH
+
             else:
-                alert.gpioPinStateTriggered = GPIO.LOW
-            alert.gpioResetStateTime = int(
-                item.find("gpio").attrib["gpioResetStateTime"])
+                alert.gpio_pin_state_triggered = GPIO.LOW
+
+            recv_triggered_activated = str(item.find("gpio").find("triggered").attrib["activated"]).upper() == "TRUE"
+            alert.recv_triggered_activated = recv_triggered_activated
+            if recv_triggered_activated:
+                alert.recv_triggered_state = int(item.find("gpio").find("triggered").attrib["state"])
+
+            recv_normal_activated = str(item.find("gpio").find("normal").attrib["activated"]).upper() == "TRUE"
+            alert.recv_normal_activated = recv_normal_activated
+            if recv_normal_activated:
+                alert.recv_normal_state = int(item.find("gpio").find("normal").attrib["state"])
+
+            recv_off_activated = str(item.find("gpio").find("off").attrib["activated"]).upper() == "TRUE"
+            alert.recv_off_activated = recv_off_activated
+
+            gpio_reset_activated = str(item.find("gpio").find("reset").attrib["activated"]).upper() == "TRUE"
+            alert.gpio_reset_activated = gpio_reset_activated
+            if gpio_reset_activated:
+                alert.gpio_reset_state_time = int(item.find("gpio").find("reset").attrib["time"])
 
             # these options are needed by the server to
             # differentiate between the registered alerts
             alert.id = int(item.find("general").attrib["id"])
             alert.description = str(item.find("general").attrib["description"])
 
-            if alert.gpioResetStateTime < 0:
-                raise ValueError("gpioResetStateTime of alert %d has to be "
-                    % alert.id
-                    + "greater or equal to 0.")
+            if alert.gpio_reset_activated and alert.gpio_reset_state_time <= 0:
+                raise ValueError("time for reset of Alert %d has to be greater to 0." % alert.id)
+
+            if recv_triggered_activated and alert.recv_triggered_state != 0 and alert.recv_triggered_state != 1:
+                raise ValueError("state for 'triggered' sensor alert of Alert %d has to be 0 or 1." % alert.id)
+
+            if recv_normal_activated and alert.recv_normal_state != 0 and alert.recv_normal_state != 1:
+                raise ValueError("state for 'normal' sensor alert of Alert %d has to be 0 or 1." % alert.id)
 
             alert.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -189,13 +208,13 @@ if __name__ == '__main__':
             # check if description is empty
             if len(alert.description) == 0:
                 raise ValueError("Description of alert %d is empty."
-                    % alert.id)
+                                 % alert.id)
 
             # check if the id of the alert is unique
             for registeredAlert in globalData.alerts:
                 if registeredAlert.id == alert.id:
-                    raise ValueError("Id of alert %d"
-                        % alert.id + "is already taken.")
+                    raise ValueError("Id of alert %d is already taken."
+                                     % alert.id)
 
             globalData.alerts.append(alert)
 
@@ -211,49 +230,48 @@ if __name__ == '__main__':
 
     # check if smtp is activated => generate object to send eMail alerts
     if smtpActivated is True:
-        globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort,
-            smtpFromAddr, smtpToAddr)
+        globalData.smtpAlert = SMTPAlert(smtpServer, smtpPort, smtpFromAddr, smtpToAddr)
     else:
         globalData.smtpAlert = None
 
-    # initialize logging
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-        datefmt='%m/%d/%Y %H:%M:%S', filename=logfile,
-        level=loglevel)
-
     # generate object for the communication to the server and connect to it
-    globalData.serverComm = ServerCommunication(server, serverPort,
-        serverCAFile, username, password, clientCertFile, clientKeyFile,
-        globalData)
+    globalData.serverComm = ServerCommunication(server,
+                                                serverPort,
+                                                serverCAFile,
+                                                username,
+                                                password,
+                                                clientCertFile,
+                                                clientKeyFile,
+                                                globalData)
     connectionRetries = 1
     logging.info("[%s] Connecting to server." % fileName)
-    while 1:
+    while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-            and (connectionRetries % 5) == 0):
+           and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
         if globalData.serverComm.initializeCommunication() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
-            if not globalData.smtpAlert is None:
+            if globalData.smtpAlert is not None:
                 globalData.smtpAlert.sendCommunicationAlertClear()
 
             connectionRetries = 1
             break
         connectionRetries += 1
 
-        logging.critical("[%s]: Connecting to server failed. " % fileName
-            + "Try again in 5 seconds.")
+        logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)
         time.sleep(5)
 
     # when connected => generate watchdog object to monitor the
     # server connection
     logging.info("[%s] Starting watchdog thread." % fileName)
     watchdog = ConnectionWatchdog(globalData.serverComm,
-        globalData.pingInterval, globalData.smtpAlert)
+                                  globalData.pingInterval,
+                                  globalData.smtpAlert)
     # set thread to daemon
     # => threads terminates when main thread terminates
     watchdog.daemon = True
@@ -262,7 +280,7 @@ if __name__ == '__main__':
     # initialize all alerts
     logging.info("[%s] Initializing alerts." % fileName)
     for alert in globalData.alerts:
-        alert.initializeAlert()
+        alert.initialize()
 
     logging.info("[%s] Client started." % fileName)
 
