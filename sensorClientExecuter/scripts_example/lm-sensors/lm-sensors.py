@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -30,7 +30,7 @@ def parse_sensors():
     new_device = True
     current_device = ""
     current_sensor = ""
-    for line in output.split("\n"):
+    for line in output.decode("UTF-8").split("\n"):
         # Ignore empty lines.
         if line == "":
             new_device = True
@@ -72,7 +72,7 @@ def pretty_print(sensors):
         print("Sensors:")
         for sensor in sensors[device]["sensors"].keys():
             print("\tSensor: %s" % sensor)
-            for key, value in sensors[device]["sensors"][sensor].iteritems():
+            for key, value in sensors[device]["sensors"][sensor].items():
                 print("\t\t%s - %s" % (key, value))
         print("\n-----------------------\n")
 
