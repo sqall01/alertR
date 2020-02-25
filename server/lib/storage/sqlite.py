@@ -27,7 +27,8 @@ class Sqlite(_Storage):
 
     def __init__(self,
                  storagePath: str,
-                 globalData: GlobalData):
+                 globalData: GlobalData,
+                 read_only: bool=False):
 
         self.globalData = globalData
         self.logger = self.globalData.logger
@@ -46,25 +47,29 @@ class Sqlite(_Storage):
         # sqlite is not thread safe => use lock
         self.dbLock = threading.Semaphore(1)
 
-        # check if database exists
-        # if not create one
+        mode = ""
+        if read_only:
+            mode = "?mode=ro"
+        uri = "file:" + self.storagePath + mode
+
+        # Check if database already exists.
+        create_new = False
         if os.path.exists(self.storagePath) is False:
+            self.logger.info("[%s]: No database found. Creating new one." % self.log_tag)
+            create_new = True
 
-            self.logger.info("[%s]: No database found. Creating '%s'." % (self.log_tag, self.storagePath))
+        self.logger.info("[%s]: Opening database '%s'." % (self.log_tag, uri))
+        self.conn = sqlite3.connect(uri,
+                                    check_same_thread=False,
+                                    uri=True)
+        self.cursor = self.conn.cursor()
 
-            self.conn = sqlite3.connect(self.storagePath,
-                                        check_same_thread=False)
-            self.cursor = self.conn.cursor()
+        if create_new:
             uniqueID = self._generateUniqueId()
             self._createStorage(uniqueID)
 
-        else:
-            self.conn = sqlite3.connect(self.storagePath,
-                                        check_same_thread=False)
-            self.cursor = self.conn.cursor()
-
-            # check if the versions are compatible
-            self.checkVersionAndClearConflict()
+        # check if the versions are compatible
+        self.checkVersionAndClearConflict()
 
     def _usernameInDb(self,
                       username: str) -> bool:
