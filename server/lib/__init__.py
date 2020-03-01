@@ -13,7 +13,7 @@ from .storage import Sqlite
 from .alert import SensorAlertExecuter
 from .localObjects import SensorDataType, Sensor, AlertLevel
 from .internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor
-from .rules import parse_rule
+from .config import parse_config
 from .users import CSVBackend
 from .manager import ManagerUpdateExecuter
 from .update import Updater

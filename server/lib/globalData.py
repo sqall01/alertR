@@ -136,6 +136,9 @@ class GlobalData:
         self.sslOptions = ssl.OP_ALL
         self.sslCiphers = "HIGH:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4"
 
+        # Port the server is listening on.
+        self.server_port = None  # type: Optional[int]
+
         # a list of all alert levels that are configured on this server
         self.alertLevels = list()
 
@@ -169,3 +172,9 @@ class GlobalData:
 
         # List of all sessions that are handled by the server.
         self.serverSessions = ServerSessions()
+
+        # Describes if the survey is activated.
+        self.survey_activated = None  # type: Optional[bool]
+
+        # URL for update repository.
+        self.update_url = None  # type: Optional[str]

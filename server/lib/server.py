@@ -19,7 +19,7 @@ import json
 from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert
 from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
-from typing import Optional, Dict, Tuple, Any, List
+from typing import Optional, Dict, Tuple, Any, List, Type
 
 BUFSIZE = 4096
 
@@ -3831,7 +3831,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn,
     def __init__(self,
                  globalData: GlobalData,
                  serverAddress: Tuple[str, int],
-                 RequestHandlerClass: socketserver.BaseRequestHandler):
+                 RequestHandlerClass: Type[socketserver.BaseRequestHandler]):
 
         # get reference to global data object
         self.globalData = globalData
