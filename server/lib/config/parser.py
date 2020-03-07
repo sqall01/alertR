@@ -67,7 +67,7 @@ def parse_config(global_data: GlobalData) -> bool:
             global_data.loglevel = logging.CRITICAL
 
         else:
-            print(f"[{log_tag}]: No valid log level in config file.")
+            print("[%s]: No valid log level in config file."  % log_tag)
             return False
 
         # initialize logging
@@ -84,7 +84,7 @@ def parse_config(global_data: GlobalData) -> bool:
         global_data.logger.addHandler(fh)
 
     except Exception as e:
-        print(f"[{log_tag}]: Config could not be parsed.")
+        print("[%s]: Config could not be parsed." % log_tag)
         print(e)
         return False
 
@@ -130,15 +130,15 @@ def check_config_file(configRoot: xml.etree.ElementTree.Element, global_data: Gl
     if (config_stat.st_mode & stat.S_IROTH
        or config_stat.st_mode & stat.S_IWOTH
        or config_stat.st_mode & stat.S_IXOTH):
-        global_data.logger.error(f"[{log_tag}]: Config file is accessible by others. "
+        global_data.logger.error("[%s]: Config file is accessible by others. " % log_tag
                                  + "Please remove file permissions for others.")
         return False
 
     # check if config and server version are compatible
     version = float(configRoot.attrib["version"])
     if version != global_data.version:
-        global_data.logger.error(f"[{log_tag}]: Config version '{version:.3f}' not compatible "
-                                 + f"with server version '{global_data.version}.3f'.")
+        global_data.logger.error("[%s]: Config version '%.3f' not compatible " % (log_tag, version)
+                                 + "with server version '%.3f'." % global_data.version)
         return False
 
     return True
@@ -152,7 +152,7 @@ def configure_update(configRoot: xml.etree.ElementTree.Element, global_data: Glo
         global_data.update_url = str(configRoot.find("update").find("server").attrib["url"])
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Parsing update options failed.")
+        global_data.logger.exception("[%s]: Parsing update options failed." % log_tag)
         return False
 
     return True
@@ -166,7 +166,7 @@ def configure_user_backend(configRoot: xml.etree.ElementTree.Element, global_dat
         global_data.userBackend = CSVBackend(global_data, global_data.userBackendCsvFile)
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring user backend failed.")
+        global_data.logger.exception("[%s]: Configuring user backend failed." % log_tag)
         return False
 
     return True
@@ -180,7 +180,7 @@ def configure_storage(configRoot: xml.etree.ElementTree.Element, global_data: Gl
         global_data.storage = Sqlite(global_data.storageBackendSqliteFile, global_data)
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring storage backend failed.")
+        global_data.logger.exception("[%s]: Configuring storage backend failed." % log_tag)
         return False
 
     # Add server as node to the database.
@@ -192,14 +192,14 @@ def configure_storage(configRoot: xml.etree.ElementTree.Element, global_data: Gl
                                        global_data.version,
                                        global_data.rev,
                                        1):
-        global_data.logger.error(f"[{log_tag}]: Not able to add server as node to the database.")
+        global_data.logger.error("[%s]: Not able to add server as node to the database." % log_tag)
         return False
 
     serverNodeId = global_data.storage.getNodeId(serverUsername)
 
     # Mark server node as connected.
     if not global_data.storage.markNodeAsConnected(serverNodeId):
-        global_data.logger.error(f"[{log_tag}]: Not able to mark server node as connected.")
+        global_data.logger.error("[%s]: Not able to mark server node as connected." % log_tag)
         return False
 
     return True
@@ -214,7 +214,7 @@ def configure_survey(configRoot: xml.etree.ElementTree.Element, global_data: Glo
             "survey").attrib["participate"]).upper() == "TRUE")
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring survey failed.")
+        global_data.logger.exception("[%s]: Configuring survey failed." % log_tag)
         return False
 
     return True
@@ -230,11 +230,11 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
         global_data.server_port = int(configRoot.find("general").find("server").attrib["port"])
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring server failed.")
+        global_data.logger.exception("[%s]: Configuring server failed." % log_tag)
         return False
 
     if os.path.exists(global_data.serverCertFile) is False or os.path.exists(global_data.serverKeyFile) is False:
-        global_data.logger.error(f"[{log_tag}]: Server certificate or key does not exist.")
+        global_data.logger.error("[%s]: Server certificate or key does not exist." % log_tag)
         return False
 
     # get client configurations
@@ -243,14 +243,14 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
                                                      "useClientCertificates"]).upper() == "TRUE")
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring client certificate failed.")
+        global_data.logger.exception("[%s]: Configuring client certificate failed." % log_tag)
         return False
 
     if global_data.useClientCertificates is True:
         global_data.clientCAFile = make_path(str(configRoot.find("general").find("client").attrib["clientCAFile"]))
 
         if os.path.exists(global_data.clientCAFile) is False:
-            global_data.logger.error(f"[{log_tag}]: Client CA file does not exist.")
+            global_data.logger.error("[%s]: Client CA file does not exist." % log_tag)
             return False
 
     # Get TLS/SSL configurations.
@@ -273,7 +273,7 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
             global_data.sslOptions |= ssl.OP_NO_TLSv1_2
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring TLS/SSL failed.")
+        global_data.logger.exception("[%s]: Configuring TLS/SSL failed." % log_tag)
         return False
 
     return True
@@ -307,20 +307,20 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
             # check if the alert level only exists once
             for tempAlertLevel in global_data.alertLevels:
                 if tempAlertLevel.level == alertLevel.level:
-                    global_data.logger.error(f"[{log_tag}]: Alert Level must be unique.")
+                    global_data.logger.error("[%s]: Alert Level must be unique." % log_tag)
                     return False
 
             global_data.alertLevels.append(alertLevel)
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring Alert Levels failed.")
+        global_data.logger.exception("[%s]: Configuring Alert Levels failed." % log_tag)
         return False
 
     # check if all alert levels for alert clients that exist in the
     # database are configured in the configuration file
     alertLevelsInDb = global_data.storage.getAllAlertsAlertLevels()
     if alertLevelsInDb is None:
-        global_data.logger.error(f"[{log_tag}]: Could not get alert client Alert Levels from database.")
+        global_data.logger.error("[%s]: Could not get alert client Alert Levels from database." % log_tag)
         return False
 
     for alertLevelInDb in alertLevelsInDb:
@@ -332,7 +332,8 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
         if found:
             continue
         else:
-            global_data.logger.error(f"[{log_tag}]: An Alert Level for an alert client exists in the database "
+            global_data.logger.error("[%s]: An Alert Level for an alert client exists in the database "
+                                     % log_tag
                                      + "that is not configured.")
             return False
 
@@ -340,7 +341,7 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
     # database are configured in the configuration file
     alertLevelsInDb = global_data.storage.getAllSensorsAlertLevels()
     if alertLevelsInDb is None:
-        global_data.logger.error(f"[{log_tag}]: Could not get sensor Alert Levels from database.")
+        global_data.logger.error("[%s]: Could not get sensor Alert Levels from database." % log_tag)
         return False
 
     for alertLevelInDb in alertLevelsInDb:
@@ -352,7 +353,8 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
         if found:
             continue
         else:
-            global_data.logger.error(f"[{log_tag}]: An Alert Level for a sensor exists in the database that is not configured.")
+            global_data.logger.error("[%s]: An Alert Level for a sensor exists in the database that is not configured."
+                                     % log_tag)
             return False
 
     return True
@@ -362,12 +364,12 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
     serverUsername = global_data.storage.getUniqueID()
     if serverUsername is None:
-        global_data.logger.error(f"[{log_tag}]: Not able to get unique id from database.")
+        global_data.logger.error("[%s]: Not able to get unique id from database." % log_tag)
         return False
 
     serverNodeId = global_data.storage.getNodeId(serverUsername)
     if serverNodeId is None:
-        global_data.logger.error(f"[{log_tag}]: Not able to get node id from database.")
+        global_data.logger.error("[%s]: Not able to get node id from database." % log_tag)
         return False
 
     # Parse internal server sensors
@@ -530,13 +532,13 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             dbInitialStateList.append((sensor.remoteSensorId, 0))
 
     except Exception:
-        global_data.logger.exception(f"[{log_tag}]: Configuring internal sensors failed.")
+        global_data.logger.exception("[%s]: Configuring internal sensors failed." % log_tag)
         return False
 
     # Add internal sensors to database (updates/deletes also old
     # sensor data in the database).
     if not global_data.storage.addSensors(serverUsername, dbSensors):
-        global_data.logger.error(f"[{log_tag}]: Not able to add internal sensors to database.")
+        global_data.logger.error("[%s]: Not able to add internal sensors to database." % log_tag)
         return False
 
     # get sensor id for each activated internal sensor from the database
@@ -545,12 +547,12 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
         sensor.sensorId = global_data.storage.getSensorId(sensor.nodeId,
                                                           sensor.remoteSensorId)
         if sensor.sensorId is None:
-            global_data.logger.error(f"[{log_tag}]: Not able to get sensor id for internal sensor from database.")
+            global_data.logger.error("[%s]: Not able to get sensor id for internal sensor from database." % log_tag)
             return False
 
     # Set initial states of the internal sensors.
     if not global_data.storage.updateSensorState(serverNodeId, dbInitialStateList):
-        global_data.logger.error(f"[{log_tag}]: Not able set initial states for internal sensors in database.")
+        global_data.logger.error("[%s]: Not able set initial states for internal sensors in database." % log_tag)
         return False
 
     return True

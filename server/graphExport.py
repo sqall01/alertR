@@ -32,9 +32,9 @@ class GraphAlert:
         self.alert = alert
 
     def __str__(self):
-        temp = f"\"Alert: {self.alert.description}\l" \
-               + f"Alert Id: {str(self.alert.alertId)}\l" \
-               + f"Remote Alert Id: {str(self.alert.remoteAlertId)}\l\""
+        temp = "\"Alert: " + self.alert.description + "\l" \
+               + "Alert Id: " + str(self.alert.alertId) + "\l" \
+               + "Remote Alert Id: " + str(self.alert.remoteAlertId) + "\l\""
         return temp
 
     def __eq__(self, other):
@@ -52,12 +52,12 @@ class GraphAlertLevel:
         self.alert_level = alert_level
 
     def __str__(self):
-        temp = f"\"AlertLevel: {self.alert_level.name}\l" \
-               + f"Level: {str(self.alert_level.level)}\l" \
-               + f"Trigger Always: {str(self.alert_level.triggerAlways)}\l" \
-               + f"Alert for Triggered: {str(self.alert_level.triggerAlertTriggered)}\l" \
-               + f"Alert for Normal: {str(self.alert_level.triggerAlertNormal)}\l" \
-               + f"Has Rules: {str(self.alert_level.rulesActivated)}\l\""
+        temp = "\"AlertLevel: " + self.alert_level.name + "\l" \
+               + "Level: " + str(self.alert_level.level) + "\l" \
+               + "Trigger Always: " + str(self.alert_level.triggerAlways) + "\l" \
+               + "Alert for Triggered: " + str(self.alert_level.triggerAlertTriggered) + "\l" \
+               + "Alert for Normal: " + str(self.alert_level.triggerAlertNormal) + "\l" \
+               + "Has Rules: " + str(self.alert_level.rulesActivated) + "\l\""
         return temp
 
     def __eq__(self, other):
@@ -82,11 +82,11 @@ class GraphSensor:
             data_type = "Integer"
         elif self.sensor.dataType == SensorDataType.FLOAT:
             data_type = "Float"
-        temp = f"\"Sensor: {self.sensor.description}\l" \
-               + f"Sensor Id: {str(self.sensor.sensorId)}\l" \
-               + f"Remote Sensor Id: {str(self.sensor.remoteSensorId)}\l" \
-               + f"Alert Delay: {str(self.sensor.alertDelay)} sec\l" \
-               + f"Data Type: {data_type}\l\""
+        temp = "\"Sensor: " + self.sensor.description + "\l" \
+               + "Sensor Id: " + str(self.sensor.sensorId) + "\l" \
+               + "Remote Sensor Id: " + str(self.sensor.remoteSensorId) + "\l" \
+               + "Alert Delay: " + str(self.sensor.alertDelay) + " sec\l" \
+               + "Data Type: " + data_type + "\l\""
         return temp
 
     def __eq__(self, other):
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.description = "Exports a graph containing Alerts, Alert Levels, and Sensors of your AlertR system."
     parser.epilog = "Example command create graph: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + f"'python3 {sys.argv[0]} -g /home/alertr/graph.dot'"
+                    + "'python3 %s -g /home/alertr/graph.dot'" % sys.argv[0]
     parser.add_option("-g",
                       "--graph",
                       dest="graph_path",
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         with open(target_location, 'w') as fp:
             pass
     except Exception:
-        print(f"Not able to write '{target_location}'.")
+        print("Not able to write '%s'." % target_location)
         sys.exit(1)
 
     global_data = GlobalData()
