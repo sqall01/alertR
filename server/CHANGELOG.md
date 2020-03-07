@@ -1,3 +1,9 @@
+## 0.600-1
+
+Features:
+
+* Added graphExport.py utility.
+
 ## 0.600
 
 Features:
