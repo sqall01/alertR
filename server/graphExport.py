@@ -113,7 +113,7 @@ class Filter:
         self.alert_level = alert_level
         self.alert_username = alert_username
         self.remote_alert_id = remote_alert_id
-        self.sensor_username =sensor_username
+        self.sensor_username = sensor_username
         self.remote_sensor_id = remote_sensor_id
 
         self.cached_node = None
@@ -469,11 +469,11 @@ if __name__ == '__main__':
 
     # Extract target Alert Level, Alert, and Sensor (if set at all).
     try:
-        filter = Filter(options.alert_level,
-                        options.alert_username,
-                        options.remote_alert_id,
-                        options.sensor_username,
-                        options.remote_sensor_id)
+        filter_obj = Filter(options.alert_level,
+                            options.alert_username,
+                            options.remote_alert_id,
+                            options.sensor_username,
+                            options.remote_sensor_id)
     except ValueError as e:
         print(e)
         sys.exit(1)
@@ -520,16 +520,16 @@ if __name__ == '__main__':
 
     # Filter Alert Level, Alert, and Sensor.
     try:
-        alert_level_objs_dict = filter.filter_alert_levels(alert_level_objs_dict,
-                                                           node_objs,
-                                                           alert_objs,
-                                                           sensor_objs)
-        alert_objs = filter.filter_alerts(node_objs,
-                                          alert_objs,
-                                          sensor_objs)
-        sensor_objs = filter.filter_sensors(node_objs,
-                                            alert_objs,
-                                            sensor_objs)
+        alert_level_objs_dict = filter_obj.filter_alert_levels(alert_level_objs_dict,
+                                                               node_objs,
+                                                               alert_objs,
+                                                               sensor_objs)
+        alert_objs = filter_obj.filter_alerts(node_objs,
+                                              alert_objs,
+                                              sensor_objs)
+        sensor_objs = filter_obj.filter_sensors(node_objs,
+                                                alert_objs,
+                                                sensor_objs)
     except ValueError as e:
         print(e)
         sys.exit(1)
