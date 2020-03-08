@@ -14,7 +14,7 @@ import xml.etree.ElementTree
 from typing import Tuple, List, Dict, Optional
 from lib import Sqlite
 from lib import GlobalData
-from lib.localObjects import Alert, Sensor, AlertLevel, SensorDataType
+from lib.localObjects import Alert, Sensor, AlertLevel, SensorDataType, Node
 from lib.config.parser import configure_alert_levels
 
 try:
@@ -28,13 +28,15 @@ except Exception:
 
 class GraphAlert:
 
-    def __init__(self, alert: Alert):
+    def __init__(self, node: Node, alert: Alert):
         self.alert = alert
+        self.node = node
 
     def __str__(self):
         temp = "\"Alert: " + self.alert.description + "\l" \
                + "Alert Id: " + str(self.alert.alertId) + "\l" \
-               + "Remote Alert Id: " + str(self.alert.remoteAlertId) + "\l\""
+               + "Remote Alert Id: " + str(self.alert.remoteAlertId) + "\l" \
+               + "Node Username: " + str(self.node.username) + "\l\""
         return temp
 
     def __eq__(self, other):
@@ -71,8 +73,9 @@ class GraphAlertLevel:
 
 class GraphSensor:
 
-    def __init__(self, sensor: Sensor):
+    def __init__(self, node: Node, sensor: Sensor):
         self.sensor = sensor
+        self.node = node
 
     def __str__(self):
         data_type = "Unknown"
@@ -85,6 +88,7 @@ class GraphSensor:
         temp = "\"Sensor: " + self.sensor.description + "\l" \
                + "Sensor Id: " + str(self.sensor.sensorId) + "\l" \
                + "Remote Sensor Id: " + str(self.sensor.remoteSensorId) + "\l" \
+               + "Node Username: " + str(self.node.username) + "\l" \
                + "Alert Delay: " + str(self.sensor.alertDelay) + " sec\l" \
                + "Data Type: " + data_type + "\l\""
         return temp
@@ -98,15 +102,18 @@ class GraphSensor:
         return self.sensor.sensorId
 
 
-def create_graph(alert_levels: Dict[int, AlertLevel], alerts: List[Alert], sensors: List[Sensor]) -> nx.DiGraph:
+def create_graph(alert_levels: Dict[int, AlertLevel],
+                 nodes: Dict[int, Node],
+                 alerts: List[Alert],
+                 sensors: List[Sensor]) -> nx.DiGraph:
     graph = nx.DiGraph()
 
     # Add alerts, alert levels, and sensors as node to the graph.
-    for sensor_obj in sensors:
-        graph.add_node(GraphSensor(sensor_obj))
-
     for alert_obj in alerts:
-        graph.add_node(GraphAlert(alert_obj))
+        graph.add_node(GraphAlert(nodes[alert_obj.nodeId], alert_obj))
+
+    for sensor_obj in sensors:
+        graph.add_node(GraphSensor(nodes[sensor_obj.nodeId], sensor_obj))
 
     for _, alert_level_obj in alert_levels.items():
         graph.add_node(GraphAlertLevel(alert_level_obj))
@@ -115,39 +122,33 @@ def create_graph(alert_levels: Dict[int, AlertLevel], alerts: List[Alert], senso
     for alert_obj in alerts:
         for alert_level_int in alert_obj.alertLevels:
             graph.add_edge(GraphAlertLevel(alert_levels[alert_level_int]),
-                           GraphAlert(alert_obj))
+                           GraphAlert(nodes[alert_obj.nodeId], alert_obj))
 
     for sensor_obj in sensors:
         for alert_level_int in sensor_obj.alertLevels:
-            graph.add_edge(GraphSensor(sensor_obj),
+            graph.add_edge(GraphSensor(nodes[sensor_obj.nodeId], sensor_obj),
                            GraphAlertLevel(alert_levels[alert_level_int]))
 
     return graph
 
 
-def get_alerts_and_sensors(global_data: GlobalData,
-                           target_alert_level: Optional[int]) -> Tuple[List[Alert], List[Sensor]]:
+def get_objects_from_db(global_data: GlobalData,
+                        target_alert_level: Optional[int]) -> Tuple[Dict[int, Node], List[Alert], List[Sensor]]:
     """
-    Gets Alerts and Sensors from the database
+    Gets Nodes, Alerts and Sensors from the database
 
-    :return: List of Alert and List of Sensor objects
+    :return: Dict of all Node objects, List of Alert and List of Sensor objects
     """
     sys_info_list = global_data.storage.getAlertSystemInformation()
 
-    # Filter Sensor objects if necessary.
-    sensor_objs = []
-    temp_sensor_objs = sys_info_list[2]
-    if target_alert_level is not None:
-        for sensor_obj in temp_sensor_objs:
-            if target_alert_level in sensor_obj.alertLevels:
-                sensor_obj.alertLevels = [target_alert_level]
-                sensor_objs.append(sensor_obj)
-    else:
-        sensor_objs = temp_sensor_objs
+    node_objs = {}
+    temp_node_objs = sys_info_list[1]  # type: List[Node]
+    for node_obj in temp_node_objs:
+        node_objs[node_obj.id] = node_obj
 
     # Filter Alert objects if necessary.
     alert_objs = []
-    temp_alert_objs = sys_info_list[4]
+    temp_alert_objs = sys_info_list[4]  # type: List[Alert]
     if target_alert_level is not None:
         for alert_obj in temp_alert_objs:
             if target_alert_level in alert_obj.alertLevels:
@@ -156,7 +157,18 @@ def get_alerts_and_sensors(global_data: GlobalData,
     else:
         alert_objs = temp_alert_objs
 
-    return alert_objs, sensor_objs
+    # Filter Sensor objects if necessary.
+    sensor_objs = []
+    temp_sensor_objs = sys_info_list[2]  # type: List[Sensor]
+    if target_alert_level is not None:
+        for sensor_obj in temp_sensor_objs:
+            if target_alert_level in sensor_obj.alertLevels:
+                sensor_obj.alertLevels = [target_alert_level]
+                sensor_objs.append(sensor_obj)
+    else:
+        sensor_objs = temp_sensor_objs
+
+    return node_objs, alert_objs, sensor_objs
 
 
 def write_graph(graph: nx.DiGraph, target_file, target_format="raw"):
@@ -259,9 +271,9 @@ if __name__ == '__main__':
         if target_alert_level is None or alert_level.level == target_alert_level:
             alert_level_objs_dict[alert_level.level] = alert_level
 
-    alert_objs, sensor_objs = get_alerts_and_sensors(global_data, target_alert_level)
+    node_objs, alert_objs, sensor_objs = get_objects_from_db(global_data, target_alert_level)
 
     # Create graph and export.
-    graph = create_graph(alert_level_objs_dict, alert_objs, sensor_objs)
+    graph = create_graph(alert_level_objs_dict, node_objs, alert_objs, sensor_objs)
     write_graph(graph, target_location, target_format)
     print("Graph written to '%s'." % target_location)
