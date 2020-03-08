@@ -102,6 +102,232 @@ class GraphSensor:
         return self.sensor.sensorId
 
 
+class Filter:
+    def __init__(self,
+                 alert_level: Optional[int],
+                 alert_username: Optional[str],
+                 remote_alert_id: Optional[int],
+                 sensor_username: Optional[str],
+                 remote_sensor_id: Optional[int]):
+
+        self.alert_level = alert_level
+        self.alert_username = alert_username
+        self.remote_alert_id = remote_alert_id
+        self.sensor_username =sensor_username
+        self.remote_sensor_id = remote_sensor_id
+
+        self.cached_node = None
+
+        if ((self.alert_username is None and self.remote_alert_id is not None)
+           or (self.alert_username is not None and self.remote_alert_id is None)):
+            raise ValueError("Bot '--alertusername' and '--remotealertid' have to be set or none.")
+
+        if ((self.sensor_username is None and self.remote_sensor_id is not None)
+           or (self.sensor_username is not None and self.remote_sensor_id is None)):
+            raise ValueError("Bot '--sensorusername' and '--remotesensorid' have to be set or none.")
+
+        filter_set = False
+        if self.alert_level is not None:
+            filter_set = True
+
+        if self.alert_username is not None and self.remote_alert_id is not None:
+            if filter_set:
+                raise ValueError("Only one filter option can be set (Alert Level, Alert, or Sensor)")
+            filter_set = True
+
+        if self.sensor_username is not None and self.remote_sensor_id is not None:
+            if filter_set:
+                raise ValueError("Only one filter option can be set (Alert Level, Alert, or Sensor)")
+
+    def _get_node(self,
+                  username: str,
+                  nodes: Dict[int, Node]) -> Node:
+
+        if self.cached_node is not None:
+            return self.cached_node
+
+        for _, node in nodes.items():
+            if node.username == username:
+                self.cached_node = node
+                break
+
+        if self.cached_node is None:
+            raise ValueError("Node with username '%s' does not exist." % username)
+
+        return self.cached_node
+
+    def filter_alert_levels(self,
+                            alert_levels: Dict[int, AlertLevel],
+                            nodes: Dict[int, Node],
+                            alerts: List[Alert],
+                            sensors: List[Sensor]) -> Dict[int, AlertLevel]:
+        """
+        Filters the alert levels to the requested ones.
+
+        :param alert_levels: Dict of all Alert Levels mapping level to Alert Level object.
+        :param nodes: Dict of all Nodes mapping node id to Node object.
+        :param alerts: List of all Alerts.
+        :param sensors: List of all Sensors.
+        :return: Dict of alert level to Alert Level object.
+        """
+        filtered_alert_levels = {}
+
+        # Process Alert Level filter if set.
+        if self.alert_level is not None:
+            for _, alert_level in alert_levels.items():
+                if alert_level.level == self.alert_level:
+                    filtered_alert_levels[alert_level.level] = alert_level
+                    break
+
+        # Process Alert filter if set.
+        elif self.alert_username is not None:
+            target_node = self._get_node(self.alert_username, nodes)
+            target_alert = None
+            for alert in alerts:
+                if alert.nodeId == target_node.id and alert.remoteAlertId == self.remote_alert_id:
+                    target_alert = alert
+                    break
+
+            if target_alert is None:
+                raise ValueError("Alert with username '%s' and remote Alert id '%d' does not exist."
+                                 % (self.alert_username, self.remote_alert_id))
+
+            for _, alert_level in alert_levels.items():
+                if alert_level.level in target_alert.alertLevels:
+                    filtered_alert_levels[alert_level.level] = alert_level
+                    break
+
+        # Process Sensor filter if set.
+        elif self.sensor_username is not None:
+            target_node = self._get_node(self.sensor_username, nodes)
+            target_sensor = None
+            for sensor in sensors:
+                if sensor.nodeId == target_node.id and sensor.remoteSensorId == self.remote_sensor_id:
+                    target_sensor = sensor
+                    break
+
+            if target_sensor is None:
+                raise ValueError("Sensor with username '%s' and remote Sensor id '%d' does not exist."
+                                 % (self.sensor_username, self.remote_alert_id))
+
+            for _, alert_level in alert_levels.items():
+                if alert_level.level in target_sensor.alertLevels:
+                    filtered_alert_levels[alert_level.level] = alert_level
+                    break
+
+        # No filter is set.
+        else:
+            filtered_alert_levels = alert_levels
+
+        return filtered_alert_levels
+
+    def filter_alerts(self,
+                      nodes: Dict[int, Node],
+                      alerts: List[Alert],
+                      sensors: List[Sensor]) -> List[Alert]:
+        """
+        Filters the alerts to the requested ones.
+
+        :param nodes: Dict of all Nodes mapping node id to Node object.
+        :param alerts: List of all Alerts.
+        :param sensors: List of all Sensors.
+        :return: List of Alert objects.
+        """
+        filtered_alerts = []
+
+        # Process Alert Level filter if set.
+        if self.alert_level is not None:
+            for alert in alerts:
+                if self.alert_level in alert.alertLevels:
+                    alert.alertLevels = [self.alert_level]
+                    filtered_alerts.append(alert)
+
+        # Process Alert filter if set.
+        elif self.alert_username is not None:
+            target_node = self._get_node(self.alert_username, nodes)
+            for alert in alerts:
+                if alert.nodeId == target_node.id and alert.remoteAlertId == self.remote_alert_id:
+                    filtered_alerts.append(alert)
+                    break
+
+        # Process Sensor filter if set.
+        elif self.sensor_username is not None:
+            target_node = self._get_node(self.sensor_username, nodes)
+            target_sensor = None
+            for sensor in sensors:
+                if sensor.nodeId == target_node.id and sensor.remoteSensorId == self.remote_sensor_id:
+                    target_sensor = sensor
+                    break
+
+            if target_sensor is None:
+                raise ValueError("Sensor with username '%s' and remote Sensor id '%d' does not exist."
+                                 % (self.sensor_username, self.remote_alert_id))
+
+            for alert in alerts:
+                for alert_level in alert.alertLevels:
+                    if alert_level in target_sensor.alertLevels:
+                        alert.alertLevels = target_sensor.alertLevels
+                        filtered_alerts.append(alert)
+
+        else:
+            filtered_alerts = alerts
+
+        return filtered_alerts
+
+    def filter_sensors(self,
+                       nodes: Dict[int, Node],
+                       alerts: List[Alert],
+                       sensors: List[Sensor]) -> List[Sensor]:
+        """
+        Filters the sensors to the requested ones.
+
+        :param nodes: Dict of all Nodes mapping node id to Node object.
+        :param alerts: List of all Alerts.
+        :param sensors: List of all Sensors.
+        :return: List of Sensor objects.
+        """
+        filtered_sensors = []
+
+        # Process Alert Level filter if set.
+        if self.alert_level is not None:
+            for sensor in sensors:
+                if self.alert_level in sensor.alertLevels:
+                    sensor.alertLevels = [self.alert_level]
+                    filtered_sensors.append(sensor)
+
+        # Process Alert filter if set.
+        elif self.alert_username is not None:
+            target_node = self._get_node(self.alert_username, nodes)
+            target_alert = None
+            for alert in alerts:
+                if alert.nodeId == target_node.id and alert.remoteAlertId == self.remote_alert_id:
+                    target_alert = alert
+                    break
+
+            if target_alert is None:
+                raise ValueError("Alert with username '%s' and remote Alert id '%d' does not exist."
+                                 % (self.alert_username, self.remote_sensor_id))
+
+            for sensor in sensors:
+                for alert_level in sensor.alertLevels:
+                    if alert_level in target_alert.alertLevels:
+                        sensor.alertLevels = target_alert.alertLevels
+                        filtered_sensors.append(sensor)
+
+        # Process Sensor filter if set.
+        elif self.sensor_username is not None:
+            target_node = self._get_node(self.sensor_username, nodes)
+            for sensor in sensors:
+                if sensor.nodeId == target_node.id and sensor.remoteSensorId == self.remote_sensor_id:
+                    filtered_sensors.append(sensor)
+                    break
+
+        else:
+            filtered_sensors = sensors
+
+        return filtered_sensors
+
+
 def create_graph(alert_levels: Dict[int, AlertLevel],
                  nodes: Dict[int, Node],
                  alerts: List[Alert],
@@ -132,8 +358,7 @@ def create_graph(alert_levels: Dict[int, AlertLevel],
     return graph
 
 
-def get_objects_from_db(global_data: GlobalData,
-                        target_alert_level: Optional[int]) -> Tuple[Dict[int, Node], List[Alert], List[Sensor]]:
+def get_objects_from_db(global_data: GlobalData) -> Tuple[Dict[int, Node], List[Alert], List[Sensor]]:
     """
     Gets Nodes, Alerts and Sensors from the database
 
@@ -146,27 +371,8 @@ def get_objects_from_db(global_data: GlobalData,
     for node_obj in temp_node_objs:
         node_objs[node_obj.id] = node_obj
 
-    # Filter Alert objects if necessary.
-    alert_objs = []
-    temp_alert_objs = sys_info_list[4]  # type: List[Alert]
-    if target_alert_level is not None:
-        for alert_obj in temp_alert_objs:
-            if target_alert_level in alert_obj.alertLevels:
-                alert_obj.alertLevels = [target_alert_level]
-                alert_objs.append(alert_obj)
-    else:
-        alert_objs = temp_alert_objs
-
-    # Filter Sensor objects if necessary.
-    sensor_objs = []
-    temp_sensor_objs = sys_info_list[2]  # type: List[Sensor]
-    if target_alert_level is not None:
-        for sensor_obj in temp_sensor_objs:
-            if target_alert_level in sensor_obj.alertLevels:
-                sensor_obj.alertLevels = [target_alert_level]
-                sensor_objs.append(sensor_obj)
-    else:
-        sensor_objs = temp_sensor_objs
+    alert_objs = sys_info_list[4]  # type: List[Alert]
+    sensor_objs = sys_info_list[2]  # type: List[Sensor]
 
     return node_objs, alert_objs, sensor_objs
 
@@ -202,7 +408,7 @@ if __name__ == '__main__':
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "Example command to create graph for a specific Alert Level:" \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python3 %s -g /home/alertr/graph.dot' -a 3" % sys.argv[0]
+                    + "'python3 %s -g /home/alertr/graph.dot' --alertlevel 3" % sys.argv[0]
     parser.add_option("-g",
                       "--graph",
                       dest="graph_path",
@@ -215,12 +421,44 @@ if __name__ == '__main__':
                       action="store_true",
                       help="Output PNG file. (Optional)",
                       default=False)
-    parser.add_option("-a",
+    parser.add_option("",
                       "--alertlevel",
                       dest="alert_level",
                       action="store",
                       type="int",
-                      help="A specific Alert Level to export. If not set, all Alert Levels are exported. (Optional)",
+                      help="Specific Alert Level to export. If not set, all Alert Levels are exported. (Optional)",
+                      default=None)
+    parser.add_option("",
+                      "--remotealertid",
+                      dest="remote_alert_id",
+                      action="store",
+                      type="int",
+                      help="Specific Remote Alert Id to export. If not set, all Alerts are exported. "
+                           + "If set, requires also to set --alertusername (Optional)",
+                      default=None)
+    parser.add_option("",
+                      "--alertusername",
+                      dest="alert_username",
+                      action="store",
+                      help="Specific username of the AlertR instance running the Alert to export. "
+                           + "If not set, all Alerts are exported. "
+                           + "If set, requires also to set --remotealertid (Optional)",
+                      default=None)
+    parser.add_option("",
+                      "--remotesensorid",
+                      dest="remote_sensor_id",
+                      action="store",
+                      type="int",
+                      help="Specific Remote Sensor Id to export. If not set, all Sensors are exported. "
+                           + "If set, requires also to set --sensorusername (Optional)",
+                      default=None)
+    parser.add_option("",
+                      "--sensorusername",
+                      dest="sensor_username",
+                      action="store",
+                      help="Specific username of the AlertR instance running the Sensor to export. "
+                           + "If not set, all Sensors are exported. "
+                           + "If set, requires also to set --remotesensorid (Optional)",
                       default=None)
 
     (options, args) = parser.parse_args()
@@ -229,7 +467,16 @@ if __name__ == '__main__':
         print("Use --help to get all available options.")
         sys.exit(0)
 
-    target_alert_level = options.alert_level
+    # Extract target Alert Level, Alert, and Sensor (if set at all).
+    try:
+        filter = Filter(options.alert_level,
+                        options.alert_username,
+                        options.remote_alert_id,
+                        options.sensor_username,
+                        options.remote_sensor_id)
+    except ValueError as e:
+        print(e)
+        sys.exit(1)
 
     # Create correct file ending and check target file writable.
     target_location = options.graph_path
@@ -268,10 +515,24 @@ if __name__ == '__main__':
     # Get Alert, Alert Level, ans Sensor objects.
     alert_level_objs_dict = dict()
     for alert_level in global_data.alertLevels:
-        if target_alert_level is None or alert_level.level == target_alert_level:
             alert_level_objs_dict[alert_level.level] = alert_level
+    node_objs, alert_objs, sensor_objs = get_objects_from_db(global_data)
 
-    node_objs, alert_objs, sensor_objs = get_objects_from_db(global_data, target_alert_level)
+    # Filter Alert Level, Alert, and Sensor.
+    try:
+        alert_level_objs_dict = filter.filter_alert_levels(alert_level_objs_dict,
+                                                           node_objs,
+                                                           alert_objs,
+                                                           sensor_objs)
+        alert_objs = filter.filter_alerts(node_objs,
+                                          alert_objs,
+                                          sensor_objs)
+        sensor_objs = filter.filter_sensors(node_objs,
+                                            alert_objs,
+                                            sensor_objs)
+    except ValueError as e:
+        print(e)
+        sys.exit(1)
 
     # Create graph and export.
     graph = create_graph(alert_level_objs_dict, node_objs, alert_objs, sensor_objs)
