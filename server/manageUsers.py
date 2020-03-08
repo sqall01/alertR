@@ -564,7 +564,7 @@ if __name__ == '__main__':
                       "--add",
                       dest="add",
                       action="store_true",
-                      help="Add a user..",
+                      help="Add a user.",
                       default=False)
     parser.add_option("-d",
                       "--delete",
