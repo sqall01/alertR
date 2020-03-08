@@ -1148,11 +1148,11 @@ if __name__ == '__main__':
 
     parser.epilog = "Example command to install the AlertR server instance: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python %s -i server -t /home/alertr/' " % sys.argv[0] \
+                    + "'python3 %s -i server -t /home/alertr/' " % sys.argv[0] \
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "Example command to list all available AlertR instances: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python %s -l' " % sys.argv[0] \
+                    + "'python3 %s -l' " % sys.argv[0] \
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "For more detailed examples how to install an AlertR instance " \
                     + "please visit: " \
