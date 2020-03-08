@@ -11,7 +11,7 @@ import sys
 import logging
 import optparse
 import xml.etree.ElementTree
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 from lib import Sqlite
 from lib import GlobalData
 from lib.localObjects import Alert, Sensor, AlertLevel, SensorDataType
@@ -125,15 +125,37 @@ def create_graph(alert_levels: Dict[int, AlertLevel], alerts: List[Alert], senso
     return graph
 
 
-def get_alerts_and_sensors(global_data: GlobalData) -> Tuple[List[Alert], List[Sensor]]:
+def get_alerts_and_sensors(global_data: GlobalData,
+                           target_alert_level: Optional[int]) -> Tuple[List[Alert], List[Sensor]]:
     """
     Gets Alerts and Sensors from the database
 
     :return: List of Alert and List of Sensor objects
     """
     sys_info_list = global_data.storage.getAlertSystemInformation()
-    sensor_objs = sys_info_list[2]
-    alert_objs = sys_info_list[4]
+
+    # Filter Sensor objects if necessary.
+    sensor_objs = []
+    temp_sensor_objs = sys_info_list[2]
+    if target_alert_level is not None:
+        for sensor_obj in temp_sensor_objs:
+            if target_alert_level in sensor_obj.alertLevels:
+                sensor_obj.alertLevels = [target_alert_level]
+                sensor_objs.append(sensor_obj)
+    else:
+        sensor_objs = temp_sensor_objs
+
+    # Filter Alert objects if necessary.
+    alert_objs = []
+    temp_alert_objs = sys_info_list[4]
+    if target_alert_level is not None:
+        for alert_obj in temp_alert_objs:
+            if target_alert_level in alert_obj.alertLevels:
+                alert_obj.alertLevels = [target_alert_level]
+                alert_objs.append(alert_obj)
+    else:
+        alert_objs = temp_alert_objs
+
     return alert_objs, sensor_objs
 
 
@@ -164,25 +186,38 @@ if __name__ == '__main__':
     parser.description = "Exports a graph containing Alerts, Alert Levels, and Sensors of your AlertR system."
     parser.epilog = "Example command create graph: " \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python3 %s -g /home/alertr/graph.dot'" % sys.argv[0]
+                    + "'python3 %s -g /home/alertr/graph.dot'" % sys.argv[0] \
+                    + "\t\t\t\t\t\t\t\t\t\t" \
+                    + "Example command to create graph for a specific Alert Level:" \
+                    + "\t\t\t\t\t\t\t\t\t\t" \
+                    + "'python3 %s -g /home/alertr/graph.dot' -a 3" % sys.argv[0]
     parser.add_option("-g",
                       "--graph",
                       dest="graph_path",
                       action="store",
-                      help="Target graph location.",
+                      help="Target graph location. (Required)",
                       default="")
     parser.add_option("",
                       "--png",
                       dest="png",
                       action="store_true",
-                      help="Output PNG file.",
+                      help="Output PNG file. (Optional)",
                       default=False)
+    parser.add_option("-a",
+                      "--alertlevel",
+                      dest="alert_level",
+                      action="store",
+                      type="int",
+                      help="A specific Alert Level to export. If not set, all Alert Levels are exported. (Optional)",
+                      default=None)
 
     (options, args) = parser.parse_args()
 
     if options.graph_path == "":
         print("Use --help to get all available options.")
         sys.exit(0)
+
+    target_alert_level = options.alert_level
 
     # Create correct file ending and check target file writable.
     target_location = options.graph_path
@@ -207,7 +242,7 @@ if __name__ == '__main__':
     # Initialize logging.
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.DEBUG)
+                        level=logging.WARNING)
     global_data.logger = logging.getLogger("graph")
 
     global_data.storage = Sqlite(global_data.storageBackendSqliteFile,
@@ -221,10 +256,12 @@ if __name__ == '__main__':
     # Get Alert, Alert Level, ans Sensor objects.
     alert_level_objs_dict = dict()
     for alert_level in global_data.alertLevels:
-        alert_level_objs_dict[alert_level.level] = alert_level
+        if target_alert_level is None or alert_level.level == target_alert_level:
+            alert_level_objs_dict[alert_level.level] = alert_level
 
-    alert_objs, sensor_objs = get_alerts_and_sensors(global_data)
+    alert_objs, sensor_objs = get_alerts_and_sensors(global_data, target_alert_level)
 
     # Create graph and export.
     graph = create_graph(alert_level_objs_dict, alert_objs, sensor_objs)
     write_graph(graph, target_location, target_format)
+    print("Graph written to '%s'." % target_location)
