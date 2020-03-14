@@ -33,6 +33,7 @@ class GraphAlert:
         self.node = node
 
     def __str__(self):
+        # noinspection PyPep8
         temp = "\"Alert: " + self.alert.description + "\l" \
                + "Alert Id: " + str(self.alert.alertId) + "\l" \
                + "Remote Alert Id: " + str(self.alert.remoteAlertId) + "\l" \
@@ -54,6 +55,7 @@ class GraphAlertLevel:
         self.alert_level = alert_level
 
     def __str__(self):
+        # noinspection PyPep8
         temp = "\"AlertLevel: " + self.alert_level.name + "\l" \
                + "Level: " + str(self.alert_level.level) + "\l" \
                + "Trigger Always: " + str(self.alert_level.triggerAlways) + "\l" \
@@ -85,6 +87,7 @@ class GraphSensor:
             data_type = "Integer"
         elif self.sensor.dataType == SensorDataType.FLOAT:
             data_type = "Float"
+        # noinspection PyPep8
         temp = "\"Sensor: " + self.sensor.description + "\l" \
                + "Sensor Id: " + str(self.sensor.sensorId) + "\l" \
                + "Remote Sensor Id: " + str(self.sensor.remoteSensorId) + "\l" \
@@ -195,7 +198,6 @@ class Filter:
             for _, alert_level in alert_levels.items():
                 if alert_level.level in target_alert.alertLevels:
                     filtered_alert_levels[alert_level.level] = alert_level
-                    break
 
         # Process Sensor filter if set.
         elif self.sensor_username is not None:
@@ -213,7 +215,6 @@ class Filter:
             for _, alert_level in alert_levels.items():
                 if alert_level.level in target_sensor.alertLevels:
                     filtered_alert_levels[alert_level.level] = alert_level
-                    break
 
         # No filter is set.
         else:
@@ -266,7 +267,14 @@ class Filter:
             for alert in alerts:
                 for alert_level in alert.alertLevels:
                     if alert_level in target_sensor.alertLevels:
-                        alert.alertLevels = target_sensor.alertLevels
+                        # Since an Alert can have different Alert Levels as the target Sensor, only store the ones
+                        # that the Sensor also has.
+                        orig_alert_levels = alert.alertLevels
+                        new_alert_levels = []
+                        for sensor_alert_level in target_sensor.alertLevels:
+                            if sensor_alert_level in orig_alert_levels:
+                                new_alert_levels.append(sensor_alert_level)
+                        alert.alertLevels = new_alert_levels
                         filtered_alerts.append(alert)
 
         else:
@@ -311,7 +319,14 @@ class Filter:
             for sensor in sensors:
                 for alert_level in sensor.alertLevels:
                     if alert_level in target_alert.alertLevels:
-                        sensor.alertLevels = target_alert.alertLevels
+                        # Since a Sensor can have different Alert Levels as the target Alert, only store the ones
+                        # that the Alert also has.
+                        orig_alert_levels = sensor.alertLevels
+                        new_alert_levels = []
+                        for alert_alert_level in target_alert.alertLevels:
+                            if alert_alert_level in orig_alert_levels:
+                                new_alert_levels.append(alert_alert_level)
+                        sensor.alertLevels = new_alert_levels
                         filtered_sensors.append(sensor)
 
         # Process Sensor filter if set.
@@ -501,7 +516,7 @@ if __name__ == '__main__':
     # Initialize logging.
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.WARNING)
+                        level=logging.DEBUG)
     global_data.logger = logging.getLogger("graph")
 
     global_data.storage = Sqlite(global_data.storageBackendSqliteFile,
