@@ -150,7 +150,7 @@ class Filter:
             return self.cached_node
 
         for _, node in nodes.items():
-            if node.username == username:
+            if node.username.lower() == username.lower():
                 self.cached_node = node
                 break
 
@@ -210,7 +210,7 @@ class Filter:
 
             if target_sensor is None:
                 raise ValueError("Sensor with username '%s' and remote Sensor id '%d' does not exist."
-                                 % (self.sensor_username, self.remote_alert_id))
+                                 % (self.sensor_username, self.remote_sensor_id))
 
             for _, alert_level in alert_levels.items():
                 if alert_level.level in target_sensor.alertLevels:
@@ -518,6 +518,13 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S',
                         level=logging.WARNING)
     global_data.logger = logging.getLogger("graph")
+
+
+
+
+    global_data.storageBackendSqliteFile = "/home/sqall/projekte/alertR/git/server/tests/graph_export/database.db"
+    global_data.configFile = "/home/sqall/projekte/alertR/git/server/tests/graph_export/config.xml"
+
 
     global_data.storage = Sqlite(global_data.storageBackendSqliteFile,
                                  global_data,
