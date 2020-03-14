@@ -423,7 +423,15 @@ if __name__ == '__main__':
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "Example command to create graph for a specific Alert Level:" \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python3 %s -g /home/alertr/graph.dot' --alertlevel 3" % sys.argv[0]
+                    + "'python3 %s -g /home/alertr/graph.dot' --alertlevel 3" % sys.argv[0] \
+                    + "\t\t\t\t\t\t\t\t\t\t" \
+                    + "Example command to create graph for a specific Alert:" \
+                    + "\t\t\t\t\t\t\t\t\t\t" \
+                    + "'python3 %s -g /home/alertr/graph.dot' --remotealertid 1 --alertusername user1" % sys.argv[0] \
+                    + "\t\t\t\t\t\t\t\t\t\t" \
+                    + "Example command to create graph for a specific Sensor:" \
+                    + "\t\t\t\t\t\t\t\t\t\t" \
+                    + "'python3 %s -g /home/alertr/graph.dot' --remotesensorid 2 --sensorusername user33" % sys.argv[0]
     parser.add_option("-g",
                       "--graph",
                       dest="graph_path",
@@ -518,13 +526,6 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S',
                         level=logging.WARNING)
     global_data.logger = logging.getLogger("graph")
-
-
-
-
-    global_data.storageBackendSqliteFile = "/home/sqall/projekte/alertR/git/server/tests/graph_export/database.db"
-    global_data.configFile = "/home/sqall/projekte/alertR/git/server/tests/graph_export/config.xml"
-
 
     global_data.storage = Sqlite(global_data.storageBackendSqliteFile,
                                  global_data,
