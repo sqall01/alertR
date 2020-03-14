@@ -516,7 +516,7 @@ if __name__ == '__main__':
     # Initialize logging.
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.DEBUG)
+                        level=logging.WARNING)
     global_data.logger = logging.getLogger("graph")
 
     global_data.storage = Sqlite(global_data.storageBackendSqliteFile,
