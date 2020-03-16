@@ -10,3 +10,4 @@
 from .serverCommunication import ServerCommunication
 from .receiver import Receiver
 from .watchdog import ConnectionWatchdog
+from .eventHandler import EventHandler

@@ -31,7 +31,7 @@ class Receiver(threading.Thread):
                 return
 
             # only run the communication handler
-            self.connection.handleCommunication()
+            self.connection.handle_requests()
 
             time.sleep(1)
 

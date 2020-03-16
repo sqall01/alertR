@@ -10,7 +10,7 @@
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .manager import LocalServerSession, ThreadedUnixStreamServer
 from .manager import Mysql
-from .manager import ServerEventHandler
+from .manager import ManagerEventHandler
 from .smtp import SMTPAlert
 from .localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel
 from .update import Updater

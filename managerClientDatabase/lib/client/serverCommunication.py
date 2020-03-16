@@ -7,18 +7,15 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import socket
 import time
-import threading
 import logging
 import os
 import json
 from typing import Dict, Any, Optional
-from .core import BUFSIZE, Client
 from .util import MsgChecker, MsgBuilder
 from .communication import Communication
+from .eventHandler import EventHandler
 from ..localObjects import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
-from ..manager import ServerEventHandler
 from ..globalData import GlobalData
 
 
@@ -32,6 +29,7 @@ class ServerCommunication:
                  password: str,
                  clientCertFile: str,
                  clientKeyFile: str,
+                 event_handler: EventHandler,
                  globalData: GlobalData):
         self.host = host
         self.port = port
@@ -50,13 +48,10 @@ class ServerCommunication:
         self.persistent = self.globalData.persistent
 
         # create the object that handles all incoming server events
-        self.serverEventHandler = ServerEventHandler(self.globalData)
+        self._event_handler = event_handler
 
         # time the last message was received by the client
-        self.lastRecv = 0.0
-
-        # this lock is used to only allow one thread to use the communication
-        self.connectionLock = threading.BoundedSemaphore(1)
+        self._last_communication = 0.0
 
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -77,16 +72,6 @@ class ServerCommunication:
         # Communication object that handles sending and receiving.
         self._communication = None  # type: Optional[Communication]
 
-    # internal function that acquires the lock
-    def _acquireLock(self):
-        logging.debug("[%s]: Acquire lock." % self.fileName)
-        self.connectionLock.acquire()
-
-    # internal function that releases the lock
-    def _releaseLock(self):
-        logging.debug("[%s]: Release lock." % self.fileName)
-        self.connectionLock.release()
-
     # this internal function cleans up the session before releasing the
     # lock and exiting/closing the session
     def _cleanUpSessionForClosing(self):
@@ -98,7 +83,7 @@ class ServerCommunication:
         self._isConnected = False
 
         # handle closing event
-        self.serverEventHandler.handleEvent()
+        self._event_handler.close_connection()
 
     # internal function to verify the server/client version and authenticate
     def _verifyVersionAndAuthenticate(self, regMessageSize: int) -> bool:
@@ -584,13 +569,13 @@ class ServerCommunication:
             alertLevels.append(alertLevel)
 
         # handle received status update
-        if not self.serverEventHandler.receivedStatusUpdate(serverTime,
-                                                            options,
-                                                            nodes,
-                                                            sensors,
-                                                            managers,
-                                                            alerts,
-                                                            alertLevels):
+        if not self._event_handler.status_update(serverTime,
+                                                 options,
+                                                 nodes,
+                                                 sensors,
+                                                 managers,
+                                                 alerts,
+                                                 alertLevels):
 
             # send error message back
             try:
@@ -617,11 +602,7 @@ class ServerCommunication:
 
         except Exception as e:
             logging.exception("[%s]: Sending status response failed." % self.fileName)
-
             return False
-
-        # handle status update event
-        self.serverEventHandler.handleEvent()
 
         return True
 
@@ -754,7 +735,7 @@ class ServerCommunication:
             return False
 
         # handle received sensor alert
-        if self.serverEventHandler.receivedSensorAlert(serverTime, sensorAlert):
+        if self._event_handler.sensor_alert(serverTime, sensorAlert):
             return True
 
         return False
@@ -831,11 +812,11 @@ class ServerCommunication:
             return False
 
         # handle received state change
-        if self.serverEventHandler.receivedStateChange(serverTime,
-                                                       sensorId,
-                                                       state,
-                                                       dataType,
-                                                       sensorData):
+        if self._event_handler.state_change(serverTime,
+                                            sensorId,
+                                            state,
+                                            dataType,
+                                            sensorData):
             return True
 
         return False
@@ -843,8 +824,6 @@ class ServerCommunication:
     # function that initializes the communication to the server
     # for example checks the version and authenticates the client
     def initializeCommunication(self) -> bool:
-
-        self._acquireLock()
 
         # Initialize communication.
         self._communication = Communication(self.host,
@@ -858,7 +837,6 @@ class ServerCommunication:
         self._communication.start()
 
         if not self._communication.connect():
-            self._releaseLock()
             return False
 
         self._msg_checker = MsgChecker(self._communication)
@@ -873,16 +851,12 @@ class ServerCommunication:
         if not self._verifyVersionAndAuthenticate(len(regMessage)):
             logging.error("[%s]: Version verification and authentication failed." % self.fileName)
             self._communication.exit()
-
-            self._releaseLock()
             return False
 
         # Second register node.
         if not self._registerNode(regMessage):
             logging.error("[%s]: Registration failed." % self.fileName)
             self._communication.exit()
-
-            self._releaseLock()
             return False
 
         # get the initial status update from the server
@@ -894,8 +868,6 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'." % (self.fileName, message["error"],))
-
-                self._releaseLock()
                 return False
 
             # check if RTS was received
@@ -932,8 +904,6 @@ class ServerCommunication:
                         logging.error("[%s]: Possible dead lock "
                                       % self.fileName
                                       + "detected while receiving data. Closing connection to server.")
-
-                        self._releaseLock()
                         return False
 
             # if no RTS was received
@@ -942,14 +912,10 @@ class ServerCommunication:
             else:
 
                 logging.error("[%s]: Did not receive RTS. Server sent: '%s'." % (self.fileName, data))
-
-                self._releaseLock()
                 return False
 
         except Exception as e:
             logging.exception("[%s]: Receiving initial status update failed." % self.fileName)
-
-            self._releaseLock()
             return False
 
         # extract message type
@@ -958,8 +924,6 @@ class ServerCommunication:
             # check if an error was received
             if "error" in message.keys():
                 logging.error("[%s]: Error received: '%s'." % (self.fileName, message["error"]))
-
-                self._releaseLock()
                 return False
 
             # check if the received type is the correct one
@@ -976,7 +940,6 @@ class ServerCommunication:
                 except Exception as e:
                     pass
 
-                self._releaseLock()
                 return False
 
             # extract the command/message type of the message
@@ -984,8 +947,6 @@ class ServerCommunication:
 
         except Exception as e:
             logging.exception("[%s]: Received data not valid: '%s'." % (self.fileName, data))
-
-            self._releaseLock()
             return False
 
         if command != "STATUS":
@@ -1000,40 +961,35 @@ class ServerCommunication:
                 self._communication.send(json.dumps(message))
             except Exception as e:
                 pass
-
-            self._releaseLock()
             return False
 
         if not self._statusUpdateHandler(message):
             logging.error("[%s]: Initial status update failed." % self.fileName)
             self._communication.exit()
-
-            self._releaseLock()
             return False
 
-        self.lastRecv = int(time.time())
+        self._last_communication = int(time.time())
 
         # set client as connected
         self._isConnected = True
 
-        self._releaseLock()
-
-        # handle connection initialized event
-        self.serverEventHandler.handleEvent()
+        # Handle connection initialized event.
+        self._event_handler.new_connection()
 
         return True
 
-    # this function handles the incoming messages from the server
-    def handleCommunication(self):
+    # This function handles the incoming messages from the server.
+    def handle_requests(self):
 
-        self._acquireLock()
-
-        # handle commands in an infinity loop
+        # Handle commands in an infinity loop.
         while True:
 
             data = self._communication.recv_request()
+            if data is None:
+                return
 
-            # extract message type
+            # Extract request/message type.
+            request = ""
             try:
                 message = json.loads(data)
                 # check if an error was received
@@ -1043,17 +999,16 @@ class ServerCommunication:
 
                     # clean up session before exiting
                     self._cleanUpSessionForClosing()
-                    self._releaseLock()
                     return
 
                 # check if the received type is the correct one
-                if str(message["payload"]["type"]).upper() != "REQUEST":
-                    logging.error("[%s]: request expected." % self.fileName)
+                if str(message["payload"]["type"]).lower() != "request":
+                    logging.error("[%s]: Request expected." % self.fileName)
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"clientTime": utcTimestamp,
+                        utc_timestamp = int(time.time())
+                        message = {"clientTime": utc_timestamp,
                                    "message": message["message"],
                                    "error": "request expected"}
                         self._communication.send(json.dumps(message))
@@ -1062,11 +1017,10 @@ class ServerCommunication:
 
                     # clean up session before exiting
                     self._cleanUpSessionForClosing()
-                    self._releaseLock()
                     return
 
-                # extract the command/message type of the message
-                command = str(message["message"]).upper()
+                # Extract the request/message type of the message.
+                request = str(message["message"]).lower()
 
             except Exception as e:
 
@@ -1074,77 +1028,100 @@ class ServerCommunication:
 
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
-                self._releaseLock()
                 return
 
-            # check if SENSORALERT was received
-            # => update screen
-            if command == "SENSORALERT":
+            # Handle SENSORALERT request.
+            if request == "sensoralert":
+                if not self._sensorAlertHandler(message):
+                    logging.error("[%s]: Receiving sensor alert failed."
+                                  % self.fileName)
 
-                    # handle sensor alert
-                    if not self._sensorAlertHandler(message):
+                    # clean up session before exiting
+                    self._cleanUpSessionForClosing()
+                    return
 
-                        logging.error("[%s]: Receiving sensor alert failed."
-                                      % self.fileName)
+            # Handle STATUS request.
+            elif request == "status":
+                if not self._statusUpdateHandler(message):
+                    logging.error("[%s]: Receiving status update failed."
+                                  % self.fileName)
 
-                        # clean up session before exiting
-                        self._cleanUpSessionForClosing()
-                        self._releaseLock()
-                        return
+                    # clean up session before exiting
+                    self._cleanUpSessionForClosing()
+                    return
 
-            # check if STATUS was received
-            # => get status update
-            elif command == "STATUS":
+            # Handle STATECHANGE request.
+            elif request == "statechange":
+                if not self._stateChangeHandler(message):
+                    logging.error("[%s]: Receiving state change failed."
+                                  % self.fileName)
 
-                    # get status update
-                    if not self._statusUpdateHandler(message):
+                    # clean up session before exiting
+                    self._cleanUpSessionForClosing()
+                    return
 
-                        logging.error("[%s]: Receiving status update failed."
-                                      % self.fileName)
-
-                        # clean up session before exiting
-                        self._cleanUpSessionForClosing()
-                        self._releaseLock()
-                        return
-
-            # check if STATECHANGE was received
-            # => update screen
-            elif command == "STATECHANGE":
-
-                    # handle sensor state change
-                    if not self._stateChangeHandler(message):
-
-                        logging.error("[%s]: Receiving state change failed."
-                                      % self.fileName)
-
-                        # clean up session before exiting
-                        self._cleanUpSessionForClosing()
-                        self._releaseLock()
-                        return
-
+            # Unkown request.
             else:
-                logging.error("[%s]: Received unknown command. Server sent: '%s'." % (self.fileName, data))
+                logging.error("[%s]: Received unknown request. Server sent: %s" % (self.fileName, data))
 
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
-                               "error": "unknown command/message type"}
+                    utc_timestamp = int(time.time())
+                    message = {"clientTime": utc_timestamp,
+                               "message": request,
+                               "error": "unknown request/message type"}
                     self._communication.send(json.dumps(message))
                 except Exception as e:
                     pass
 
                 # clean up session before exiting
                 self._cleanUpSessionForClosing()
-                self._releaseLock()
                 return
 
-            # handle incoming message event
-            self.serverEventHandler.handleEvent()
+            self._last_communication = int(time.time())
 
-            self.lastRecv = int(time.time())
+    def isConnected(self) -> bool:
+        return self._isConnected
 
-    def sendOption(self, optionType: str, optionValue: float, optionDelay: int = 0):
+    # this function reconnects the client to the server
+    def reconnect(self) -> bool:
+
+        logging.info("[%s] Reconnecting to server." % self.fileName)
+
+        # clean up session before exiting
+        self._cleanUpSessionForClosing()
+
+        return self.initializeCommunication()
+
+    # this function closes the connection to the server
+    def close(self):
+        # clean up session before exiting
+        self._cleanUpSessionForClosing()
+
+    # this function sends a keep alive (PING request) to the server
+    # to keep the connection alive and to check if the connection
+    # is still alive
+    def sendKeepalive(self) -> bool:
+
+        pingMessage = MsgBuilder.build_ping_msg()
+
+        promise = self._communication.send_request("ping", pingMessage)
+
+        # TODO block at the moment when sending request until we checked the code works
+        promise.is_finished(blocking=True)
+
+        if not promise.was_successful():
+            # clean up session before exiting
+            self._cleanUpSessionForClosing()
+            return False
+
+        self._last_communication = int(time.time())
+
+        return True
+
+    def sendOption(self,
+                   optionType: str,
+                   optionValue: float,
+                   optionDelay: int = 0):
         """
         This function sends an option change to the server for example
         to activate the alert system or deactivate it.
@@ -1165,57 +1142,8 @@ class ServerCommunication:
         if not promise.was_successful():
             # clean up session before exiting
             self._cleanUpSessionForClosing()
-            self._releaseLock()
             return False
 
-        self.lastRecv = int(time.time())
-
-        return True
-
-    def isConnected(self) -> bool:
-        return self._isConnected
-
-    # this function reconnects the client to the server
-    def reconnect(self) -> bool:
-
-        logging.info("[%s] Reconnecting to server." % self.fileName)
-
-        self._acquireLock()
-
-        # clean up session before exiting
-        self._cleanUpSessionForClosing()
-
-        self._releaseLock()
-
-        return self.initializeCommunication()
-
-    # this function closes the connection to the server
-    def close(self):
-
-        self._acquireLock()
-
-        # clean up session before exiting
-        self._cleanUpSessionForClosing()
-        self._releaseLock()
-
-    # this function sends a keep alive (PING request) to the server
-    # to keep the connection alive and to check if the connection
-    # is still alive
-    def sendKeepalive(self) -> bool:
-
-        pingMessage = MsgBuilder.build_ping_msg()
-
-        promise = self._communication.send_request("ping", pingMessage)
-
-        # TODO block at the moment when sending request until we checked the code works
-        promise.is_finished(blocking=True)
-
-        if not promise.was_successful():
-            # clean up session before exiting
-            self._cleanUpSessionForClosing()
-            self._releaseLock()
-            return False
-
-        self.lastRecv = int(time.time())
+        self._last_communication = int(time.time())
 
         return True

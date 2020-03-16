@@ -7,6 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import ServerEventHandler
+from .core import ManagerEventHandler
 from .server import LocalServerSession, ThreadedUnixStreamServer
 from .storage import Mysql

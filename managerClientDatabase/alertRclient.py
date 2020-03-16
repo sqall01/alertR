@@ -15,6 +15,7 @@ from lib import LocalServerSession, ThreadedUnixStreamServer
 from lib import Mysql
 from lib import SMTPAlert
 from lib import GlobalData
+from lib import ManagerEventHandler
 import logging
 import time
 import random
@@ -200,6 +201,7 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
+                                                ManagerEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
     logging.info("[%s] Connecting to server." % fileName)

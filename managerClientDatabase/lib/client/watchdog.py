@@ -92,7 +92,7 @@ class ConnectionWatchdog(threading.Thread):
             # check if the time of the data last received lies too far in the
             # past => send ping to check connection
             utcTimestamp = int(time.time())
-            if (utcTimestamp - self.connection.lastRecv) > self.pingInterval:
+            if (utcTimestamp - self.connection._last_communication) > self.pingInterval:
                 logging.debug("[%s]: Ping interval exceeded." % self.fileName)
 
                 # check if PING failed

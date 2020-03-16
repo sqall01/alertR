@@ -83,7 +83,6 @@ class Communication(threading.Thread):
         self.client_cert_file = client_cert_file
         self.client_key_file = client_key_file
 
-        # TODO create client in this class so no reference is available on the outside
         self._client_lock = threading.Lock()
         self._client = None
 
@@ -173,7 +172,7 @@ class Communication(threading.Thread):
             # Check if an error was received
             # (only log error, gets handled afterwards)
             if "error" in message.keys():
-                logging.error("[%s]: Error received: '%s'"
+                logging.error("[%s]: Error received: %s"
                               % (self._log_tag, message["error"]))
 
             # if no error => extract values from message
@@ -404,7 +403,7 @@ class Communication(threading.Thread):
 
                     # Check if an error was received.
                     if "error" in message.keys():
-                        logging.error("[%s]: Error received: '%s'" % (self._log_tag, message["error"]))
+                        logging.error("[%s]: Error received: %s" % (self._log_tag, message["error"]))
                         return None
 
                     # Check if RTS was received
@@ -451,7 +450,7 @@ class Communication(threading.Thread):
                     # => terminate session
                     else:
 
-                        logging.error("[%s]: Did not receive RTS. Server sent: '%s'"
+                        logging.error("[%s]: Did not receive RTS. Server sent: %s"
                                       % (self._log_tag, data))
                         return None
 

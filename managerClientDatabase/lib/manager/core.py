@@ -18,6 +18,7 @@ from .events import EventChangeOption, EventChangeNode, EventChangeSensor
 from .events import EventChangeAlert, EventChangeManager
 from .events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
 from .events import EventDeleteManager
+from ..client import EventHandler
 from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 from typing import List, Any
@@ -25,9 +26,11 @@ from typing import List, Any
 
 # this class handles an incoming server event (sensor alert message,
 # status update, ...)
-class ServerEventHandler:
+class ManagerEventHandler(EventHandler):
 
-    def __init__(self, globalData: GlobalData):
+    def __init__(self,
+                 globalData: GlobalData):
+        super().__init__()
 
         # file name of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -144,17 +147,68 @@ class ServerEventHandler:
         for alertLevel in self.alertLevels:
             alertLevel.checked = False
 
-    # is called when a status update event was received from the server
-    def receivedStatusUpdate(self,
-                             serverTime: int,
-                             options: List[Option],
-                             nodes: List[Node],
-                             sensors: List[Sensor],
-                             managers: List[Manager],
-                             alerts: List[Alert],
-                             alertLevels: List[AlertLevel]) -> bool:
+    def _update_db_data(self):
+        """
+        Internal function that updates alarm system data in the database.
+        """
+                # check if configured to not store sensor alerts
+        # => delete them directly
+        if self.sensorAlertLifeSpan == 0:
+            del self.sensorAlerts[:]
 
-        self.serverTime = serverTime
+        # check if a sensor has timed out
+        # => create an event for it
+        for sensor in self.sensors:
+            if sensor.lastStateUpdated < (self.serverTime - (2 * self.connectionTimeout)):
+
+                # create sensor time out event
+                # (only add it if node is connected)
+                foundNode = None
+                for node in self.nodes:
+                    if node.nodeId == sensor.nodeId:
+                        foundNode = node
+                        break
+                if foundNode is None:
+                    logging.error("[%s]: Could not find node with id '%d' for sensor with id '%d'."
+                                  % (self.fileName, sensor.nodeId, sensor.sensorId))
+                    continue
+
+                if foundNode.connected == 1:
+                    utcTimestamp = int(time.time())
+                    tempEvent = EventSensorTimeOut(utcTimestamp)
+                    tempEvent.hostname = foundNode.hostname
+                    tempEvent.description = sensor.description
+                    tempEvent.state = sensor.state
+                    self.events.append(tempEvent)
+
+        # update the local server information
+        if not self.storage.updateServerInformation(self.serverTime,
+                                                    self.options,
+                                                    self.nodes,
+                                                    self.sensors,
+                                                    self.alerts,
+                                                    self.managers,
+                                                    self.alertLevels,
+                                                    self.sensorAlerts):
+
+            logging.error("[%s]: Unable to update server information." % self.fileName)
+
+        else:
+            # empty sensor alerts list to prevent it
+            # from getting too big
+            del self.sensorAlerts[:]
+
+    # is called when a status update event was received from the server
+    def status_update(self,
+                      server_time: int,
+                      options: List[Option],
+                      nodes: List[Node],
+                      sensors: List[Sensor],
+                      managers: List[Manager],
+                      alerts: List[Alert],
+                      alert_levels: List[AlertLevel]) -> bool:
+
+        self.serverTime = server_time
         timeReceived = int(time.time())
 
         # mark all nodes as not checked
@@ -520,7 +574,7 @@ class ServerEventHandler:
                 self.events.append(tempEvent)
 
         # process received alertLevels
-        for recvAlertLevel in alertLevels:
+        for recvAlertLevel in alert_levels:
 
             # search alertLevel in list of known alertLevels
             # => if not known add it
@@ -558,11 +612,11 @@ class ServerEventHandler:
         return True
 
     # is called when a sensor alert event was received from the server
-    def receivedSensorAlert(self, serverTime: int, sensorAlert: SensorAlert) -> bool:
+    def sensor_alert(self, server_time: int, sensor_alert: SensorAlert) -> bool:
 
-        self.serverTime = serverTime
+        self.serverTime = server_time
         timeReceived = int(time.time())
-        self.sensorAlerts.append(sensorAlert)
+        self.sensorAlerts.append(sensor_alert)
 
         # when events are activated
         # => create events
@@ -570,31 +624,31 @@ class ServerEventHandler:
 
             # create sensor alert event
             tempEvent = EventSensorAlert(timeReceived)
-            tempEvent.description = sensorAlert.description
-            tempEvent.state = sensorAlert.state
-            tempEvent.dataType = sensorAlert.dataType
-            tempEvent.sensorData = sensorAlert.sensorData
+            tempEvent.description = sensor_alert.description
+            tempEvent.state = sensor_alert.state
+            tempEvent.dataType = sensor_alert.dataType
+            tempEvent.sensorData = sensor_alert.sensorData
 
-            tempEvent.alertLevels = list(sensorAlert.alertLevels)
+            tempEvent.alertLevels = list(sensor_alert.alertLevels)
             self.events.append(tempEvent)
 
             # When rules are not activated and change state flag is set.
             # => Create state change event.
-            if not sensorAlert.rulesActivated and sensorAlert.changeState:
+            if not sensor_alert.rulesActivated and sensor_alert.changeState:
                 tempStateEvent = EventStateChange(timeReceived)
-                tempStateEvent.state = sensorAlert.state
+                tempStateEvent.state = sensor_alert.state
 
                 # Only store data for this state change event if the sensor
                 # alert carries the latest data of the sensor.
-                if sensorAlert.hasLatestData:
-                    tempStateEvent.dataType = sensorAlert.dataType
-                    tempStateEvent.data = sensorAlert.sensorData
+                if sensor_alert.hasLatestData:
+                    tempStateEvent.dataType = sensor_alert.dataType
+                    tempStateEvent.data = sensor_alert.sensorData
                 else:
                     tempStateEvent.dataType = SensorDataType.NONE
 
                 triggeredSensor = None
                 for sensor in self.sensors:
-                    if sensor.sensorId == sensorAlert.sensorId:
+                    if sensor.sensorId == sensor_alert.sensorId:
                         tempStateEvent.description = sensor.description
                         triggeredSensor = sensor
                         break
@@ -617,22 +671,22 @@ class ServerEventHandler:
         # If rules are not activated (and therefore the sensor alert was
         # only triggered by one distinct sensor).
         # => Update information in sensor which triggered the sensor alert.
-        if not sensorAlert.rulesActivated:
+        if not sensor_alert.rulesActivated:
             found = False
             for sensor in self.sensors:
-                if sensor.sensorId == sensorAlert.sensorId:
-                    sensor.lastStateUpdated = serverTime
+                if sensor.sensorId == sensor_alert.sensorId:
+                    sensor.lastStateUpdated = server_time
 
                     # Only update sensor state information if the flag
                     # was set in the received message.
-                    if sensorAlert.changeState:
-                        sensor.state = sensorAlert.state
+                    if sensor_alert.changeState:
+                        sensor.state = sensor_alert.state
 
                     # Only update sensor data information if the flag
                     # was set in the received message.
-                    if sensorAlert.hasLatestData:
-                        if sensorAlert.dataType == sensor.dataType:
-                            sensor.data = sensorAlert.sensorData
+                    if sensor_alert.hasLatestData:
+                        if sensor_alert.dataType == sensor.dataType:
+                            sensor.data = sensor_alert.sensorData
 
                         else:
                             logging.error("[%s]: Sensor data type different. Skipping data assignment."
@@ -645,23 +699,26 @@ class ServerEventHandler:
                 logging.error("[%s]: Sensor of sensor alert not known." % self.fileName)
                 return False
 
+        # Update data.
+        self._update_db_data()
+
         return True
 
     # is called when a state change event was received from the server
-    def receivedStateChange(self,
-                            serverTime: int,
-                            sensorId: int,
-                            state: int,
-                            dataType: SensorDataType,
-                            sensorData: Any) -> bool:
+    def state_change(self,
+                     server_time: int,
+                     sensor_id: int,
+                     state: int,
+                     data_type: SensorDataType,
+                     sensor_data: Any) -> bool:
 
-        self.serverTime = serverTime
+        self.serverTime = server_time
 
         # search sensor in list of known sensors
         # => if not known return failure
         sensor = None
         for tempSensor in self.sensors:
-            if tempSensor.sensorId == sensorId:
+            if tempSensor.sensorId == sensor_id:
                 sensor = tempSensor
                 break
         if not sensor:
@@ -689,61 +746,17 @@ class ServerEventHandler:
 
         # Change sensor state.
         sensor.state = state
-        sensor.lastStateUpdated = serverTime
+        sensor.lastStateUpdated = server_time
 
-        if dataType == sensor.dataType:
-            sensor.data = sensorData
+        if data_type == sensor.dataType:
+            sensor.data = sensor_data
         else:
             logging.error("[%s]: Sensor data type different. Skipping data assignment." % self.fileName)
 
         return True
 
-    # is called when an incoming server event has to be handled
-    def handleEvent(self):
+    def close_connection(self):
+        self._update_db_data()
 
-        # check if configured to not store sensor alerts
-        # => delete them directly
-        if self.sensorAlertLifeSpan == 0:
-            del self.sensorAlerts[:]
-
-        # check if a sensor has timed out
-        # => create an event for it
-        for sensor in self.sensors:
-            if sensor.lastStateUpdated < (self.serverTime - (2 * self.connectionTimeout)):
-
-                # create sensor time out event
-                # (only add it if node is connected)
-                foundNode = None
-                for node in self.nodes:
-                    if node.nodeId == sensor.nodeId:
-                        foundNode = node
-                        break
-                if foundNode is None:
-                    logging.error("[%s]: Could not find node with id '%d' for sensor with id '%d'."
-                                  % (self.fileName, sensor.nodeId, sensor.sensorId))
-                    continue
-
-                if foundNode.connected == 1:
-                    utcTimestamp = int(time.time())
-                    tempEvent = EventSensorTimeOut(utcTimestamp)
-                    tempEvent.hostname = foundNode.hostname
-                    tempEvent.description = sensor.description
-                    tempEvent.state = sensor.state
-                    self.events.append(tempEvent)
-
-        # update the local server information
-        if not self.storage.updateServerInformation(self.serverTime,
-                                                    self.options,
-                                                    self.nodes,
-                                                    self.sensors,
-                                                    self.alerts,
-                                                    self.managers,
-                                                    self.alertLevels,
-                                                    self.sensorAlerts):
-
-            logging.error("[%s]: Unable to update server information." % self.fileName)
-
-        else:
-            # empty sensor alerts list to prevent it
-            # from getting too big
-            del self.sensorAlerts[:]
+    def new_connection(self):
+        self._update_db_data()
