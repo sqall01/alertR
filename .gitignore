@@ -1,1 +1,9 @@
+.idea/
+tests/
+logs/
 *.pyc
+lib/**/__pycache__/
+update.json
+*.log
+updateVersionFile.py
+repositoryTester.py
