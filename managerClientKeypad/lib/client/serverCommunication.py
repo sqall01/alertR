@@ -9,62 +9,17 @@
 
 import socket
 import time
-import ssl
 import threading
 import logging
 import os
 import random
 import json
-from .localObjects import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
-from .manager import ServerEventHandler
-from .globalData import GlobalData
-from .smtp import SMTPAlert
-from typing import List, Dict, Any, Optional
-
-BUFSIZE = 4096
-
-
-# simple class of an ssl tcp client
-class Client:
-
-    def __init__(self, host: str, port: int, serverCAFile: str, clientCertFile: str, clientKeyFile: str):
-        self.host = host
-        self.port = port
-        self.serverCAFile = serverCAFile
-        self.clientCertFile = clientCertFile
-        self.clientKeyFile = clientKeyFile
-        self.socket = None
-        self.sslSocket = None
-
-    def connect(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # check if a client certificate is required
-        if self.clientCertFile is None or self.clientKeyFile is None:
-            self.sslSocket = ssl.wrap_socket(self.socket,
-                                             ca_certs=self.serverCAFile,
-                                             cert_reqs=ssl.CERT_REQUIRED)
-        else:
-            self.sslSocket = ssl.wrap_socket(self.socket,
-                                             ca_certs=self.serverCAFile,
-                                             cert_reqs=ssl.CERT_REQUIRED,
-                                             certfile=self.clientCertFile,
-                                             keyfile=self.clientKeyFile)
-
-        self.sslSocket.connect((self.host, self.port))
-
-    def send(self, data: str):
-        self.sslSocket.send(data.encode('ascii'))
-
-    def recv(self, buffsize: int, timeout: float = 20.0) -> str:
-        self.sslSocket.settimeout(timeout)
-        data = self.sslSocket.recv(buffsize)
-        self.sslSocket.settimeout(None)
-        return data.decode("ascii")
-
-    def close(self):
-        # closing SSLSocket will also close the underlying socket
-        self.sslSocket.close()
+from typing import Dict, Any
+from .core import BUFSIZE, Client
+from .util import MsgChecker, MsgBuilder
+from ..localObjects import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
+from ..manager import ServerEventHandler
+from ..globalData import GlobalData
 
 
 # this class handles the communication with the server
@@ -86,7 +41,7 @@ class ServerCommunication:
         self.clientCertFile = clientCertFile
         self.clientKeyFile = clientKeyFile
 
-        # instance of the used client class
+        # Instance of the used client class
         self.client = None
 
         # get global configured data
@@ -119,6 +74,9 @@ class ServerCommunication:
         # transaction with the server
         self.transactionInitiation = False
 
+        # Utility class that checks the incoming messages.
+        self.msg_checker = None
+
     # internal function that acquires the lock
     def _acquireLock(self):
         logging.debug("[%s]: Acquire lock." % self.fileName)
@@ -128,1203 +86,6 @@ class ServerCommunication:
     def _releaseLock(self):
         logging.debug("[%s]: Release lock." % self.fileName)
         self.connectionLock.release()
-
-    # Internal function to check sanity of the alertDelay.
-    def _checkMsgAlertDelay(self, alertDelay: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(alertDelay, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertDelay not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the alertId.
-    def _checkMsgAlertId(self, alertId: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(alertId, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertId not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the alertLevel.
-    def _checkMsgAlertLevel(self, alertLevel: int, messageType: str):
-
-        isCorrect = True
-        if not isinstance(alertLevel, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertLevel not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the alertLevels.
-    def _checkMsgAlertLevels(self, alertLevels: List[int], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(alertLevels, list):
-            isCorrect = False
-        elif not all(isinstance(item, int) for item in alertLevels):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertLevels not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the changeState.
-    def _checkMsgChangeState(self, changeState: bool, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(changeState, bool):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "changeState not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the connected.
-    def _checkMsgConnected(self, connected, messageType):
-
-        isCorrect = True
-        if not isinstance(connected, int):
-            isCorrect = False
-        elif connected != 0 and connected != 1:
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "connected not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the description.
-    def _checkMsgDescription(self, description: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(description, str):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "description not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the hasLatestData.
-    def _checkMsgHasLatestData(self, hasLatestData: bool, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(hasLatestData, bool):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "hasLatestData not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the hasOptionalData.
-    def _checkMsgHasOptionalData(self, hasOptionalData: bool, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(hasOptionalData, bool):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "hasOptionalData not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the hostname.
-    def _checkMsgHostname(self, hostname: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(hostname, str):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "hostname not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the instance.
-    def _checkMsgInstance(self, instance: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(instance, str):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "instance not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the lastStateUpdated.
-    def _checkMsgLastStateUpdated(self, lastStateUpdated: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(lastStateUpdated, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "lastStateUpdated not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the managerId.
-    def _checkMsgManagerId(self, managerId: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(managerId, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "managerId not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the name.
-    def _checkMsgName(self, name: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(name, str):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "name not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the nodeId.
-    def _checkMsgNodeId(self, nodeId: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(nodeId, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "nodeId not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the nodeType.
-    def _checkMsgNodeType(self, nodeType: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(nodeType, str):
-            isCorrect = False
-
-        nodeTypes = {"alert", "manager", "sensor", "server"}
-        if nodeType not in nodeTypes:
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "nodeType not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the optionalData.
-    def _checkMsgOptionalData(self, optionalData: Dict[str, Any], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(optionalData, dict):
-            isCorrect = False
-        if "message" in optionalData.keys():
-            if not self._checkMsgOptionalDataMessage(optionalData["message"], messageType):
-
-                isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "optionalData not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the optionalData message.
-    def _checkMsgOptionalDataMessage(self, message: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(message, str):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "optionalData message not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the optionType.
-    def _checkMsgOptionType(self, optionType: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(optionType, str):
-            isCorrect = False
-
-        if optionType != "alertSystemActive":
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "optionType not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the option value.
-    def _checkMsgOptionValue(self, value: float, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(value, float):
-            isCorrect = False
-
-        if not 0.0 <= value <= 1.0:
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "value not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the persistent.
-    def _checkMsgPersistent(self, persistent: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(persistent, int):
-            isCorrect = False
-        elif persistent != 0 and persistent != 1:
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "persistent not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the remoteAlertId.
-    def _checkMsgRemoteAlertId(self, remoteAlertId: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(remoteAlertId, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "remoteAlertId not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the remoteSensorId.
-    def _checkMsgRemoteSensorId(self, remoteSensorId: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(remoteSensorId, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "remoteSensorId not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the rev.
-    def _checkMsgRev(self, rev: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(rev, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "rev not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the rulesActivated.
-    def _checkMsgRulesActivated(self, rulesActivated: bool, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(rulesActivated, bool):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "rulesActivated not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the sensor data.
-    def _checkMsgSensorData(self, data: Any, dataType: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if dataType == SensorDataType.NONE and data is not None:
-            isCorrect = False
-        elif dataType == SensorDataType.INT and not isinstance(data, int):
-            isCorrect = False
-        elif dataType == SensorDataType.FLOAT and not isinstance(data, float):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "data not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the sensor data type.
-    def _checkMsgSensorDataType(self, dataType: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(dataType, int):
-            isCorrect = False
-        elif not (SensorDataType.NONE == dataType
-           or SensorDataType.INT == dataType
-           or SensorDataType.FLOAT == dataType):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "dataType not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the sensorId.
-    def _checkMsgSensorId(self, sensorId: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(sensorId, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "sensorId not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the serverTime.
-    def _checkMsgServerTime(self, serverTime: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(serverTime, int):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "serverTime not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the state.
-    def _checkMsgState(self, state: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(state, int):
-            isCorrect = False
-        elif state != 0 and state != 1:
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "state not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the status alertLevels list.
-    def _checkMsgStatusAlertLevelsList(self, alertLevels: List[Dict[str, Any]], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(alertLevels, list):
-            isCorrect = False
-
-        # Check each alertLevel if correct.
-        for alertLevel in alertLevels:
-
-            if not isinstance(alertLevel, dict):
-                isCorrect = False
-                break
-
-            if "alertLevel" not in alertLevel.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgAlertLevel(alertLevel["alertLevel"], messageType):
-                isCorrect = False
-                break
-
-            if "name" not in alertLevel.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgName(alertLevel["name"], messageType):
-                isCorrect = False
-                break
-
-            if "triggerAlways" not in alertLevel.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgTriggerAlways(alertLevel["triggerAlways"], messageType):
-                isCorrect = False
-                break
-
-            if "rulesActivated" not in alertLevel.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgRulesActivated(alertLevel["rulesActivated"], messageType):
-                isCorrect = False
-                break
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertLevels list not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the status alerts list.
-    def _checkMsgStatusAlertsList(self, alerts: List[Dict[str, Any]], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(alerts, list):
-            isCorrect = False
-
-        # Check each alert if correct.
-        for alert in alerts:
-
-            if not isinstance(alert, dict):
-                isCorrect = False
-                break
-
-            if "nodeId" not in alert.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgNodeId(alert["nodeId"], messageType):
-                isCorrect = False
-                break
-
-            if "alertId" not in alert.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgAlertId(alert["alertId"], messageType):
-                isCorrect = False
-                break
-
-            if "description" not in alert.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgDescription(alert["description"], messageType):
-                isCorrect = False
-                break
-
-            if "alertLevels" not in alert.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgAlertLevels(alert["alertLevels"], messageType):
-                isCorrect = False
-                break
-
-            if "remoteAlertId" not in alert.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgRemoteAlertId(alert["remoteAlertId"], messageType):
-                isCorrect = False
-                break
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alerts list not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the status managers list.
-    def _checkMsgStatusManagersList(self, managers: List[Dict[str, Any]], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(managers, list):
-            isCorrect = False
-
-        # Check each manager if correct.
-        for manager in managers:
-
-            if not isinstance(manager, dict):
-                isCorrect = False
-                break
-
-            if "nodeId" not in manager.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgNodeId(manager["nodeId"], messageType):
-                isCorrect = False
-                break
-
-            if "managerId" not in manager.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgManagerId(manager["managerId"], messageType):
-                isCorrect = False
-                break
-
-            if "description" not in manager.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgDescription(manager["description"], messageType):
-                isCorrect = False
-                break
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "managers list not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the status nodes list.
-    def _checkMsgStatusNodesList(self, nodes: List[Dict[str, Any]], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(nodes, list):
-            isCorrect = False
-
-        # Check each option if correct.
-        for node in nodes:
-
-            if not isinstance(node, dict):
-                isCorrect = False
-                break
-
-            if "nodeId" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgNodeId(node["nodeId"], messageType):
-                isCorrect = False
-                break
-
-            if "hostname" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgHostname(node["hostname"], messageType):
-                isCorrect = False
-                break
-
-            if "nodeType" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgNodeType(node["nodeType"], messageType):
-                isCorrect = False
-                break
-
-            if "instance" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgInstance(node["instance"], messageType):
-                isCorrect = False
-                break
-
-            if "connected" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgConnected(node["connected"], messageType):
-                isCorrect = False
-                break
-
-            if "version" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgVersion(node["version"], messageType):
-                isCorrect = False
-                break
-
-            if "rev" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgRev(node["rev"], messageType):
-                isCorrect = False
-                break
-
-            if "username" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgUsername(node["username"], messageType):
-                isCorrect = False
-                break
-
-            if "persistent" not in node.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgPersistent(node["persistent"], messageType):
-                isCorrect = False
-                break
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "nodes list not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the status options list.
-    def _checkMsgStatusOptionsList(self, options: List[Dict[str, Any]], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(options, list):
-            isCorrect = False
-
-        # Check each option if correct.
-        for option in options:
-
-            if not isinstance(option, dict):
-                isCorrect = False
-                break
-
-            if "type" not in option.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgOptionType(option["type"], messageType):
-                isCorrect = False
-                break
-
-            if "value" not in option.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgOptionValue(option["value"], messageType):
-                isCorrect = False
-                break
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "options list not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the status sensors list.
-    def _checkMsgStatusSensorsList(self, sensors: List[Dict[str, Any]], messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(sensors, list):
-            isCorrect = False
-
-        # Check each sensor if correct.
-        for sensor in sensors:
-
-            if not isinstance(sensor, dict):
-                isCorrect = False
-                break
-
-            if "nodeId" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgNodeId(sensor["nodeId"], messageType):
-                isCorrect = False
-                break
-
-            if "sensorId" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgSensorId(sensor["sensorId"], messageType):
-                isCorrect = False
-                break
-
-            if "alertDelay" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgAlertDelay(sensor["alertDelay"], messageType):
-                isCorrect = False
-                break
-
-            if "alertLevels" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgAlertLevels(sensor["alertLevels"], messageType):
-                isCorrect = False
-                break
-
-            if "description" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgDescription(sensor["description"], messageType):
-                isCorrect = False
-                break
-
-            if "lastStateUpdated" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgLastStateUpdated(sensor["lastStateUpdated"], messageType):
-                isCorrect = False
-                break
-
-            if "state" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgState(sensor["state"], messageType):
-                isCorrect = False
-                break
-
-            if "remoteSensorId" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgRemoteSensorId(sensor["remoteSensorId"], messageType):
-                isCorrect = False
-                break
-
-            if "dataType" not in sensor.keys():
-                isCorrect = False
-                break
-
-            elif not self._checkMsgSensorDataType(sensor["dataType"], messageType):
-                isCorrect = False
-                break
-
-            if sensor["dataType"] != SensorDataType.NONE:
-                if "data" not in sensor.keys():
-                    isCorrect = False
-                    break
-                    
-                elif not self._checkMsgSensorData(sensor["data"], sensor["dataType"], messageType):
-                    isCorrect = False
-                    break
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "sensors list not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the triggerAlways.
-    def _checkMsgTriggerAlways(self, triggerAlways: int, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(triggerAlways, int):
-            isCorrect = False
-        elif triggerAlways != 0 and triggerAlways != 1:
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "triggerAlways not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the username.
-    def _checkMsgUsername(self, username: str, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(username, str):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "username not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
-    # Internal function to check sanity of the version.
-    def _checkMsgVersion(self, version: float, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(version, float):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "version not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
 
     # this internal function cleans up the session before releasing the
     # lock and exiting/closing the session
@@ -1489,67 +250,14 @@ class ServerCommunication:
 
         return True
 
-    # Internal function that builds the client authentication message.
-    def _buildAuthenticationMessage(self, regMessageSize: int) -> str:
-
-        payload = {"type": "request",
-                   "version": self.version,
-                   "rev": self.rev,
-                   "username": self.username,
-                   "password": self.password}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
-                   "size": regMessageSize,
-                   "message": "initialization",
-                   "payload": payload}
-        return json.dumps(message)
-
-    # Internal function that builds the option message.
-    def _buildOptionMessage(self, optionType: str, optionValue: float, optionDelay: int) -> str:
-
-        payload = {"type": "request",
-                   "optionType": optionType,
-                   "value": float(optionValue),
-                   "timeDelay": optionDelay}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
-                   "message": "option",
-                   "payload": payload}
-        return json.dumps(message)
-
-    # Internal function that builds the ping message.
-    def _buildPingMessage(self) -> str:
-
-        payload = {"type": "request"}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
-                   "message": "ping",
-                   "payload": payload}
-        return json.dumps(message)
-
-    # Internal function that builds the client registration message.
-    def _buildRegistrationMessage(self) -> str:
-
-        # build manager dict for the message
-        manager = dict()
-        manager["description"] = self.description
-
-        payload = {"type": "request",
-                   "hostname": socket.gethostname(),
-                   "nodeType": self.nodeType,
-                   "instance": self.instance,
-                   "persistent": self.persistent,
-                   "manager": manager}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
-                   "message": "initialization",
-                   "payload": payload}
-        return json.dumps(message)
-
     # internal function to verify the server/client version and authenticate
     def _verifyVersionAndAuthenticate(self, regMessageSize: int) -> bool:
 
-        authMessage = self._buildAuthenticationMessage(regMessageSize)
+        authMessage = MsgBuilder.build_auth_msg(self.username,
+                                                self.password,
+                                                self.version,
+                                                self.rev,
+                                                regMessageSize)
 
         # send user credentials and version
         try:
@@ -1738,32 +446,32 @@ class ServerCommunication:
         # extract status values
         try:
 
-            if not self._checkMsgServerTime(incomingMessage["serverTime"], incomingMessage["message"]):
+            if not self.msg_checker.check_server_time(incomingMessage["serverTime"], incomingMessage["message"]):
                 logging.error("[%s]: Received serverTime invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgStatusOptionsList(incomingMessage["payload"]["options"], incomingMessage["message"]):
+            if not self.msg_checker.check_status_options_list(incomingMessage["payload"]["options"], incomingMessage["message"]):
                 logging.error("[%s]: Received options invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgStatusNodesList(incomingMessage["payload"]["nodes"], incomingMessage["message"]):
+            if not self.msg_checker.check_status_nodes_list(incomingMessage["payload"]["nodes"], incomingMessage["message"]):
                 logging.error("[%s]: Received nodes invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgStatusSensorsList(incomingMessage["payload"]["sensors"], incomingMessage["message"]):
+            if not self.msg_checker.check_status_sensors_list(incomingMessage["payload"]["sensors"], incomingMessage["message"]):
                 logging.error("[%s]: Received sensors invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgStatusManagersList(incomingMessage["payload"]["managers"], incomingMessage["message"]):
+            if not self.msg_checker.check_status_managers_list(incomingMessage["payload"]["managers"], incomingMessage["message"]):
                 logging.error("[%s]: Received managers invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgStatusAlertsList(incomingMessage["payload"]["alerts"], incomingMessage["message"]):
+            if not self.msg_checker.check_status_alerts_list(incomingMessage["payload"]["alerts"], incomingMessage["message"]):
                 logging.error("[%s]: Received alerts invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgStatusAlertLevelsList(incomingMessage["payload"]["alertLevels"],
-                                                       incomingMessage["message"]):
+            if not self.msg_checker.check_status_alert_levels_list(incomingMessage["payload"]["alertLevels"],
+                                                                   incomingMessage["message"]):
                 logging.error("[%s]: Received alertLevels invalid." % self.fileName)
                 return False
 
@@ -2076,61 +784,61 @@ class ServerCommunication:
         sensorAlert = SensorAlert()
         sensorAlert.timeReceived = int(time.time())
         try:
-            if not self._checkMsgServerTime(incomingMessage["serverTime"], incomingMessage["message"]):
+            if not self.msg_checker.check_server_time(incomingMessage["serverTime"], incomingMessage["message"]):
                 logging.error("[%s]: Received serverTime invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgAlertLevels(incomingMessage["payload"]["alertLevels"], incomingMessage["message"]):
+            if not self.msg_checker.check_alert_levels(incomingMessage["payload"]["alertLevels"], incomingMessage["message"]):
                 logging.error("[%s]: Received alertLevels invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgDescription(incomingMessage["payload"]["description"], incomingMessage["message"]):
+            if not self.msg_checker.check_description(incomingMessage["payload"]["description"], incomingMessage["message"]):
                 logging.error("[%s]: Received description invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgRulesActivated(incomingMessage["payload"]["rulesActivated"],
-                                                incomingMessage["message"]):
+            if not self.msg_checker.check_rules_activated(incomingMessage["payload"]["rulesActivated"],
+                                                          incomingMessage["message"]):
                 logging.error("[%s]: Received rulesActivated invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgSensorId(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
+            if not self.msg_checker.check_sensor_id(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
                 logging.error("[%s]: Received sensorId invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgState(incomingMessage["payload"]["state"], incomingMessage["message"]):
+            if not self.msg_checker.check_state(incomingMessage["payload"]["state"], incomingMessage["message"]):
                 logging.error("[%s]: Received state invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgHasOptionalData(incomingMessage["payload"]["hasOptionalData"],
-                                                 incomingMessage["message"]):
+            if not self.msg_checker.check_has_optional_data(incomingMessage["payload"]["hasOptionalData"],
+                                                            incomingMessage["message"]):
                 logging.error("[%s]: Received hasOptionalData invalid." % self.fileName)
                 return False
 
             if incomingMessage["payload"]["hasOptionalData"]:
-                if not self._checkMsgOptionalData(incomingMessage["payload"]["optionalData"],
-                                                  incomingMessage["message"]):
+                if not self.msg_checker.check_optional_data(incomingMessage["payload"]["optionalData"],
+                                                            incomingMessage["message"]):
                     logging.error("[%s]: Received optionalData invalid." % self.fileName)
                     return False
 
-            if not self._checkMsgSensorDataType(incomingMessage["payload"]["dataType"],
-                                                incomingMessage["message"]):
+            if not self.msg_checker.check_sensor_data_type(incomingMessage["payload"]["dataType"],
+                                                           incomingMessage["message"]):
                 logging.error("[%s]: Received dataType invalid." % self.fileName)
                 return False
 
             if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
-                if not self._checkMsgSensorData(incomingMessage["payload"]["data"],
-                                                incomingMessage["payload"]["dataType"],
-                                                incomingMessage["message"]):
+                if not self.msg_checker.check_sensor_data(incomingMessage["payload"]["data"],
+                                                          incomingMessage["payload"]["dataType"],
+                                                          incomingMessage["message"]):
                     logging.error("[%s]: Received data invalid." % self.fileName)
                     return False
 
-            if not self._checkMsgHasLatestData(incomingMessage["payload"]["hasLatestData"],
-                                               incomingMessage["message"]):
+            if not self.msg_checker.check_has_latest_data(incomingMessage["payload"]["hasLatestData"],
+                                                          incomingMessage["message"]):
                 logging.error("[%s]: Received hasLatestData invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgChangeState(incomingMessage["payload"]["changeState"],
-                                             incomingMessage["message"]):
+            if not self.msg_checker.check_change_state(incomingMessage["payload"]["changeState"],
+                                                       incomingMessage["message"]):
                 logging.error("[%s]: Received changeState invalid." % self.fileName)
                 return False
 
@@ -2208,25 +916,25 @@ class ServerCommunication:
 
         # extract state change values
         try:
-            if not self._checkMsgServerTime(incomingMessage["serverTime"], incomingMessage["message"]):
+            if not self.msg_checker.check_server_time(incomingMessage["serverTime"], incomingMessage["message"]):
                 logging.error("[%s]: Received serverTime invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgSensorId(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
+            if not self.msg_checker.check_sensor_id(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
                 logging.error("[%s]: Received sensorId invalid." % self.fileName)
                 return False
-            if not self._checkMsgState(incomingMessage["payload"]["state"], incomingMessage["message"]):
+            if not self.msg_checker.check_state(incomingMessage["payload"]["state"], incomingMessage["message"]):
                 logging.error("[%s]: Received state invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgSensorDataType(incomingMessage["payload"]["dataType"], incomingMessage["message"]):
+            if not self.msg_checker.check_sensor_data_type(incomingMessage["payload"]["dataType"], incomingMessage["message"]):
                 logging.error("[%s]: Received dataType invalid." % self.fileName)
                 return False
 
             if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
-                if not self._checkMsgSensorData(incomingMessage["payload"]["data"],
-                                                incomingMessage["payload"]["dataType"],
-                                                incomingMessage["message"]):
+                if not self.msg_checker.check_sensor_data(incomingMessage["payload"]["data"],
+                                                          incomingMessage["payload"]["dataType"],
+                                                          incomingMessage["message"]):
                     logging.error("[%s]: Received data invalid." % self.fileName)
                     return False
 
@@ -2306,8 +1014,13 @@ class ServerCommunication:
             self._releaseLock()
             return False
 
+        self.msg_checker = MsgChecker(self.client)
+
         # Build registration message.
-        regMessage = self._buildRegistrationMessage()
+        regMessage = MsgBuilder.build_reg_msg(self.description,
+                                              self.nodeType,
+                                              self.instance,
+                                              self.persistent)
 
         # First check version and authenticate.
         if not self._verifyVersionAndAuthenticate(len(regMessage)):
@@ -2689,7 +1402,7 @@ class ServerCommunication:
     # to activate the alert system or deactivate it
     def sendOption(self, optionType: str, optionValue: float, optionDelay: int = 0):
 
-        optionMessage = self._buildOptionMessage(optionType, optionValue, optionDelay)
+        optionMessage = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
 
         # initiate transaction with server and acquire lock
         if not self._initiateTransaction("option", len(optionMessage), acquireLock=True):
@@ -2810,7 +1523,7 @@ class ServerCommunication:
     # is still alive
     def sendKeepalive(self) -> bool:
 
-        pingMessage = self._buildPingMessage()
+        pingMessage = MsgBuilder.build_ping_msg()
 
         # initiate transaction with server and acquire lock
         if not self._initiateTransaction("ping", len(pingMessage), acquireLock=True):
@@ -2904,145 +1617,3 @@ class ServerCommunication:
         self.lastRecv = int(time.time())
 
         return True
-
-
-# this class checks if the connection to the server has broken down
-# => reconnects it if necessary
-class ConnectionWatchdog(threading.Thread):
-
-    def __init__(self, connection: ServerCommunication, pingInterval: int, smtpAlert: Optional[SMTPAlert]):
-        threading.Thread.__init__(self)
-
-        # the object that handles the communication with the server
-        self.connection = connection
-
-        # the interval in which a ping should be send when no data
-        # was received in this time
-        self.pingInterval = pingInterval
-
-        # the object to send a email alert via smtp
-        self.smtpAlert = smtpAlert
-
-        # the file name of this file for logging
-        self.fileName = os.path.basename(__file__)
-
-        # set exit flag as false
-        self.exitFlag = False
-
-        # internal counter to get the current count of connection retries
-        self.connectionRetries = 1
-
-    def run(self):
-
-        # check every 5 seconds if the client is still connected
-        # and the time of the last received data
-        # from the server lies too far in the past
-        while True:
-
-            # wait 5 seconds before checking time of last received data
-            for i in range(5):
-                if self.exitFlag:
-                    logging.info("[%s]: Exiting ConnectionWatchdog." % self.fileName)
-                    return
-                time.sleep(1)
-
-            # check if the client is still connected to the server
-            if not self.connection.isConnected():
-
-                logging.error("[%s]: Connection to server has died. " % self.fileName)
-
-                # reconnect to the server
-                while True:
-
-                    # check if 5 unsuccessful attempts are made to connect
-                    # to the server and if smtp alert is activated
-                    # => send eMail alert
-                    if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
-                        self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
-
-                    # try to connect to the server
-                    if self.connection.reconnect():
-                        # if smtp alert is activated
-                        # => send email that communication problems are solved
-                        if self.smtpAlert is not None:
-                            self.smtpAlert.sendCommunicationAlertClear()
-
-                        logging.info("[%s] Reconnecting successful after %d attempts."
-                                     % (self.fileName, self.connectionRetries))
-
-                        self.connectionRetries = 1
-                        break
-                    self.connectionRetries += 1
-
-                    logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self.fileName)
-                    time.sleep(5)
-
-                continue
-
-            # check if the time of the data last received lies too far in the
-            # past => send ping to check connection
-            utcTimestamp = int(time.time())
-            if (utcTimestamp - self.connection.lastRecv) > self.pingInterval:
-                logging.debug("[%s]: Ping interval exceeded." % self.fileName)
-
-                # check if PING failed
-                if not self.connection.sendKeepalive():
-                    logging.error("[%s]: Connection to server has died." % self.fileName)
-
-                    # reconnect to the server
-                    while True:
-
-                        # check if 5 unsuccessful attempts are made to connect
-                        # to the server and if smtp alert is activated
-                        # => send eMail alert
-                        if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
-                            self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
-
-                        # try to connect to the server
-                        if self.connection.reconnect():
-                            # if smtp alert is activated
-                            # => send email that communication
-                            # problems are solved
-                            if self.smtpAlert is not None:
-                                self.smtpAlert.sendCommunicationAlertClear()
-
-                            logging.info("[%s] Reconnecting successful after %d attempts."
-                                         % (self.fileName, self.connectionRetries))
-
-                            self.connectionRetries = 1
-                            break
-                        self.connectionRetries += 1
-
-                        logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self.fileName)
-                        time.sleep(5)
-
-    # sets the exit flag to shut down the thread
-    def exit(self):
-        self.exitFlag = True
-
-
-# this class handles the receive part of the client
-class Receiver(threading.Thread):
-
-    def __init__(self, connection: ServerCommunication):
-        threading.Thread.__init__(self)
-        self.connection = connection
-        self.fileName = os.path.basename(__file__)
-
-        # set exit flag as false
-        self.exitFlag = False
-
-    def run(self):
-
-        while True:
-            if self.exitFlag:
-                return
-
-            # only run the communication handler
-            self.connection.handleCommunication()
-
-            time.sleep(1)
-
-    # sets the exit flag to shut down the thread
-    def exit(self):
-        self.exitFlag = True
