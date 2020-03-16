@@ -12,14 +12,14 @@ import time
 import json
 import socket
 from typing import List, Dict, Any
-from .core import Client
+from .communication import Communication
 from ..localObjects import SensorDataType
 
 
 class MsgChecker:
 
-    def __init__(self, client: Client):
-        self.client = client
+    def __init__(self, communication: Communication):
+        self._communication = communication
 
     # Internal function to check sanity of the alertDelay.
     def check_alert_delay(self, alertDelay: int, messageType: str) -> bool:
@@ -30,16 +30,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertDelay not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "alertDelay not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -54,16 +49,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertId not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "alertId not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -78,16 +68,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertLevel not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "alertLevel not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -104,16 +89,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertLevels not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "alertLevels not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -128,16 +108,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "changeState not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "changeState not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -154,16 +129,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "connected not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "connected not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -178,16 +148,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "description not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "description not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -202,16 +167,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "hasLatestData not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "hasLatestData not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -226,16 +186,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "hasOptionalData not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "hasOptionalData not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -250,16 +205,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "hostname not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "hostname not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -274,16 +224,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "instance not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "instance not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -298,16 +243,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "lastStateUpdated not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "lastStateUpdated not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -322,16 +262,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "managerId not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "managerId not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -346,16 +281,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "name not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "name not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -370,16 +300,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "nodeId not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "nodeId not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -398,16 +323,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "nodeType not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "nodeType not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -425,16 +345,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "optionalData not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "optionalData not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -449,16 +364,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "optionalData message not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "optionalData message not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -476,16 +386,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "optionType not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "optionType not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -503,16 +408,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "value not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "value not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -529,16 +429,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "persistent not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "persistent not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -553,16 +448,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "remoteAlertId not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "remoteAlertId not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -577,16 +467,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "remoteSensorId not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "remoteSensorId not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -601,16 +486,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "rev not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "rev not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -625,16 +505,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "rulesActivated not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "rulesActivated not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -653,16 +528,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "data not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "data not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -681,16 +551,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "dataType not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "dataType not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -705,16 +570,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "sensorId not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "sensorId not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -729,16 +589,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "serverTime not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "serverTime not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -755,16 +610,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "state not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "state not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -818,16 +668,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alertLevels list not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "alertLevels list not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -889,16 +734,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "alerts list not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "alerts list not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -944,16 +784,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "managers list not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "managers list not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -1047,16 +882,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "nodes list not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "nodes list not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -1094,16 +924,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "options list not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "options list not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -1206,16 +1031,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "sensors list not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "sensors list not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -1232,16 +1052,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "triggerAlways not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "triggerAlways not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -1256,16 +1071,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "username not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "username not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 
@@ -1280,16 +1090,11 @@ class MsgChecker:
 
         if not isCorrect:
             # send error message back
-            # noinspection PyBroadException
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "version not valid"}
-                self.client.send(json.dumps(message))
-
-            except Exception as e:
-                pass
+            utcTimestamp = int(time.time())
+            message = {"clientTime": utcTimestamp,
+                       "message": messageType,
+                       "error": "version not valid"}
+            self._communication.send(json.dumps(message))
 
             return False
 

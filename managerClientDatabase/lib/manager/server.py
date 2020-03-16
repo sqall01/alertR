@@ -134,7 +134,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
             return
 
         # send option message to server
-        if self.serverComm.sendOption(optionType, optionValue, optionDelay):
+        if self.serverComm.send_option(optionType, optionValue, optionDelay):
 
             # send response to client
             try:
