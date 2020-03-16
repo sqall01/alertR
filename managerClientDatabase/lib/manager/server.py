@@ -13,7 +13,9 @@ import os
 import json
 import time
 import socket
+from typing import Type
 from ..globalData import GlobalData
+
 BUFSIZE = 1024
 
 
@@ -24,7 +26,7 @@ class ThreadedUnixStreamServer(socketserver.ThreadingMixIn,
     
     def __init__(self, globalData: GlobalData,
                  serverAddress: str,
-                 RequestHandlerClass: socketserver.BaseRequestHandler):
+                 RequestHandlerClass: Type[socketserver.BaseRequestHandler]):
 
         # get reference to global data object
         self.globalData = globalData
