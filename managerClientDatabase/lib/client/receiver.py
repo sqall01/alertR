@@ -16,26 +16,26 @@ from .serverCommunication import ServerCommunication
 # this class handles the receive part of the client
 class Receiver(threading.Thread):
 
-    def __init__(self, connection: ServerCommunication):
-        threading.Thread.__init__(self)
-        self.connection = connection
-        self.fileName = os.path.basename(__file__)
+    def __init__(self,
+                 connection: ServerCommunication):
 
-        # set exit flag as false
-        self.exit_flag = False
+        threading.Thread.__init__(self)
+        self._connection = connection
+        self._log_tag = os.path.basename(__file__)
+        self._exit_flag = False
 
     def run(self):
 
         while True:
-            if self.exit_flag:
-                self.connection.exit()
+            if self._exit_flag:
+                self._connection.exit()
                 return
 
             # only run the communication handler
-            self.connection.handle_requests()
+            self._connection.handle_requests()
 
             time.sleep(1)
 
     # sets the exit flag to shut down the thread
     def exit(self):
-        self.exit_flag = True
+        self._exit_flag = True
