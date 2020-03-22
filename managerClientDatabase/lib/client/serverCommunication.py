@@ -204,9 +204,14 @@ class ServerCommunication:
 
         return True
 
-    # Internal function to register the node.
-    def _register_node(self, regMessage: str) -> bool:
+    def _register_node(self,
+                       regMessage: str) -> bool:
+        """
+        Internal function to register the node.
 
+        :param regMessage:
+        :return: success or failure
+        """
         # Send registration message.
         try:
             logging.debug("[%s]: Sending registration message." % self._log_tag)
@@ -866,6 +871,9 @@ class ServerCommunication:
         # Handle commands in an infinity loop.
         while True:
 
+            if not self._communication.is_connected:
+                return
+
             # Exit if we are requested to.
             if self._exit_flag:
                 return
@@ -1143,7 +1151,7 @@ class ServerCommunication:
         Sends a keep alive (PING request) to the server to keep the connection alive and to check
         if the connection is still alive.
 
-        :return: success or failure
+        :return: Promise that the request will be sent and that contains the state of the send request
         """
         pingMessage = MsgBuilder.build_ping_msg()
 
@@ -1160,7 +1168,7 @@ class ServerCommunication:
         :param optionType:
         :param optionValue:
         :param optionDelay:
-        :return: success or failure
+        :return: Promise that the request will be sent and that contains the state of the send request
         """
 
         optionMessage = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)

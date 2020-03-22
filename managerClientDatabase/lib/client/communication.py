@@ -415,6 +415,11 @@ class Communication:
         :return: Data of the received request.
         """
         while True:
+
+            # Only try to receive requests if we are connected.
+            if not self._is_connected:
+                return None
+
             try:
 
                 # Exit if requested.
