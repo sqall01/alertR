@@ -416,6 +416,11 @@ class Communication:
         """
         while True:
             try:
+
+                # Exit if requested.
+                if self._exit_flag:
+                    return None
+
                 with self._client_lock:
                     data = self._client.recv(BUFSIZE, timeout=0.5)
                     if not data:

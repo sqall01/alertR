@@ -58,6 +58,8 @@ class ServerCommunication:
         # Description of this manager.
         self._description = self._global_data.description
 
+        self._exit_flag = False
+
         # Communication object that handles sending and receiving.
         self._communication = Communication(self._host,
                                             self._port,
@@ -834,6 +836,132 @@ class ServerCommunication:
 
         return False
 
+    def close(self):
+        """
+        Closes the connection to the server.
+        """
+        # Closes communication channel to server.
+        self._communication.close()
+
+        # handle closing event
+        self._event_handler.close_connection()
+
+    def exit(self):
+        """
+        Destroys the server communication object by setting the exit flag to shut down the thread and closes connection.
+        NOTE: server communication object not usable afterwards.
+        """
+        # clean up session before exiting
+        self.close()
+        self._communication.exit()
+        self._exit_flag = True
+
+    def handle_requests(self):
+        """
+        Handles received requests by server in a loop. Returns if an error is encountered.
+
+        :return:
+        """
+
+        # Handle commands in an infinity loop.
+        while True:
+
+            # Exit if we are requested to.
+            if self._exit_flag:
+                return
+
+            data = self._communication.recv_request()
+            if data is None:
+                return
+
+            # Extract request/message type.
+            request = ""
+            try:
+                message = json.loads(data)
+                # check if an error was received
+                if "error" in message.keys():
+                    logging.error("[%s]: Error received: '%s'."
+                                  % (self._log_tag, message["error"]))
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
+                # check if the received type is the correct one
+                if str(message["payload"]["type"]).lower() != "request":
+                    logging.error("[%s]: Request expected." % self._log_tag)
+
+                    # send error message back
+                    try:
+                        utc_timestamp = int(time.time())
+                        message = {"clientTime": utc_timestamp,
+                                   "message": message["message"],
+                                   "error": "request expected"}
+                        self._communication.send(json.dumps(message))
+                    except Exception:
+                        pass
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
+                # Extract the request/message type of the message.
+                request = str(message["message"]).lower()
+
+            except Exception:
+                logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
+
+                # clean up session before exiting
+                self.close()
+                return
+
+            # Handle SENSORALERT request.
+            if request == "sensoralert":
+                if not self._sensorAlertHandler(message):
+                    logging.error("[%s]: Receiving sensor alert failed."
+                                  % self._log_tag)
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
+            # Handle STATUS request.
+            elif request == "status":
+                if not self._status_update_handler(message):
+                    logging.error("[%s]: Receiving status update failed."
+                                  % self._log_tag)
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
+            # Handle STATECHANGE request.
+            elif request == "statechange":
+                if not self._state_change_handler(message):
+                    logging.error("[%s]: Receiving state change failed."
+                                  % self._log_tag)
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
+            # Unkown request.
+            else:
+                logging.error("[%s]: Received unknown request. Server sent: %s" % (self._log_tag, data))
+
+                try:
+                    utc_timestamp = int(time.time())
+                    message = {"clientTime": utc_timestamp,
+                               "message": request,
+                               "error": "unknown request/message type"}
+                    self._communication.send(json.dumps(message))
+                except Exception:
+                    pass
+
+                # clean up session before exiting
+                self.close()
+                return
+
     def initialize(self) -> bool:
         """
         Function that initializes the communication channel to the server, for example,
@@ -997,105 +1125,6 @@ class ServerCommunication:
 
             return True
 
-    # This function handles the incoming messages from the server.
-    def handle_requests(self):
-
-        # Handle commands in an infinity loop.
-        while True:
-
-            data = self._communication.recv_request()
-            if data is None:
-                return
-
-            # Extract request/message type.
-            request = ""
-            try:
-                message = json.loads(data)
-                # check if an error was received
-                if "error" in message.keys():
-                    logging.error("[%s]: Error received: '%s'."
-                                  % (self._log_tag, message["error"]))
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-                # check if the received type is the correct one
-                if str(message["payload"]["type"]).lower() != "request":
-                    logging.error("[%s]: Request expected." % self._log_tag)
-
-                    # send error message back
-                    try:
-                        utc_timestamp = int(time.time())
-                        message = {"clientTime": utc_timestamp,
-                                   "message": message["message"],
-                                   "error": "request expected"}
-                        self._communication.send(json.dumps(message))
-                    except Exception as e:
-                        pass
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-                # Extract the request/message type of the message.
-                request = str(message["message"]).lower()
-
-            except Exception as e:
-
-                logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
-
-                # clean up session before exiting
-                self.close()
-                return
-
-            # Handle SENSORALERT request.
-            if request == "sensoralert":
-                if not self._sensorAlertHandler(message):
-                    logging.error("[%s]: Receiving sensor alert failed."
-                                  % self._log_tag)
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-            # Handle STATUS request.
-            elif request == "status":
-                if not self._status_update_handler(message):
-                    logging.error("[%s]: Receiving status update failed."
-                                  % self._log_tag)
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-            # Handle STATECHANGE request.
-            elif request == "statechange":
-                if not self._state_change_handler(message):
-                    logging.error("[%s]: Receiving state change failed."
-                                  % self._log_tag)
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-            # Unkown request.
-            else:
-                logging.error("[%s]: Received unknown request. Server sent: %s" % (self._log_tag, data))
-
-                try:
-                    utc_timestamp = int(time.time())
-                    message = {"clientTime": utc_timestamp,
-                               "message": request,
-                               "error": "unknown request/message type"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
-                # clean up session before exiting
-                self.close()
-                return
-
     def reconnect(self) -> bool:
         """
         Closes the connection to the server and initializes a new connection.
@@ -1108,25 +1137,6 @@ class ServerCommunication:
         self.close()
 
         return self.initialize()
-
-    def exit(self):
-        """
-        Destroys the server communication object by setting the exit flag to shut down the thread and closes connection.
-        NOTE: server communication object not usable afterwards.
-        """
-        # clean up session before exiting
-        self.close()
-        self._communication.exit()
-
-    def close(self):
-        """
-        Closes the connection to the server.
-        """
-        # Closes communication channel to server.
-        self._communication.close()
-
-        # handle closing event
-        self._event_handler.close_connection()
 
     def send_ping(self) -> Promise:
         """
