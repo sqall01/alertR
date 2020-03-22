@@ -12,9 +12,9 @@ import logging
 import os
 import json
 import threading
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .util import MsgChecker, MsgBuilder
-from .communication import Communication
+from .communication import Communication, Promise
 from .eventHandler import EventHandler
 from ..localObjects import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
 from ..globalData import GlobalData
@@ -1128,7 +1128,7 @@ class ServerCommunication:
         # handle closing event
         self._event_handler.close_connection()
 
-    def send_ping(self) -> bool:
+    def send_ping(self) -> Promise:
         """
         Sends a keep alive (PING request) to the server to keep the connection alive and to check
         if the connection is still alive.
@@ -1137,22 +1137,12 @@ class ServerCommunication:
         """
         pingMessage = MsgBuilder.build_ping_msg()
 
-        promise = self._communication.send_request("ping", pingMessage)
-
-        # TODO block at the moment when sending request until we checked the code works
-        promise.is_finished(blocking=True)
-
-        if not promise.was_successful():
-            # clean up session before exiting
-            self.close()
-            return False
-
-        return True
+        return self._communication.send_request("ping", pingMessage)
 
     def send_option(self,
                     optionType: str,
                     optionValue: float,
-                    optionDelay: int = 0) -> bool:
+                    optionDelay: int = 0) -> Promise:
         """
         This function sends an option change to the server for example
         to activate the alert system or deactivate it.
@@ -1165,14 +1155,4 @@ class ServerCommunication:
 
         optionMessage = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
 
-        promise = self._communication.send_request("option", optionMessage)
-
-        # TODO block at the moment when sending request until we checked the code works
-        promise.is_finished(blocking=True)
-
-        if not promise.was_successful():
-            # clean up session before exiting
-            self.close()
-            return False
-
-        return True
+        return self._communication.send_request("option", optionMessage)

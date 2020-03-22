@@ -12,6 +12,7 @@ import logging
 import os
 import threading
 from typing import Optional
+from .communication import Promise
 from .serverCommunication import ServerCommunication
 from ..smtp import SMTPAlert
 
@@ -69,10 +70,10 @@ class ConnectionWatchdog(threading.Thread):
 
                 logging.error("[%s]: Connection to server has died. " % self._log_tag)
 
-                # reconnect to the server
+                # Reconnect to the server.
                 while True:
 
-                    # check if 5 unsuccessful attempts are made to connect
+                    # Check if 5 unsuccessful attempts are made to connect
                     # to the server and if smtp alert is activated
                     # => send eMail alert
                     if self._smtp_alert is not None and (self._connection_retries % 5) == 0:
@@ -90,6 +91,7 @@ class ConnectionWatchdog(threading.Thread):
 
                         self._connection_retries = 1
                         break
+
                     self._connection_retries += 1
 
                     logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self._log_tag)
@@ -97,17 +99,19 @@ class ConnectionWatchdog(threading.Thread):
 
                 continue
 
-            # check if the time of the data last received lies too far in the
+            # Check if the time of the data last received lies too far in the
             # past => send ping to check connection
             utc_timestamp = int(time.time())
             if (utc_timestamp - self._connection.last_communication) > self._ping_interval:
                 logging.debug("[%s]: Ping interval exceeded." % self._log_tag)
 
                 # check if PING failed
-                if not self._connection.send_ping():
+                promise = self._connection.send_ping()  # type: Promise
+                promise.is_finished(blocking=True)
+                if not promise.was_successful():
                     logging.error("[%s]: Connection to server has died." % self._log_tag)
 
-                    # reconnect to the server
+                    # Reconnect to the server
                     while True:
 
                         # check if 5 unsuccessful attempts are made to connect
