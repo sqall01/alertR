@@ -1,1 +1,0 @@
-alertClientDbus/alertRclient.py
