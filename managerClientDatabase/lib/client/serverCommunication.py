@@ -78,7 +78,7 @@ class ServerCommunication:
 
     @property
     def is_connected(self) -> bool:
-        return self._communication.is_connected
+        return self._communication.has_channel
 
     def _verify_version_and_auth(self,
                                  regMessageSize: int) -> bool:
@@ -871,7 +871,7 @@ class ServerCommunication:
         # Handle commands in an infinity loop.
         while True:
 
-            if not self._communication.is_connected:
+            if not self._communication.has_channel:
                 return
 
             # Exit if we are requested to.
@@ -982,7 +982,7 @@ class ServerCommunication:
         with self._initialization_lock:
 
             # Do not initialize the communication anew if we have already a working communication channel.
-            if self._communication.is_connected:
+            if self._communication.has_channel:
                 return True
 
             if not self._communication.connect():

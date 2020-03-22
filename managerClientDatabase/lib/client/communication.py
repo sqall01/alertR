@@ -98,7 +98,7 @@ class Communication:
         self._last_communication = 0
 
         # Flag that indicates if we have a valid communication channel to the other side.
-        self._is_connected = False
+        self._has_channel = False
 
         # Start request sender thread.
         self._thread_request_sender = threading.Thread(target=self._request_sender,
@@ -106,8 +106,8 @@ class Communication:
         self._thread_request_sender.start()
 
     @property
-    def is_connected(self):
-        return self._is_connected
+    def has_channel(self):
+        return self._has_channel
 
     @property
     def last_communication(self):
@@ -143,7 +143,7 @@ class Communication:
             self._connection.send(json.dumps(message))
 
         except Exception:
-            self._is_connected = False
+            self._has_channel = False
             logging.exception("[%s]: Sending RTS failed." % self._log_tag)
             return False
 
@@ -170,7 +170,7 @@ class Communication:
                 received_payload_type = str(message["payload"]["type"]).upper()
 
         except Exception:
-            self._is_connected = False
+            self._has_channel = False
             logging.exception("[%s]: Receiving CTS failed." % self._log_tag)
             return False
 
@@ -208,7 +208,7 @@ class Communication:
                 return
 
             # Only process message queue if we have a working communication channel.
-            if not self._is_connected:
+            if not self._has_channel:
                 continue
 
             backoff = False
@@ -232,7 +232,7 @@ class Communication:
                 with self._connection_lock:
 
                     # Only send message if we have a working communication channel.
-                    if not self._is_connected:
+                    if not self._has_channel:
                         self._msg_queue.insert(0, promise)
                         break
 
@@ -252,7 +252,7 @@ class Communication:
                     except Exception:
                         logging.exception("[%s]: Sending message of type '%s' failed."
                                           % (self._log_tag, promise.msg_type))
-                        self._is_connected = False
+                        self._has_channel = False
                         break
 
                     # Receive response.
@@ -280,7 +280,7 @@ class Communication:
                                            "error": "%s message expected" % promise.msg_type}
                                 self._connection.send(json.dumps(message))
                             except Exception:
-                                self._is_connected = False
+                                self._has_channel = False
 
                             promise.set_failed()
                             continue
@@ -300,7 +300,7 @@ class Communication:
                                 self._connection.send(json.dumps(message))
 
                             except Exception:
-                                self._is_connected = False
+                                self._has_channel = False
 
                             promise.set_failed()
                             continue
@@ -327,7 +327,7 @@ class Communication:
                     except Exception:
                         logging.exception("[%s]: Receiving response for message of type '%s' failed."
                                           % (self._log_tag, promise.msg_type))
-                        self._is_connected = False
+                        self._has_channel = False
                         promise.set_failed()
                         continue
 
@@ -355,7 +355,7 @@ class Communication:
 
         except Exception:
             logging.exception("[%s]: Connecting to server failed." % self._log_tag)
-            self._is_connected = False
+            self._has_channel = False
 
             try:
                 self._connection.close()
@@ -379,7 +379,7 @@ class Communication:
         """
         Closes the connection to the other side.
         """
-        self._is_connected = False
+        self._has_channel = False
         try:
             self._connection.close()
         except Exception:
@@ -397,7 +397,7 @@ class Communication:
                 data = self._connection.recv(BUFSIZE)
             except Exception:
                 logging.exception("[%s]: Receiving failed." % self._log_tag)
-                self._is_connected = False
+                self._has_channel = False
                 return None
 
             if not data:
@@ -417,7 +417,7 @@ class Communication:
         while True:
 
             # Only try to receive requests if we are connected.
-            if not self._is_connected:
+            if not self._has_channel:
                 return None
 
             try:
@@ -429,7 +429,7 @@ class Communication:
                 with self._connection_lock:
                     data = self._connection.recv(BUFSIZE, timeout=0.5)
                     if not data:
-                        self._is_connected = False
+                        self._has_channel = False
                         return None
 
                     data = data.strip()
@@ -477,7 +477,7 @@ class Communication:
                                 logging.error("[%s]: Possible dead lock detected while receiving data. "
                                               % self._log_tag
                                               + "Closing connection.")
-                                self._is_connected = False
+                                self._has_channel = False
                                 return None
 
                     # if no RTS was received
@@ -502,7 +502,7 @@ class Communication:
 
             except Exception:
                 logging.exception("[%s]: Receiving failed." % self._log_tag)
-                self._is_connected = False
+                self._has_channel = False
                 return None
 
             self._last_communication = int(time.time())
@@ -540,7 +540,7 @@ class Communication:
                 self._last_communication = int(time.time())
 
             except Exception:
-                self._is_connected = False
+                self._has_channel = False
 
     def set_connected(self):
-        self._is_connected = True
+        self._has_channel = True
