@@ -95,36 +95,15 @@ class Communication(threading.Thread):
         self._msg_queue = []
         self._msg_queue_lock = threading.Lock()
 
-    # noinspection PyBroadException
-    def connect(self) -> bool:
+        # Timestamp when the last communication with the server occurred.
+        self._last_communication = 0
 
-        # Closes existing connection if we have one.
-        if self._client is not None:
-            try:
-                self._client.close()
-            except Exception:
-                pass
+        # Flag that indicates if we have a valid communication channel to the server.
+        self._is_connected = False
 
-        # create client instance and connect to the server
-        self._client = Client(self.host,
-                              self.port,
-                              self.server_ca_file,
-                              self.client_cert_file,
-                              self.client_key_file)
-
-        try:
-            self._client.connect()
-
-        except Exception:
-            logging.exception("[%s]: Connecting to server failed." % self._log_tag)
-            try:
-                self._client.close()
-            except Exception:
-                pass
-
-            return False
-
-        return True
+    @property
+    def is_connected(self):
+        return self._is_connected
 
     # noinspection PyBroadException
     def _initiate_transaction(self,
@@ -156,6 +135,7 @@ class Communication(threading.Thread):
             self._client.send(json.dumps(message))
 
         except Exception:
+            self._is_connected = False
             logging.exception("[%s]: Sending RTS failed." % self._log_tag)
             return False
 
@@ -182,6 +162,7 @@ class Communication(threading.Thread):
                 received_payload_type = str(message["payload"]["type"]).upper()
 
         except Exception:
+            self._is_connected = False
             logging.exception("[%s]: Receiving CTS failed." % self._log_tag)
             return False
 
@@ -192,6 +173,7 @@ class Communication(threading.Thread):
            and received_payload_type == "CTS"):
 
             logging.debug("[%s]: Initiate transaction succeeded." % self._log_tag)
+            self._last_communication = int(time.time())
             return True
 
         # if RTS was not acknowledged
@@ -199,6 +181,39 @@ class Communication(threading.Thread):
         else:
             logging.warning("[%s]: Initiate transaction failed. Backing off." % self._log_tag)
             return False
+
+    # noinspection PyBroadException
+    def connect(self) -> bool:
+
+        # Closes existing connection if we have one.
+        if self._client is not None:
+            try:
+                self._client.close()
+            except Exception:
+                pass
+
+        # create client instance and connect to the server
+        self._client = Client(self.host,
+                              self.port,
+                              self.server_ca_file,
+                              self.client_cert_file,
+                              self.client_key_file)
+
+        try:
+            self._client.connect()
+
+        except Exception:
+            logging.exception("[%s]: Connecting to server failed." % self._log_tag)
+            self._is_connected = False
+
+            try:
+                self._client.close()
+            except Exception:
+                pass
+
+            return False
+
+        return True
 
     # noinspection PyBroadException
     def exit(self):
@@ -212,159 +227,6 @@ class Communication(threading.Thread):
         except Exception:
             pass
 
-    def run(self):
-
-        logging.info("[%s] Starting Request Sender thread." % self._log_tag)
-
-        while True:
-
-            # Wait until a new message has to be sent.
-            self._new_msg_event.wait(5)
-
-            if self._exit_flag:
-                logging.info("[%s] Exiting Request Sender thread." % self._log_tag)
-                return
-
-            backoff = False
-            while self._msg_queue:
-
-                # Backoff random time between 0 and 1 second.
-                if backoff:
-                    backoff_time = float(random.randint(0, 100))/100
-                    logging.debug("[%s] Backing off from sending request for %.3f seconds."
-                                  % (self._log_tag, backoff_time))
-                    time.sleep(backoff_time)
-
-                if self._exit_flag:
-                    logging.info("[%s] Exiting Request Sender thread." % self._log_tag)
-                    return
-
-                with self._msg_queue_lock:
-                    promise = self._msg_queue.pop(0)
-
-                # Have the client exclusively locked for this communication.
-                with self._client_lock:
-
-                    # Initiate transaction with server.
-                    backoff = False
-                    if not self._initiate_transaction(promise.msg_type, len(promise.msg)):
-                        with self._msg_queue_lock:
-                            self._msg_queue.insert(0, promise)
-                        backoff = True
-                        continue
-
-                    # Send message.
-                    try:
-                        logging.debug("[%s]: Sending message of type '%s'." % (self._log_tag, promise.msg_type))
-                        self._client.send(promise.msg)
-
-                    except Exception:
-                        logging.exception("[%s]: Sending message of type '%s' failed." % (self._log_tag, promise.msg_type))
-                        backoff = True
-                        continue
-
-                    # Receive response.
-                    try:
-                        data = self._client.recv(BUFSIZE)
-                        message = json.loads(data)
-
-                        # check if an error was received
-                        if "error" in message.keys():
-                            logging.error("[%s]: Error received for message of type '%s': %s"
-                                          % (self._log_tag, promise.msg_type, message["error"]))
-                            promise.set_failed()
-                            continue
-
-                        # Check if we received an answer to our sent request.
-                        if str(message["message"]).lower() != promise.msg_type:
-                            logging.error("[%s]: Wrong message type for message of type '%s' received: %s"
-                                          % (self._log_tag, promise.msg_type, message["message"]))
-
-                            # Send error message back.
-                            try:
-                                utcTimestamp = int(time.time())
-                                message = {"clientTime": utcTimestamp,
-                                           "message": message["message"],
-                                           "error": "%s message expected" % promise.msg_type}
-                                self._client.send(json.dumps(message))
-                            except Exception:
-                                pass
-
-                            promise.set_failed()
-                            continue
-
-                        # Check if the received type (rts/cts/request/response) is the correct one.
-                        if str(message["payload"]["type"]).lower() != "response":
-
-                            logging.error("[%s]: Response expected for message of type '%s'."
-                                          % (self._log_tag, promise.msg_type))
-
-                            # Send error message back
-                            try:
-                                utcTimestamp = int(time.time())
-                                message = {"clientTime": utcTimestamp,
-                                           "message": message["message"],
-                                           "error": "response expected"}
-                                self._client.send(json.dumps(message))
-                            except Exception as e:
-                                pass
-
-                            promise.set_failed()
-                            continue
-
-                        # Check if result of message was ok.
-                        if str(message["payload"]["result"]).lower() != "ok":
-                            logging.error("[%s]: Wrong result for message of type '%s' received: %s"
-                                          % (self._log_tag, promise.msg_type, message["payload"]["result"]))
-
-                            promise.set_failed()
-                            continue
-
-                        logging.debug("[%s]: Received valid response for message of type '%s'."
-                                      % (self._log_tag, promise.msg_type))
-
-                        promise.set_success()
-
-                    except Exception:
-                        logging.exception("[%s]: Receiving response for message of type '%s' failed."
-                                          % (self._log_tag, promise.msg_type))
-                        promise.set_failed()
-                        continue
-
-            self._new_msg_event.clear()
-
-    def send_request(self,
-                     msg_type: str,
-                     msg: str) -> Promise:
-        """
-        Inserts a message into the send queue and returns a promise that it is to be sent.
-
-        :param msg: Message string to send.
-        :param msg_type: Type of the message we are sending.
-        :return: promise which contains the results after it was send and data was received.
-        """
-        promise = Promise(msg_type, msg)
-        with self._msg_queue_lock:
-            self._msg_queue.append(promise)
-
-        self._new_msg_event.set()
-        return promise
-
-    # noinspection PyBroadException
-    def send(self,
-             msg: str):
-        """
-        Sends the given message to the server. Does not guarantee that the message is received
-        (kind of an UDP packet ;) ).
-
-        :param msg: Message string to send.
-        """
-        with self._client_lock:
-            try:
-                self._client.send(msg)
-            except Exception:
-                pass
-
     # noinspection PyBroadException
     def recv(self) -> Optional[str]:
         """
@@ -377,10 +239,13 @@ class Communication(threading.Thread):
                 data = self._client.recv(BUFSIZE)
             except Exception:
                 logging.exception("[%s]: Receiving failed." % self._log_tag)
+                self._is_connected = False
                 return None
 
             if not data:
                 return None
+
+        self._last_communication = int(time.time())
         return data
 
     # noinspection PyBroadException
@@ -396,6 +261,7 @@ class Communication(threading.Thread):
                 with self._client_lock:
                     data = self._client.recv(BUFSIZE, timeout=0.5)
                     if not data:
+                        self._is_connected = False
                         return None
 
                     data = data.strip()
@@ -443,13 +309,13 @@ class Communication(threading.Thread):
                                 logging.error("[%s]: Possible dead lock detected while receiving data. "
                                               % self._log_tag
                                               + "Closing connection to server.")
+                                self._is_connected = False
                                 return None
 
                     # if no RTS was received
                     # => server does not stick to protocol
                     # => terminate session
                     else:
-
                         logging.error("[%s]: Did not receive RTS. Server sent: %s"
                                       % (self._log_tag, data))
                         return None
@@ -468,6 +334,183 @@ class Communication(threading.Thread):
 
             except Exception:
                 logging.exception("[%s]: Receiving failed." % self._log_tag)
+                self._is_connected = False
                 return None
 
+            self._last_communication = int(time.time())
             return data
+
+    def run(self):
+
+        logging.info("[%s] Starting Request Sender thread." % self._log_tag)
+
+        while True:
+
+            # Wait until a new message has to be sent.
+            self._new_msg_event.wait(5)
+
+            if self._exit_flag:
+                logging.info("[%s] Exiting Request Sender thread." % self._log_tag)
+                return
+
+            # Only process message queue if we have a working communication channel.
+            if not self._is_connected:
+                continue
+
+            backoff = False
+            while self._msg_queue:
+
+                # Backoff random time between 0 and 1 second.
+                if backoff:
+                    backoff_time = float(random.randint(0, 100))/100
+                    logging.debug("[%s] Backing off from sending request for %.3f seconds."
+                                  % (self._log_tag, backoff_time))
+                    time.sleep(backoff_time)
+
+                if self._exit_flag:
+                    logging.info("[%s] Exiting Request Sender thread." % self._log_tag)
+                    return
+
+                with self._msg_queue_lock:
+                    promise = self._msg_queue.pop(0)
+
+                # Have the client exclusively locked for this communication.
+                with self._client_lock:
+
+                    # Only send message if we have a working communication channel.
+                    if not self._is_connected:
+                        self._msg_queue.insert(0, promise)
+                        break
+
+                    # Initiate transaction with server.
+                    backoff = False
+                    if not self._initiate_transaction(promise.msg_type, len(promise.msg)):
+                        with self._msg_queue_lock:
+                            self._msg_queue.insert(0, promise)
+                        backoff = True
+                        continue
+
+                    # Send message.
+                    try:
+                        logging.debug("[%s]: Sending message of type '%s'." % (self._log_tag, promise.msg_type))
+                        self._client.send(promise.msg)
+
+                    except Exception:
+                        logging.exception("[%s]: Sending message of type '%s' failed."
+                                          % (self._log_tag, promise.msg_type))
+                        self._is_connected = False
+                        break
+
+                    # Receive response.
+                    try:
+                        data = self._client.recv(BUFSIZE)
+                        message = json.loads(data)
+
+                        # check if an error was received
+                        if "error" in message.keys():
+                            logging.error("[%s]: Error received for message of type '%s': %s"
+                                          % (self._log_tag, promise.msg_type, message["error"]))
+                            promise.set_failed()
+                            continue
+
+                        # Check if we received an answer to our sent request.
+                        if str(message["message"]).lower() != promise.msg_type:
+                            logging.error("[%s]: Wrong message type for message of type '%s' received: %s"
+                                          % (self._log_tag, promise.msg_type, message["message"]))
+
+                            # Send error message back.
+                            try:
+                                utcTimestamp = int(time.time())
+                                message = {"clientTime": utcTimestamp,
+                                           "message": message["message"],
+                                           "error": "%s message expected" % promise.msg_type}
+                                self._client.send(json.dumps(message))
+                            except Exception:
+                                self._is_connected = False
+
+                            promise.set_failed()
+                            continue
+
+                        # Check if the received type (rts/cts/request/response) is the correct one.
+                        if str(message["payload"]["type"]).lower() != "response":
+
+                            logging.error("[%s]: Response expected for message of type '%s'."
+                                          % (self._log_tag, promise.msg_type))
+
+                            # Send error message back
+                            try:
+                                utcTimestamp = int(time.time())
+                                message = {"clientTime": utcTimestamp,
+                                           "message": message["message"],
+                                           "error": "response expected"}
+                                self._client.send(json.dumps(message))
+
+                            except Exception:
+                                self._is_connected = False
+
+                            promise.set_failed()
+                            continue
+
+                        msg_result = str(message["payload"]["result"]).lower()
+                        # Check if result of message was ok.
+                        if msg_result == "ok":
+                            logging.debug("[%s]: Received valid response for message of type '%s'."
+                                          % (self._log_tag, promise.msg_type))
+                            promise.set_success()
+
+                        # Check if result of message was expired (too long in queue that server does not process it).
+                        elif msg_result == "expired":
+                            logging.warning("[%s]: Server said message of type '%s' is expired (too old)."
+                                          % (self._log_tag, promise.msg_type))
+                            promise.set_failed()
+
+                        else:
+                            logging.error("[%s]: Wrong result for message of type '%s' received: %s"
+                                          % (self._log_tag, promise.msg_type, msg_result))
+                            promise.set_failed()
+
+                    except Exception:
+                        logging.exception("[%s]: Receiving response for message of type '%s' failed."
+                                          % (self._log_tag, promise.msg_type))
+                        self._is_connected = False
+                        promise.set_failed()
+                        continue
+
+            self._new_msg_event.clear()
+
+    def send_request(self,
+                     msg_type: str,
+                     msg: str) -> Promise:
+        """
+        Inserts a message into the send queue and returns a promise that it is to be sent.
+
+        :param msg: Message string to send.
+        :param msg_type: Type of the message we are sending.
+        :return: promise which contains the results after it was send and data was received.
+        """
+        promise = Promise(msg_type, msg)
+        with self._msg_queue_lock:
+            self._msg_queue.append(promise)
+
+        self._new_msg_event.set()
+        return promise
+
+    # noinspection PyBroadException
+    def send(self,
+             msg: str):
+        """
+        Sends the given message to the server. Does not guarantee that the message is received
+        (kind of an UDP packet ;) ).
+
+        :param msg: Message string to send.
+        """
+        with self._client_lock:
+            try:
+                self._client.send(msg)
+                self._last_communication = int(time.time())
+
+            except Exception:
+                self._is_connected = False
+
+    def set_connected(self):
+        self._is_connected = True
