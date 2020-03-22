@@ -20,29 +20,37 @@ from ..smtp import SMTPAlert
 # => reconnects it if necessary
 class ConnectionWatchdog(threading.Thread):
 
-    def __init__(self, connection: ServerCommunication, pingInterval: int, smtpAlert: Optional[SMTPAlert]):
+    def __init__(self,
+                 connection: ServerCommunication,
+                 pingInterval: int,
+                 smtpAlert: Optional[SMTPAlert]):
+
         threading.Thread.__init__(self)
 
         # the object that handles the communication with the server
-        self.connection = connection
+        self._connection = connection
 
         # the interval in which a ping should be send when no data
         # was received in this time
-        self.pingInterval = pingInterval
+        self._ping_interval = pingInterval
 
         # the object to send a email alert via smtp
-        self.smtpAlert = smtpAlert
+        self._smtp_alert = smtpAlert
 
         # the file name of this file for logging
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # set exit flag as false
-        self.exitFlag = False
+        self._exit_flag = False
 
         # internal counter to get the current count of connection retries
-        self.connectionRetries = 1
+        self._connection_retries = 1
 
     def run(self):
+        """
+        Connection watchdog loop that checks the communication channel to the server.
+        :return:
+        """
 
         # check every 5 seconds if the client is still connected
         # and the time of the last received data
@@ -51,15 +59,15 @@ class ConnectionWatchdog(threading.Thread):
 
             # wait 5 seconds before checking time of last received data
             for i in range(5):
-                if self.exitFlag:
-                    logging.info("[%s]: Exiting ConnectionWatchdog." % self.fileName)
+                if self._exit_flag:
+                    logging.info("[%s]: Exiting Connection Watchdog." % self._log_tag)
                     return
                 time.sleep(1)
 
             # check if the client is still connected to the server
-            if not self.connection.is_connected():
+            if not self._connection.is_connected:
 
-                logging.error("[%s]: Connection to server has died. " % self.fileName)
+                logging.error("[%s]: Connection to server has died. " % self._log_tag)
 
                 # reconnect to the server
                 while True:
@@ -67,37 +75,37 @@ class ConnectionWatchdog(threading.Thread):
                     # check if 5 unsuccessful attempts are made to connect
                     # to the server and if smtp alert is activated
                     # => send eMail alert
-                    if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
-                        self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
+                    if self._smtp_alert is not None and (self._connection_retries % 5) == 0:
+                        self._smtp_alert.sendCommunicationAlert(self._connection_retries)
 
                     # try to connect to the server
-                    if self.connection.reconnect():
+                    if self._connection.reconnect():
                         # if smtp alert is activated
                         # => send email that communication problems are solved
-                        if self.smtpAlert is not None:
-                            self.smtpAlert.sendCommunicationAlertClear()
+                        if self._smtp_alert is not None:
+                            self._smtp_alert.sendCommunicationAlertClear()
 
                         logging.info("[%s] Reconnecting successful after %d attempts."
-                                     % (self.fileName, self.connectionRetries))
+                                     % (self._log_tag, self._connection_retries))
 
-                        self.connectionRetries = 1
+                        self._connection_retries = 1
                         break
-                    self.connectionRetries += 1
+                    self._connection_retries += 1
 
-                    logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self.fileName)
+                    logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self._log_tag)
                     time.sleep(5)
 
                 continue
 
             # check if the time of the data last received lies too far in the
             # past => send ping to check connection
-            utcTimestamp = int(time.time())
-            if (utcTimestamp - self.connection._last_communication) > self.pingInterval:
-                logging.debug("[%s]: Ping interval exceeded." % self.fileName)
+            utc_timestamp = int(time.time())
+            if (utc_timestamp - self._connection.last_communication) > self._ping_interval:
+                logging.debug("[%s]: Ping interval exceeded." % self._log_tag)
 
                 # check if PING failed
-                if not self.connection.sendPing():
-                    logging.error("[%s]: Connection to server has died." % self.fileName)
+                if not self._connection.send_ping():
+                    logging.error("[%s]: Connection to server has died." % self._log_tag)
 
                     # reconnect to the server
                     while True:
@@ -105,27 +113,30 @@ class ConnectionWatchdog(threading.Thread):
                         # check if 5 unsuccessful attempts are made to connect
                         # to the server and if smtp alert is activated
                         # => send eMail alert
-                        if self.smtpAlert is not None and (self.connectionRetries % 5) == 0:
-                            self.smtpAlert.sendCommunicationAlert(self.connectionRetries)
+                        if self._smtp_alert is not None and (self._connection_retries % 5) == 0:
+                            self._smtp_alert.sendCommunicationAlert(self._connection_retries)
 
                         # try to connect to the server
-                        if self.connection.reconnect():
+                        if self._connection.reconnect():
                             # if smtp alert is activated
                             # => send email that communication
                             # problems are solved
-                            if self.smtpAlert is not None:
-                                self.smtpAlert.sendCommunicationAlertClear()
+                            if self._smtp_alert is not None:
+                                self._smtp_alert.sendCommunicationAlertClear()
 
                             logging.info("[%s] Reconnecting successful after %d attempts."
-                                         % (self.fileName, self.connectionRetries))
+                                         % (self._log_tag, self._connection_retries))
 
-                            self.connectionRetries = 1
+                            self._connection_retries = 1
                             break
-                        self.connectionRetries += 1
 
-                        logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self.fileName)
+                        self._connection_retries += 1
+
+                        logging.error("[%s]: Reconnecting failed. Retrying in 5 seconds." % self._log_tag)
                         time.sleep(5)
 
-    # sets the exit flag to shut down the thread
     def exit(self):
-        self.exitFlag = True
+        """
+        Sets the exit flag to shut down the thread.
+        """
+        self._exit_flag = True

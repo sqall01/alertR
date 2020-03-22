@@ -109,6 +109,10 @@ class Communication:
     def is_connected(self):
         return self._is_connected
 
+    @property
+    def last_communication(self):
+        return self._last_communication
+
     # noinspection PyBroadException
     def _initiate_transaction(self,
                               messageType: str,
