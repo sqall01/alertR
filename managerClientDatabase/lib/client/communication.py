@@ -67,7 +67,7 @@ class Promise:
             raise ValueError("Request not finisehd.")
 
 
-class Communication(threading.Thread):
+class Communication:
 
     def __init__(self,
                  host: str,
@@ -75,7 +75,6 @@ class Communication(threading.Thread):
                  server_ca_file: str,
                  client_cert_file: str,
                  client_key_file: str):
-        threading.Thread.__init__(self)
 
         self.host = host
         self.port = port
@@ -95,11 +94,16 @@ class Communication(threading.Thread):
         self._msg_queue = []
         self._msg_queue_lock = threading.Lock()
 
-        # Timestamp when the last communication with the server occurred.
+        # Timestamp when the last communication with the other side occurred.
         self._last_communication = 0
 
-        # Flag that indicates if we have a valid communication channel to the server.
+        # Flag that indicates if we have a valid communication channel to the other side.
         self._is_connected = False
+
+        # Start request sender thread.
+        self._thread_request_sender = threading.Thread(target=self._request_sender,
+                                                       daemon=True)
+        self._thread_request_sender.start()
 
     @property
     def is_connected(self):
@@ -110,7 +114,7 @@ class Communication(threading.Thread):
                               messageType: str,
                               messageSize: int) -> bool:
         """
-        This internal function tries to initiate a transaction with the server.
+        This internal function tries to initiate a transaction with the other side.
 
         :param messageType:
         :param messageSize:
@@ -182,166 +186,12 @@ class Communication(threading.Thread):
             logging.warning("[%s]: Initiate transaction failed. Backing off." % self._log_tag)
             return False
 
-    # noinspection PyBroadException
-    def connect(self) -> bool:
-
-        # Closes existing connection if we have one.
-        if self._client is not None:
-            try:
-                self._client.close()
-            except Exception:
-                pass
-
-        # create client instance and connect to the server
-        self._client = Client(self.host,
-                              self.port,
-                              self.server_ca_file,
-                              self.client_cert_file,
-                              self.client_key_file)
-
-        try:
-            self._client.connect()
-
-        except Exception:
-            logging.exception("[%s]: Connecting to server failed." % self._log_tag)
-            self._is_connected = False
-
-            try:
-                self._client.close()
-            except Exception:
-                pass
-
-            return False
-
-        return True
-
-    # noinspection PyBroadException
-    def exit(self):
+    def _request_sender(self):
         """
-        Sets the exit flag to shut down the thread and closes connection.
+        Request sender loop that processes the message queue.
+
+        :return:
         """
-        self._exit_flag = True
-
-        try:
-            self._client.close()
-        except Exception:
-            pass
-
-    # noinspection PyBroadException
-    def recv(self) -> Optional[str]:
-        """
-        Raw receiving method that just plainly returns the received data.
-
-        :return: Data received as string.
-        """
-        with self._client_lock:
-            try:
-                data = self._client.recv(BUFSIZE)
-            except Exception:
-                logging.exception("[%s]: Receiving failed." % self._log_tag)
-                self._is_connected = False
-                return None
-
-            if not data:
-                return None
-
-        self._last_communication = int(time.time())
-        return data
-
-    # noinspection PyBroadException
-    def recv_request(self) -> Optional[str]:
-        """
-        Returns received request as string. Blocking until request is received or error occurs.
-        Does not block the channel. Handles RTS/CTS messages with server.
-
-        :return: Data of the received request.
-        """
-        while True:
-            try:
-                with self._client_lock:
-                    data = self._client.recv(BUFSIZE, timeout=0.5)
-                    if not data:
-                        self._is_connected = False
-                        return None
-
-                    data = data.strip()
-                    message = json.loads(data)
-
-                    # Check if an error was received.
-                    if "error" in message.keys():
-                        logging.error("[%s]: Error received: %s" % (self._log_tag, message["error"]))
-                        return None
-
-                    # Check if RTS was received
-                    # => acknowledge
-                    if str(message["payload"]["type"]).lower() == "rts":
-                        received_transaction_id = int(message["payload"]["id"])
-                        message_size = int(message["size"])
-
-                        # Received RTS (request to send) message.
-                        logging.debug("[%s]: Received RTS %s message."
-                                      % (self._log_tag, received_transaction_id))
-
-                        logging.debug("[%s]: Sending CTS %s message."
-                                      % (self._log_tag, received_transaction_id))
-
-                        # send CTS (clear to send) message
-                        payload = {"type": "cts",
-                                   "id": received_transaction_id}
-                        utc_timestamp = int(time.time())
-                        message = {"clientTime": utc_timestamp,
-                                   "message": str(message["message"]),
-                                   "payload": payload}
-                        self._client.send(json.dumps(message))
-
-                        # After initiating transaction receive actual command.
-                        data = ""
-                        last_size = 0
-                        while len(data) < message_size:
-                            data += self._client.recv(BUFSIZE)
-
-                            # Check if the size of the received data has changed.
-                            # If not we detected a possible dead lock.
-                            if last_size != len(data):
-                                last_size = len(data)
-
-                            else:
-                                logging.error("[%s]: Possible dead lock detected while receiving data. "
-                                              % self._log_tag
-                                              + "Closing connection to server.")
-                                self._is_connected = False
-                                return None
-
-                    # if no RTS was received
-                    # => server does not stick to protocol
-                    # => terminate session
-                    else:
-                        logging.error("[%s]: Did not receive RTS. Server sent: %s"
-                                      % (self._log_tag, data))
-                        return None
-
-            except socket.timeout as e:
-                # release lock and acquire to let other threads send
-                # data to the server
-                # (wait 0.5 seconds in between, because semaphore
-                # are released in random order => other threads could be
-                # unlucky and not be chosen => this has happened when
-                # loglevel was not debug => hdd I/O has slowed this process down)
-                time.sleep(0.5)
-
-                # Continue receiving.
-                continue
-
-            except Exception:
-                logging.exception("[%s]: Receiving failed." % self._log_tag)
-                self._is_connected = False
-                return None
-
-            self._last_communication = int(time.time())
-            return data
-
-    def run(self):
-
         logging.info("[%s] Starting Request Sender thread." % self._log_tag)
 
         while True:
@@ -382,7 +232,7 @@ class Communication(threading.Thread):
                         self._msg_queue.insert(0, promise)
                         break
 
-                    # Initiate transaction with server.
+                    # Initiate transaction with other side.
                     backoff = False
                     if not self._initiate_transaction(promise.msg_type, len(promise.msg)):
                         with self._msg_queue_lock:
@@ -458,9 +308,10 @@ class Communication(threading.Thread):
                                           % (self._log_tag, promise.msg_type))
                             promise.set_success()
 
-                        # Check if result of message was expired (too long in queue that server does not process it).
+                        # Check if result of message was expired
+                        # (too long in queue that other side does not process it).
                         elif msg_result == "expired":
-                            logging.warning("[%s]: Server said message of type '%s' is expired (too old)."
+                            logging.warning("[%s]: Other side said message of type '%s' is expired (too old)."
                                           % (self._log_tag, promise.msg_type))
                             promise.set_failed()
 
@@ -477,6 +328,171 @@ class Communication(threading.Thread):
                         continue
 
             self._new_msg_event.clear()
+
+    # noinspection PyBroadException
+    def connect(self) -> bool:
+
+        # Closes existing connection if we have one.
+        if self._client is not None:
+            try:
+                self._client.close()
+            except Exception:
+                pass
+
+        # create client instance and connect to the other side
+        self._client = Client(self.host,
+                              self.port,
+                              self.server_ca_file,
+                              self.client_cert_file,
+                              self.client_key_file)
+
+        try:
+            self._client.connect()
+
+        except Exception:
+            logging.exception("[%s]: Connecting to server failed." % self._log_tag)
+            self._is_connected = False
+
+            try:
+                self._client.close()
+            except Exception:
+                pass
+
+            return False
+
+        return True
+
+    def exit(self):
+        """
+        Destroys the communication object by setting the exit flag to shut down the thread and closes connection.
+        NOTE: communication object not usable afterwards.
+        """
+        self._exit_flag = True
+        self.close()
+
+    # noinspection PyBroadException
+    def close(self):
+        """
+        Closes the connection to the other side.
+        """
+        self._is_connected = False
+        try:
+            self._client.close()
+        except Exception:
+            pass
+
+    # noinspection PyBroadException
+    def recv(self) -> Optional[str]:
+        """
+        Raw receiving method that just plainly returns the received data.
+
+        :return: Data received as string.
+        """
+        with self._client_lock:
+            try:
+                data = self._client.recv(BUFSIZE)
+            except Exception:
+                logging.exception("[%s]: Receiving failed." % self._log_tag)
+                self._is_connected = False
+                return None
+
+            if not data:
+                return None
+
+        self._last_communication = int(time.time())
+        return data
+
+    # noinspection PyBroadException
+    def recv_request(self) -> Optional[str]:
+        """
+        Returns received request as string. Blocking until request is received or error occurs.
+        Does not block the channel. Handles RTS/CTS messages with other side.
+
+        :return: Data of the received request.
+        """
+        while True:
+            try:
+                with self._client_lock:
+                    data = self._client.recv(BUFSIZE, timeout=0.5)
+                    if not data:
+                        self._is_connected = False
+                        return None
+
+                    data = data.strip()
+                    message = json.loads(data)
+
+                    # Check if an error was received.
+                    if "error" in message.keys():
+                        logging.error("[%s]: Error received: %s" % (self._log_tag, message["error"]))
+                        return None
+
+                    # Check if RTS was received
+                    # => acknowledge
+                    if str(message["payload"]["type"]).lower() == "rts":
+                        received_transaction_id = int(message["payload"]["id"])
+                        message_size = int(message["size"])
+
+                        # Received RTS (request to send) message.
+                        logging.debug("[%s]: Received RTS %s message."
+                                      % (self._log_tag, received_transaction_id))
+
+                        logging.debug("[%s]: Sending CTS %s message."
+                                      % (self._log_tag, received_transaction_id))
+
+                        # send CTS (clear to send) message
+                        payload = {"type": "cts",
+                                   "id": received_transaction_id}
+                        utc_timestamp = int(time.time())
+                        message = {"clientTime": utc_timestamp,
+                                   "message": str(message["message"]),
+                                   "payload": payload}
+                        self._client.send(json.dumps(message))
+
+                        # After initiating transaction receive actual command.
+                        data = ""
+                        last_size = 0
+                        while len(data) < message_size:
+                            data += self._client.recv(BUFSIZE)
+
+                            # Check if the size of the received data has changed.
+                            # If not we detected a possible dead lock.
+                            if last_size != len(data):
+                                last_size = len(data)
+
+                            else:
+                                logging.error("[%s]: Possible dead lock detected while receiving data. "
+                                              % self._log_tag
+                                              + "Closing connection.")
+                                self._is_connected = False
+                                return None
+
+                    # if no RTS was received
+                    # => other side does not stick to protocol
+                    # => terminate session
+                    else:
+                        logging.error("[%s]: Did not receive RTS. Other side sent: %s"
+                                      % (self._log_tag, data))
+                        return None
+
+            except socket.timeout as e:
+                # release lock and acquire to let other threads send
+                # data to the other side
+                # (wait 0.5 seconds in between, because semaphore
+                # are released in random order => other threads could be
+                # unlucky and not be chosen => this has happened when
+                # loglevel was not debug => hdd I/O has slowed this process down)
+                time.sleep(0.5)
+
+                # Continue receiving.
+                continue
+
+            except Exception:
+                logging.exception("[%s]: Receiving failed." % self._log_tag)
+                self._is_connected = False
+                return None
+
+            self._last_communication = int(time.time())
+            return data
 
     def send_request(self,
                      msg_type: str,
@@ -499,7 +515,7 @@ class Communication(threading.Thread):
     def send(self,
              msg: str):
         """
-        Sends the given message to the server. Does not guarantee that the message is received
+        Sends the given message to the other side. Does not guarantee that the message is received
         (kind of an UDP packet ;) ).
 
         :param msg: Message string to send.

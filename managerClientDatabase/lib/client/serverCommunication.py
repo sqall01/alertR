@@ -50,17 +50,11 @@ class ServerCommunication:
         # create the object that handles all incoming server events
         self._event_handler = event_handler
 
-        # time the last message was received by the client
-        self._last_communication = 0.0
-
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
 
         # Description of this manager.
         self.description = self.globalData.description
-
-        # flag that states if the client is connected
-        self._isConnected = False
 
         # flag that states if the client is already trying to initiate a
         # transaction with the server
@@ -70,17 +64,18 @@ class ServerCommunication:
         self._msg_checker = None
 
         # Communication object that handles sending and receiving.
-        self._communication = None  # type: Optional[Communication]
+        self._communication = Communication(self.host,
+                                            self.port,
+                                            self.serverCAFile,
+                                            self.clientCertFile,
+                                            self.clientKeyFile)
 
     # this internal function cleans up the session before releasing the
     # lock and exiting/closing the session
     def _cleanUpSessionForClosing(self):
 
-        # Stopping request sender thread.
-        self._communication.exit()
-
-        # set client as disconnected
-        self._isConnected = False
+        # Closes communication channel to server.
+        self._communication.close()
 
         # handle closing event
         self._event_handler.close_connection()
@@ -825,17 +820,6 @@ class ServerCommunication:
     # for example checks the version and authenticates the client
     def initializeCommunication(self) -> bool:
 
-        # Initialize communication.
-        self._communication = Communication(self.host,
-                                            self.port,
-                                            self.serverCAFile,
-                                            self.clientCertFile,
-                                            self.clientKeyFile)
-        # set thread to daemon
-        # => threads terminates when main thread terminates
-        self._communication.daemon = True
-        self._communication.start()
-
         if not self._communication.connect():
             return False
 
@@ -850,13 +834,13 @@ class ServerCommunication:
         # First check version and authenticate.
         if not self._verifyVersionAndAuthenticate(len(regMessage)):
             logging.error("[%s]: Version verification and authentication failed." % self.fileName)
-            self._communication.exit()
+            self._communication.close()
             return False
 
         # Second register node.
         if not self._registerNode(regMessage):
             logging.error("[%s]: Registration failed." % self.fileName)
-            self._communication.exit()
+            self._communication.close()
             return False
 
         # get the initial status update from the server
@@ -965,13 +949,8 @@ class ServerCommunication:
 
         if not self._statusUpdateHandler(message):
             logging.error("[%s]: Initial status update failed." % self.fileName)
-            self._communication.exit()
+            self._communication.close()
             return False
-
-        self._last_communication = int(time.time())
-
-        # set client as connected
-        self._isConnected = True
 
         # Handle connection initialized event.
         self._event_handler.new_connection()
@@ -1077,14 +1056,15 @@ class ServerCommunication:
                 self._cleanUpSessionForClosing()
                 return
 
-            self._last_communication = int(time.time())
+    def is_connected(self) -> bool:
+        return self._communication.is_connected
 
-    def isConnected(self) -> bool:
-        return self._isConnected
-
-    # this function reconnects the client to the server
     def reconnect(self) -> bool:
+        """
+        Closes the connection to the server and initializes a new connection.
 
+        :return: success or failure
+        """
         logging.info("[%s] Reconnecting to server." % self.fileName)
 
         # clean up session before exiting
@@ -1092,16 +1072,29 @@ class ServerCommunication:
 
         return self.initializeCommunication()
 
-    # this function closes the connection to the server
-    def close(self):
+    def exit(self):
+        """
+        Destroys the server communication object by setting the exit flag to shut down the thread and closes connection.
+        NOTE: server communication object not usable afterwards.
+        """
         # clean up session before exiting
         self._cleanUpSessionForClosing()
+        self._communication.exit()
 
-    # this function sends a keep alive (PING request) to the server
-    # to keep the connection alive and to check if the connection
-    # is still alive
-    def sendKeepalive(self) -> bool:
+    def close(self):
+        """
+        Closes the connection to the server.
+        """
+        # clean up session for closing
+        self._cleanUpSessionForClosing()
 
+    def sendPing(self) -> bool:
+        """
+        Sends a keep alive (PING request) to the server to keep the connection alive and to check
+        if the connection is still alive.
+
+        :return: success or failure
+        """
         pingMessage = MsgBuilder.build_ping_msg()
 
         promise = self._communication.send_request("ping", pingMessage)
@@ -1114,14 +1107,12 @@ class ServerCommunication:
             self._cleanUpSessionForClosing()
             return False
 
-        self._last_communication = int(time.time())
-
         return True
 
     def sendOption(self,
                    optionType: str,
                    optionValue: float,
-                   optionDelay: int = 0):
+                   optionDelay: int = 0) -> bool:
         """
         This function sends an option change to the server for example
         to activate the alert system or deactivate it.
@@ -1129,7 +1120,7 @@ class ServerCommunication:
         :param optionType:
         :param optionValue:
         :param optionDelay:
-        :return:
+        :return: success or failure
         """
 
         optionMessage = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
@@ -1143,7 +1134,5 @@ class ServerCommunication:
             # clean up session before exiting
             self._cleanUpSessionForClosing()
             return False
-
-        self._last_communication = int(time.time())
 
         return True

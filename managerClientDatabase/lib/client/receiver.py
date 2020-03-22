@@ -22,12 +22,13 @@ class Receiver(threading.Thread):
         self.fileName = os.path.basename(__file__)
 
         # set exit flag as false
-        self.exitFlag = False
+        self.exit_flag = False
 
     def run(self):
 
         while True:
-            if self.exitFlag:
+            if self.exit_flag:
+                self.connection.exit()
                 return
 
             # only run the communication handler
@@ -37,4 +38,4 @@ class Receiver(threading.Thread):
 
     # sets the exit flag to shut down the thread
     def exit(self):
-        self.exitFlag = True
+        self.exit_flag = True

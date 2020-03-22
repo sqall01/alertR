@@ -57,7 +57,7 @@ class ConnectionWatchdog(threading.Thread):
                 time.sleep(1)
 
             # check if the client is still connected to the server
-            if not self.connection.isConnected():
+            if not self.connection.is_connected():
 
                 logging.error("[%s]: Connection to server has died. " % self.fileName)
 
@@ -96,7 +96,7 @@ class ConnectionWatchdog(threading.Thread):
                 logging.debug("[%s]: Ping interval exceeded." % self.fileName)
 
                 # check if PING failed
-                if not self.connection.sendKeepalive():
+                if not self.connection.sendPing():
                     logging.error("[%s]: Connection to server has died." % self.fileName)
 
                     # reconnect to the server
