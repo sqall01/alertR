@@ -15,7 +15,7 @@ import json
 import os
 import socket
 from typing import Optional
-from .core import BUFSIZE, Client
+from .core import BUFSIZE, Client, Connection, RecvTimeout
 
 
 class PromiseState:
@@ -82,8 +82,8 @@ class Communication:
         self.client_cert_file = client_cert_file
         self.client_key_file = client_key_file
 
-        self._client_lock = threading.Lock()
-        self._client = None
+        self._connection_lock = threading.Lock()
+        self._connection = None  # type: Optional[Connection]
 
         self._exit_flag = False
         self._log_tag = os.path.basename(__file__)
@@ -140,7 +140,7 @@ class Communication:
                        "size": messageSize,
                        "message": messageType,
                        "payload": payload}
-            self._client.send(json.dumps(message))
+            self._connection.send(json.dumps(message))
 
         except Exception:
             self._is_connected = False
@@ -154,7 +154,7 @@ class Communication:
         received_message_type = ""
         received_payload_type = ""
         try:
-            data = self._client.recv(BUFSIZE)
+            data = self._connection.recv(BUFSIZE)
             message = json.loads(data)
 
             # Check if an error was received
@@ -229,7 +229,7 @@ class Communication:
                     promise = self._msg_queue.pop(0)
 
                 # Have the client exclusively locked for this communication.
-                with self._client_lock:
+                with self._connection_lock:
 
                     # Only send message if we have a working communication channel.
                     if not self._is_connected:
@@ -247,7 +247,7 @@ class Communication:
                     # Send message.
                     try:
                         logging.debug("[%s]: Sending message of type '%s'." % (self._log_tag, promise.msg_type))
-                        self._client.send(promise.msg)
+                        self._connection.send(promise.msg)
 
                     except Exception:
                         logging.exception("[%s]: Sending message of type '%s' failed."
@@ -257,7 +257,7 @@ class Communication:
 
                     # Receive response.
                     try:
-                        data = self._client.recv(BUFSIZE)
+                        data = self._connection.recv(BUFSIZE)
                         message = json.loads(data)
 
                         # check if an error was received
@@ -278,7 +278,7 @@ class Communication:
                                 message = {"clientTime": utcTimestamp,
                                            "message": message["message"],
                                            "error": "%s message expected" % promise.msg_type}
-                                self._client.send(json.dumps(message))
+                                self._connection.send(json.dumps(message))
                             except Exception:
                                 self._is_connected = False
 
@@ -297,7 +297,7 @@ class Communication:
                                 message = {"clientTime": utcTimestamp,
                                            "message": message["message"],
                                            "error": "response expected"}
-                                self._client.send(json.dumps(message))
+                                self._connection.send(json.dumps(message))
 
                             except Exception:
                                 self._is_connected = False
@@ -337,28 +337,28 @@ class Communication:
     def connect(self) -> bool:
 
         # Closes existing connection if we have one.
-        if self._client is not None:
+        if self._connection is not None:
             try:
-                self._client.close()
+                self._connection.close()
             except Exception:
                 pass
 
         # create client instance and connect to the other side
-        self._client = Client(self.host,
-                              self.port,
-                              self.server_ca_file,
-                              self.client_cert_file,
-                              self.client_key_file)
+        self._connection = Client(self.host,
+                                  self.port,
+                                  self.server_ca_file,
+                                  self.client_cert_file,
+                                  self.client_key_file)
 
         try:
-            self._client.connect()
+            self._connection.connect()
 
         except Exception:
             logging.exception("[%s]: Connecting to server failed." % self._log_tag)
             self._is_connected = False
 
             try:
-                self._client.close()
+                self._connection.close()
             except Exception:
                 pass
 
@@ -381,7 +381,7 @@ class Communication:
         """
         self._is_connected = False
         try:
-            self._client.close()
+            self._connection.close()
         except Exception:
             pass
 
@@ -392,9 +392,9 @@ class Communication:
 
         :return: Data received as string.
         """
-        with self._client_lock:
+        with self._connection_lock:
             try:
-                data = self._client.recv(BUFSIZE)
+                data = self._connection.recv(BUFSIZE)
             except Exception:
                 logging.exception("[%s]: Receiving failed." % self._log_tag)
                 self._is_connected = False
@@ -426,8 +426,8 @@ class Communication:
                 if self._exit_flag:
                     return None
 
-                with self._client_lock:
-                    data = self._client.recv(BUFSIZE, timeout=0.5)
+                with self._connection_lock:
+                    data = self._connection.recv(BUFSIZE, timeout=0.5)
                     if not data:
                         self._is_connected = False
                         return None
@@ -460,13 +460,13 @@ class Communication:
                         message = {"clientTime": utc_timestamp,
                                    "message": str(message["message"]),
                                    "payload": payload}
-                        self._client.send(json.dumps(message))
+                        self._connection.send(json.dumps(message))
 
                         # After initiating transaction receive actual command.
                         data = ""
                         last_size = 0
                         while len(data) < message_size:
-                            data += self._client.recv(BUFSIZE)
+                            data += self._connection.recv(BUFSIZE)
 
                             # Check if the size of the received data has changed.
                             # If not we detected a possible dead lock.
@@ -488,7 +488,7 @@ class Communication:
                                       % (self._log_tag, data))
                         return None
 
-            except socket.timeout as e:
+            except RecvTimeout:
                 # release lock and acquire to let other threads send
                 # data to the other side
                 # (wait 0.5 seconds in between, because semaphore
@@ -534,9 +534,9 @@ class Communication:
 
         :param msg: Message string to send.
         """
-        with self._client_lock:
+        with self._connection_lock:
             try:
-                self._client.send(msg)
+                self._connection.send(msg)
                 self._last_communication = int(time.time())
 
             except Exception:
