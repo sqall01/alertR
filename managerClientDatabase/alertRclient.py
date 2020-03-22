@@ -213,7 +213,7 @@ if __name__ == '__main__':
            and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-        if globalData.serverComm.initializeCommunication() is True:
+        if globalData.serverComm.initialize() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
             if globalData.smtpAlert is not None:
