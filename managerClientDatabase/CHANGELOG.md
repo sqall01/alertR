@@ -2,9 +2,8 @@
 
 Features:
 
-* Refactored client code to get a more resilient connection.
-* Unified client code to make it more maintainable.
-* Guarantee that requests are send to server in timely order.
+* Added symlink support to updater/installer to make maintaining repository easier
+* Added repository version and repository compatibility list to updater/installer 
 
 ## 0.600
 

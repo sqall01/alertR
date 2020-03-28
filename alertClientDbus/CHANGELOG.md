@@ -1,3 +1,11 @@
+## 0.600-1
+
+Features:
+
+* Added symlink support to updater/installer to make maintaining repository easier
+* Added repository version and repository compatibility list to updater/installer 
+
+
 ## 0.600
 
 Features:
@@ -5,13 +13,6 @@ Features:
 * Migration from Python 2.7 to Python 3.5
 * Permissions check for config file
 * Added separated sensor alert message handling (distinguish between "triggered" and "normal" state)
-
-
-## 0.600
-
-Features:
-
-* Migration from Python 2.7 to Python 3.5
 
 
 ## 0.501-2
