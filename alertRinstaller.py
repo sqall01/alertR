@@ -557,6 +557,8 @@ class Updater:
             if "version" in self.repoInfo.keys():
                 self.repo_version = self.repoInfo["version"]
 
+            logging.debug("[%s]: Repository version: %d" % (self.fileName, self.repo_version))
+
         except Exception as e:
             logging.exception("[%s]: Parsing repository information failed." % self.fileName)
             return False
@@ -567,6 +569,7 @@ class Updater:
                           + "(Repository version: %d; Supported versions: %s)."
                           % (self.repo_version, ", ".join([str(i) for i in self.supported_versions])))
             logging.error("[%s]: Please visit https://github.com/sqall01/alertR/wiki/Update "
+                          % self.fileName
                           + "to see how to fix this issue.")
             return False
 
