@@ -62,8 +62,8 @@ class Updater:
         # the updater object is not thread safe
         self.updaterLock = threading.Lock()
 
-        # Version of this Updater class.
-        self.updater_version = 2
+        # Compatible repository versions.
+        self.supported_versions = [1, 2]
 
         # set global configured data
         self.version = 0
@@ -508,8 +508,10 @@ class Updater:
             if not isinstance(self.instanceInfo["dependencies"], dict):
                 raise ValueError("Key 'dependencies' is not of type dict.")
 
-            if not isinstance(self.instanceInfo["symlinks"], list):
-                raise ValueError("Key 'symlinks' is not of type list.")
+            # Check if symlinks exist to be compatible with version 1 repositories.
+            if "symlinks" in self.instanceInfo.keys():
+                if not isinstance(self.instanceInfo["symlinks"], list):
+                    raise ValueError("Key 'symlinks' is not of type list.")
 
         except Exception as e:
             logging.exception("[%s]: Parsing instance information failed." % self.fileName)
@@ -559,11 +561,11 @@ class Updater:
             logging.exception("[%s]: Parsing repository information failed." % self.fileName)
             return False
 
-        if self.repo_version != self.updater_version:
+        if self.repo_version not in self.supported_versions:
             logging.error("[%s]: Updater is not compatible with repository "
                           % self.fileName
-                          + "(Update version: %d; Repository version: %d)."
-                          % (self.updater_version, self.repo_version))
+                          + "(Repository version: %d; Supported versions: %s)."
+                          % (self.repo_version, ", ".join([str(i) for i in self.supported_versions])))
             logging.error("[%s]: Please visit https://github.com/sqall01/alertR/wiki/Update "
                           + "to see how to fix this issue.")
             return False
@@ -592,7 +594,12 @@ class Updater:
             version = float(self.instanceInfo["version"])
             rev = int(self.instanceInfo["rev"])
             newestFiles = self.instanceInfo["files"]
-            newestSymlinks = self.instanceInfo["symlinks"]
+
+            # Check if symlinks exist to be compatible with version 1 repositories.
+            if "symlinks" in self.instanceInfo.keys():
+                newestSymlinks = self.instanceInfo["symlinks"]
+            else:
+                newestSymlinks = []
 
             if not isinstance(newestFiles, dict):
                 raise ValueError("Key 'files' is not of type dict.")
