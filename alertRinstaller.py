@@ -60,7 +60,10 @@ class Updater:
         self.fileName = os.path.basename(__file__)
 
         # the updater object is not thread safe
-        self.updaterLock = threading.Semaphore(1)
+        self.updaterLock = threading.Lock()
+
+        # Version of this Updater class.
+        self.updater_version = 2
 
         # set global configured data
         self.version = 0
@@ -83,6 +86,7 @@ class Updater:
         self.repoInfo = None  # type: Dict[str, Any]
         self.repoInstanceLocation = None  # type: Optional[str]
         self.instanceInfo = None  # type: Dict[str, Any]
+        self.repo_version = 1
 
         if localInstanceInfo is None:
             self.localInstanceInfo = {"files": {}}
@@ -423,6 +427,7 @@ class Updater:
 
             # We have downloaded a symlink => read correct location, reset file handle, and download correct file.
             fileHandle.seek(0)
+            # The symlink accessed via githubs HTTPS API just contains a string of the target file.
             file_location = fileHandle.readline().decode("ascii").strip()
             fileHandle.seek(0)
 
@@ -547,8 +552,20 @@ class Updater:
             if self.instance not in self.repoInfo["instances"].keys():
                 raise ValueError("Instance '%s' is not managed by used repository." % self.instance)
 
+            if "version" in self.repoInfo.keys():
+                self.repo_version = self.repoInfo["version"]
+
         except Exception as e:
             logging.exception("[%s]: Parsing repository information failed." % self.fileName)
+            return False
+
+        if self.repo_version != self.updater_version:
+            logging.error("[%s]: Updater is not compatible with repository "
+                          % self.fileName
+                          + "(Update version: %d; Repository version: %d)."
+                          % (self.updater_version, self.repo_version))
+            logging.error("[%s]: Please visit https://github.com/sqall01/alertR/wiki/Update "
+                          + "to see how to fix this issue.")
             return False
 
         # Set repository location on server.
