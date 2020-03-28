@@ -21,7 +21,7 @@ import importlib
 import threading
 import optparse
 import io
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 
 ################ GLOBAL CONFIGURATION DATA ################
 
@@ -77,7 +77,8 @@ class Updater:
         # needed to keep track of the newest version
         self.newestVersion = self.version
         self.newestRev = self.rev
-        self.newestFiles = None
+        self.newestFiles = None  # type: Optional[Dict[str, str]]
+        self.newestSymlinks = None  # type: Optional[List[str]]
         self.lastChecked = 0
         self.repoInfo = None  # type: Dict[str, Any]
         self.repoInstanceLocation = None  # type: Optional[str]
@@ -120,7 +121,7 @@ class Updater:
         # or was done at all
         # => if not get the newest version information
         utcTimestamp = int(time.time())
-        if (utcTimestamp - self.lastChecked) > 60 or self.newestFiles is None:
+        if (utcTimestamp - self.lastChecked) > 60 or self.newestFiles is None or self.newestSymlinks is None:
             if self._getNewestVersionInformation() is False:
                 logging.error("[%s]: Not able to get version information for checking files." % self.fileName)
                 return None
@@ -337,15 +338,15 @@ class Updater:
 
         return True
 
-    def _downloadFile(self, fileLocation: str, fileHash: str) -> Optional[io.BufferedRandom]:
+    def _downloadFile(self, file_location: str, file_hash: str) -> Optional[io.BufferedRandom]:
         """
         Internal function that downloads the given file into a temporary file and checks if the given hash is correct
 
-        :param fileLocation: location of the file
-        :param fileHash: hash of the file
+        :param file_location: location of the file
+        :param file_hash: hash of the file
         :return: None or the handle to the temporary file
         """
-        logging.info("[%s]: Downloading file: '%s'" % (self.fileName, fileLocation))
+        logging.info("[%s]: Downloading file: '%s'" % (self.fileName, file_location))
 
         # create temporary file
         try:
@@ -356,62 +357,76 @@ class Updater:
             return None
 
         # Download file from server.
-        try:
-            url = self.url + "/" + self.repoInstanceLocation + "/" + fileLocation
-            with requests.get(url,
-                              verify=True,
-                              stream=True,
-                              timeout=self.timeout) as r:
+        while True:
+            try:
+                url = self.url + "/" + self.repoInstanceLocation + "/" + file_location
+                with requests.get(url,
+                                  verify=True,
+                                  stream=True,
+                                  timeout=self.timeout) as r:
 
-                # Check if server responded correctly
-                # => download file
-                r.raise_for_status()
+                    # Check if server responded correctly
+                    # => download file
+                    r.raise_for_status()
 
-                # get the size of the response
-                fileSize = -1
-                maxChunks = 0
-                try:
-                    fileSize = int(r.headers.get('content-type'))
-
-                except Exception as e:
+                    # get the size of the response
                     fileSize = -1
+                    maxChunks = 0
+                    try:
+                        fileSize = int(r.headers.get('content-type'))
 
-                # Check if the file size was part of the header
-                # and we can output the status of the download
-                showStatus = False
-                if fileSize > 0:
-                    showStatus = True
-                    maxChunks = int(math.ceil(float(fileSize) / float(self.chunkSize)))
+                    except Exception as e:
+                        fileSize = -1
 
-                # Actually download file.
-                chunkCount = 0
-                printedPercentage = 0
-                for chunk in r.iter_content(chunk_size=self.chunkSize):
-                    if not chunk:
-                        continue
-                    fileHandle.write(chunk)
+                    # Check if the file size was part of the header
+                    # and we can output the status of the download
+                    showStatus = False
+                    if fileSize > 0:
+                        showStatus = True
+                        maxChunks = int(math.ceil(float(fileSize) / float(self.chunkSize)))
 
-                    # output status of the download
-                    chunkCount += 1
-                    if showStatus:
-                        if chunkCount > maxChunks:
-                            showStatus = False
-                            logging.warning("[%s]: Content information of received header flawed. Stopping "
-                                            % self.fileName
-                                            + "to show download status.")
+                    # Actually download file.
+                    chunkCount = 0
+                    printedPercentage = 0
+                    for chunk in r.iter_content(chunk_size=self.chunkSize):
+                        if not chunk:
                             continue
+                        fileHandle.write(chunk)
 
-                        else:
-                            percentage = int((float(chunkCount) / float(maxChunks)) * 100)
-                            if (percentage / 10) > printedPercentage:
-                                printedPercentage = percentage / 10
+                        # output status of the download
+                        chunkCount += 1
+                        if showStatus:
+                            if chunkCount > maxChunks:
+                                showStatus = False
+                                logging.warning("[%s]: Content information of received header flawed. Stopping "
+                                                % self.fileName
+                                                + "to show download status.")
+                                continue
 
-                                logging.info("[%s]: Download: %d%%" % (self.fileName, printedPercentage * 10))
+                            else:
+                                percentage = int((float(chunkCount) / float(maxChunks)) * 100)
+                                if (percentage / 10) > printedPercentage:
+                                    printedPercentage = percentage / 10
 
-        except Exception as e:
-            logging.exception("[%s]: Downloading file '%s' from the server failed."
-                              % (self.fileName, fileLocation))
-            return None
+                                    logging.info("[%s]: Download: %d%%" % (self.fileName, printedPercentage * 10))
+
+            except Exception as e:
+                logging.exception("[%s]: Downloading file '%s' from the server failed."
+                                  % (self.fileName, file_location))
+                return None
+
+            # We have downloaded the final file if it is not listed as symlink.
+            if file_location not in self.newestSymlinks:
+                break
+
+            logging.info("[%s]: File '%s' is symlink." % (self.fileName, file_location))
+
+            # We have downloaded a symlink => read correct location, reset file handle, and download correct file.
+            fileHandle.seek(0)
+            file_location = fileHandle.readline().decode("ascii").strip()
+            fileHandle.seek(0)
+
+            logging.info("[%s]: Downloading new location: %s" % (self.fileName, file_location))
 
         # calculate sha256 hash of the downloaded file
         fileHandle.seek(0)
@@ -419,13 +434,13 @@ class Updater:
         fileHandle.seek(0)
 
         # check if downloaded file has the correct hash
-        if sha256Hash != fileHash:
+        if sha256Hash != file_hash:
             logging.error("[%s]: Temporary file does not have the correct hash." % self.fileName)
             logging.debug("[%s]: Temporary file: %s" % (self.fileName, sha256Hash))
-            logging.debug("[%s]: Repository: %s" % (self.fileName, fileHash))
+            logging.debug("[%s]: Repository: %s" % (self.fileName, file_hash))
             return None
 
-        logging.info("[%s]: Successfully downloaded file: '%s'" % (self.fileName, fileLocation))
+        logging.info("[%s]: Successfully downloaded file: '%s'" % (self.fileName, file_location))
         return fileHandle
 
     def _sha256File(self, fileHandle: Union[io.TextIOBase, io.BufferedIOBase]) -> str:
@@ -472,7 +487,7 @@ class Updater:
                 instanceInfoString = r.text
 
         except Exception as e:
-            logging.exception("[%s]: Getting version information failed." % self.fileName)
+            logging.exception("[%s]: Getting instance information failed." % self.fileName)
             return False
 
         # parse instance information string
@@ -488,8 +503,11 @@ class Updater:
             if not isinstance(self.instanceInfo["dependencies"], dict):
                 raise ValueError("Key 'dependencies' is not of type dict.")
 
+            if not isinstance(self.instanceInfo["symlinks"], list):
+                raise ValueError("Key 'symlinks' is not of type list.")
+
         except Exception as e:
-            logging.exception("[%s]: Parsing version information failed." % self.fileName)
+            logging.exception("[%s]: Parsing instance information failed." % self.fileName)
             return False
 
         return True
@@ -557,9 +575,13 @@ class Updater:
             version = float(self.instanceInfo["version"])
             rev = int(self.instanceInfo["rev"])
             newestFiles = self.instanceInfo["files"]
+            newestSymlinks = self.instanceInfo["symlinks"]
 
             if not isinstance(newestFiles, dict):
                 raise ValueError("Key 'files' is not of type dict.")
+
+            if not isinstance(newestSymlinks, list):
+                raise ValueError("Key 'symlinks' is not of type list.")
 
         except Exception as e:
             logging.exception("[%s]: Parsing version information failed." % self.fileName)
@@ -572,12 +594,14 @@ class Updater:
         # => update information
         if (version > self.newestVersion
            or (rev > self.newestRev and version == self.newestVersion)
-           or self.newestFiles is None):
+           or self.newestFiles is None
+           or self.newestSymlinks is None):
 
             # update newest known version information
             self.newestVersion = version
             self.newestRev = rev
             self.newestFiles = newestFiles
+            self.newestSymlinks = newestSymlinks
 
         self.lastChecked = int(time.time())
         return True
