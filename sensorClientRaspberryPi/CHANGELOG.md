@@ -1,3 +1,11 @@
+## 0.600-1
+
+Features:
+
+* Added symlink support to updater/installer to make maintaining repository easier
+* Added repository version and repository compatibility list to updater/installer 
+
+
 ## 0.600
 
 Features:
