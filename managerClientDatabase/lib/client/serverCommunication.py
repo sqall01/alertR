@@ -13,7 +13,7 @@ import os
 import json
 import threading
 from typing import Dict, Any
-from .util import MsgChecker, MsgBuilder
+from .util import MsgBuilder, MsgChecker
 from .communication import Communication, Promise
 from .eventHandler import EventHandler
 from ..localObjects import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
@@ -67,9 +67,6 @@ class ServerCommunication:
                                             self._client_cert_file,
                                             self._client_key_file)
 
-        # Utility class that checks the incoming messages.
-        self._msg_checker = MsgChecker(self._communication)
-
         self._initialization_lock = threading.Lock()
 
     @property
@@ -97,7 +94,7 @@ class ServerCommunication:
         # send user credentials and version
         try:
             logging.debug("[%s]: Sending user credentials and version." % self._log_tag)
-            self._communication.send(authMessage)
+            self._communication.send_raw(authMessage)
 
         except Exception as e:
             logging.exception("[%s]: Sending user credentials "
@@ -107,7 +104,7 @@ class ServerCommunication:
 
         # get authentication response from server
         try:
-            data = self._communication.recv()
+            data = self._communication.recv_raw()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -125,7 +122,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "initialization message expected"}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
                 except Exception as e:
                     pass
 
@@ -141,7 +138,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
                 except Exception as e:
                     pass
 
@@ -180,7 +177,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "version not compatible"}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -196,7 +193,7 @@ class ServerCommunication:
                 message = {"clientTime": utcTimestamp,
                            "message": message["message"],
                            "error": "version not valid"}
-                self._communication.send(json.dumps(message))
+                self._communication.send_raw(json.dumps(message))
             except Exception:
                 pass
 
@@ -215,7 +212,7 @@ class ServerCommunication:
         # Send registration message.
         try:
             logging.debug("[%s]: Sending registration message." % self._log_tag)
-            self._communication.send(regMessage)
+            self._communication.send_raw(regMessage)
 
         except Exception:
             logging.exception("[%s]: Sending registration message." % self._log_tag)
@@ -223,7 +220,7 @@ class ServerCommunication:
 
         # get registration response from server
         try:
-            data = self._communication.recv()
+            data = self._communication.recv_raw()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -240,7 +237,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "initialization message expected"}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -256,7 +253,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -290,36 +287,6 @@ class ServerCommunication:
 
         # extract status values
         try:
-
-            if not self._msg_checker.check_server_time(incomingMessage["serverTime"], incomingMessage["message"]):
-                logging.error("[%s]: Received serverTime invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_status_options_list(incomingMessage["payload"]["options"], incomingMessage["message"]):
-                logging.error("[%s]: Received options invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_status_nodes_list(incomingMessage["payload"]["nodes"], incomingMessage["message"]):
-                logging.error("[%s]: Received nodes invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_status_sensors_list(incomingMessage["payload"]["sensors"], incomingMessage["message"]):
-                logging.error("[%s]: Received sensors invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_status_managers_list(incomingMessage["payload"]["managers"], incomingMessage["message"]):
-                logging.error("[%s]: Received managers invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_status_alerts_list(incomingMessage["payload"]["alerts"], incomingMessage["message"]):
-                logging.error("[%s]: Received alerts invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_status_alert_levels_list(incomingMessage["payload"]["alertLevels"],
-                                                                    incomingMessage["message"]):
-                logging.error("[%s]: Received alertLevels invalid." % self._log_tag)
-                return False
-
             serverTime = incomingMessage["serverTime"]
             optionsRaw = incomingMessage["payload"]["options"]
             nodesRaw = incomingMessage["payload"]["nodes"]
@@ -328,19 +295,8 @@ class ServerCommunication:
             alertsRaw = incomingMessage["payload"]["alerts"]
             alertLevelsRaw = incomingMessage["payload"]["alertLevels"]
 
-        except Exception as e:
+        except Exception:
             logging.exception("[%s]: Received status invalid." % self._log_tag)
-
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": incomingMessage["message"],
-                           "error": "received status invalid"}
-                self._communication.send(json.dumps(message))
-            except Exception as e:
-                pass
-
             return False
 
         logging.debug("[%s]: Received option count: %d." % (self._log_tag, len(optionsRaw)))
@@ -351,19 +307,9 @@ class ServerCommunication:
             try:
                 optionType = optionsRaw[i]["type"]
                 optionValue = optionsRaw[i]["value"]
-            except Exception as e:
+
+            except Exception:
                 logging.exception("[%s]: Received option invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "received option invalid"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
                 return False
 
             logging.debug("[%s]: Received option information: '%s':%d." % (self._log_tag, optionType, optionValue))
@@ -389,19 +335,8 @@ class ServerCommunication:
                 username = nodesRaw[i]["username"]
                 persistent = nodesRaw[i]["persistent"]
 
-            except Exception as e:
+            except Exception:
                 logging.exception("[%s]: Received node invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "received node invalid"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
                 return False
 
             logging.debug("[%s]: Received node information: %d:'%s':'%s':%d:%d."
@@ -439,19 +374,9 @@ class ServerCommunication:
                 description = sensorsRaw[i]["description"]
                 lastStateUpdated = sensorsRaw[i]["lastStateUpdated"]
                 state = sensorsRaw[i]["state"]
-            except Exception as e:
+
+            except Exception:
                 logging.exception("[%s]: Received sensor invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "received sensor invalid"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
                 return False
 
             logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d:%d."
@@ -480,19 +405,9 @@ class ServerCommunication:
                 nodeId = managersRaw[i]["nodeId"]
                 managerId = managersRaw[i]["managerId"]
                 description = managersRaw[i]["description"]
-            except Exception as e:
+
+            except Exception:
                 logging.exception("[%s]: Received manager invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "received manager invalid"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
                 return False
 
             logging.debug("[%s]: Received manager information: %d:%d:'%s'."
@@ -516,19 +431,8 @@ class ServerCommunication:
                 description = alertsRaw[i]["description"]
                 alertAlertLevels = alertsRaw[i]["alertLevels"]
 
-            except Exception as e:
+            except Exception:
                 logging.exception("[%s]: Received alert invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "received alert invalid"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
                 return False
 
             logging.debug("[%s]: Received alert information: %d:%d:'%s'."
@@ -553,19 +457,8 @@ class ServerCommunication:
                 triggerAlways = alertLevelsRaw[i]["triggerAlways"]
                 rulesActivated = alertLevelsRaw[i]["rulesActivated"]
 
-            except Exception as e:
+            except Exception:
                 logging.exception("[%s]: Received alertLevel invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "received alertLevel invalid"}
-                    self._communication.send(json.dumps(message))
-                except Exception as e:
-                    pass
-
                 return False
 
             logging.debug("[%s]: Received alertLevel information: %d:'%s':%d."
@@ -586,32 +479,6 @@ class ServerCommunication:
                                                  managers,
                                                  alerts,
                                                  alertLevels):
-
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": incomingMessage["message"],
-                           "error": "handling received data failed"}
-                self._communication.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        # sending sensor alert response
-        logging.debug("[%s]: Sending status response message." % self._log_tag)
-        try:
-            payload = {"type": "response",
-                       "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": "status",
-                       "payload": payload}
-            self._communication.send(json.dumps(message))
-
-        except Exception as e:
-            logging.exception("[%s]: Sending status response failed." % self._log_tag)
             return False
 
         return True
@@ -630,64 +497,6 @@ class ServerCommunication:
         sensorAlert = SensorAlert()
         sensorAlert.timeReceived = int(time.time())
         try:
-            if not self._msg_checker.check_server_time(incomingMessage["serverTime"], incomingMessage["message"]):
-                logging.error("[%s]: Received serverTime invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_alert_levels(incomingMessage["payload"]["alertLevels"], incomingMessage["message"]):
-                logging.error("[%s]: Received alertLevels invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_description(incomingMessage["payload"]["description"], incomingMessage["message"]):
-                logging.error("[%s]: Received description invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_rules_activated(incomingMessage["payload"]["rulesActivated"],
-                                                           incomingMessage["message"]):
-                logging.error("[%s]: Received rulesActivated invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_sensor_id(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
-                logging.error("[%s]: Received sensorId invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_state(incomingMessage["payload"]["state"], incomingMessage["message"]):
-                logging.error("[%s]: Received state invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_has_optional_data(incomingMessage["payload"]["hasOptionalData"],
-                                                             incomingMessage["message"]):
-                logging.error("[%s]: Received hasOptionalData invalid." % self._log_tag)
-                return False
-
-            if incomingMessage["payload"]["hasOptionalData"]:
-                if not self._msg_checker.check_optional_data(incomingMessage["payload"]["optionalData"],
-                                                             incomingMessage["message"]):
-                    logging.error("[%s]: Received optionalData invalid." % self._log_tag)
-                    return False
-
-            if not self._msg_checker.check_sensor_data_type(incomingMessage["payload"]["dataType"],
-                                                            incomingMessage["message"]):
-                logging.error("[%s]: Received dataType invalid." % self._log_tag)
-                return False
-
-            if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
-                if not self._msg_checker.check_sensor_data(incomingMessage["payload"]["data"],
-                                                           incomingMessage["payload"]["dataType"],
-                                                           incomingMessage["message"]):
-                    logging.error("[%s]: Received data invalid." % self._log_tag)
-                    return False
-
-            if not self._msg_checker.check_has_latest_data(incomingMessage["payload"]["hasLatestData"],
-                                                           incomingMessage["message"]):
-                logging.error("[%s]: Received hasLatestData invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_change_state(incomingMessage["payload"]["changeState"],
-                                                        incomingMessage["message"]):
-                logging.error("[%s]: Received changeState invalid." % self._log_tag)
-                return False
-
             serverTime = incomingMessage["serverTime"]
 
             sensorAlert.rulesActivated = incomingMessage["payload"]["rulesActivated"]
@@ -719,34 +528,8 @@ class ServerCommunication:
             elif sensorAlert.dataType == SensorDataType.FLOAT:
                 sensorAlert.sensorData = incomingMessage["payload"]["data"]
 
-        except Exception as e:
+        except Exception:
             logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
-
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": incomingMessage["message"],
-                           "error": "received sensor alert invalid"}
-                self._communication.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        # sending sensor alert response
-        logging.debug("[%s]: Sending sensor alert response message." % self._log_tag)
-        try:
-            payload = {"type": "response",
-                       "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": "sensoralert",
-                       "payload": payload}
-            self._communication.send(json.dumps(message))
-
-        except Exception as e:
-            logging.exception("[%s]: Sending sensor alert response failed." % self._log_tag)
             return False
 
         # handle received sensor alert
@@ -767,28 +550,6 @@ class ServerCommunication:
 
         # extract state change values
         try:
-            if not self._msg_checker.check_server_time(incomingMessage["serverTime"], incomingMessage["message"]):
-                logging.error("[%s]: Received serverTime invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_sensor_id(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
-                logging.error("[%s]: Received sensorId invalid." % self._log_tag)
-                return False
-            if not self._msg_checker.check_state(incomingMessage["payload"]["state"], incomingMessage["message"]):
-                logging.error("[%s]: Received state invalid." % self._log_tag)
-                return False
-
-            if not self._msg_checker.check_sensor_data_type(incomingMessage["payload"]["dataType"], incomingMessage["message"]):
-                logging.error("[%s]: Received dataType invalid." % self._log_tag)
-                return False
-
-            if incomingMessage["payload"]["dataType"] != SensorDataType.NONE:
-                if not self._msg_checker.check_sensor_data(incomingMessage["payload"]["data"],
-                                                           incomingMessage["payload"]["dataType"],
-                                                           incomingMessage["message"]):
-                    logging.error("[%s]: Received data invalid." % self._log_tag)
-                    return False
-
             serverTime = incomingMessage["serverTime"]
 
             sensorId = incomingMessage["payload"]["sensorId"]
@@ -801,34 +562,8 @@ class ServerCommunication:
             elif dataType == SensorDataType.FLOAT:
                 sensorData = incomingMessage["payload"]["data"]
 
-        except Exception as e:
+        except Exception:
             logging.exception("[%s]: Received state change invalid." % self._log_tag)
-
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": incomingMessage["message"],
-                           "error": "received state change invalid"}
-                self._communication.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        # sending state change response
-        logging.debug("[%s]: Sending state change response message." % self._log_tag)
-        try:
-            payload = {"type": "response",
-                       "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": "statechange",
-                       "payload": payload}
-            self._communication.send(json.dumps(message))
-
-        except Exception as e:
-            logging.exception("[%s]: Sending state change response failed." % self._log_tag)
             return False
 
         # handle received state change
@@ -878,50 +613,10 @@ class ServerCommunication:
             if self._exit_flag:
                 return
 
-            data = self._communication.recv_request()
-            if data is None:
+            message = self._communication.recv_request()
+            if message is None:
                 return
-
-            # Extract request/message type.
-            request = ""
-            try:
-                message = json.loads(data)
-                # check if an error was received
-                if "error" in message.keys():
-                    logging.error("[%s]: Error received: '%s'."
-                                  % (self._log_tag, message["error"]))
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-                # check if the received type is the correct one
-                if str(message["payload"]["type"]).lower() != "request":
-                    logging.error("[%s]: Request expected." % self._log_tag)
-
-                    # send error message back
-                    try:
-                        utc_timestamp = int(time.time())
-                        message = {"clientTime": utc_timestamp,
-                                   "message": message["message"],
-                                   "error": "request expected"}
-                        self._communication.send(json.dumps(message))
-                    except Exception:
-                        pass
-
-                    # clean up session before exiting
-                    self.close()
-                    return
-
-                # Extract the request/message type of the message.
-                request = str(message["message"]).lower()
-
-            except Exception:
-                logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
-
-                # clean up session before exiting
-                self.close()
-                return
+            request = message["message"]
 
             # Handle SENSORALERT request.
             if request == "sensoralert":
@@ -955,16 +650,7 @@ class ServerCommunication:
 
             # Unkown request.
             else:
-                logging.error("[%s]: Received unknown request. Server sent: %s" % (self._log_tag, data))
-
-                try:
-                    utc_timestamp = int(time.time())
-                    message = {"clientTime": utc_timestamp,
-                               "message": request,
-                               "error": "unknown request/message type"}
-                    self._communication.send(json.dumps(message))
-                except Exception:
-                    pass
+                logging.error("[%s]: Received unknown request. Server sent: %s" % (self._log_tag, str(message)))
 
                 # clean up session before exiting
                 self.close()
@@ -1011,7 +697,7 @@ class ServerCommunication:
             try:
                 logging.debug("[%s]: Receiving initial status update." % self._log_tag)
 
-                data = self._communication.recv()
+                data = self._communication.recv_raw()
                 message = json.loads(data)
                 # check if an error was received
                 if "error" in message.keys():
@@ -1037,13 +723,13 @@ class ServerCommunication:
                     message = {"clientTime": utc_timestamp,
                                "message": str(message["message"]),
                                "payload": payload}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
 
                     # After initiating transaction receive actual command.
                     data = ""
                     last_size = 0
                     while len(data) < messageSize:
-                        data += self._communication.recv()
+                        data += self._communication.recv_raw()
 
                         # Check if the size of the received data has changed.
                         # If not we detected a possible dead lock.
@@ -1070,6 +756,7 @@ class ServerCommunication:
                 return False
 
             # Extract message type
+            message_type = "unknown"
             try:
                 message = json.loads(data)
                 # check if an error was received
@@ -1079,41 +766,58 @@ class ServerCommunication:
                     return False
 
                 # check if the received type is the correct one
-                if str(message["payload"]["type"]).upper() != "REQUEST":
+                if str(message["payload"]["type"]).lower() != "request":
                     logging.error("[%s]: request expected." % self._log_tag)
 
                     # send error message back
                     try:
                         utc_timestamp = int(time.time())
                         message = {"clientTime": utc_timestamp,
-                                   "message": message["message"],
+                                   "message": "unknown",
                                    "error": "request expected"}
-                        self._communication.send(json.dumps(message))
-                    except Exception as e:
+                        self._communication.send_raw(json.dumps(message))
+                    except Exception:
                         pass
 
                     self.close()
                     return False
 
                 # extract the command/message type of the message
-                command = str(message["message"]).lower()
+                message_type = str(message["message"]).lower()
 
             except Exception:
                 logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
                 self.close()
                 return False
 
-            if command != "status":
+            if message_type != "status":
                 logging.error("[%s]: Receiving status update failed. Server sent: '%s'" % (self._log_tag, data))
 
                 # send error message back
                 try:
                     utc_timestamp = int(time.time())
                     message = {"clientTime": utc_timestamp,
-                               "message": message["message"],
+                               "message": message_type,
                                "error": "initial status update expected"}
-                    self._communication.send(json.dumps(message))
+                    self._communication.send_raw(json.dumps(message))
 
+                except Exception:
+                    pass
+
+                self.close()
+                return False
+
+            error_msg = MsgChecker.check_received_message(message)
+            if error_msg is not None:
+                logging.error("[%s]: Received status update invalid." % self._log_tag)
+
+                # send error message back
+                try:
+                    utc_timestamp = int(time.time())
+                    message = {"clientTime": utc_timestamp,
+                               "message": message_type,
+                               "error": error_msg}
+                    self._communication.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -1122,6 +826,22 @@ class ServerCommunication:
 
             if not self._status_update_handler(message):
                 logging.error("[%s]: Initial status update failed." % self._log_tag)
+                self.close()
+                return False
+
+            # sending sensor alert response
+            logging.debug("[%s]: Sending status update response." % self._log_tag)
+            try:
+                payload = {"type": "response",
+                           "result": "ok"}
+                utc_timestamp = int(time.time())
+                message = {"clientTime": utc_timestamp,
+                           "message": message_type,
+                           "payload": payload}
+                self._communication.send_raw(json.dumps(message))
+
+            except Exception as e:
+                logging.exception("[%s]: Sending status update response failed." % self._log_tag)
                 self.close()
                 return False
 

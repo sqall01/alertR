@@ -13,8 +13,9 @@ import logging
 import random
 import json
 import os
-from typing import Optional
-from .core import BUFSIZE, Client, Connection, RecvTimeout
+from typing import Optional, Dict, Any
+from .core import BUFSIZE, Client, RecvTimeout
+from .util import MsgChecker
 
 
 class PromiseState:
@@ -195,6 +196,7 @@ class Communication:
             logging.warning("[%s]: Initiate transaction failed. Backing off." % self._log_tag)
             return False
 
+    # noinspection PyBroadException
     def _request_sender(self):
         """
         Request sender loop that processes the message queue.
@@ -321,7 +323,7 @@ class Communication:
                         # (too long in queue that other side does not process it).
                         elif msg_result == "expired":
                             logging.warning("[%s]: Other side said message of type '%s' is expired (too old)."
-                                          % (self._log_tag, promise.msg_type))
+                                            % (self._log_tag, promise.msg_type))
                             promise.set_failed()
 
                         else:
@@ -383,7 +385,7 @@ class Communication:
             pass
 
     # noinspection PyBroadException
-    def recv(self) -> Optional[str]:
+    def recv_raw(self) -> Optional[str]:
         """
         Raw receiving method that just plainly returns the received data.
 
@@ -404,7 +406,7 @@ class Communication:
         return data
 
     # noinspection PyBroadException
-    def recv_request(self) -> Optional[str]:
+    def recv_request(self) -> Optional[Dict[str, Any]]:
         """
         Returns received request as string. Blocking until request is received or error occurs.
         Does not block the channel. Handles RTS/CTS messages with other side.
@@ -502,8 +504,62 @@ class Communication:
                 self._has_channel = False
                 return None
 
+            recv_message = {}
+            try:
+                recv_message = json.loads(data)
+                # check if an error was received
+                if "error" in recv_message.keys():
+                    logging.error("[%s]: Error received: '%s'."
+                                  % (self._log_tag, recv_message["error"]))
+                    self._has_channel = False
+                    return None
+
+            except Exception:
+                logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
+                self._has_channel = False
+                return None
+
+            error_msg = MsgChecker.check_received_message(recv_message)
+            if error_msg is not None:
+
+                request_type = "unknown"
+                if "message" in recv_message.keys() and type(recv_message["message"]) != str:
+                    request_type = recv_message["message"]
+
+                # send error message back
+                try:
+                    utc_timestamp = int(time.time())
+                    message = {"clientTime": utc_timestamp,
+                               "message": request_type,
+                               "error": error_msg}
+                    self._connection.send(json.dumps(message))
+                except Exception:
+                    pass
+
+                self._has_channel = False
+                return None
+
+            request_type = recv_message["message"]
+            logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
+
+            # sending sensor alert response
+            logging.debug("[%s]: Sending response message of type '%s'." % (self._log_tag, request_type))
+            try:
+                payload = {"type": "response",
+                           "result": "ok"}
+                utc_timestamp = int(time.time())
+                message = {"clientTime": utc_timestamp,
+                           "message": request_type,
+                           "payload": payload}
+                self._connection.send(json.dumps(message))
+
+            except Exception:
+                logging.exception("[%s]: Sending response message of type '%s' failed." % (self._log_tag, request_type))
+                self._has_channel = False
+                return None
+
             self._last_communication = int(time.time())
-            return data
+            return recv_message
 
     def send_request(self,
                      msg_type: str,
@@ -523,8 +579,8 @@ class Communication:
         return promise
 
     # noinspection PyBroadException
-    def send(self,
-             msg: str):
+    def send_raw(self,
+                 msg: str):
         """
         Sends the given message to the other side. Does not guarantee that the message is received
         (kind of an UDP packet ;) ).

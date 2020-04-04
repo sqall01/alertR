@@ -11,75 +11,209 @@
 import time
 import json
 import socket
-from typing import List, Dict, Any
-from .communication import Communication
+import os
+import logging
+from typing import List, Dict, Any, Optional
 from ..localObjects import SensorDataType
 
 
 class MsgChecker:
 
-    def __init__(self, communication: Communication):
-        self._communication = communication
+    _log_tag = os.path.basename(__file__)
+
+    @staticmethod
+    def check_received_message(message: Dict[str, Any]) -> Optional[str]:
+
+        if "message" not in message.keys() and type(message["message"]) != str:
+            return "message not valid"
+
+        if "payload" not in message.keys() and type(message["payload"]) != dict:
+            return "payload not valid"
+
+        if "type" not in message["payload"].keys() and str(message["payload"]["type"]).lower() != "request":
+            return "request expected"
+
+        # Extract the request/message type of the message and check message accordingly.
+        request = str(message["message"]).lower()
+
+        # Check "SENSORALERT" message.
+        if request == "sensoralert":
+            error_msg = MsgChecker.check_server_time(message["serverTime"])
+            if error_msg is not None:
+                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_alert_levels(message["payload"]["alertLevels"])
+            if error_msg is not None:
+                logging.error("[%s]: Received alertLevels invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_description(message["payload"]["description"])
+            if error_msg is not None:
+                logging.error("[%s]: Received description invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_rules_activated(message["payload"]["rulesActivated"])
+            if error_msg is not None:
+                logging.error("[%s]: Received rulesActivated invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
+            if error_msg is not None:
+                logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_state(message["payload"]["state"])
+            if error_msg is not None:
+                logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_has_optional_data(message["payload"]["hasOptionalData"])
+            if error_msg is not None:
+                logging.error("[%s]: Received hasOptionalData invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if message["payload"]["hasOptionalData"]:
+                error_msg = MsgChecker.check_optional_data(message["payload"]["optionalData"])
+                if error_msg is not None:
+                    logging.error("[%s]: Received optionalData invalid." % MsgChecker._log_tag)
+                    return error_msg
+
+            error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
+            if error_msg is not None:
+                logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if message["payload"]["dataType"] != SensorDataType.NONE:
+                error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
+                                                         message["payload"]["dataType"])
+                if error_msg is not None:
+                    logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
+                    return error_msg
+
+            error_msg = MsgChecker.check_has_latest_data(message["payload"]["hasLatestData"])
+            if error_msg is not None:
+                logging.error("[%s]: Received hasLatestData invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_change_state(message["payload"]["changeState"])
+            if error_msg is not None:
+                logging.error("[%s]: Received changeState invalid." % MsgChecker._log_tag)
+                return error_msg
+
+        # Check "STATUS" message.
+        elif request == "status":
+            error_msg = MsgChecker.check_server_time(message["serverTime"])
+            if error_msg is not None:
+                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_status_options_list(message["payload"]["options"])
+            if error_msg is not None:
+                logging.error("[%s]: Received options invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_status_nodes_list(message["payload"]["nodes"])
+            if error_msg is not None:
+                logging.error("[%s]: Received nodes invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_status_sensors_list(message["payload"]["sensors"])
+            if error_msg is not None:
+                logging.error("[%s]: Received sensors invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_status_managers_list(message["payload"]["managers"])
+            if error_msg is not None:
+                logging.error("[%s]: Received managers invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_status_alerts_list(message["payload"]["alerts"])
+            if error_msg is not None:
+                logging.error("[%s]: Received alerts invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_status_alert_levels_list(message["payload"]["alertLevels"])
+            if error_msg is not None:
+                logging.error("[%s]: Received alertLevels invalid." % MsgChecker._log_tag)
+                return error_msg
+
+        # Check "STATECHANGE" message.
+        elif request == "statechange":
+            error_msg = MsgChecker.check_server_time(message["serverTime"])
+            if error_msg is not None:
+                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
+            if error_msg is not None:
+                logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_state(message["payload"]["state"])
+            if error_msg is not None:
+                logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
+            if error_msg is not None:
+                logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if message["payload"]["dataType"] != SensorDataType.NONE:
+                error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
+                                                         message["payload"]["dataType"])
+                if error_msg is not None:
+                    logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
+                    return error_msg
+
+        else:
+            return "unknown request/message type"
+
+        return None
 
     # Internal function to check sanity of the alertDelay.
-    def check_alert_delay(self, alertDelay: int, messageType: str) -> bool:
+    @staticmethod
+    def check_alert_delay(alertDelay: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(alertDelay, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "alertDelay not valid"}
-            self._communication.send(json.dumps(message))
+            return "alertDelay not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the alertId.
-    def check_alert_id(self, alertId: int, messageType: str) -> bool:
+    @staticmethod
+    def check_alert_id(alertId: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(alertId, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "alertId not valid"}
-            self._communication.send(json.dumps(message))
+            return "alertId not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the alertLevel.
-    def check_alert_level(self, alertLevel: int, messageType: str):
+    @staticmethod
+    def check_alert_level(alertLevel: int):
 
         isCorrect = True
         if not isinstance(alertLevel, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "alertLevel not valid"}
-            self._communication.send(json.dumps(message))
+            return "alertLevel not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the alertLevels.
-    def check_alert_levels(self, alertLevels: List[int], messageType: str) -> bool:
+    @staticmethod
+    def check_alert_levels(alertLevels: List[int]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(alertLevels, list):
@@ -88,38 +222,26 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "alertLevels not valid"}
-            self._communication.send(json.dumps(message))
+            return "alertLevels not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the changeState.
-    def check_change_state(self, changeState: bool, messageType: str) -> bool:
+    @staticmethod
+    def check_change_state(changeState: bool) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(changeState, bool):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "changeState not valid"}
-            self._communication.send(json.dumps(message))
+            return "changeState not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the connected.
-    def check_connected(self, connected, messageType):
+    @staticmethod
+    def check_connected(connected: int):
 
         isCorrect = True
         if not isinstance(connected, int):
@@ -128,190 +250,130 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "connected not valid"}
-            self._communication.send(json.dumps(message))
+            return "connected not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the description.
-    def check_description(self, description: str, messageType: str) -> bool:
+    @staticmethod
+    def check_description(description: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(description, str):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "description not valid"}
-            self._communication.send(json.dumps(message))
+            return "description not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the hasLatestData.
-    def check_has_latest_data(self, hasLatestData: bool, messageType: str) -> bool:
+    @staticmethod
+    def check_has_latest_data(hasLatestData: bool) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(hasLatestData, bool):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "hasLatestData not valid"}
-            self._communication.send(json.dumps(message))
+            return "hasLatestData not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the hasOptionalData.
-    def check_has_optional_data(self, hasOptionalData: bool, messageType: str) -> bool:
+    @staticmethod
+    def check_has_optional_data(hasOptionalData: bool) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(hasOptionalData, bool):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "hasOptionalData not valid"}
-            self._communication.send(json.dumps(message))
+            return "hasOptionalData not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the hostname.
-    def check_hostname(self, hostname: str, messageType: str) -> bool:
+    @staticmethod
+    def check_hostname(hostname: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(hostname, str):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "hostname not valid"}
-            self._communication.send(json.dumps(message))
+            return "hostname not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the instance.
-    def check_instance(self, instance: str, messageType: str) -> bool:
+    @staticmethod
+    def check_instance(instance: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(instance, str):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "instance not valid"}
-            self._communication.send(json.dumps(message))
+            return "instance not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the lastStateUpdated.
-    def check_last_state_updated(self, lastStateUpdated: int, messageType: str) -> bool:
+    @staticmethod
+    def check_last_state_updated(lastStateUpdated: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(lastStateUpdated, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "lastStateUpdated not valid"}
-            self._communication.send(json.dumps(message))
+            return "lastStateUpdated not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the managerId.
-    def check_manager_id(self, managerId: int, messageType: str) -> bool:
+    @staticmethod
+    def check_manager_id(managerId: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(managerId, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "managerId not valid"}
-            self._communication.send(json.dumps(message))
+            return "managerId not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the name.
-    def check_name(self, name: str, messageType: str) -> bool:
+    @staticmethod
+    def check_name(name: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(name, str):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "name not valid"}
-            self._communication.send(json.dumps(message))
+            return "name not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the nodeId.
-    def check_node_id(self, nodeId: int, messageType: str) -> bool:
+    @staticmethod
+    def check_node_id(nodeId: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(nodeId, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "nodeId not valid"}
-            self._communication.send(json.dumps(message))
+            return "nodeId not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the nodeType.
-    def check_node_type(self, nodeType: str, messageType: str) -> bool:
+    @staticmethod
+    def check_node_type(nodeType: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(nodeType, str):
@@ -322,60 +384,42 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "nodeType not valid"}
-            self._communication.send(json.dumps(message))
+            return "nodeType not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the optionalData.
-    def check_optional_data(self, optionalData: Dict[str, Any], messageType: str) -> bool:
+    @staticmethod
+    def check_optional_data(optionalData: Dict[str, Any]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(optionalData, dict):
             isCorrect = False
         if "message" in optionalData.keys():
-            if not self.check_optional_data_message(optionalData["message"], messageType):
+            if not MsgChecker.check_optional_data_message(optionalData["message"]):
                 isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "optionalData not valid"}
-            self._communication.send(json.dumps(message))
+            return "optionalData not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the optionalData message.
-    def check_optional_data_message(self, message: str, messageType: str) -> bool:
+    @staticmethod
+    def check_optional_data_message(message: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(message, str):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "optionalData message not valid"}
-            self._communication.send(json.dumps(message))
+            return "optionalData message not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the optionType.
-    def check_option_type(self, optionType: str, messageType: str) -> bool:
+    @staticmethod
+    def check_option_type(optionType: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(optionType, str):
@@ -385,19 +429,13 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "optionType not valid"}
-            self._communication.send(json.dumps(message))
+            return "optionType not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the option value.
-    def check_option_value(self, value: float, messageType: str) -> bool:
+    @staticmethod
+    def check_option_value(value: float) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(value, float):
@@ -407,19 +445,13 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "value not valid"}
-            self._communication.send(json.dumps(message))
+            return "value not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the persistent.
-    def check_persistent(self, persistent: int, messageType: str) -> bool:
+    @staticmethod
+    def check_persistent(persistent: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(persistent, int):
@@ -428,95 +460,65 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "persistent not valid"}
-            self._communication.send(json.dumps(message))
+            return "persistent not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the remoteAlertId.
-    def check_remote_alert_id(self, remoteAlertId: int, messageType: str) -> bool:
+    @staticmethod
+    def check_remote_alert_id(remoteAlertId: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(remoteAlertId, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "remoteAlertId not valid"}
-            self._communication.send(json.dumps(message))
+            return "remoteAlertId not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the remoteSensorId.
-    def check_remote_sensor_id(self, remoteSensorId: int, messageType: str) -> bool:
+    @staticmethod
+    def check_remote_sensor_id(remoteSensorId: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(remoteSensorId, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "remoteSensorId not valid"}
-            self._communication.send(json.dumps(message))
+            return "remoteSensorId not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the rev.
-    def check_rev(self, rev: int, messageType: str) -> bool:
+    @staticmethod
+    def check_rev(rev: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(rev, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "rev not valid"}
-            self._communication.send(json.dumps(message))
+            return "rev not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the rulesActivated.
-    def check_rules_activated(self, rulesActivated: bool, messageType: str) -> bool:
+    @staticmethod
+    def check_rules_activated(rulesActivated: bool) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(rulesActivated, bool):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "rulesActivated not valid"}
-            self._communication.send(json.dumps(message))
+            return "rulesActivated not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the sensor data.
-    def check_sensor_data(self, data: Any, dataType: int, messageType: str) -> bool:
+    @staticmethod
+    def check_sensor_data(data: Any, dataType: int) -> Optional[str]:
 
         isCorrect = True
         if dataType == SensorDataType.NONE and data is not None:
@@ -527,19 +529,13 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "data not valid"}
-            self._communication.send(json.dumps(message))
+            return "data not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the sensor data type.
-    def check_sensor_data_type(self, dataType: int, messageType: str) -> bool:
+    @staticmethod
+    def check_sensor_data_type(dataType: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(dataType, int):
@@ -550,57 +546,39 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "dataType not valid"}
-            self._communication.send(json.dumps(message))
+            return "dataType not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the sensorId.
-    def check_sensor_id(self, sensorId: int, messageType: str) -> bool:
+    @staticmethod
+    def check_sensor_id(sensorId: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(sensorId, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "sensorId not valid"}
-            self._communication.send(json.dumps(message))
+            return "sensorId not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the serverTime.
-    def check_server_time(self, serverTime: int, messageType: str) -> bool:
+    @staticmethod
+    def check_server_time(serverTime: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(serverTime, int):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "serverTime not valid"}
-            self._communication.send(json.dumps(message))
+            return "serverTime not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the state.
-    def check_state(self, state: int, messageType: str) -> bool:
+    @staticmethod
+    def check_state(state: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(state, int):
@@ -609,19 +587,13 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "state not valid"}
-            self._communication.send(json.dumps(message))
+            return "state not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the status alertLevels list.
-    def check_status_alert_levels_list(self, alertLevels: List[Dict[str, Any]], messageType: str) -> bool:
+    @staticmethod
+    def check_status_alert_levels_list(alertLevels: List[Dict[str, Any]]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(alertLevels, list):
@@ -638,7 +610,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_alert_level(alertLevel["alertLevel"], messageType):
+            elif MsgChecker.check_alert_level(alertLevel["alertLevel"]) is not None:
                 isCorrect = False
                 break
 
@@ -646,7 +618,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_name(alertLevel["name"], messageType):
+            elif MsgChecker.check_name(alertLevel["name"]) is not None:
                 isCorrect = False
                 break
 
@@ -654,7 +626,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_trigger_always(alertLevel["triggerAlways"], messageType):
+            elif MsgChecker.check_trigger_always(alertLevel["triggerAlways"]) is not None:
                 isCorrect = False
                 break
 
@@ -662,24 +634,18 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_rules_activated(alertLevel["rulesActivated"], messageType):
+            elif MsgChecker.check_rules_activated(alertLevel["rulesActivated"]) is not None:
                 isCorrect = False
                 break
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "alertLevels list not valid"}
-            self._communication.send(json.dumps(message))
+            return "alertLevels list not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the status alerts list.
-    def check_status_alerts_list(self, alerts: List[Dict[str, Any]], messageType: str) -> bool:
+    @staticmethod
+    def check_status_alerts_list(alerts: List[Dict[str, Any]]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(alerts, list):
@@ -696,7 +662,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_node_id(alert["nodeId"], messageType):
+            elif MsgChecker.check_node_id(alert["nodeId"]) is not None:
                 isCorrect = False
                 break
 
@@ -704,7 +670,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_alert_id(alert["alertId"], messageType):
+            elif MsgChecker.check_alert_id(alert["alertId"]) is not None:
                 isCorrect = False
                 break
 
@@ -712,7 +678,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_description(alert["description"], messageType):
+            elif MsgChecker.check_description(alert["description"]) is not None:
                 isCorrect = False
                 break
 
@@ -720,7 +686,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_alert_levels(alert["alertLevels"], messageType):
+            elif MsgChecker.check_alert_levels(alert["alertLevels"]) is not None:
                 isCorrect = False
                 break
 
@@ -728,24 +694,18 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_remote_alert_id(alert["remoteAlertId"], messageType):
+            elif MsgChecker.check_remote_alert_id(alert["remoteAlertId"]) is not None:
                 isCorrect = False
                 break
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "alerts list not valid"}
-            self._communication.send(json.dumps(message))
+            return "alerts list not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the status managers list.
-    def check_status_managers_list(self, managers: List[Dict[str, Any]], messageType: str) -> bool:
+    @staticmethod
+    def check_status_managers_list(managers: List[Dict[str, Any]]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(managers, list):
@@ -762,7 +722,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_node_id(manager["nodeId"], messageType):
+            elif MsgChecker.check_node_id(manager["nodeId"]) is not None:
                 isCorrect = False
                 break
 
@@ -770,7 +730,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_manager_id(manager["managerId"], messageType):
+            elif MsgChecker.check_manager_id(manager["managerId"]) is not None:
                 isCorrect = False
                 break
 
@@ -778,24 +738,18 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_description(manager["description"], messageType):
+            elif MsgChecker.check_description(manager["description"]) is not None:
                 isCorrect = False
                 break
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "managers list not valid"}
-            self._communication.send(json.dumps(message))
+            return "managers list not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the status nodes list.
-    def check_status_nodes_list(self, nodes: List[Dict[str, Any]], messageType: str) -> bool:
+    @staticmethod
+    def check_status_nodes_list(nodes: List[Dict[str, Any]]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(nodes, list):
@@ -812,7 +766,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_node_id(node["nodeId"], messageType):
+            elif MsgChecker.check_node_id(node["nodeId"]) is not None:
                 isCorrect = False
                 break
 
@@ -820,7 +774,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_hostname(node["hostname"], messageType):
+            elif MsgChecker.check_hostname(node["hostname"]) is not None:
                 isCorrect = False
                 break
 
@@ -828,7 +782,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_node_type(node["nodeType"], messageType):
+            elif MsgChecker.check_node_type(node["nodeType"]) is not None:
                 isCorrect = False
                 break
 
@@ -836,7 +790,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_instance(node["instance"], messageType):
+            elif MsgChecker.check_instance(node["instance"]) is not None:
                 isCorrect = False
                 break
 
@@ -844,7 +798,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_connected(node["connected"], messageType):
+            elif MsgChecker.check_connected(node["connected"]) is not None:
                 isCorrect = False
                 break
 
@@ -852,7 +806,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_version(node["version"], messageType):
+            elif MsgChecker.check_version(node["version"]) is not None:
                 isCorrect = False
                 break
 
@@ -860,7 +814,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_rev(node["rev"], messageType):
+            elif MsgChecker.check_rev(node["rev"]) is not None:
                 isCorrect = False
                 break
 
@@ -868,7 +822,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_username(node["username"], messageType):
+            elif MsgChecker.check_username(node["username"]) is not None:
                 isCorrect = False
                 break
 
@@ -876,24 +830,18 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_persistent(node["persistent"], messageType):
+            elif MsgChecker.check_persistent(node["persistent"]) is not None:
                 isCorrect = False
                 break
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "nodes list not valid"}
-            self._communication.send(json.dumps(message))
+            return "nodes list not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the status options list.
-    def check_status_options_list(self, options: List[Dict[str, Any]], messageType: str) -> bool:
+    @staticmethod
+    def check_status_options_list(options: List[Dict[str, Any]]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(options, list):
@@ -910,7 +858,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_option_type(option["type"], messageType):
+            elif MsgChecker.check_option_type(option["type"]) is not None:
                 isCorrect = False
                 break
 
@@ -918,24 +866,18 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_option_value(option["value"], messageType):
+            elif MsgChecker.check_option_value(option["value"]) is not None:
                 isCorrect = False
                 break
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "options list not valid"}
-            self._communication.send(json.dumps(message))
+            return "options list not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the status sensors list.
-    def check_status_sensors_list(self, sensors: List[Dict[str, Any]], messageType: str) -> bool:
+    @staticmethod
+    def check_status_sensors_list(sensors: List[Dict[str, Any]]) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(sensors, list):
@@ -952,7 +894,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_node_id(sensor["nodeId"], messageType):
+            elif MsgChecker.check_node_id(sensor["nodeId"]) is not None:
                 isCorrect = False
                 break
 
@@ -960,7 +902,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_sensor_id(sensor["sensorId"], messageType):
+            elif MsgChecker.check_sensor_id(sensor["sensorId"]) is not None:
                 isCorrect = False
                 break
 
@@ -968,7 +910,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_alert_delay(sensor["alertDelay"], messageType):
+            elif MsgChecker.check_alert_delay(sensor["alertDelay"]) is not None:
                 isCorrect = False
                 break
 
@@ -976,7 +918,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_alert_levels(sensor["alertLevels"], messageType):
+            elif MsgChecker.check_alert_levels(sensor["alertLevels"]) is not None:
                 isCorrect = False
                 break
 
@@ -984,7 +926,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_description(sensor["description"], messageType):
+            elif MsgChecker.check_description(sensor["description"]) is not None:
                 isCorrect = False
                 break
 
@@ -992,7 +934,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_last_state_updated(sensor["lastStateUpdated"], messageType):
+            elif MsgChecker.check_last_state_updated(sensor["lastStateUpdated"]) is not None:
                 isCorrect = False
                 break
 
@@ -1000,7 +942,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_state(sensor["state"], messageType):
+            elif MsgChecker.check_state(sensor["state"]):
                 isCorrect = False
                 break
 
@@ -1008,7 +950,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_remote_sensor_id(sensor["remoteSensorId"], messageType):
+            elif MsgChecker.check_remote_sensor_id(sensor["remoteSensorId"]) is not None:
                 isCorrect = False
                 break
 
@@ -1016,7 +958,7 @@ class MsgChecker:
                 isCorrect = False
                 break
 
-            elif not self.check_sensor_data_type(sensor["dataType"], messageType):
+            elif MsgChecker.check_sensor_data_type(sensor["dataType"]) is not None:
                 isCorrect = False
                 break
 
@@ -1025,24 +967,18 @@ class MsgChecker:
                     isCorrect = False
                     break
 
-                elif not self.check_sensor_data(sensor["data"], sensor["dataType"], messageType):
+                elif MsgChecker.check_sensor_data(sensor["data"], sensor["dataType"]) is not None:
                     isCorrect = False
                     break
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "sensors list not valid"}
-            self._communication.send(json.dumps(message))
+            return "sensors list not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the triggerAlways.
-    def check_trigger_always(self, triggerAlways: int, messageType: str) -> bool:
+    @staticmethod
+    def check_trigger_always(triggerAlways: int) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(triggerAlways, int):
@@ -1051,54 +987,35 @@ class MsgChecker:
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "triggerAlways not valid"}
-            self._communication.send(json.dumps(message))
+            return "triggerAlways not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the username.
-    def check_username(self, username: str, messageType: str) -> bool:
+    @staticmethod
+    def check_username(username: str) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(username, str):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "username not valid"}
-            self._communication.send(json.dumps(message))
+            return "username not valid"
 
-            return False
-
-        return True
+        return None
 
     # Internal function to check sanity of the version.
-    def check_version(self, version: float, messageType: str) -> bool:
+    @staticmethod
+    def check_version(version: float) -> Optional[str]:
 
         isCorrect = True
         if not isinstance(version, float):
             isCorrect = False
 
         if not isCorrect:
-            # send error message back
-            utcTimestamp = int(time.time())
-            message = {"clientTime": utcTimestamp,
-                       "message": messageType,
-                       "error": "version not valid"}
-            self._communication.send(json.dumps(message))
+            return "version not valid"
 
-            return False
-
-        return True
+        return None
 
 
 class MsgBuilder:
