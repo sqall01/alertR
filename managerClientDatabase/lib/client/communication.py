@@ -13,7 +13,6 @@ import logging
 import random
 import json
 import os
-import socket
 from typing import Optional
 from .core import BUFSIZE, Client, Connection, RecvTimeout
 
@@ -83,7 +82,13 @@ class Communication:
         self.client_key_file = client_key_file
 
         self._connection_lock = threading.Lock()
-        self._connection = None  # type: Optional[Connection]
+
+        # create client instance and connect to the other side
+        self._connection = Client(self.host,
+                                  self.port,
+                                  self.server_ca_file,
+                                  self.client_cert_file,
+                                  self.client_key_file)
 
         self._exit_flag = False
         self._log_tag = os.path.basename(__file__)
@@ -337,18 +342,10 @@ class Communication:
     def connect(self) -> bool:
 
         # Closes existing connection if we have one.
-        if self._connection is not None:
-            try:
-                self._connection.close()
-            except Exception:
-                pass
-
-        # create client instance and connect to the other side
-        self._connection = Client(self.host,
-                                  self.port,
-                                  self.server_ca_file,
-                                  self.client_cert_file,
-                                  self.client_key_file)
+        try:
+            self._connection.close()
+        except Exception:
+            pass
 
         try:
             self._connection.connect()
