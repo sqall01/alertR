@@ -396,7 +396,7 @@ class MsgChecker:
         if not isinstance(optionalData, dict):
             isCorrect = False
         if "message" in optionalData.keys():
-            if not MsgChecker.check_optional_data_message(optionalData["message"]):
+            if MsgChecker.check_optional_data_message(optionalData["message"]) is not None:
                 isCorrect = False
 
         if not isCorrect:
