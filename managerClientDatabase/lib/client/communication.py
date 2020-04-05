@@ -76,6 +76,9 @@ class Communication:
                  client_cert_file: str,
                  client_key_file: str):
 
+        # Maximum time in seconds the communication is backed off in case of collision.
+        self.backoff_max = 5
+
         self.host = host
         self.port = port
         self.server_ca_file = server_ca_file
@@ -221,9 +224,9 @@ class Communication:
             backoff = False
             while self._msg_queue:
 
-                # Backoff random time between 0 and 1 second.
+                # Backoff random time between 0 and X seconds.
                 if backoff:
-                    backoff_time = float(random.randint(0, 100))/100
+                    backoff_time = float(random.randint(0, self.backoff_max * 100))/100
                     logging.debug("[%s] Backing off from sending request for %.3f seconds."
                                   % (self._log_tag, backoff_time))
                     time.sleep(backoff_time)
