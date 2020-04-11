@@ -47,6 +47,8 @@ class ConnectionWatchdog(threading.Thread):
         # internal counter to get the current count of connection retries
         self._connection_retries = 1
 
+        self._ping_delay_warning = 10
+
     def run(self):
         """
         Connection watchdog loop that checks the communication channel to the server.
@@ -106,9 +108,23 @@ class ConnectionWatchdog(threading.Thread):
 
                 # check if PING failed
                 promise = self._connection.send_ping()  # type: Promise
-                promise.is_finished(blocking=True)
-                if not promise.was_successful():
-                    logging.error("[%s]: Connection to server has died." % self._log_tag)
+
+                # Wait for ping response to finish (in a non-blocking way since otherwise we could
+                # get a deadlock in which we do not re-connect to the server anymore).
+                is_finished = False
+                for _ in range(self._ping_delay_warning):
+                    if promise.is_finished(blocking=False):
+                        is_finished = True
+                        break
+                    time.sleep(1)
+
+                if is_finished:
+                    if not promise.was_successful():
+                        logging.error("[%s]: Connection to server has died." % self._log_tag)
+
+                else:
+                    logging.warning("[%s]: Stopped waiting for ping response after %d seconds."
+                                    % (self._log_tag, self._ping_delay_warning))
 
     def exit(self):
         """
