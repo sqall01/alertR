@@ -22,7 +22,7 @@ from ..globalData import GlobalData
 
 
 # this class handles the communication with the server
-class ServerCommunication:
+class ServerCommunication(Communication):
 
     def __init__(self, host: str,
                  port: int,
@@ -42,6 +42,13 @@ class ServerCommunication:
         self._client_cert_file = client_cert_file
         self._client_key_file = client_key_file
 
+        client = Client(self._host,
+                        self._port,
+                        self._server_ca_file,
+                        self._client_cert_file,
+                        self._client_key_file)
+        super().__init__(client)
+
         # get global configured data
         self._global_data = global_data
         self._version = self._global_data.version
@@ -59,26 +66,11 @@ class ServerCommunication:
         # Description of this manager.
         self._description = self._global_data.description
 
-        self._exit_flag = False
-
-        client = Client(self._host,
-                        self._port,
-                        self._server_ca_file,
-                        self._client_cert_file,
-                        self._client_key_file)
-
-        # Communication object that handles sending and receiving.
-        self._communication = Communication(client)
-
         self._initialization_lock = threading.Lock()
 
     @property
-    def last_communication(self) -> int:
-        return self._communication.last_communication
-
-    @property
     def is_connected(self) -> bool:
-        return self._communication.has_channel
+        return self.has_channel
 
     def _verify_version_and_auth(self,
                                  regMessageSize: int) -> bool:
@@ -97,7 +89,7 @@ class ServerCommunication:
         # send user credentials and version
         try:
             logging.debug("[%s]: Sending user credentials and version." % self._log_tag)
-            self._communication.send_raw(authMessage)
+            self.send_raw(authMessage)
 
         except Exception as e:
             logging.exception("[%s]: Sending user credentials "
@@ -107,7 +99,7 @@ class ServerCommunication:
 
         # get authentication response from server
         try:
-            data = self._communication.recv_raw()
+            data = self.recv_raw()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -125,7 +117,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "initialization message expected"}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
                 except Exception as e:
                     pass
 
@@ -141,7 +133,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
                 except Exception as e:
                     pass
 
@@ -180,7 +172,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "version not compatible"}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -196,7 +188,7 @@ class ServerCommunication:
                 message = {"clientTime": utcTimestamp,
                            "message": message["message"],
                            "error": "version not valid"}
-                self._communication.send_raw(json.dumps(message))
+                self.send_raw(json.dumps(message))
             except Exception:
                 pass
 
@@ -215,7 +207,7 @@ class ServerCommunication:
         # Send registration message.
         try:
             logging.debug("[%s]: Sending registration message." % self._log_tag)
-            self._communication.send_raw(regMessage)
+            self.send_raw(regMessage)
 
         except Exception:
             logging.exception("[%s]: Sending registration message." % self._log_tag)
@@ -223,7 +215,7 @@ class ServerCommunication:
 
         # get registration response from server
         try:
-            data = self._communication.recv_raw()
+            data = self.recv_raw()
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
@@ -240,7 +232,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "initialization message expected"}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -256,7 +248,7 @@ class ServerCommunication:
                     message = {"clientTime": utcTimestamp,
                                "message": message["message"],
                                "error": "response expected"}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -584,7 +576,7 @@ class ServerCommunication:
         Closes the connection to the server.
         """
         # Closes communication channel to server.
-        self._communication.close()
+        super().close()
 
         # handle closing event
         self._event_handler.close_connection()
@@ -596,8 +588,7 @@ class ServerCommunication:
         """
         # clean up session before exiting
         self.close()
-        self._communication.exit()
-        self._exit_flag = True
+        super().exit()
 
     def handle_requests(self):
         """
@@ -609,14 +600,14 @@ class ServerCommunication:
         # Handle commands in an infinity loop.
         while True:
 
-            if not self._communication.has_channel:
+            if not self.has_channel:
                 return
 
             # Exit if we are requested to.
             if self._exit_flag:
                 return
 
-            message = self._communication.recv_request()
+            message = self.recv_request()
             if message is None:
                 return
             request = message["message"]
@@ -671,10 +662,10 @@ class ServerCommunication:
         with self._initialization_lock:
 
             # Do not initialize the communication anew if we have already a working communication channel.
-            if self._communication.has_channel:
+            if self.has_channel:
                 return True
 
-            if not self._communication.connect():
+            if not self.connect():
                 self.close()
                 return False
 
@@ -700,7 +691,7 @@ class ServerCommunication:
             try:
                 logging.debug("[%s]: Receiving initial status update." % self._log_tag)
 
-                data = self._communication.recv_raw()
+                data = self.recv_raw()
                 message = json.loads(data)
                 # check if an error was received
                 if "error" in message.keys():
@@ -726,13 +717,13 @@ class ServerCommunication:
                     message = {"clientTime": utc_timestamp,
                                "message": str(message["message"]),
                                "payload": payload}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
 
                     # After initiating transaction receive actual command.
                     data = ""
                     last_size = 0
                     while len(data) < messageSize:
-                        data += self._communication.recv_raw()
+                        data += self.recv_raw()
 
                         # Check if the size of the received data has changed.
                         # If not we detected a possible dead lock.
@@ -778,7 +769,7 @@ class ServerCommunication:
                         message = {"clientTime": utc_timestamp,
                                    "message": "unknown",
                                    "error": "request expected"}
-                        self._communication.send_raw(json.dumps(message))
+                        self.send_raw(json.dumps(message))
                     except Exception:
                         pass
 
@@ -802,7 +793,7 @@ class ServerCommunication:
                     message = {"clientTime": utc_timestamp,
                                "message": message_type,
                                "error": "initial status update expected"}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
 
                 except Exception:
                     pass
@@ -820,7 +811,7 @@ class ServerCommunication:
                     message = {"clientTime": utc_timestamp,
                                "message": message_type,
                                "error": error_msg}
-                    self._communication.send_raw(json.dumps(message))
+                    self.send_raw(json.dumps(message))
                 except Exception:
                     pass
 
@@ -841,7 +832,7 @@ class ServerCommunication:
                 message = {"clientTime": utc_timestamp,
                            "message": message_type,
                            "payload": payload}
-                self._communication.send_raw(json.dumps(message))
+                self.send_raw(json.dumps(message))
 
             except Exception as e:
                 logging.exception("[%s]: Sending status update response failed." % self._log_tag)
@@ -849,7 +840,7 @@ class ServerCommunication:
                 return False
 
             # Set communication channel as established.
-            self._communication.set_connected()
+            self.set_connected()
 
             # Handle connection initialized event.
             self._event_handler.new_connection()
@@ -878,7 +869,7 @@ class ServerCommunication:
         """
         pingMessage = MsgBuilder.build_ping_msg()
 
-        return self._communication.send_request("ping", pingMessage)
+        return self.send_request("ping", pingMessage)
 
     def send_option(self,
                     optionType: str,
@@ -896,4 +887,4 @@ class ServerCommunication:
 
         optionMessage = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
 
-        return self._communication.send_request("option", optionMessage)
+        return self.send_request("option", optionMessage)
