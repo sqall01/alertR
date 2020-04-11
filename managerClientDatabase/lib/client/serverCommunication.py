@@ -13,6 +13,7 @@ import os
 import json
 import threading
 from typing import Dict, Any
+from .core import Client
 from .util import MsgBuilder, MsgChecker
 from .communication import Communication, Promise
 from .eventHandler import EventHandler
@@ -60,12 +61,14 @@ class ServerCommunication:
 
         self._exit_flag = False
 
+        client = Client(self._host,
+                        self._port,
+                        self._server_ca_file,
+                        self._client_cert_file,
+                        self._client_key_file)
+
         # Communication object that handles sending and receiving.
-        self._communication = Communication(self._host,
-                                            self._port,
-                                            self._server_ca_file,
-                                            self._client_cert_file,
-                                            self._client_key_file)
+        self._communication = Communication(client)
 
         self._initialization_lock = threading.Lock()
 

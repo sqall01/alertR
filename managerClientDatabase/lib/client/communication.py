@@ -14,7 +14,7 @@ import random
 import json
 import os
 from typing import Optional, Dict, Any
-from .core import BUFSIZE, Client, RecvTimeout
+from .core import BUFSIZE, RecvTimeout, Connection
 from .util import MsgChecker
 
 
@@ -26,7 +26,9 @@ class PromiseState:
 
 class Promise:
 
-    def __init__(self, msg_type: str, msg: str):
+    def __init__(self,
+                 msg_type: str,
+                 msg: str):
         self._finished_event = threading.Event()
         self._finished_event.clear()
         self._state = PromiseState.PENDING
@@ -42,7 +44,8 @@ class Promise:
     def msg_type(self):
         return self._msg_type
 
-    def is_finished(self, blocking: bool = False) -> bool:
+    def is_finished(self,
+                    blocking: bool = False) -> bool:
         if blocking:
             self._finished_event.wait()
 
@@ -70,29 +73,13 @@ class Promise:
 class Communication:
 
     def __init__(self,
-                 host: str,
-                 port: int,
-                 server_ca_file: str,
-                 client_cert_file: str,
-                 client_key_file: str):
+                 connection: Connection):
 
         # Maximum time in seconds the communication is backed off in case of collision.
         self.backoff_max = 5
 
-        self.host = host
-        self.port = port
-        self.server_ca_file = server_ca_file
-        self.client_cert_file = client_cert_file
-        self.client_key_file = client_key_file
-
         self._connection_lock = threading.Lock()
-
-        # create client instance and connect to the other side
-        self._connection = Client(self.host,
-                                  self.port,
-                                  self.server_ca_file,
-                                  self.client_cert_file,
-                                  self.client_key_file)
+        self._connection = connection
 
         self._exit_flag = False
         self._log_tag = os.path.basename(__file__)
@@ -238,7 +225,7 @@ class Communication:
                 with self._msg_queue_lock:
                     promise = self._msg_queue.pop(0)
 
-                # Have the client exclusively locked for this communication.
+                # Have the connection exclusively locked for this communication.
                 with self._connection_lock:
 
                     # Only send message if we have a working communication channel.
