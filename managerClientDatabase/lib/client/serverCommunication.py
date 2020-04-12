@@ -687,160 +687,37 @@ class ServerCommunication(Communication):
                 self.close()
                 return False
 
-            # get the initial status update from the server
-            try:
+            # Set communication channel as established.
+            self.set_connected()
+
+            # Nodes of type "manager" receive an initial status update when connecting to the server.
+            if self._nodeType == "manager":
+
                 logging.debug("[%s]: Receiving initial status update." % self._log_tag)
 
-                data = self.recv_raw()
-                message = json.loads(data)
-                # check if an error was received
-                if "error" in message.keys():
-                    logging.error("[%s]: Error received: '%s'." % (self._log_tag, message["error"],))
-                    self.close()
-                    return False
-
-                # check if RTS was received
-                # => acknowledge it
-                if str(message["payload"]["type"]).upper() == "RTS":
-                    receivedTransactionId = int(message["payload"]["id"])
-                    messageSize = int(message["size"])
-
-                    # received RTS (request to send) message
-                    logging.debug("[%s]: Received RTS %s message." % (self._log_tag, receivedTransactionId))
-
-                    logging.debug("[%s]: Sending CTS %s message." % (self._log_tag, receivedTransactionId))
-
-                    # send CTS (clear to send) message
-                    payload = {"type": "cts",
-                               "id": receivedTransactionId}
-                    utc_timestamp = int(time.time())
-                    message = {"clientTime": utc_timestamp,
-                               "message": str(message["message"]),
-                               "payload": payload}
-                    self.send_raw(json.dumps(message))
-
-                    # After initiating transaction receive actual command.
-                    data = ""
-                    last_size = 0
-                    while len(data) < messageSize:
-                        data += self.recv_raw()
-
-                        # Check if the size of the received data has changed.
-                        # If not we detected a possible dead lock.
-                        if last_size != len(data):
-                            last_size = len(data)
-                        else:
-                            logging.error("[%s]: Possible dead lock "
-                                          % self._log_tag
-                                          + "detected while receiving data. Closing connection to server.")
-                            self.close()
-                            return False
-
-                # if no RTS was received
-                # => server does not stick to protocol
-                # => terminate session
-                else:
-                    logging.error("[%s]: Did not receive RTS. Server sent: '%s'." % (self._log_tag, data))
-                    self.close()
-                    return False
-
-            except Exception:
-                logging.exception("[%s]: Receiving initial status update failed." % self._log_tag)
-                self.close()
-                return False
-
-            # Extract message type
-            message_type = "unknown"
-            try:
-                message = json.loads(data)
-                # check if an error was received
-                if "error" in message.keys():
-                    logging.error("[%s]: Error received: '%s'." % (self._log_tag, message["error"]))
-                    self.close()
-                    return False
-
-                # check if the received type is the correct one
-                if str(message["payload"]["type"]).lower() != "request":
-                    logging.error("[%s]: request expected." % self._log_tag)
+                message = self.recv_request()
+                message_type = message["message"]
+                if message_type != "status":
+                    logging.error("[%s]: Receiving status update failed. Server sent: '%s'" % (self._log_tag, str(message)))
 
                     # send error message back
                     try:
                         utc_timestamp = int(time.time())
                         message = {"clientTime": utc_timestamp,
-                                   "message": "unknown",
-                                   "error": "request expected"}
+                                   "message": message_type,
+                                   "error": "initial status update expected"}
                         self.send_raw(json.dumps(message))
+
                     except Exception:
                         pass
 
                     self.close()
                     return False
 
-                # extract the command/message type of the message
-                message_type = str(message["message"]).lower()
-
-            except Exception:
-                logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
-                self.close()
-                return False
-
-            if message_type != "status":
-                logging.error("[%s]: Receiving status update failed. Server sent: '%s'" % (self._log_tag, data))
-
-                # send error message back
-                try:
-                    utc_timestamp = int(time.time())
-                    message = {"clientTime": utc_timestamp,
-                               "message": message_type,
-                               "error": "initial status update expected"}
-                    self.send_raw(json.dumps(message))
-
-                except Exception:
-                    pass
-
-                self.close()
-                return False
-
-            error_msg = MsgChecker.check_received_message(message)
-            if error_msg is not None:
-                logging.error("[%s]: Received status update invalid." % self._log_tag)
-
-                # send error message back
-                try:
-                    utc_timestamp = int(time.time())
-                    message = {"clientTime": utc_timestamp,
-                               "message": message_type,
-                               "error": error_msg}
-                    self.send_raw(json.dumps(message))
-                except Exception:
-                    pass
-
-                self.close()
-                return False
-
-            if not self._status_update_handler(message):
-                logging.error("[%s]: Initial status update failed." % self._log_tag)
-                self.close()
-                return False
-
-            # sending sensor alert response
-            logging.debug("[%s]: Sending status update response." % self._log_tag)
-            try:
-                payload = {"type": "response",
-                           "result": "ok"}
-                utc_timestamp = int(time.time())
-                message = {"clientTime": utc_timestamp,
-                           "message": message_type,
-                           "payload": payload}
-                self.send_raw(json.dumps(message))
-
-            except Exception as e:
-                logging.exception("[%s]: Sending status update response failed." % self._log_tag)
-                self.close()
-                return False
-
-            # Set communication channel as established.
-            self.set_connected()
+                if not self._status_update_handler(message):
+                    logging.error("[%s]: Initial status update failed." % self._log_tag)
+                    self.close()
+                    return False
 
             # Handle connection initialized event.
             self._event_handler.new_connection()
