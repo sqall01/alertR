@@ -24,7 +24,8 @@ from ..globalData import GlobalData
 # this class handles the communication with the server
 class ServerCommunication(Communication):
 
-    def __init__(self, host: str,
+    def __init__(self,
+                 host: str,
                  port: int,
                  server_ca_file: str,
                  username: str,
@@ -67,6 +68,10 @@ class ServerCommunication(Communication):
         self._description = self._global_data.description
 
         self._initialization_lock = threading.Lock()
+
+    @property
+    def event_handler(self) -> EventHandler:
+        return self._event_handler
 
     @property
     def is_connected(self) -> bool:
