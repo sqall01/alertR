@@ -12,90 +12,10 @@ import logging
 import os
 import time
 import urwid
-from .audio import AudioOptions
+from .audio import AudioOutput
 from .screenElements import PinUrwid, StatusUrwid, WarningUrwid
 from ..globalData import GlobalData
-from typing import Optional
-
-
-# this class is used by the urwid console thread
-# to process actions concurrently and do not block the console thread
-class ScreenActionExecuter(threading.Thread):
-
-    def __init__(self, globalData: GlobalData):
-        threading.Thread.__init__(self)
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # get global configured data
-        self.globalData = globalData
-        self.serverComm = self.globalData.serverComm
-        self.audioOutput = self.globalData.audioOutput
-
-        # this options are used when the thread should
-        # send a new option to the server
-        self.sendOption = False
-        self.optionType = None  # type: Optional[str]
-        self.optionValue = None  # type: Optional[float]
-
-        # this options are used when the thread should
-        # send delayed a new option to the server
-        self.sendOptionDelayed = False
-        self.optionTypeDelayed = None  # type: Optional[str]
-        self.optionValueDelayed = None  # type: Optional[float]
-        self.optionDelayDelayed = None  # type: Optional[int]
-
-        # this options are used when the thread should
-        # output audio
-        self.outputAudio = False
-        self.audioType = None  # type: Optional[int]
-
-    def run(self):
-
-        # check if an option message should be send to the server
-        if self.sendOption:
-
-            # check if the server communication object is available
-            if self.serverComm is None:
-                logging.error("[%s]: Sending option change to server failed. No server communication object available."
-                              % self.fileName)
-                return
-
-            # send option change to server
-            if not self.serverComm.sendOption(self.optionType, self.optionValue):
-                logging.error("[%s]: Sending option change to the server failed." % self.fileName)
-                return
-
-        # check if an option message should be send delayed to the server
-        elif self.sendOptionDelayed:
-
-            # check if the server communication object is available
-            if self.serverComm is None:
-                logging.error("[%s]: Sending delayed option change to server failed. "
-                              % self.fileName
-                              + "No server communication object available.")
-                return
-
-            # send option change to server
-            if not self.serverComm.sendOption(self.optionTypeDelayed, self.optionValueDelayed, self.optionDelayDelayed):
-                logging.error("[%s]: Sending option change delayed to the server failed."
-                              % self.fileName)
-                return
-
-        # check if audio should be outputted
-        elif self.outputAudio:
-            if self.audioType == AudioOptions.activating:
-                self.audioOutput.audioActivating()
-
-            elif self.audioType == AudioOptions.activatingDelayed:
-                self.audioOutput.audioActivatingDelayed()
-
-            elif self.audioType == AudioOptions.deactivating:
-                self.audioOutput.audioDeactivating()
-
-            elif self.audioType == AudioOptions.warning:
-                self.audioOutput.audioWarning()
+from ..client import ServerCommunication
 
 
 # this class handles the screen updates
@@ -108,7 +28,7 @@ class ScreenUpdater(threading.Thread):
         self.globalData = globalData
         self.sensorAlerts = self.globalData.sensorAlerts
         self.console = self.globalData.console
-        self.serverComm = self.globalData.serverComm
+        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
         self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
 
         # file nme of this file (used for logging)
@@ -182,7 +102,7 @@ class ScreenUpdater(threading.Thread):
 
             # check if the client is not connected to the server
             # => update screen to connection failure
-            if not self.serverComm.isConnected:
+            if not self.serverComm.is_connected:
                 logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
 
                 if not self.console.updateScreen("connectionfail"):
@@ -207,7 +127,8 @@ class Console:
         self.managers = self.globalData.managers
         self.alerts = self.globalData.alerts
         self.sensorAlerts = self.globalData.sensorAlerts
-        self.serverComm = self.globalData.serverComm
+        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
+        self.audioOutput = self.globalData.audioOutput  # type: AudioOutput
         self.pins = self.globalData.pins
         self.timeDelayedActivation = self.globalData.timeDelayedActivation
         self.audioOutput = self.globalData.audioOutput
@@ -342,26 +263,9 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.activating
-            audioProcess.start()
+            self.audioOutput.audioActivating()
 
-        # send option message to server via a thread to not block
-        # the urwid console thread
-        updateProcess = ScreenActionExecuter(self.globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates 
-        updateProcess.daemon = True
-        updateProcess.sendOption = True
-        updateProcess.optionType = "alertSystemActive"
-        updateProcess.optionValue = 1
-        updateProcess.start()
+        self.serverComm.send_option("alertSystemActive", 1.0)
 
     # internal function that executes option 2 of the menu
     def _executeOption2(self):
@@ -370,26 +274,9 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.deactivating
-            audioProcess.start()
+            self.audioOutput.audioDeactivating()
 
-        # send option message to server via a thread to not block
-        # the urwid console thread
-        updateProcess = ScreenActionExecuter(self.globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates 
-        updateProcess.daemon = True
-        updateProcess.sendOption = True
-        updateProcess.optionType = "alertSystemActive"
-        updateProcess.optionValue = 0
-        updateProcess.start()
+        self.serverComm.send_option("alertSystemActive", 0.0)
 
     # internal function that executes option 3 of the menu
     def _executeOption3(self):
@@ -398,27 +285,9 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.activatingDelayed
-            audioProcess.start()
+            self.audioOutput.audioActivatingDelayed()
 
-        # send option message to server via a thread to not block
-        # the urwid console thread
-        updateProcess = ScreenActionExecuter(self.globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates 
-        updateProcess.daemon = True
-        updateProcess.sendOptionDelayed = True
-        updateProcess.optionTypeDelayed = "alertSystemActive"
-        updateProcess.optionValueDelayed = 1
-        updateProcess.optionDelayDelayed = self.timeDelayedActivation
-        updateProcess.start()
+        self.serverComm.send_option("alertSystemActive", 1.0, self.timeDelayedActivation)
 
     # internal function that handles the keypress for the menu view
     def _handleMenuKeypress(self, key: str):
@@ -643,15 +512,7 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.warning
-            audioProcess.start()
+            self.audioOutput.audioWarning()
 
         # remove views from the screen
         self._clearEditPartScreen()
