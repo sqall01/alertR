@@ -609,6 +609,8 @@ class ManagerEventHandler(EventHandler):
         # remove all nodes that are not checked
         self._removeNotCheckedNodes()
 
+        self._update_db_data()
+
         return True
 
     # is called when a sensor alert event was received from the server
@@ -699,7 +701,6 @@ class ManagerEventHandler(EventHandler):
                 logging.error("[%s]: Sensor of sensor alert not known." % self.fileName)
                 return False
 
-        # Update data.
         self._update_db_data()
 
         return True
@@ -752,6 +753,8 @@ class ManagerEventHandler(EventHandler):
             sensor.data = sensor_data
         else:
             logging.error("[%s]: Sensor data type different. Skipping data assignment." % self.fileName)
+
+        self._update_db_data()
 
         return True
 
