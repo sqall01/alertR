@@ -9,6 +9,6 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .manager import ScreenUpdater, Console
+from .manager import ScreenUpdater, Console, ManagerEventHandler
 from .update import Updater
 from .globalData import GlobalData

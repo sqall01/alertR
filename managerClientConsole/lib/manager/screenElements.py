@@ -12,7 +12,7 @@ import urwid
 import types
 from typing import Any, List
 from ..localObjects import Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
-from .core import ServerEventHandler
+from .core import ManagerEventHandler
 
 
 # this class is an urwid object for a status
@@ -69,7 +69,7 @@ class SensorUrwid:
                  sensor: Sensor,
                  node: Node,
                  connectionTimeout: int,
-                 serverEventHandler: ServerEventHandler):
+                 serverEventHandler: ManagerEventHandler):
 
         # is needed to decide when a sensor has timed out
         self.connectionTimeout = connectionTimeout

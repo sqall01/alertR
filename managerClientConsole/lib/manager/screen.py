@@ -16,6 +16,7 @@ from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, Alert
                             SensorAlertUrwid, SearchViewUrwid
 from ..globalData import GlobalData
 from ..localObjects import Sensor, Alert, AlertLevel
+from ..client import ServerCommunication
 from typing import Any, List
 
 
@@ -24,44 +25,6 @@ class FocusedElement:
     alerts = 1
     managers = 3
     alertLevels = 4
-
-
-# this class is used by the urwid console thread
-# to process actions concurrently and do not block the console thread
-class ScreenActionExecuter(threading.Thread):
-
-    def __init__(self, globalData: GlobalData):
-        threading.Thread.__init__(self)
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # get global configured data
-        self.globalData = globalData
-        self.serverComm = self.globalData.serverComm
-
-        # this options are used when the thread should
-        # send a new option to the server
-        self.sendOption = False
-        self.optionType = None
-        self.optionValue = None
-
-    def run(self):
-
-        # check if an option message should be send to the server
-        if self.sendOption:
-
-            # check if the server communication object is available
-            if self.serverComm is None:
-                logging.error("[%s]: Sending option "
-                              % self.fileName
-                              + "change to server failed. No server communication object available.")
-                return
-
-            # send option change to server
-            if not self.serverComm.sendOption(self.optionType, self.optionValue):
-                logging.error("[%s]: Sending option change to server failed." % self.fileName)
-                return
 
 
 # this class handles the screen updates
@@ -74,7 +37,7 @@ class ScreenUpdater(threading.Thread):
         self.globalData = globalData
         self.sensorAlerts = self.globalData.sensorAlerts
         self.console = self.globalData.console
-        self.serverComm = self.globalData.serverComm
+        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
 
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -134,7 +97,7 @@ class ScreenUpdater(threading.Thread):
 
             # check if the client is not connected to the server
             # => update screen to connection failure
-            if not self.serverComm.isConnected:
+            if not self.serverComm.is_connected:
                 logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
 
                 if not self.console.updateScreen("connectionfail"):
@@ -161,8 +124,8 @@ class Console:
         self.sensorAlerts = self.globalData.sensorAlerts
         self.alertLevels = self.globalData.alertLevels
         self.connectionTimeout = self.globalData.connectionTimeout
-        self.serverComm = self.globalData.serverComm
-        self.serverEventHandler = self.serverComm.serverEventHandler
+        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
+        self.serverEventHandler = self.serverComm.event_handler
         self.timeShowSensorAlert = self.globalData.timeShowSensorAlert
         self.maxCountShowSensorAlert = self.globalData.maxCountShowSensorAlert
         self.maxCountShowSensorsPerPage = self.globalData.maxCountShowSensorsPerPage
@@ -1126,33 +1089,13 @@ class Console:
         if key in ["1"]:
             if not self.inDetailView:
                 logging.info("[%s]: Activating alert system." % self.fileName)
-
-                # send option message to server via a thread to not block
-                # the urwid console thread
-                updateProcess = ScreenActionExecuter(self.globalData)
-                # set thread to daemon
-                # => threads terminates when main thread terminates 
-                updateProcess.daemon = True
-                updateProcess.sendOption = True
-                updateProcess.optionType = "alertSystemActive"
-                updateProcess.optionValue = 1
-                updateProcess.start()
+                self.serverComm.send_option("alertSystemActive", 1.0)
 
         # check if key 2 is pressed => send alert system deactivation to server
         elif key in ["2"]:
             if not self.inDetailView:
                 logging.info("[%s]: Deactivating alert system." % self.fileName)
-
-                # send option message to server via a thread to not block
-                # the urwid console thread
-                updateProcess = ScreenActionExecuter(self.globalData)
-                # set thread to daemon
-                # => threads terminates when main thread terminates 
-                updateProcess.daemon = True
-                updateProcess.sendOption = True
-                updateProcess.optionType = "alertSystemActive"
-                updateProcess.optionValue = 0
-                updateProcess.start()
+                self.serverComm.send_option("alertSystemActive", 0.0)
 
         # check if key b/B is pressed => show previous page of focused elements
         elif key in ["b", "B"]:

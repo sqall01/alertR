@@ -9,6 +9,7 @@
 
 import os
 import logging
+from ..client import EventHandler
 from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 from typing import List, Any
@@ -16,9 +17,11 @@ from typing import List, Any
 
 # this class handles an incoming server event (sensor alert message,
 # status update, ...)
-class ServerEventHandler:
+class ManagerEventHandler(EventHandler):
 
-    def __init__(self, globalData: GlobalData):
+    def __init__(self,
+                 globalData: GlobalData):
+        super().__init__()
 
         # file name of this file (used for logging)
         self.fileName = os.path.basename(__file__)
@@ -165,16 +168,16 @@ class ServerEventHandler:
             alertLevel.checked = False
 
     # is called when a status update event was received from the server
-    def receivedStatusUpdate(self,
-                             serverTime: int,
-                             options: List[Option],
-                             nodes: List[Node],
-                             sensors: List[Sensor],
-                             managers: List[Manager],
-                             alerts: List[Alert],
-                             alertLevels: List[AlertLevel]) -> bool:
+    def status_update(self,
+                      server_time: int,
+                      options: List[Option],
+                      nodes: List[Node],
+                      sensors: List[Sensor],
+                      managers: List[Manager],
+                      alerts: List[Alert],
+                      alert_levels: List[AlertLevel]) -> bool:
 
-        self.serverTime = serverTime
+        self.serverTime = server_time
 
         # mark all nodes as not checked
         self._markAlertSystemObjectsAsNotChecked()
@@ -349,7 +352,7 @@ class ServerEventHandler:
         self.alerts.sort(key=lambda x: x.description.lower())
 
         # process received alertLevels
-        for recvAlertLevel in alertLevels:
+        for recvAlertLevel in alert_levels:
 
             # search alertLevel in list of known alertLevels
             # => if not known add it
@@ -386,33 +389,36 @@ class ServerEventHandler:
         # remove all nodes that are not checked
         self._removeNotCheckedNodes()
 
+        # wake up the screen updater
+        self.screenUpdater.screenUpdaterEvent.set()
+
         return True
 
     # is called when a sensor alert event was received from the server
-    def receivedSensorAlert(self, serverTime: int, sensorAlert: SensorAlert) -> bool:
+    def sensor_alert(self, server_time: int, sensor_alert: SensorAlert) -> bool:
 
-        self.serverTime = serverTime
-        self.sensorAlerts.append(sensorAlert)
+        self.serverTime = server_time
+        self.sensorAlerts.append(sensor_alert)
 
         # If rules are not activated (and therefore the sensor alert was
         # only triggered by one distinct sensor).
         # => Update information in sensor which triggered the sensor alert.
-        if not sensorAlert.rulesActivated:
+        if not sensor_alert.rulesActivated:
             found = False
             for sensor in self.sensors:
-                if sensor.sensorId == sensorAlert.sensorId:
-                    sensor.lastStateUpdated = serverTime
+                if sensor.sensorId == sensor_alert.sensorId:
+                    sensor.lastStateUpdated = server_time
 
                     # Only update sensor state information if the flag
                     # was set in the received message.
-                    if sensorAlert.changeState:
-                        sensor.state = sensorAlert.state
+                    if sensor_alert.changeState:
+                        sensor.state = sensor_alert.state
 
                     # Only update sensor data information if the flag
                     # was set in the received message.
-                    if sensorAlert.hasLatestData:
-                        if sensorAlert.dataType == sensor.dataType:
-                            sensor.data = sensorAlert.sensorData
+                    if sensor_alert.hasLatestData:
+                        if sensor_alert.dataType == sensor.dataType:
+                            sensor.data = sensor_alert.sensorData
 
                         else:
                             logging.error("[%s]: Sensor data type different. Skipping data assignment."
@@ -425,23 +431,26 @@ class ServerEventHandler:
                 logging.error("[%s]: Sensor of sensor alert not known." % self.fileName)
                 return False
 
+        # wake up the screen updater
+        self.screenUpdater.screenUpdaterEvent.set()
+
         return True
 
     # is called when a state change event was received from the server
-    def receivedStateChange(self,
-                            serverTime: int,
-                            sensorId: int,
-                            state: int,
-                            dataType: SensorDataType,
-                            sensorData: Any) -> bool:
+    def state_change(self,
+                     server_time: int,
+                     sensor_id: int,
+                     state: int,
+                     data_type: SensorDataType,
+                     sensor_data: Any) -> bool:
 
-        self.serverTime = serverTime
+        self.serverTime = server_time
 
         # search sensor in list of known sensors
         # => if not known return failure
         sensor = None
         for tempSensor in self.sensors:
-            if tempSensor.sensorId == sensorId:
+            if tempSensor.sensorId == sensor_id:
                 sensor = tempSensor
                 break
         if not sensor:
@@ -450,17 +459,22 @@ class ServerEventHandler:
 
         # Change sensor state.
         sensor.state = state
-        sensor.lastStateUpdated = serverTime
+        sensor.lastStateUpdated = server_time
 
-        if dataType == sensor.dataType:
-            sensor.data = sensorData
+        if data_type == sensor.dataType:
+            sensor.data = sensor_data
         else:
             logging.error("[%s]: Sensor data type different. Skipping data assignment." % self.fileName)
 
+        # wake up the screen updater
+        self.screenUpdater.screenUpdaterEvent.set()
+
         return True
 
-    # is called when an incoming server event has to be handled
-    def handleEvent(self):
+    def close_connection(self):
+        # wake up the screen updater
+        self.screenUpdater.screenUpdaterEvent.set()
 
+    def new_connection(self):
         # wake up the screen updater
         self.screenUpdater.screenUpdaterEvent.set()

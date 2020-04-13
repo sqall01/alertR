@@ -15,6 +15,7 @@ from lib import SMTPAlert
 from lib import ScreenUpdater
 from lib import Console
 from lib import GlobalData
+from lib import ManagerEventHandler
 import logging
 import time
 import random
@@ -220,6 +221,7 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
+                                                ManagerEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
     logging.info("[%s] Connecting to server." % fileName)
@@ -232,7 +234,7 @@ if __name__ == '__main__':
            and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-        if globalData.serverComm.initializeCommunication() is True:
+        if globalData.serverComm.initialize() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
             if globalData.smtpAlert is not None:
