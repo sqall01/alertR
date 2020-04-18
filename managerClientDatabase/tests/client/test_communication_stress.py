@@ -1,7 +1,7 @@
 import logging
 import time
 import threading
-from typing import List, Tuple
+from typing import List, Tuple, Any, Dict
 from unittest import TestCase
 from lib.client.core import Connection, RecvTimeout
 from lib.client.communication import Communication
@@ -45,7 +45,7 @@ class SimConnection(Connection):
             with self._recv_lock:
                 if self._recv_msg_queue:
                     data = self._recv_msg_queue.pop(0)
-                    logging.debug("[%s]: Received : %s" % (self._tag, data))
+                    logging.debug("[%s]: Received: %s" % (self._tag, data))
                     return data
             time.sleep(0.2)
 
@@ -55,7 +55,7 @@ class TestCommunicationBasic(TestCase):
     def _config_logging(self):
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                             datefmt='%m/%d/%Y %H:%M:%S',
-                            level=logging.ERROR)
+                            level=logging.DEBUG)
 
     def _create_communication(self) -> Tuple[Communication, Communication]:
         lock_send_client = threading.Lock()
@@ -86,6 +86,22 @@ class TestCommunicationBasic(TestCase):
 
         return comm_client, comm_server
 
+    def _msg_receiver(self,
+                      **kwargs):
+
+        count = kwargs["count"]  # type: int
+        comm = kwargs["comm"]  # type: Communication
+        recv_msgs = kwargs["recv_msgs"]  # type: List[Dict[str, Any]]
+        sync = kwargs["sync"]  # type: threading.Event
+
+        # Wait until we are clear to receive messages.
+        sync.wait()
+        logging.debug("[%s]: Starting receiver loop." % comm._log_tag)
+
+        for _ in range(count):
+            recv_msg = comm.recv_request()
+            recv_msgs.append(recv_msg)
+
     def test_single_communication(self):
 
         self._config_logging()
@@ -107,3 +123,78 @@ class TestCommunicationBasic(TestCase):
 
         if not promise.was_successful():
             self.fail("Sending message was not successful.")
+
+    def test_stress_communication(self):
+
+        count = 1
+
+        self._config_logging()
+
+        comm_client, comm_server = self._create_communication()
+
+        receiving_sync = threading.Event()
+        receiving_sync.clear()
+
+        msgs_recv_server = []
+        kwargs = {"count": count,
+                  "comm": comm_server,
+                  "recv_msgs": msgs_recv_server,
+                  "sync": receiving_sync}
+        server_receiver = threading.Thread(target=self._msg_receiver,
+                                           kwargs=kwargs,
+                                           daemon=True)
+        server_receiver.start()
+
+        msgs_recv_client = []
+        kwargs = {"count": count,
+                  "comm": comm_client,
+                  "recv_msgs": msgs_recv_client,
+                  "sync": receiving_sync}
+        client_receiver = threading.Thread(target=self._msg_receiver,
+                                           kwargs=kwargs,
+                                           daemon=True)
+        client_receiver.start()
+
+        receiving_sync.set()
+
+        # Send requests from client to server.
+        requests_client = []
+        for _ in range(count):
+            ping_msg = MsgBuilder.build_ping_msg()
+            promise = comm_client.send_request("ping", ping_msg)
+            requests_client.append(promise)
+
+        # Send requests from server to client.
+        requests_server = []
+        for _ in range(count):
+            ping_msg = MsgBuilder.build_ping_msg()
+            ping_msg = ping_msg.replace("clientTime", "serverTime")
+            promise = comm_server.send_request("ping", ping_msg)
+            requests_server.append(promise)
+
+        # Give each received message 2 seconds time.
+        client_receiver.join(timeout=(count * 10.0)) # TODO
+        if client_receiver.isAlive():
+            self.fail("Client timed out while receiving messages.")
+
+        # Give each received message 2 seconds time.
+        server_receiver.join(timeout=(count * 10.0)) # TODO
+        if server_receiver.isAlive():
+            self.fail("Server timed out while receiving messages.")
+
+        if len(requests_client) != len(msgs_recv_server):
+            self.fail("Client requests differ from messages received by server.")
+
+        if len(requests_server) != len(msgs_recv_client):
+            self.fail("Server requests differ from messages received by client.")
+
+        for i in range(len(requests_client)):
+            promise = requests_client[i]
+            recv_msg = msgs_recv_server[i]
+
+            if promise.msg_type != recv_msg["message"]:
+                self.fail("Message type from send and receive different.")
+
+            # TODO check if correct order
+
+        print("HIER")
