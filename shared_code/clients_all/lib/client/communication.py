@@ -73,7 +73,8 @@ class Promise:
 class Communication:
 
     def __init__(self,
-                 connection: Connection):
+                 connection: Connection,
+                 is_server: bool = False):
 
         # Maximum time in seconds the communication is backed off in case of collision.
         self.backoff_max = 5
@@ -100,6 +101,12 @@ class Communication:
         self._thread_request_sender = threading.Thread(target=self._request_sender,
                                                        daemon=True)
         self._thread_request_sender.start()
+
+        self._is_server = is_server
+        if is_server:
+            self._key_msg_time = "serverTime"
+        else:
+            self._key_msg_time = "clientTime"
 
     @property
     def has_channel(self):
@@ -132,7 +139,7 @@ class Communication:
             payload = {"type": "rts",
                        "id": transaction_id}
             utc_timestamp = int(time.time())
-            message = {"clientTime": utc_timestamp,
+            message = {self._key_msg_time: utc_timestamp,
                        "size": messageSize,
                        "message": messageType,
                        "payload": payload}
@@ -272,7 +279,7 @@ class Communication:
                             # Send error message back.
                             try:
                                 utcTimestamp = int(time.time())
-                                message = {"clientTime": utcTimestamp,
+                                message = {self._key_msg_time: utcTimestamp,
                                            "message": message["message"],
                                            "error": "%s message expected" % promise.msg_type}
                                 self._connection.send(json.dumps(message))
@@ -291,7 +298,7 @@ class Communication:
                             # Send error message back
                             try:
                                 utcTimestamp = int(time.time())
-                                message = {"clientTime": utcTimestamp,
+                                message = {self._key_msg_time: utcTimestamp,
                                            "message": message["message"],
                                            "error": "response expected"}
                                 self._connection.send(json.dumps(message))
@@ -333,25 +340,26 @@ class Communication:
     # noinspection PyBroadException
     def connect(self) -> bool:
 
-        # Closes existing connection if we have one.
-        try:
-            self._connection.close()
-        except Exception:
-            pass
-
-        try:
-            self._connection.connect()
-
-        except Exception:
-            logging.exception("[%s]: Connecting to server failed." % self._log_tag)
-            self._has_channel = False
-
+        if not self._is_server:
+            # Closes existing connection if we have one.
             try:
                 self._connection.close()
             except Exception:
                 pass
 
-            return False
+            try:
+                self._connection.connect()
+
+            except Exception:
+                logging.exception("[%s]: Connecting to server failed." % self._log_tag)
+                self._has_channel = False
+
+                try:
+                    self._connection.close()
+                except Exception:
+                    pass
+
+                return False
 
         return True
 
@@ -446,7 +454,7 @@ class Communication:
                         payload = {"type": "cts",
                                    "id": received_transaction_id}
                         utc_timestamp = int(time.time())
-                        message = {"clientTime": utc_timestamp,
+                        message = {self._key_msg_time: utc_timestamp,
                                    "message": str(message["message"]),
                                    "payload": payload}
                         self._connection.send(json.dumps(message))
@@ -519,7 +527,7 @@ class Communication:
                 # send error message back
                 try:
                     utc_timestamp = int(time.time())
-                    message = {"clientTime": utc_timestamp,
+                    message = {self._key_msg_time: utc_timestamp,
                                "message": request_type,
                                "error": error_msg}
                     self._connection.send(json.dumps(message))
@@ -538,7 +546,7 @@ class Communication:
                 payload = {"type": "response",
                            "result": "ok"}
                 utc_timestamp = int(time.time())
-                message = {"clientTime": utc_timestamp,
+                message = {self._key_msg_time: utc_timestamp,
                            "message": request_type,
                            "payload": payload}
                 self._connection.send(json.dumps(message))
