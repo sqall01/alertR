@@ -81,7 +81,11 @@ class Communication:
                  is_server: bool = False):
 
         # Maximum time in seconds the communication is backed off in case of collision.
-        self.backoff_max = 5
+        # Prioritize server messages.
+        if is_server:
+            self.backoff_max = 1
+        else:
+            self.backoff_max = 5
 
         self._connection_lock = threading.Lock()
         self._connection = connection
