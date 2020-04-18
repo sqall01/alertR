@@ -45,9 +45,13 @@ class Promise:
         return self._msg_type
 
     def is_finished(self,
-                    blocking: bool = False) -> bool:
+                    blocking: bool = False,
+                    timeout: Optional[float] = None) -> bool:
         if blocking:
             self._finished_event.wait()
+
+        if timeout is not None:
+            self._finished_event.wait(timeout)
 
         return self._state != PromiseState.PENDING
 
