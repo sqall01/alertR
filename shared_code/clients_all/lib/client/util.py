@@ -36,9 +36,28 @@ class MsgChecker:
         # Extract the request/message type of the message and check message accordingly.
         request = str(message["message"]).lower()
 
+        # check "PING" message.
+        if request == "ping":
+            error_msg = None
+            if "serverTime" in message.keys():
+                error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+                if error_msg is not None:
+                    logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                    return error_msg
+            elif "clientTime" in message.keys():
+                error_msg = MsgChecker.check_client_server_time(message["clientTime"])
+                if error_msg is not None:
+                    logging.error("[%s]: Received clientTime invalid." % MsgChecker._log_tag)
+                    return error_msg
+            else:
+                return "clientTime/serverTime expected"
+
         # Check "SENSORALERT" message.
-        if request == "sensoralert":
-            error_msg = MsgChecker.check_server_time(message["serverTime"])
+        elif request == "sensoralert":
+            if "serverTime" in message.keys():
+                return "serverTime expected"
+
+            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
             if error_msg is not None:
                 logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
                 return error_msg
@@ -101,9 +120,44 @@ class MsgChecker:
                 logging.error("[%s]: Received changeState invalid." % MsgChecker._log_tag)
                 return error_msg
 
+        # Check "STATECHANGE" message.
+        elif request == "statechange":
+            if "serverTime" in message.keys():
+                return "serverTime expected"
+
+            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            if error_msg is not None:
+                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
+            if error_msg is not None:
+                logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_state(message["payload"]["state"])
+            if error_msg is not None:
+                logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
+            if error_msg is not None:
+                logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if message["payload"]["dataType"] != SensorDataType.NONE:
+                error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
+                                                         message["payload"]["dataType"])
+                if error_msg is not None:
+                    logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
+                    return error_msg
+
         # Check "STATUS" message.
         elif request == "status":
-            error_msg = MsgChecker.check_server_time(message["serverTime"])
+            if "serverTime" in message.keys():
+                return "serverTime expected"
+
+            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
             if error_msg is not None:
                 logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
                 return error_msg
@@ -137,35 +191,6 @@ class MsgChecker:
             if error_msg is not None:
                 logging.error("[%s]: Received alertLevels invalid." % MsgChecker._log_tag)
                 return error_msg
-
-        # Check "STATECHANGE" message.
-        elif request == "statechange":
-            error_msg = MsgChecker.check_server_time(message["serverTime"])
-            if error_msg is not None:
-                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
-                return error_msg
-
-            error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
-            if error_msg is not None:
-                logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
-                return error_msg
-
-            error_msg = MsgChecker.check_state(message["payload"]["state"])
-            if error_msg is not None:
-                logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
-                return error_msg
-
-            error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
-            if error_msg is not None:
-                logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
-                return error_msg
-
-            if message["payload"]["dataType"] != SensorDataType.NONE:
-                error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
-                                                         message["payload"]["dataType"])
-                if error_msg is not None:
-                    logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
-                    return error_msg
 
         else:
             return "unknown request/message type"
@@ -565,14 +590,14 @@ class MsgChecker:
 
     # Internal function to check sanity of the serverTime.
     @staticmethod
-    def check_server_time(serverTime: int) -> Optional[str]:
+    def check_client_server_time(client_server_time: int) -> Optional[str]:
 
-        isCorrect = True
-        if not isinstance(serverTime, int):
-            isCorrect = False
+        is_correct = True
+        if not isinstance(client_server_time, int):
+            is_correct = False
 
-        if not isCorrect:
-            return "serverTime not valid"
+        if not is_correct:
+            return "clientTime/serverTime not valid"
 
         return None
 
