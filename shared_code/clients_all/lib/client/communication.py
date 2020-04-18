@@ -97,16 +97,16 @@ class Communication:
         # Flag that indicates if we have a valid communication channel to the other side.
         self._has_channel = False
 
-        # Start request sender thread.
-        self._thread_request_sender = threading.Thread(target=self._request_sender,
-                                                       daemon=True)
-        self._thread_request_sender.start()
-
         self._is_server = is_server
         if is_server:
             self._key_msg_time = "serverTime"
         else:
             self._key_msg_time = "clientTime"
+
+        # Start request sender thread.
+        self._thread_request_sender = threading.Thread(target=self._request_sender,
+                                                       daemon=True)
+        self._thread_request_sender.start()
 
     @property
     def has_channel(self):

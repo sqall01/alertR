@@ -749,9 +749,9 @@ class ServerCommunication(Communication):
 
         :return: Promise that the request will be sent and that contains the state of the send request
         """
-        pingMessage = MsgBuilder.build_ping_msg()
+        ping_message = MsgBuilder.build_ping_msg()
 
-        return self.send_request("ping", pingMessage)
+        return self.send_request("ping", ping_message)
 
     def send_option(self,
                     optionType: str,
@@ -767,6 +767,6 @@ class ServerCommunication(Communication):
         :return: Promise that the request will be sent and that contains the state of the send request
         """
 
-        optionMessage = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
+        option_message = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
 
-        return self.send_request("option", optionMessage)
+        return self.send_request("option", option_message)
