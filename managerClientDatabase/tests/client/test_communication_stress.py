@@ -191,9 +191,9 @@ class TestCommunicationBasic(TestCase):
             promise = comm_server.send_request("ping", ping_msg)
             requests_server.append(promise)
 
-        # Give each each message 10 seconds time
-        # ("count" messages send by client and "count" messages send by server).
-        for _ in range(count * 2 * 10):
+        # Give each each message 5 seconds time
+        # ("count" messages sent by client and "count" messages sent by server).
+        for _ in range(count * 2 * 5):
             if client_receiver.isAlive():
                 client_receiver.join(timeout=1.0)
             elif server_receiver.isAlive():
