@@ -1,6 +1,7 @@
 import logging
 import time
 import threading
+import json
 from typing import List, Tuple, Any, Dict
 from unittest import TestCase
 from lib.client.core import Connection, RecvTimeout
@@ -55,7 +56,7 @@ class TestCommunicationBasic(TestCase):
     def _config_logging(self):
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                             datefmt='%m/%d/%Y %H:%M:%S',
-                            level=logging.DEBUG)
+                            level=logging.ERROR)
 
     def _create_communication(self) -> Tuple[Communication, Communication]:
         lock_send_client = threading.Lock()
@@ -103,7 +104,9 @@ class TestCommunicationBasic(TestCase):
             recv_msgs.append(recv_msg)
 
     def test_single_communication(self):
-
+        """
+        Tests single request sending through the communication channel from the client to the server.
+        """
         self._config_logging()
 
         comm_client, comm_server = self._create_communication()
@@ -125,8 +128,13 @@ class TestCommunicationBasic(TestCase):
             self.fail("Sending message was not successful.")
 
     def test_stress_communication(self):
+        """
+        Stress tests communication by letting client and server trying to send
+        X messages to each other at the same time. Checks order of the send/received messages
+        as well as not to take too long to send messages.
+        """
 
-        count = 1
+        count = 30
 
         self._config_logging()
 
@@ -155,30 +163,45 @@ class TestCommunicationBasic(TestCase):
                                            daemon=True)
         client_receiver.start()
 
+        start_timer = time.time()
         receiving_sync.set()
 
         # Send requests from client to server.
         requests_client = []
-        for _ in range(count):
+        for i in range(count):
             ping_msg = MsgBuilder.build_ping_msg()
+            ping_dict = json.loads(ping_msg)
+            # Insert bogus field to uniquely identify messages on the other side.
+            ping_dict["test_msg_name"] = "client_" + str(i)
+            ping_msg = json.dumps(ping_dict)
             promise = comm_client.send_request("ping", ping_msg)
             requests_client.append(promise)
 
         # Send requests from server to client.
         requests_server = []
-        for _ in range(count):
+        for i in range(count):
             ping_msg = MsgBuilder.build_ping_msg()
-            ping_msg = ping_msg.replace("clientTime", "serverTime")
+            ping_dict = json.loads(ping_msg)
+            # Since the server is sending the message, swap clientTime with serverTime
+            ping_dict["serverTime"] = ping_dict["clientTime"]
+            del ping_dict["clientTime"]
+            # Insert bogus field to uniquely identify messages on the other side.
+            ping_dict["test_msg_name"] = "server_" + str(i)
+            ping_msg = json.dumps(ping_dict)
             promise = comm_server.send_request("ping", ping_msg)
             requests_server.append(promise)
 
-        # Give each received message 2 seconds time.
-        client_receiver.join(timeout=(count * 10.0)) # TODO
+        # Give each each message 10 seconds time
+        # ("count" messages send by client and "count" messages send by server).
+        for _ in range(count * 2 * 10):
+            if client_receiver.isAlive():
+                client_receiver.join(timeout=1.0)
+            elif server_receiver.isAlive():
+                server_receiver.join(timeout=1.0)
+            else:
+                break
         if client_receiver.isAlive():
             self.fail("Client timed out while receiving messages.")
-
-        # Give each received message 2 seconds time.
-        server_receiver.join(timeout=(count * 10.0)) # TODO
         if server_receiver.isAlive():
             self.fail("Server timed out while receiving messages.")
 
@@ -188,13 +211,29 @@ class TestCommunicationBasic(TestCase):
         if len(requests_server) != len(msgs_recv_client):
             self.fail("Server requests differ from messages received by client.")
 
+        # Check requests send by the client.
         for i in range(len(requests_client)):
             promise = requests_client[i]
+            send_msg = json.loads(promise.msg)
             recv_msg = msgs_recv_server[i]
 
             if promise.msg_type != recv_msg["message"]:
-                self.fail("Message type from send and receive different.")
+                self.fail("Message type from send and receive different (client -> server).")
 
-            # TODO check if correct order
+            if send_msg["test_msg_name"] != recv_msg["test_msg_name"]:
+                self.fail("Messages sent and received different or different order (client -> server).")
 
-        print("HIER")
+        # Check requests send by the server.
+        for i in range(len(requests_client)):
+            promise = requests_server[i]
+            send_msg = json.loads(promise.msg)
+            recv_msg = msgs_recv_client[i]
+
+            if promise.msg_type != recv_msg["message"]:
+                self.fail("Message type from send and receive different (server -> client).")
+
+            if send_msg["test_msg_name"] != recv_msg["test_msg_name"]:
+                self.fail("Messages sent and received different or different order (server -> client).")
+
+        time_elapsed = time.time() - start_timer
+        logging.info("Needed %.2f seconds to send/receive messages." % time_elapsed)
