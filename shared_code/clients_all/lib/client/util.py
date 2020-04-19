@@ -25,12 +25,15 @@ class MsgChecker:
     def check_received_message(message: Dict[str, Any]) -> Optional[str]:
 
         if "message" not in message.keys() and type(message["message"]) != str:
+            logging.error("[%s]: Message not invalid." % MsgChecker._log_tag)
             return "message not valid"
 
         if "payload" not in message.keys() and type(message["payload"]) != dict:
+            logging.error("[%s]: Payload not invalid." % MsgChecker._log_tag)
             return "payload not valid"
 
         if "type" not in message["payload"].keys() and str(message["payload"]["type"]).lower() != "request":
+            logging.error("[%s]: Request expected." % MsgChecker._log_tag)
             return "request expected"
 
         # Extract the request/message type of the message and check message accordingly.
@@ -55,6 +58,7 @@ class MsgChecker:
         # Check "SENSORALERT" message.
         elif request == "sensoralert":
             if "serverTime" not in message.keys():
+                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
                 return "serverTime expected"
 
             error_msg = MsgChecker.check_client_server_time(message["serverTime"])
@@ -123,6 +127,7 @@ class MsgChecker:
         # Check "STATECHANGE" message.
         elif request == "statechange":
             if "serverTime" not in message.keys():
+                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
                 return "serverTime expected"
 
             error_msg = MsgChecker.check_client_server_time(message["serverTime"])
@@ -155,6 +160,7 @@ class MsgChecker:
         # Check "STATUS" message.
         elif request == "status":
             if "serverTime" not in message.keys():
+                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
                 return "serverTime expected"
 
             error_msg = MsgChecker.check_client_server_time(message["serverTime"])
@@ -193,6 +199,7 @@ class MsgChecker:
                 return error_msg
 
         else:
+            logging.error("[%s]: Unknown request/message type." % MsgChecker._log_tag)
             return "unknown request/message type"
 
         return None
