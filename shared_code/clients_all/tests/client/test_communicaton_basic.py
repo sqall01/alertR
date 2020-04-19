@@ -1,5 +1,5 @@
 from unittest import TestCase
-from .core import create_basic_communication
+from tests.client.core import create_basic_communication
 
 
 class TestCommunicationBasic(TestCase):

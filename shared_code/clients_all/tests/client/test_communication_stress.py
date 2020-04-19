@@ -4,12 +4,12 @@ import threading
 import json
 from typing import List, Any, Dict
 from unittest import TestCase
-from .core import config_logging, create_simulated_communication
+from tests.client.core import config_logging, create_simulated_communication
 from lib.client.communication import Communication
 from lib.client.util import MsgBuilder
 
 
-class TestCommunicationBasic(TestCase):
+class TestCommunicationStress(TestCase):
 
     def _msg_receiver(self,
                       **kwargs):
