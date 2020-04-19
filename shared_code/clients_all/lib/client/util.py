@@ -54,7 +54,7 @@ class MsgChecker:
 
         # Check "SENSORALERT" message.
         elif request == "sensoralert":
-            if "serverTime" in message.keys():
+            if "serverTime" not in message.keys():
                 return "serverTime expected"
 
             error_msg = MsgChecker.check_client_server_time(message["serverTime"])
@@ -122,7 +122,7 @@ class MsgChecker:
 
         # Check "STATECHANGE" message.
         elif request == "statechange":
-            if "serverTime" in message.keys():
+            if "serverTime" not in message.keys():
                 return "serverTime expected"
 
             error_msg = MsgChecker.check_client_server_time(message["serverTime"])
@@ -154,7 +154,7 @@ class MsgChecker:
 
         # Check "STATUS" message.
         elif request == "status":
-            if "serverTime" in message.keys():
+            if "serverTime" not in message.keys():
                 return "serverTime expected"
 
             error_msg = MsgChecker.check_client_server_time(message["serverTime"])
