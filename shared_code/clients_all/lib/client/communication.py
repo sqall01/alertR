@@ -80,12 +80,14 @@ class Communication:
                  connection: Connection,
                  is_server: bool = False):
 
-        # Maximum time in seconds the communication is backed off in case of collision.
+        # Maximum time in milliseconds the communication is backed off in case of collision.
         # Prioritize server messages.
         if is_server:
-            self.backoff_max = 1
+            self._backoff_min = 0
+            self._backoff_max = 500
         else:
-            self.backoff_max = 5
+            self._backoff_min = 1000
+            self._backoff_max = 2000
 
         self._connection_lock = threading.Lock()
         self._connection = connection
@@ -226,9 +228,9 @@ class Communication:
             backoff = False
             while self._msg_queue:
 
-                # Backoff random time between 0 and X seconds.
+                # Backoff random time between X and Y seconds.
                 if backoff:
-                    backoff_time = float(random.randint(0, self.backoff_max * 100))/100
+                    backoff_time = float(random.randint(self._backoff_min, self._backoff_max))/1000
                     logging.debug("[%s] Backing off from sending request for %.3f seconds."
                                   % (self._log_tag, backoff_time))
                     time.sleep(backoff_time)
