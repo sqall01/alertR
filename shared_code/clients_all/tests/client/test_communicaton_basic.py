@@ -10,6 +10,10 @@ from tests.client.core import config_logging, create_basic_communication, create
 class TestCommunicationBasic(TestCase):
 
     def test_send_raw(self):
+        """
+        Tests the raw send function of the communication.
+        """
+
         test_msgs = ["test msg1", "test msg2", "test msg3"]
         comm = create_basic_communication()
 
@@ -29,6 +33,10 @@ class TestCommunicationBasic(TestCase):
                 self.fail("Received message '%s' but expected message '%s'." % (recv_msgs[i], test_msgs[i]))
 
     def test_send_request_rts_error(self):
+        """
+        Tests communication error handling by letting the client send a ping request to the server
+        and failing the rts message part the first time.
+        """
 
         config_logging(logging.ERROR)
 
@@ -112,6 +120,10 @@ class TestCommunicationBasic(TestCase):
         logging.info("Needed %.2f seconds to send/receive messages." % time_elapsed)
 
     def test_send_request_cts_error(self):
+        """
+        Tests communication error handling by letting the client send a ping request to the server
+        and failing the cts message part the first time.
+        """
 
         config_logging(logging.ERROR)
 
@@ -195,6 +207,10 @@ class TestCommunicationBasic(TestCase):
         logging.info("Needed %.2f seconds to send/receive messages." % time_elapsed)
 
     def test_send_request_request_error(self):
+        """
+        Tests communication error handling by letting the client send a ping request to the server
+        and failing the request message part the first time.
+        """
 
         config_logging(logging.ERROR)
 
@@ -278,6 +294,10 @@ class TestCommunicationBasic(TestCase):
         logging.info("Needed %.2f seconds to send/receive messages." % time_elapsed)
 
     def test_send_request_response_error(self):
+        """
+        Tests communication error handling by letting the client send a ping request to the server
+        and failing the response message part the first time.
+        """
 
         config_logging(logging.ERROR)
 
