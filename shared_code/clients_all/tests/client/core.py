@@ -89,7 +89,8 @@ class SimulatedErrorConnection(SimulatedConnection):
                  recv_msg_queue: List[str],
                  recv_lock: threading.Lock,
                  tag: str,
-                 sim_error_rts: bool = False):
+                 sim_error_rts: bool = False,
+                 sim_error_cts: bool = False):
 
         super().__init__(send_msg_queue,
                          send_lock,
@@ -97,6 +98,7 @@ class SimulatedErrorConnection(SimulatedConnection):
                          recv_lock,
                          tag)
         self.sim_error_rts = sim_error_rts
+        self.sim_error_cts = sim_error_cts
 
     def connect(self):
         raise NotImplementedError("Abstract class.")
@@ -104,15 +106,19 @@ class SimulatedErrorConnection(SimulatedConnection):
     def send(self,
              data: str):
 
+        try:
+            data_json = json.loads(data)
+        except:
+            raise ValueError("Unexpected data format")
+
         raise_error = False
-        if self.sim_error_rts:
-            try:
-                data_json = json.loads(data)
-                if data_json["payload"]["type"] == "rts":
-                    self.sim_error_rts = False
-                    raise_error = True
-            except:
-                pass
+        if self.sim_error_rts and data_json["payload"]["type"] == "rts":
+            self.sim_error_rts = False
+            raise_error = True
+
+        if self.sim_error_cts and data_json["payload"]["type"] == "cts":
+            self.sim_error_cts = False
+            raise_error = True
 
         if raise_error:
             super().send("SIM_EXCEPTION")
