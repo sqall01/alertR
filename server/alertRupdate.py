@@ -135,7 +135,7 @@ def checkDependencies(oldDependencies, newDependencies):
             # => check if the installed version satisfies the needed version
             if version is not None:
 
-                versionCorrect = False
+                versionCorrect = True
                 versionCheckFailed = False
                 installedVersion = "Information Not Available"
 
@@ -261,7 +261,7 @@ def checkDependencies(oldDependencies, newDependencies):
             # needed version
             if version is not None:
 
-                versionCorrect = False
+                versionCorrect = True
                 versionCheckFailed = False
                 installedVersion = "Information Not Available"
 
