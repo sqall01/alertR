@@ -263,10 +263,19 @@ class Communication:
                         logging.debug("[%s]: Sending message of type '%s'." % (self._log_tag, promise.msg_type))
                         self._connection.send(promise.msg)
 
+                    except OSError:
+                        logging.exception("[%s]: Sending message of type '%s' failed (retrying)."
+                                          % (self._log_tag, promise.msg_type))
+                        with self._msg_queue_lock:
+                            self._msg_queue.insert(0, promise)
+                        self._has_channel = False
+                        break
+
                     except Exception:
-                        logging.exception("[%s]: Sending message of type '%s' failed."
+                        logging.exception("[%s]: Sending message of type '%s' failed (giving up)."
                                           % (self._log_tag, promise.msg_type))
                         self._has_channel = False
+                        promise.set_failed()
                         break
 
                     # Receive response.
@@ -338,12 +347,20 @@ class Communication:
                                           % (self._log_tag, promise.msg_type, msg_result))
                             promise.set_failed()
 
+                    except OSError:
+                        logging.exception("[%s]: Receiving response for message of type '%s' failed (retrying)."
+                                          % (self._log_tag, promise.msg_type))
+                        with self._msg_queue_lock:
+                            self._msg_queue.insert(0, promise)
+                        self._has_channel = False
+                        break
+
                     except Exception:
-                        logging.exception("[%s]: Receiving response for message of type '%s' failed."
+                        logging.exception("[%s]: Receiving response for message of type '%s' failed (giving up)."
                                           % (self._log_tag, promise.msg_type))
                         self._has_channel = False
                         promise.set_failed()
-                        continue
+                        break
 
             self._new_msg_event.clear()
 
