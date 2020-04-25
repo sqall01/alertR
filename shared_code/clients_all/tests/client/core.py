@@ -1,7 +1,8 @@
 import threading
 import time
 import logging
-from typing import List, Tuple
+import json
+from typing import List, Tuple, Dict, Any
 from lib.client.core import Connection, RecvTimeout
 from lib.client.communication import Communication
 
@@ -80,6 +81,58 @@ class SimulatedConnection(Connection):
         raise NotImplementedError("Abstract class.")
 
 
+class SimulatedErrorConnection(SimulatedConnection):
+
+    def __init__(self,
+                 send_msg_queue: List[str],
+                 send_lock: threading.Lock,
+                 recv_msg_queue: List[str],
+                 recv_lock: threading.Lock,
+                 tag: str,
+                 sim_error_rts: bool = False):
+
+        super().__init__(send_msg_queue,
+                         send_lock,
+                         recv_msg_queue,
+                         recv_lock,
+                         tag)
+        self.sim_error_rts = sim_error_rts
+
+    def connect(self):
+        raise NotImplementedError("Abstract class.")
+
+    def send(self,
+             data: str):
+
+        raise_error = False
+        if self.sim_error_rts:
+            try:
+                data_json = json.loads(data)
+                if data_json["payload"]["type"] == "rts":
+                    self.sim_error_rts = False
+                    raise_error = True
+            except:
+                pass
+
+        if raise_error:
+            super().send("SIM_EXCEPTION")
+            raise OSError("Simulated connection error")
+
+        super().send(data)
+
+    def recv(self,
+             buffsize: int,
+             timeout: float = 20.0) -> str:
+
+        data = super().recv(buffsize, timeout=timeout)
+        if data == "SIM_EXCEPTION":
+            raise OSError("Simulated connection error")
+        return data
+
+    def close(self):
+        raise NotImplementedError("Abstract class.")
+
+
 def config_logging(loglevel):
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
@@ -120,3 +173,53 @@ def create_simulated_communication() -> Tuple[Communication, Communication]:
     comm_server.set_connected()
 
     return comm_client, comm_server
+
+
+def create_simulated_error_communication() -> Tuple[Communication, Communication]:
+    lock_send_client = threading.Lock()
+    lock_send_server = threading.Lock()
+    msg_queue_send_client = []
+    msg_queue_send_server = []
+
+    conn_client = SimulatedErrorConnection(msg_queue_send_client,
+                                           lock_send_client,
+                                           msg_queue_send_server,
+                                           lock_send_server,
+                                           "client")
+
+    conn_server = SimulatedErrorConnection(msg_queue_send_server,
+                                           lock_send_server,
+                                           msg_queue_send_client,
+                                           lock_send_client,
+                                           "server")
+
+    comm_client = Communication(conn_client)
+    comm_server = Communication(conn_server, is_server=True)
+
+    comm_client._log_tag = "client"
+    comm_server._log_tag = "server"
+
+    comm_client.set_connected()
+    comm_server.set_connected()
+
+    return comm_client, comm_server
+
+
+def msg_receiver(**kwargs):
+
+    count = kwargs["count"]  # type: int
+    comm = kwargs["comm"]  # type: Communication
+    recv_msgs = kwargs["recv_msgs"]  # type: List[Dict[str, Any]]
+    sync = kwargs["sync"]  # type: threading.Event
+
+    # Wait until we are clear to receive messages.
+    sync.wait()
+    logging.debug("[%s]: Starting receiver loop." % comm._log_tag)
+
+    for _ in range(count):
+
+        while not comm.has_channel:
+            time.sleep(0.5)
+
+        recv_msg = comm.recv_request()
+        recv_msgs.append(recv_msg)

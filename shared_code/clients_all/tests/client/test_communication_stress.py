@@ -2,30 +2,12 @@ import logging
 import time
 import threading
 import json
-from typing import List, Any, Dict
 from unittest import TestCase
-from tests.client.core import config_logging, create_simulated_communication
-from lib.client.communication import Communication
+from tests.client.core import config_logging, create_simulated_communication, msg_receiver
 from lib.client.util import MsgBuilder
 
 
 class TestCommunicationStress(TestCase):
-
-    def _msg_receiver(self,
-                      **kwargs):
-
-        count = kwargs["count"]  # type: int
-        comm = kwargs["comm"]  # type: Communication
-        recv_msgs = kwargs["recv_msgs"]  # type: List[Dict[str, Any]]
-        sync = kwargs["sync"]  # type: threading.Event
-
-        # Wait until we are clear to receive messages.
-        sync.wait()
-        logging.debug("[%s]: Starting receiver loop." % comm._log_tag)
-
-        for _ in range(count):
-            recv_msg = comm.recv_request()
-            recv_msgs.append(recv_msg)
 
     def test_single_communication(self):
         """
@@ -72,7 +54,7 @@ class TestCommunicationStress(TestCase):
                   "comm": comm_server,
                   "recv_msgs": msgs_recv_server,
                   "sync": receiving_sync}
-        server_receiver = threading.Thread(target=self._msg_receiver,
+        server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
                                            daemon=True)
         server_receiver.start()
@@ -82,7 +64,7 @@ class TestCommunicationStress(TestCase):
                   "comm": comm_client,
                   "recv_msgs": msgs_recv_client,
                   "sync": receiving_sync}
-        client_receiver = threading.Thread(target=self._msg_receiver,
+        client_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
                                            daemon=True)
         client_receiver.start()
@@ -115,7 +97,7 @@ class TestCommunicationStress(TestCase):
             promise = comm_server.send_request("ping", ping_msg)
             requests_server.append(promise)
 
-        # Give each each message 5 seconds time
+        # Give each message 5 seconds time
         # ("count" messages sent by client and "count" messages sent by server).
         for _ in range(count * 2 * 5):
             if client_receiver.isAlive():
