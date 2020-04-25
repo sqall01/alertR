@@ -859,7 +859,7 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
             # => check if the installed version satisfies the needed version
             if version is not None:
 
-                versionCorrect = False
+                versionCorrect = True
                 versionCheckFailed = False
                 installedVersion = "Information Not Available"
 
@@ -950,7 +950,7 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
             # needed version
             if version is not None:
 
-                versionCorrect = False
+                versionCorrect = True
                 versionCheckFailed = False
                 installedVersion = "Information Not Available"
 
