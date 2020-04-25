@@ -90,7 +90,9 @@ class SimulatedErrorConnection(SimulatedConnection):
                  recv_lock: threading.Lock,
                  tag: str,
                  sim_error_rts: bool = False,
-                 sim_error_cts: bool = False):
+                 sim_error_cts: bool = False,
+                 sim_error_request: bool = False,
+                 sim_error_response: bool = False):
 
         super().__init__(send_msg_queue,
                          send_lock,
@@ -99,6 +101,8 @@ class SimulatedErrorConnection(SimulatedConnection):
                          tag)
         self.sim_error_rts = sim_error_rts
         self.sim_error_cts = sim_error_cts
+        self.sim_error_request = sim_error_request
+        self.sim_error_response = sim_error_response
 
     def connect(self):
         raise NotImplementedError("Abstract class.")
@@ -116,8 +120,16 @@ class SimulatedErrorConnection(SimulatedConnection):
             self.sim_error_rts = False
             raise_error = True
 
-        if self.sim_error_cts and data_json["payload"]["type"] == "cts":
+        elif self.sim_error_cts and data_json["payload"]["type"] == "cts":
             self.sim_error_cts = False
+            raise_error = True
+
+        elif self.sim_error_request and data_json["payload"]["type"] == "request":
+            self.sim_error_request = False
+            raise_error = True
+
+        elif self.sim_error_response and data_json["payload"]["type"] == "response":
+            self.sim_error_response = False
             raise_error = True
 
         if raise_error:

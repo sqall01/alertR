@@ -214,8 +214,14 @@ class Communication:
 
         while True:
 
-            # Wait until a new message has to be sent.
-            self._new_msg_event.wait(5)
+            # If we still have messages in the queue, wait a short time before starting a new sending round.
+            if self._msg_queue:
+                time.sleep(0.5)
+
+            # Wait until a new message has to be sent if we do not have anything in the queue.
+            else:
+                self._new_msg_event.wait(5)
+
 
             if self._exit_flag:
                 logging.info("[%s] Exiting Request Sender thread." % self._log_tag)
