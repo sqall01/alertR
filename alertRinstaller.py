@@ -878,7 +878,6 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
                     # check the needed version and the installed version
                     for i in range(maxLength):
                         if int(installedVersion[i]) > int(neededVersion[i]):
-                            versionCorrect = True
                             break
 
                         elif int(installedVersion[i]) < int(neededVersion[i]):
@@ -969,7 +968,6 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
                     # check the needed version and the installed version
                     for i in range(maxLength):
                         if int(installedVersion[i]) > int(neededVersion[i]):
-                            versionCorrect = True
                             break
 
                         elif int(installedVersion[i]) < int(neededVersion[i]):
