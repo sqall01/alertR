@@ -1,0 +1,10 @@
+requests==2.20.0
+lightweightpush==0.0.5
+RPi.GPIO==0.5.2
+kodi-json==1.0.0
+urwid==2.1.0
+mysqlclient==1.4.6
+icalendar==4.0.2
+python-dateutil==2.7.3
+pytz==2019.3
+bcrypt==3.1.4
