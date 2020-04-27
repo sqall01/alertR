@@ -4,7 +4,7 @@ import time
 from unittest import TestCase
 from lib.client.util import MsgBuilder
 from tests.client.core import config_logging, create_basic_communication, create_simulated_error_communication, \
-                              msg_receiver
+                              msg_receiver, create_simulated_communication
 
 
 class TestCommunicationBasic(TestCase):
@@ -32,13 +32,37 @@ class TestCommunicationBasic(TestCase):
             if recv_msgs[i] != test_msgs[i]:
                 self.fail("Received message '%s' but expected message '%s'." % (recv_msgs[i], test_msgs[i]))
 
+    def test_single_communication(self):
+        """
+        Tests single request sending through the communication channel from the client to the server.
+        """
+        config_logging(logging.CRITICAL)
+
+        comm_client, comm_server = create_simulated_communication()
+
+        ping_msg = MsgBuilder.build_ping_msg()
+        promise = comm_client.send_request("ping", ping_msg)
+
+        recv_msg = comm_server.recv_request()
+        if recv_msg is None:
+            self.fail("Receiving message failed.")
+
+        if "ping" != recv_msg["message"]:
+            self.fail("Expected 'ping' message.")
+
+        if not promise.is_finished(timeout=5.0):
+            self.fail("Expected message to be sent.")
+
+        if not promise.was_successful():
+            self.fail("Sending message was not successful.")
+
     def test_send_request_rts_error(self):
         """
         Tests communication error handling by letting the client send a ping request to the server
         and failing the rts message part the first time.
         """
 
-        config_logging(logging.ERROR)
+        config_logging(logging.CRITICAL)
 
         comm_client, comm_server = create_simulated_error_communication()
 
@@ -125,7 +149,7 @@ class TestCommunicationBasic(TestCase):
         and failing the cts message part the first time.
         """
 
-        config_logging(logging.ERROR)
+        config_logging(logging.CRITICAL)
 
         comm_client, comm_server = create_simulated_error_communication()
 
@@ -212,7 +236,7 @@ class TestCommunicationBasic(TestCase):
         and failing the request message part the first time.
         """
 
-        config_logging(logging.ERROR)
+        config_logging(logging.CRITICAL)
 
         comm_client, comm_server = create_simulated_error_communication()
 
@@ -299,7 +323,7 @@ class TestCommunicationBasic(TestCase):
         and failing the response message part the first time.
         """
 
-        config_logging(logging.ERROR)
+        config_logging(logging.CRITICAL)
 
         comm_client, comm_server = create_simulated_error_communication()
 

@@ -10,30 +10,6 @@ from lib.client.util import MsgBuilder
 
 class TestCommunicationStress(TestCase):
 
-    def test_single_communication(self):
-        """
-        Tests single request sending through the communication channel from the client to the server.
-        """
-        config_logging(logging.ERROR)
-
-        comm_client, comm_server = create_simulated_communication()
-
-        ping_msg = MsgBuilder.build_ping_msg()
-        promise = comm_client.send_request("ping", ping_msg)
-
-        recv_msg = comm_server.recv_request()
-        if recv_msg is None:
-            self.fail("Receiving message failed.")
-
-        if "ping" != recv_msg["message"]:
-            self.fail("Expected 'ping' message.")
-
-        if not promise.is_finished(timeout=5.0):
-            self.fail("Expected message to be sent.")
-
-        if not promise.was_successful():
-            self.fail("Sending message was not successful.")
-
     def test_stress_communication(self):
         """
         Stress tests communication by letting client and server trying to send
@@ -43,7 +19,7 @@ class TestCommunicationStress(TestCase):
 
         count = 30
 
-        config_logging(logging.ERROR)
+        config_logging(logging.CRITICAL)
 
         comm_client, comm_server = create_simulated_communication()
 
@@ -151,7 +127,7 @@ class TestCommunicationStress(TestCase):
         and failing each of the four message parts (rts, cts, request, response) the first time.
         """
 
-        config_logging(logging.ERROR)
+        config_logging(logging.CRITICAL)
 
         comm_client, comm_server = create_simulated_error_communication()
 
