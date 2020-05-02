@@ -67,26 +67,21 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
     def _interruptCallback(self, gpioPin: int):
 
-        # check if the last time the sensor was triggered is longer ago
-        # than the configured delay between two triggers
+        # Check if the last time we detected an interrupt is longer ago than the configured delay between two triggers
         # => set time and reset edge counter
         utcTimestamp = int(time.time())
         if (utcTimestamp - self.lastTimeTriggered) > self.delayBetweenTriggers:
-
-            self.edgeCounter = 1
+            self.edgeCounter = 0
             self.lastTimeTriggered = utcTimestamp
 
-        else:
+        self.edgeCounter += 1
 
-            # increment edge counter
-            self.edgeCounter += 1
+        # if edge counter reaches threshold
+        # => trigger state
+        if self.edgeCounter >= self.edgeCountBeforeTrigger:
+            self._internalState = self.triggerState
 
-            # if edge counter reaches threshold
-            # => trigger state
-            if self.edgeCounter >= self.edgeCountBeforeTrigger:
-                self._internalState = self.triggerState
-
-                logging.debug("[%s]: Sensor '%s' triggered." % (self.fileName, self.description))
+            logging.debug("[%s]: Sensor '%s' triggered." % (self.fileName, self.description))
 
         logging.debug("[%s]: %d Interrupt "
                       % (self.fileName, self.edgeCounter)
