@@ -87,6 +87,7 @@ class Updater:
         self.repoInstanceLocation = None  # type: Optional[str]
         self.instanceInfo = None  # type: Dict[str, Any]
         self.repo_version = 1
+        self.max_redirections = 10
 
         if localInstanceInfo is None:
             self.localInstanceInfo = {"files": {}}
@@ -361,9 +362,18 @@ class Updater:
             return None
 
         # Download file from server.
+        redirect_ctr = 0
         while True:
+
+            if redirect_ctr > self.max_redirections:
+                logging.error("[%s]: Too many redirections during download. Something is wrong with the repository."
+                              % self.fileName)
+                return None
+
             try:
-                url = self.url + "/" + self.repoInstanceLocation + "/" + file_location
+                # Replace "//" with "/" since we are working with relative paths here and get problems when
+                # we have them.
+                url = self.url + ("/" + self.repoInstanceLocation + "/" + file_location).replace("//", "/")
                 with requests.get(url,
                                   verify=True,
                                   stream=True,
@@ -427,11 +437,16 @@ class Updater:
 
             # We have downloaded a symlink => read correct location, reset file handle, and download correct file.
             fileHandle.seek(0)
-            # The symlink accessed via githubs HTTPS API just contains a string of the target file.
-            file_location = fileHandle.readline().decode("ascii").strip()
+            # The symlink accessed via githubs HTTPS API just contains a string of the target file relative to the
+            # current download path.
+            base_path = os.path.dirname(file_location) + "/"
+            if base_path[0] == "/":
+                base_path = base_path[1:]
+            file_location = base_path + fileHandle.readline().decode("ascii").strip()
             fileHandle.seek(0)
 
             logging.info("[%s]: Downloading new location: %s" % (self.fileName, file_location))
+            redirect_ctr += 1
 
         # calculate sha256 hash of the downloaded file
         fileHandle.seek(0)
