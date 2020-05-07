@@ -129,9 +129,9 @@ class Updater:
 
             # check if file already exists
             # => check if file has to be updated
-            if os.path.exists(self.instanceLocation + clientFile):
+            if os.path.exists(os.path.join(self.instanceLocation, clientFile)):
 
-                f = open(self.instanceLocation + clientFile, 'rb')
+                f = open(os.path.join(self.instanceLocation, clientFile), 'rb')
                 sha256Hash = self._sha256File(f)
                 f.close()
 
@@ -181,7 +181,7 @@ class Updater:
 
                 # check if the file is not writable
                 # => cancel update
-                if not os.access(self.instanceLocation + clientFile, os.W_OK):
+                if not os.access(os.path.join(self.instanceLocation, clientFile), os.W_OK):
                     logging.error("[%s]: File '%s' is not writable." % (self.fileName, clientFile))
                     return False
 
@@ -213,26 +213,26 @@ class Updater:
                     for filePart in folderStructure:
 
                         # check if folder exists
-                        if os.path.exists(self.instanceLocation + tempPart + "/" + filePart):
+                        if os.path.exists(os.path.join(self.instanceLocation, tempPart, filePart)):
 
                             # check if folder is not writable
                             # => cancel update
-                            if not os.access(self.instanceLocation + tempPart + "/" + filePart, os.W_OK):
-                                logging.error("[%s]: Folder '.%s/%s' is not writable."
-                                              % (self.fileName, tempPart, filePart))
+                            if not os.access(os.path.join(self.instanceLocation, tempPart, filePart), os.W_OK):
+                                logging.error("[%s]: Folder '%s' is not writable."
+                                              % (self.fileName, os.path.join(tempPart, filePart)))
                                 return False
 
-                            logging.debug("[%s]: Folder '.%s/%s' is writable." % (self.fileName, tempPart, filePart))
+                            logging.debug("[%s]: Folder '%s' is writable."
+                                          % (self.fileName, os.path.join(tempPart, filePart)))
 
-                            tempPart += "/"
-                            tempPart += filePart
+                            tempPart = os.path.join(tempPart, filePart)
 
             # check if the file has to be deleted
             elif filesToUpdate[clientFile] == _FileUpdateType.DELETE:
 
                 # check if the file is not writable
                 # => cancel update
-                if not os.access(self.instanceLocation + clientFile, os.W_OK):
+                if not os.access(os.path.join(self.instanceLocation, clientFile), os.W_OK):
                     logging.error("[%s]: File '%s' is not writable (deletable)."
                                   % (self.fileName, clientFile))
                     return False
@@ -263,27 +263,25 @@ class Updater:
 
                     # check if the sub directory already exists
                     # => if not create it
-                    if not os.path.exists(targetDirectory + tempPart + "/" + folderStructure[i]):
-                        logging.debug("[%s]: Creating directory '%s/%s/%s'."
-                                      % (self.fileName, targetDirectory, tempPart, folderStructure[i]))
+                    if not os.path.exists(os.path.join(targetDirectory, tempPart, folderStructure[i])):
+                        logging.debug("[%s]: Creating directory '%s'."
+                                      % (self.fileName, os.path.join(targetDirectory, tempPart, folderStructure[i])))
 
-                        os.mkdir(targetDirectory + tempPart + "/" + folderStructure[i])
+                        os.mkdir(os.path.join(targetDirectory, tempPart, folderStructure[i]))
 
                     # if the sub directory already exists then check
                     # if it is a directory
                     # => raise an exception if it is not
-                    elif not os.path.isdir(targetDirectory + tempPart + "/" + folderStructure[i]):
+                    elif not os.path.isdir(os.path.join(targetDirectory, tempPart, folderStructure[i])):
                         raise ValueError("Location '%s' already exists and is not a directory."
-                                         % (tempPart + "/" + folderStructure[i]))
+                                         % (os.path.join(tempPart, folderStructure[i])))
 
                     # only log if sub directory already exists
                     else:
-                        logging.debug("[%s]: Directory '%s/%s/%s' already exists."
-                                      % (self.fileName, targetDirectory, tempPart, folderStructure[i]))
+                        logging.debug("[%s]: Directory '%s' already exists."
+                                      % (self.fileName, os.path.join(targetDirectory, tempPart, folderStructure[i])))
 
-                    tempPart += "/"
-                    tempPart += folderStructure[i]
-
+                    tempPart = os.path.join(tempPart, folderStructure[i])
                     i += 1
 
             except Exception as e:
@@ -311,16 +309,17 @@ class Updater:
 
                 tempDir = ""
                 for j in range(i + 1):
-                    tempDir = tempDir + "/" + folderStructure[j]
+                    tempDir = os.path.join(tempDir, folderStructure[j])
 
                 # If the directory to delete is not empty then finish
                 # the whole sub directory delete process.
-                if os.listdir(targetDirectory + tempDir):
+                if os.listdir(os.path.join(targetDirectory, tempDir)):
                     break
 
-                logging.debug("[%s]: Deleting directory '%s/%s/'." % (self.fileName, targetDirectory, tempDir))
+                logging.debug("[%s]: Deleting directory '%s'."
+                              % (self.fileName, os.path.join(targetDirectory, tempDir)))
 
-                os.rmdir(targetDirectory + tempDir)
+                os.rmdir(os.path.join(targetDirectory, tempDir))
                 i -= 1
 
         except Exception as e:
@@ -358,9 +357,7 @@ class Updater:
                 return None
 
             try:
-                # Replace "//" with "/" since we are working with relative paths here and get problems when
-                # we have them.
-                url = self.url + ("/" + self.repoInstanceLocation + "/" + file_location).replace("//", "/")
+                url = os.path.join(self.url, self.repoInstanceLocation, file_location)
                 with requests.get(url,
                                   verify=True,
                                   stream=True,
@@ -426,10 +423,8 @@ class Updater:
             fileHandle.seek(0)
             # The symlink accessed via githubs HTTPS API just contains a string of the target file relative to the
             # current download path.
-            base_path = os.path.dirname(file_location) + "/"
-            if base_path[0] == "/":
-                base_path = base_path[1:]
-            file_location = base_path + fileHandle.readline().decode("ascii").strip()
+            base_path = os.path.dirname(file_location)
+            file_location = os.path.join(base_path, fileHandle.readline().decode("ascii").strip())
             fileHandle.seek(0)
 
             logging.info("[%s]: Downloading new location: %s" % (self.fileName, file_location))
@@ -486,7 +481,7 @@ class Updater:
         # get instance information string from the server
         instanceInfoString = ""
         try:
-            url = self.url + "/" + self.repoInstanceLocation + "/instanceInfo.json"
+            url = os.path.join(self.url, self.repoInstanceLocation, "instanceInfo.json")
             with requests.get(url,
                               verify=True,
                               timeout=self.timeout) as r:
@@ -532,7 +527,7 @@ class Updater:
         # get repository information from the server
         repoInfoString = ""
         try:
-            url = self.url + "/repoInfo.json"
+            url = os.path.join(self.url, "repoInfo.json")
             with requests.get(url,
                               verify=True,
                               timeout=self.timeout) as r:
@@ -732,7 +727,7 @@ class Updater:
                 # remove old file.
                 try:
                     logging.debug("[%s]: Deleting file '%s'." % (self.fileName, fileToUpdate))
-                    os.remove(self.instanceLocation + "/" + fileToUpdate)
+                    os.remove(os.path.join(self.instanceLocation, fileToUpdate))
 
                 except Exception as e:
                     logging.exception("[%s]: Deleting file '%s' failed." % (self.fileName, fileToUpdate))
@@ -751,7 +746,7 @@ class Updater:
             # copy file to correct location
             try:
                 logging.debug("[%s]: Copying file '%s' to AlertR instance directory." % (self.fileName, fileToUpdate))
-                dest = open(self.instanceLocation + "/" + fileToUpdate, 'wb')
+                dest = open(os.path.join(self.instanceLocation, fileToUpdate), 'wb')
                 shutil.copyfileobj(downloadedFileHandles[fileToUpdate], dest)
                 dest.close()
 
@@ -761,7 +756,7 @@ class Updater:
                 return False
 
             # check if the hash of the copied file is correct
-            f = open(self.instanceLocation + "/" + fileToUpdate, 'rb')
+            f = open(os.path.join(self.instanceLocation, fileToUpdate), 'rb')
             sha256Hash = self._sha256File(f)
             f.close()
             if sha256Hash != self.newestFiles[fileToUpdate]:
@@ -775,7 +770,8 @@ class Updater:
                 logging.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 
                 try:
-                    os.chmod(self.instanceLocation + "/" + fileToUpdate, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+                    os.chmod(os.path.join(self.instanceLocation, fileToUpdate),
+                             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
                 except Exception as e:
                     logging.exception("[%s]: Changing permissions of '%s' failed." % (self.fileName, fileToUpdate))
@@ -788,7 +784,8 @@ class Updater:
                 logging.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 
                 try:
-                    os.chmod(self.instanceLocation + "/" + fileToUpdate, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
+                    os.chmod(os.path.join(self.instanceLocation, fileToUpdate),
+                             stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
 
                 except Exception as e:
                     logging.exception("[%s]: Changing permissions of '%s' failed." % (self.fileName, fileToUpdate))
