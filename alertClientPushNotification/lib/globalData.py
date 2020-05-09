@@ -21,7 +21,7 @@ class GlobalData:
         self.version = 0.600  # type: float
 
         # revision of the used client
-        self.rev = 1  # type: int
+        self.rev = 2  # type: int
 
         # name of this client
         self.name = "AlertR Alert Client Push Notification"  # type: str
