@@ -56,7 +56,7 @@ class Updater:
         self.instance = self.globalData.instance
 
         # location of this instance
-        self.instanceLocation = os.path.dirname(os.path.abspath(__file__)) + "/../"
+        self.instanceLocation = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
         # set update server configuration
         if not url.lower().startswith("https"):
