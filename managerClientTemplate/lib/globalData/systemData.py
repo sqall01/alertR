@@ -8,8 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
-import logging
-from typing import Dict
+from typing import Dict, List
 from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option
 
 
@@ -51,15 +50,75 @@ class SystemData:
             raise ValueError("Node %d not of correct type for corresponding alert %d."
                              % (alert.nodeId, alert.alertId))
 
-    def update_option(self, option: Option):
+    def _manager_sanity_check(self, manager: Manager):
+        # Does corresponding node exist?
+        if manager.nodeId not in self._nodes.keys():
+            raise ValueError("Node %d for corresponding manager %d does not exist."
+                             % (manager.nodeId, manager.managerId))
+
+        # Does corresponding node have correct type?
+        if self._nodes[manager.managerId].nodeType.lower() != "manager":
+            raise ValueError("Node %d not of correct type for corresponding manager %d."
+                             % (manager.nodeId, manager.managerId))
+
+    def _sensor_sanity_check(self, sensor: Sensor):
+        # Does corresponding node exist?
+        if sensor.nodeId not in self._nodes.keys():
+            raise ValueError("Node %d for corresponding sensor %d does not exist."
+                             % (sensor.nodeId, sensor.sensorId))
+
+        # Does corresponding node have correct type?
+        if self._nodes[sensor.sensorId].nodeType.lower() != "sensor":
+            raise ValueError("Node %d not of correct type for corresponding sensor %d."
+                             % (sensor.nodeId, sensor.sensorId))
+
+    def get_alerts_list(self) -> List[Alert]:
         """
-        Updates the given option data.
-        :param option:
-        :return: success of failure
+        Gets list of all alert objects.
+        :return: List of objects.
         """
         with self._data_lock:
-            # Just change value, does not make a difference if it already exists or not.
-            self._options[option.type] = option.value
+            return list(self._alerts.values())
+
+    def get_alert_levels_list(self) -> List[AlertLevel]:
+        """
+        Gets list of all alert level objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            return list(self._alert_levels.values())
+
+    def get_managers_list(self) -> List[Manager]:
+        """
+        Gets list of all manager objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            return list(self._managers.values())
+
+    def get_nodes_list(self) -> List[Node]:
+        """
+        Gets list of all node objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            return list(self._nodes.values())
+
+    def get_options_list(self) -> List[Option]:
+        """
+        Gets list of all option objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            return list(self._options.values())
+
+    def get_sensors_list(self) -> List[Sensor]:
+        """
+        Gets list of all sensor objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            return list(self._sensors.values())
 
     def update_alert(self, alert: Alert):
         """
@@ -99,6 +158,100 @@ class SystemData:
                 # to make sure others can work on the same object.
                 self._alert_levels[alert_level.level].deepCopy(alert_level)
 
+    def update_manager(self, manager: Manager):
+        """
+        Updates the given manager data.
+        :param manager:
+        """
+        with self._data_lock:
+
+            # Add manager object if it does not exist yet.
+            if manager.managerId not in self._managers.keys():
+                self._manager_sanity_check(manager)
+                self._managers[manager.managerId] = manager
+
+            # Update manager object data.
+            else:
+                self._manager_sanity_check(manager)
+
+                # Do update of data instead of just using new manager object
+                # to make sure others can work on the same object.
+                self._managers[manager.managerId].deepCopy(manager)
+
+    def update_node(self, node: Node):
+        """
+        Updates the given node data.
+        :param node:
+        """
+        with self._data_lock:
+
+            # Add node object if it does not exist yet.
+            if node.nodeId not in self._nodes.keys():
+                self._nodes[node.nodeId] = node
+
+            # Update node object data.
+            else:
+
+                # If the type of the node has changed remove related objects.
+                curr_node = self._nodes[node.nodeId]
+                if curr_node.nodeType != node.nodeType:
+                    if curr_node.nodeType.lower() == "alert":
+                        to_remove = []
+                        for alert_id, alert in self._alerts.items():
+                            if alert.nodeId == curr_node.nodeId:
+                                to_remove.append(alert_id)
+                        for alert_id in to_remove:
+                            del self._alerts[alert_id]
+
+                    elif curr_node.nodeType.lower() == "manager":
+                        to_remove = []
+                        for manager_id, manager in self._managers.items():
+                            if manager.nodeId == curr_node.nodeId:
+                                to_remove.append(manager_id)
+                        for manager_id in to_remove:
+                            del self._managers[manager_id]
+
+                    elif curr_node.nodeType.lower() == "sensor":
+                        to_remove = []
+                        for sensor_id, sensor in self._sensors.items():
+                            if sensor.nodeId == curr_node.nodeId:
+                                to_remove.append(sensor_id)
+                        for sensor_id in to_remove:
+                            del self._sensors[sensor_id]
+
+                # Do update of data instead of just using new node object
+                # to make sure others can work on the same object.
+                self._nodes[node.nodeId].deepCopy(node)
+
+    def update_option(self, option: Option):
+        """
+        Updates the given option data.
+        :param option:
+        :return: success of failure
+        """
+        with self._data_lock:
+            # Just change value, does not make a difference if it already exists or not.
+            self._options[option.type] = option.value
+
+    def update_sensor(self, sensor: Sensor):
+        """
+        Updates the given sensor data.
+        :param sensor:
+        """
+        with self._data_lock:
+
+            # Add sensor object if it does not exist yet.
+            if sensor.sensorId not in self._sensors.keys():
+                self._sensor_sanity_check(sensor)
+                self._sensors[sensor.sensorId] = sensor
+
+            # Update sensor object data.
+            else:
+                self._sensor_sanity_check(sensor)
+
+                # Do update of data instead of just using new sensor object
+                # to make sure others can work on the same object.
+                self._sensors[sensor.sensorId].deepCopy(sensor)
 
 
 
@@ -109,3 +262,4 @@ class SystemData:
 # * lock data when accessed
 # * give interfaces to get copy of data (perhaps also list of Node/Alert/... to be compatible with old managers?)
 # * test cases to check if it works
+#   * edge case node changes type
