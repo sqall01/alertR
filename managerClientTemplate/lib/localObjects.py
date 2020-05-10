@@ -22,6 +22,11 @@ class Option:
         self.type = None
         self.value = None
 
+    def deepCopy(self, option):
+        self.type = option.type
+        self.value = option.value
+        return self
+
 
 # this class represents an node/client of the alert system
 # which can be either a sensor, alert or manager
@@ -38,15 +43,6 @@ class Node:
         self.username = None
         self.persistent = None
 
-        # used by mobile manager only:
-        # newest known version
-        self.newestVersion = -1.0
-        self.newestRev = -1
-
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
     # This function copies all attributes of the given node to this object.
     def deepCopy(self, node):
         self.nodeId = node.nodeId
@@ -58,6 +54,7 @@ class Node:
         self.rev = node.rev
         self.username = node.username
         self.persistent = node.persistent
+        return self
 
 
 # this class represents a sensor client of the alert system
@@ -75,10 +72,6 @@ class Sensor:
         self.dataType = None
         self.data = None
 
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
     # This function copies all attributes of the given sensor to this object.
     def deepCopy(self, sensor):
         self.nodeId = sensor.nodeId
@@ -91,6 +84,7 @@ class Sensor:
         self.state = sensor.state
         self.dataType = sensor.dataType
         self.data = sensor.data
+        return self
 
 
 # this class represents a manager client of the alert system
@@ -101,15 +95,12 @@ class Manager:
         self.managerId = None
         self.description = None
 
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
     # This function copies all attributes of the given manager to this object.
     def deepCopy(self, manager):
         self.nodeId = manager.nodeId
         self.managerId = manager.managerId
         self.description = manager.description
+        return self
 
 
 # this class represents an alert client of the alert system
@@ -122,10 +113,6 @@ class Alert:
         self.alertLevels = list()
         self.description = None
 
-        # flag that marks this object as checked
-        # (is used to verify if this object is still connected to the server)
-        self.checked = False
-
     # This function copies all attributes of the given alert to this object.
     def deepCopy(self, alert):
         self.nodeId = alert.nodeId
@@ -133,6 +120,7 @@ class Alert:
         self.remoteAlertId = alert.remoteAlertId
         self.alertLevels = list(alert.alertLevels)
         self.description = alert.description
+        return self
 
 
 # this class represents a triggered sensor alert of the alert system
@@ -191,3 +179,4 @@ class AlertLevel:
         self.name = alert_level.name
         self.triggerAlways = alert_level.triggerAlways
         self.rulesActivated = alert_level.rulesActivated
+        return self

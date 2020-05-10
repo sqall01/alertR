@@ -46,9 +46,15 @@ class SystemData:
                              % (alert.nodeId, alert.alertId))
 
         # Does corresponding node have correct type?
-        if self._nodes[alert.alertId].nodeType.lower() != "alert":
+        if self._nodes[alert.nodeId].nodeType.lower() != "alert":
             raise ValueError("Node %d not of correct type for corresponding alert %d."
                              % (alert.nodeId, alert.alertId))
+
+        # Do the alert levels for this alert exist?
+        for alert_level in alert.alertLevels:
+            if alert_level not in self._alert_levels.keys():
+                raise ValueError("Alert Level %d does not exist for alert %d."
+                                 % (alert_level, alert.alertId))
 
     def _manager_sanity_check(self, manager: Manager):
         # Does corresponding node exist?
@@ -57,7 +63,7 @@ class SystemData:
                              % (manager.nodeId, manager.managerId))
 
         # Does corresponding node have correct type?
-        if self._nodes[manager.managerId].nodeType.lower() != "manager":
+        if self._nodes[manager.nodeId].nodeType.lower() != "manager":
             raise ValueError("Node %d not of correct type for corresponding manager %d."
                              % (manager.nodeId, manager.managerId))
 
@@ -68,9 +74,15 @@ class SystemData:
                              % (sensor.nodeId, sensor.sensorId))
 
         # Does corresponding node have correct type?
-        if self._nodes[sensor.sensorId].nodeType.lower() != "sensor":
+        if self._nodes[sensor.nodeId].nodeType.lower() != "sensor":
             raise ValueError("Node %d not of correct type for corresponding sensor %d."
                              % (sensor.nodeId, sensor.sensorId))
+
+        # Do the alert levels for this alert exist?
+        for alert_level in sensor.alertLevels:
+            if alert_level not in self._alert_levels.keys():
+                raise ValueError("Alert Level %d does not exist for sensor %d."
+                                 % (alert_level, sensor.sensorId))
 
     def get_alerts_list(self) -> List[Alert]:
         """
@@ -231,7 +243,7 @@ class SystemData:
         """
         with self._data_lock:
             # Just change value, does not make a difference if it already exists or not.
-            self._options[option.type] = option.value
+            self._options[option.type] = option
 
     def update_sensor(self, sensor: Sensor):
         """
