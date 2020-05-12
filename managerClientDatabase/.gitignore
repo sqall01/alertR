@@ -1,5 +1,4 @@
 .idea/
-logs/
 *.pyc
 lib/**/__pycache__/
 update.json

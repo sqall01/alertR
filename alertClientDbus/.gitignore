@@ -1,5 +1,4 @@
 .idea/
-tests/
 logs/
 *.pyc
 lib/**/__pycache__/
