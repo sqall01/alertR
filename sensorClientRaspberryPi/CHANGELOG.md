@@ -1,3 +1,10 @@
+## 0.600-2
+
+Features:
+
+* Fixed redirection bug in updater/installer
+* Fixed interrupt counting
+
 ## 0.600-1
 
 Features:
