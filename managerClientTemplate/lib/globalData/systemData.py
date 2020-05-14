@@ -137,17 +137,16 @@ class SystemData:
         Updates the given alert data.
         :param alert:
         """
+        self._alert_sanity_check(alert)
+
         with self._data_lock:
 
             # Add alert object if it does not exist yet.
             if alert.alertId not in self._alerts.keys():
-                self._alert_sanity_check(alert)
                 self._alerts[alert.alertId] = alert
 
             # Update alert object data.
             else:
-                self._alert_sanity_check(alert)
-
                 # Do update of data instead of just using new alert object
                 # to make sure others can work on the same object.
                 self._alerts[alert.alertId].deepCopy(alert)
@@ -165,7 +164,6 @@ class SystemData:
 
             # Update alert level object data.
             else:
-
                 # Do update of data instead of just using new alert level object
                 # to make sure others can work on the same object.
                 self._alert_levels[alert_level.level].deepCopy(alert_level)
@@ -175,17 +173,16 @@ class SystemData:
         Updates the given manager data.
         :param manager:
         """
+        self._manager_sanity_check(manager)
+
         with self._data_lock:
 
             # Add manager object if it does not exist yet.
             if manager.managerId not in self._managers.keys():
-                self._manager_sanity_check(manager)
                 self._managers[manager.managerId] = manager
 
             # Update manager object data.
             else:
-                self._manager_sanity_check(manager)
-
                 # Do update of data instead of just using new manager object
                 # to make sure others can work on the same object.
                 self._managers[manager.managerId].deepCopy(manager)
@@ -250,17 +247,16 @@ class SystemData:
         Updates the given sensor data.
         :param sensor:
         """
+        self._sensor_sanity_check(sensor)
+
         with self._data_lock:
 
             # Add sensor object if it does not exist yet.
             if sensor.sensorId not in self._sensors.keys():
-                self._sensor_sanity_check(sensor)
                 self._sensors[sensor.sensorId] = sensor
 
             # Update sensor object data.
             else:
-                self._sensor_sanity_check(sensor)
-
                 # Do update of data instead of just using new sensor object
                 # to make sure others can work on the same object.
                 self._sensors[sensor.sensorId].deepCopy(sensor)
