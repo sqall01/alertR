@@ -1,9 +1,9 @@
-from unittest import TestCase
+from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
 from lib.localObjects import Node, Alert
 
 
-class TestSystemDataAlert(TestCase):
+class TestSystemDataAlert(TestSystemDataCore):
 
     def test_invalid_alert_adding(self):
         """
@@ -83,3 +83,61 @@ class TestSystemDataAlert(TestCase):
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
+
+    def test_update_alert(self):
+        system_data = self._create_system_data()
+
+        # Create changes that should be copied to the stored object.
+        new_alerts = []
+        for i in range(len(self.alerts)):
+            temp_alert = Alert().deepCopy(self.alerts[i])
+            temp_alert.description = "new_alert_" + str(i + 1)
+            temp_alert.remoteAlertId = i
+            # We started the alert levels in our test data with level 1.
+            temp_alert.alertLevels = [(i % len(self.alert_levels)) + 1]
+            new_alerts.append(temp_alert)
+
+        for i in range(len(new_alerts)):
+
+            # Update store with new object data.
+            temp_alert = new_alerts[i]
+            system_data.update_alert(temp_alert)
+
+            gt_storage = []
+            for j in range(i+1):
+                gt_storage.append(new_alerts[j])
+            for j in range(i+1, len(new_alerts)):
+                gt_storage.append(self.alerts[j])
+
+            stored_alerts = system_data.get_alerts_list()
+            if len(stored_alerts) != len(gt_storage):
+                self.fail("Wrong number of objects stored.")
+
+            already_processed = []
+            for stored_alert in stored_alerts:
+                found = False
+                for gt_alert in gt_storage:
+                    if stored_alert.nodeId == gt_alert.nodeId and stored_alert.alertId == gt_alert.alertId:
+                        found = True
+
+                        # Check which objects we already processed to see if we hold an object with
+                        # duplicated values.
+                        if gt_alert in already_processed:
+                            self.fail()
+                        already_processed.append(gt_alert)
+
+                        # Only the content of the object should have changed, not the object itself.
+                        if stored_alert == gt_alert:
+                            self.fail("Store changed object not content of existing object.")
+
+                        if (stored_alert.remoteAlertId != gt_alert.remoteAlertId
+                                or stored_alert.description != gt_alert.description
+                                or any(map(lambda x: x not in gt_alert.alertLevels, stored_alert.alertLevels))
+                                or any(map(lambda x: x not in stored_alert.alertLevels, gt_alert.alertLevels))):
+
+                            self.fail("Stored object does not have correct content.")
+
+                        break
+
+                if not found:
+                    self.fail("Not able to find modified alert object.")
