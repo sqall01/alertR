@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
-from typing import Dict, List
+from typing import Dict, List, Optional
 from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option
 
 
@@ -84,6 +84,17 @@ class SystemData:
                 raise ValueError("Alert Level %d does not exist for sensor %d."
                                  % (alert_level, sensor.sensorId))
 
+    def get_alert_by_id(self, alert_id: int) -> Optional[Alert]:
+        """
+        Gets Alert object corresponding to given id.
+        :param alert_id:
+        :return:
+        """
+        if alert_id not in self._alerts.keys():
+            return None
+        with self._data_lock:
+            return self._alerts[alert_id]
+
     def get_alerts_list(self) -> List[Alert]:
         """
         Gets list of all alert objects.
@@ -92,6 +103,17 @@ class SystemData:
         with self._data_lock:
             return list(self._alerts.values())
 
+    def get_alert_level_by_level(self, level: int) -> Optional[AlertLevel]:
+        """
+        Gets AlertLevel object corresponding to given id.
+        :param level:
+        :return:
+        """
+        if level not in self._alert_levels.keys():
+            return None
+        with self._data_lock:
+            return self._alert_levels[level]
+
     def get_alert_levels_list(self) -> List[AlertLevel]:
         """
         Gets list of all alert level objects.
@@ -99,6 +121,17 @@ class SystemData:
         """
         with self._data_lock:
             return list(self._alert_levels.values())
+
+    def get_manager_by_id(self, manager_id: int) -> Optional[Manager]:
+        """
+        Gets Manager object corresponding to given id.
+        :param manager_id:
+        :return:
+        """
+        if manager_id not in self._managers.keys():
+            return None
+        with self._data_lock:
+            return self._managers[manager_id]
 
     def get_managers_list(self) -> List[Manager]:
         """
@@ -116,6 +149,17 @@ class SystemData:
         with self._data_lock:
             return list(self._nodes.values())
 
+    def get_node_by_id(self, node_id: int) -> Optional[Node]:
+        """
+        Gets Node object corresponding to given id.
+        :param node_id:
+        :return:
+        """
+        if node_id not in self._nodes.keys():
+            return None
+        with self._data_lock:
+            return self._nodes[node_id]
+
     def get_options_list(self) -> List[Option]:
         """
         Gets list of all option objects.
@@ -123,6 +167,17 @@ class SystemData:
         """
         with self._data_lock:
             return list(self._options.values())
+
+    def get_sensor_by_id(self, sensor_id: int) -> Optional[Sensor]:
+        """
+        Gets Sensor object corresponding to given id.
+        :param sensor_id:
+        :return:
+        """
+        if sensor_id not in self._sensors.keys():
+            return None
+        with self._data_lock:
+            return self._sensors[sensor_id]
 
     def get_sensors_list(self) -> List[Sensor]:
         """
