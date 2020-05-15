@@ -5,13 +5,52 @@ from lib.localObjects import Node, Alert
 
 class TestSystemDataAlert(TestSystemDataCore):
 
-    def test_invalid_alert_adding(self):
-        """
-        Tests sanity checks for Alert object adding.
-        """
-        # Test invalid node type.
-        system_data = SystemData()
+    def _invalid_alert_level_missing(self, system_data: SystemData):
+        # Test non-existing alert level.
+        node = Node()
+        node.nodeId = 1
+        node.hostname = "hostname_1"
+        node.nodeType = "alert"
+        node.instance = "instance_1"
+        node.connected = 1
+        node.version = 1.0
+        node.rev = 0
+        node.username = "username_1"
+        node.persistent = 1
+        system_data.update_node(node)
 
+        alert = Alert()
+        alert.nodeId = 1
+        alert.alertId = 1
+        alert.remoteAlertId = 1
+        alert.alertLevels = [99]
+        alert.description = "alert_1"
+        is_exception = False
+        try:
+            system_data.update_alert(alert)
+        except ValueError:
+            is_exception = True
+        if not is_exception:
+            self.fail("Exception because of wrong node type expected.")
+
+    def _invalid_node_missing(self, system_data: SystemData):
+        # Test non-existing node.
+        alert = Alert()
+        alert.nodeId = 99
+        alert.alertId = 1
+        alert.remoteAlertId = 1
+        alert.alertLevels = []
+        alert.description = "alert_1"
+        is_exception = False
+        try:
+            system_data.update_alert(alert)
+        except ValueError:
+            is_exception = True
+        if not is_exception:
+            self.fail("Exception because of non-existing node expected.")
+
+    def _invalid_wrong_node_type(self, system_data: SystemData):
+        # Test wrong node type.
         node = Node()
         node.nodeId = 1
         node.hostname = "hostname_1"
@@ -38,51 +77,31 @@ class TestSystemDataAlert(TestSystemDataCore):
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
 
+    def test_invalid_alert_adding(self):
+        """
+        Tests sanity checks for Alert object adding.
+        """
         system_data = SystemData()
+        self._invalid_wrong_node_type(system_data)
 
-        # Test non-existing node.
-        alert = Alert()
-        alert.nodeId = 1
-        alert.alertId = 1
-        alert.remoteAlertId = 1
-        alert.alertLevels = []
-        alert.description = "alert_1"
-        is_exception = False
-        try:
-            system_data.update_alert(alert)
-        except ValueError:
-            is_exception = True
-        if not is_exception:
-            self.fail("Exception because of non-existing node expected.")
-
-        # Test non-existing alert level.
         system_data = SystemData()
+        self._invalid_node_missing(system_data)
 
-        node = Node()
-        node.nodeId = 1
-        node.hostname = "hostname_1"
-        node.nodeType = "alert"
-        node.instance = "instance_1"
-        node.connected = 1
-        node.version = 1.0
-        node.rev = 0
-        node.username = "username_1"
-        node.persistent = 1
-        system_data.update_node(node)
+        system_data = SystemData()
+        self._invalid_alert_level_missing(system_data)
 
-        alert = Alert()
-        alert.nodeId = 1
-        alert.alertId = 1
-        alert.remoteAlertId = 1
-        alert.alertLevels = [1]
-        alert.description = "alert_1"
-        is_exception = False
-        try:
-            system_data.update_alert(alert)
-        except ValueError:
-            is_exception = True
-        if not is_exception:
-            self.fail("Exception because of wrong node type expected.")
+    def test_invalid_alert_updating(self):
+        """
+        Tests sanity checks for Alert object updating.
+        """
+        system_data = self._create_system_data()
+        self._invalid_wrong_node_type(system_data)
+
+        system_data = self._create_system_data()
+        self._invalid_node_missing(system_data)
+
+        system_data = self._create_system_data()
+        self._invalid_alert_level_missing(system_data)
 
     def test_update_alert(self):
         system_data = self._create_system_data()
