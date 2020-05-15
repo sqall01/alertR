@@ -208,11 +208,11 @@ class MsgChecker:
     @staticmethod
     def check_alert_delay(alertDelay: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(alertDelay, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "alertDelay not valid"
 
         return None
@@ -221,11 +221,11 @@ class MsgChecker:
     @staticmethod
     def check_alert_id(alertId: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(alertId, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "alertId not valid"
 
         return None
@@ -234,11 +234,11 @@ class MsgChecker:
     @staticmethod
     def check_alert_level(alertLevel: int):
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(alertLevel, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "alertLevel not valid"
 
         return None
@@ -247,13 +247,13 @@ class MsgChecker:
     @staticmethod
     def check_alert_levels(alertLevels: List[int]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(alertLevels, list):
-            isCorrect = False
+            is_correct = False
         elif not all(isinstance(item, int) for item in alertLevels):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "alertLevels not valid"
 
         return None
@@ -262,11 +262,11 @@ class MsgChecker:
     @staticmethod
     def check_change_state(changeState: bool) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(changeState, bool):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "changeState not valid"
 
         return None
@@ -275,13 +275,13 @@ class MsgChecker:
     @staticmethod
     def check_connected(connected: int):
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(connected, int):
-            isCorrect = False
+            is_correct = False
         elif connected != 0 and connected != 1:
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "connected not valid"
 
         return None
@@ -290,11 +290,11 @@ class MsgChecker:
     @staticmethod
     def check_description(description: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(description, str):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "description not valid"
 
         return None
@@ -303,11 +303,11 @@ class MsgChecker:
     @staticmethod
     def check_has_latest_data(hasLatestData: bool) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(hasLatestData, bool):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "hasLatestData not valid"
 
         return None
@@ -316,11 +316,11 @@ class MsgChecker:
     @staticmethod
     def check_has_optional_data(hasOptionalData: bool) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(hasOptionalData, bool):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "hasOptionalData not valid"
 
         return None
@@ -329,11 +329,11 @@ class MsgChecker:
     @staticmethod
     def check_hostname(hostname: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(hostname, str):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "hostname not valid"
 
         return None
@@ -342,11 +342,11 @@ class MsgChecker:
     @staticmethod
     def check_instance(instance: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(instance, str):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "instance not valid"
 
         return None
@@ -355,11 +355,11 @@ class MsgChecker:
     @staticmethod
     def check_last_state_updated(lastStateUpdated: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(lastStateUpdated, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "lastStateUpdated not valid"
 
         return None
@@ -368,11 +368,11 @@ class MsgChecker:
     @staticmethod
     def check_manager_id(managerId: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(managerId, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "managerId not valid"
 
         return None
@@ -381,11 +381,11 @@ class MsgChecker:
     @staticmethod
     def check_name(name: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(name, str):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "name not valid"
 
         return None
@@ -394,11 +394,11 @@ class MsgChecker:
     @staticmethod
     def check_node_id(nodeId: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(nodeId, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "nodeId not valid"
 
         return None
@@ -407,15 +407,15 @@ class MsgChecker:
     @staticmethod
     def check_node_type(nodeType: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(nodeType, str):
-            isCorrect = False
+            is_correct = False
 
         nodeTypes = {"alert", "manager", "sensor", "server"}
         if nodeType not in nodeTypes:
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "nodeType not valid"
 
         return None
@@ -424,14 +424,14 @@ class MsgChecker:
     @staticmethod
     def check_optional_data(optionalData: Dict[str, Any]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(optionalData, dict):
-            isCorrect = False
+            is_correct = False
         if "message" in optionalData.keys():
             if MsgChecker.check_optional_data_message(optionalData["message"]) is not None:
-                isCorrect = False
+                is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "optionalData not valid"
 
         return None
@@ -440,11 +440,11 @@ class MsgChecker:
     @staticmethod
     def check_optional_data_message(message: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(message, str):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "optionalData message not valid"
 
         return None
@@ -453,14 +453,14 @@ class MsgChecker:
     @staticmethod
     def check_option_type(optionType: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(optionType, str):
-            isCorrect = False
+            is_correct = False
 
         if optionType != "alertSystemActive":
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "optionType not valid"
 
         return None
@@ -469,14 +469,14 @@ class MsgChecker:
     @staticmethod
     def check_option_value(value: float) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(value, float):
-            isCorrect = False
+            is_correct = False
 
         if not 0.0 <= value <= 1.0:
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "value not valid"
 
         return None
@@ -485,13 +485,13 @@ class MsgChecker:
     @staticmethod
     def check_persistent(persistent: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(persistent, int):
-            isCorrect = False
+            is_correct = False
         elif persistent != 0 and persistent != 1:
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "persistent not valid"
 
         return None
@@ -500,11 +500,11 @@ class MsgChecker:
     @staticmethod
     def check_remote_alert_id(remoteAlertId: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(remoteAlertId, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "remoteAlertId not valid"
 
         return None
@@ -513,11 +513,11 @@ class MsgChecker:
     @staticmethod
     def check_remote_sensor_id(remoteSensorId: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(remoteSensorId, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "remoteSensorId not valid"
 
         return None
@@ -526,11 +526,11 @@ class MsgChecker:
     @staticmethod
     def check_rev(rev: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(rev, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "rev not valid"
 
         return None
@@ -539,11 +539,11 @@ class MsgChecker:
     @staticmethod
     def check_rules_activated(rulesActivated: bool) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(rulesActivated, bool):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "rulesActivated not valid"
 
         return None
@@ -552,15 +552,15 @@ class MsgChecker:
     @staticmethod
     def check_sensor_data(data: Any, dataType: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if dataType == SensorDataType.NONE and data is not None:
-            isCorrect = False
+            is_correct = False
         elif dataType == SensorDataType.INT and not isinstance(data, int):
-            isCorrect = False
+            is_correct = False
         elif dataType == SensorDataType.FLOAT and not isinstance(data, float):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "data not valid"
 
         return None
@@ -569,15 +569,15 @@ class MsgChecker:
     @staticmethod
     def check_sensor_data_type(dataType: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(dataType, int):
-            isCorrect = False
+            is_correct = False
         elif not (SensorDataType.NONE == dataType
                   or SensorDataType.INT == dataType
                   or SensorDataType.FLOAT == dataType):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "dataType not valid"
 
         return None
@@ -586,11 +586,11 @@ class MsgChecker:
     @staticmethod
     def check_sensor_id(sensorId: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(sensorId, int):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "sensorId not valid"
 
         return None
@@ -612,13 +612,13 @@ class MsgChecker:
     @staticmethod
     def check_state(state: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(state, int):
-            isCorrect = False
+            is_correct = False
         elif state != 0 and state != 1:
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "state not valid"
 
         return None
@@ -627,50 +627,57 @@ class MsgChecker:
     @staticmethod
     def check_status_alert_levels_list(alertLevels: List[Dict[str, Any]]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(alertLevels, list):
-            isCorrect = False
+            is_correct = False
+
+        alert_level_ids = set()
 
         # Check each alertLevel if correct.
         for alertLevel in alertLevels:
 
             if not isinstance(alertLevel, dict):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "alertLevel" not in alertLevel.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_alert_level(alertLevel["alertLevel"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "name" not in alertLevel.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_name(alertLevel["name"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "triggerAlways" not in alertLevel.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_trigger_always(alertLevel["triggerAlways"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "rulesActivated" not in alertLevel.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_rules_activated(alertLevel["rulesActivated"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
-        if not isCorrect:
+            if alertLevel["alertLevel"] in alert_level_ids:
+                is_correct = False
+                break
+            alert_level_ids.add(alertLevel["alertLevel"])
+
+        if not is_correct:
             return "alertLevels list not valid"
 
         return None
@@ -679,58 +686,65 @@ class MsgChecker:
     @staticmethod
     def check_status_alerts_list(alerts: List[Dict[str, Any]]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(alerts, list):
-            isCorrect = False
+            is_correct = False
+
+        alert_ids = set()
 
         # Check each alert if correct.
         for alert in alerts:
 
             if not isinstance(alert, dict):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "nodeId" not in alert.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_node_id(alert["nodeId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "alertId" not in alert.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_alert_id(alert["alertId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "description" not in alert.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_description(alert["description"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "alertLevels" not in alert.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_alert_levels(alert["alertLevels"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "remoteAlertId" not in alert.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_remote_alert_id(alert["remoteAlertId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
-        if not isCorrect:
+            if alert["alertId"] in alert_ids:
+                is_correct = False
+                break
+            alert_ids.add(alert["alertId"])
+
+        if not is_correct:
             return "alerts list not valid"
 
         return None
@@ -739,42 +753,49 @@ class MsgChecker:
     @staticmethod
     def check_status_managers_list(managers: List[Dict[str, Any]]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(managers, list):
-            isCorrect = False
+            is_correct = False
+
+        manager_ids = set()
 
         # Check each manager if correct.
         for manager in managers:
 
             if not isinstance(manager, dict):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "nodeId" not in manager.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_node_id(manager["nodeId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "managerId" not in manager.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_manager_id(manager["managerId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "description" not in manager.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_description(manager["description"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
-        if not isCorrect:
+            if manager["managerId"] in manager_ids:
+                is_correct = False
+                break
+            manager_ids.add(manager["managerId"])
+
+        if not is_correct:
             return "managers list not valid"
 
         return None
@@ -783,90 +804,97 @@ class MsgChecker:
     @staticmethod
     def check_status_nodes_list(nodes: List[Dict[str, Any]]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(nodes, list):
-            isCorrect = False
+            is_correct = False
+
+        node_ids = set()
 
         # Check each option if correct.
         for node in nodes:
 
             if not isinstance(node, dict):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "nodeId" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_node_id(node["nodeId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "hostname" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_hostname(node["hostname"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "nodeType" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_node_type(node["nodeType"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "instance" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_instance(node["instance"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "connected" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_connected(node["connected"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "version" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_version(node["version"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "rev" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_rev(node["rev"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "username" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_username(node["username"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "persistent" not in node.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_persistent(node["persistent"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
-        if not isCorrect:
+            if node["nodeId"] in node_ids:
+                is_correct = False
+                break
+            node_ids.add(node["nodeId"])
+
+        if not is_correct:
             return "nodes list not valid"
 
         return None
@@ -875,34 +903,34 @@ class MsgChecker:
     @staticmethod
     def check_status_options_list(options: List[Dict[str, Any]]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(options, list):
-            isCorrect = False
+            is_correct = False
 
         # Check each option if correct.
         for option in options:
 
             if not isinstance(option, dict):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "type" not in option.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_option_type(option["type"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "value" not in option.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_option_value(option["value"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
-        if not isCorrect:
+        if not is_correct:
             return "options list not valid"
 
         return None
@@ -911,99 +939,106 @@ class MsgChecker:
     @staticmethod
     def check_status_sensors_list(sensors: List[Dict[str, Any]]) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(sensors, list):
-            isCorrect = False
+            is_correct = False
+
+        sensor_ids = set()
 
         # Check each sensor if correct.
         for sensor in sensors:
 
             if not isinstance(sensor, dict):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "nodeId" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_node_id(sensor["nodeId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "sensorId" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_sensor_id(sensor["sensorId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "alertDelay" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_alert_delay(sensor["alertDelay"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "alertLevels" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_alert_levels(sensor["alertLevels"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "description" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_description(sensor["description"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "lastStateUpdated" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_last_state_updated(sensor["lastStateUpdated"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "state" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_state(sensor["state"]):
-                isCorrect = False
+                is_correct = False
                 break
 
             if "remoteSensorId" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_remote_sensor_id(sensor["remoteSensorId"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if "dataType" not in sensor.keys():
-                isCorrect = False
+                is_correct = False
                 break
 
             elif MsgChecker.check_sensor_data_type(sensor["dataType"]) is not None:
-                isCorrect = False
+                is_correct = False
                 break
 
             if sensor["dataType"] != SensorDataType.NONE:
                 if "data" not in sensor.keys():
-                    isCorrect = False
+                    is_correct = False
                     break
 
                 elif MsgChecker.check_sensor_data(sensor["data"], sensor["dataType"]) is not None:
-                    isCorrect = False
+                    is_correct = False
                     break
 
-        if not isCorrect:
+            if sensor["sensorId"] in sensor_ids:
+                is_correct = False
+                break
+            sensor_ids.add(sensor["sensorId"])
+
+        if not is_correct:
             return "sensors list not valid"
 
         return None
@@ -1012,13 +1047,13 @@ class MsgChecker:
     @staticmethod
     def check_trigger_always(triggerAlways: int) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(triggerAlways, int):
-            isCorrect = False
+            is_correct = False
         elif triggerAlways != 0 and triggerAlways != 1:
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "triggerAlways not valid"
 
         return None
@@ -1027,11 +1062,11 @@ class MsgChecker:
     @staticmethod
     def check_username(username: str) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(username, str):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "username not valid"
 
         return None
@@ -1040,11 +1075,11 @@ class MsgChecker:
     @staticmethod
     def check_version(version: float) -> Optional[str]:
 
-        isCorrect = True
+        is_correct = True
         if not isinstance(version, float):
-            isCorrect = False
+            is_correct = False
 
-        if not isCorrect:
+        if not is_correct:
             return "version not valid"
 
         return None
