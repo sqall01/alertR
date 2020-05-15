@@ -150,7 +150,7 @@ class TestSystemDataAlert(TestSystemDataCore):
 
                         # Only the content of the object should have changed, not the object itself.
                         if stored_alert == gt_alert:
-                            self.fail("Store changed object not content of existing object.")
+                            self.fail("Store changed object, not content of existing object.")
 
                         if (stored_alert.remoteAlertId != gt_alert.remoteAlertId
                                 or stored_alert.description != gt_alert.description
@@ -162,4 +162,4 @@ class TestSystemDataAlert(TestSystemDataCore):
                         break
 
                 if not found:
-                    self.fail("Not able to find modified alert object.")
+                    self.fail("Not able to find modified Alert object.")

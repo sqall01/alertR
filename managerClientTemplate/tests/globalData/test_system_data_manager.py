@@ -109,7 +109,7 @@ class TestSystemDataManager(TestSystemDataCore):
 
                         # Only the content of the object should have changed, not the object itself.
                         if stored_manager == gt_manager:
-                            self.fail("Store changed object not content of existing object.")
+                            self.fail("Store changed object, not content of existing object.")
 
                         if stored_manager.description != gt_manager.description:
                             self.fail("Stored object does not have correct content.")
@@ -117,4 +117,4 @@ class TestSystemDataManager(TestSystemDataCore):
                         break
 
                 if not found:
-                    self.fail("Not able to find modified manager object.")
+                    self.fail("Not able to find modified Manager object.")

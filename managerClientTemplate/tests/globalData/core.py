@@ -139,7 +139,7 @@ class TestSystemDataCore(TestCase):
         node = Node()
         node.nodeId = 6
         node.hostname = "hostname_6"
-        node.nodeType = "sensor"
+        node.nodeType = "manager"
         node.instance = "instance_6"
         node.connected = 1
         node.version = 1.0
@@ -149,18 +149,12 @@ class TestSystemDataCore(TestCase):
         nodes.append(node)
         system_data.update_node(Node().deepCopy(node))
 
-        sensor = Sensor()
-        sensor.nodeId = 6
-        sensor.sensorId = 1
-        sensor.remoteSensorId = 1
-        sensor.alertDelay = 0
-        sensor.alertLevels = [1, 2]
-        sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
-        sensor.state = 0
-        sensor.dataType = SensorDataType.NONE
-        sensors.append(sensor)
-        system_data.update_sensor(Sensor().deepCopy(sensor))
+        manager = Manager()
+        manager.nodeId = 6
+        manager.managerId = 3
+        manager.description = "manager_3"
+        managers.append(manager)
+        system_data.update_manager(Manager().deepCopy(manager))
 
         node = Node()
         node.nodeId = 7
@@ -177,10 +171,62 @@ class TestSystemDataCore(TestCase):
 
         sensor = Sensor()
         sensor.nodeId = 7
-        sensor.sensorId = 2
+        sensor.sensorId = 1
         sensor.remoteSensorId = 2
         sensor.alertDelay = 0
+        sensor.alertLevels = [2]
+        sensor.description = "sensor_1"
+        sensor.lastStateUpdated = 0
+        sensor.state = 0
+        sensor.dataType = SensorDataType.NONE
+        sensors.append(sensor)
+        system_data.update_sensor(Sensor().deepCopy(sensor))
+
+        node = Node()
+        node.nodeId = 8
+        node.hostname = "hostname_8"
+        node.nodeType = "sensor"
+        node.instance = "instance_8"
+        node.connected = 1
+        node.version = 1.0
+        node.rev = 0
+        node.username = "username_8"
+        node.persistent = 1
+        nodes.append(node)
+        system_data.update_node(Node().deepCopy(node))
+
+        sensor = Sensor()
+        sensor.nodeId = 8
+        sensor.sensorId = 2
+        sensor.remoteSensorId = 3
+        sensor.alertDelay = 0
         sensor.alertLevels = [1, 2]
+        sensor.description = "sensor_2"
+        sensor.lastStateUpdated = 0
+        sensor.state = 0
+        sensor.dataType = SensorDataType.NONE
+        sensors.append(sensor)
+        system_data.update_sensor(Sensor().deepCopy(sensor))
+
+        node = Node()
+        node.nodeId = 9
+        node.hostname = "hostname_9"
+        node.nodeType = "sensor"
+        node.instance = "instance_9"
+        node.connected = 1
+        node.version = 1.0
+        node.rev = 0
+        node.username = "username_9"
+        node.persistent = 1
+        nodes.append(node)
+        system_data.update_node(Node().deepCopy(node))
+
+        sensor = Sensor()
+        sensor.nodeId = 9
+        sensor.sensorId = 3
+        sensor.remoteSensorId = 1
+        sensor.alertDelay = 0
+        sensor.alertLevels = [1]
         sensor.description = "sensor_2"
         sensor.lastStateUpdated = 0
         sensor.state = 0
