@@ -104,6 +104,9 @@ class TestSystemDataAlert(TestSystemDataCore):
         self._invalid_alert_level_missing(system_data)
 
     def test_update_alert(self):
+        """
+        Test Alert object updating.
+        """
         system_data = self._create_system_data()
 
         # Create changes that should be copied to the stored object.
