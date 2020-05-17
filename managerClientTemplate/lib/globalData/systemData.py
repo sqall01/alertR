@@ -56,6 +56,53 @@ class SystemData:
                 raise ValueError("Alert Level %d does not exist for alert %d."
                                  % (alert_level, alert.alertId))
 
+    def _delete_alert_by_id(self, alert_id: int):
+        if alert_id in self._alerts.keys():
+            del self._alerts[alert_id]
+
+    def _delete_alert_level_by_level(self, level: int):
+        if level in self._alert_levels.keys():
+            del self._alert_levels[level]
+
+    def _delete_linked_objects_to_node_id(self, node_id: int):
+        node_obj = self._nodes[node_id]
+        if node_obj.nodeType.lower() == "alert":
+            to_remove = []
+            for alert_id, alert in self._alerts.items():
+                if alert.nodeId == node_obj.nodeId:
+                    to_remove.append(alert_id)
+            for alert_id in to_remove:
+                self._delete_alert_by_id(alert_id)
+
+        elif node_obj.nodeType.lower() == "manager":
+            to_remove = []
+            for manager_id, manager in self._managers.items():
+                if manager.nodeId == node_obj.nodeId:
+                    to_remove.append(manager_id)
+            for manager_id in to_remove:
+                self._delete_manager_by_id(manager_id)
+
+        elif node_obj.nodeType.lower() == "sensor":
+            to_remove = []
+            for sensor_id, sensor in self._sensors.items():
+                if sensor.nodeId == node_obj.nodeId:
+                    to_remove.append(sensor_id)
+            for sensor_id in to_remove:
+                self._delete_sensor_by_id(sensor_id)
+
+    def _delete_manager_by_id(self, manager_id: int):
+        if manager_id in self._managers.keys():
+            del self._managers[manager_id]
+
+    def _delete_node_by_id(self, node_id: int):
+        if node_id in self._nodes.keys():
+            self._delete_linked_objects_to_node_id(node_id)
+            del self._nodes[node_id]
+
+    def _delete_sensor_by_id(self, sensor_id: int):
+        if sensor_id in self._sensors.keys():
+            del self._sensors[sensor_id]
+
     def _manager_sanity_check(self, manager: Manager):
         # Does corresponding node exist?
         if manager.nodeId not in self._nodes.keys():
@@ -84,15 +131,55 @@ class SystemData:
                 raise ValueError("Alert Level %d does not exist for sensor %d."
                                  % (alert_level, sensor.sensorId))
 
+    def delete_alert_by_id(self, alert_id: int):
+        """
+        Deletes Alert object given by id.
+        :param alert_id:
+        """
+        with self._data_lock:
+            self._delete_alert_by_id(alert_id)
+
+    def delete_alert_level_by_level(self, level: int):
+        """
+        Deletes Alert Level object given by level.
+        :param level:
+        """
+        with self._data_lock:
+            self._delete_alert_level_by_level(level)
+
+    def delete_manager_by_id(self, manager_id: int):
+        """
+        Deletes Manager object given by id.
+        :param manager_id:
+        """
+        with self._data_lock:
+            self._delete_manager_by_id(manager_id)
+
+    def delete_node_by_id(self, node_id: int):
+        """
+        Deletes Node object given by id and all linked objects to this node.
+        :param node_id:
+        """
+        with self._data_lock:
+            self._delete_node_by_id(node_id)
+
+    def delete_sensor_by_id(self, sensor_id: int):
+        """
+        Deletes Sensor object given by id.
+        :param sensor_id:
+        """
+        with self._data_lock:
+            self._delete_sensor_by_id(sensor_id)
+
     def get_alert_by_id(self, alert_id: int) -> Optional[Alert]:
         """
         Gets Alert object corresponding to given id.
         :param alert_id:
         :return:
         """
-        if alert_id not in self._alerts.keys():
-            return None
         with self._data_lock:
+            if alert_id not in self._alerts.keys():
+                return None
             return self._alerts[alert_id]
 
     def get_alerts_list(self) -> List[Alert]:
@@ -109,9 +196,9 @@ class SystemData:
         :param level:
         :return:
         """
-        if level not in self._alert_levels.keys():
-            return None
         with self._data_lock:
+            if level not in self._alert_levels.keys():
+                return None
             return self._alert_levels[level]
 
     def get_alert_levels_list(self) -> List[AlertLevel]:
@@ -128,9 +215,9 @@ class SystemData:
         :param manager_id:
         :return:
         """
-        if manager_id not in self._managers.keys():
-            return None
         with self._data_lock:
+            if manager_id not in self._managers.keys():
+                return None
             return self._managers[manager_id]
 
     def get_managers_list(self) -> List[Manager]:
@@ -155,9 +242,9 @@ class SystemData:
         :param node_id:
         :return:
         """
-        if node_id not in self._nodes.keys():
-            return None
         with self._data_lock:
+            if node_id not in self._nodes.keys():
+                return None
             return self._nodes[node_id]
 
     def get_options_list(self) -> List[Option]:
@@ -174,9 +261,9 @@ class SystemData:
         :param sensor_id:
         :return:
         """
-        if sensor_id not in self._sensors.keys():
-            return None
         with self._data_lock:
+            if sensor_id not in self._sensors.keys():
+                return None
             return self._sensors[sensor_id]
 
     def get_sensors_list(self) -> List[Sensor]:
@@ -259,29 +346,7 @@ class SystemData:
                 # If the type of the node has changed remove related objects.
                 curr_node = self._nodes[node.nodeId]
                 if curr_node.nodeType != node.nodeType:
-                    if curr_node.nodeType.lower() == "alert":
-                        to_remove = []
-                        for alert_id, alert in self._alerts.items():
-                            if alert.nodeId == curr_node.nodeId:
-                                to_remove.append(alert_id)
-                        for alert_id in to_remove:
-                            del self._alerts[alert_id]
-
-                    elif curr_node.nodeType.lower() == "manager":
-                        to_remove = []
-                        for manager_id, manager in self._managers.items():
-                            if manager.nodeId == curr_node.nodeId:
-                                to_remove.append(manager_id)
-                        for manager_id in to_remove:
-                            del self._managers[manager_id]
-
-                    elif curr_node.nodeType.lower() == "sensor":
-                        to_remove = []
-                        for sensor_id, sensor in self._sensors.items():
-                            if sensor.nodeId == curr_node.nodeId:
-                                to_remove.append(sensor_id)
-                        for sensor_id in to_remove:
-                            del self._sensors[sensor_id]
+                    self._delete_linked_objects_to_node_id(curr_node.nodeId)
 
                 # Do update of data instead of just using new node object
                 # to make sure others can work on the same object.
@@ -331,4 +396,4 @@ class SystemData:
 # * lock data when accessed
 # * give interfaces to get copy of data (perhaps also list of Node/Alert/... to be compatible with old managers?)
 # * Delete interface
-#   * How to handle an alert level deletion?
+#   * How to handle an alert level deletion? Delete objects that contain alert level? Just remove alert level from these objects?
