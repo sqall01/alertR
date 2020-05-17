@@ -330,7 +330,5 @@ class SystemData:
 # * only have atomic interfaces (update, delete, get) and let big picture like "node X was deleted" be handled by eventmanager
 # * lock data when accessed
 # * give interfaces to get copy of data (perhaps also list of Node/Alert/... to be compatible with old managers?)
-# * How to handle an alert level deletion?
-# * Test cases:
-#   * alert level update
-
+# * Delete interface
+#   * How to handle an alert level deletion?
