@@ -1,6 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
-from lib.globalData.systemData import SystemData
-from lib.localObjects import Node, Alert
+from lib.localObjects import Node
 
 
 class TestSystemDataNode(TestSystemDataCore):

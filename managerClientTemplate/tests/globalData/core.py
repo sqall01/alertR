@@ -19,7 +19,7 @@ class TestSystemDataCore(TestCase):
 
         alert_level = AlertLevel()
         alert_level.level = 1
-        alert_level.name = "Alert Level One"
+        alert_level.name = "alert_level_1"
         alert_level.triggerAlways = True
         alert_level.rulesActivated = True
         self.alert_levels.append(alert_level)
@@ -27,8 +27,16 @@ class TestSystemDataCore(TestCase):
 
         alert_level = AlertLevel()
         alert_level.level = 2
-        alert_level.name = "Alert Level Two"
+        alert_level.name = "alert_level_2"
         alert_level.triggerAlways = False
+        alert_level.rulesActivated = False
+        self.alert_levels.append(alert_level)
+        system_data.update_alert_level(AlertLevel().deepCopy(alert_level))
+
+        alert_level = AlertLevel()
+        alert_level.level = 3
+        alert_level.name = "alert_level_3"
+        alert_level.triggerAlways = True
         alert_level.rulesActivated = False
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(AlertLevel().deepCopy(alert_level))
