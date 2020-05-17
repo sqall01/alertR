@@ -302,7 +302,7 @@ class TestSystemDataCore(TestCase):
         system_data.update_option(Option().deepCopy(option))
 
         option = Option()
-        option.type = "type_2"
+        option.type = "type_3"
         option.value = 3.0
         self.options.append(option)
         system_data.update_option(Option().deepCopy(option))

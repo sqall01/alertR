@@ -294,8 +294,14 @@ class SystemData:
         :return: success of failure
         """
         with self._data_lock:
-            # Just change value, does not make a difference if it already exists or not.
-            self._options[option.type] = option
+
+            # Add option object if it does not exist yet.
+            if option.type not in self._options.keys():
+                self._options[option.type] = option
+
+            # Update option object data.
+            else:
+                self._options[option.type].deepCopy(option)
 
     def update_sensor(self, sensor: Sensor):
         """
@@ -324,5 +330,7 @@ class SystemData:
 # * only have atomic interfaces (update, delete, get) and let big picture like "node X was deleted" be handled by eventmanager
 # * lock data when accessed
 # * give interfaces to get copy of data (perhaps also list of Node/Alert/... to be compatible with old managers?)
-# * test cases to check if it works
-#   * edge case node changes type
+# * How to handle an alert level deletion?
+# * Test cases:
+#   * alert level update
+
