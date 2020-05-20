@@ -8,6 +8,12 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 
+class InternalState:
+    NOT_USED = 0
+    STORED = 1
+    DELETED = 2
+
+
 # This enum class gives the different data types of a sensor.
 class SensorDataType:
     NONE = 0
@@ -15,10 +21,25 @@ class SensorDataType:
     FLOAT = 2
 
 
-# this class represents an option of the server
-class Option:
+class LocalObject:
 
     def __init__(self):
+        # Internal data used by the manager.
+        self.internal_state = InternalState.NOT_USED
+        self.internal_data = dict()
+
+    def is_deleted(self):
+        return self.internal_state == InternalState.DELETED
+
+    def is_stored(self):
+        return self.internal_data == InternalState.STORED
+
+
+# this class represents an option of the server
+class Option(LocalObject):
+
+    def __init__(self):
+        super().__init__()
         self.type = None
         self.value = None
 
@@ -30,9 +51,10 @@ class Option:
 
 # this class represents an node/client of the alert system
 # which can be either a sensor, alert or manager
-class Node:
+class Node(LocalObject):
 
     def __init__(self):
+        super().__init__()
         self.nodeId = None
         self.hostname = None
         self.nodeType = None
@@ -58,9 +80,10 @@ class Node:
 
 
 # this class represents a sensor client of the alert system
-class Sensor:
+class Sensor(LocalObject):
 
     def __init__(self):
+        super().__init__()
         self.nodeId = None
         self.sensorId = None
         self.remoteSensorId = None
@@ -88,9 +111,10 @@ class Sensor:
 
 
 # this class represents a manager client of the alert system
-class Manager:
+class Manager(LocalObject):
 
     def __init__(self):
+        super().__init__()
         self.nodeId = None
         self.managerId = None
         self.description = None
@@ -104,9 +128,10 @@ class Manager:
 
 
 # this class represents an alert client of the alert system
-class Alert:
+class Alert(LocalObject):
 
     def __init__(self):
+        super().__init__()
         self.nodeId = None
         self.alertId = None
         self.remoteAlertId = None
@@ -124,9 +149,10 @@ class Alert:
 
 
 # this class represents a triggered sensor alert of the alert system
-class SensorAlert:
+class SensorAlert(LocalObject):
 
     def __init__(self):
+        super().__init__()
 
         # Are rules for this sensor alert activated (true or false)?
         self.rulesActivated = None
@@ -165,9 +191,10 @@ class SensorAlert:
 
 
 # this class represents an alert level that is configured on the server
-class AlertLevel:
+class AlertLevel(LocalObject):
 
     def __init__(self):
+        super().__init__()
         self.level = None
         self.name = None
         self.triggerAlways = None

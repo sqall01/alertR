@@ -1,3 +1,4 @@
+from lib.localObjects import InternalState
 from tests.globalData.core import TestSystemDataCore
 
 
@@ -11,7 +12,8 @@ class TestSystemDataGeneral(TestSystemDataCore):
         for created_option in self.options:
             found = False
             for stored_option in stored_options:
-                if stored_option.type == created_option.type:
+                if (stored_option.type == created_option.type
+                        and stored_option.internal_state == InternalState.STORED):
                     found = True
                     break
             if not found:
@@ -22,7 +24,8 @@ class TestSystemDataGeneral(TestSystemDataCore):
         for created_alert_level in self.alert_levels:
             found = False
             for stored_alert_level in stored_alert_levels:
-                if stored_alert_level.level == created_alert_level.level:
+                if (stored_alert_level.level == created_alert_level.level
+                        and stored_alert_level.internal_state == InternalState.STORED):
                     found = True
                     break
             if not found:
@@ -33,7 +36,8 @@ class TestSystemDataGeneral(TestSystemDataCore):
         for created_node in self.nodes:
             found = False
             for stored_node in stored_nodes:
-                if stored_node.nodeId == created_node.nodeId:
+                if (stored_node.nodeId == created_node.nodeId
+                        and stored_node.internal_state == InternalState.STORED):
                     found = True
                     break
             if not found:
@@ -45,7 +49,8 @@ class TestSystemDataGeneral(TestSystemDataCore):
             found = False
             for stored_alert in stored_alerts:
                 if (stored_alert.nodeId == created_alert.nodeId
-                        and stored_alert.alertId == created_alert.alertId):
+                        and stored_alert.alertId == created_alert.alertId
+                        and stored_alert.internal_state == InternalState.STORED):
                     found = True
                     break
             if not found:
@@ -57,7 +62,8 @@ class TestSystemDataGeneral(TestSystemDataCore):
             found = False
             for stored_manager in stored_managers:
                 if (stored_manager.nodeId == created_manager.nodeId
-                        and stored_manager.managerId == created_manager.managerId):
+                        and stored_manager.managerId == created_manager.managerId
+                        and stored_manager.internal_state == InternalState.STORED):
                     found = True
                     break
             if not found:
@@ -69,7 +75,8 @@ class TestSystemDataGeneral(TestSystemDataCore):
             found = False
             for stored_sensor in stored_sensors:
                 if (stored_sensor.nodeId == created_sensor.nodeId
-                        and stored_sensor.sensorId == created_sensor.sensorId):
+                        and stored_sensor.sensorId == created_sensor.sensorId
+                        and stored_sensor.internal_state == InternalState.STORED):
                     found = True
                     break
             if not found:

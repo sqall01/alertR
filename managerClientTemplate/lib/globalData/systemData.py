@@ -9,7 +9,7 @@
 
 import threading
 from typing import Dict, List, Optional
-from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option
+from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option, InternalState
 
 
 class SystemData:
@@ -58,10 +58,12 @@ class SystemData:
 
     def _delete_alert_by_id(self, alert_id: int):
         if alert_id in self._alerts.keys():
+            self._alerts[alert_id].internal_state = InternalState.DELETED
             del self._alerts[alert_id]
 
     def _delete_alert_level_by_level(self, level: int):
         if level in self._alert_levels.keys():
+            self._alert_levels[level].internal_state = InternalState.DELETED
             del self._alert_levels[level]
 
     def _delete_linked_objects_to_node_id(self, node_id: int):
@@ -92,15 +94,18 @@ class SystemData:
 
     def _delete_manager_by_id(self, manager_id: int):
         if manager_id in self._managers.keys():
+            self._managers[manager_id].internal_state = InternalState.DELETED
             del self._managers[manager_id]
 
     def _delete_node_by_id(self, node_id: int):
         if node_id in self._nodes.keys():
             self._delete_linked_objects_to_node_id(node_id)
+            self._nodes[node_id].internal_state = InternalState.DELETED
             del self._nodes[node_id]
 
     def _delete_sensor_by_id(self, sensor_id: int):
         if sensor_id in self._sensors.keys():
+            self._sensors[sensor_id].internal_state = InternalState.DELETED
             del self._sensors[sensor_id]
 
     def _manager_sanity_check(self, manager: Manager):
@@ -286,6 +291,7 @@ class SystemData:
             # Add alert object if it does not exist yet.
             if alert.alertId not in self._alerts.keys():
                 self._alerts[alert.alertId] = alert
+                alert.internal_state = InternalState.STORED
 
             # Update alert object data.
             else:
@@ -303,6 +309,7 @@ class SystemData:
             # Add alert level object if it does not exist yet.
             if alert_level.level not in self._alert_levels.keys():
                 self._alert_levels[alert_level.level] = alert_level
+                alert_level.internal_state = InternalState.STORED
 
             # Update alert level object data.
             else:
@@ -322,6 +329,7 @@ class SystemData:
             # Add manager object if it does not exist yet.
             if manager.managerId not in self._managers.keys():
                 self._managers[manager.managerId] = manager
+                manager.internal_state = InternalState.STORED
 
             # Update manager object data.
             else:
@@ -339,6 +347,7 @@ class SystemData:
             # Add node object if it does not exist yet.
             if node.nodeId not in self._nodes.keys():
                 self._nodes[node.nodeId] = node
+                node.internal_state = InternalState.STORED
 
             # Update node object data.
             else:
@@ -363,6 +372,7 @@ class SystemData:
             # Add option object if it does not exist yet.
             if option.type not in self._options.keys():
                 self._options[option.type] = option
+                option.internal_state = InternalState.STORED
 
             # Update option object data.
             else:
@@ -380,6 +390,7 @@ class SystemData:
             # Add sensor object if it does not exist yet.
             if sensor.sensorId not in self._sensors.keys():
                 self._sensors[sensor.sensorId] = sensor
+                sensor.internal_state = InternalState.STORED
 
             # Update sensor object data.
             else:
@@ -397,3 +408,4 @@ class SystemData:
 # * give interfaces to get copy of data (perhaps also list of Node/Alert/... to be compatible with old managers?)
 # * Delete interface
 #   * How to handle an alert level deletion? Delete objects that contain alert level? Just remove alert level from these objects?
+#   * test case should check internal state

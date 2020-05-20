@@ -1,5 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
-from lib.localObjects import Node
+from lib.localObjects import Node, InternalState
 
 
 class TestSystemDataNode(TestSystemDataCore):
@@ -14,6 +14,7 @@ class TestSystemDataNode(TestSystemDataCore):
 
         for i in range(len(self.alerts)):
             alert = self.alerts[i]
+            stored_alert = system_data.get_alert_by_id(alert.alertId)
             target_node = system_data.get_node_by_id(alert.nodeId)
             if target_node is None:
                 self.fail("Node does not exist.")
@@ -32,6 +33,9 @@ class TestSystemDataNode(TestSystemDataCore):
             if len(self.nodes) != len(system_data.get_nodes_list()):
                 self.fail("Number of stored nodes changed.")
 
+            if stored_alert.internal_state != InternalState.DELETED:
+                self.fail("Alert object state not set to DELETED.")
+
     def test_change_node_type_manager(self):
         """
         Test if a change from an "manager" node type to another is handled correctly.
@@ -41,6 +45,7 @@ class TestSystemDataNode(TestSystemDataCore):
 
         for i in range(len(self.managers)):
             manager = self.managers[i]
+            stored_manager = system_data.get_manager_by_id(manager.managerId)
             target_node = system_data.get_node_by_id(manager.nodeId)
             if target_node is None:
                 self.fail("Node does not exist.")
@@ -59,6 +64,9 @@ class TestSystemDataNode(TestSystemDataCore):
             if len(self.nodes) != len(system_data.get_nodes_list()):
                 self.fail("Number of stored nodes changed.")
 
+            if stored_manager.internal_state != InternalState.DELETED:
+                self.fail("Manager object state not set to DELETED.")
+
     def test_change_node_type_sensor(self):
         """
         Test if a change from an "sensor" node type to another is handled correctly.
@@ -69,6 +77,7 @@ class TestSystemDataNode(TestSystemDataCore):
 
         for i in range(len(self.sensors)):
             sensor = self.sensors[i]
+            stored_sensor = system_data.get_sensor_by_id(sensor.sensorId)
             target_node = system_data.get_node_by_id(sensor.nodeId)
             if target_node is None:
                 self.fail("Node does not exist.")
@@ -86,3 +95,6 @@ class TestSystemDataNode(TestSystemDataCore):
 
             if len(self.nodes) != len(system_data.get_nodes_list()):
                 self.fail("Number of stored nodes changed.")
+
+            if stored_sensor.internal_state != InternalState.DELETED:
+                self.fail("Sensor object state not set to DELETED.")
