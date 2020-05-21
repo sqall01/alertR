@@ -168,7 +168,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         """
         Test Alert object deleting.
         """
-        system_data = self._create_system_data()
+        system_data = self._create_alerts()
 
         for alert in system_data.get_alerts_list():
 

@@ -123,7 +123,7 @@ class TestSystemDataManager(TestSystemDataCore):
         """
         Test Manager object deleting.
         """
-        system_data = self._create_system_data()
+        system_data = self._create_managers()
 
         for manager in system_data.get_managers_list():
 

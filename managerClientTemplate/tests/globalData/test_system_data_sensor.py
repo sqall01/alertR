@@ -192,7 +192,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         """
         Test Sensor object deleting.
         """
-        system_data = self._create_system_data()
+        system_data = self._create_sensors()
 
         for sensor in system_data.get_sensors_list():
 

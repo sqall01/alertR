@@ -62,7 +62,7 @@ class TestSystemDataOption(TestSystemDataCore):
         """
         Test Option object deleting.
         """
-        system_data = self._create_system_data()
+        system_data = self._create_options()
 
         for option in system_data.get_options_list():
 
