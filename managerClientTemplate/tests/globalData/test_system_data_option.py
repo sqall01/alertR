@@ -57,3 +57,23 @@ class TestSystemDataOption(TestSystemDataCore):
 
                 if not found:
                     self.fail("Not able to find modified Option object.")
+
+    def test_delete_option(self):
+        """
+        Test Option object deleting.
+        """
+        system_data = self._create_system_data()
+
+        for option in system_data.get_options_list():
+
+            system_data.delete_option_by_type(option.type)
+
+            if not option.is_deleted():
+                self.fail("Option object not marked as deleted.")
+
+            for stored_option in system_data.get_options_list():
+                if stored_option.is_deleted():
+                    self.fail("Stored Option object marked as deleted.")
+
+                if option.type == stored_option.type:
+                    self.fail("Store still contains Option with type that was deleted.")
