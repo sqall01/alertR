@@ -31,11 +31,10 @@ class SystemData:
         # key: alertId
         self._alerts = dict()  # type: Dict[int, Alert]
 
-        # TODO: list perhaps better? How long do we store sensorAlerts? Perhaps give function to delete all sensor alerts older than X?
-        self._sensor_alerts = dict()
-
         # key: level
         self._alert_levels = dict()  # type: Dict[int, AlertLevel]
+
+        self._sensor_alerts = list()  # type: List[SensorAlert]
 
         self._data_lock = threading.Lock()
 
@@ -120,6 +119,12 @@ class SystemData:
 
     def _delete_sensor_by_id(self, sensor_id: int):
         if sensor_id in self._sensors.keys():
+            # Remove Sensor Alerts for this sensor.
+            for sensor_alert in list(self._sensor_alerts):
+                if sensor_alert.sensorId == sensor_id:
+                    sensor_alert.internal_state = InternalState.DELETED
+                    self._sensor_alerts.remove(sensor_alert)
+
             self._sensors[sensor_id].internal_state = InternalState.DELETED
             del self._sensors[sensor_id]
 
@@ -150,6 +155,43 @@ class SystemData:
             if alert_level not in self._alert_levels.keys():
                 raise ValueError("Alert Level %d does not exist for sensor %d."
                                  % (alert_level, sensor.sensorId))
+
+    def add_sensor_alert(self, sensor_alert: SensorAlert):
+        """
+        Adds the sensor alert and updates sensor data accordingly.
+        :param sensor_alert:
+        """
+        # Sanity check if Alert Levels of Sensor Alert exist.
+        for alert_level in sensor_alert.alertLevels:
+            if alert_level not in self._alert_levels.keys():
+                raise ValueError("Alert Level %d corresponding to sensor alert does not exist."
+                                 % alert_level)
+
+        # Sensor Alert is set to -1 if are rulesActivated.
+        if sensor_alert.sensorId != -1:
+
+            # Sanity check if sensor exists.
+            sensor = self.get_sensor_by_id(sensor_alert.sensorId)
+            if sensor is None:
+                raise ValueError("Sensor %d corresponding to sensor alert does not exist."
+                                 % sensor_alert.sensorId)
+
+            # Sanity check if data type is correct.
+            if sensor.dataType != sensor_alert.dataType:
+                raise ValueError("Sensor %d corresponding to sensor alert has different data type"
+                                 % sensor_alert.sensorId)
+
+            # Update sensor data accordingly.
+            with self._data_lock:
+                if sensor_alert.changeState:
+                    sensor.state = sensor_alert.state
+
+                if sensor_alert.hasLatestData:
+                    sensor.data = sensor_alert.sensorData
+
+        with self._data_lock:
+            sensor_alert.internal_state = InternalState.STORED
+            self._sensor_alerts.append(sensor_alert)
 
     def delete_alert_by_id(self, alert_id: int):
         """
@@ -495,5 +537,6 @@ class SystemData:
 
 
 # TODO
-# * handle storage of AlertR data
-# * only have atomic interfaces (update, delete, get) and let big picture like "node X was deleted" be handled by eventmanager
+# * how long are sensor alerts stored?
+# * Test Case: delete Sensor also deletes Sensor Alerts for this Sensor
+# * Test Case: Sensor Alert handling

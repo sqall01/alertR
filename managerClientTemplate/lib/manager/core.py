@@ -137,7 +137,14 @@ class BaseManagerEventHandler(EventHandler):
 
         self.server_time = server_time
 
-        # TODO
+        try:
+            self._system_data.add_sensor_alert(sensor_alert)
+
+        except Exception:
+            logging.exception("[%s]: Adding Sensor Alert failed." % self._log_tag)
+            return False
+
+        return True
 
     # noinspection PyBroadException
     def state_change(self,
