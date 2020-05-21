@@ -16,8 +16,8 @@ from typing import List, Any
 class ManagerEventHandler(BaseManagerEventHandler):
 
     def __init__(self,
-                 globalData: GlobalData):
-        super().__init__(globalData)
+                 global_data: GlobalData):
+        super().__init__(global_data)
 
     def status_update(self,
                       server_time: int,

@@ -7,4 +7,4 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .template import ManagerEventHandler
+from .eventHandler import ManagerEventHandler
