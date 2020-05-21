@@ -46,7 +46,7 @@ class TestSystemDataCore(TestCase):
     def _create_alerts(self, system_data: Optional[SystemData] = None) -> SystemData:
 
         if system_data is None:
-            system_data = SystemData()
+            system_data = self._create_alert_levels()
             self.alert_levels = []
             self.alerts = []
             self.managers = []
@@ -198,7 +198,7 @@ class TestSystemDataCore(TestCase):
     def _create_sensors(self, system_data: Optional[SystemData] = None) -> SystemData:
 
         if system_data is None:
-            system_data = SystemData()
+            system_data = self._create_alert_levels()
             self.alert_levels = []
             self.alerts = []
             self.managers = []
