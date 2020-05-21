@@ -118,3 +118,23 @@ class TestSystemDataManager(TestSystemDataCore):
 
                 if not found:
                     self.fail("Not able to find modified Manager object.")
+
+    def test_delete_manager(self):
+        """
+        Test Manager object deleting.
+        """
+        system_data = self._create_system_data()
+
+        for manager in system_data.get_managers_list():
+
+            system_data.delete_manager_by_id(manager.managerId)
+
+            if not manager.is_deleted():
+                self.fail("Manager object not marked as deleted.")
+
+            for stored_manager in system_data.get_managers_list():
+                if stored_manager.is_deleted():
+                    self.fail("Stored Manager object marked as deleted.")
+
+                if manager.managerId == stored_manager.managerId:
+                    self.fail("Store still contains Manager with id that was deleted.")

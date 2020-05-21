@@ -63,6 +63,16 @@ class SystemData:
 
     def _delete_alert_level_by_level(self, level: int):
         if level in self._alert_levels.keys():
+
+            # Remove alert level from Alert and Sensor objects.
+            for _, alert in self._alerts.items():
+                if level in alert.alertLevels:
+                    alert.alertLevels.remove(level)
+
+            for _, sensor in self._sensors.items():
+                if level in sensor.alertLevels:
+                    sensor.alertLevels.remove(level)
+
             self._alert_levels[level].internal_state = InternalState.DELETED
             del self._alert_levels[level]
 
@@ -187,6 +197,23 @@ class SystemData:
                 return None
             return self._alerts[alert_id]
 
+    def get_alerts_by_node_id(self, node_id: int) -> List[Alert]:
+        """
+        Gets Alert objects corresponding to given node id.
+        :param node_id:
+        :return:
+        """
+        result = []
+        node = self.get_node_by_id(node_id)
+        if node is None or node.nodeType != "alert":
+            return result
+
+        with self._data_lock:
+            for _, alert in self._alerts.items():
+                if alert.nodeId == node_id:
+                    result.append(alert)
+        return result
+
     def get_alerts_list(self) -> List[Alert]:
         """
         Gets list of all alert objects.
@@ -224,6 +251,23 @@ class SystemData:
             if manager_id not in self._managers.keys():
                 return None
             return self._managers[manager_id]
+
+    def get_managers_by_node_id(self, node_id: int) -> List[Manager]:
+        """
+        Gets Manager objects corresponding to given node id.
+        :param node_id:
+        :return:
+        """
+        result = []
+        node = self.get_node_by_id(node_id)
+        if node is None or node.nodeType != "manager":
+            return result
+
+        with self._data_lock:
+            for _, manager in self._managers.items():
+                if manager.nodeId == node_id:
+                    result.append(manager)
+        return result
 
     def get_managers_list(self) -> List[Manager]:
         """
@@ -270,6 +314,23 @@ class SystemData:
             if sensor_id not in self._sensors.keys():
                 return None
             return self._sensors[sensor_id]
+
+    def get_sensors_by_node_id(self, node_id: int) -> List[Sensor]:
+        """
+        Gets Sensor objects corresponding to given node id.
+        :param node_id:
+        :return:
+        """
+        result = []
+        node = self.get_node_by_id(node_id)
+        if node is None or node.nodeType != "sensor":
+            return result
+
+        with self._data_lock:
+            for _, sensor in self._sensors.items():
+                if sensor.nodeId == node_id:
+                    result.append(sensor)
+        return result
 
     def get_sensors_list(self) -> List[Sensor]:
         """
@@ -404,8 +465,3 @@ class SystemData:
 # TODO
 # * handle storage of AlertR data
 # * only have atomic interfaces (update, delete, get) and let big picture like "node X was deleted" be handled by eventmanager
-# * lock data when accessed
-# * give interfaces to get copy of data (perhaps also list of Node/Alert/... to be compatible with old managers?)
-# * Delete interface
-#   * How to handle an alert level deletion? Delete objects that contain alert level? Just remove alert level from these objects?
-#   * test case should check internal state

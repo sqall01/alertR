@@ -187,3 +187,23 @@ class TestSystemDataSensor(TestSystemDataCore):
 
                 if not found:
                     self.fail("Not able to find modified Sensor object.")
+
+    def test_delete_sensor(self):
+        """
+        Test Sensor object deleting.
+        """
+        system_data = self._create_system_data()
+
+        for sensor in system_data.get_sensors_list():
+
+            system_data.delete_sensor_by_id(sensor.sensorId)
+
+            if not sensor.is_deleted():
+                self.fail("Sensor object not marked as deleted.")
+
+            for stored_sensor in system_data.get_sensors_list():
+                if stored_sensor.is_deleted():
+                    self.fail("Stored Sensor object marked as deleted.")
+
+                if sensor.sensorId == stored_sensor.sensorId:
+                    self.fail("Store still contains Sensor with id that was deleted.")

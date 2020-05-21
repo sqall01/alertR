@@ -61,3 +61,42 @@ class TestSystemDataAlertLevel(TestSystemDataCore):
 
                 if not found:
                     self.fail("Not able to find modified Alert Level object.")
+
+    def test_delete_alert_level(self):
+        """
+        Test Alert Level object deleting.
+        """
+        system_data = self._create_system_data()
+
+        for alert_level in system_data.get_alert_levels_list():
+
+            # Get Alerts and Sensors that use this alert level.
+            corresponding_alerts = []
+            for alert in system_data.get_alerts_list():
+                if alert_level.level in alert.alertLevels:
+                    corresponding_alerts.append(alert)
+
+            corresponding_sensors = []
+            for sensor in system_data.get_sensors_list():
+                if alert_level.level in sensor.alertLevels:
+                    corresponding_sensors.append(sensor)
+
+            system_data.delete_alert_level_by_level(alert_level.level)
+
+            if not alert_level.is_deleted():
+                self.fail("Alert Level object not marked as deleted.")
+
+            for stored_alert_level in system_data.get_alert_levels_list():
+                if stored_alert_level.is_deleted():
+                    self.fail("Stored Alert Level object marked as deleted.")
+
+                if alert_level.level == stored_alert_level.level:
+                    self.fail("Store still contains Alert Level with level that was deleted.")
+
+            for alert in corresponding_alerts:
+                if alert_level.level in alert.alertLevels:
+                    self.fail("Alert object still contains deleted alert level.")
+
+            for sensor in corresponding_sensors:
+                if alert_level.level in sensor.alertLevels:
+                    self.fail("Sensor object still contains deleted alert level.")

@@ -98,3 +98,39 @@ class TestSystemDataNode(TestSystemDataCore):
 
             if stored_sensor.internal_state != InternalState.DELETED:
                 self.fail("Sensor object state not set to DELETED.")
+
+    def test_delete_node(self):
+        """
+        Test Node object deleting.
+        """
+        system_data = self._create_system_data()
+
+        for node in system_data.get_nodes_list():
+
+            corresponding_alerts = system_data.get_alerts_by_node_id(node.nodeId)
+            corresponding_managers = system_data.get_managers_by_node_id(node.nodeId)
+            corresponding_sensors = system_data.get_sensors_by_node_id(node.nodeId)
+
+            system_data.delete_node_by_id(node.nodeId)
+
+            if not node.is_deleted():
+                self.fail("Node object not marked as deleted.")
+
+            for stored_node in system_data.get_nodes_list():
+                if stored_node.is_deleted():
+                    self.fail("Stored Node object marked as deleted.")
+
+                if node.nodeId == stored_node.nodeId:
+                    self.fail("Store still contains Node with id that was deleted.")
+
+            for alert in corresponding_alerts:
+                if not alert.is_deleted():
+                    self.fail("Alert object not deleted.")
+
+            for manager in corresponding_managers:
+                if not manager.is_deleted():
+                    self.fail("Manager object not deleted.")
+
+            for sensor in corresponding_sensors:
+                if not sensor.is_deleted():
+                    self.fail("Sensor object not deleted.")

@@ -163,3 +163,23 @@ class TestSystemDataAlert(TestSystemDataCore):
 
                 if not found:
                     self.fail("Not able to find modified Alert object.")
+
+    def test_delete_alert(self):
+        """
+        Test Alert object deleting.
+        """
+        system_data = self._create_system_data()
+
+        for alert in system_data.get_alerts_list():
+
+            system_data.delete_alert_by_id(alert.alertId)
+
+            if not alert.is_deleted():
+                self.fail("Alert object not marked as deleted.")
+
+            for stored_alert in system_data.get_alerts_list():
+                if stored_alert.is_deleted():
+                    self.fail("Stored Alert object marked as deleted.")
+
+                if alert.alertId == stored_alert.alertId:
+                    self.fail("Store still contains Alert with id that was deleted.")
