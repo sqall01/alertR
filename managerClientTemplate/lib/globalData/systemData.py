@@ -8,8 +8,8 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
-from typing import Dict, List, Optional
-from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option, InternalState
+from typing import Any, Dict, List, Optional
+from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option, InternalState, SensorDataType
 
 
 class SystemData:
@@ -353,6 +353,27 @@ class SystemData:
         with self._data_lock:
             return list(self._sensors.values())
 
+    def sensor_state_change(self,
+                            sensor_id: int,
+                            state: int,
+                            data_type: SensorDataType,
+                            sensor_data: Any):
+        """
+        Updates sensor state given by id.
+
+        :param sensor_id:
+        :param state:
+        :param data_type:
+        :param sensor_data:
+        """
+        sensor = self.get_sensor_by_id(sensor_id)
+        if sensor.dataType != data_type:
+            raise ValueError("Sensor %d has different data type." % sensor_id)
+
+        with self._data_lock:
+            sensor.state = state
+            sensor.data = sensor_data
+
     def update_alert(self, alert: Alert):
         """
         Updates the given alert data.
@@ -471,8 +492,6 @@ class SystemData:
                 # Do update of data instead of just using new sensor object
                 # to make sure others can work on the same object.
                 self._sensors[sensor.sensorId].deepCopy(sensor)
-
-
 
 
 # TODO

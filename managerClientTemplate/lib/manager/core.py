@@ -31,6 +31,7 @@ class BaseManagerEventHandler(EventHandler):
         # Keep track of the server time.
         self.server_time = 0.0
 
+    # noinspection PyBroadException
     def status_update(self,
                       server_time: int,
                       options: List[Option],
@@ -60,7 +61,7 @@ class BaseManagerEventHandler(EventHandler):
                 alert_levels_int.add(alert_level.level)
 
             except Exception:
-                logging.exception("[%s]: Updating Alert Level '%d' failed." % (self._log_tag, alert_level.level))
+                logging.exception("[%s]: Updating Alert Level %d failed." % (self._log_tag, alert_level.level))
                 return False
 
         nodes_int = set()
@@ -70,7 +71,7 @@ class BaseManagerEventHandler(EventHandler):
                 nodes_int.add(node.nodeId)
 
             except Exception:
-                logging.exception("[%s]: Updating Node '%d' failed." % (self._log_tag, node.nodeId))
+                logging.exception("[%s]: Updating Node %d failed." % (self._log_tag, node.nodeId))
                 return False
 
         alerts_int = set()
@@ -80,7 +81,7 @@ class BaseManagerEventHandler(EventHandler):
                 alerts_int.add(alert.alertId)
 
             except Exception:
-                logging.exception("[%s]: Updating Alert '%d' failed." % (self._log_tag, alert.alertId))
+                logging.exception("[%s]: Updating Alert %d failed." % (self._log_tag, alert.alertId))
                 return False
 
         managers_int = set()
@@ -90,7 +91,7 @@ class BaseManagerEventHandler(EventHandler):
                 managers_int.add(manager.managerId)
 
             except Exception:
-                logging.exception("[%s]: Updating Manager '%d' failed." % (self._log_tag, manager.managerId))
+                logging.exception("[%s]: Updating Manager %d failed." % (self._log_tag, manager.managerId))
                 return False
 
         sensors_int = set()
@@ -100,7 +101,7 @@ class BaseManagerEventHandler(EventHandler):
                 sensors_int.add(sensor.sensorId)
 
             except Exception:
-                logging.exception("[%s]: Updating Sensor '%d' failed." % (self._log_tag, sensor.sensorId))
+                logging.exception("[%s]: Updating Sensor %d failed." % (self._log_tag, sensor.sensorId))
                 return False
 
         # Clean system data storage of not existing data.
@@ -138,6 +139,7 @@ class BaseManagerEventHandler(EventHandler):
 
         # TODO
 
+    # noinspection PyBroadException
     def state_change(self,
                      server_time: int,
                      sensor_id: int,
@@ -147,7 +149,14 @@ class BaseManagerEventHandler(EventHandler):
 
         self.server_time = server_time
 
-        # TODO
+        try:
+            self._system_data.sensor_state_change(sensor_id, state, data_type, sensor_data)
+
+        except Exception:
+            logging.exception("[%s]: Updating Sensor %d with state change data failed." % (self._log_tag, sensor_id))
+            return False
+
+        return True
 
     def close_connection(self):
         pass
