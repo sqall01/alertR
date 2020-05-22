@@ -191,7 +191,15 @@ class SystemData:
 
         with self._data_lock:
             sensor_alert.internal_state = InternalState.STORED
-            self._sensor_alerts.append(sensor_alert)
+
+            # Make sure Sensor Alerts are ordered by time received.
+            idx = 0
+            for i in range(len(self._sensor_alerts), 0, -1):
+                curr_sensor_alert = self._sensor_alerts[i-1]
+                if curr_sensor_alert.timeReceived <= sensor_alert.timeReceived:
+                    idx = i
+                    break
+            self._sensor_alerts.insert(idx, sensor_alert)
 
     def delete_alert_by_id(self, alert_id: int):
         """
@@ -232,6 +240,21 @@ class SystemData:
         """
         with self._data_lock:
             self._delete_option_by_type(option_type)
+
+    def delete_sensor_alerts_received_before(self, timestamp: int):
+        """
+        Deletes all Sensor Alert objects that are older are received before the given time.
+        :param timestamp:
+        """
+        with self._data_lock:
+            for sensor_alert in list(self._sensor_alerts):
+                if sensor_alert.timeReceived < timestamp:
+                    self._sensor_alerts.remove(sensor_alert)
+
+                # Sensor Alerts are ordered by time received,
+                # therefore the next sensor alert will be received later in time and we can stop searching.
+                else:
+                    break
 
     def delete_sensor_by_id(self, sensor_id: int):
         """
