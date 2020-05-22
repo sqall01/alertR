@@ -112,7 +112,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_alerts = []
         for i in range(len(self.alerts)):
-            temp_alert = Alert().deepCopy(self.alerts[i])
+            temp_alert = Alert().deepcopy(self.alerts[i])
             temp_alert.description = "new_alert_" + str(i + 1)
             temp_alert.remoteAlertId = i
             # We started the alert levels in our test data with level 1.

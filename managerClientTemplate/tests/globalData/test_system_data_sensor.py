@@ -1,6 +1,6 @@
 from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
-from lib.localObjects import Node, Sensor, SensorDataType
+from lib.localObjects import Node, Sensor, SensorDataType, SensorAlert
 
 
 class TestSystemDataSensor(TestSystemDataCore):
@@ -126,7 +126,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_sensors = []
         for i in range(len(self.sensors)):
-            temp_sensor = Sensor().deepCopy(self.sensors[i])
+            temp_sensor = Sensor().deepcopy(self.sensors[i])
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.remoteSensorId = i
             temp_sensor.alertDelay = i + 10
@@ -193,7 +193,24 @@ class TestSystemDataSensor(TestSystemDataCore):
         Test Sensor object deleting.
         """
         system_data = self._create_sensors()
+        number_sensor_alerts = 3
 
+        for i in range(len(self.sensors)):
+            for j in range(number_sensor_alerts):
+                temp_sensor_alert = SensorAlert()
+                temp_sensor_alert.rulesActivated = False
+                temp_sensor_alert.sensorId = self.sensors[i % len(self.sensors)].sensorId
+                temp_sensor_alert.state = j % 2
+                temp_sensor_alert.alertLevels = list(self.sensors[i % len(self.sensors)].alertLevels)
+                temp_sensor_alert.hasOptionalData = False
+                temp_sensor_alert.optionalData = None
+                temp_sensor_alert.changeState = (j % 2) == 0
+                temp_sensor_alert.hasLatestData = False
+                temp_sensor_alert.dataType = SensorDataType.NONE
+                temp_sensor_alert.timeReceived = j
+                system_data.add_sensor_alert(temp_sensor_alert)
+
+        idx = 0
         for sensor in system_data.get_sensors_list():
 
             system_data.delete_sensor_by_id(sensor.sensorId)
@@ -207,3 +224,12 @@ class TestSystemDataSensor(TestSystemDataCore):
 
                 if sensor.sensorId == stored_sensor.sensorId:
                     self.fail("Store still contains Sensor with id that was deleted.")
+
+            if ((len(self.sensors) - (idx + 1)) * number_sensor_alerts) != len(system_data.get_sensor_alerts_list()):
+                self.fail("Wrong number of Sensor Alerts remaining stored.")
+
+            for sensor_alert in system_data.get_sensor_alerts_list():
+                if sensor_alert.sensorId == sensor.sensorId:
+                    self.fail("Sensor Alerts corresponding to Sensor object not deleted.")
+
+            idx += 1

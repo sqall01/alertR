@@ -176,6 +176,12 @@ class SystemData:
                 raise ValueError("Sensor %d corresponding to sensor alert does not exist."
                                  % sensor_alert.sensorId)
 
+            # Sanity check if sensor handles received alert level.
+            for alert_level in sensor_alert.alertLevels:
+                if alert_level not in sensor.alertLevels:
+                    raise ValueError("Sensor %d does not handle Alert Level %d."
+                                     % (sensor_alert.sensorId, alert_level))
+
             # Sanity check if data type is correct.
             if sensor.dataType != sensor_alert.dataType:
                 raise ValueError("Sensor %d corresponding to sensor alert has different data type"
@@ -249,6 +255,7 @@ class SystemData:
         with self._data_lock:
             for sensor_alert in list(self._sensor_alerts):
                 if sensor_alert.timeReceived < timestamp:
+                    sensor_alert.internal_state = InternalState.DELETED
                     self._sensor_alerts.remove(sensor_alert)
 
                 # Sensor Alerts are ordered by time received,
@@ -382,6 +389,14 @@ class SystemData:
         with self._data_lock:
             return list(self._options.values())
 
+    def get_sensor_alerts_list(self) -> List[SensorAlert]:
+        """
+        Gets list of all Sensor Alert objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            return list(self._sensor_alerts)
+
     def get_sensor_by_id(self, sensor_id: int) -> Optional[Sensor]:
         """
         Gets Sensor object corresponding to given id.
@@ -457,7 +472,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new alert object
                 # to make sure others can work on the same object.
-                self._alerts[alert.alertId].deepCopy(alert)
+                self._alerts[alert.alertId].deepcopy(alert)
 
     def update_alert_level(self, alert_level: AlertLevel):
         """
@@ -475,7 +490,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new alert level object
                 # to make sure others can work on the same object.
-                self._alert_levels[alert_level.level].deepCopy(alert_level)
+                self._alert_levels[alert_level.level].deepcopy(alert_level)
 
     def update_manager(self, manager: Manager):
         """
@@ -495,7 +510,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new manager object
                 # to make sure others can work on the same object.
-                self._managers[manager.managerId].deepCopy(manager)
+                self._managers[manager.managerId].deepcopy(manager)
 
     def update_node(self, node: Node):
         """
@@ -519,7 +534,7 @@ class SystemData:
 
                 # Do update of data instead of just using new node object
                 # to make sure others can work on the same object.
-                self._nodes[node.nodeId].deepCopy(node)
+                self._nodes[node.nodeId].deepcopy(node)
 
     def update_option(self, option: Option):
         """
@@ -536,7 +551,7 @@ class SystemData:
 
             # Update option object data.
             else:
-                self._options[option.type].deepCopy(option)
+                self._options[option.type].deepcopy(option)
 
     def update_sensor(self, sensor: Sensor):
         """
@@ -556,10 +571,4 @@ class SystemData:
             else:
                 # Do update of data instead of just using new sensor object
                 # to make sure others can work on the same object.
-                self._sensors[sensor.sensorId].deepCopy(sensor)
-
-
-# TODO
-# * how long are sensor alerts stored?
-# * Test Case: delete Sensor also deletes Sensor Alerts for this Sensor
-# * Test Case: Sensor Alert handling
+                self._sensors[sensor.sensorId].deepcopy(sensor)

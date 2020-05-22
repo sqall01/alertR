@@ -7,6 +7,8 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import copy
+
 
 class InternalState:
     NOT_USED = 0
@@ -34,6 +36,8 @@ class LocalObject:
     def is_stored(self):
         return self.internal_data == InternalState.STORED
 
+    def deepcopy(self, obj):
+        raise NotImplementedError("Abstract class.")
 
 # this class represents an option of the server
 class Option(LocalObject):
@@ -43,7 +47,7 @@ class Option(LocalObject):
         self.type = None
         self.value = None
 
-    def deepCopy(self, option):
+    def deepcopy(self, option):
         self.type = option.type
         self.value = option.value
         return self
@@ -66,7 +70,7 @@ class Node(LocalObject):
         self.persistent = None
 
     # This function copies all attributes of the given node to this object.
-    def deepCopy(self, node):
+    def deepcopy(self, node):
         self.nodeId = node.nodeId
         self.hostname = node.hostname
         self.nodeType = node.nodeType
@@ -96,7 +100,7 @@ class Sensor(LocalObject):
         self.data = None
 
     # This function copies all attributes of the given sensor to this object.
-    def deepCopy(self, sensor):
+    def deepcopy(self, sensor):
         self.nodeId = sensor.nodeId
         self.sensorId = sensor.sensorId
         self.remoteSensorId = sensor.remoteSensorId
@@ -120,7 +124,7 @@ class Manager(LocalObject):
         self.description = None
 
     # This function copies all attributes of the given manager to this object.
-    def deepCopy(self, manager):
+    def deepcopy(self, manager):
         self.nodeId = manager.nodeId
         self.managerId = manager.managerId
         self.description = manager.description
@@ -139,7 +143,7 @@ class Alert(LocalObject):
         self.description = None
 
     # This function copies all attributes of the given alert to this object.
-    def deepCopy(self, alert):
+    def deepcopy(self, alert):
         self.nodeId = alert.nodeId
         self.alertId = alert.alertId
         self.remoteAlertId = alert.remoteAlertId
@@ -189,6 +193,28 @@ class SensorAlert(LocalObject):
         self.dataType = None
         self.sensorData = None
 
+    # This function copies all attributes of the given sensor alert to this object.
+    def deepcopy(self, sensor_alert):
+        self.rulesActivated = sensor_alert.rulesActivated
+        self.sensorId = sensor_alert.sensorId
+        self.state = sensor_alert.state
+        self.description = sensor_alert.description
+        self.timeReceived = sensor_alert.timeReceived
+        self.alertLevels = list(sensor_alert.alertLevels)
+        self.hasOptionalData = sensor_alert.hasOptionalData
+        self.changeState = sensor_alert.changeState
+        self.hasLatestData = sensor_alert.hasLatestData
+        self.dataType = sensor_alert.dataType
+        self.sensorData = sensor_alert.sensorData
+
+        if type(sensor_alert.optionalData) == dict:
+            self.optionalData = copy.deepcopy(sensor_alert.optionalData)
+
+        else:
+            self.optionalData = None
+
+        return self
+
 
 # this class represents an alert level that is configured on the server
 class AlertLevel(LocalObject):
@@ -201,7 +227,7 @@ class AlertLevel(LocalObject):
         self.rulesActivated = None
 
     # This function copies all attributes of the given alert level to this object.
-    def deepCopy(self, alert_level):
+    def deepcopy(self, alert_level):
         self.level = alert_level.level
         self.name = alert_level.name
         self.triggerAlways = alert_level.triggerAlways
