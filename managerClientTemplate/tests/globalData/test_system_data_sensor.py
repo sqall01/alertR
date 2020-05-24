@@ -233,3 +233,143 @@ class TestSystemDataSensor(TestSystemDataCore):
                     self.fail("Sensor Alerts corresponding to Sensor object not deleted.")
 
             idx += 1
+
+    def test_sensor_alert(self):
+        """
+        Test Sensor Alert state change.
+        """
+        system_data = self._create_sensors()
+
+        for i in range(len(self.sensors)):
+            curr_sensor = self.sensors[i]
+            stored_sensor = system_data.get_sensor_by_id(curr_sensor.sensorId)
+
+            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+                    or stored_sensor.description != curr_sensor.description
+                    or stored_sensor.alertDelay != curr_sensor.alertDelay
+                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
+                    or stored_sensor.state != curr_sensor.state
+                    or stored_sensor.dataType != curr_sensor.dataType
+                    or stored_sensor.data != curr_sensor.data
+                    or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
+                    or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
+                self.fail("Stored object does not have initially correct content.")
+
+            sensor_alert = SensorAlert()
+            sensor_alert.rulesActivated = False
+            sensor_alert.sensorId = curr_sensor.sensorId
+            sensor_alert.state = 1 - curr_sensor.state
+            sensor_alert.alertLevels = curr_sensor.alertLevels
+            sensor_alert.hasOptionalData = False
+            sensor_alert.optionalData = None
+            sensor_alert.changeState = True
+            sensor_alert.hasLatestData = False
+            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.timeReceived = 0
+            system_data.add_sensor_alert(sensor_alert)
+
+            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+                    or stored_sensor.description != curr_sensor.description
+                    or stored_sensor.alertDelay != curr_sensor.alertDelay
+                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
+                    or stored_sensor.dataType != curr_sensor.dataType
+                    or stored_sensor.data != curr_sensor.data
+                    or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
+                    or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
+                self.fail("Stored object does not have correct content after adding Sensor Alert.")
+
+            if stored_sensor.state == curr_sensor.state:
+                self.fail("State of Sensor object was not updated.")
+
+            # Check nothing has changed in other Sensor objects
+            # (update state of current sensor manually for this check).
+            curr_sensor.state = stored_sensor.state
+            for gt_sensor in self.sensors:
+                found = False
+                for stored_sensor in system_data.get_sensors_list():
+                    if stored_sensor.sensorId == gt_sensor.sensorId:
+                        found = True
+                        if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
+                                or stored_sensor.description != gt_sensor.description
+                                or stored_sensor.alertDelay != gt_sensor.alertDelay
+                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
+                                or stored_sensor.state != gt_sensor.state
+                                or stored_sensor.dataType != gt_sensor.dataType
+                                or stored_sensor.data != gt_sensor.data
+                                or any(map(lambda x: x not in gt_sensor.alertLevels, stored_sensor.alertLevels))
+                                or any(map(lambda x: x not in stored_sensor.alertLevels, gt_sensor.alertLevels))):
+                            self.fail("Sensor content has changed.")
+
+                        break
+
+                if not found:
+                    self.fail("Not able to find Sensor object corresponding to created sensors.")
+
+            if len(self.sensors) != len(system_data.get_sensors_list()):
+                self.fail("Number of stored Sensor objects differ from created ones.")
+
+    def test_sensor_state_change(self):
+        """
+        Test Sensor state change.
+        """
+        system_data = self._create_sensors()
+
+        for i in range(len(self.sensors)):
+            curr_sensor = self.sensors[i]
+            stored_sensor = system_data.get_sensor_by_id(curr_sensor.sensorId)
+
+            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+                    or stored_sensor.description != curr_sensor.description
+                    or stored_sensor.alertDelay != curr_sensor.alertDelay
+                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
+                    or stored_sensor.state != curr_sensor.state
+                    or stored_sensor.dataType != curr_sensor.dataType
+                    or stored_sensor.data != curr_sensor.data
+                    or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
+                    or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
+                self.fail("Stored object does not have initially correct content.")
+
+            system_data.sensor_state_change(stored_sensor.sensorId,
+                                            1 - stored_sensor.state,
+                                            stored_sensor.dataType,
+                                            stored_sensor.data)
+
+            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+                    or stored_sensor.description != curr_sensor.description
+                    or stored_sensor.alertDelay != curr_sensor.alertDelay
+                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
+                    or stored_sensor.dataType != curr_sensor.dataType
+                    or stored_sensor.data != curr_sensor.data
+                    or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
+                    or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
+                self.fail("Stored object does not have correct content after state change.")
+
+            if stored_sensor.state == curr_sensor.state:
+                self.fail("State of Sensor object was not updated.")
+
+            # Check nothing has changed in other Sensor objects
+            # (update state of current sensor manually for this check).
+            curr_sensor.state = stored_sensor.state
+            for gt_sensor in self.sensors:
+                found = False
+                for stored_sensor in system_data.get_sensors_list():
+                    if stored_sensor.sensorId == gt_sensor.sensorId:
+                        found = True
+                        if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
+                                or stored_sensor.description != gt_sensor.description
+                                or stored_sensor.alertDelay != gt_sensor.alertDelay
+                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
+                                or stored_sensor.state != gt_sensor.state
+                                or stored_sensor.dataType != gt_sensor.dataType
+                                or stored_sensor.data != gt_sensor.data
+                                or any(map(lambda x: x not in gt_sensor.alertLevels, stored_sensor.alertLevels))
+                                or any(map(lambda x: x not in stored_sensor.alertLevels, gt_sensor.alertLevels))):
+                            self.fail("Sensor content has changed.")
+
+                        break
+
+                if not found:
+                    self.fail("Not able to find Sensor object corresponding to created sensors.")
+
+            if len(self.sensors) != len(system_data.get_sensors_list()):
+                self.fail("Number of stored Sensor objects differ from created ones.")
