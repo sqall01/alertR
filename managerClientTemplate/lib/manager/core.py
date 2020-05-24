@@ -170,10 +170,3 @@ class BaseManagerEventHandler(EventHandler):
 
     def new_connection(self):
         pass
-
-
-
-# TODO
-# * store data in globalData "systemData" class and update it
-# * write test cases for this class
-# * how long do we hold sensor alert objects?
