@@ -136,7 +136,7 @@ class TestManagerCoreStatusUpdate(TestSystemDataCore):
             if not found:
                 self.fail("Stored Sensor object not found in local objects.")
 
-        if not event_handler.status_update(0,
+        if not event_handler.status_update(1337,
                                            self.options,
                                            self.nodes,
                                            self.sensors,
@@ -144,6 +144,9 @@ class TestManagerCoreStatusUpdate(TestSystemDataCore):
                                            self.alerts,
                                            self.alert_levels):
             self.fail("Status update failed.")
+
+        if event_handler.server_time != 1337:
+            self.fail("Server time update failed.")
 
         # Check changes are stored.
         for stored_option in global_data.system_data.get_options_list():
