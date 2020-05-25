@@ -146,7 +146,7 @@ class SystemData:
                              % (sensor.nodeId, sensor.sensorId))
 
         # Does corresponding node have correct type?
-        if self._nodes[sensor.nodeId].nodeType.lower() != "sensor":
+        if self._nodes[sensor.nodeId].nodeType.lower() not in ["sensor", "server"]:
             raise ValueError("Node %d not of correct type for corresponding sensor %d."
                              % (sensor.nodeId, sensor.sensorId))
 
