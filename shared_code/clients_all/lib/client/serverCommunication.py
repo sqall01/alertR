@@ -671,7 +671,7 @@ class ServerCommunication(Communication):
                 return True
 
             if not self.connect():
-                self.close()
+                # Do not close the connection since it was not established yet.
                 return False
 
             # Build registration message.
@@ -737,7 +737,7 @@ class ServerCommunication(Communication):
         """
         logging.info("[%s] Reconnecting to server." % self._log_tag)
 
-        # clean up session before exiting
+        # Clean up session before reconnecting.
         self.close()
 
         return self.initialize()
