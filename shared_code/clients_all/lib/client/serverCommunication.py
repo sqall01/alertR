@@ -610,10 +610,13 @@ class ServerCommunication(Communication):
 
             # Exit if we are requested to.
             if self._exit_flag:
+                if self.has_channel:
+                    self.close()
                 return
 
             message = self.recv_request()
             if message is None:
+                self.close()
                 return
             request = message["message"]
 
@@ -737,8 +740,9 @@ class ServerCommunication(Communication):
         """
         logging.info("[%s] Reconnecting to server." % self._log_tag)
 
-        # Clean up session before reconnecting.
-        self.close()
+        # Clean up session before reconnecting if it exists.
+        if self.has_channel:
+            self.close()
 
         return self.initialize()
 
