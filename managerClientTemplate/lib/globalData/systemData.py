@@ -93,7 +93,7 @@ class SystemData:
             for manager_id in to_remove:
                 self._delete_manager_by_id(manager_id)
 
-        elif node_obj.nodeType.lower() == "sensor":
+        elif node_obj.nodeType.lower() in ["sensor", "server"]:
             to_remove = []
             for sensor_id, sensor in self._sensors.items():
                 if sensor.nodeId == node_obj.nodeId:
