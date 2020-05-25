@@ -38,7 +38,11 @@ class GlobalData:
         self.nodeType = "manager"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "..",
+                                       "config",
+                                       "config.xml")  # type: str
 
         # this flags indicate if email alerts via smtp are active
         self.smtpAlert = None
