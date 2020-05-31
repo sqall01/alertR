@@ -72,17 +72,13 @@ class ManagerEventHandler(BaseManagerEventHandler):
         return result
 
     def close_connection(self):
-        result = super().close_connection()
+        super().close_connection()
 
         # DEVELOPERS: add your code here
         print("ManagerEventHandler: close_connection")
 
-        return result
-
     def new_connection(self):
-        result = super().new_connection()
+        super().new_connection()
 
         # DEVELOPERS: add your code here
         print("ManagerEventHandler: new_connection")
-
-        return result
