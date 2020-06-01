@@ -1504,12 +1504,11 @@ class Console:
                 # check if a new sensor was added
                 if "urwid" not in sensor.internal_data.keys():
                     # get node the sensor belongs to
-                    nodeSensorBelongs = self.system_data.get_sensor_by_id(sensor.nodeId)
+                    nodeSensorBelongs = self.system_data.get_node_by_id(sensor.nodeId)
                     if nodeSensorBelongs is None:
                         raise ValueError("Could not find a node the sensor belongs to.")
                     elif nodeSensorBelongs.nodeType != "sensor" and nodeSensorBelongs.nodeType != "server":
-                        raise ValueError(
-                            'Node the sensor belongs to is not of type "sensor" or "server".')
+                        raise ValueError('Node the sensor belongs to is not of type "sensor" or "server".')
 
                     # create new sensor urwid object
                     # (also links urwid object to sensor object)
@@ -1875,3 +1874,6 @@ class Console:
         # return true so the file descriptor will NOT be closed
         self._releaseLock()
         return True
+
+
+    # TODO does not remove sensor when the client connects with a removed sensor
