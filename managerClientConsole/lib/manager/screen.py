@@ -486,7 +486,7 @@ class Console:
 
         # get all alert levels the focused sensor belongs to
         currentAlertLevels = list()
-        for alertLevel in self.system_data.get_alert_levels_list():
+        for alertLevel in self.system_data.get_alert_levels_list(order_by_level=True):
             if alertLevel.level in obj.alertLevels:
                 currentAlertLevels.append(alertLevel)
 
@@ -498,7 +498,7 @@ class Console:
 
         # get all alerts that belong to the focused alert level
         currentAlerts = list()
-        for alert in self.system_data.get_alerts_list():
+        for alert in self.system_data.get_alerts_list(order_by_desc=True):
             if alertLevel.level in alert.alertLevels:
                 currentAlerts.append(alert)
 
@@ -510,7 +510,7 @@ class Console:
 
         # get all sensors that belong to the focused alert level
         currentSensors = list()
-        for sensor in self.system_data.get_sensors_list():
+        for sensor in self.system_data.get_sensors_list(order_by_desc=True):
             if alertLevel.level in sensor.alertLevels:
                 currentSensors.append(sensor)
 
@@ -1100,7 +1100,7 @@ class Console:
     def startConsole(self):
 
         # generate all sensor urwid objects
-        for sensor in self.system_data.get_sensors_list():
+        for sensor in self.system_data.get_sensors_list(order_by_desc=True):
 
             # get node the sensor belongs to
             nodeSensorBelongs = self.system_data.get_node_by_id(sensor.nodeId)
@@ -1159,7 +1159,7 @@ class Console:
                                         title="Sensors")
 
         # generate all manager urwid objects
-        for manager in self.system_data.get_managers_list():
+        for manager in self.system_data.get_managers_list(order_by_desc=True):
 
             # get node the manager belongs to
             nodeManagerBelongs = self.system_data.get_node_by_id(manager.nodeId)
@@ -1219,7 +1219,7 @@ class Console:
         self.leftDisplayPart = urwid.Pile([self.sensorsBox, self.managersBox])
 
         # generate all alert urwid objects
-        for alert in self.system_data.get_alerts_list():
+        for alert in self.system_data.get_alerts_list(order_by_desc=True):
 
             # get node the alert belongs to
             nodeAlertBelongs = self.system_data.get_node_by_id(alert.nodeId)
@@ -1278,7 +1278,7 @@ class Console:
                                        title="Alert Clients")
 
         # generate all alert level urwid objects
-        for alertLevel in self.system_data.get_alert_levels_list():
+        for alertLevel in self.system_data.get_alert_levels_list(order_by_level=True):
 
             # create new alert level urwid object
             # (also links urwid object to alert level object)
@@ -1500,7 +1500,7 @@ class Console:
                         self.detailedView.updateCompleteWidget(objAlertLevels)
 
             # add all sensors that were newly added
-            for sensor in self.system_data.get_sensors_list():
+            for sensor in self.system_data.get_sensors_list(order_by_desc=True):
                 # check if a new sensor was added
                 if "urwid" not in sensor.internal_data.keys():
                     # get node the sensor belongs to
@@ -1579,7 +1579,7 @@ class Console:
                         self.detailedView.updateCompleteWidget(objAlertLevels)
 
             # add all alerts that were newly added
-            for alert in self.system_data.get_alerts_list():
+            for alert in self.system_data.get_alerts_list(order_by_desc=True):
                 # check if a new alert was added
                 if "urwid" not in alert.internal_data.keys():
                     # get node the alert belongs to
@@ -1653,7 +1653,7 @@ class Console:
                         self.detailedView.updateCompleteWidget()
 
             # add all managers that were newly added
-            for manager in self.system_data.get_managers_list():
+            for manager in self.system_data.get_managers_list(order_by_desc=True):
                 # check if a new manager was added
                 if "urwid" not in manager.internal_data.keys():
                     # get node the manager belongs to
@@ -1735,7 +1735,7 @@ class Console:
                         self.detailedView.updateCompleteWidget(currentSensors, currentAlerts)
 
             # add all alert levels that were newly added
-            for alertLevel in self.system_data.get_alert_levels_list():
+            for alertLevel in self.system_data.get_alert_levels_list(order_by_level=True):
                 # check if a new alert level was added
                 if "urwid" not in alertLevel.internal_data.keys():
                     # create new alert level urwid object
@@ -1826,10 +1826,8 @@ class Console:
                 # if rules of the triggered alert level are activated
                 # => use name of the first alert level for its description
                 else:
-                    for alertLevel in self.system_data.get_alert_levels_list():
-                        if sensorAlert.alertLevels[0] == alertLevel.level:
-                            description = alertLevel.name
-                            break
+                    alertLevel = self.system_data.get_alert_level_by_level(sensorAlert.alertLevels[0])
+                    description = alertLevel.name
 
                 # check if more sensor alerts are shown than are received
                 # => there still exists empty sensor alerts
