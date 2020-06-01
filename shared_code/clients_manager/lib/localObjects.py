@@ -39,6 +39,7 @@ class LocalObject:
     def deepcopy(self, obj):
         raise NotImplementedError("Abstract class.")
 
+
 # this class represents an option of the server
 class Option(LocalObject):
 

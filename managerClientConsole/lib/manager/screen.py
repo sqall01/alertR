@@ -14,6 +14,7 @@ import urwid
 from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, AlertUrwid, AlertDetailedUrwid, \
                             ManagerUrwid, ManagerDetailedUrwid, AlertLevelUrwid, AlertLevelDetailedUrwid, \
                             SensorAlertUrwid, SearchViewUrwid
+from .eventHandler import ManagerEventHandler
 from ..globalData import GlobalData
 from ..localObjects import Sensor, Alert, AlertLevel
 from ..client import ServerCommunication
@@ -27,105 +28,18 @@ class FocusedElement:
     alertLevels = 4
 
 
-# this class handles the screen updates
-class ScreenUpdater(threading.Thread):
-
-    def __init__(self, globalData: GlobalData):
-        threading.Thread.__init__(self)
-
-        # get global configured data
-        self.globalData = globalData
-        self.sensorAlerts = self.globalData.sensorAlerts
-        self.console = self.globalData.console
-        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # create an event that is used to wake this thread up
-        # and update the screen
-        self.screenUpdaterEvent = threading.Event()
-        self.screenUpdaterEvent.clear()
-
-        # set exit flag as false
-        self.exitFlag = False
-
-    def run(self):
-
-        while True:
-            if self.exitFlag:
-                return
-
-            # wait until thread is woken up by an event to update the screen
-            # or 10 seconds elapsed
-            self.screenUpdaterEvent.wait(10)
-            self.screenUpdaterEvent.clear()
-
-            # if reference to console object does not exist
-            # => get it from global data or if it does not exist continue loop
-            if self.console is None:
-                if self.globalData.console is not None:
-                    self.console = self.globalData.console
-                else:
-                    continue            
-
-            # check if a sensor alert was received
-            # => update screen with sensor alert
-            if len(self.sensorAlerts) != 0:
-                logging.info("[%s]: Updating screen with sensor alert." % self.fileName)
-
-                if not self.console.updateScreen("sensoralert"):
-                    logging.error("[%s]: Updating screen with sensor alert failed." % self.fileName)
-
-                # do not use the old status information from the server
-                # to update the screen => wait for new status update
-                continue
-
-            # update screen normally
-            logging.debug("[%s]: Updating screen." % self.fileName)
-            if not self.console.updateScreen("status"):
-                logging.error("[%s]: Updating screen failed." % self.fileName)
-
-            # if reference to server communication object does not exist
-            # => get it from global data or if it does not exist continue loop 
-            if self.serverComm is None:
-                if self.globalData.serverComm is not None:
-                    self.serverComm = self.globalData.serverComm
-
-                else:
-                    continue
-
-            # check if the client is not connected to the server
-            # => update screen to connection failure
-            if not self.serverComm.is_connected:
-                logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
-
-                if not self.console.updateScreen("connectionfail"):
-                    logging.error("[%s]: Updating screen failed." % self.fileName)
-
-    # sets the exit flag to shut down the thread
-    def exit(self):
-        self.exitFlag = True
-
-
 # this class handles the complete screen/console
 class Console:
 
-    def __init__(self, globalData: GlobalData):
+    def __init__(self, global_data: GlobalData):
         self.fileName = os.path.basename(__file__)
 
         # get global configured data
-        self.globalData = globalData
-        self.options = self.globalData.options
-        self.nodes = self.globalData.nodes
-        self.sensors = self.globalData.sensors
-        self.managers = self.globalData.managers
-        self.alerts = self.globalData.alerts
-        self.sensorAlerts = self.globalData.sensorAlerts
-        self.alertLevels = self.globalData.alertLevels
+        self.globalData = global_data
+        self.system_data = self.globalData.system_data
         self.connectionTimeout = self.globalData.connectionTimeout
         self.serverComm = self.globalData.serverComm  # type: ServerCommunication
-        self.serverEventHandler = self.serverComm.event_handler
+        self.serverEventHandler = self.serverComm.event_handler  # type: ManagerEventHandler
         self.timeShowSensorAlert = self.globalData.timeShowSensorAlert
         self.maxCountShowSensorAlert = self.globalData.maxCountShowSensorAlert
         self.maxCountShowSensorsPerPage = self.globalData.maxCountShowSensorsPerPage
@@ -572,7 +486,7 @@ class Console:
 
         # get all alert levels the focused sensor belongs to
         currentAlertLevels = list()
-        for alertLevel in self.alertLevels:
+        for alertLevel in self.system_data.get_alert_levels_list():
             if alertLevel.level in obj.alertLevels:
                 currentAlertLevels.append(alertLevel)
 
@@ -584,7 +498,7 @@ class Console:
 
         # get all alerts that belong to the focused alert level
         currentAlerts = list()
-        for alert in self.alerts:
+        for alert in self.system_data.get_alerts_list():
             if alertLevel.level in alert.alertLevels:
                 currentAlerts.append(alert)
 
@@ -596,7 +510,7 @@ class Console:
 
         # get all sensors that belong to the focused alert level
         currentSensors = list()
-        for sensor in self.sensors:
+        for sensor in self.system_data.get_sensors_list():
             if alertLevel.level in sensor.alertLevels:
                 currentSensors.append(sensor)
 
@@ -1076,6 +990,7 @@ class Console:
         # write status to the callback file descriptor
         if self.screenFd is not None:
 
+            # Lock is closed in screenCallback() function which handles our request.
             self._acquireLock()
 
             os.write(self.screenFd, status.encode("ascii"))
@@ -1185,14 +1100,10 @@ class Console:
     def startConsole(self):
 
         # generate all sensor urwid objects
-        for sensor in self.sensors:
+        for sensor in self.system_data.get_sensors_list():
 
             # get node the sensor belongs to
-            nodeSensorBelongs = None
-            for node in self.nodes:
-                if sensor.nodeId == node.nodeId:
-                    nodeSensorBelongs = node
-                    break
+            nodeSensorBelongs = self.system_data.get_node_by_id(sensor.nodeId)
             if nodeSensorBelongs is None:
                 raise ValueError("Could not find a node the sensor belongs to.")
             elif nodeSensorBelongs.nodeType != "sensor" and nodeSensorBelongs.nodeType != "server":
@@ -1248,14 +1159,10 @@ class Console:
                                         title="Sensors")
 
         # generate all manager urwid objects
-        for manager in self.managers:
+        for manager in self.system_data.get_managers_list():
 
             # get node the manager belongs to
-            nodeManagerBelongs = None
-            for node in self.nodes:
-                if manager.nodeId == node.nodeId:
-                    nodeManagerBelongs = node
-                    break
+            nodeManagerBelongs = self.system_data.get_node_by_id(manager.nodeId)
             if nodeManagerBelongs is None:
                 raise ValueError("Could not find a node the manager belongs to.")
             elif nodeManagerBelongs.nodeType != "manager":
@@ -1312,14 +1219,10 @@ class Console:
         self.leftDisplayPart = urwid.Pile([self.sensorsBox, self.managersBox])
 
         # generate all alert urwid objects
-        for alert in self.alerts:
+        for alert in self.system_data.get_alerts_list():
 
             # get node the alert belongs to
-            nodeAlertBelongs = None
-            for node in self.nodes:
-                if alert.nodeId == node.nodeId:
-                    nodeAlertBelongs = node
-                    break
+            nodeAlertBelongs = self.system_data.get_node_by_id(alert.nodeId)
             if nodeAlertBelongs is None:
                 raise ValueError("Could not find a node the alert belongs to.")
             elif nodeAlertBelongs.nodeType != "alert":
@@ -1375,7 +1278,7 @@ class Console:
                                        title="Alert Clients")
 
         # generate all alert level urwid objects
-        for alertLevel in self.alertLevels:
+        for alertLevel in self.system_data.get_alert_levels_list():
 
             # create new alert level urwid object
             # (also links urwid object to alert level object)
@@ -1437,14 +1340,14 @@ class Console:
         sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile, title="List of Triggered Sensor Alerts")
 
         # generate widget to show the status of the alert system
-        for option in self.options:
-            if option.type == "alertSystemActive":
-                if option.value == 0:
-                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-                    self.alertSystemActive.turnRed()
-                else:
-                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-                    self.alertSystemActive.turnGreen()
+        option = self.system_data.get_option_by_type("alertSystemActive")
+        if option.type == "alertSystemActive":
+            if option.value == 0:
+                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
+                self.alertSystemActive.turnRed()
+            else:
+                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
+                self.alertSystemActive.turnGreen()
         if self.alertSystemActive is None:
             logging.error("[%s]: No alert system status option." % self.fileName)
             return
@@ -1528,17 +1431,16 @@ class Console:
             self.connectionStatus.updateStatusValue("Online")
             self.connectionStatus.turnNeutral()
 
-            # update all option widgets
-            for option in self.options:
-                # change alert system active widget according
-                # to received status
-                if option.type == "alertSystemActive":
-                    if option.value == 0:
-                        self.alertSystemActive.updateStatusValue("Deactivated")
-                        self.alertSystemActive.turnRed()
-                    else:
-                        self.alertSystemActive.updateStatusValue("Activated")
-                        self.alertSystemActive.turnGreen()
+            # change alert system active widget according
+            # to received status
+            option = self.system_data.get_option_by_type("alertSystemActive")
+            if option.type == "alertSystemActive":
+                if option.value == 0:
+                    self.alertSystemActive.updateStatusValue("Deactivated")
+                    self.alertSystemActive.turnRed()
+                else:
+                    self.alertSystemActive.updateStatusValue("Activated")
+                    self.alertSystemActive.turnGreen()
 
             # remove sensor alerts if they are too old
             for sensorAlertUrwid in self.sensorAlertUrwidObjects:
@@ -1581,10 +1483,10 @@ class Console:
                     # => object will be deleted by garbage collector
                     self.sensorUrwidObjects.remove(sensorUrwidObject)
 
-                    # if the detailed view is shown and this sensor
-                    # was removed
+                    # if the detailed view is shown and this sensor was removed
                     # => close detailed view
-                    if self.inDetailView and self.detailedView.sensor not in self.sensors:
+                    if (self.inDetailView
+                            and self.detailedView.sensor not in self.system_data.get_sensors_list()):
                         self._closeDetailedView()
 
                 # if the detailed view is shown of a sensor
@@ -1598,15 +1500,11 @@ class Console:
                         self.detailedView.updateCompleteWidget(objAlertLevels)
 
             # add all sensors that were newly added
-            for sensor in self.sensors:
+            for sensor in self.system_data.get_sensors_list():
                 # check if a new sensor was added
-                if sensor.sensorUrwid is None:
+                if "urwid" not in sensor.internal_data.keys():
                     # get node the sensor belongs to
-                    nodeSensorBelongs = None
-                    for node in self.nodes:
-                        if sensor.nodeId == node.nodeId:
-                            nodeSensorBelongs = node
-                            break
+                    nodeSensorBelongs = self.system_data.get_sensor_by_id(sensor.nodeId)
                     if nodeSensorBelongs is None:
                         raise ValueError("Could not find a node the sensor belongs to.")
                     elif nodeSensorBelongs.nodeType != "sensor" and nodeSensorBelongs.nodeType != "server":
@@ -1666,7 +1564,8 @@ class Console:
                     # if the detailed view is shown and this alert
                     # was removed
                     # => close detailed view
-                    if self.inDetailView and self.detailedView.alert not in self.alerts:
+                    if (self.inDetailView
+                            and self.detailedView.alert not in self.system_data.get_alerts_list()):
                         self._closeDetailedView()
 
                 # if the detailed view is shown of an alert
@@ -1680,15 +1579,11 @@ class Console:
                         self.detailedView.updateCompleteWidget(objAlertLevels)
 
             # add all alerts that were newly added
-            for alert in self.alerts:
+            for alert in self.system_data.get_alerts_list():
                 # check if a new alert was added
-                if alert.alertUrwid is None:
+                if "urwid" not in alert.internal_data.keys():
                     # get node the alert belongs to
-                    nodeAlertBelongs = None
-                    for node in self.nodes:
-                        if alert.nodeId == node.nodeId:
-                            nodeAlertBelongs = node
-                            break
+                    nodeAlertBelongs = self.system_data.get_node_by_id(alert.nodeId)
                     if nodeAlertBelongs is None:
                         raise ValueError("Could not find a node the alert belongs to.")
                     elif nodeAlertBelongs.nodeType != "alert":
@@ -1744,7 +1639,8 @@ class Console:
                     # if the detailed view is shown and this manager
                     # was removed
                     # => close detailed view
-                    if self.inDetailView and self.detailedView.manager not in self.managers:
+                    if (self.inDetailView
+                            and self.detailedView.manager not in self.system_data.get_managers_list()):
                         self._closeDetailedView()
 
                 # if the detailed view is shown of a manager
@@ -1757,15 +1653,11 @@ class Console:
                         self.detailedView.updateCompleteWidget()
 
             # add all managers that were newly added
-            for manager in self.managers:
+            for manager in self.system_data.get_managers_list():
                 # check if a new manager was added
-                if manager.managerUrwid is None:
+                if "urwid" not in manager.internal_data.keys():
                     # get node the manager belongs to
-                    nodeManagerBelongs = None
-                    for node in self.nodes:
-                        if manager.nodeId == node.nodeId:
-                            nodeManagerBelongs = node
-                            break
+                    nodeManagerBelongs = self.system_data.get_node_by_id(manager.nodeId)
                     if nodeManagerBelongs is None:
                         raise ValueError("Could not find a node the manager belongs to.")
                     elif nodeManagerBelongs.nodeType != "manager":
@@ -1822,7 +1714,8 @@ class Console:
                     # if the detailed view is shown and this alert level
                     # was removed
                     # => close detailed view
-                    if self.inDetailView and self.detailedView.alertLevel not in self.alertLevels:
+                    if (self.inDetailView
+                            and self.detailedView.alertLevel not in self.system_data.get_alert_levels_list()):
                         self._closeDetailedView()
 
                 # if the detailed view is shown of a manager
@@ -1842,9 +1735,9 @@ class Console:
                         self.detailedView.updateCompleteWidget(currentSensors, currentAlerts)
 
             # add all alert levels that were newly added
-            for alertLevel in self.alertLevels:
+            for alertLevel in self.system_data.get_alert_levels_list():
                 # check if a new alert level was added
-                if alertLevel.alertLevelUrwid is None:
+                if "urwid" not in alertLevel.internal_data.keys():
                     # create new alert level urwid object
                     # (also links urwid object to alert level object)
                     alertLevelUrwid = AlertLevelUrwid(alertLevel)
@@ -1902,41 +1795,38 @@ class Console:
             logging.debug("[%s]: Sensor alert received. Updating screen elements." % self.fileName)
 
             # output all sensor alerts
-            for sensorAlert in self.sensorAlerts:
+            for sensorAlert in self.system_data.get_sensor_alerts_list():
 
                 description = ""
 
                 # if rules of the triggered alert level are not activated
                 # => search for the sensor urwid object and update it
                 if not sensorAlert.rulesActivated:
-                    for sensor in self.sensors:
-                        if sensorAlert.sensorId == sensor.sensorId:
+                    sensor = self.system_data.get_sensor_by_id(sensorAlert.sensorId)
 
-                            # Only update sensor state information if the flag
-                            # was set in the received message.
-                            if sensorAlert.changeState:
-                                sensor.sensorUrwid.updateState(sensorAlert.state)
+                    # Only update sensor state information if the flag
+                    # was set in the received message.
+                    if sensorAlert.changeState:
+                        sensor.internal_data["urwid"].updateState(sensorAlert.state)
 
-                            sensor.sensorUrwid.updateLastUpdated(sensorAlert.timeReceived)
+                    sensor.internal_data["urwid"].updateLastUpdated(sensorAlert.timeReceived)
 
-                            # get description for the sensor alert to add
-                            description = sensor.description
+                    # get description for the sensor alert to add
+                    description = sensor.description
 
-                            # differentiate if sensor alert was triggered
-                            # for a "triggered" or "normal" state
-                            if sensorAlert.state == 0:
-                                description += " (normal)"
-                            elif sensorAlert.state == 1:
-                                description += " (triggered)"
-                            else:
-                                description += " (undefined)"
-
-                            break
+                    # differentiate if sensor alert was triggered
+                    # for a "triggered" or "normal" state
+                    if sensorAlert.state == 0:
+                        description += " (normal)"
+                    elif sensorAlert.state == 1:
+                        description += " (triggered)"
+                    else:
+                        description += " (undefined)"
 
                 # if rules of the triggered alert level are activated
                 # => use name of the first alert level for its description
                 else:
-                    for alertLevel in self.alertLevels:
+                    for alertLevel in self.system_data.get_alert_levels_list():
                         if sensorAlert.alertLevels[0] == alertLevel.level:
                             description = alertLevel.name
                             break
@@ -1980,8 +1870,9 @@ class Console:
                 # => new sensor alerts will be displayed on top
                 self.sensorAlertsPile.contents.insert(0, (sensorAlertUrwid.get(), self.sensorAlertsPile.options()))
 
-                # remove sensor alert from the list of sensor alerts
-                self.sensorAlerts.remove(sensorAlert)
+                # Remove sensor alert (as well as all others) from the list of sensor alerts,
+                # we only care for displaying them.
+                self.system_data.delete_sensor_alerts_received_before(sensorAlert.timeReceived + 1)
 
         # return true so the file descriptor will NOT be closed
         self._releaseLock()

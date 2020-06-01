@@ -12,7 +12,7 @@ import urwid
 import types
 from typing import Any, List
 from ..localObjects import Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
-from .core import ManagerEventHandler
+from .eventHandler import ManagerEventHandler
 
 
 # this class is an urwid object for a status
@@ -34,12 +34,12 @@ class StatusUrwid:
     def get(self):
         return self.statusUrwidMap
 
-    # this functipn updates the status type
+    # this function updates the status type
     def updateStatusType(self, statusType: str):
         self.statusType = statusType
         self.statusTextWidget.set_text(self.statusType + ": " + str(self.statusValue))
 
-    # this functipn updates the status value
+    # this function updates the status value
     def updateStatusValue(self, statusValue: str):
         self.statusValue = statusValue
         self.statusTextWidget.set_text(self.statusType + ": " + str(self.statusValue))
@@ -106,7 +106,7 @@ class SensorUrwid:
 
         # check if sensor has timed out and change color accordingly
         # and consider the state of the sensor (1 = triggered)
-        if (sensor.lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout))
+        if (sensor.lastStateUpdated < (self.serverEventHandler.server_time - (2 * self.connectionTimeout))
            and sensor.state != 1):
             self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "timedout")
             self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
@@ -116,7 +116,7 @@ class SensorUrwid:
         self.node = node
 
         # store reference in sensor object to this urwid sensor object
-        self.sensor.sensorUrwid = self
+        self.sensor.internal_data["urwid"] = self
 
         # Store the current data type of the sensor. This is used to check
         # if the data type has changed and the urwid object has to be adjusted.
@@ -146,7 +146,7 @@ class SensorUrwid:
 
         # check if sensor has timed out and change color accordingly
         # and consider the state of the sensor (1 = triggered)
-        if (self.sensor.lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout))
+        if (self.sensor.lastStateUpdated < (self.serverEventHandler.server_time - (2 * self.connectionTimeout))
            and self.sensor.state != 1):
             self.sensorUrwidMap.set_attr_map({None: "timedout"})
             self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
@@ -156,7 +156,7 @@ class SensorUrwid:
     def updateLastUpdated(self, lastStateUpdated: int):
 
         # check if sensor has timed out and change color accordingly
-        if (lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout))
+        if (lastStateUpdated < (self.serverEventHandler.server_time - (2 * self.connectionTimeout))
            and self.sensor.state != 1):
             self.sensorUrwidMap.set_attr_map({None: "timedout"})
             self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
@@ -177,7 +177,7 @@ class SensorUrwid:
                 self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
                 # check if the sensor timed out and change 
                 # the color accordingly
-                if self.sensor.lastStateUpdated < (self.serverEventHandler.serverTime - (2 * self.connectionTimeout)):
+                if self.sensor.lastStateUpdated < (self.serverEventHandler.server_time - (2 * self.connectionTimeout)):
                     self.sensorUrwidMap.set_attr_map({None: "timedout"})
                     self.sensorUrwidMap.set_focus_map({None: "timedout_focus"})
 
@@ -496,7 +496,7 @@ class AlertUrwid:
         self.node = node
 
         # store reference in alert object to this urwid alert object
-        self.alert.alertUrwid = self
+        self.alert.internal_data["urwid"] = self
 
         alertPileList = list()
         self.descriptionWidget = urwid.Text("Desc.: " + self.alert.description)
@@ -792,7 +792,7 @@ class ManagerUrwid:
         self.node = node
 
         # store reference in manager object to this urwid manager object
-        self.manager.managerUrwid = self
+        self.manager.internal_data["urwid"] = self
 
         managerPileList = list()
         self.descriptionWidget = urwid.Text("Desc.: " + self.manager.description)
@@ -1003,7 +1003,7 @@ class AlertLevelUrwid:
 
         # store reference in alert level object to
         # this urwid alert level object
-        self.alertLevel.alertLevelUrwid = self
+        self.alertLevel.internal_data["urwid"] = self
 
         alertLevelPileList = list()
         self.nameWidget = urwid.Text("Name: " + self.alertLevel.name)

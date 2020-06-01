@@ -7,8 +7,8 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from typing import List, Any
+from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 
 
 class EventHandler:

@@ -1,1 +1,1 @@
-../../../shared_code/clients_manager/console_keypad/lib/manager/core.py
+../../../shared_code/clients_manager/lib/manager/core.py

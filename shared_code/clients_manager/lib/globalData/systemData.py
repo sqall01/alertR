@@ -389,6 +389,17 @@ class SystemData:
         with self._data_lock:
             return list(self._options.values())
 
+    def get_option_by_type(self, option_type: str) -> Optional[Option]:
+        """
+        Gets Option object corresponding to given type.
+        :param option_type:
+        :return:
+        """
+        with self._data_lock:
+            if option_type not in self._options.keys():
+                return None
+            return self._options[option_type]
+
     def get_sensor_alerts_list(self) -> List[SensorAlert]:
         """
         Gets list of all Sensor Alert objects.

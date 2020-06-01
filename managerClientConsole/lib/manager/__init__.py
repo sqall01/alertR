@@ -7,5 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import ManagerEventHandler
-from .screen import ScreenUpdater, Console
+from .eventHandler import ManagerEventHandler
+from .screen import Console
+from .screenUpdater import ScreenUpdater

@@ -205,13 +205,7 @@ if __name__ == '__main__':
     else:
         globalData.smtpAlert = None
 
-    # generate a screen updater thread (that generates the GUI)
-    logging.info("[%s] Starting screen updater thread." % fileName)
     globalData.screenUpdater = ScreenUpdater(globalData)
-    # set thread to daemon
-    # => threads terminates when main thread terminates
-    globalData.screenUpdater.daemon = True
-    globalData.screenUpdater.start()
 
     # generate object for the communication to the server and connect to it
     globalData.serverComm = ServerCommunication(server,
