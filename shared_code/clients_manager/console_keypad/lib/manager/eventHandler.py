@@ -44,21 +44,6 @@ class ManagerEventHandler(BaseManagerEventHandler):
                                        alerts,
                                        alert_levels)
 
-
-        # TODO
-        '''
-        self.sensors.sort(key=lambda x: x.description.lower())
-
-
-        self.managers.sort(key=lambda x: x.description.lower())
-
-
-        self.alerts.sort(key=lambda x: x.description.lower())
-
-
-        self.alertLevels.sort(key=lambda x: x.level)
-        '''
-
         self.screen_updater.update_status()
 
         return result

@@ -299,13 +299,17 @@ class SystemData:
                     result.append(alert)
         return result
 
-    def get_alerts_list(self) -> List[Alert]:
+    def get_alerts_list(self,
+                        order_by_desc: bool = False) -> List[Alert]:
         """
         Gets list of all alert objects.
         :return: List of objects.
         """
         with self._data_lock:
-            return list(self._alerts.values())
+            temp = list(self._alerts.values())
+            if order_by_desc:
+                temp.sort(key=lambda x: x.description.lower())
+            return temp
 
     def get_alert_level_by_level(self, level: int) -> Optional[AlertLevel]:
         """
@@ -318,13 +322,17 @@ class SystemData:
                 return None
             return self._alert_levels[level]
 
-    def get_alert_levels_list(self) -> List[AlertLevel]:
+    def get_alert_levels_list(self,
+                              order_by_level: bool = False) -> List[AlertLevel]:
         """
         Gets list of all alert level objects.
         :return: List of objects.
         """
         with self._data_lock:
-            return list(self._alert_levels.values())
+            temp = list(self._alert_levels.values())
+            if order_by_level:
+                temp.sort(key=lambda x: x.level)
+            return temp
 
     def get_manager_by_id(self, manager_id: int) -> Optional[Manager]:
         """
@@ -354,13 +362,17 @@ class SystemData:
                     result.append(manager)
         return result
 
-    def get_managers_list(self) -> List[Manager]:
+    def get_managers_list(self,
+                          order_by_desc: bool = False) -> List[Manager]:
         """
         Gets list of all manager objects.
         :return: List of objects.
         """
         with self._data_lock:
-            return list(self._managers.values())
+            temp = list(self._managers.values())
+            if order_by_desc:
+                temp.sort(key=lambda x: x.description.lower())
+            return temp
 
     def get_nodes_list(self) -> List[Node]:
         """
@@ -436,13 +448,17 @@ class SystemData:
                     result.append(sensor)
         return result
 
-    def get_sensors_list(self) -> List[Sensor]:
+    def get_sensors_list(self,
+                         order_by_desc: bool = False) -> List[Sensor]:
         """
         Gets list of all sensor objects.
         :return: List of objects.
         """
         with self._data_lock:
-            return list(self._sensors.values())
+            temp = list(self._sensors.values())
+            if order_by_desc:
+                temp.sort(key=lambda x: x.description.lower())
+            return temp
 
     def sensor_state_change(self,
                             sensor_id: int,
