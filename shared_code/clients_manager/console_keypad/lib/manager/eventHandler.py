@@ -10,7 +10,7 @@
 from typing import List, Any
 from .screenUpdater import ScreenUpdater
 from .core import BaseManagerEventHandler
-from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 
 

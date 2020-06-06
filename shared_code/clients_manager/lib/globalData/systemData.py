@@ -9,7 +9,7 @@
 
 import threading
 from typing import Any, Dict, List, Optional
-from ..localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option, InternalState, SensorDataType
+from .localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option, InternalState, SensorDataType
 
 
 class SystemData:

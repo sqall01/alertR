@@ -14,7 +14,7 @@ import socket
 import os
 import logging
 from typing import List, Dict, Any, Optional
-from ..localObjects import SensorDataType
+from ..globalData import SensorDataType
 
 
 class MsgChecker:

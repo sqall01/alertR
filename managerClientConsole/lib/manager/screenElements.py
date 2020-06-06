@@ -11,8 +11,8 @@ import time
 import urwid
 import types
 from typing import Any, List
-from ..localObjects import Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from .eventHandler import ManagerEventHandler
+from ..globalData import Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 
 
 # this class is an urwid object for a status

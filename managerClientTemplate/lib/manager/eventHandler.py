@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from .core import BaseManagerEventHandler
-from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 from typing import List, Any
 

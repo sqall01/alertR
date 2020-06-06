@@ -15,8 +15,8 @@ from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, Alert
                             ManagerUrwid, ManagerDetailedUrwid, AlertLevelUrwid, AlertLevelDetailedUrwid, \
                             SensorAlertUrwid, SearchViewUrwid
 from .eventHandler import ManagerEventHandler
+from ..globalData import Sensor, Alert, AlertLevel
 from ..globalData import GlobalData
-from ..localObjects import Sensor, Alert, AlertLevel
 from ..client import ServerCommunication
 from typing import Any, List
 

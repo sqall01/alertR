@@ -1,1 +1,0 @@
-../../shared_code/clients_manager/lib/localObjects.py

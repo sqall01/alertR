@@ -9,8 +9,8 @@
 
 import os
 import logging
+from ..globalData import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..client import EventHandler
-from ..localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 from typing import List, Any
 

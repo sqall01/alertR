@@ -17,7 +17,7 @@ from .core import Client
 from .util import MsgBuilder, MsgChecker
 from .communication import Communication, Promise
 from .eventHandler import EventHandler
-from ..localObjects import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
+from ..globalData import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
 from ..globalData import GlobalData
 
 
