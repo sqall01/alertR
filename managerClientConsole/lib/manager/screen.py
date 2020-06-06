@@ -1341,16 +1341,15 @@ class Console:
 
         # generate widget to show the status of the alert system
         option = self.system_data.get_option_by_type("alertSystemActive")
-        if option.type == "alertSystemActive":
-            if option.value == 0:
-                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-                self.alertSystemActive.turnRed()
-            else:
-                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-                self.alertSystemActive.turnGreen()
-        if self.alertSystemActive is None:
+        if option is None:
             logging.error("[%s]: No alert system status option." % self.fileName)
             return
+        if option.value == 0:
+            self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
+            self.alertSystemActive.turnRed()
+        else:
+            self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
+            self.alertSystemActive.turnGreen()
 
         # generate widget to show the status of the connection
         self.connectionStatus = StatusUrwid("connection status", "Status", "Online")

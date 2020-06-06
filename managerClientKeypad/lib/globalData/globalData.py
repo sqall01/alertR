@@ -9,6 +9,7 @@
 
 import os
 from typing import Optional
+from .systemData import SystemData
 
 
 # this class is a global configuration class that holds 
@@ -37,7 +38,11 @@ class GlobalData:
         self.nodeType = "manager"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "..",
+                                       "config",
+                                       "config.xml")  # type: str
 
         # this flags indicate if email alerts via smtp are active
         self.smtpAlert = None
@@ -45,26 +50,8 @@ class GlobalData:
         # this holds the description of this client
         self.description = None  # type: Optional[str]
 
-        # this is a list of all option objects that are received
-        self.options = list()
-
-        # this is a list of all node objects that are received
-        self.nodes = list()
-
-        # this is a list of all sensor objects that are received
-        self.sensors = list()
-
-        # this is a list of all manager objects that are received
-        self.managers = list()
-
-        # this is a list of all alert objects that are received
-        self.alerts = list()
-
-        # this is a list of all sensor alert objects that are received
-        self.sensorAlerts = list()
-
-        # this is a list of all alert level objects that are received
-        self.alertLevels = list()
+        # Holds copy of the AlertR system data.
+        self.system_data = SystemData()
 
         # this is the instance of the screen updateter object that is
         # responsible of updating the screen

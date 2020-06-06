@@ -129,6 +129,8 @@ class PinUrwid(urwid.Edit):
         # set time the screen was unlocked
         self.console.screenUnlockedTime = int(time.time())
 
+        logging.info("[%s] Unlocking screen." % self.fileName)
+
         # show menu
         self.console.showMenuView()
 

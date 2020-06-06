@@ -7,8 +7,10 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .eventHandler import ManagerEventHandler
-from .screen import Console
-from .screenUpdater import ScreenUpdater
-from .audio import AudioOutput
-from .localObjects import SensorWarningState
+
+class SensorWarningState:
+
+    def __init__(self):
+        self.username = None
+        self.remoteSensorId = None
+        self.warningState = None

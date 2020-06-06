@@ -10,129 +10,30 @@
 import threading
 import logging
 import os
-import time
 import urwid
+import time
 from .audio import AudioOutput
 from .screenElements import PinUrwid, StatusUrwid, WarningUrwid
 from ..globalData import GlobalData
 from ..client import ServerCommunication
 
 
-# this class handles the screen updates
-class ScreenUpdater(threading.Thread):
-
-    def __init__(self, globalData: GlobalData):
-        threading.Thread.__init__(self)
-
-        # get global configured data
-        self.globalData = globalData
-        self.sensorAlerts = self.globalData.sensorAlerts
-        self.console = self.globalData.console
-        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
-        self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # create an event that is used to wake this thread up
-        # and update the screen
-        self.screenUpdaterEvent = threading.Event()
-        self.screenUpdaterEvent.clear()
-
-        # set exit flag as false
-        self.exitFlag = False
-
-    def run(self):
-
-        while True:
-            if self.exitFlag:
-                return
-
-            # wait until thread is woken up by an event to update the screen
-            # or 5 seconds elapsed
-            self.screenUpdaterEvent.wait(5)
-            self.screenUpdaterEvent.clear()
-
-            # if reference to console object does not exist
-            # => get it from global data or if it does not exist continue loop
-            if self.console is None:
-                if self.globalData.console is not None:
-                    self.console = self.globalData.console
-
-                else:
-                    continue
-
-            # check if the screen is unlocked
-            # and the screen unlocked time has timed out
-            # => lock screen
-            utcTimestamp = int(time.time())
-            if (not self.console.inPinView
-               and (utcTimestamp - self.console.screenUnlockedTime) > self.unlockedScreenTimeout):
-
-                logging.info("[%s]: Timeout for unlocked screen." % self.fileName)
-
-                if not self.console.updateScreen("lockscreen"):
-                    logging.error("[%s]: Locking screen failed." % self.fileName)
-
-            # check if a sensor alert was received
-            # => update screen with sensor alert
-            if len(self.sensorAlerts) != 0:
-                logging.info("[%s]: Updating screen with sensor alert." % self.fileName)
-
-                if not self.console.updateScreen("sensoralert"):
-                    logging.error("[%s]: Updating screen with sensor alert failed." % self.fileName)
-
-                # do not use the old status information from the server
-                # to update the screen => wait for new status update
-                continue
-
-            # update screen normally
-            logging.debug("[%s]: Updating screen." % self.fileName)
-            if not self.console.updateScreen("status"):
-                logging.error("[%s]: Updating screen failed." % self.fileName)
-
-            # if reference to server communication object does not exist
-            # => get it from global data or if it does not exist continue loop 
-            if self.serverComm is None:
-                if self.globalData.serverComm is not None:
-                    self.serverComm = self.globalData.serverComm
-
-                else:
-                    continue
-
-            # check if the client is not connected to the server
-            # => update screen to connection failure
-            if not self.serverComm.is_connected:
-                logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
-
-                if not self.console.updateScreen("connectionfail"):
-                    logging.error("[%s]: Updating screen failed." % self.fileName)
-
-    # sets the exit flag to shut down the thread
-    def exit(self):
-        self.exitFlag = True
-
-
 # this class handles the complete screen/console
 class Console:
 
-    def __init__(self, globalData: GlobalData):
+    def __init__(self, global_data: GlobalData):
         self.fileName = os.path.basename(__file__)
 
         # get global configured data
-        self.globalData = globalData
-        self.options = self.globalData.options
-        self.nodes = self.globalData.nodes
-        self.sensors = self.globalData.sensors
-        self.managers = self.globalData.managers
-        self.alerts = self.globalData.alerts
-        self.sensorAlerts = self.globalData.sensorAlerts
+        self.globalData = global_data
         self.serverComm = self.globalData.serverComm  # type: ServerCommunication
         self.audioOutput = self.globalData.audioOutput  # type: AudioOutput
         self.pins = self.globalData.pins
         self.timeDelayedActivation = self.globalData.timeDelayedActivation
         self.audioOutput = self.globalData.audioOutput
         self.sensorWarningStates = self.globalData.sensorWarningStates
+        self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
+        self.system_data = self.globalData.system_data
 
         # lock that is being used so only one thread can update the screen
         self.consoleLock = threading.BoundedSemaphore(1)
@@ -219,25 +120,8 @@ class Console:
         statesNotSatisfied = list()
         for sensorWarningState in self.sensorWarningStates:
 
-            # get the node corresponding to sensor warning state
-            currentNode = None
-            for node in self.nodes:
-                if node.username == sensorWarningState.username:
-                    currentNode = node
-                    break
-
-            # skip warning state if node is not found
-            if currentNode is None:
-                logging.warning("[%s]: Not able to find node for username '%s'."
-                                % (self.fileName, sensorWarningState.username))
-                continue
-
-            # get the sensor corresponding to sensor warning state
-            currentSensor = None
-            for sensor in self.sensors:
-                if sensor.nodeId == currentNode.nodeId and sensor.remoteSensorId == sensorWarningState.remoteSensorId:
-                    currentSensor = sensor
-                    break
+            currentSensor = self.system_data.get_sensor_by_remote_id(sensorWarningState.username,
+                                                                     sensorWarningState.remoteSensorId)
 
             # skip warning state if sensor is not found
             if currentSensor is None:
@@ -367,6 +251,19 @@ class Console:
         logging.debug("[%s]: Release lock." % self.fileName)
         self.consoleLock.release()
 
+    def _thread_screen_unlock_checker(self):
+        while True:
+            utcTimestamp = int(time.time())
+            if (not self.inPinView
+                    and (utcTimestamp - self.screenUnlockedTime) > self.unlockedScreenTimeout):
+
+                logging.info("[%s]: Timeout for unlocked screen." % self.fileName)
+
+                if not self.updateScreen("lockscreen"):
+                    logging.error("[%s]: Locking screen failed." % self.fileName)
+
+            time.sleep(5)
+
     # this function checks if the given pin is in the list of allowed pins
     def checkPin(self, inputPin: str) -> bool:
         if inputPin in self.pins:
@@ -429,21 +326,21 @@ class Console:
             self.connectionStatus.updateStatusValue("Online")
             self.connectionStatus.turnNeutral()
 
-            # update all option widgets
-            for option in self.options:
-                # change alert system active widget according
-                # to received status
-                if option.type == "alertSystemActive":
-                    if option.value == 0:
-                        self.alertSystemActive.updateStatusValue("Deactivated")
-                        self.alertSystemActive.turnRed()
+            option = self.system_data.get_option_by_type("alertSystemActive")
+            if option is None:
+                logging.error("[%s]: No alert system status option." % self.fileName)
 
-                    else:
-                        self.alertSystemActive.updateStatusValue("Activated")
-                        self.alertSystemActive.turnGreen()
+            else:
+                if option.value == 0:
+                    self.alertSystemActive.updateStatusValue("Deactivated")
+                    self.alertSystemActive.turnRed()
+
+                else:
+                    self.alertSystemActive.updateStatusValue("Activated")
+                    self.alertSystemActive.turnGreen()
 
         # check if the connection to the server failed
-        if received_str == "connectionfail":
+        elif received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
@@ -454,14 +351,14 @@ class Console:
             self.alertSystemActive.turnGray()
 
         # check if a sensor alert was received from the server
-        if received_str == "sensoralert":
+        elif received_str == "sensoralert":
             logging.debug("[%s]: Sensor alert received. Removing it." % self.fileName)
 
             # remove all sensor alerts
-            del self.sensorAlerts[:]
+            self.system_data.delete_sensor_alerts_received_before(int(time.time() + 1))
 
         # check if the screen should be locked
-        if received_str == "lockscreen":
+        elif received_str == "lockscreen":
             logging.debug("[%s]: Locking screen." % self.fileName)
 
             self.showPinView()
@@ -485,6 +382,8 @@ class Console:
 
     # show the pin view
     def showPinView(self):
+
+        logging.info("[%s] Locking screen." % self.fileName)
 
         self.inMenuView = False
         self.inPinView = True
@@ -526,19 +425,19 @@ class Console:
     def startConsole(self):
 
         # generate widget to show the status of the alert system
-        for option in self.options:
-            if option.type == "alertSystemActive":
-                if option.value == 0:
-                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-                    self.alertSystemActive.turnRed()
-
-                else:
-                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-                    self.alertSystemActive.turnGreen()
-
-        if self.alertSystemActive is None:
+        option = self.system_data.get_option_by_type("alertSystemActive")
+        if option is None:
             logging.error("[%s]: No alert system status option." % self.fileName)
             return
+
+        if option.type == "alertSystemActive":
+            if option.value == 0:
+                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
+                self.alertSystemActive.turnRed()
+
+            else:
+                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
+                self.alertSystemActive.turnGreen()
 
         # generate widget to show the status of the connection
         self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
@@ -600,6 +499,11 @@ class Console:
         self.inMenuView = False
         self.inWarningView = False
 
+        # Start unlock checker thread.
+        thread = threading.Thread(target=self._thread_screen_unlock_checker)
+        thread.daemon = True
+        thread.start()
+
         # run urwid loop
         self.mainLoop.run()
 
@@ -613,4 +517,5 @@ class Console:
 
             os.write(self.screenFd, status.encode("ascii"))
             return True
+
         return False

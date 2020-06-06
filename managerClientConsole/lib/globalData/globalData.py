@@ -35,7 +35,7 @@ class GlobalData:
         self.pingInterval = 30  # type: int
 
         # type of this node/client
-        self.nodeType = "manager"
+        self.nodeType = "manager"  # type: str
 
         # path to the configuration file of the client
         self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
