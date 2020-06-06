@@ -1874,6 +1874,3 @@ class Console:
         # return true so the file descriptor will NOT be closed
         self._releaseLock()
         return True
-
-
-    # TODO does not remove sensor when the client connects with a removed sensor

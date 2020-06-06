@@ -210,7 +210,7 @@ class SensorUrwid:
     def updateCompleteWidget(self) -> bool:
 
         # check if sensor/node still exists
-        if self.sensor is None or self.node is None:
+        if self.sensor.is_deleted() or self.node.is_deleted():
             # return false if object no longer exists
             return False
 
@@ -541,7 +541,7 @@ class AlertUrwid:
     def updateCompleteWidget(self) -> bool:
 
         # check if alert/node still exists
-        if self.alert is None or self.node is None:
+        if self.alert.is_deleted() or self.node.is_deleted():
             # return false if object no longer exists
             return False
 
@@ -838,7 +838,7 @@ class ManagerUrwid:
     def updateCompleteWidget(self):
 
         # check if manager/node still exists
-        if self.manager is None or self.node is None:
+        if self.manager.is_deleted() or self.node.is_deleted():
             # return false if object no longer exists
             return False
 
@@ -1051,7 +1051,7 @@ class AlertLevelUrwid:
     def updateCompleteWidget(self):
 
         # check if alert level still exists
-        if self.alertLevel is None:
+        if self.alertLevel.is_deleted():
             # return false if object no longer exists
             return False
 
