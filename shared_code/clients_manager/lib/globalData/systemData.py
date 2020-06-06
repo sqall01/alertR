@@ -128,6 +128,12 @@ class SystemData:
             self._sensors[sensor_id].internal_state = InternalState.DELETED
             del self._sensors[sensor_id]
 
+    def _get_node_by_username(self, username: str) -> Optional[Node]:
+        for _, node in self._nodes.items():
+            if node.username == username:
+                return node
+        return None
+
     def _manager_sanity_check(self, manager: Manager):
         # Does corresponding node exist?
         if manager.nodeId not in self._nodes.keys():
@@ -282,6 +288,22 @@ class SystemData:
                 return None
             return self._alerts[alert_id]
 
+    def get_alert_by_remote_id(self, username: str, remote_id: int) -> Optional[Alert]:
+        """
+        Gets Alert object corresponding to given username and remote id.
+        :param username:
+        :param remote_id:
+        :return:
+        """
+        with self._data_lock:
+            node = self._get_node_by_username(username)
+            if node is None:
+                return None
+            for _, alert in self._alerts.items():
+                if alert.nodeId == node.nodeId and alert.remoteAlertId == remote_id:
+                    return alert
+            return None
+
     def get_alerts_by_node_id(self, node_id: int) -> List[Alert]:
         """
         Gets Alert objects corresponding to given node id.
@@ -393,6 +415,15 @@ class SystemData:
                 return None
             return self._nodes[node_id]
 
+    def get_node_by_username(self, username: str) -> Optional[Node]:
+        """
+        Gets Node object corresponding to given username.
+        :param username:
+        :return:
+        """
+        with self._data_lock:
+            return self._get_node_by_username(username)
+
     def get_options_list(self) -> List[Option]:
         """
         Gets list of all option objects.
@@ -430,6 +461,22 @@ class SystemData:
             if sensor_id not in self._sensors.keys():
                 return None
             return self._sensors[sensor_id]
+
+    def get_sensor_by_remote_id(self, username: str, remote_id: int) -> Optional[Sensor]:
+        """
+        Gets Sensor object corresponding to given username and remote id.
+        :param username:
+        :param remote_id:
+        :return:
+        """
+        with self._data_lock:
+            node = self._get_node_by_username(username)
+            if node is None:
+                return None
+            for _, sensor in self._sensors.items():
+                if sensor.nodeId == node.nodeId and sensor.remoteSensorId == remote_id:
+                    return sensor
+            return None
 
     def get_sensors_by_node_id(self, node_id: int) -> List[Sensor]:
         """
