@@ -14,7 +14,7 @@ import json
 import threading
 from typing import Dict, Any
 from .core import Client
-from .util import MsgBuilder, MsgChecker
+from .util import MsgBuilder
 from .communication import Communication, Promise
 from .eventHandler import EventHandler
 from ..globalData import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
@@ -96,7 +96,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Sending user credentials and version." % self._log_tag)
             self.send_raw(authMessage)
 
-        except Exception as e:
+        except Exception:
             logging.exception("[%s]: Sending user credentials "
                               % self._log_tag
                               + "and version failed.")
@@ -112,7 +112,7 @@ class ServerCommunication(Communication):
                               % (self._log_tag, message["error"]))
                 return False
 
-            if str(message["message"]).upper() != "initialization".upper():
+            if str(message["message"]).lower() != "initialization":
                 logging.error("[%s]: Wrong authentication message: '%s'."
                               % (self._log_tag, message["message"]))
 
@@ -123,13 +123,13 @@ class ServerCommunication(Communication):
                                "message": message["message"],
                                "error": "initialization message expected"}
                     self.send_raw(json.dumps(message))
-                except Exception as e:
+                except Exception:
                     pass
 
                 return False
 
             # check if the received type is the correct one
-            if str(message["payload"]["type"]).upper() != "RESPONSE":
+            if str(message["payload"]["type"]).lower() != "response":
                 logging.error("[%s]: response expected." % self._log_tag)
 
                 # send error message back
@@ -139,13 +139,13 @@ class ServerCommunication(Communication):
                                "message": message["message"],
                                "error": "response expected"}
                     self.send_raw(json.dumps(message))
-                except Exception as e:
+                except Exception:
                     pass
 
                 return False
 
             # check if status message was correctly received
-            if str(message["payload"]["result"]).upper() != "OK":
+            if str(message["payload"]["result"]).lower() != "ok":
                 logging.error("[%s]: Result not ok: '%s'."
                               % (self._log_tag, message["payload"]["result"]))
                 return False
@@ -227,7 +227,7 @@ class ServerCommunication(Communication):
                 logging.error("[%s]: Error received: '%s'." % (self._log_tag, message["error"]))
                 return False
 
-            if str(message["message"]).upper() != "initialization".upper():
+            if str(message["message"]).lower() != "initialization":
                 logging.error("[%s]: Wrong registration message: '%s'."
                               % (self._log_tag, message["message"]))
 
@@ -243,8 +243,8 @@ class ServerCommunication(Communication):
 
                 return False
 
-            # check if the received type is the correct one
-            if str(message["payload"]["type"]).upper() != "RESPONSE":
+            # Check if the received type is the correct one.
+            if str(message["payload"]["type"]).lower() != "response":
                 logging.error("[%s]: response expected." % self._log_tag)
 
                 # send error message back
@@ -260,7 +260,7 @@ class ServerCommunication(Communication):
                 return False
 
             # check if status message was correctly received
-            if str(message["payload"]["result"]).upper() != "OK":
+            if str(message["payload"]["result"]).lower() != "ok":
                 logging.error("[%s]: Result not ok: '%s'." % (self._log_tag, message["payload"]["result"]))
                 return False
 
@@ -621,7 +621,7 @@ class ServerCommunication(Communication):
             request = message["message"]
 
             # Handle SENSORALERT request.
-            if request == "sensoralert":
+            if request.lower() == "sensoralert":
                 if not self._sensorAlertHandler(message):
                     logging.error("[%s]: Receiving sensor alert failed."
                                   % self._log_tag)
@@ -631,7 +631,7 @@ class ServerCommunication(Communication):
                     return
 
             # Handle STATUS request.
-            elif request == "status":
+            elif request.lower() == "status":
                 if not self._status_update_handler(message):
                     logging.error("[%s]: Receiving status update failed."
                                   % self._log_tag)
@@ -641,7 +641,7 @@ class ServerCommunication(Communication):
                     return
 
             # Handle STATECHANGE request.
-            elif request == "statechange":
+            elif request.lower() == "statechange":
                 if not self._state_change_handler(message):
                     logging.error("[%s]: Receiving state change failed."
                                   % self._log_tag)

@@ -28,14 +28,16 @@ class Receiver(threading.Thread):
 
         while True:
             if self._exit_flag:
-                self._connection.exit()
                 return
 
-            # only run the communication handler
+            # Only run the communication handler.
+            # NOTE: Connection initialization is performed once during AlertR client start up
+            # and by connection watchdog if it was lost.
             self._connection.handle_requests()
 
             time.sleep(1)
 
-    # sets the exit flag to shut down the thread
+    # Sets the exit flag to shut down the thread and exists connection.
     def exit(self):
         self._exit_flag = True
+        self._connection.exit()
