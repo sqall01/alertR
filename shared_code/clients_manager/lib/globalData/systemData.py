@@ -112,7 +112,7 @@ class SystemData:
             self._nodes[node_id].internal_state = InternalState.DELETED
             del self._nodes[node_id]
 
-    def _delete_option_by_type(self, option_type: int):
+    def _delete_option_by_type(self, option_type: str):
         if option_type in self._options.keys():
             self._options[option_type].internal_state = InternalState.DELETED
             del self._options[option_type]
@@ -245,7 +245,7 @@ class SystemData:
         with self._data_lock:
             self._delete_node_by_id(node_id)
 
-    def delete_option_by_type(self, option_type: int):
+    def delete_option_by_type(self, option_type: str):
         """
         Deletes Option object given by type.
         :param option_type:
