@@ -1,6 +1,6 @@
 from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
-from lib.localObjects import Node, SensorAlert, SensorDataType, InternalState
+from lib.globalData.localObjects import Node, SensorAlert, SensorDataType, InternalState
 
 
 class TestSystemDataSensorAlert(TestSystemDataCore):

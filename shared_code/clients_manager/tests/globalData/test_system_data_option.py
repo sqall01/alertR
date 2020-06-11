@@ -1,5 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
-from lib.localObjects import Option
+from lib.globalData.localObjects import Option
 
 
 class TestSystemDataOption(TestSystemDataCore):

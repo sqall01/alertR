@@ -1,5 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
-from lib.localObjects import Node, InternalState
+from lib.globalData.localObjects import Node, InternalState
 
 
 class TestSystemDataNode(TestSystemDataCore):

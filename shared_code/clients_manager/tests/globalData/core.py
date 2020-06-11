@@ -1,7 +1,7 @@
 from unittest import TestCase
 from typing import Optional
 from lib.globalData.systemData import SystemData
-from lib.localObjects import Option, AlertLevel, Node, Alert, Manager, Sensor, SensorDataType
+from lib.globalData.localObjects import Option, AlertLevel, Node, Alert, Manager, Sensor, SensorDataType
 
 
 class TestSystemDataCore(TestCase):

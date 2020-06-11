@@ -1,5 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
-from lib.localObjects import AlertLevel
+from lib.globalData.localObjects import AlertLevel
 
 
 class TestSystemDataAlertLevel(TestSystemDataCore):

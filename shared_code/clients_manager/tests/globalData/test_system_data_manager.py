@@ -1,6 +1,6 @@
 from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
-from lib.localObjects import Node, Manager
+from lib.globalData.localObjects import Node, Manager
 
 
 class TestSystemDataManager(TestSystemDataCore):

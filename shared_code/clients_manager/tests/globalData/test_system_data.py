@@ -1,4 +1,4 @@
-from lib.localObjects import InternalState
+from lib.globalData.localObjects import InternalState
 from tests.globalData.core import TestSystemDataCore
 
 
