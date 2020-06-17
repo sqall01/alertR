@@ -444,19 +444,29 @@ class Communication:
 
         :return: Data of the received request.
         """
+        is_timeout_exception = False
+
         while True:
 
             # Only try to receive requests if we are connected.
             if not self._has_channel:
                 return None
 
-            try:
+            # Exit if requested.
+            if self._exit_flag:
+                return None
 
-                # Exit if requested.
-                if self._exit_flag:
-                    return None
+            # Wait on a timeout exception to let other threads send data to the other side
+            # (wait 0.5 seconds in between, because lock
+            # are released in random order => other threads could be
+            # unlucky and not be chosen => this has happened when
+            # loglevel was not debug => hdd I/O has slowed this process down)
+            if is_timeout_exception:
+                time.sleep(0.5)
 
-                with self._connection_lock:
+            with self._connection_lock:
+
+                try:
                     data = self._connection.recv(BUFSIZE, timeout=0.5)
                     if not data:
                         self._has_channel = False
@@ -518,79 +528,72 @@ class Communication:
                                       % (self._log_tag, data))
                         return None
 
-            except RecvTimeout:
-                # release lock and acquire to let other threads send
-                # data to the other side
-                # (wait 0.5 seconds in between, because semaphore
-                # are released in random order => other threads could be
-                # unlucky and not be chosen => this has happened when
-                # loglevel was not debug => hdd I/O has slowed this process down)
-                time.sleep(0.5)
+                except RecvTimeout:
+                    # Continue receiving.
+                    is_timeout_exception = True
+                    continue
 
-                # Continue receiving.
-                continue
-
-            except Exception:
-                logging.exception("[%s]: Receiving failed." % self._log_tag)
-                self._has_channel = False
-                return None
-
-            recv_message = {}
-            try:
-                recv_message = json.loads(data)
-                # check if an error was received
-                if "error" in recv_message.keys():
-                    logging.error("[%s]: Error received: '%s'."
-                                  % (self._log_tag, recv_message["error"]))
+                except Exception:
+                    logging.exception("[%s]: Receiving failed." % self._log_tag)
                     self._has_channel = False
                     return None
 
-            except Exception:
-                logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
-                self._has_channel = False
-                return None
-
-            error_msg = MsgChecker.check_received_message(recv_message)
-            if error_msg is not None:
-
-                request_type = "unknown"
-                if "message" in recv_message.keys() and type(recv_message["message"]) != str:
-                    request_type = recv_message["message"]
-
-                # send error message back
+                recv_message = {}
                 try:
+                    recv_message = json.loads(data)
+                    # check if an error was received
+                    if "error" in recv_message.keys():
+                        logging.error("[%s]: Error received: '%s'."
+                                      % (self._log_tag, recv_message["error"]))
+                        self._has_channel = False
+                        return None
+
+                except Exception:
+                    logging.exception("[%s]: Received data not valid: '%s'." % (self._log_tag, data))
+                    self._has_channel = False
+                    return None
+
+                error_msg = MsgChecker.check_received_message(recv_message)
+                if error_msg is not None:
+
+                    request_type = "unknown"
+                    if "message" in recv_message.keys() and type(recv_message["message"]) != str:
+                        request_type = recv_message["message"]
+
+                    # send error message back
+                    try:
+                        utc_timestamp = int(time.time())
+                        message = {self._key_msg_time: utc_timestamp,
+                                   "message": request_type,
+                                   "error": error_msg}
+                        self._connection.send(json.dumps(message))
+                    except Exception:
+                        pass
+
+                    self._has_channel = False
+                    return None
+
+                request_type = recv_message["message"]
+                logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
+
+                # sending sensor alert response
+                logging.debug("[%s]: Sending response message of type '%s'." % (self._log_tag, request_type))
+                try:
+                    payload = {"type": "response",
+                               "result": "ok"}
                     utc_timestamp = int(time.time())
                     message = {self._key_msg_time: utc_timestamp,
                                "message": request_type,
-                               "error": error_msg}
+                               "payload": payload}
                     self._connection.send(json.dumps(message))
+
                 except Exception:
-                    pass
+                    logging.exception("[%s]: Sending response message of type '%s' failed." % (self._log_tag, request_type))
+                    self._has_channel = False
+                    return None
 
-                self._has_channel = False
-                return None
-
-            request_type = recv_message["message"]
-            logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
-
-            # sending sensor alert response
-            logging.debug("[%s]: Sending response message of type '%s'." % (self._log_tag, request_type))
-            try:
-                payload = {"type": "response",
-                           "result": "ok"}
-                utc_timestamp = int(time.time())
-                message = {self._key_msg_time: utc_timestamp,
-                           "message": request_type,
-                           "payload": payload}
-                self._connection.send(json.dumps(message))
-
-            except Exception:
-                logging.exception("[%s]: Sending response message of type '%s' failed." % (self._log_tag, request_type))
-                self._has_channel = False
-                return None
-
-            self._last_communication = int(time.time())
-            return recv_message
+                self._last_communication = int(time.time())
+                return recv_message
 
     def send_request(self,
                      msg_type: str,
