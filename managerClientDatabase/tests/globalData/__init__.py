@@ -1,0 +1,1 @@
+../../../shared_code/clients_manager/tests/globalData/__init__.py

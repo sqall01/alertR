@@ -156,14 +156,9 @@ if __name__ == '__main__':
         if globalData.sensorAlertLifeSpan < 0:
             raise ValueError("Option 'sensorAlertLifeSpan' has to be greater or equal to 0.")
 
-        globalData.eventsLifeSpan = int(configRoot.find("manager").find("options").attrib["eventsLifeSpan"])
-
-        if globalData.eventsLifeSpan < 0:
-            raise ValueError("Option 'eventsLifeSpan' has to be greater or equal to 0.")
-
         # configure storage backend (check which backend is configured)
         userBackendMethod = str(configRoot.find("manager").find("storage").attrib["method"])
-        if userBackendMethod.upper() == "MYSQL":
+        if userBackendMethod.lower() == "mysql":
 
             backendUsername = str(configRoot.find("manager").find("storage").attrib["username"])
             backendPassword = str(configRoot.find("manager").find("storage").attrib["password"])
@@ -210,7 +205,7 @@ if __name__ == '__main__':
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-           and (connectionRetries % 5) == 0):
+                and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
         if globalData.serverComm.initialize() is True:
@@ -221,6 +216,7 @@ if __name__ == '__main__':
 
             connectionRetries = 1
             break
+
         connectionRetries += 1
 
         logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)

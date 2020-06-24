@@ -1,3 +1,10 @@
+## 0.601
+
+Features:
+
+* Removed storing of events on manager database (long term plan is to move event creation to server)
+
+
 ## 0.600-2
 
 Features:

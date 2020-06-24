@@ -12,6 +12,6 @@ from .manager import LocalServerSession, ThreadedUnixStreamServer
 from .manager import Mysql
 from .manager import ManagerEventHandler
 from .smtp import SMTPAlert
-from .localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel
 from .update import Updater
 from .globalData import GlobalData
+from .globalData import Option, Node, Sensor, Manager, Alert, AlertLevel

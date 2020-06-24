@@ -12,15 +12,7 @@ import os
 import threading
 import time
 import json
-from .events import EventSensorAlert, EventNewVersion
-from .events import EventStateChange, EventConnectedChange, EventSensorTimeOut
-from .events import EventNewOption, EventNewNode, EventNewSensor
-from .events import EventNewAlert, EventNewManager
-from .events import EventChangeOption, EventChangeNode, EventChangeSensor
-from .events import EventChangeAlert, EventChangeManager
-from .events import EventDeleteNode, EventDeleteSensor, EventDeleteAlert
-from .events import EventDeleteManager
-from ..localObjects import Option, Node, Sensor, Alert, Manager, AlertLevel, SensorAlert, SensorDataType
+from ..globalData.localObjects import Option, Node, Sensor, Alert, Manager, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 from typing import List
 
@@ -32,28 +24,28 @@ class _Storage:
     # (should only be called during the initial connection to the database)
     #
     # no return value but raise exception if it fails
-    def createObjectsFromDb(self):
+    def create_objects_from_db(self):
         raise NotImplemented("Function not implemented yet.")
 
     # creates the database (should only be called if the database
     # does not exist)
     #
     # no return value but raise exception if it fails
-    def createStorage(self):
+    def create_storage(self):
         raise NotImplemented("Function not implemented yet.")
 
     # updates the received server information
     #
     # return True or False
-    def updateServerInformation(self,
-                                serverTime: int,
-                                options: List[Option],
-                                nodes: List[Node],
-                                sensors: List[Sensor],
-                                alerts: List[Alert],
-                                managers: List[Manager],
-                                alertLevels: List[AlertLevel],
-                                sensorAlerts: List[SensorAlert]) -> bool:
+    def update_server_information(self,
+                                  serverTime: int,
+                                  options: List[Option],
+                                  nodes: List[Node],
+                                  sensors: List[Sensor],
+                                  alerts: List[Alert],
+                                  managers: List[Manager],
+                                  alertLevels: List[AlertLevel],
+                                  sensorAlerts: List[SensorAlert]) -> bool:
         raise NotImplemented("Function not implemented yet.")
 
 
@@ -69,2108 +61,1202 @@ class Mysql(_Storage):
                  globalData: GlobalData):
 
         # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # needed mysql parameters
-        self.host = host
-        self.port = port
-        self.database = database
-        self.username = username
-        self.password = password
+        self._host = host
+        self._port = port
+        self._database = database
+        self._username = username
+        self._password = password
 
         # get global configured data
-        self.globalData = globalData
-        self.sensorAlertLifeSpan = self.globalData.sensorAlertLifeSpan
-        self.events = self.globalData.events
-        self.eventsLifeSpan = self.globalData.eventsLifeSpan
-        self.version = self.globalData.version
-        self.rev = self.globalData.rev
-        self.options = self.globalData.options
-        self.nodes = self.globalData.nodes
-        self.sensors = self.globalData.sensors
-        self.alerts = self.globalData.alerts
-        self.managers = self.globalData.managers
-        self.alertLevels = self.globalData.alertLevels
-        self.storageBackendMysqlRetries = self.globalData.storageBackendMysqlRetries
+        self._global_data = globalData
+        self._system_data = self._global_data.system_data
+        self._sensor_alert_life_span = self._global_data.sensorAlertLifeSpan
+        self._version = self._global_data.version
+        self._rev = self._global_data.rev
+        self._connection_retries = self._global_data.storageBackendMysqlRetries
 
-        # local copy of elements in the database (to make the update faster)
-        self.optionsCopy = list()
-        self.nodesCopy = list()
-        self.sensorsCopy = list()
-        self.alertsCopy = list()
-        self.managersCopy = list()
-        self.alertLevelsCopy = list()
+        # Hold a copy of the alert system objects locally to know which data we have stored in the database.
+        self._db_copy_options: List[Option] = list()
+        self._db_copy_nodes: List[Node] = list()
+        self._db_copy_alerts: List[Alert] = list()
+        self._db_copy_managers: List[Manager] = list()
+        self._db_copy_sensors: List[Sensor] = list()
+        self._db_copy_alert_levels: List[AlertLevel] = list()
 
         # mysql lock
-        self.dbLock = threading.Semaphore(1)
+        self._lock = threading.Lock()
 
-        self.conn = None
-        self.cursor = None
+        self._conn = None
+        self._cursor = None
 
         # connect to the database
-        self._openConnection()
+        self._open_connection()
 
-        # check if version of database is the same as version of client
-        self.cursor.execute("SHOW TABLES LIKE 'internals'")
-        result = self.cursor.fetchall()
+        # Check if version of database is the same as version of client
+        self._cursor.execute("SHOW TABLES LIKE 'internals'")
+        result = self._cursor.fetchall()
         if len(result) != 0:
 
-            self.cursor.execute("SELECT type, value FROM internals")
-            result = self.cursor.fetchall()
+            self._cursor.execute("SELECT type, value FROM internals")
+            result = self._cursor.fetchall()
 
-            dbVersion = 0.0
-            dbRev = 0.0
-            for internalTuple in result: 
-                internalType = internalTuple[0]
-                internalValue = internalTuple[1]
+            # Extract internal data.
+            db_version = 0.0
+            db_rev = 0
+            for internal_tuple in result:
+                internal_type = internal_tuple[0]
+                internal_value = internal_tuple[1]
 
-                if internalType.upper() == "VERSION":
-                    dbVersion = internalValue
+                if internal_type.upper() == "VERSION":
+                    db_version = internal_value
                     continue
-                elif internalType.upper() == "REV":
-                    dbRev = internalValue
+                elif internal_type.upper() == "REV":
+                    db_rev = int(internal_value)
                     continue
 
             # if version is not the same of db and client
             # => delete event tables
-            if dbVersion != self.version or dbRev != self.rev:
-                
-                self.cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsDataInt")
-                self.cursor.execute("DROP TABLE IF EXISTS eventsDataFloat")
-                self.cursor.execute("DROP TABLE IF EXISTS events")
-                self.cursor.execute("DROP TABLE IF EXISTS internals")
-                self.cursor.execute("DROP TABLE IF EXISTS options")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsAlertLevels")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
-                self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
-                self.cursor.execute("DROP TABLE IF EXISTS sensors")
-                self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
-                self.cursor.execute("DROP TABLE IF EXISTS alerts")
-                self.cursor.execute("DROP TABLE IF EXISTS managers")
-                self.cursor.execute("DROP TABLE IF EXISTS alertLevels")
-                self.cursor.execute("DROP TABLE IF EXISTS nodes")
+            if db_version != self._version or db_rev != self._rev:
+
+                # Remove old event tables (not used anymore).
+                self._cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsDataInt")
+                self._cursor.execute("DROP TABLE IF EXISTS eventsDataFloat")
+                self._cursor.execute("DROP TABLE IF EXISTS events")
+
+                self._cursor.execute("DROP TABLE IF EXISTS internals")
+                self._cursor.execute("DROP TABLE IF EXISTS options")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsAlertLevels")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+                self._cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
+                self._cursor.execute("DROP TABLE IF EXISTS sensors")
+                self._cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+                self._cursor.execute("DROP TABLE IF EXISTS alerts")
+                self._cursor.execute("DROP TABLE IF EXISTS managers")
+                self._cursor.execute("DROP TABLE IF EXISTS alertLevels")
+                self._cursor.execute("DROP TABLE IF EXISTS nodes")
 
                 # commit all changes
-                self.conn.commit()
+                self._conn.commit()
 
                 # close connection to the database
-                self._closeConnection()
+                self._close_connection()
 
-                self.createStorage()
+                self.create_storage()
 
             else:
                 # commit all changes
-                self.conn.commit()
+                self._conn.commit()
 
                 # close connection to the database
-                self._closeConnection()
+                self._close_connection()
 
-                self.createObjectsFromDb()
+                self.create_objects_from_db()
 
         # tables do not exist yet
         # => create them
         else:
             # close connection to the database
-            self._closeConnection()
+            self._close_connection()
 
-            self.createStorage()
+            self.create_storage()
 
-    # internal function that acquires the lock
-    def _acquireLock(self):
-        logging.debug("[%s]: Acquire lock." % self.fileName)
-        self.dbLock.acquire()
+    def _add_sensor_data_to_db(self, sensor: Sensor):
+        """
+        Internal function that adds the data of the sensor to the database. Does not catch exceptions.
 
-    # internal function that adds all events from the queue to the database
-    #
-    # return True or False
-    def _addEventsToDb(self) -> bool:
-
-        # add all events to the database (if any exists)
-        while len(self.events) != 0:
-
-            event = self.events.pop()
-
-            # insert event into the database
-            if isinstance(event, EventSensorAlert):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "sensorAlert"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsSensorAlert ("
-                                        + "eventId, "
-                                        + "description, "
-                                        + "state, "
-                                        + "dataType) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (eventId, event.description, event.state, event.dataType))
-
-                    # Only store data if sensor alert event carries it.
-                    if event.dataType == SensorDataType.INT:
-                        self.cursor.execute("INSERT INTO eventsDataInt ("
-                                            + "eventId, "
-                                            + "data) "
-                                            + "VALUES (%s, %s)",
-                                            (eventId, event.sensorData))
-                    elif event.dataType == SensorDataType.FLOAT:
-                        self.cursor.execute("INSERT INTO eventsDataFloat ("
-                                            + "eventId, "
-                                            + "data) "
-                                            + "VALUES (%s, %s)",
-                                            (eventId, event.sensorData))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add sensor alert event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventNewVersion):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "newVersion"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsNewVersion ("
-                                        + "eventId, "
-                                        + "usedVersion, "
-                                        + "usedRev, "
-                                        + "newVersion, "
-                                        + "newRev, "
-                                        + "instance, "
-                                        + "hostname) "
-                                        + "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                                        (eventId,
-                                         event.usedVersion,
-                                         event.usedRev,
-                                         event.newVersion,
-                                         event.newRev,
-                                         event.instance,
-                                         event.hostname))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add new version event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventStateChange):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "stateChange"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsStateChange ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "description, "
-                                        + "state, "
-                                        + "dataType) "
-                                        + "VALUES (%s, %s, %s, %s, %s)",
-                                        (eventId, event.hostname, event.description, event.state, event.dataType))
-
-                    # Only store data if state change event carries it.
-                    if event.dataType == SensorDataType.INT:
-                        self.cursor.execute("INSERT INTO eventsDataInt ("
-                                            + "eventId, "
-                                            + "data) "
-                                            + "VALUES (%s, %s)",
-                                            (eventId, event.data))
-
-                    elif event.dataType == SensorDataType.FLOAT:
-                        self.cursor.execute("INSERT INTO eventsDataFloat ("
-                                            + "eventId, "
-                                            + "data) "
-                                            + "VALUES (%s, %s)",
-                                            (eventId, event.data))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add state changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventConnectedChange):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "connectedChange"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsConnectedChange ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "nodeType, "
-                                        + "instance, "
-                                        + "connected) "
-                                        + "VALUES (%s, %s, %s, %s, %s)",
-                                        (eventId, event.hostname, event.nodeType, event.instance, event.connected))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add connection changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventSensorTimeOut):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "sensorTimeOut"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsSensorTimeOut ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "description, "
-                                        + "state) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (eventId, event.hostname, event.description, event.state))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add sensor timed out event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventNewOption):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "newOption"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsNewOption ("
-                                        + "eventId, "
-                                        + "type, "
-                                        + "value) "
-                                        + "VALUES (%s, %s, %s)",
-                                        (eventId, event.type, event.value))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add new option event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventNewNode):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "newNode"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsNewNode ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "nodeType, "
-                                        + "instance) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (eventId, event.hostname, event.nodeType, event.instance))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add new node event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventNewSensor):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "newSensor"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsNewSensor ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "description, "
-                                        + "state) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (eventId, event.hostname, event.description, event.state))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add new sensor event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventNewAlert):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "newAlert"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsNewAlert ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "description) "
-                                        + "VALUES (%s, %s, %s)",
-                                        (eventId, event.hostname, event.description))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add new alert event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventNewManager):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "newManager"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsNewManager ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "description) "
-                                        + "VALUES (%s, %s, %s)",
-                                        (eventId, event.hostname, event.description))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add new manager event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventChangeOption):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "changeOption"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsChangeOption ("
-                                        + "eventId, "
-                                        + "type, "
-                                        + "oldValue, "
-                                        + "newValue) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (eventId, event.type, event.oldValue, event.newValue))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add option changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventChangeNode):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "changeNode"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsChangeNode ("
-                                        + "eventId, "
-                                        + "oldHostname, "
-                                        + "oldNodeType, "
-                                        + "oldInstance, "
-                                        + "oldVersion, "
-                                        + "oldRev, "
-                                        + "oldUsername, "
-                                        + "oldPersistent, "
-                                        + "newHostname, "
-                                        + "newNodeType, "
-                                        + "newInstance, "
-                                        + "newVersion, "
-                                        + "newRev, "
-                                        + "newUsername, "
-                                        + "newPersistent) "
-                                        + "VALUES "
-                                        + "(%s, %s, %s, %s, %s, %s, %s, %s, %s, "
-                                        + "%s, %s, %s, %s, %s, %s)",
-                                        (eventId,
-                                         event.oldHostname,
-                                         event.oldNodeType,
-                                         event.oldInstance,
-                                         event.oldVersion,
-                                         event.oldRev,
-                                         event.oldUsername,
-                                         event.oldPersistent,
-                                         event.newHostname,
-                                         event.newNodeType,
-                                         event.newInstance,
-                                         event.newVersion,
-                                         event.newRev,
-                                         event.newUsername,
-                                         event.newPersistent))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add node changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventChangeSensor):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "changeSensor"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsChangeSensor ("
-                                        + "eventId, "
-                                        + "oldAlertDelay, "
-                                        + "oldDescription, "
-                                        + "oldRemoteSensorId, "
-                                        + "newAlertDelay, "
-                                        + "newDescription, "
-                                        + "newRemoteSensorId) "
-                                        + "VALUES "
-                                        + "(%s, %s, %s, %s, %s, %s, %s)",
-                                        (eventId,
-                                         event.oldAlertDelay,
-                                         event.oldDescription,
-                                         event.oldRemoteSensorId,
-                                         event.newAlertDelay,
-                                         event.newDescription,
-                                         event.newRemoteSensorId))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add sensor changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventChangeAlert):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "changeAlert"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsChangeAlert ("
-                                        + "eventId, "
-                                        + "oldDescription, "
-                                        + "oldRemoteAlertId, "
-                                        + "newDescription, "
-                                        + "newRemoteAlertId) "
-                                        + "VALUES "
-                                        + "(%s, %s, %s, %s, %s)",
-                                        (eventId,
-                                         event.oldDescription,
-                                         event.oldRemoteAlertId,
-                                         event.newDescription,
-                                         event.newRemoteAlertId))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add alert changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventChangeManager):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "changeManager"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsChangeManager ("
-                                        + "eventId, "
-                                        + "oldDescription, "
-                                        + "newDescription) "
-                                        + "VALUES "
-                                        + "(%s, %s, %s)",
-                                        (eventId, event.oldDescription, event.newDescription))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add manager changed event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventDeleteNode):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "deleteNode"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsDeleteNode ("
-                                        + "eventId, "
-                                        + "hostname, "
-                                        + "nodeType, "
-                                        + "instance) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (eventId, event.hostname, event.nodeType, event.instance))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add node deleted event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventDeleteSensor):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "deleteSensor"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsDeleteSensor ("
-                                        + "eventId, "
-                                        + "description) "
-                                        + "VALUES (%s, %s)",
-                                        (eventId, event.description))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add sensor deleted event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventDeleteAlert):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "deleteAlert"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsDeleteAlert ("
-                                        + "eventId, "
-                                        + "description) "
-                                        + "VALUES (%s, %s)",
-                                        (eventId, event.description))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add alert deleted event." % self.fileName)
-                    return False
-
-            elif isinstance(event, EventDeleteManager):
-                try:
-                    self.cursor.execute("INSERT INTO events ("
-                                        + "timeOccurred, "
-                                        + "type) "
-                                        + "VALUES (%s, %s)",
-                                        (event.timeOccurred, "deleteManager"))
-
-                    eventId = self.cursor.lastrowid
-
-                    self.cursor.execute("INSERT INTO eventsDeleteManager ("
-                                        + "eventId, "
-                                        + "description) "
-                                        + "VALUES (%s, %s)",
-                                        (eventId, event.description))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add manager deleted event." % self.fileName)
-                    return False
-
-            else:
-                logging.error("[%s]: Used event not known." % self.fileName)
-
-        return True
-
-    # Internal function that adds the data of the sensor to the database.
-    # Does not catch exceptions.
-    #
-    # No return value.
-    def _addSensorDataToDb(self, sensor: Sensor):
-
+        :param sensor:
+        """
         if sensor.dataType == SensorDataType.NONE:
             pass
 
         elif sensor.dataType == SensorDataType.INT:
-            self.cursor.execute("INSERT INTO sensorsDataInt ("
-                                + "sensorId, "
-                                + "data) "
-                                + "VALUES (%s, %s)",
-                                (sensor.sensorId, sensor.data))
+            self._cursor.execute("INSERT INTO sensorsDataInt ("
+                                 + "sensorId, "
+                                 + "data) "
+                                 + "VALUES (%s, %s)",
+                                 (sensor.sensorId, sensor.data))
 
         elif sensor.dataType == SensorDataType.FLOAT:
-            self.cursor.execute("INSERT INTO sensorsDataFloat ("
-                                + "sensorId, "
-                                + "data) "
-                                + "VALUES (%s, %s)",
-                                (sensor.sensorId, sensor.data))
+            self._cursor.execute("INSERT INTO sensorsDataFloat ("
+                                 + "sensorId, "
+                                 + "data) "
+                                 + "VALUES (%s, %s)",
+                                 (sensor.sensorId, sensor.data))
 
-    # internal function that closes the connection to the mysql server
-    def _closeConnection(self):
-        self.cursor.close()
-        self.conn.close()
-        self.cursor = None
-        self.conn = None
+    def _close_connection(self):
+        """
+        Internal function that closes the connection to the mysql server.
+        """
+        self._cursor.close()
+        self._conn.close()
+        self._cursor = None
+        self._conn = None
 
-    # internal function that connects to the mysql server
-    # (needed because direct changes to the database by another program
-    # are not seen if the connection to the mysql server is kept alive)
-    def _openConnection(self):
+    def _open_connection(self):
+        """
+        Internal function that connects to the mysql server
+        (needed because direct changes to the database by another program
+        are not seen if the connection to the mysql server is kept alive)
+        """
         # import the needed package
         import MySQLdb
 
-        currentTry = 0
+        current_try = 0
         while True:
             try:
 
-                self.conn = MySQLdb.connect(host=self.host,
-                                            port=self.port,
-                                            user=self.username,
-                                            passwd=self.password,
-                                            db=self.database)
-                self.cursor = self.conn.cursor()
+                self._conn = MySQLdb.connect(host=self._host,
+                                             port=self._port,
+                                             user=self._username,
+                                             passwd=self._password,
+                                             db=self._database)
+                self._cursor = self._conn.cursor()
                 break
 
-            except Exception as e:
+            except Exception:
                 # Re-throw the exception if we reached our retry limit.
-                if currentTry >= self.storageBackendMysqlRetries:
+                if current_try >= self._connection_retries:
                     raise
 
-                currentTry += 1
+                current_try += 1
                 logging.exception("[%s]: Not able to connect to the MySQL server. Waiting before retrying (%d/%d)."
-                                  % (self.fileName, currentTry, self.storageBackendMysqlRetries))
+                                  % (self._log_tag, current_try, self._connection_retries))
 
                 time.sleep(5)
 
-    # internal function that releases the lock
-    def _releaseLock(self):
-        logging.debug("[%s]: Release lock." % self.fileName)
-        self.dbLock.release()
+    def _remove_sensor_data_from_db(self, sensor: Sensor):
+        """
+        Internal function that removes the data of the sensor in the database. Does not catch exceptions.
 
-    # internal function that removes all events from the database
-    # that are too old
-    #
-    # return True or False
-    def _removeEventsFromDb(self) -> bool:
+        :param sensor:
+        """
+        self._cursor.execute("DELETE FROM sensorsDataInt "
+                             + "WHERE sensorId = %s",
+                             (sensor.sensorId, ))
 
-        # delete all events that are older than the configured life span 
-        try:
-            utcTimestamp = int(time.time())
-            self.cursor.execute("SELECT id, type FROM events "
-                                + "WHERE (timeOccurred + "
-                                + str(self.eventsLifeSpan * 86400)
-                                + ")"
-                                + "<= %s",
-                                (utcTimestamp, ))
-            result = self.cursor.fetchall()
-            
-            for idTuple in result:
-                eventId = idTuple[0]
-                eventType = idTuple[1]
+        self._cursor.execute("DELETE FROM sensorsDataFloat "
+                             + "WHERE sensorId = %s",
+                             (sensor.sensorId, ))
 
-                if eventType.upper() == "sensorAlert".upper():
-                    self.cursor.execute("DELETE FROM eventsSensorAlert "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-                    self.cursor.execute("DELETE FROM eventsDataInt "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-                    self.cursor.execute("DELETE FROM eventsDataFloat "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "newVersion".upper():
-                    self.cursor.execute("DELETE FROM eventsNewVersion "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "stateChange".upper():
-                    self.cursor.execute("DELETE FROM eventsStateChange "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-                    self.cursor.execute("DELETE FROM eventsDataInt "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-                    self.cursor.execute("DELETE FROM eventsDataFloat "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "connectedChange".upper():
-                    self.cursor.execute("DELETE FROM eventsConnectedChange "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "sensorTimeOut".upper():
-                    self.cursor.execute("DELETE FROM eventsSensorTimeOut "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "newOption".upper():
-                    self.cursor.execute("DELETE FROM eventsNewOption "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "newNode".upper():
-                    self.cursor.execute("DELETE FROM eventsNewNode "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "newSensor".upper():
-                    self.cursor.execute("DELETE FROM eventsNewSensor "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "newAlert".upper():
-                    self.cursor.execute("DELETE FROM eventsNewAlert "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "newManager".upper():
-                    self.cursor.execute("DELETE FROM eventsNewManager "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "changeOption".upper():
-                    self.cursor.execute("DELETE FROM eventsChangeOption "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "changeNode".upper():
-                    self.cursor.execute("DELETE FROM eventsChangeNode "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "changeSensor".upper():
-                    self.cursor.execute("DELETE FROM eventsChangeSensor "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "changeAlert".upper():
-                    self.cursor.execute("DELETE FROM eventsChangeAlert "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "changeManager".upper():
-                    self.cursor.execute("DELETE FROM eventsChangeManager "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "deleteNode".upper():
-                    self.cursor.execute("DELETE FROM eventsDeleteNode "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "deleteSensor".upper():
-                    self.cursor.execute("DELETE FROM eventsDeleteSensor "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "deleteAlert".upper():
-                    self.cursor.execute("DELETE FROM eventsDeleteAlert "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                elif eventType.upper() == "deleteManager".upper():
-                    self.cursor.execute("DELETE FROM eventsDeleteManager "
-                                        + "WHERE eventId = %s",
-                                        (eventId, ))
-
-                else:
-                    logging.error("[%s]: Stored event not known." % self.fileName)
-
-                self.cursor.execute("DELETE FROM events "
-                                    + "WHERE id = %s",
-                                    (eventId, ))
-
-        except Exception as e:
-            logging.exception("[%s]: Not able to delete old events." % self.fileName)
-            return False
-
-        return True
-
-    # Internal function that removes the data of the sensor in the database.
-    # Does not catch exceptions.
-    #
-    # No return value.
-    def _removeSensorDataFromDb(self, sensor: Sensor):
-
-        self.cursor.execute("DELETE FROM sensorsDataInt "
-                            + "WHERE sensorId = %s",
-                            (sensor.sensorId, ))
-
-        self.cursor.execute("DELETE FROM sensorsDataFloat "
-                            + "WHERE sensorId = %s",
-                            (sensor.sensorId, ))
-
-    # creates objects from the data in the database 
-    # (should only be called during the initial connection to the database)
-    #
-    # no return value but raise exception if it fails
-    def createObjectsFromDb(self):
-
+    def create_objects_from_db(self):
+        """
+        creates objects from the data in the database
+        (should only be called during the initial connection to the database)
+        Has no return value but raise exception if it fails.
+        """
         # connect to the database
-        self._openConnection()
+        self._open_connection()
 
         # get last stored server time
-        self.cursor.execute("SELECT "
-                            + "value "
-                            + "FROM internals WHERE type = 'serverTime'")
-        result = self.cursor.fetchall()
-        serverTime = result[0][0]
+        self._cursor.execute("SELECT "
+                             + "value "
+                             + "FROM internals WHERE type = 'serverTime'")
+        result = self._cursor.fetchall()
+        server_time = result[0][0]
 
         # create option objects from db
-        self.cursor.execute("SELECT "
-                            + "type, "
-                            + "value "
-                            + "FROM options")
-        result = self.cursor.fetchall()
+        self._cursor.execute("SELECT "
+                             + "type, "
+                             + "value "
+                             + "FROM options")
+        result = self._cursor.fetchall()
 
-        for optionTuple in result:
-            tempOption = Option()
-            tempOption.type = optionTuple[0]
-            tempOption.value = optionTuple[1]
+        for option_tuple in result:
+            option = Option()
+            option.type = option_tuple[0]
+            option.value = option_tuple[1]
 
-            self.options.append(tempOption)
-            self.optionsCopy.append(tempOption)
+            self._system_data.update_option(option)
 
         # create node objects from db
-        self.cursor.execute("SELECT * FROM nodes")
-        result = self.cursor.fetchall()
+        self._cursor.execute("SELECT * FROM nodes")
+        result = self._cursor.fetchall()
 
-        for nodeTuple in result:
-            tempNode = Node()
-            tempNode.nodeId = nodeTuple[0]
-            tempNode.hostname = nodeTuple[1]
-            tempNode.nodeType = nodeTuple[2]
-            tempNode.instance = nodeTuple[3]
-            tempNode.connected = nodeTuple[4]
-            tempNode.version = nodeTuple[5]
-            tempNode.rev = nodeTuple[6]
-            tempNode.newestVersion = nodeTuple[7]
-            tempNode.newestRev = nodeTuple[8]
-            tempNode.username = nodeTuple[9]
-            tempNode.persistent = nodeTuple[10]
+        for node_tuple in result:
+            node = Node()
+            node.nodeId = node_tuple[0]
+            node.hostname = node_tuple[1]
+            node.nodeType = node_tuple[2]
+            node.instance = node_tuple[3]
+            node.connected = node_tuple[4]
+            node.version = node_tuple[5]
+            node.rev = node_tuple[6]
+            node.username = node_tuple[7]
+            node.persistent = node_tuple[8]
 
-            self.nodes.append(tempNode)
-            self.nodesCopy.append(tempNode)
+            self._system_data.update_node(node)
 
         # create sensor objects from db
-        self.cursor.execute("SELECT "
-                            + "id, "
-                            + "nodeId, "
-                            + "remoteSensorId, "
-                            + "description, "
-                            + "state, "
-                            + "lastStateUpdated, "
-                            + "alertDelay, "
-                            + "dataType "
-                            + "FROM sensors")
-        result = self.cursor.fetchall()
+        self._cursor.execute("SELECT "
+                             + "id, "
+                             + "nodeId, "
+                             + "remoteSensorId, "
+                             + "description, "
+                             + "state, "
+                             + "lastStateUpdated, "
+                             + "alertDelay, "
+                             + "dataType "
+                             + "FROM sensors")
+        result = self._cursor.fetchall()
 
-        for sensorTuple in result:
-            tempSensor = Sensor()
-            tempSensor.sensorId = sensorTuple[0]
-            tempSensor.nodeId = sensorTuple[1]
-            tempSensor.remoteSensorId = sensorTuple[2]
-            tempSensor.description = sensorTuple[3]
-            tempSensor.state = sensorTuple[4]
-            tempSensor.lastStateUpdated = sensorTuple[5]
-            tempSensor.alertDelay = sensorTuple[6]
-            tempSensor.dataType = sensorTuple[7]
-            tempSensor.serverTime = serverTime
+        for sensor_tuple in result:
+            sensor = Sensor()
+            sensor.sensorId = sensor_tuple[0]
+            sensor.nodeId = sensor_tuple[1]
+            sensor.remoteSensorId = sensor_tuple[2]
+            sensor.description = sensor_tuple[3]
+            sensor.state = sensor_tuple[4]
+            sensor.lastStateUpdated = sensor_tuple[5]
+            sensor.alertDelay = sensor_tuple[6]
+            sensor.dataType = sensor_tuple[7]
+            sensor.serverTime = server_time
 
-            self.cursor.execute("SELECT "
-                                + "alertLevel "
-                                + "FROM sensorsAlertLevels "
-                                + "WHERE sensorId = %s", (tempSensor.sensorId, ))
-            alertLevelResult = self.cursor.fetchall()
-            for alertLevelTuple in alertLevelResult:
-                tempSensor.alertLevels.append(alertLevelTuple[0])
+            self._cursor.execute("SELECT "
+                                 + "alertLevel "
+                                 + "FROM sensorsAlertLevels "
+                                 + "WHERE sensorId = %s", (sensor.sensorId, ))
+            alert_level_result = self._cursor.fetchall()
+            for alert_level_tuple in alert_level_result:
+                sensor.alertLevels.append(alert_level_tuple[0])
 
             # Get sensor data from database.
-            if tempSensor.dataType == SensorDataType.NONE:
-                tempSensor.data = None
+            if sensor.dataType == SensorDataType.NONE:
+                sensor.data = None
 
-            elif tempSensor.dataType == SensorDataType.INT:
-                self.cursor.execute("SELECT "
-                                    + "data "
-                                    + "FROM sensorsDataInt "
-                                    + "WHERE sensorId = %s", (tempSensor.sensorId, ))
-                dataResult = self.cursor.fetchall()
-                tempSensor.data = dataResult[0][0]
+            elif sensor.dataType == SensorDataType.INT:
+                self._cursor.execute("SELECT "
+                                     + "data "
+                                     + "FROM sensorsDataInt "
+                                     + "WHERE sensorId = %s", (sensor.sensorId, ))
+                data_result = self._cursor.fetchall()
+                sensor.data = data_result[0][0]
 
-            elif tempSensor.dataType == SensorDataType.FLOAT:
-                self.cursor.execute("SELECT "
-                                    + "data "
-                                    + "FROM sensorsDataFloat "
-                                    + "WHERE sensorId = %s", (tempSensor.sensorId, ))
-                dataResult = self.cursor.fetchall()
-                tempSensor.data = dataResult[0][0]
+            elif sensor.dataType == SensorDataType.FLOAT:
+                self._cursor.execute("SELECT "
+                                     + "data "
+                                     + "FROM sensorsDataFloat "
+                                     + "WHERE sensorId = %s", (sensor.sensorId, ))
+                data_result = self._cursor.fetchall()
+                sensor.data = data_result[0][0]
 
-            self.sensors.append(tempSensor)
-            self.sensorsCopy.append(tempSensor)
+            self._system_data.update_sensor(sensor)
 
         # create alert objects from db
-        self.cursor.execute("SELECT "
-                            + "id, "
-                            + "nodeId, "
-                            + "remoteAlertId, "
-                            + "description "
-                            + "FROM alerts")
-        result = self.cursor.fetchall()
+        self._cursor.execute("SELECT "
+                             + "id, "
+                             + "nodeId, "
+                             + "remoteAlertId, "
+                             + "description "
+                             + "FROM alerts")
+        result = self._cursor.fetchall()
 
-        for alertTuple in result:
-            tempAlert = Alert()
-            tempAlert.alertId = alertTuple[0]
-            tempAlert.nodeId = alertTuple[1]
-            tempAlert.remoteAlertId = alertTuple[2]
-            tempAlert.description = alertTuple[3]
+        for alert_tuple in result:
+            alert = Alert()
+            alert.alertId = alert_tuple[0]
+            alert.nodeId = alert_tuple[1]
+            alert.remoteAlertId = alert_tuple[2]
+            alert.description = alert_tuple[3]
 
-            self.cursor.execute("SELECT "
-                                + "alertLevel "
-                                + "FROM alertsAlertLevels "
-                                + "WHERE alertId = %s", (tempAlert.alertId, ))
-            alertLevelResult = self.cursor.fetchall()
-            for alertLevelTuple in alertLevelResult:
-                tempAlert.alertLevels.append(alertLevelTuple[0])
+            self._cursor.execute("SELECT "
+                                 + "alertLevel "
+                                 + "FROM alertsAlertLevels "
+                                 + "WHERE alertId = %s", (alert.alertId, ))
+            alert_level_result = self._cursor.fetchall()
+            for alert_level_tuple in alert_level_result:
+                alert.alertLevels.append(alert_level_tuple[0])
 
-            self.alerts.append(tempAlert)
-            self.alertsCopy.append(tempAlert)
+            self._system_data.update_alert(alert)
 
         # create manager objects from db
-        self.cursor.execute("SELECT "
-                            + "id, "
-                            + "nodeId, "
-                            + "description "
-                            + "FROM managers")
-        result = self.cursor.fetchall()
+        self._cursor.execute("SELECT "
+                             + "id, "
+                             + "nodeId, "
+                             + "description "
+                             + "FROM managers")
+        result = self._cursor.fetchall()
 
-        for managerTuple in result:
-            tempManager = Manager()
-            tempManager.managerId = managerTuple[0]
-            tempManager.nodeId = managerTuple[1]
-            tempManager.description = managerTuple[2]
+        for manager_tuple in result:
+            manager = Manager()
+            manager.managerId = manager_tuple[0]
+            manager.nodeId = manager_tuple[1]
+            manager.description = manager_tuple[2]
 
-            self.managers.append(tempManager)
-            self.managersCopy.append(tempManager)
+            self._system_data.update_manager(manager)
 
         # create alert levels objects from db
-        self.cursor.execute("SELECT "
-                            + "alertLevel, "
-                            + "name, "
-                            + "triggerAlways "
-                            + "FROM alertLevels")
-        result = self.cursor.fetchall()
+        self._cursor.execute("SELECT "
+                             + "alertLevel, "
+                             + "name, "
+                             + "triggerAlways "
+                             + "FROM alertLevels")
+        result = self._cursor.fetchall()
 
-        for alertLevelTuple in result:
-            tempAlertLevel = AlertLevel()
-            tempAlertLevel.level = alertLevelTuple[0]
-            tempAlertLevel.name = alertLevelTuple[1]
-            tempAlertLevel.triggerAlways = (alertLevelTuple[2] == 1)
+        for alert_level_tuple in result:
+            alert_level = AlertLevel()
+            alert_level.level = alert_level_tuple[0]
+            alert_level.name = alert_level_tuple[1]
+            alert_level.triggerAlways = alert_level_tuple[2]
 
-            self.alertLevels.append(tempAlertLevel)
-            self.alertLevelsCopy.append(tempAlertLevel)
-
-        # close connection to the database
-        self._closeConnection()
-
-    # creates the database (should only be called if the database
-    # does not exist)
-    #
-    # no return value but raise exception if it fails
-    def createStorage(self):
-
-        self._acquireLock()
-
-        # connect to the database
-        try:
-            self._openConnection()
-
-        except Exception as e:
-            logging.exception("[%s]: Not able to connect to MySQL server." % self.fileName)
-            self._releaseLock()
-            # remember to pass the exception
-            raise
-
-        # create internals table (used internally by the client)
-        # if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'internals'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE internals ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "type VARCHAR(255) NOT NULL UNIQUE, "
-                                + "value DOUBLE NOT NULL)")
-
-            # insert server time field
-            self.cursor.execute("INSERT INTO internals ("
-                                + "type, "
-                                + "value) VALUES (%s, %s)",
-                                ("serverTime", 0.0))
-
-            # insert version field
-            self.cursor.execute("INSERT INTO internals ("
-                                + "type, "
-                                + "value) VALUES (%s, %s)",
-                                ("version", self.version))
-
-            # insert rev field
-            self.cursor.execute("INSERT INTO internals ("
-                                + "type, "
-                                + "value) VALUES (%s, %s)",
-                                ("rev", self.rev))
-
-        # create options table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'options'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE options ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "type VARCHAR(255) NOT NULL UNIQUE, "
-                                + "value DOUBLE NOT NULL)")
-
-        # create nodes table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'nodes'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE nodes ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "hostname VARCHAR(255) NOT NULL, "
-                                + "nodeType VARCHAR(255) NOT NULL, "
-                                + "instance VARCHAR(255) NOT NULL, "
-                                + "connected INTEGER NOT NULL, "
-                                + "version DOUBLE NOT NULL, "
-                                + "rev INTEGER NOT NULL, "
-                                + "newestVersion DOUBLE NOT NULL, "
-                                + "newestRev INTEGER NOT NULL, "
-                                + "username VARCHAR(255) NOT NULL, "
-                                + "persistent INTEGER NOT NULL)")
-
-        # create sensors table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'sensors'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensors ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "nodeId INTEGER NOT NULL, "
-                                + "remoteSensorId INTEGER NOT NULL, "
-                                + "description VARCHAR(255) NOT NULL, "
-                                + "state INTEGER NOT NULL, "
-                                + "lastStateUpdated INTEGER NOT NULL, "
-                                + "alertDelay INTEGER NOT NULL, "
-                                + "dataType INTEGER NOT NULL, "
-                                + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
-        # Create sensorsDataInt table if it does not exist.
-        self.cursor.execute("SHOW TABLES LIKE 'sensorsDataInt'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorsDataInt ("
-                                + "sensorId INTEGER PRIMARY KEY NOT NULL, "
-                                + "data INTEGER NOT NULL, "
-                                + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
-
-        # Create sensorsDataFloat table if it does not exist.
-        self.cursor.execute("SHOW TABLES LIKE 'sensorsDataFloat'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorsDataFloat ("
-                                + "sensorId INTEGER PRIMARY KEY NOT NULL, "
-                                + "data REAL NOT NULL, "
-                                + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
-
-        # create sensorAlerts table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorAlerts ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "sensorId INTEGER NOT NULL, "
-                                + "state INTEGER NOT NULL, "
-                                + "description TEXT NOT NULL,"
-                                + "timeReceived INTEGER NOT NULL, "
-                                + "dataJson TEXT NOT NULL, "
-                                + "dataType INTEGER NOT NULL)")
-
-        # Create sensorAlertsDataInt table if it does not exist.
-        self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataInt'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
-                                + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
-                                + "data INTEGER NOT NULL, "
-                                + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
-
-        # Create sensorAlertsDataFloat table if it does not exist.
-        self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataFloat'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
-                                + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
-                                + "data REAL NOT NULL, "
-                                + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
-
-        # create sensorAlertsAlertLevels table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'sensorAlertsAlertLevels'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorAlertsAlertLevels ("
-                                + "sensorAlertId INTEGER NOT NULL, "
-                                + "alertLevel INTEGER NOT NULL, "
-                                + "PRIMARY KEY(sensorAlertId, alertLevel), "
-                                + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
-
-        # create sensorsAlertLevels table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE sensorsAlertLevels ("
-                                + "sensorId INTEGER NOT NULL, "
-                                + "alertLevel INTEGER NOT NULL, "
-                                + "PRIMARY KEY(sensorId, alertLevel), "
-                                + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
-
-        # create alerts table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'alerts'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE alerts ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "nodeId INTEGER NOT NULL, "
-                                + "remoteAlertId INTEGER NOT NULL, "
-                                + "description VARCHAR(255) NOT NULL, "
-                                + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
-        # create alertsAlertLevels table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'alertsAlertLevels'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE alertsAlertLevels ("
-                                + "alertId INTEGER NOT NULL, "
-                                + "alertLevel INTEGER NOT NULL, "
-                                + "PRIMARY KEY(alertId, alertLevel), "
-                                + "FOREIGN KEY(alertId) REFERENCES alerts(id))")
-
-        # create managers table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'managers'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE managers ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "nodeId INTEGER NOT NULL, "
-                                + "description VARCHAR(255) NOT NULL, "
-                                + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
-
-        # create alert levels table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'alertLevels'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE alertLevels ("
-                                + "alertLevel INTEGER PRIMARY KEY, "
-                                + "name VARCHAR(255) NOT NULL, "
-                                + "triggerAlways INTEGER NOT NULL)")
-
-        # create events table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'events'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE events ("
-                                + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                + "timeOccurred INTEGER NOT NULL, "
-                                + "type VARCHAR(255) NOT NULL)")
-
-        # create eventsSensorAlert table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsSensorAlert'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsSensorAlert ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "state INTEGER NOT NULL, "
-                                + "dataType INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsStateChange table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsStateChange'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsStateChange ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "state INTEGER NOT NULL, "
-                                + "dataType INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsConnectedChange table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsConnectedChange'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsConnectedChange ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "nodeType TEXT NOT NULL, "
-                                + "instance TEXT NOT NULL, "
-                                + "connected INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsSensorTimeOut table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsSensorTimeOut'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsSensorTimeOut ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "state INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsNewVersion table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsNewVersion'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsNewVersion ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "usedVersion DOUBLE NOT NULL, "
-                                + "usedRev INTEGER NOT NULL, "
-                                + "newVersion DOUBLE NOT NULL, "
-                                + "newRev INTEGER NOT NULL, "
-                                + "instance VARCHAR(255) NOT NULL, "
-                                + "hostname VARCHAR(255) NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsNewOption table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsNewOption'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsNewOption ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "type VARCHAR(255) NOT NULL, "
-                                + "value DOUBLE NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsNewNode table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsNewNode'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsNewNode ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "nodeType TEXT NOT NULL, "
-                                + "instance TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsNewSensor table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsNewSensor'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsNewSensor ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "state INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsNewAlert table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsNewAlert'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsNewAlert ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsNewManager table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsNewManager'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsNewManager ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsChangeOption table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsChangeOption'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsChangeOption ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "type VARCHAR(255) NOT NULL, "
-                                + "oldValue DOUBLE NOT NULL, "
-                                + "newValue DOUBLE NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsChangeNode table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsChangeNode'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsChangeNode ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "oldHostname VARCHAR(255) NOT NULL, "
-                                + "oldNodeType VARCHAR(255) NOT NULL, "
-                                + "oldInstance VARCHAR(255) NOT NULL, "
-                                + "oldVersion DOUBLE NOT NULL, "
-                                + "oldRev INTEGER NOT NULL, "
-                                + "oldUsername VARCHAR(255) NOT NULL, "
-                                + "oldPersistent INTEGER NOT NULL, "
-                                + "newHostname VARCHAR(255) NOT NULL, "
-                                + "newNodeType VARCHAR(255) NOT NULL, "
-                                + "newInstance VARCHAR(255) NOT NULL, "
-                                + "newVersion DOUBLE NOT NULL, "
-                                + "newRev INTEGER NOT NULL, "
-                                + "newUsername VARCHAR(255) NOT NULL, "
-                                + "newPersistent INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsChangeSensor table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsChangeSensor'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsChangeSensor ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "oldAlertDelay INTEGER NOT NULL, "
-                                + "oldDescription VARCHAR(255) NOT NULL, "
-                                + "oldRemoteSensorId INTEGER NOT NULL, "
-                                + "newAlertDelay INTEGER NOT NULL, "
-                                + "newDescription VARCHAR(255) NOT NULL, "
-                                + "newRemoteSensorId INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsChangeAlert table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsChangeAlert'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsChangeAlert ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "oldDescription VARCHAR(255) NOT NULL, "
-                                + "oldRemoteAlertId INTEGER NOT NULL, "
-                                + "newDescription VARCHAR(255) NOT NULL, "
-                                + "newRemoteAlertId INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsChangeManager table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsChangeManager'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsChangeManager ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "oldDescription VARCHAR(255) NOT NULL, "
-                                + "newDescription VARCHAR(255) NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsDeleteNode table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteNode'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsDeleteNode ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "hostname TEXT NOT NULL, "
-                                + "nodeType TEXT NOT NULL, "
-                                + "instance TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsDeleteSensor table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteSensor'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsDeleteSensor ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsDeleteAlert table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteAlert'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsDeleteAlert ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # create eventsDeleteManager table if it does not exist
-        self.cursor.execute("SHOW TABLES LIKE 'eventsDeleteManager'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsDeleteManager ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "description TEXT NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # Create eventsDataInt table if it does not exist.
-        self.cursor.execute("SHOW TABLES LIKE 'eventsDataInt'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsDataInt ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "data INTEGER NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # Create eventsDataFloat table if it does not exist.
-        self.cursor.execute("SHOW TABLES LIKE 'eventsDataFloat'")
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            self.cursor.execute("CREATE TABLE eventsDataFloat ("
-                                + "eventId INTEGER PRIMARY KEY NOT NULL, "
-                                + "data REAL NOT NULL, "
-                                + "FOREIGN KEY(eventId) REFERENCES events(id))")
-
-        # commit all changes
-        self.conn.commit()
+            self._system_data.update_alert_level(alert_level)
 
         # close connection to the database
-        self._closeConnection()
-
-        self._releaseLock()
-
-    # updates the received server information
-    #
-    # return True or False
-    def updateServerInformation(self,
-                                serverTime: int,
-                                options: List[Option],
-                                nodes: List[Node],
-                                sensors: List[Sensor],
-                                alerts: List[Alert],
-                                managers: List[Manager],
-                                alertLevels: List[AlertLevel],
-                                sensorAlerts: List[SensorAlert]) -> bool:
-
-        self._acquireLock()
-
-        # connect to the database
-        try:
-            self._openConnection()
-
-        except Exception as e:
-            logging.exception("[%s]: Not able to connect to MySQL server." % self.fileName)
-            self._releaseLock()
-            return False
-
-        # update server time
-        try:
-            self.cursor.execute("UPDATE internals SET "
-                                + "value = %s "
-                                + "WHERE type = %s",
-                                (serverTime, "serverTime"))
-
-        except Exception as e:
-            logging.exception("[%s]: Not able to update server time." % self.fileName)
-            self._releaseLock()
-            return False
-
-        # step one: delete all objects that do not exist anymore
-        # (NOTE: first delete alerts, sensors and managers before
-        # nodes because of the foreign key dependency; also delete
-        # sensorAlerts before sensors and nodes)
-        for option in list(self.optionsCopy):
-            # check if options stored in the database do
-            # not exist anymore in the received data
-            # => delete from database and from local database elements
-            if option not in options:
-                try:
-                    self.cursor.execute("DELETE FROM options "
-                                        + "WHERE type = %s "
-                                        + "AND value = %s",
-                                        (option.type, option.value))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete option of type %s."
-                                      % (self.fileName, option.type))
-                    self._releaseLock()
-                    return False
-
-                self.optionsCopy.remove(option)
-
-        # delete all sensor alerts that are older than the configured
-        # life span
-        try:
-            # delete all sensor alerts with the returned id
-            utcTimestamp = int(time.time())
-            self.cursor.execute("SELECT id FROM sensorAlerts "
-                                + "WHERE (timeReceived + "
-                                + str(self.sensorAlertLifeSpan * 86400)
-                                + ")"
-                                + "<= %s",
-                                (utcTimestamp, ))
-            result = self.cursor.fetchall()
-
-            for idTuple in result:
-                try:
-                    self.cursor.execute("DELETE FROM sensorAlertsAlertLevels "
-                                        + "WHERE sensorAlertId = %s",
-                                        (idTuple[0], ))
-                    self.cursor.execute("DELETE FROM sensorAlertsDataInt "
-                                        + "WHERE sensorAlertId = %s",
-                                        (idTuple[0], ))
-                    self.cursor.execute("DELETE FROM sensorAlertsDataFloat "
-                                        + "WHERE sensorAlertId = %s",
-                                        (idTuple[0], ))
-                    self.cursor.execute("DELETE FROM sensorAlerts "
-                                        + "WHERE id = %s",
-                                        (idTuple[0], ))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete sensor alert with id %d."
-                                      % (self.fileName, idTuple[0]))
-                    self._releaseLock()
-                    return False
-
-        except Exception as e:
-            logging.exception("[%s]: Not able to delete sensor alerts." % self.fileName)
-            self._releaseLock()
-            return False
-
-        for sensor in list(self.sensorsCopy):
-            # check if sensors stored in the database do
-            # not exist anymore in the received data
-            # => delete from database and from local database elements
-            if sensor not in sensors:
-                try:
-                    self.cursor.execute("DELETE FROM sensorsAlertLevels "
-                                        + "WHERE sensorId = %s",
-                                        (sensor.sensorId, ))
-
-                    # delete all sensor alerts with the returned id
-                    self.cursor.execute("SELECT id FROM sensorAlerts "
-                                        + "WHERE sensorId = %s",
-                                        (sensor.sensorId, ))
-                    result = self.cursor.fetchall()
-                    for idTuple in result:
-                        self.cursor.execute("DELETE FROM "
-                                            + "sensorAlertsAlertLevels "
-                                            + "WHERE sensorAlertId = %s",
-                                            (idTuple[0], ))
-                        self.cursor.execute("DELETE FROM "
-                                            + "sensorAlertsDataInt "
-                                            + "WHERE sensorAlertId = %s",
-                                            (idTuple[0], ))
-                        self.cursor.execute("DELETE FROM "
-                                            + "sensorAlertsDataFloat "
-                                            + "WHERE sensorAlertId = %s",
-                                            (idTuple[0], ))
-                        self.cursor.execute("DELETE FROM sensorAlerts "
-                                            + "WHERE id = %s",
-                                            (idTuple[0], ))
-
-                    # Delete all sensor data from database.
-                    self._removeSensorDataFromDb(sensor)
-
-                    self.cursor.execute("DELETE FROM sensors "
-                                        + "WHERE id = %s",
-                                        (sensor.sensorId, ))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete sensor with id %d."
-                                      % (self.fileName, sensor.sensorId))
-                    self._releaseLock()
-                    return False
-
-                self.sensorsCopy.remove(sensor)
-
-        for alert in list(self.alertsCopy):
-            # check if alerts stored in the database do
-            # not exist anymore in the received data
-            # => delete from database and from local database elements  
-            if alert not in alerts:
-                try:
-                    self.cursor.execute("DELETE FROM alertsAlertLevels "
-                                        + "WHERE alertId = %s",
-                                        (alert.alertId, ))
-
-                    self.cursor.execute("DELETE FROM alerts "
-                                        + "WHERE id = %s",
-                                        (alert.alertId, ))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete alert with id %d."
-                                      % (self.fileName, alert.alertId))
-                    self._releaseLock()
-                    return False
-
-                self.alertsCopy.remove(alert)
-
-        for manager in list(self.managersCopy):
-            # check if managers stored in the database do
-            # not exist anymore in the received data
-            # => delete from database and from local database elements
-            if manager not in managers:
-                try:
-                    self.cursor.execute("DELETE FROM managers "
-                                        + "WHERE id = %s",
-                                        (manager.managerId, ))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete manager with id %d."
-                                      % (self.fileName, manager.managerId))
-                    self._releaseLock()
-                    return False
-
-                self.managersCopy.remove(manager)
-
-        for node in list(self.nodesCopy):
-            # check if nodes stored in the database do
-            # not exist anymore in the received data
-            # => delete from database and from local database elements
-            if node not in nodes:
-                try:
-                    self.cursor.execute("DELETE FROM nodes "
-                                        + "WHERE id = %s",
-                                        (node.nodeId, ))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete node with id %d."
-                                      % (self.fileName, node.nodeId))
-                    self._releaseLock()
-                    return False
-
-                self.nodesCopy.remove(node)
-
-        for alertLevel in list(self.alertLevelsCopy):
-            # check if alert levels stored in the database do
-            # not exist anymore in the received data
-            # => delete from database and from local database elements  
-            if alertLevel not in alertLevels:
-                try:
-                    self.cursor.execute("DELETE FROM alertLevels "
-                                        + "WHERE alertLevel = %s",
-                                        (alertLevel.level, ))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to delete alert level  %d."
-                                      % (self.fileName, alertLevel.level))
-                    self._releaseLock()
-                    return False
-
-                self.alertLevelsCopy.remove(alertLevel)
-
-        # delete all events that are older than the configured life span
-        if self.eventsLifeSpan > 0:
-            if not self._removeEventsFromDb():
-                logging.error("[%s]: Not able to remove old events." % self.fileName)
-                self._releaseLock()
-                return False
-
-        # step two: update all existing objects
-        for option in options:
-            # when the option was found
-            # => update it in the database
-            if option in self.optionsCopy:
-                try:
-                    self.cursor.execute("UPDATE options SET "
-                                        + "value = %s WHERE type = %s",
-                                        (option.value, option.type))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to update option." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-        for node in nodes:
-            # when the node was found
-            # => update it in the database
-            if node in self.nodesCopy:
-                try:
-                    self.cursor.execute("UPDATE nodes SET "
-                                        + "hostname = %s, "
-                                        + "nodeType = %s, "
-                                        + "instance = %s, "
-                                        + "connected = %s, "
-                                        + "version = %s, "
-                                        + "rev = %s, "
-                                        + "newestVersion = %s, "
-                                        + "newestRev = %s, "
-                                        + "username = %s, "
-                                        + "persistent = %s "
-                                        + "WHERE id = %s",
-                                        (node.hostname,
-                                         node.nodeType,
-                                         node.instance,
-                                         node.connected,
-                                         node.version,
-                                         node.rev,
-                                         node.newestVersion,
-                                         node.newestRev,
-                                         node.username,
-                                         node.persistent,
-                                         node.nodeId))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to update node." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-        for sensor in sensors:
-            # when the sensor was found
-            # => update it in the database
-            if sensor in self.sensorsCopy:
-                try:
-                    self.cursor.execute("UPDATE sensors SET "
-                                        + "nodeId = %s, "
-                                        + "remoteSensorId = %s, "
-                                        + "description = %s, "
-                                        + "state = %s ,"
-                                        + "lastStateUpdated = %s, "
-                                        + "alertDelay = %s, "
-                                        + "dataType = %s "
-                                        + "WHERE id = %s",
-                                        (sensor.nodeId,
-                                         sensor.remoteSensorId,
-                                         sensor.description,
-                                         sensor.state,
-                                         sensor.lastStateUpdated,
-                                         sensor.alertDelay,
-                                         sensor.dataType,
-                                         sensor.sensorId))
-
-                    self.cursor.execute("DELETE FROM sensorsAlertLevels "
-                                        + "WHERE sensorId = %s",
-                                        (sensor.sensorId, ))
-
-                    for sensorAlertLevel in sensor.alertLevels:
-                        self.cursor.execute("INSERT INTO sensorsAlertLevels ("
-                                            + "sensorId, "
-                                            + "alertLevel) "
-                                            + "VALUES (%s, %s)",
-                                            (sensor.sensorId, sensorAlertLevel))
-
-                    # Delete all sensor data from database.
-                    self._removeSensorDataFromDb(sensor)
-
-                    # Add sensor data to database.
-                    self._addSensorDataToDb(sensor)
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to update sensor." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-        for alert in alerts:
-            # when the alert was found
-            # => update it in the database
-            if alert in self.alertsCopy:
-                try:
-                    self.cursor.execute("UPDATE alerts SET "
-                                        + "nodeId = %s, "
-                                        + "remoteAlertId = %s, "
-                                        + "description = %s "
-                                        + "WHERE id = %s",
-                                        (alert.nodeId,
-                                         alert.remoteAlertId,
-                                         alert.description,
-                                         alert.alertId))
-
-                    self.cursor.execute("DELETE FROM alertsAlertLevels "
-                                        + "WHERE alertId = %s",
-                                        (alert.alertId, ))
-
-                    for alertAlertLevel in alert.alertLevels:
-                        self.cursor.execute("INSERT INTO alertsAlertLevels ("
-                                            + "alertId, "
-                                            + "alertLevel) "
-                                            + "VALUES (%s, %s)",
-                                            (alert.alertId, alertAlertLevel))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to update alert." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-        for manager in managers:
-            # when the manager was found
-            # => update it in the database
-            if manager in self.managersCopy:
-                try:
-                    self.cursor.execute("UPDATE managers SET "
-                                        + "nodeId = %s, "
-                                        + "description = %s "
-                                        + "WHERE id = %s",
-                                        (manager.nodeId,
-                                         manager.description,
-                                         manager.managerId))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to update manager." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-        for alertLevel in alertLevels:
-            # when the alert level was found
-            # => update it in the database
-            if alertLevel in self.alertLevelsCopy:
-                try:
-                    self.cursor.execute("UPDATE alertLevels SET "
-                                        + "name = %s, "
-                                        + "triggerAlways = %s "
-                                        + "WHERE alertLevel = %s",
-                                        (alertLevel.name,
-                                         alertLevel.triggerAlways,
-                                         alertLevel.level))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to update alert level." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-        # step three: add all new objects
-        # (NOTE: first add nodes before alerts, sensors and managers
-        # because of the foreign key dependency)
-        for option in options:
-
-            # when it does not exist in the database
-            # => add it and add to local database elements
-            if option not in self.optionsCopy:
-                try:
-                    self.cursor.execute("INSERT INTO options ("
-                                        + "type, "
-                                        + "value) VALUES (%s, %s)",
-                                        (option.type, option.value))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add option." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-                self.optionsCopy.append(option)
-
-        for node in nodes:
-            # when it does not exist in the database
-            # => add it and add to local database elements
-            if node not in self.nodesCopy:
-                try:
-                    self.cursor.execute("INSERT INTO nodes ("
-                                        + "id, "
-                                        + "hostname, "
-                                        + "nodeType, "
-                                        + "instance, "
-                                        + "connected, "
-                                        + "version, "
-                                        + "rev, "
-                                        + "newestVersion, "
-                                        + "newestRev, "
-                                        + "username, "
-                                        + "persistent) "
-                                        + "VALUES "
-                                        + "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                                        (node.nodeId,
-                                         node.hostname,
-                                         node.nodeType,
-                                         node.instance,
-                                         node.connected,
-                                         node.version,
-                                         node.rev,
-                                         node.newestVersion,
-                                         node.newestRev,
-                                         node.username,
-                                         node.persistent))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add node." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-                self.nodesCopy.append(node)
-
-        for sensor in sensors:
-            # when it does not exist in the database
-            # => add it and add to local database elements
-            if sensor not in self.sensorsCopy:
-                try:
-                    self.cursor.execute("INSERT INTO sensors ("
-                                        + "id, "
-                                        + "nodeId, "
-                                        + "remoteSensorId, "
-                                        + "description, "
-                                        + "state, "
-                                        + "lastStateUpdated, "
-                                        + "alertDelay, "
-                                        + "dataType) "
-                                        + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                                        (sensor.sensorId,
-                                         sensor.nodeId,
-                                         sensor.remoteSensorId,
-                                         sensor.description,
-                                         sensor.state,
-                                         sensor.lastStateUpdated,
-                                         sensor.alertDelay,
-                                         sensor.dataType))
-
-                    for sensorAlertLevel in sensor.alertLevels:
-                        self.cursor.execute("INSERT INTO sensorsAlertLevels ("
-                                            + "sensorId, "
-                                            + "alertLevel) "
-                                            + "VALUES (%s, %s)",
-                                            (sensor.sensorId, sensorAlertLevel))
-
-                    # Add sensor data to database.
-                    self._addSensorDataToDb(sensor)
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add sensor." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-                self.sensorsCopy.append(sensor)
-
-        for sensorAlert in sensorAlerts:
-            # try to convert received data to json
+        self._close_connection()
+
+    def create_storage(self):
+        """
+        Creates the database (should only be called if the database does not exist).
+        Has no return value but raise exception if it fails.
+        """
+        with self._lock:
+
+            # connect to the database
             try:
-                dataJson = json.dumps(sensorAlert.optionalData)
-            except Exception as e:
-                logging.exception("[%s]: Not able to convert optional data  of sensor alert to json." % self.fileName)
-                continue
+                self._open_connection()
 
+            except Exception:
+                logging.exception("[%s]: Not able to connect to MySQL server." % self._log_tag)
+                # remember to pass the exception
+                raise
+
+            # create internals table (used internally by the client)
+            # if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'internals'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE internals ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "type VARCHAR(255) NOT NULL UNIQUE, "
+                                     + "value DOUBLE NOT NULL)")
+
+                # insert server time field
+                self._cursor.execute("INSERT INTO internals ("
+                                     + "type, "
+                                     + "value) VALUES (%s, %s)",
+                                     ("serverTime", 0.0))
+
+                # insert version field
+                self._cursor.execute("INSERT INTO internals ("
+                                     + "type, "
+                                     + "value) VALUES (%s, %s)",
+                                     ("version", self._version))
+
+                # insert rev field
+                self._cursor.execute("INSERT INTO internals ("
+                                     + "type, "
+                                     + "value) VALUES (%s, %s)",
+                                     ("rev", self._rev))
+
+            # create options table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'options'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE options ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "type VARCHAR(255) NOT NULL UNIQUE, "
+                                     + "value DOUBLE NOT NULL)")
+
+            # create nodes table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'nodes'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE nodes ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "hostname VARCHAR(255) NOT NULL, "
+                                     + "nodeType VARCHAR(255) NOT NULL, "
+                                     + "instance VARCHAR(255) NOT NULL, "
+                                     + "connected INTEGER NOT NULL, "
+                                     + "version DOUBLE NOT NULL, "
+                                     + "rev INTEGER NOT NULL, "
+                                     + "username VARCHAR(255) NOT NULL, "
+                                     + "persistent INTEGER NOT NULL)")
+
+            # create sensors table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'sensors'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensors ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "nodeId INTEGER NOT NULL, "
+                                     + "remoteSensorId INTEGER NOT NULL, "
+                                     + "description VARCHAR(255) NOT NULL, "
+                                     + "state INTEGER NOT NULL, "
+                                     + "lastStateUpdated INTEGER NOT NULL, "
+                                     + "alertDelay INTEGER NOT NULL, "
+                                     + "dataType INTEGER NOT NULL, "
+                                     + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+            # Create sensorsDataInt table if it does not exist.
+            self._cursor.execute("SHOW TABLES LIKE 'sensorsDataInt'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorsDataInt ("
+                                     + "sensorId INTEGER PRIMARY KEY NOT NULL, "
+                                     + "data INTEGER NOT NULL, "
+                                     + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+            # Create sensorsDataFloat table if it does not exist.
+            self._cursor.execute("SHOW TABLES LIKE 'sensorsDataFloat'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorsDataFloat ("
+                                     + "sensorId INTEGER PRIMARY KEY NOT NULL, "
+                                     + "data REAL NOT NULL, "
+                                     + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+            # create sensorAlerts table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'sensorAlerts'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorAlerts ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "sensorId INTEGER NOT NULL, "
+                                     + "state INTEGER NOT NULL, "
+                                     + "description TEXT NOT NULL,"
+                                     + "timeReceived INTEGER NOT NULL, "
+                                     + "dataJson TEXT NOT NULL, "
+                                     + "dataType INTEGER NOT NULL)")
+
+            # Create sensorAlertsDataInt table if it does not exist.
+            self._cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataInt'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorAlertsDataInt ("
+                                     + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
+                                     + "data INTEGER NOT NULL, "
+                                     + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+            # Create sensorAlertsDataFloat table if it does not exist.
+            self._cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataFloat'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
+                                     + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
+                                     + "data REAL NOT NULL, "
+                                     + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+            # create sensorAlertsAlertLevels table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'sensorAlertsAlertLevels'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorAlertsAlertLevels ("
+                                     + "sensorAlertId INTEGER NOT NULL, "
+                                     + "alertLevel INTEGER NOT NULL, "
+                                     + "PRIMARY KEY(sensorAlertId, alertLevel), "
+                                     + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+            # create sensorsAlertLevels table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'sensorsAlertLevels'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorsAlertLevels ("
+                                     + "sensorId INTEGER NOT NULL, "
+                                     + "alertLevel INTEGER NOT NULL, "
+                                     + "PRIMARY KEY(sensorId, alertLevel), "
+                                     + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+            # create alerts table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'alerts'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE alerts ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "nodeId INTEGER NOT NULL, "
+                                     + "remoteAlertId INTEGER NOT NULL, "
+                                     + "description VARCHAR(255) NOT NULL, "
+                                     + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+            # create alertsAlertLevels table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'alertsAlertLevels'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE alertsAlertLevels ("
+                                     + "alertId INTEGER NOT NULL, "
+                                     + "alertLevel INTEGER NOT NULL, "
+                                     + "PRIMARY KEY(alertId, alertLevel), "
+                                     + "FOREIGN KEY(alertId) REFERENCES alerts(id))")
+
+            # create managers table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'managers'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE managers ("
+                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "nodeId INTEGER NOT NULL, "
+                                     + "description VARCHAR(255) NOT NULL, "
+                                     + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
+
+            # create alert levels table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'alertLevels'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE alertLevels ("
+                                     + "alertLevel INTEGER PRIMARY KEY, "
+                                     + "name VARCHAR(255) NOT NULL, "
+                                     + "triggerAlways INTEGER NOT NULL)")
+
+            # commit all changes
+            self._conn.commit()
+
+            # close connection to the database
+            self._close_connection()
+
+    def update_server_information(self,
+                                  server_time: int,
+                                  options: List[Option],
+                                  nodes: List[Node],
+                                  sensors: List[Sensor],
+                                  alerts: List[Alert],
+                                  managers: List[Manager],
+                                  alert_levels: List[AlertLevel],
+                                  sensorAlerts: List[SensorAlert]) -> bool:
+        """
+        Updates the received server information.
+
+        :param server_time:
+        :param options:
+        :param nodes:
+        :param sensors:
+        :param alerts:
+        :param managers:
+        :param alert_levels:
+        :param sensorAlerts:
+        :return: Success or Failure
+        """
+        with self._lock:
+
+            # connect to the database
             try:
-                self.cursor.execute("INSERT INTO sensorAlerts ("
-                                    + "sensorId, "
-                                    + "state, "
-                                    + "description, "
-                                    + "timeReceived, "
-                                    + "dataJson, "
-                                    + "dataType) "
-                                    + "VALUES (%s, %s, %s, %s, %s, %s)",
-                                    (sensorAlert.sensorId,
-                                     sensorAlert.state,
-                                     sensorAlert.description,
-                                     sensorAlert.timeReceived,
-                                     dataJson,
-                                     sensorAlert.dataType))
-                sensorAlertId = self.cursor.lastrowid
+                self._open_connection()
 
-                for alertLevel in sensorAlert.alertLevels:
-                    self.cursor.execute("INSERT INTO sensorAlertsAlertLevels ("
-                                        + "sensorAlertId, "
-                                        + "alertLevel) "
-                                        + "VALUES (%s, %s)",
-                                        (sensorAlertId, alertLevel))
-
-                # Only store data if sensor alert carries it.
-                if sensorAlert.dataType == SensorDataType.INT:
-                    self.cursor.execute("INSERT INTO sensorAlertsDataInt ("
-                                        + "sensorAlertId, "
-                                        + "data) "
-                                        + "VALUES (%s, %s)",
-                                        (sensorAlertId, sensorAlert.sensorData))
-                elif sensorAlert.dataType == SensorDataType.FLOAT:
-                    self.cursor.execute("INSERT INTO sensorAlertsDataFloat ("
-                                        + "sensorAlertId, "
-                                        + "data) "
-                                        + "VALUES (%s, %s)",
-                                        (sensorAlertId, sensorAlert.sensorData))
-
-            except Exception as e:
-                logging.exception("[%s]: Not able to add sensor alert." % self.fileName)
-                self._releaseLock()
+            except Exception:
+                logging.exception("[%s]: Not able to connect to MySQL server." % self._log_tag)
                 return False
 
-        for alert in alerts:
-            # when it does not exist in the database
-            # => add it and add to local database elements
-            if alert not in self.alertsCopy:
-                try:
-                    self.cursor.execute("INSERT INTO alerts ("
-                                        + "id, "
-                                        + "nodeId, "
-                                        + "remoteAlertId, "
-                                        + "description) "
-                                        + "VALUES (%s, %s, %s, %s)",
-                                        (alert.alertId, alert.nodeId, alert.remoteAlertId, alert.description))
+            # Update server time.
+            try:
+                self._cursor.execute("UPDATE internals SET "
+                                     + "value = %s "
+                                     + "WHERE type = %s",
+                                     (server_time, "serverTime"))
 
-                    for alertAlertLevel in alert.alertLevels:
-                        self.cursor.execute("INSERT INTO alertsAlertLevels ("
-                                            + "alertId, "
-                                            + "alertLevel) "
-                                            + "VALUES (%s, %s)",
-                                            (alert.alertId, alertAlertLevel))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add alert." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-                self.alertsCopy.append(alert)
-
-        for manager in managers:
-            # when it does not exist in the database
-            # => add it and add to local database elements
-            if manager not in self.managersCopy:
-                try:
-                    self.cursor.execute("INSERT INTO managers ("
-                                        + "id, "
-                                        + "nodeId, "
-                                        + "description) "
-                                        + "VALUES (%s, %s, %s)",
-                                        (manager.managerId, manager.nodeId, manager.description))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add manager." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-                self.managersCopy.append(manager)
-
-        for alertLevel in alertLevels:
-            # when it does not exist in the database
-            # => add it and add to local database elements
-            if alertLevel not in self.alertLevelsCopy:
-                try:
-                    self.cursor.execute("INSERT INTO alertLevels ("
-                                        + "alertLevel, "
-                                        + "name, "
-                                        + "triggerAlways) "
-                                        + "VALUES (%s, %s, %s)",
-                                        (alertLevel.level, alertLevel.name, alertLevel.triggerAlways))
-
-                except Exception as e:
-                    logging.exception("[%s]: Not able to add alert level." % self.fileName)
-                    self._releaseLock()
-                    return False
-
-                self.alertLevelsCopy.append(alertLevel)
-
-        # add all events to the database (if it is activated to store events)
-        if self.eventsLifeSpan > 0:
-            if not self._addEventsToDb():
-                logging.error("[%s]: Not able to add events." % self.fileName)
-                self._releaseLock()
+            except Exception:
+                logging.exception("[%s]: Not able to update server time." % self._log_tag)
                 return False
 
-        # commit all changes
-        self.conn.commit()
+            # STEP ONE: delete all objects that do not exist anymore
+            # (NOTE: first delete alerts, sensors and managers before
+            # nodes because of the foreign key dependency; also delete
+            # sensorAlerts before sensors and nodes)
+            for option in self._db_copy_options:
 
-        # close connection to the database
-        self._closeConnection()
+                # Check if object does not exist anymore in received data.
+                if option.is_deleted():
+                    try:
+                        self._cursor.execute("DELETE FROM options "
+                                             + "WHERE type = %s "
+                                             + "AND value = %s",
+                                             (option.type, option.value))
 
-        self._releaseLock()
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Option of type '%s'."
+                                          % (self._log_tag, option.type))
+                        return False
 
-        return True
+            # Delete all sensor alerts that are older than the configured life span.
+            try:
+                # delete all sensor alerts with the returned id
+                utc_timestamp = int(time.time())
+                self._cursor.execute("SELECT id FROM sensorAlerts "
+                                     + "WHERE (timeReceived + "
+                                     + str(self._sensor_alert_life_span * 86400)
+                                     + ")"
+                                     + "<= %s",
+                                     (utc_timestamp, ))
+                result = self._cursor.fetchall()
+
+                for id_tuple in result:
+                    try:
+                        self._cursor.execute("DELETE FROM sensorAlertsAlertLevels "
+                                             + "WHERE sensorAlertId = %s",
+                                             (id_tuple[0], ))
+                        self._cursor.execute("DELETE FROM sensorAlertsDataInt "
+                                             + "WHERE sensorAlertId = %s",
+                                             (id_tuple[0], ))
+                        self._cursor.execute("DELETE FROM sensorAlertsDataFloat "
+                                             + "WHERE sensorAlertId = %s",
+                                             (id_tuple[0], ))
+                        self._cursor.execute("DELETE FROM sensorAlerts "
+                                             + "WHERE id = %s",
+                                             (id_tuple[0], ))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Sensor Alert with id %d."
+                                          % (self._log_tag, id_tuple[0]))
+                        return False
+
+            except Exception:
+                logging.exception("[%s]: Not able to delete Sensor Alerts." % self._log_tag)
+                return False
+
+            for sensor in self._db_copy_sensors:
+
+                # Check if object does not exist anymore in received data.
+                if sensor.is_deleted():
+                    try:
+                        self._cursor.execute("DELETE FROM sensorsAlertLevels "
+                                             + "WHERE sensorId = %s",
+                                             (sensor.sensorId, ))
+
+                        # delete all sensor alerts with the returned id
+                        self._cursor.execute("SELECT id FROM sensorAlerts "
+                                             + "WHERE sensorId = %s",
+                                             (sensor.sensorId, ))
+                        result = self._cursor.fetchall()
+                        for id_tuple in result:
+                            self._cursor.execute("DELETE FROM "
+                                                 + "sensorAlertsAlertLevels "
+                                                 + "WHERE sensorAlertId = %s",
+                                                 (id_tuple[0], ))
+                            self._cursor.execute("DELETE FROM "
+                                                 + "sensorAlertsDataInt "
+                                                 + "WHERE sensorAlertId = %s",
+                                                 (id_tuple[0], ))
+                            self._cursor.execute("DELETE FROM "
+                                                 + "sensorAlertsDataFloat "
+                                                 + "WHERE sensorAlertId = %s",
+                                                 (id_tuple[0], ))
+                            self._cursor.execute("DELETE FROM sensorAlerts "
+                                                 + "WHERE id = %s",
+                                                 (id_tuple[0], ))
+
+                        # Delete all sensor data from database.
+                        self._remove_sensor_data_from_db(sensor)
+
+                        self._cursor.execute("DELETE FROM sensors "
+                                             + "WHERE id = %s",
+                                             (sensor.sensorId, ))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Sensor with id %d."
+                                          % (self._log_tag, sensor.sensorId))
+                        return False
+
+            for alert in self._db_copy_alerts:
+
+                # Check if object does not exist anymore in received data.
+                if alert.is_deleted():
+                    try:
+                        self._cursor.execute("DELETE FROM alertsAlertLevels "
+                                             + "WHERE alertId = %s",
+                                             (alert.alertId, ))
+
+                        self._cursor.execute("DELETE FROM alerts "
+                                             + "WHERE id = %s",
+                                             (alert.alertId, ))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Alert with id %d."
+                                          % (self._log_tag, alert.alertId))
+                        return False
+
+            for manager in self._db_copy_managers:
+
+                # Check if object does not exist anymore in received data.
+                if manager.is_deleted():
+                    try:
+                        self._cursor.execute("DELETE FROM managers "
+                                             + "WHERE id = %s",
+                                             (manager.managerId, ))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Manager with id %d."
+                                          % (self._log_tag, manager.managerId))
+                        return False
+
+            for node in self._db_copy_nodes:
+
+                # Check if object does not exist anymore in received data.
+                if node not in nodes:
+                    try:
+                        self._cursor.execute("DELETE FROM nodes "
+                                             + "WHERE id = %s",
+                                             (node.nodeId, ))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Node with id %d."
+                                          % (self._log_tag, node.nodeId))
+                        return False
+
+            for alert_level in self._db_copy_alert_levels:
+
+                # Check if object does not exist anymore in received data.
+                if alert_level.is_deleted():
+                    try:
+                        self._cursor.execute("DELETE FROM alertLevels "
+                                             + "WHERE alertLevel = %s",
+                                             (alert_level.level, ))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to delete Alert Level %d."
+                                          % (self._log_tag, alert_level.level))
+                        return False
+
+            # STEP TWO: update all existing objects and add new ones
+            # (NOTE: first add nodes before alerts, sensors and managers
+            # because of the foreign key dependency)
+            for option in options:
+
+                    try:
+                        self._cursor.execute("SELECT * FROM options WHERE type = %s",
+                                             (option.type,))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to get Option of type '%s'."
+                                          % (self._log_tag, option.type))
+                        return False
+
+                    result = self._cursor.fetchall()
+
+                    # Update existing object.
+                    if len(result) != 0: # TODO test if this check works
+                        try:
+                            self._cursor.execute("UPDATE options SET "
+                                                 + "value = %s WHERE type = %s",
+                                                 (option.value, option.type))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to update Option of type '%s'."
+                                              % (self._log_tag, option.type))
+                            return False
+
+                    # Add not existing new object.
+                    else:
+                        try:
+                            self._cursor.execute("INSERT INTO options ("
+                                                 + "type, "
+                                                 + "value) VALUES (%s, %s)",
+                                                 (option.type, option.value))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to add Option of type '%s'."
+                                              % (self._log_tag, option.type))
+                            return False
+
+            for node in nodes:
+
+                    try:
+                        self._cursor.execute("SELECT * FROM nodes WHERE id = %s",
+                                             (node.nodeId,))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to get Node with id %d."
+                                          % (self._log_tag, node.nodeId))
+                        return False
+
+                    result = self._cursor.fetchall()
+
+                    # Update existing object.
+                    if len(result) != 0: # TODO test if this check works
+                        try:
+                            self._cursor.execute("UPDATE nodes SET "
+                                                 + "hostname = %s, "
+                                                 + "nodeType = %s, "
+                                                 + "instance = %s, "
+                                                 + "connected = %s, "
+                                                 + "version = %s, "
+                                                 + "rev = %s, "
+                                                 + "username = %s, "
+                                                 + "persistent = %s "
+                                                 + "WHERE id = %s",
+                                                 (node.hostname,
+                                                  node.nodeType,
+                                                  node.instance,
+                                                  node.connected,
+                                                  node.version,
+                                                  node.rev,
+                                                  node.username,
+                                                  node.persistent,
+                                                  node.nodeId))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to update Node with id %d."
+                                              % (self._log_tag, node.nodeId))
+                            return False
+
+                    # Add not existing new object.
+                    else:
+                        try:
+                            self._cursor.execute("INSERT INTO nodes ("
+                                                 + "id, "
+                                                 + "hostname, "
+                                                 + "nodeType, "
+                                                 + "instance, "
+                                                 + "connected, "
+                                                 + "version, "
+                                                 + "rev, "
+                                                 + "username, "
+                                                 + "persistent) "
+                                                 + "VALUES "
+                                                 + "(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                                                 (node.nodeId,
+                                                  node.hostname,
+                                                  node.nodeType,
+                                                  node.instance,
+                                                  node.connected,
+                                                  node.version,
+                                                  node.rev,
+                                                  node.username,
+                                                  node.persistent))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to add Node with id %d."
+                                              % (self._log_tag, node.nodeId))
+                            return False
+
+            for sensor in sensors:
+
+                    try:
+                        self._cursor.execute("SELECT * FROM sensors WHERE id = %s",
+                                             (sensor.sensorId,))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to get Sensor with id %d."
+                                          % (self._log_tag, sensor.sensorId))
+                        return False
+
+                    result = self._cursor.fetchall()
+
+                    # Update existing object.
+                    if len(result) != 0: # TODO test if this check works
+                        try:
+                            # Delete all sensor data from database.
+                            self._remove_sensor_data_from_db(sensor)
+
+                            self._cursor.execute("UPDATE sensors SET "
+                                                 + "nodeId = %s, "
+                                                 + "remoteSensorId = %s, "
+                                                 + "description = %s, "
+                                                 + "state = %s ,"
+                                                 + "lastStateUpdated = %s, "
+                                                 + "alertDelay = %s, "
+                                                 + "dataType = %s "
+                                                 + "WHERE id = %s",
+                                                 (sensor.nodeId,
+                                                  sensor.remoteSensorId,
+                                                  sensor.description,
+                                                  sensor.state,
+                                                  sensor.lastStateUpdated,
+                                                  sensor.alertDelay,
+                                                  sensor.dataType,
+                                                  sensor.sensorId))
+
+                            self._cursor.execute("DELETE FROM sensorsAlertLevels "
+                                                 + "WHERE sensorId = %s",
+                                                 (sensor.sensorId, ))
+
+                            for sensorAlertLevel in sensor.alertLevels:
+                                self._cursor.execute("INSERT INTO sensorsAlertLevels ("
+                                                     + "sensorId, "
+                                                     + "alertLevel) "
+                                                     + "VALUES (%s, %s)",
+                                                     (sensor.sensorId, sensorAlertLevel))
+
+                            # Add sensor data to database.
+                            self._add_sensor_data_to_db(sensor)
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to update Sensor with id %d."
+                                              % (self._log_tag, sensor.sensorId))
+                            return False
+
+                    # Add not existing new object.
+                    else:
+                        try:
+                            self._cursor.execute("INSERT INTO sensors ("
+                                                 + "id, "
+                                                 + "nodeId, "
+                                                 + "remoteSensorId, "
+                                                 + "description, "
+                                                 + "state, "
+                                                 + "lastStateUpdated, "
+                                                 + "alertDelay, "
+                                                 + "dataType) "
+                                                 + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                                                 (sensor.sensorId,
+                                                  sensor.nodeId,
+                                                  sensor.remoteSensorId,
+                                                  sensor.description,
+                                                  sensor.state,
+                                                  sensor.lastStateUpdated,
+                                                  sensor.alertDelay,
+                                                  sensor.dataType))
+
+                            for sensorAlertLevel in sensor.alertLevels:
+                                self._cursor.execute("INSERT INTO sensorsAlertLevels ("
+                                                     + "sensorId, "
+                                                     + "alertLevel) "
+                                                     + "VALUES (%s, %s)",
+                                                     (sensor.sensorId, sensorAlertLevel))
+
+                            # Add sensor data to database.
+                            self._add_sensor_data_to_db(sensor)
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to add Sensor with id %d."
+                                              % (self._log_tag, sensor.sensorId))
+                            return False
+
+            for alert in alerts:
+
+                    try:
+                        self._cursor.execute("SELECT * FROM alerts WHERE id = %s",
+                                             (alert.alertId,))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to get alert with id %d."
+                                          % (self._log_tag, alert.alertId))
+                        return False
+
+                    result = self._cursor.fetchall()
+
+                    # Update existing object.
+                    if len(result) != 0: # TODO test if this check works
+                        try:
+                            self._cursor.execute("UPDATE alerts SET "
+                                                 + "nodeId = %s, "
+                                                 + "remoteAlertId = %s, "
+                                                 + "description = %s "
+                                                 + "WHERE id = %s",
+                                                 (alert.nodeId,
+                                                  alert.remoteAlertId,
+                                                  alert.description,
+                                                  alert.alertId))
+
+                            self._cursor.execute("DELETE FROM alertsAlertLevels "
+                                                 + "WHERE alertId = %s",
+                                                 (alert.alertId, ))
+
+                            for alertAlertLevel in alert.alertLevels:
+                                self._cursor.execute("INSERT INTO alertsAlertLevels ("
+                                                     + "alertId, "
+                                                     + "alertLevel) "
+                                                     + "VALUES (%s, %s)",
+                                                     (alert.alertId, alertAlertLevel))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to update Alert with id %d."
+                                              % (self._log_tag, alert.alertId))
+                            return False
+
+                    # Add not existing new object.
+                    else:
+                        try:
+                            self._cursor.execute("INSERT INTO alerts ("
+                                                 + "id, "
+                                                 + "nodeId, "
+                                                 + "remoteAlertId, "
+                                                 + "description) "
+                                                 + "VALUES (%s, %s, %s, %s)",
+                                                 (alert.alertId, alert.nodeId, alert.remoteAlertId, alert.description))
+
+                            for alertAlertLevel in alert.alertLevels:
+                                self._cursor.execute("INSERT INTO alertsAlertLevels ("
+                                                     + "alertId, "
+                                                     + "alertLevel) "
+                                                     + "VALUES (%s, %s)",
+                                                     (alert.alertId, alertAlertLevel))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to add Alert with id %d."
+                                              % (self._log_tag, alert.alertId))
+                            return False
+
+            for manager in managers:
+
+                    try:
+                        self._cursor.execute("SELECT * FROM managers WHERE id = %s",
+                                             (manager.managerId,))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to get Manager with id %d."
+                                          % (self._log_tag, manager.managerId))
+                        return False
+
+                    result = self._cursor.fetchall()
+
+                    # Update existing object.
+                    if len(result) != 0: # TODO test if this check works
+                        try:
+                            self._cursor.execute("UPDATE managers SET "
+                                                 + "nodeId = %s, "
+                                                 + "description = %s "
+                                                 + "WHERE id = %s",
+                                                 (manager.nodeId,
+                                                  manager.description,
+                                                  manager.managerId))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to update Manager with id %d."
+                                              % (self._log_tag, manager.managerId))
+                            return False
+
+                    # Add not existing new object.
+                    else:
+                        try:
+                            self._cursor.execute("INSERT INTO managers ("
+                                                 + "id, "
+                                                 + "nodeId, "
+                                                 + "description) "
+                                                 + "VALUES (%s, %s, %s)",
+                                                 (manager.managerId, manager.nodeId, manager.description))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to add Manager with id %d."
+                                              % (self._log_tag, manager.managerId))
+                            return False
+
+            for alert_level in alert_levels:
+
+                    try:
+                        self._cursor.execute("SELECT * FROM alertLevels WHERE id = %s",
+                                             (alert_level.level,))
+
+                    except Exception:
+                        logging.exception("[%s]: Not able to get Alert Level %d."
+                                          % (self._log_tag, alert_level.level))
+                        return False
+
+                    result = self._cursor.fetchall()
+
+                    # Update existing object.
+                    if len(result) != 0: # TODO test if this check works
+                        try:
+                            self._cursor.execute("UPDATE alertLevels SET "
+                                                 + "name = %s, "
+                                                 + "triggerAlways = %s "
+                                                 + "WHERE alertLevel = %s",
+                                                 (alert_level.name,
+                                                  alert_level.triggerAlways,
+                                                  alert_level.level))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to update Alert Level %d."
+                                              % (self._log_tag, alert_level.level))
+                            return False
+
+                    # Add not existing new object.
+                    else:
+                        try:
+                            self._cursor.execute("INSERT INTO alertLevels ("
+                                                 + "alertLevel, "
+                                                 + "name, "
+                                                 + "triggerAlways) "
+                                                 + "VALUES (%s, %s, %s)",
+                                                 (alert_level.level, alert_level.name, alert_level.triggerAlways))
+
+                        except Exception:
+                            logging.exception("[%s]: Not able to add Alert Level %d."
+                                              % (self._log_tag, alert_level.level))
+                            return False
+
+            for sensor_alert in sensorAlerts:
+                # Try to convert received data to json to store it in the database.
+                try:
+                    dataJson = json.dumps(sensor_alert.optionalData)
+
+                except Exception:
+                    logging.exception("[%s]: Not able to convert optional data of Sensor Alert to json."
+                                      % self._log_tag)
+                    continue
+
+                try:
+                    self._cursor.execute("INSERT INTO sensorAlerts ("
+                                         + "sensorId, "
+                                         + "state, "
+                                         + "description, "
+                                         + "timeReceived, "
+                                         + "dataJson, "
+                                         + "dataType) "
+                                         + "VALUES (%s, %s, %s, %s, %s, %s)",
+                                         (sensor_alert.sensorId,
+                                          sensor_alert.state,
+                                          sensor_alert.description,
+                                          sensor_alert.timeReceived,
+                                          dataJson,
+                                          sensor_alert.dataType))
+                    db_sensor_alert_id = self._cursor.lastrowid
+
+                    for alert_level in sensor_alert.alertLevels:
+                        self._cursor.execute("INSERT INTO sensorAlertsAlertLevels ("
+                                             + "sensorAlertId, "
+                                             + "alertLevel) "
+                                             + "VALUES (%s, %s)",
+                                             (db_sensor_alert_id, alert_level))
+
+                    # Only store data if sensor alert carries it.
+                    if sensor_alert.dataType == SensorDataType.INT:
+                        self._cursor.execute("INSERT INTO sensorAlertsDataInt ("
+                                             + "sensorAlertId, "
+                                             + "data) "
+                                             + "VALUES (%s, %s)",
+                                             (db_sensor_alert_id, sensor_alert.sensorData))
+                    elif sensor_alert.dataType == SensorDataType.FLOAT:
+                        self._cursor.execute("INSERT INTO sensorAlertsDataFloat ("
+                                             + "sensorAlertId, "
+                                             + "data) "
+                                             + "VALUES (%s, %s)",
+                                             (db_sensor_alert_id, sensor_alert.sensorData))
+
+                except Exception:
+                    logging.exception("[%s]: Not able to add Sensor Alert." % self._log_tag)
+                    return False
+
+            # commit all changes
+            self._conn.commit()
+
+            # close connection to the database
+            self._close_connection()
+
+            self._db_copy_options = options
+            self._db_copy_nodes = nodes
+            self._db_copy_alerts = alerts
+            self._db_copy_managers = managers
+            self._db_copy_sensors = sensors
+            self._db_copy_alert_levels = alert_levels
+
+            return True
+
+
+
+
+
+
+# TODO
+# - Use transactions
+# - Test code
