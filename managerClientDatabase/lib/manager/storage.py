@@ -12,31 +12,31 @@ import os
 import threading
 import time
 import json
+from typing import List
 from ..globalData.localObjects import Option, Node, Sensor, Alert, Manager, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
-from typing import List
 
 
 # internal abstract class for new storage backends
 class _Storage:
 
-    # creates objects from the data in the database 
-    # (should only be called during the initial connection to the database)
-    #
-    # no return value but raise exception if it fails
-    def create_objects_from_db(self):
+    def create_objects(self):
+        """
+        Creates objects from the data in the database
+        (should only be called during the initial connection to the database)
+
+        no return value but raise exception if it fails
+        """
         raise NotImplemented("Function not implemented yet.")
 
-    # creates the database (should only be called if the database
-    # does not exist)
-    #
-    # no return value but raise exception if it fails
     def create_storage(self):
+        """
+        Creates the database (should only be called if the database does not exist)
+
+        No return value but raise exception if it fails
+        """
         raise NotImplemented("Function not implemented yet.")
 
-    # updates the received server information
-    #
-    # return True or False
     def update_server_information(self,
                                   serverTime: int,
                                   options: List[Option],
@@ -46,6 +46,19 @@ class _Storage:
                                   managers: List[Manager],
                                   alertLevels: List[AlertLevel],
                                   sensorAlerts: List[SensorAlert]) -> bool:
+        """
+        Updates the received server information.
+
+        :param serverTime:
+        :param options:
+        :param nodes:
+        :param sensors:
+        :param alerts:
+        :param managers:
+        :param alertLevels:
+        :param sensorAlerts:
+        :return Success or Failure
+        """
         raise NotImplemented("Function not implemented yet.")
 
 
@@ -176,7 +189,7 @@ class Mysql(_Storage):
                 # close connection to the database
                 self._close_connection()
 
-                self.create_objects_from_db()
+                self.create_objects()
 
         # tables do not exist yet
         # => create them
@@ -186,7 +199,64 @@ class Mysql(_Storage):
 
             self.create_storage()
 
-    def _add_sensor_data_to_db(self, sensor: Sensor):
+    def _add_sensor_alert(self, sensor_alert: SensorAlert):
+        """
+        Internal function that adds a Sensor Alert to the database. Does not catch exceptions.
+
+        :param sensor_alert:
+        """
+        # Try to convert received data to json to store it in the database.
+        try:
+            dataJson = json.dumps(sensor_alert.optionalData)
+
+        except Exception:
+            logging.exception("[%s]: Not able to convert optional data of Sensor Alert to json."
+                              % self._log_tag)
+            raise
+
+        try:
+            self._cursor.execute("INSERT INTO sensorAlerts ("
+                                 + "sensorId, "
+                                 + "state, "
+                                 + "description, "
+                                 + "timeReceived, "
+                                 + "dataJson, "
+                                 + "dataType) "
+                                 + "VALUES (%s, %s, %s, %s, %s, %s)",
+                                 (sensor_alert.sensorId,
+                                  sensor_alert.state,
+                                  sensor_alert.description,
+                                  sensor_alert.timeReceived,
+                                  dataJson,
+                                  sensor_alert.dataType))
+            db_sensor_alert_id = self._cursor.lastrowid
+
+            for alert_level in sensor_alert.alertLevels:
+                self._cursor.execute("INSERT INTO sensorAlertsAlertLevels ("
+                                     + "sensorAlertId, "
+                                     + "alertLevel) "
+                                     + "VALUES (%s, %s)",
+                                     (db_sensor_alert_id, alert_level))
+
+            # Only store data if sensor alert carries it.
+            if sensor_alert.dataType == SensorDataType.INT:
+                self._cursor.execute("INSERT INTO sensorAlertsDataInt ("
+                                     + "sensorAlertId, "
+                                     + "data) "
+                                     + "VALUES (%s, %s)",
+                                     (db_sensor_alert_id, sensor_alert.sensorData))
+            elif sensor_alert.dataType == SensorDataType.FLOAT:
+                self._cursor.execute("INSERT INTO sensorAlertsDataFloat ("
+                                     + "sensorAlertId, "
+                                     + "data) "
+                                     + "VALUES (%s, %s)",
+                                     (db_sensor_alert_id, sensor_alert.sensorData))
+
+        except Exception:
+            logging.exception("[%s]: Not able to add Sensor Alert." % self._log_tag)
+            raise
+
+    def _add_sensor_data(self, sensor: Sensor):
         """
         Internal function that adds the data of the sensor to the database. Does not catch exceptions.
 
@@ -196,18 +266,29 @@ class Mysql(_Storage):
             pass
 
         elif sensor.dataType == SensorDataType.INT:
-            self._cursor.execute("INSERT INTO sensorsDataInt ("
-                                 + "sensorId, "
-                                 + "data) "
-                                 + "VALUES (%s, %s)",
-                                 (sensor.sensorId, sensor.data))
+            try:
+                self._cursor.execute("INSERT INTO sensorsDataInt ("
+                                     + "sensorId, "
+                                     + "data) "
+                                     + "VALUES (%s, %s)",
+                                     (sensor.sensorId, sensor.data))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add integer data for Sensor %d."
+                                  % (self._log_tag, sensor.sensorId))
+                raise
 
         elif sensor.dataType == SensorDataType.FLOAT:
-            self._cursor.execute("INSERT INTO sensorsDataFloat ("
-                                 + "sensorId, "
-                                 + "data) "
-                                 + "VALUES (%s, %s)",
-                                 (sensor.sensorId, sensor.data))
+            try:
+                self._cursor.execute("INSERT INTO sensorsDataFloat ("
+                                     + "sensorId, "
+                                     + "data) "
+                                     + "VALUES (%s, %s)",
+                                     (sensor.sensorId, sensor.data))
+            except Exception:
+                logging.exception("[%s]: Not able to add float data for Sensor %d."
+                                  % (self._log_tag, sensor.sensorId))
+                raise
 
     def _close_connection(self):
         """
@@ -217,6 +298,218 @@ class Mysql(_Storage):
         self._conn.close()
         self._cursor = None
         self._conn = None
+
+    def _delete_alert(self, alert_id: int):
+        """
+        Internal function that deletes an Alert from the database. Does not catch exceptions.
+
+        :param alert_id:
+        """
+        try:
+            self._cursor.execute("DELETE FROM alertsAlertLevels "
+                                 + "WHERE alertId = %s",
+                                 (alert_id, ))
+
+            self._cursor.execute("DELETE FROM alerts "
+                                 + "WHERE id = %s",
+                                 (alert_id, ))
+        except Exception:
+            logging.exception("[%s]: Not able to delete Alert with id %d."
+                              % (self._log_tag, alert_id))
+            raise
+
+    def _delete_alert_level(self, level: int):
+        """
+        Internal function that deletes an Alert Level from the database. Does not catch exceptions.
+
+        :param level:
+        """
+        try:
+            self._cursor.execute("DELETE FROM alertsAlertLevels "
+                                 + "WHERE alertLevel = %s",
+                                 (level, ))
+
+            self._cursor.execute("DELETE FROM sensorsAlertLevels "
+                                 + "WHERE alertLevel = %s",
+                                 (level, ))
+
+            self._cursor.execute("DELETE FROM sensorAlertsAlertLevels "
+                                 + "WHERE alertLevel = %s",
+                                 (level, ))
+
+            self._cursor.execute("DELETE FROM alertLevels "
+                                 + "WHERE alertLevel = %s",
+                                 (level, ))
+        except Exception:
+            logging.exception("[%s]: Not able to delete Alert Level %d."
+                              % (self._log_tag, level))
+            raise
+
+    def _delete_manager(self, manager_id: int):
+        """
+        Internal function that deletes a Manager from the database. Does not catch exceptions.
+
+        :param manager_id:
+        """
+        try:
+            self._cursor.execute("DELETE FROM managers "
+                                 + "WHERE id = %s",
+                                 (manager_id, ))
+        except Exception:
+            logging.exception("[%s]: Not able to delete Manager with id %d."
+                              % (self._log_tag, manager_id))
+            raise
+
+    def _delete_node(self, node_id: int):
+        """
+        Internal function that deletes a Node from the database. Does not catch exceptions.
+
+        :param node_id:
+        """
+        try:
+            # Delete all Alerts with the returned id.
+            self._cursor.execute("SELECT id FROM alerts "
+                                 + "WHERE nodeId = %s",
+                                 (node_id, ))
+            result = self._cursor.fetchall()
+            for id_tuple in result:
+                self._delete_alert(id_tuple[0])
+
+            # Delete all Managers with the returned id.
+            self._cursor.execute("SELECT id FROM managers "
+                                 + "WHERE nodeId = %s",
+                                 (node_id, ))
+            result = self._cursor.fetchall()
+            for id_tuple in result:
+                self._delete_manager(id_tuple[0])
+
+            # Delete all Sensors with the returned id.
+            self._cursor.execute("SELECT id FROM sensors "
+                                 + "WHERE nodeId = %s",
+                                 (node_id, ))
+            result = self._cursor.fetchall()
+            for id_tuple in result:
+                self._delete_sensor(id_tuple[0])
+
+            self._cursor.execute("DELETE FROM nodes "
+                                 + "WHERE id = %s",
+                                 (node_id, ))
+        except Exception:
+            logging.exception("[%s]: Not able to delete Node with id %d."
+                              % (self._log_tag, node_id))
+            raise
+
+    def _delete_option(self, option_type: str):
+        """
+        Internal function that deletes an Option from the database. Does not catch exceptions.
+
+        :param option_type:
+        """
+        try:
+            self._cursor.execute("DELETE FROM options "
+                                 + "WHERE type = %s",
+                                 (option_type, ))
+
+        except Exception:
+            logging.exception("[%s]: Not able to delete Option of type '%s'."
+                              % (self._log_tag, option_type))
+            raise
+
+    def _delete_sensor(self, sensor_id: int):
+        """
+        Internal function that deletes a Sensor from the database. Does not catch exceptions.
+
+        :param sensor_id:
+        """
+        try:
+            self._cursor.execute("DELETE FROM sensorsAlertLevels "
+                                 + "WHERE sensorId = %s",
+                                 (sensor_id, ))
+
+            # delete all sensor alerts with the returned id
+            self._cursor.execute("SELECT id FROM sensorAlerts "
+                                 + "WHERE sensorId = %s",
+                                 (sensor_id, ))
+            result = self._cursor.fetchall()
+            for id_tuple in result:
+                self._cursor.execute("DELETE FROM "
+                                     + "sensorAlertsAlertLevels "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM "
+                                     + "sensorAlertsDataInt "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM "
+                                     + "sensorAlertsDataFloat "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM sensorAlerts "
+                                     + "WHERE id = %s",
+                                     (id_tuple[0], ))
+
+            # Delete all sensor data from database.
+            self._delete_sensor_data(sensor_id)
+
+            self._cursor.execute("DELETE FROM sensors "
+                                 + "WHERE id = %s",
+                                 (sensor_id, ))
+
+        except Exception:
+            logging.exception("[%s]: Not able to delete Sensor with id %d."
+                              % (self._log_tag, sensor_id))
+            raise
+
+    def _delete_sensor_alerts(self, max_life_in_seconds: int):
+        """
+        Internal function that deletes all Sensor Alerts exceeding their life span from the database.
+        Does not catch exceptions.
+
+        :param max_life_in_seconds:
+        """
+
+        try:
+            # Delete all sensor alerts with the returned id.
+            utc_timestamp = int(time.time())
+            self._cursor.execute("SELECT id FROM sensorAlerts "
+                                 + "WHERE (timeReceived + "
+                                 + str(max_life_in_seconds)
+                                 + ")"
+                                 + "<= %s",
+                                 (utc_timestamp, ))
+            result = self._cursor.fetchall()
+
+            for id_tuple in result:
+                self._cursor.execute("DELETE FROM sensorAlertsAlertLevels "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM sensorAlertsDataInt "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM sensorAlertsDataFloat "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM sensorAlerts "
+                                     + "WHERE id = %s",
+                                     (id_tuple[0], ))
+
+        except Exception:
+            logging.exception("[%s]: Not able to delete Sensor Alerts." % self._log_tag)
+            raise
+
+    def _delete_sensor_data(self, sensor_id: int):
+        """
+        Internal function that removes the data of the sensor in the database. Does not catch exceptions.
+
+        :param sensor_id:
+        """
+        self._cursor.execute("DELETE FROM sensorsDataInt "
+                             + "WHERE sensorId = %s",
+                             (sensor_id, ))
+
+        self._cursor.execute("DELETE FROM sensorsDataFloat "
+                             + "WHERE sensorId = %s",
+                             (sensor_id, ))
 
     def _open_connection(self):
         """
@@ -250,21 +543,398 @@ class Mysql(_Storage):
 
                 time.sleep(5)
 
-    def _remove_sensor_data_from_db(self, sensor: Sensor):
+    def _update_alert(self, alert: Alert):
         """
-        Internal function that removes the data of the sensor in the database. Does not catch exceptions.
+        Internal function that updates an Alert in the database. Does not catch exceptions.
+
+        :param alert:
+        """
+        try:
+            self._cursor.execute("SELECT * FROM alerts WHERE id = %s",
+                                 (alert.alertId,))
+
+        except Exception:
+            logging.exception("[%s]: Not able to get alert with id %d."
+                              % (self._log_tag, alert.alertId))
+            raise
+
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0: # TODO test if this check works
+            try:
+                self._cursor.execute("UPDATE alerts SET "
+                                     + "nodeId = %s, "
+                                     + "remoteAlertId = %s, "
+                                     + "description = %s "
+                                     + "WHERE id = %s",
+                                     (alert.nodeId,
+                                      alert.remoteAlertId,
+                                      alert.description,
+                                      alert.alertId))
+
+                self._cursor.execute("DELETE FROM alertsAlertLevels "
+                                     + "WHERE alertId = %s",
+                                     (alert.alertId, ))
+
+                for alertAlertLevel in alert.alertLevels:
+                    self._cursor.execute("INSERT INTO alertsAlertLevels ("
+                                         + "alertId, "
+                                         + "alertLevel) "
+                                         + "VALUES (%s, %s)",
+                                         (alert.alertId, alertAlertLevel))
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Alert with id %d."
+                                  % (self._log_tag, alert.alertId))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO alerts ("
+                                     + "id, "
+                                     + "nodeId, "
+                                     + "remoteAlertId, "
+                                     + "description) "
+                                     + "VALUES (%s, %s, %s, %s)",
+                                     (alert.alertId, alert.nodeId, alert.remoteAlertId, alert.description))
+
+                for alertAlertLevel in alert.alertLevels:
+                    self._cursor.execute("INSERT INTO alertsAlertLevels ("
+                                         + "alertId, "
+                                         + "alertLevel) "
+                                         + "VALUES (%s, %s)",
+                                         (alert.alertId, alertAlertLevel))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Alert with id %d."
+                                  % (self._log_tag, alert.alertId))
+                raise
+
+    def _update_alert_level(self, alert_level: AlertLevel):
+        """
+        Internal function that updates an Alert Level in the database. Does not catch exceptions.
+
+        :param alert_level:
+        """
+        try:
+            self._cursor.execute("SELECT * FROM alertLevels WHERE id = %s",
+                                 (alert_level.level,))
+
+        except Exception:
+            logging.exception("[%s]: Not able to get Alert Level %d."
+                              % (self._log_tag, alert_level.level))
+            raise
+
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0: # TODO test if this check works
+            try:
+                self._cursor.execute("UPDATE alertLevels SET "
+                                     + "name = %s, "
+                                     + "triggerAlways = %s "
+                                     + "WHERE alertLevel = %s",
+                                     (alert_level.name,
+                                      alert_level.triggerAlways,
+                                      alert_level.level))
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Alert Level %d."
+                                  % (self._log_tag, alert_level.level))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO alertLevels ("
+                                     + "alertLevel, "
+                                     + "name, "
+                                     + "triggerAlways) "
+                                     + "VALUES (%s, %s, %s)",
+                                     (alert_level.level, alert_level.name, alert_level.triggerAlways))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Alert Level %d."
+                                  % (self._log_tag, alert_level.level))
+                raise
+
+    def _update_manager(self, manager: Manager):
+        """
+        Internal function that updates a Manager in the database. Does not catch exceptions.
+
+        :param manager:
+        """
+        try:
+            self._cursor.execute("SELECT * FROM managers WHERE id = %s",
+                                 (manager.managerId,))
+
+        except Exception:
+            logging.exception("[%s]: Not able to get Manager with id %d."
+                              % (self._log_tag, manager.managerId))
+            raise
+
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0: # TODO test if this check works
+            try:
+                self._cursor.execute("UPDATE managers SET "
+                                     + "nodeId = %s, "
+                                     + "description = %s "
+                                     + "WHERE id = %s",
+                                     (manager.nodeId,
+                                      manager.description,
+                                      manager.managerId))
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Manager with id %d."
+                                  % (self._log_tag, manager.managerId))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO managers ("
+                                     + "id, "
+                                     + "nodeId, "
+                                     + "description) "
+                                     + "VALUES (%s, %s, %s)",
+                                     (manager.managerId, manager.nodeId, manager.description))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Manager with id %d."
+                                  % (self._log_tag, manager.managerId))
+                raise
+
+    def _update_node(self, node: Node):
+        """
+        Internal function that updates a Node in the database. Does not catch exceptions.
+
+        :param node:
+        """
+
+        try:
+            self._cursor.execute("SELECT * FROM nodes WHERE id = %s",
+                                 (node.nodeId,))
+
+        except Exception:
+            logging.exception("[%s]: Not able to get Node with id %d."
+                              % (self._log_tag, node.nodeId))
+            raise
+
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0: # TODO test if this check works
+            try:
+                self._cursor.execute("UPDATE nodes SET "
+                                     + "hostname = %s, "
+                                     + "nodeType = %s, "
+                                     + "instance = %s, "
+                                     + "connected = %s, "
+                                     + "version = %s, "
+                                     + "rev = %s, "
+                                     + "username = %s, "
+                                     + "persistent = %s "
+                                     + "WHERE id = %s",
+                                     (node.hostname,
+                                      node.nodeType,
+                                      node.instance,
+                                      node.connected,
+                                      node.version,
+                                      node.rev,
+                                      node.username,
+                                      node.persistent,
+                                      node.nodeId))
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Node with id %d."
+                                  % (self._log_tag, node.nodeId))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO nodes ("
+                                     + "id, "
+                                     + "hostname, "
+                                     + "nodeType, "
+                                     + "instance, "
+                                     + "connected, "
+                                     + "version, "
+                                     + "rev, "
+                                     + "username, "
+                                     + "persistent) "
+                                     + "VALUES "
+                                     + "(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                                     (node.nodeId,
+                                      node.hostname,
+                                      node.nodeType,
+                                      node.instance,
+                                      node.connected,
+                                      node.version,
+                                      node.rev,
+                                      node.username,
+                                      node.persistent))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Node with id %d."
+                                  % (self._log_tag, node.nodeId))
+                raise
+
+    def _update_option(self, option: Option):
+        """
+        Internal function that updates an Option in the database. Does not catch exceptions.
+
+        :param option:
+        """
+        try:
+            self._cursor.execute("SELECT * FROM options WHERE type = %s",
+                                 (option.type,))
+
+        except Exception:
+            logging.exception("[%s]: Not able to get Option of type '%s'."
+                              % (self._log_tag, option.type))
+            raise
+
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0: # TODO test if this check works
+            try:
+                self._cursor.execute("UPDATE options SET "
+                                     + "value = %s WHERE type = %s",
+                                     (option.value, option.type))
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Option of type '%s'."
+                                  % (self._log_tag, option.type))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO options ("
+                                     + "type, "
+                                     + "value) VALUES (%s, %s)",
+                                     (option.type, option.value))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Option of type '%s'."
+                                  % (self._log_tag, option.type))
+                raise
+
+    def _update_sensor(self, sensor: Sensor):
+        """
+        Internal function that updates a Sensor in the database. Does not catch exceptions.
 
         :param sensor:
         """
-        self._cursor.execute("DELETE FROM sensorsDataInt "
-                             + "WHERE sensorId = %s",
-                             (sensor.sensorId, ))
+        try:
+            self._cursor.execute("SELECT * FROM sensors WHERE id = %s",
+                                 (sensor.sensorId,))
 
-        self._cursor.execute("DELETE FROM sensorsDataFloat "
-                             + "WHERE sensorId = %s",
-                             (sensor.sensorId, ))
+        except Exception:
+            logging.exception("[%s]: Not able to get Sensor with id %d."
+                              % (self._log_tag, sensor.sensorId))
+            raise
 
-    def create_objects_from_db(self):
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0: # TODO test if this check works
+            try:
+                # Delete all sensor data from database.
+                self._delete_sensor_data(sensor.sensorId)
+
+                self._cursor.execute("UPDATE sensors SET "
+                                     + "nodeId = %s, "
+                                     + "remoteSensorId = %s, "
+                                     + "description = %s, "
+                                     + "state = %s ,"
+                                     + "lastStateUpdated = %s, "
+                                     + "alertDelay = %s, "
+                                     + "dataType = %s "
+                                     + "WHERE id = %s",
+                                     (sensor.nodeId,
+                                      sensor.remoteSensorId,
+                                      sensor.description,
+                                      sensor.state,
+                                      sensor.lastStateUpdated,
+                                      sensor.alertDelay,
+                                      sensor.dataType,
+                                      sensor.sensorId))
+
+                self._cursor.execute("DELETE FROM sensorsAlertLevels "
+                                     + "WHERE sensorId = %s",
+                                     (sensor.sensorId, ))
+
+                for sensorAlertLevel in sensor.alertLevels:
+                    self._cursor.execute("INSERT INTO sensorsAlertLevels ("
+                                         + "sensorId, "
+                                         + "alertLevel) "
+                                         + "VALUES (%s, %s)",
+                                         (sensor.sensorId, sensorAlertLevel))
+
+                # Add sensor data to database.
+                self._add_sensor_data(sensor)
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Sensor with id %d."
+                                  % (self._log_tag, sensor.sensorId))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO sensors ("
+                                     + "id, "
+                                     + "nodeId, "
+                                     + "remoteSensorId, "
+                                     + "description, "
+                                     + "state, "
+                                     + "lastStateUpdated, "
+                                     + "alertDelay, "
+                                     + "dataType) "
+                                     + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                                     (sensor.sensorId,
+                                      sensor.nodeId,
+                                      sensor.remoteSensorId,
+                                      sensor.description,
+                                      sensor.state,
+                                      sensor.lastStateUpdated,
+                                      sensor.alertDelay,
+                                      sensor.dataType))
+
+                for sensorAlertLevel in sensor.alertLevels:
+                    self._cursor.execute("INSERT INTO sensorsAlertLevels ("
+                                         + "sensorId, "
+                                         + "alertLevel) "
+                                         + "VALUES (%s, %s)",
+                                         (sensor.sensorId, sensorAlertLevel))
+
+                # Add sensor data to database.
+                self._add_sensor_data(sensor)
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Sensor with id %d."
+                                  % (self._log_tag, sensor.sensorId))
+                raise
+
+    def _update_server_time(self, server_time: int):
+        """
+        Internal function that updates server time in the database. Does not catch exceptions.
+
+        :param server_time:
+        """
+        self._cursor.execute("UPDATE internals SET "
+                             + "value = %s "
+                             + "WHERE type = %s",
+                             (server_time, "serverTime"))
+
+    def create_objects(self):
         """
         creates objects from the data in the database
         (should only be called during the initial connection to the database)
@@ -660,10 +1330,7 @@ class Mysql(_Storage):
 
             # Update server time.
             try:
-                self._cursor.execute("UPDATE internals SET "
-                                     + "value = %s "
-                                     + "WHERE type = %s",
-                                     (server_time, "serverTime"))
+                self._update_server_time(server_time)
 
             except Exception:
                 logging.exception("[%s]: Not able to update server time." % self._log_tag)
@@ -678,50 +1345,16 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if option.is_deleted():
                     try:
-                        self._cursor.execute("DELETE FROM options "
-                                             + "WHERE type = %s "
-                                             + "AND value = %s",
-                                             (option.type, option.value))
+                        self._delete_option(option.type)
 
                     except Exception:
-                        logging.exception("[%s]: Not able to delete Option of type '%s'."
-                                          % (self._log_tag, option.type))
                         return False
 
             # Delete all sensor alerts that are older than the configured life span.
             try:
-                # delete all sensor alerts with the returned id
-                utc_timestamp = int(time.time())
-                self._cursor.execute("SELECT id FROM sensorAlerts "
-                                     + "WHERE (timeReceived + "
-                                     + str(self._sensor_alert_life_span * 86400)
-                                     + ")"
-                                     + "<= %s",
-                                     (utc_timestamp, ))
-                result = self._cursor.fetchall()
-
-                for id_tuple in result:
-                    try:
-                        self._cursor.execute("DELETE FROM sensorAlertsAlertLevels "
-                                             + "WHERE sensorAlertId = %s",
-                                             (id_tuple[0], ))
-                        self._cursor.execute("DELETE FROM sensorAlertsDataInt "
-                                             + "WHERE sensorAlertId = %s",
-                                             (id_tuple[0], ))
-                        self._cursor.execute("DELETE FROM sensorAlertsDataFloat "
-                                             + "WHERE sensorAlertId = %s",
-                                             (id_tuple[0], ))
-                        self._cursor.execute("DELETE FROM sensorAlerts "
-                                             + "WHERE id = %s",
-                                             (id_tuple[0], ))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to delete Sensor Alert with id %d."
-                                          % (self._log_tag, id_tuple[0]))
-                        return False
+                self._delete_sensor_alerts(self._sensor_alert_life_span * 86400)
 
             except Exception:
-                logging.exception("[%s]: Not able to delete Sensor Alerts." % self._log_tag)
                 return False
 
             for sensor in self._db_copy_sensors:
@@ -729,42 +1362,9 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if sensor.is_deleted():
                     try:
-                        self._cursor.execute("DELETE FROM sensorsAlertLevels "
-                                             + "WHERE sensorId = %s",
-                                             (sensor.sensorId, ))
-
-                        # delete all sensor alerts with the returned id
-                        self._cursor.execute("SELECT id FROM sensorAlerts "
-                                             + "WHERE sensorId = %s",
-                                             (sensor.sensorId, ))
-                        result = self._cursor.fetchall()
-                        for id_tuple in result:
-                            self._cursor.execute("DELETE FROM "
-                                                 + "sensorAlertsAlertLevels "
-                                                 + "WHERE sensorAlertId = %s",
-                                                 (id_tuple[0], ))
-                            self._cursor.execute("DELETE FROM "
-                                                 + "sensorAlertsDataInt "
-                                                 + "WHERE sensorAlertId = %s",
-                                                 (id_tuple[0], ))
-                            self._cursor.execute("DELETE FROM "
-                                                 + "sensorAlertsDataFloat "
-                                                 + "WHERE sensorAlertId = %s",
-                                                 (id_tuple[0], ))
-                            self._cursor.execute("DELETE FROM sensorAlerts "
-                                                 + "WHERE id = %s",
-                                                 (id_tuple[0], ))
-
-                        # Delete all sensor data from database.
-                        self._remove_sensor_data_from_db(sensor)
-
-                        self._cursor.execute("DELETE FROM sensors "
-                                             + "WHERE id = %s",
-                                             (sensor.sensorId, ))
+                        self._delete_sensor(sensor.sensorId)
 
                     except Exception:
-                        logging.exception("[%s]: Not able to delete Sensor with id %d."
-                                          % (self._log_tag, sensor.sensorId))
                         return False
 
             for alert in self._db_copy_alerts:
@@ -772,17 +1372,9 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if alert.is_deleted():
                     try:
-                        self._cursor.execute("DELETE FROM alertsAlertLevels "
-                                             + "WHERE alertId = %s",
-                                             (alert.alertId, ))
-
-                        self._cursor.execute("DELETE FROM alerts "
-                                             + "WHERE id = %s",
-                                             (alert.alertId, ))
+                        self._delete_alert(alert.alertId)
 
                     except Exception:
-                        logging.exception("[%s]: Not able to delete Alert with id %d."
-                                          % (self._log_tag, alert.alertId))
                         return False
 
             for manager in self._db_copy_managers:
@@ -790,13 +1382,9 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if manager.is_deleted():
                     try:
-                        self._cursor.execute("DELETE FROM managers "
-                                             + "WHERE id = %s",
-                                             (manager.managerId, ))
+                        self._delete_manager(manager.managerId)
 
                     except Exception:
-                        logging.exception("[%s]: Not able to delete Manager with id %d."
-                                          % (self._log_tag, manager.managerId))
                         return False
 
             for node in self._db_copy_nodes:
@@ -804,13 +1392,9 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if node not in nodes:
                     try:
-                        self._cursor.execute("DELETE FROM nodes "
-                                             + "WHERE id = %s",
-                                             (node.nodeId, ))
+                        self._delete_node(node.nodeId)
 
                     except Exception:
-                        logging.exception("[%s]: Not able to delete Node with id %d."
-                                          % (self._log_tag, node.nodeId))
                         return False
 
             for alert_level in self._db_copy_alert_levels:
@@ -818,423 +1402,61 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if alert_level.is_deleted():
                     try:
-                        self._cursor.execute("DELETE FROM alertLevels "
-                                             + "WHERE alertLevel = %s",
-                                             (alert_level.level, ))
+                        self._delete_alert_level(alert_level.level)
 
                     except Exception:
-                        logging.exception("[%s]: Not able to delete Alert Level %d."
-                                          % (self._log_tag, alert_level.level))
                         return False
 
             # STEP TWO: update all existing objects and add new ones
             # (NOTE: first add nodes before alerts, sensors and managers
             # because of the foreign key dependency)
             for option in options:
+                try:
+                    self._update_option(option)
 
-                    try:
-                        self._cursor.execute("SELECT * FROM options WHERE type = %s",
-                                             (option.type,))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to get Option of type '%s'."
-                                          % (self._log_tag, option.type))
-                        return False
-
-                    result = self._cursor.fetchall()
-
-                    # Update existing object.
-                    if len(result) != 0: # TODO test if this check works
-                        try:
-                            self._cursor.execute("UPDATE options SET "
-                                                 + "value = %s WHERE type = %s",
-                                                 (option.value, option.type))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to update Option of type '%s'."
-                                              % (self._log_tag, option.type))
-                            return False
-
-                    # Add not existing new object.
-                    else:
-                        try:
-                            self._cursor.execute("INSERT INTO options ("
-                                                 + "type, "
-                                                 + "value) VALUES (%s, %s)",
-                                                 (option.type, option.value))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to add Option of type '%s'."
-                                              % (self._log_tag, option.type))
-                            return False
+                except Exception:
+                    return False
 
             for node in nodes:
+                try:
+                    self._update_node(node)
 
-                    try:
-                        self._cursor.execute("SELECT * FROM nodes WHERE id = %s",
-                                             (node.nodeId,))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to get Node with id %d."
-                                          % (self._log_tag, node.nodeId))
-                        return False
-
-                    result = self._cursor.fetchall()
-
-                    # Update existing object.
-                    if len(result) != 0: # TODO test if this check works
-                        try:
-                            self._cursor.execute("UPDATE nodes SET "
-                                                 + "hostname = %s, "
-                                                 + "nodeType = %s, "
-                                                 + "instance = %s, "
-                                                 + "connected = %s, "
-                                                 + "version = %s, "
-                                                 + "rev = %s, "
-                                                 + "username = %s, "
-                                                 + "persistent = %s "
-                                                 + "WHERE id = %s",
-                                                 (node.hostname,
-                                                  node.nodeType,
-                                                  node.instance,
-                                                  node.connected,
-                                                  node.version,
-                                                  node.rev,
-                                                  node.username,
-                                                  node.persistent,
-                                                  node.nodeId))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to update Node with id %d."
-                                              % (self._log_tag, node.nodeId))
-                            return False
-
-                    # Add not existing new object.
-                    else:
-                        try:
-                            self._cursor.execute("INSERT INTO nodes ("
-                                                 + "id, "
-                                                 + "hostname, "
-                                                 + "nodeType, "
-                                                 + "instance, "
-                                                 + "connected, "
-                                                 + "version, "
-                                                 + "rev, "
-                                                 + "username, "
-                                                 + "persistent) "
-                                                 + "VALUES "
-                                                 + "(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                                                 (node.nodeId,
-                                                  node.hostname,
-                                                  node.nodeType,
-                                                  node.instance,
-                                                  node.connected,
-                                                  node.version,
-                                                  node.rev,
-                                                  node.username,
-                                                  node.persistent))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to add Node with id %d."
-                                              % (self._log_tag, node.nodeId))
-                            return False
+                except Exception:
+                    return False
 
             for sensor in sensors:
+                try:
+                    self._update_sensor(sensor)
 
-                    try:
-                        self._cursor.execute("SELECT * FROM sensors WHERE id = %s",
-                                             (sensor.sensorId,))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to get Sensor with id %d."
-                                          % (self._log_tag, sensor.sensorId))
-                        return False
-
-                    result = self._cursor.fetchall()
-
-                    # Update existing object.
-                    if len(result) != 0: # TODO test if this check works
-                        try:
-                            # Delete all sensor data from database.
-                            self._remove_sensor_data_from_db(sensor)
-
-                            self._cursor.execute("UPDATE sensors SET "
-                                                 + "nodeId = %s, "
-                                                 + "remoteSensorId = %s, "
-                                                 + "description = %s, "
-                                                 + "state = %s ,"
-                                                 + "lastStateUpdated = %s, "
-                                                 + "alertDelay = %s, "
-                                                 + "dataType = %s "
-                                                 + "WHERE id = %s",
-                                                 (sensor.nodeId,
-                                                  sensor.remoteSensorId,
-                                                  sensor.description,
-                                                  sensor.state,
-                                                  sensor.lastStateUpdated,
-                                                  sensor.alertDelay,
-                                                  sensor.dataType,
-                                                  sensor.sensorId))
-
-                            self._cursor.execute("DELETE FROM sensorsAlertLevels "
-                                                 + "WHERE sensorId = %s",
-                                                 (sensor.sensorId, ))
-
-                            for sensorAlertLevel in sensor.alertLevels:
-                                self._cursor.execute("INSERT INTO sensorsAlertLevels ("
-                                                     + "sensorId, "
-                                                     + "alertLevel) "
-                                                     + "VALUES (%s, %s)",
-                                                     (sensor.sensorId, sensorAlertLevel))
-
-                            # Add sensor data to database.
-                            self._add_sensor_data_to_db(sensor)
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to update Sensor with id %d."
-                                              % (self._log_tag, sensor.sensorId))
-                            return False
-
-                    # Add not existing new object.
-                    else:
-                        try:
-                            self._cursor.execute("INSERT INTO sensors ("
-                                                 + "id, "
-                                                 + "nodeId, "
-                                                 + "remoteSensorId, "
-                                                 + "description, "
-                                                 + "state, "
-                                                 + "lastStateUpdated, "
-                                                 + "alertDelay, "
-                                                 + "dataType) "
-                                                 + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                                                 (sensor.sensorId,
-                                                  sensor.nodeId,
-                                                  sensor.remoteSensorId,
-                                                  sensor.description,
-                                                  sensor.state,
-                                                  sensor.lastStateUpdated,
-                                                  sensor.alertDelay,
-                                                  sensor.dataType))
-
-                            for sensorAlertLevel in sensor.alertLevels:
-                                self._cursor.execute("INSERT INTO sensorsAlertLevels ("
-                                                     + "sensorId, "
-                                                     + "alertLevel) "
-                                                     + "VALUES (%s, %s)",
-                                                     (sensor.sensorId, sensorAlertLevel))
-
-                            # Add sensor data to database.
-                            self._add_sensor_data_to_db(sensor)
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to add Sensor with id %d."
-                                              % (self._log_tag, sensor.sensorId))
-                            return False
+                except Exception:
+                    return False
 
             for alert in alerts:
+                try:
+                    self._update_alert(alert)
 
-                    try:
-                        self._cursor.execute("SELECT * FROM alerts WHERE id = %s",
-                                             (alert.alertId,))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to get alert with id %d."
-                                          % (self._log_tag, alert.alertId))
-                        return False
-
-                    result = self._cursor.fetchall()
-
-                    # Update existing object.
-                    if len(result) != 0: # TODO test if this check works
-                        try:
-                            self._cursor.execute("UPDATE alerts SET "
-                                                 + "nodeId = %s, "
-                                                 + "remoteAlertId = %s, "
-                                                 + "description = %s "
-                                                 + "WHERE id = %s",
-                                                 (alert.nodeId,
-                                                  alert.remoteAlertId,
-                                                  alert.description,
-                                                  alert.alertId))
-
-                            self._cursor.execute("DELETE FROM alertsAlertLevels "
-                                                 + "WHERE alertId = %s",
-                                                 (alert.alertId, ))
-
-                            for alertAlertLevel in alert.alertLevels:
-                                self._cursor.execute("INSERT INTO alertsAlertLevels ("
-                                                     + "alertId, "
-                                                     + "alertLevel) "
-                                                     + "VALUES (%s, %s)",
-                                                     (alert.alertId, alertAlertLevel))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to update Alert with id %d."
-                                              % (self._log_tag, alert.alertId))
-                            return False
-
-                    # Add not existing new object.
-                    else:
-                        try:
-                            self._cursor.execute("INSERT INTO alerts ("
-                                                 + "id, "
-                                                 + "nodeId, "
-                                                 + "remoteAlertId, "
-                                                 + "description) "
-                                                 + "VALUES (%s, %s, %s, %s)",
-                                                 (alert.alertId, alert.nodeId, alert.remoteAlertId, alert.description))
-
-                            for alertAlertLevel in alert.alertLevels:
-                                self._cursor.execute("INSERT INTO alertsAlertLevels ("
-                                                     + "alertId, "
-                                                     + "alertLevel) "
-                                                     + "VALUES (%s, %s)",
-                                                     (alert.alertId, alertAlertLevel))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to add Alert with id %d."
-                                              % (self._log_tag, alert.alertId))
-                            return False
+                except Exception:
+                    return False
 
             for manager in managers:
+                try:
+                    self._update_manager(manager)
 
-                    try:
-                        self._cursor.execute("SELECT * FROM managers WHERE id = %s",
-                                             (manager.managerId,))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to get Manager with id %d."
-                                          % (self._log_tag, manager.managerId))
-                        return False
-
-                    result = self._cursor.fetchall()
-
-                    # Update existing object.
-                    if len(result) != 0: # TODO test if this check works
-                        try:
-                            self._cursor.execute("UPDATE managers SET "
-                                                 + "nodeId = %s, "
-                                                 + "description = %s "
-                                                 + "WHERE id = %s",
-                                                 (manager.nodeId,
-                                                  manager.description,
-                                                  manager.managerId))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to update Manager with id %d."
-                                              % (self._log_tag, manager.managerId))
-                            return False
-
-                    # Add not existing new object.
-                    else:
-                        try:
-                            self._cursor.execute("INSERT INTO managers ("
-                                                 + "id, "
-                                                 + "nodeId, "
-                                                 + "description) "
-                                                 + "VALUES (%s, %s, %s)",
-                                                 (manager.managerId, manager.nodeId, manager.description))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to add Manager with id %d."
-                                              % (self._log_tag, manager.managerId))
-                            return False
+                except Exception:
+                    return False
 
             for alert_level in alert_levels:
+                try:
+                    self._update_alert_level(alert_level)
 
-                    try:
-                        self._cursor.execute("SELECT * FROM alertLevels WHERE id = %s",
-                                             (alert_level.level,))
-
-                    except Exception:
-                        logging.exception("[%s]: Not able to get Alert Level %d."
-                                          % (self._log_tag, alert_level.level))
-                        return False
-
-                    result = self._cursor.fetchall()
-
-                    # Update existing object.
-                    if len(result) != 0: # TODO test if this check works
-                        try:
-                            self._cursor.execute("UPDATE alertLevels SET "
-                                                 + "name = %s, "
-                                                 + "triggerAlways = %s "
-                                                 + "WHERE alertLevel = %s",
-                                                 (alert_level.name,
-                                                  alert_level.triggerAlways,
-                                                  alert_level.level))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to update Alert Level %d."
-                                              % (self._log_tag, alert_level.level))
-                            return False
-
-                    # Add not existing new object.
-                    else:
-                        try:
-                            self._cursor.execute("INSERT INTO alertLevels ("
-                                                 + "alertLevel, "
-                                                 + "name, "
-                                                 + "triggerAlways) "
-                                                 + "VALUES (%s, %s, %s)",
-                                                 (alert_level.level, alert_level.name, alert_level.triggerAlways))
-
-                        except Exception:
-                            logging.exception("[%s]: Not able to add Alert Level %d."
-                                              % (self._log_tag, alert_level.level))
-                            return False
+                except Exception:
+                    return False
 
             for sensor_alert in sensorAlerts:
-                # Try to convert received data to json to store it in the database.
                 try:
-                    dataJson = json.dumps(sensor_alert.optionalData)
+                    self._add_sensor_alert(sensor_alert)
 
                 except Exception:
-                    logging.exception("[%s]: Not able to convert optional data of Sensor Alert to json."
-                                      % self._log_tag)
-                    continue
-
-                try:
-                    self._cursor.execute("INSERT INTO sensorAlerts ("
-                                         + "sensorId, "
-                                         + "state, "
-                                         + "description, "
-                                         + "timeReceived, "
-                                         + "dataJson, "
-                                         + "dataType) "
-                                         + "VALUES (%s, %s, %s, %s, %s, %s)",
-                                         (sensor_alert.sensorId,
-                                          sensor_alert.state,
-                                          sensor_alert.description,
-                                          sensor_alert.timeReceived,
-                                          dataJson,
-                                          sensor_alert.dataType))
-                    db_sensor_alert_id = self._cursor.lastrowid
-
-                    for alert_level in sensor_alert.alertLevels:
-                        self._cursor.execute("INSERT INTO sensorAlertsAlertLevels ("
-                                             + "sensorAlertId, "
-                                             + "alertLevel) "
-                                             + "VALUES (%s, %s)",
-                                             (db_sensor_alert_id, alert_level))
-
-                    # Only store data if sensor alert carries it.
-                    if sensor_alert.dataType == SensorDataType.INT:
-                        self._cursor.execute("INSERT INTO sensorAlertsDataInt ("
-                                             + "sensorAlertId, "
-                                             + "data) "
-                                             + "VALUES (%s, %s)",
-                                             (db_sensor_alert_id, sensor_alert.sensorData))
-                    elif sensor_alert.dataType == SensorDataType.FLOAT:
-                        self._cursor.execute("INSERT INTO sensorAlertsDataFloat ("
-                                             + "sensorAlertId, "
-                                             + "data) "
-                                             + "VALUES (%s, %s)",
-                                             (db_sensor_alert_id, sensor_alert.sensorData))
-
-                except Exception:
-                    logging.exception("[%s]: Not able to add Sensor Alert." % self._log_tag)
                     return False
 
             # commit all changes
