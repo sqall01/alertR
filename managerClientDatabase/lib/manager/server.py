@@ -137,38 +137,9 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
         # send option message to server
         promise = self.serverComm.send_option(optionType, optionValue, optionDelay)
-        if promise.is_finished(blocking=False, timeout=8.0):
+        promise.is_finished(blocking=True)
 
-            if promise.was_successful():
-
-                # send response to client
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "payload": {"type": "response",
-                                           "result": "ok"}}
-                    self.request.send(json.dumps(message).encode('ascii'))
-
-                except Exception:
-                    logging.exception("[%s]: Sending response message failed." % self.fileName)
-
-            else:
-                logging.error("[%s]: Sending message to server failed." % self.fileName)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
-                               "error": "sending message to server failed"}
-                    self.request.send(json.dumps(message).encode('ascii'))
-
-                except Exception:
-                    pass
-
-        # Message still in message queue and not yet transmitted.
-        else:
+        if promise.was_successful():
 
             # send response to client
             try:
@@ -176,8 +147,22 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                 message = {"serverTime": utcTimestamp,
                            "message": incomingMessage["message"],
                            "payload": {"type": "response",
-                                       "result": "queued"}}
+                                       "result": "ok"}}
                 self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception:
                 logging.exception("[%s]: Sending response message failed." % self.fileName)
+
+        else:
+            logging.error("[%s]: Sending message to server failed." % self.fileName)
+
+            # send error message back
+            try:
+                utcTimestamp = int(time.time())
+                message = {"serverTime": utcTimestamp,
+                           "message": incomingMessage["message"],
+                           "error": "sending message to server failed"}
+                self.request.send(json.dumps(message).encode('ascii'))
+
+            except Exception:
+                pass
