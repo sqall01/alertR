@@ -12,7 +12,8 @@ import os
 import threading
 import time
 import json
-from typing import List
+import MySQLdb
+from typing import List, Optional
 from ..globalData.localObjects import Option, Node, Sensor, Alert, Manager, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
 
@@ -102,8 +103,8 @@ class Mysql(_Storage):
         # mysql lock
         self._lock = threading.Lock()
 
-        self._conn = None
-        self._cursor = None
+        self._conn: Optional[MySQLdb.Connection] = None
+        self._cursor: Optional[MySQLdb.cursors.Cursor] = None
 
         # connect to the database
         self._open_connection()
@@ -503,13 +504,17 @@ class Mysql(_Storage):
 
         :param sensor_id:
         """
-        self._cursor.execute("DELETE FROM sensorsDataInt "
-                             + "WHERE sensorId = %s",
-                             (sensor_id, ))
+        try:
+            self._cursor.execute("DELETE FROM sensorsDataInt "
+                                 + "WHERE sensorId = %s",
+                                 (sensor_id, ))
 
-        self._cursor.execute("DELETE FROM sensorsDataFloat "
-                             + "WHERE sensorId = %s",
-                             (sensor_id, ))
+            self._cursor.execute("DELETE FROM sensorsDataFloat "
+                                 + "WHERE sensorId = %s",
+                                 (sensor_id, ))
+        except Exception:
+            logging.exception("[%s]: Not able to delete data of Sensor %d." % (self._log_tag, sensor_id))
+            raise
 
     def _open_connection(self):
         """
@@ -517,9 +522,6 @@ class Mysql(_Storage):
         (needed because direct changes to the database by another program
         are not seen if the connection to the mysql server is kept alive)
         """
-        # import the needed package
-        import MySQLdb
-
         current_try = 0
         while True:
             try:
@@ -529,6 +531,7 @@ class Mysql(_Storage):
                                              user=self._username,
                                              passwd=self._password,
                                              db=self._database)
+                self._conn.autocommit(False)
                 self._cursor = self._conn.cursor()
                 break
 
@@ -1480,5 +1483,4 @@ class Mysql(_Storage):
 
 
 # TODO
-# - Use transactions
 # - Test code
