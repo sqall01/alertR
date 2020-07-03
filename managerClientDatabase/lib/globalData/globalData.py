@@ -39,7 +39,11 @@ class GlobalData:
         self.nodeType: str = "manager"
 
         # path to the configuration file of the client
-        self.configFile: str = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "..",
+                                       "config",
+                                       "config.xml")  # type: str
 
         # How often the AlertR client should try to connect to the
         # MySQL server when the connection establishment fails.
