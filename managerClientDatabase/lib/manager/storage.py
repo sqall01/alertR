@@ -134,46 +134,7 @@ class Mysql(_Storage):
             # if version is not the same of db and client
             # => delete event tables
             if db_version != self._version or db_rev != self._rev:
-
-                # Remove old event tables (not used anymore).
-                self._cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsDataInt")
-                self._cursor.execute("DROP TABLE IF EXISTS eventsDataFloat")
-                self._cursor.execute("DROP TABLE IF EXISTS events")
-
-                self._cursor.execute("DROP TABLE IF EXISTS internals")
-                self._cursor.execute("DROP TABLE IF EXISTS options")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsAlertLevels")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
-                self._cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
-                self._cursor.execute("DROP TABLE IF EXISTS sensors")
-                self._cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
-                self._cursor.execute("DROP TABLE IF EXISTS alerts")
-                self._cursor.execute("DROP TABLE IF EXISTS managers")
-                self._cursor.execute("DROP TABLE IF EXISTS alertLevels")
-                self._cursor.execute("DROP TABLE IF EXISTS nodes")
+                self._delete_storage()
 
                 # commit all changes
                 self._conn.commit()
@@ -295,8 +256,13 @@ class Mysql(_Storage):
         """
         Internal function that closes the connection to the mysql server.
         """
-        self._cursor.close()
-        self._conn.close()
+        try:
+            self._cursor.close()
+            self._conn.close()
+
+        except Exception:
+            pass
+
         self._cursor = None
         self._conn = None
 
@@ -515,6 +481,51 @@ class Mysql(_Storage):
         except Exception:
             logging.exception("[%s]: Not able to delete data of Sensor %d." % (self._log_tag, sensor_id))
             raise
+
+    def _delete_storage(self):
+        """
+        Internal function that deletes the complete storage. Does not catch exceptions.
+        """
+
+        # Remove old event tables (not used anymore).
+        self._cursor.execute("DROP TABLE IF EXISTS eventsNewVersion")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsSensorAlert")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsStateChange")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsConnectedChange")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsSensorTimeOut")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsNewOption")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsNewNode")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsNewSensor")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsNewAlert")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsNewManager")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsChangeOption")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsChangeNode")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsChangeSensor")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsChangeAlert")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsChangeManager")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteNode")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteSensor")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteAlert")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsDeleteManager")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsDataInt")
+        self._cursor.execute("DROP TABLE IF EXISTS eventsDataFloat")
+        self._cursor.execute("DROP TABLE IF EXISTS events")
+
+        self._cursor.execute("DROP TABLE IF EXISTS internals")
+        self._cursor.execute("DROP TABLE IF EXISTS options")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsAlertLevels")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
+        self._cursor.execute("DROP TABLE IF EXISTS sensors")
+        self._cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
+        self._cursor.execute("DROP TABLE IF EXISTS alerts")
+        self._cursor.execute("DROP TABLE IF EXISTS managers")
+        self._cursor.execute("DROP TABLE IF EXISTS alertLevels")
+        self._cursor.execute("DROP TABLE IF EXISTS nodes")
 
     def _open_connection(self):
         """
@@ -1329,6 +1340,7 @@ class Mysql(_Storage):
 
             except Exception:
                 logging.exception("[%s]: Not able to connect to MySQL server." % self._log_tag)
+                self._close_connection()
                 return False
 
             # Update server time.
@@ -1337,6 +1349,7 @@ class Mysql(_Storage):
 
             except Exception:
                 logging.exception("[%s]: Not able to update server time." % self._log_tag)
+                self._close_connection()
                 return False
 
             # STEP ONE: delete all objects that do not exist anymore
@@ -1351,6 +1364,7 @@ class Mysql(_Storage):
                         self._delete_option(option.type)
 
                     except Exception:
+                        self._close_connection()
                         return False
 
             # Delete all sensor alerts that are older than the configured life span.
@@ -1358,6 +1372,7 @@ class Mysql(_Storage):
                 self._delete_sensor_alerts(self._sensor_alert_life_span * 86400)
 
             except Exception:
+                self._close_connection()
                 return False
 
             for sensor in self._db_copy_sensors:
@@ -1368,6 +1383,7 @@ class Mysql(_Storage):
                         self._delete_sensor(sensor.sensorId)
 
                     except Exception:
+                        self._close_connection()
                         return False
 
             for alert in self._db_copy_alerts:
@@ -1378,6 +1394,7 @@ class Mysql(_Storage):
                         self._delete_alert(alert.alertId)
 
                     except Exception:
+                        self._close_connection()
                         return False
 
             for manager in self._db_copy_managers:
@@ -1388,6 +1405,7 @@ class Mysql(_Storage):
                         self._delete_manager(manager.managerId)
 
                     except Exception:
+                        self._close_connection()
                         return False
 
             for node in self._db_copy_nodes:
@@ -1398,6 +1416,7 @@ class Mysql(_Storage):
                         self._delete_node(node.nodeId)
 
                     except Exception:
+                        self._close_connection()
                         return False
 
             for alert_level in self._db_copy_alert_levels:
@@ -1408,6 +1427,7 @@ class Mysql(_Storage):
                         self._delete_alert_level(alert_level.level)
 
                     except Exception:
+                        self._close_connection()
                         return False
 
             # STEP TWO: update all existing objects and add new ones
@@ -1418,6 +1438,7 @@ class Mysql(_Storage):
                     self._update_option(option)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             for node in nodes:
@@ -1425,6 +1446,7 @@ class Mysql(_Storage):
                     self._update_node(node)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             for sensor in sensors:
@@ -1432,6 +1454,7 @@ class Mysql(_Storage):
                     self._update_sensor(sensor)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             for alert in alerts:
@@ -1439,6 +1462,7 @@ class Mysql(_Storage):
                     self._update_alert(alert)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             for manager in managers:
@@ -1446,6 +1470,7 @@ class Mysql(_Storage):
                     self._update_manager(manager)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             for alert_level in alert_levels:
@@ -1453,6 +1478,7 @@ class Mysql(_Storage):
                     self._update_alert_level(alert_level)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             for sensor_alert in sensorAlerts:
@@ -1460,6 +1486,7 @@ class Mysql(_Storage):
                     self._add_sensor_alert(sensor_alert)
 
                 except Exception:
+                    self._close_connection()
                     return False
 
             # commit all changes
@@ -1484,3 +1511,4 @@ class Mysql(_Storage):
 
 # TODO
 # - Test code
+# - close connection in error paths if it was opened
