@@ -7,10 +7,10 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+from typing import List, Any
 from .core import BaseManagerEventHandler
 from ..globalData import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
 from ..globalData import GlobalData
-from typing import List, Any
 
 
 class ManagerEventHandler(BaseManagerEventHandler):
