@@ -2,7 +2,7 @@ import logging
 from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_options_content
-from lib.globalData.globalData import GlobalData, SystemData
+from lib.globalData.globalData import SystemData
 from lib.globalData.localObjects import Option
 
 

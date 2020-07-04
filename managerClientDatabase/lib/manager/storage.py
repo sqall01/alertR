@@ -633,7 +633,7 @@ class Mysql(_Storage):
         :param alert_level:
         """
         try:
-            self._cursor.execute("SELECT * FROM alertLevels WHERE id = %s",
+            self._cursor.execute("SELECT * FROM alertLevels WHERE alertLevel = %s",
                                  (alert_level.level,))
 
         except Exception:
@@ -982,6 +982,22 @@ class Mysql(_Storage):
 
             self._system_data.update_option(option)
 
+        # create alert levels objects from db
+        self._cursor.execute("SELECT "
+                             + "alertLevel, "
+                             + "name, "
+                             + "triggerAlways "
+                             + "FROM alertLevels")
+        result = self._cursor.fetchall()
+
+        for alert_level_tuple in result:
+            alert_level = AlertLevel()
+            alert_level.level = alert_level_tuple[0]
+            alert_level.name = alert_level_tuple[1]
+            alert_level.triggerAlways = alert_level_tuple[2]
+
+            self._system_data.update_alert_level(alert_level)
+
         # create node objects from db
         self._cursor.execute("SELECT * FROM nodes")
         result = self._cursor.fetchall()
@@ -1096,22 +1112,6 @@ class Mysql(_Storage):
             manager.description = manager_tuple[2]
 
             self._system_data.update_manager(manager)
-
-        # create alert levels objects from db
-        self._cursor.execute("SELECT "
-                             + "alertLevel, "
-                             + "name, "
-                             + "triggerAlways "
-                             + "FROM alertLevels")
-        result = self._cursor.fetchall()
-
-        for alert_level_tuple in result:
-            alert_level = AlertLevel()
-            alert_level.level = alert_level_tuple[0]
-            alert_level.name = alert_level_tuple[1]
-            alert_level.triggerAlways = alert_level_tuple[2]
-
-            self._system_data.update_alert_level(alert_level)
 
         # close connection to the database
         self._close_connection()
@@ -1517,7 +1517,6 @@ class Mysql(_Storage):
 # - Test code
 #   * Edge cases
 #   * Nodes add + update + delete
-#   * Alerts add + update + delete
 #   * Sensors add + update + delete
 #   * Managers add + update + delete
 #   * SensorAlerts?
