@@ -6,7 +6,7 @@ from lib.globalData.globalData import SystemData
 from lib.globalData.localObjects import Alert
 
 
-class TestManagerStorageAlerts(TestManagerStorageCore):
+class TestManagerStorageAlert(TestManagerStorageCore):
 
     def test_add_alert(self):
         """

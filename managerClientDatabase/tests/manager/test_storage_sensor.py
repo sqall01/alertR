@@ -6,7 +6,7 @@ from lib.globalData.globalData import SystemData
 from lib.globalData.localObjects import Sensor, SensorDataType
 
 
-class TestManagerStorageSensors(TestManagerStorageCore):
+class TestManagerStorageSensor(TestManagerStorageCore):
 
     def test_add_sensor(self):
         """

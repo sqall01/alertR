@@ -6,7 +6,7 @@ from lib.globalData.globalData import SystemData
 from lib.globalData.localObjects import Option
 
 
-class TestManagerStorageOptions(TestManagerStorageCore):
+class TestManagerStorageOption(TestManagerStorageCore):
 
     def test_add_option(self):
         """
