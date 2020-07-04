@@ -21,7 +21,7 @@ from ..globalData import GlobalData
 # internal abstract class for new storage backends
 class _Storage:
 
-    def create_objects(self):
+    def synchronize_database_to_system_data(self):
         """
         Creates objects from the data in the database
         (should only be called during the initial connection to the database)
@@ -151,7 +151,7 @@ class Mysql(_Storage):
                 # close connection to the database
                 self._close_connection()
 
-                self.create_objects()
+                self.synchronize_database_to_system_data()
 
         # tables do not exist yet
         # => create them
@@ -575,7 +575,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0: # TODO test if this check works
+        if len(result) != 0:
             try:
                 self._cursor.execute("UPDATE alerts SET "
                                      + "nodeId = %s, "
@@ -644,7 +644,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0: # TODO test if this check works
+        if len(result) != 0:
             try:
                 self._cursor.execute("UPDATE alertLevels SET "
                                      + "name = %s, "
@@ -692,7 +692,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0: # TODO test if this check works
+        if len(result) != 0:
             try:
                 self._cursor.execute("UPDATE managers SET "
                                      + "nodeId = %s, "
@@ -741,7 +741,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0: # TODO test if this check works
+        if len(result) != 0:
             try:
                 self._cursor.execute("UPDATE nodes SET "
                                      + "hostname = %s, "
@@ -816,7 +816,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0: # TODO test if this check works
+        if len(result) != 0:
             try:
                 self._cursor.execute("UPDATE options SET "
                                      + "value = %s WHERE type = %s",
@@ -858,7 +858,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0: # TODO test if this check works
+        if len(result) != 0:
             try:
                 # Delete all sensor data from database.
                 self._delete_sensor_data(sensor.sensorId)
@@ -948,12 +948,16 @@ class Mysql(_Storage):
                              + "WHERE type = %s",
                              (server_time, "serverTime"))
 
-    def create_objects(self):
+    def synchronize_database_to_system_data(self):
         """
-        creates objects from the data in the database
+        Creates objects from the data in the database and stores them into the local system data storage.
         (should only be called during the initial connection to the database)
         Has no return value but raise exception if it fails.
         """
+
+        # Clear system data
+        self._system_data.clear_data()
+
         # connect to the database
         self._open_connection()
 
@@ -1511,4 +1515,10 @@ class Mysql(_Storage):
 
 # TODO
 # - Test code
+#   * Edge cases
+#   * Nodes add + update + delete
+#   * Alerts add + update + delete
+#   * Sensors add + update + delete
+#   * Managers add + update + delete
+#   * SensorAlerts?
 # - close connection in error paths if it was opened
