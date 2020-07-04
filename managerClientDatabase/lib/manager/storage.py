@@ -1546,6 +1546,5 @@ class Mysql(_Storage):
 # TODO
 # - Test code
 #   * Edge cases
-#   * Nodes add + update + delete
 #   * SensorAlerts?
 # - close connection in error paths if it was opened

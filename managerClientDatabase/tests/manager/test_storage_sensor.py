@@ -70,6 +70,7 @@ class TestManagerStorageSensor(TestManagerStorageCore):
             temp_sensor.data = ctr
             # We started the alert levels in our test data with level 1.
             temp_sensor.alertLevels = [(ctr % len(system_data.get_alert_levels_list())) + 1]
+            system_data.update_sensor(temp_sensor)
             ctr += 1
 
         # Update database objects.
