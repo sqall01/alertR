@@ -743,6 +743,36 @@ class Mysql(_Storage):
         # Update existing object.
         if len(result) != 0:
             try:
+                node_id = result[0][0]
+                node_type = result[0][2].lower()
+                if node.nodeType.lower() != node_type:
+                    if node_type == "alert":
+                        # Delete all Alerts with the returned id.
+                        self._cursor.execute("SELECT id FROM alerts "
+                                             + "WHERE nodeId = %s",
+                                             (node_id, ))
+                        result = self._cursor.fetchall()
+                        for id_tuple in result:
+                            self._delete_alert(id_tuple[0])
+
+                    elif node_type == "manager":
+                        # Delete all Managers with the returned id.
+                        self._cursor.execute("SELECT id FROM managers "
+                                             + "WHERE nodeId = %s",
+                                             (node_id, ))
+                        result = self._cursor.fetchall()
+                        for id_tuple in result:
+                            self._delete_manager(id_tuple[0])
+
+                    elif node_type in ["sensor", "server"]:
+                        # Delete all Sensors with the returned id.
+                        self._cursor.execute("SELECT id FROM sensors "
+                                             + "WHERE nodeId = %s",
+                                             (node_id, ))
+                        result = self._cursor.fetchall()
+                        for id_tuple in result:
+                            self._delete_sensor(id_tuple[0])
+
                 self._cursor.execute("UPDATE nodes SET "
                                      + "hostname = %s, "
                                      + "nodeType = %s, "
@@ -1517,7 +1547,5 @@ class Mysql(_Storage):
 # - Test code
 #   * Edge cases
 #   * Nodes add + update + delete
-#   * Sensors add + update + delete
-#   * Managers add + update + delete
 #   * SensorAlerts?
 # - close connection in error paths if it was opened
