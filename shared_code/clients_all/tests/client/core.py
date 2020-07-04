@@ -151,12 +151,6 @@ class SimulatedErrorConnection(SimulatedConnection):
         raise NotImplementedError("Abstract class.")
 
 
-def config_logging(loglevel):
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %H:%M:%S',
-                        level=loglevel)
-
-
 def create_basic_communication() -> Communication:
     comm = Communication(BasicConnection())
     comm.set_connected()

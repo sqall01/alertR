@@ -1,4 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
+from tests.globalData.util import compare_sensors_content
 from lib.globalData.systemData import SystemData
 from lib.globalData.localObjects import Node, Sensor, SensorDataType, SensorAlert
 
@@ -151,42 +152,7 @@ class TestSystemDataSensor(TestSystemDataCore):
                 gt_storage.append(self.sensors[j])
 
             stored_sensors = system_data.get_sensors_list()
-            if len(stored_sensors) != len(gt_storage):
-                self.fail("Wrong number of objects stored.")
-
-            already_processed = []
-            for stored_sensor in stored_sensors:
-                found = False
-                for gt_sensor in gt_storage:
-                    if stored_sensor.nodeId == gt_sensor.nodeId and stored_sensor.sensorId == gt_sensor.sensorId:
-                        found = True
-
-                        # Check which objects we already processed to see if we hold an object with
-                        # duplicated values.
-                        if gt_sensor in already_processed:
-                            self.fail()
-                        already_processed.append(gt_sensor)
-
-                        # Only the content of the object should have changed, not the object itself.
-                        if stored_sensor == gt_sensor:
-                            self.fail("Store changed object, not content of existing object.")
-
-                        if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
-                                or stored_sensor.description != gt_sensor.description
-                                or stored_sensor.alertDelay != gt_sensor.alertDelay
-                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
-                                or stored_sensor.state != gt_sensor.state
-                                or stored_sensor.dataType != gt_sensor.dataType
-                                or stored_sensor.data != gt_sensor.data
-                                or any(map(lambda x: x not in gt_sensor.alertLevels, stored_sensor.alertLevels))
-                                or any(map(lambda x: x not in stored_sensor.alertLevels, gt_sensor.alertLevels))):
-
-                            self.fail("Stored object does not have correct content.")
-
-                        break
-
-                if not found:
-                    self.fail("Not able to find modified Sensor object.")
+            compare_sensors_content(self, gt_storage, stored_sensors)
 
     def test_delete_sensor(self):
         """

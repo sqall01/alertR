@@ -213,6 +213,22 @@ class SystemData:
                     break
             self._sensor_alerts.insert(idx, sensor_alert)
 
+    def clear_data(self):
+        """
+        Clears the complete system data storage.
+        """
+        with self._data_lock:
+            for option in list(self._options.values()):
+                self._delete_option_by_type(option.type)
+
+            # Deletes also all Alert, Manager, and Sensor objects as well as Sensor Alerts
+            # (otherwise we have an inconsistency bug in the code).
+            for node in list(self._nodes.values()):
+                self._delete_node_by_id(node.nodeId)
+
+            for alert_level in list(self._alert_levels.values()):
+                self._delete_alert_level_by_level(alert_level.level)
+
     def delete_alert_by_id(self, alert_id: int):
         """
         Deletes Alert object given by id.

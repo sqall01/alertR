@@ -3,7 +3,8 @@ import threading
 import time
 from unittest import TestCase
 from lib.client.util import MsgBuilder
-from tests.client.core import config_logging, create_basic_communication, create_simulated_error_communication, \
+from tests.util import config_logging
+from tests.client.core import create_basic_communication, create_simulated_error_communication, \
                               msg_receiver, create_simulated_communication
 
 

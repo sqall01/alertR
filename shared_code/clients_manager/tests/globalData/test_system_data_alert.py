@@ -1,4 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
+from tests.globalData.util import compare_alerts_content
 from lib.globalData.systemData import SystemData
 from lib.globalData.localObjects import Node, Alert
 
@@ -132,37 +133,7 @@ class TestSystemDataAlert(TestSystemDataCore):
                 gt_storage.append(self.alerts[j])
 
             stored_alerts = system_data.get_alerts_list()
-            if len(stored_alerts) != len(gt_storage):
-                self.fail("Wrong number of objects stored.")
-
-            already_processed = []
-            for stored_alert in stored_alerts:
-                found = False
-                for gt_alert in gt_storage:
-                    if stored_alert.nodeId == gt_alert.nodeId and stored_alert.alertId == gt_alert.alertId:
-                        found = True
-
-                        # Check which objects we already processed to see if we hold an object with
-                        # duplicated values.
-                        if gt_alert in already_processed:
-                            self.fail()
-                        already_processed.append(gt_alert)
-
-                        # Only the content of the object should have changed, not the object itself.
-                        if stored_alert == gt_alert:
-                            self.fail("Store changed object, not content of existing object.")
-
-                        if (stored_alert.remoteAlertId != gt_alert.remoteAlertId
-                                or stored_alert.description != gt_alert.description
-                                or any(map(lambda x: x not in gt_alert.alertLevels, stored_alert.alertLevels))
-                                or any(map(lambda x: x not in stored_alert.alertLevels, gt_alert.alertLevels))):
-
-                            self.fail("Stored object does not have correct content.")
-
-                        break
-
-                if not found:
-                    self.fail("Not able to find modified Alert object.")
+            compare_alerts_content(self, gt_storage, stored_alerts)
 
     def test_delete_alert(self):
         """

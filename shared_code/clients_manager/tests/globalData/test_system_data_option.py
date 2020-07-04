@@ -1,4 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
+from tests.globalData.util import compare_options_content
 from lib.globalData.localObjects import Option
 
 
@@ -30,33 +31,7 @@ class TestSystemDataOption(TestSystemDataCore):
                 gt_storage.append(self.options[j])
 
             stored_options = system_data.get_options_list()
-            if len(stored_options) != len(gt_storage):
-                self.fail("Wrong number of objects stored.")
-
-            already_processed = []
-            for stored_option in stored_options:
-                found = False
-                for gt_option in gt_storage:
-                    if stored_option.type == gt_option.type:
-                        found = True
-
-                        # Check which objects we already processed to see if we hold an object with
-                        # duplicated values.
-                        if gt_option in already_processed:
-                            self.fail()
-                        already_processed.append(gt_option)
-
-                        # Only the content of the object should have changed, not the object itself.
-                        if stored_option == gt_option:
-                            self.fail("Store changed object, not content of existing object.")
-
-                        if stored_option.value != gt_option.value:
-                            self.fail("Stored object does not have correct content.")
-
-                        break
-
-                if not found:
-                    self.fail("Not able to find modified Option object.")
+            compare_options_content(self, gt_storage, stored_options)
 
     def test_delete_option(self):
         """

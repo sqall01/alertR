@@ -222,7 +222,6 @@ class Communication:
             else:
                 self._new_msg_event.wait(5)
 
-
             if self._exit_flag:
                 logging.info("[%s] Exiting Request Sender thread." % self._log_tag)
                 return

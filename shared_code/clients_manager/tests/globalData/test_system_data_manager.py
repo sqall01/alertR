@@ -1,4 +1,5 @@
 from tests.globalData.core import TestSystemDataCore
+from tests.globalData.util import compare_managers_content
 from lib.globalData.systemData import SystemData
 from lib.globalData.localObjects import Node, Manager
 
@@ -91,33 +92,7 @@ class TestSystemDataManager(TestSystemDataCore):
                 gt_storage.append(self.managers[j])
 
             stored_managers = system_data.get_managers_list()
-            if len(stored_managers) != len(gt_storage):
-                self.fail("Wrong number of objects stored.")
-
-            already_processed = []
-            for stored_manager in stored_managers:
-                found = False
-                for gt_manager in gt_storage:
-                    if stored_manager.nodeId == gt_manager.nodeId and stored_manager.managerId == gt_manager.managerId:
-                        found = True
-
-                        # Check which objects we already processed to see if we hold an object with
-                        # duplicated values.
-                        if gt_manager in already_processed:
-                            self.fail()
-                        already_processed.append(gt_manager)
-
-                        # Only the content of the object should have changed, not the object itself.
-                        if stored_manager == gt_manager:
-                            self.fail("Store changed object, not content of existing object.")
-
-                        if stored_manager.description != gt_manager.description:
-                            self.fail("Stored object does not have correct content.")
-
-                        break
-
-                if not found:
-                    self.fail("Not able to find modified Manager object.")
+            compare_managers_content(self, gt_storage, stored_managers)
 
     def test_delete_manager(self):
         """
