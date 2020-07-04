@@ -64,7 +64,7 @@ class TestManagerStorageAlerts(TestManagerStorageCore):
             temp_alert.description = "new_alert_" + str(ctr + 1)
             temp_alert.remoteAlertId = ctr
             # We started the alert levels in our test data with level 1.
-            temp_alert.alertLevels = [(ctr % len(self.alert_levels)) + 1]
+            temp_alert.alertLevels = [(ctr % len(system_data.get_alert_levels_list())) + 1]
             system_data.update_alert(temp_alert)
             ctr += 1
 
