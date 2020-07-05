@@ -1,6 +1,44 @@
 from unittest import TestCase
 from typing import List
-from lib.globalData.localObjects import Option, Alert, Manager, Sensor, Node
+from lib.globalData.localObjects import Option, Alert, Manager, Sensor, Node, AlertLevel
+
+
+def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[AlertLevel], new_alert_levels: List[AlertLevel]):
+    """
+    Compares two lists of AlertLevel objects.
+    :param context:
+    :param gt_alert_levels:
+    :param new_alert_levels:
+    """
+    if len(new_alert_levels) != len(gt_alert_levels):
+        context.fail("Wrong number of objects.")
+
+    already_processed = []
+    for stored_alert_level in new_alert_levels:
+        found = False
+        for gt_alert_level in gt_alert_levels:
+            if stored_alert_level.level == gt_alert_level.level:
+                found = True
+
+                # Check which objects we already processed to see if we hold an object with
+                # duplicated values.
+                if gt_alert_level in already_processed:
+                    context.fail("Duplicated object.")
+                already_processed.append(gt_alert_level)
+
+                # Only the content of the object should have changed, not the object itself.
+                if stored_alert_level == gt_alert_level:
+                    context.fail("Changed ground truth object, not content of existing object.")
+
+                if (stored_alert_level.name != gt_alert_level.name
+                        or stored_alert_level.triggerAlways != gt_alert_level.triggerAlways
+                        or stored_alert_level.rulesActivated != gt_alert_level.rulesActivated):
+                    context.fail("New object does not have correct content.")
+
+                break
+
+        if not found:
+            context.fail("Not able to find modified Alert Level object.")
 
 
 def compare_alerts_content(context: TestCase, gt_alerts: List[Alert], new_alerts: List[Alert]):
