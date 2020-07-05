@@ -648,10 +648,12 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("UPDATE alertLevels SET "
                                      + "name = %s, "
-                                     + "triggerAlways = %s "
+                                     + "triggerAlways = %s, "
+                                     + "rulesActivated = %s "
                                      + "WHERE alertLevel = %s",
                                      (alert_level.name,
                                       alert_level.triggerAlways,
+                                      1 if alert_level.rulesActivated else 0,
                                       alert_level.level))
 
             except Exception:
@@ -665,9 +667,13 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO alertLevels ("
                                      + "alertLevel, "
                                      + "name, "
-                                     + "triggerAlways) "
-                                     + "VALUES (%s, %s, %s)",
-                                     (alert_level.level, alert_level.name, alert_level.triggerAlways))
+                                     + "triggerAlways, "
+                                     + "rulesActivated) "
+                                     + "VALUES (%s, %s, %s, %s)",
+                                     (alert_level.level,
+                                      alert_level.name,
+                                      alert_level.triggerAlways,
+                                      1 if alert_level.rulesActivated else 0))
 
             except Exception:
                 logging.exception("[%s]: Not able to add Alert Level %d."
@@ -1016,7 +1022,8 @@ class Mysql(_Storage):
         self._cursor.execute("SELECT "
                              + "alertLevel, "
                              + "name, "
-                             + "triggerAlways "
+                             + "triggerAlways, "
+                             + "rulesActivated "
                              + "FROM alertLevels")
         result = self._cursor.fetchall()
 
@@ -1025,6 +1032,7 @@ class Mysql(_Storage):
             alert_level.level = alert_level_tuple[0]
             alert_level.name = alert_level_tuple[1]
             alert_level.triggerAlways = alert_level_tuple[2]
+            alert_level.rulesActivated = (alert_level_tuple[3] == 1)
 
             self._system_data.update_alert_level(alert_level)
 
@@ -1336,7 +1344,8 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE alertLevels ("
                                      + "alertLevel INTEGER PRIMARY KEY, "
                                      + "name VARCHAR(255) NOT NULL, "
-                                     + "triggerAlways INTEGER NOT NULL)")
+                                     + "triggerAlways INTEGER NOT NULL, "
+                                     + "rulesActivated INTEGER NOT NULL)")
 
             # commit all changes
             self._conn.commit()
@@ -1387,9 +1396,6 @@ class Mysql(_Storage):
                 return False
 
             # STEP ONE: delete all objects that do not exist anymore
-            # (NOTE: first delete alerts, sensors and managers before
-            # nodes because of the foreign key dependency; also delete
-            # sensorAlerts before sensors and nodes)
             for option in self._db_copy_options:
 
                 # Check if object does not exist anymore in received data.
@@ -1544,7 +1550,4 @@ class Mysql(_Storage):
 
 
 # TODO
-# - Test code
-#   * Edge cases
-#   * SensorAlerts?
 # - close connection in error paths if it was opened
