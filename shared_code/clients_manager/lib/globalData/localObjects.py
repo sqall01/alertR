@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import copy
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 
 
 class InternalState:
@@ -46,8 +46,8 @@ class Option(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.type = None
-        self.value = None
+        self.type = None  # type: Optional[str]
+        self.value = None  # type: Optional[float]
 
     def deepcopy(self, option):
         self.type = option.type
@@ -61,15 +61,15 @@ class Node(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.nodeId: Optional[int] = None
-        self.hostname: Optional[str] = None
-        self.nodeType: Optional[str] = None
-        self.instance: Optional[str] = None
-        self.connected: Optional[int] = None
-        self.version: Optional[float] = None
-        self.rev: Optional[int] = None
-        self.username: Optional[str] = None
-        self.persistent: Optional[int] = None
+        self.nodeId = None  # type: Optional[int]
+        self.hostname = None  # type: Optional[str]
+        self.nodeType = None  # type: Optional[str]
+        self.instance = None  # type: Optional[str]
+        self.connected = None  # type: Optional[int]
+        self.version = None  # type: Optional[float]
+        self.rev = None  # type: Optional[int]
+        self.username = None  # type: Optional[str]
+        self.persistent = None  # type: Optional[int]
 
     # This function copies all attributes of the given node to this object.
     def deepcopy(self, node):
@@ -90,16 +90,16 @@ class Sensor(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.nodeId: Optional[int] = None
-        self.sensorId: Optional[int] = None
-        self.remoteSensorId: Optional[int] = None
-        self.alertDelay: Optional[int] = None
-        self.alertLevels: List[int] = list()
-        self.description: Optional[str] = None
-        self.lastStateUpdated: Optional[int] = None
-        self.state: Optional[int] = None
-        self.dataType: Optional[int] = None
-        self.data: Any = None
+        self.nodeId = None  # type: Optional[int]
+        self.sensorId = None  # type: Optional[int]
+        self.remoteSensorId = None  # type: Optional[int]
+        self.alertDelay = None  # type: Optional[int]
+        self.alertLevels = list()  # type: List[int]
+        self.description = None  # type: Optional[str]
+        self.lastStateUpdated = None  # type: Optional[int]
+        self.state = None  # type: Optional[int]
+        self.dataType = None  # type: Optional[int]
+        self.data = None  # type: Any
 
     # This function copies all attributes of the given sensor to this object.
     def deepcopy(self, sensor):
@@ -121,9 +121,9 @@ class Manager(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.nodeId: Optional[int] = None
-        self.managerId: Optional[int] = None
-        self.description: Optional[str] = None
+        self.nodeId = None  # type: Optional[int]
+        self.managerId = None  # type: Optional[int]
+        self.description = None  # type: Optional[str]
 
     # This function copies all attributes of the given manager to this object.
     def deepcopy(self, manager):
@@ -138,11 +138,11 @@ class Alert(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.nodeId: Optional[int] = None
-        self.alertId: Optional[int] = None
-        self.remoteAlertId: Optional[int] = None
-        self.alertLevels: List[int] = list()
-        self.description: Optional[str] = None
+        self.nodeId = None  # type: Optional[int]
+        self.alertId = None  # type: Optional[int]
+        self.remoteAlertId = None  # type: Optional[int]
+        self.alertLevels = list()  # type: List[int]
+        self.description = None  # type: Optional[str]
 
     # This function copies all attributes of the given alert to this object.
     def deepcopy(self, alert):
@@ -161,39 +161,39 @@ class SensorAlert(LocalObject):
         super().__init__()
 
         # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated: Optional[bool] = None
+        self.rulesActivated = None  # type: Optional[bool]
 
         # If rulesActivated = true => always set to -1.
-        self.sensorId: Optional[int] = None
+        self.sensorId = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
         # If rulesActivated = true => always set to 1.
-        self.state: Optional[int] = None
+        self.state = None  # type: Optional[int]
 
         # Description of the sensor that raised this sensor alert.
-        self.description: Optional[str] = None
+        self.description = None  # type: Optional[str]
 
         # Time this sensor alert was received.
-        self.timeReceived: Optional[int] = None
+        self.timeReceived = None  # type: Optional[int]
 
         # List of alert levels (Integer) that are triggered
         # by this sensor alert.
-        self.alertLevels: List[int] = list()
+        self.alertLevels = list()  # type: List[int]
 
         # The optional data of the sensor alert (if it has any).
         # If rulesActivated = true => always set to false.
-        self.hasOptionalData: Optional[bool] = None
-        self.optionalData = None
+        self.hasOptionalData = None  # type: Optional[bool]
+        self.optionalData = None  # type: Dict[str, Any]
 
         # Does this sensor alert change the state of the sensor?
-        self.changeState: Optional[bool] = None
+        self.changeState = None  # type: Optional[bool]
 
         # Does this sensor alert hold the latest data of the sensor?
-        self.hasLatestData: Optional[bool] = None
+        self.hasLatestData = None  # type: Optional[bool]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType: Optional[int] = None
-        self.sensorData: Any = None
+        self.dataType = None  # type: Optional[int]
+        self.sensorData = None  # type: Any
 
     # This function copies all attributes of the given sensor alert to this object.
     def deepcopy(self, sensor_alert):
@@ -223,10 +223,10 @@ class AlertLevel(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.level: Optional[int] = None
-        self.name: Optional[str] = None
-        self.triggerAlways: Optional[int] = None
-        self.rulesActivated: Optional[bool] = None
+        self.level = None  # type: Optional[int]
+        self.name = None  # type: Optional[str]
+        self.triggerAlways = None  # type: Optional[int]
+        self.rulesActivated = None  # type: Optional[bool]
 
     # This function copies all attributes of the given alert level to this object.
     def deepcopy(self, alert_level):
