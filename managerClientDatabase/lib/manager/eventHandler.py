@@ -56,8 +56,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         else:
             # Clear sensor alerts list to prevent it from getting too big.
-            oldest_sensor_alert_time = int(time.time()) - (self.sensorAlertLifeSpan * 86400)
-            self._system_data.delete_sensor_alerts_received_before(oldest_sensor_alert_time)
+            self._system_data.delete_sensor_alerts_received_before(2147483647)  # max signed 32bit integer
 
     def _update_db_data_non_blocking(self):
         """

@@ -1543,11 +1543,3 @@ class Mysql(_Storage):
             self._db_copy_alert_levels = alert_levels
 
             return True
-
-
-
-
-
-
-# TODO
-# - close connection in error paths if it was opened
