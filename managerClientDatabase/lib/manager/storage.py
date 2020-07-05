@@ -124,10 +124,10 @@ class Mysql(_Storage):
                 internal_type = internal_tuple[0]
                 internal_value = internal_tuple[1]
 
-                if internal_type.upper() == "VERSION":
+                if internal_type.lower() == "version":
                     db_version = internal_value
                     continue
-                elif internal_type.upper() == "REV":
+                elif internal_type.lower() == "rev":
                     db_rev = int(internal_value)
                     continue
 
@@ -156,6 +156,9 @@ class Mysql(_Storage):
         # tables do not exist yet
         # => create them
         else:
+            # Make sure tables are deleted before creating them.
+            self._delete_storage()
+
             # close connection to the database
             self._close_connection()
 
