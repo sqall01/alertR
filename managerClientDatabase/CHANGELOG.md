@@ -3,14 +3,15 @@
 Features:
 
 * Removed storing of events on manager database (long term plan is to move event creation to server)
-
+* Refactored client code to get a more resilient connection.
+* Unified client code to make it more maintainable.
+* Guarantee that requests are send to server in timely order.
 
 ## 0.600-2
 
 Features:
 
 * Fixed redirection bug in updater/installer
-
 
 ## 0.600-1
 
@@ -26,13 +27,11 @@ Features:
 * Migration from Python 2.7 to Python 3.5
 * Permissions check for config file
 
-
 ## 0.501-3
 
 Features:
 
 * Update "force" switch now ignores dependency check.
-
 
 ## 0.501-2
 
@@ -40,13 +39,11 @@ Features:
 
 * Fixed problem with starting the version fetching process even if updates are deactivated.
 
-
 ## 0.501-1
 
 Features:
 
 * Removed fixed TLS version.
-
 
 ## 0.501
 
@@ -55,13 +52,11 @@ Features:
 * Removed update checker process (moved to server instance).
 * Update process checks dependency changes and can delete old files.
 
-
 ## 0.500-1
 
 Features:
 
 * Changed timeout setting in order to have a more stable connection recovery.
-
 
 ## 0.400-1
 
@@ -70,14 +65,12 @@ Features:
 * User paths can now be relative paths.
 * Added start up log entries.
 
-
 ## 0.400
 
 Features:
 
 * Streamlined database layout.
 * Added persistent/non-persistent flag.
-
 
 ## 0.300
 
