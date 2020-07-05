@@ -4,21 +4,12 @@ from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.globalData import SystemData
 from lib.globalData.localObjects import Sensor, SensorDataType
+from lib.manager.storage import Mysql
 
 
 class TestManagerStorageSensor(TestManagerStorageCore):
 
-    def test_add_sensor(self):
-        """
-        Tests adding of sensors to the database.
-        """
-        config_logging(logging.CRITICAL)
-
-        storage = self._init_database()
-
-        system_data = self._create_system_data()
-
-        # Create database objects.
+    def _create_objects(self, storage: Mysql, system_data: SystemData):
         storage._open_connection()
         for alert_level in system_data.get_alert_levels_list():
             storage._update_alert_level(alert_level)
@@ -28,6 +19,17 @@ class TestManagerStorageSensor(TestManagerStorageCore):
             storage._update_node(node)
             storage._update_sensor(sensor)
         storage._conn.commit()
+
+    def test_add_sensor(self):
+        """
+        Tests adding of sensors to the database.
+        """
+        config_logging(logging.ERROR)
+
+        storage = self._init_database()
+
+        system_data = self._create_system_data()
+        self._create_objects(storage, system_data)
 
         storage._system_data = SystemData()
         storage.synchronize_database_to_system_data()
@@ -40,22 +42,12 @@ class TestManagerStorageSensor(TestManagerStorageCore):
         """
         Tests updating of sensors in the database.
         """
-        config_logging(logging.CRITICAL)
+        config_logging(logging.ERROR)
 
         storage = self._init_database()
 
         system_data = self._create_system_data()
-
-        # Create database objects.
-        storage._open_connection()
-        for alert_level in system_data.get_alert_levels_list():
-            storage._update_alert_level(alert_level)
-
-        for sensor in system_data.get_sensors_list():
-            node = system_data.get_node_by_id(sensor.nodeId)
-            storage._update_node(node)
-            storage._update_sensor(sensor)
-        storage._conn.commit()
+        self._create_objects(storage, system_data)
 
         # Update local objects.
         ctr = 0
@@ -90,22 +82,12 @@ class TestManagerStorageSensor(TestManagerStorageCore):
         """
         Tests deleting of sensors in the database.
         """
-        config_logging(logging.CRITICAL)
+        config_logging(logging.ERROR)
 
         storage = self._init_database()
 
         system_data = self._create_system_data()
-
-        # Create database objects.
-        storage._open_connection()
-        for alert_level in system_data.get_alert_levels_list():
-            storage._update_alert_level(alert_level)
-
-        for sensor in system_data.get_sensors_list():
-            node = system_data.get_node_by_id(sensor.nodeId)
-            storage._update_node(node)
-            storage._update_sensor(sensor)
-        storage._conn.commit()
+        self._create_objects(storage, system_data)
 
         # Delete object and check correct deletion.
         for sensor in system_data.get_sensors_list():

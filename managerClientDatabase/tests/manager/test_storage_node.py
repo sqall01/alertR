@@ -37,7 +37,7 @@ class TestManagerStorageNode(TestManagerStorageCore):
         """
         Tests adding of nodes to the database.
         """
-        config_logging(logging.CRITICAL)
+        config_logging(logging.ERROR)
 
         storage = self._init_database()
 
@@ -55,7 +55,7 @@ class TestManagerStorageNode(TestManagerStorageCore):
         """
         Tests updating of nodes in the database.
         """
-        config_logging(logging.CRITICAL)
+        config_logging(logging.ERROR)
 
         storage = self._init_database()
 
@@ -74,7 +74,7 @@ class TestManagerStorageNode(TestManagerStorageCore):
             temp_node.rev = ctr
             temp_node.username = "new_username_" + str(ctr + 1)
             temp_node.persistent = (ctr % 2)
-            system_data.update_node(temp_node)  # NOTE: update function plainly updates and ignores node type changes
+            system_data.update_node(temp_node)
             ctr += 1
 
         # Update database objects.
@@ -105,7 +105,7 @@ class TestManagerStorageNode(TestManagerStorageCore):
         """
         Tests deleting of nodes in the database.
         """
-        config_logging(logging.CRITICAL)
+        config_logging(logging.ERROR)
 
         storage = self._init_database()
 

@@ -13,6 +13,7 @@ class TestManagerStorageCore(TestSystemDataCore):
         :return: storage object
         """
         global_data = GlobalData()
+        global_data.sensorAlertLifeSpan = 0
 
         storage = None
         try:
