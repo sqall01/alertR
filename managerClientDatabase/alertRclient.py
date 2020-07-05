@@ -199,7 +199,7 @@ if __name__ == '__main__':
                                                 ManagerEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
-    logging.info("[%s] Connecting to server." % fileName)
+    logging.info("[%s]: Connecting to server." % fileName)
     while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
@@ -224,7 +224,7 @@ if __name__ == '__main__':
 
     # when connected => generate watchdog object to monitor the
     # server connection
-    logging.info("[%s] Starting watchdog thread." % fileName)
+    logging.info("[%s]: Starting watchdog thread." % fileName)
     watchdog = ConnectionWatchdog(globalData.serverComm,
                                   globalData.pingInterval,
                                   globalData.smtpAlert)
@@ -274,7 +274,7 @@ if __name__ == '__main__':
         serverThread.daemon = True
         serverThread.start()
 
-    logging.info("[%s] Client started." % fileName)
+    logging.info("[%s]: Client started." % fileName)
 
     # generate receiver to handle incoming data (for example status updates)
     receiver = Receiver(globalData.serverComm)
