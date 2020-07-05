@@ -93,18 +93,18 @@ class Mysql(_Storage):
         self._connection_retries = self._global_data.storageBackendMysqlRetries
 
         # Hold a copy of the alert system objects locally to know which data we have stored in the database.
-        self._db_copy_options: List[Option] = list()
-        self._db_copy_nodes: List[Node] = list()
-        self._db_copy_alerts: List[Alert] = list()
-        self._db_copy_managers: List[Manager] = list()
-        self._db_copy_sensors: List[Sensor] = list()
-        self._db_copy_alert_levels: List[AlertLevel] = list()
+        self._db_copy_options = list()  # type: List[Option]
+        self._db_copy_nodes = list()  # type: List[Node]
+        self._db_copy_alerts = list()  # type: List[Alert]
+        self._db_copy_managers = list()  # type: List[Manager]
+        self._db_copy_sensors = list()  # type: List[Sensor]
+        self._db_copy_alert_levels = list()  # type: List[AlertLevel]
 
         # mysql lock
         self._lock = threading.Lock()
 
-        self._conn: Optional[MySQLdb.Connection] = None
-        self._cursor: Optional[MySQLdb.cursors.Cursor] = None
+        self._conn = None  # type: Optional[MySQLdb.Connection]
+        self._cursor = None  # type: Optional[MySQLdb.cursors.Cursor]
 
         # connect to the database
         self._open_connection()

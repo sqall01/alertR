@@ -20,23 +20,23 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version: float = 0.601
+        self.version = 0.601
 
         # revision of the used client
-        self.rev: int = 0
+        self.rev = 0
 
         # name of this client
-        self.name: str = "AlertR Manger Client Database"
+        self.name = "AlertR Manger Client Database"
 
         # the instance of this client
-        self.instance: str = "managerClientDatabase"
+        self.instance = "managerClientDatabase"
 
         # interval in which a ping should be send when 
         # no data was received/send     
-        self.pingInterval: int = 30
+        self.pingInterval = 30
 
         # type of this node/client
-        self.nodeType: str = "manager"
+        self.nodeType = "manager"
 
         # path to the configuration file of the client
         self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -47,7 +47,7 @@ class GlobalData:
 
         # How often the AlertR client should try to connect to the
         # MySQL server when the connection establishment fails.
-        self.storageBackendMysqlRetries: int = 5
+        self.storageBackendMysqlRetries = 5
 
         # path to the unix socket which is used to communicate
         # with the web page (only set when server is activated
@@ -65,7 +65,7 @@ class GlobalData:
 
         # this is the time in seconds when the sensor should be
         # handled as timed out
-        self.connectionTimeout: int = 60
+        self.connectionTimeout = 60
 
         # this variable holds the object of the server communication
         self.serverComm = None
@@ -75,8 +75,8 @@ class GlobalData:
 
         # the amount of days sensor alerts are kept in the database before
         # they are removed (value 0 will not store any sensor alerts)
-        self.sensorAlertLifeSpan: Optional[int] = None
+        self.sensorAlertLifeSpan = None  # type: Optional[int]
 
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
-        self.persistent: Optional[int] = None
+        self.persistent = None  # type: Optional[int]
