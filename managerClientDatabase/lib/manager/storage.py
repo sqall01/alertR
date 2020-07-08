@@ -159,6 +159,9 @@ class Mysql(_Storage):
             # Make sure tables are deleted before creating them.
             self._delete_storage()
 
+            # commit all changes
+            self._conn.commit()
+
             # close connection to the database
             self._close_connection()
 
