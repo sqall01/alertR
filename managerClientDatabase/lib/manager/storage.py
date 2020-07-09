@@ -145,9 +145,6 @@ class Mysql(_Storage):
                 self.create_storage()
 
             else:
-                # commit all changes
-                self._conn.commit()
-
                 # close connection to the database
                 self._close_connection()
 
