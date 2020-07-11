@@ -117,6 +117,17 @@ class SystemData:
             self._options[option_type].internal_state = InternalState.DELETED
             del self._options[option_type]
 
+    def _delete_sensor_alerts_received_before(self, timestamp: int):
+        for sensor_alert in list(self._sensor_alerts):
+            if sensor_alert.timeReceived < timestamp:
+                sensor_alert.internal_state = InternalState.DELETED
+                self._sensor_alerts.remove(sensor_alert)
+
+            # Sensor Alerts are ordered by time received,
+            # therefore the next sensor alert will be received later in time and we can stop searching.
+            else:
+                break
+
     def _delete_sensor_by_id(self, sensor_id: int):
         if sensor_id in self._sensors.keys():
             # Remove Sensor Alerts for this sensor.
@@ -221,7 +232,12 @@ class SystemData:
             for option in list(self._options.values()):
                 self._delete_option_by_type(option.type)
 
-            # Deletes also all Alert, Manager, and Sensor objects as well as Sensor Alerts
+            # Delete all sensor alerts stored (faster doing it directly than indirectly through deleting nodes).
+            if self._sensor_alerts:
+                sensor_alert = self._sensor_alerts[-1]
+                self._delete_sensor_alerts_received_before(sensor_alert.timeReceived + 1)
+
+            # Deletes also all Alert, Manager, and Sensor objects
             # (otherwise we have an inconsistency bug in the code).
             for node in list(self._nodes.values()):
                 self._delete_node_by_id(node.nodeId)
@@ -275,15 +291,7 @@ class SystemData:
         :param timestamp:
         """
         with self._data_lock:
-            for sensor_alert in list(self._sensor_alerts):
-                if sensor_alert.timeReceived < timestamp:
-                    sensor_alert.internal_state = InternalState.DELETED
-                    self._sensor_alerts.remove(sensor_alert)
-
-                # Sensor Alerts are ordered by time received,
-                # therefore the next sensor alert will be received later in time and we can stop searching.
-                else:
-                    break
+            self._delete_sensor_alerts_received_before(timestamp)
 
     def delete_sensor_by_id(self, sensor_id: int):
         """
