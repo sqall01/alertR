@@ -125,7 +125,6 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 			</table>
 		</div>
 
-		<script src="js/events.js"></script>
 		<script src="js/main.js"></script>
 
 	</body>
