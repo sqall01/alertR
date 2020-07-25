@@ -1,7 +1,7 @@
 # example unit file when systemd is used
 
 [Unit]
-Description=alertR Manger Client Database
+Description=alertR Manager Client Database
 After=mysql.service
 
 [Service]

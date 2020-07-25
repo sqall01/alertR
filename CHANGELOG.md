@@ -26,6 +26,6 @@ Features:
 * Authentication message now contains version and revision.
 * Alert system update messages to manager clients now contain version, revision and client instance.
 * Renamed "alertR Sensor Client CTF Watchdog" to "alertR Sensor Client Executer" and updated code to allow a variable number of arguments for the scripts.
-* Renamed "alertR Manger Client Mobile" to "alertR Manager Client Database" and updated code to log events, check instance versions against only repository and redefined UNIX socket protocol.
+* Renamed "alertR Manager Client Mobile" to "alertR Manager Client Database" and updated code to log events, check instance versions against only repository and redefined UNIX socket protocol.
 * Moved "alertR Mobile Manager" (web page and android app) to "alertR Web Mobile Manager" and completely rewrote web page (new design, displays sensor alert information, displays log event information, displays when a new alertR version is available, ...) - needs "alertR Manager Client Database" to work.
 * AlertR server can now participate in a survey.

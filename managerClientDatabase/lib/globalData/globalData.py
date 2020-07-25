@@ -26,7 +26,7 @@ class GlobalData:
         self.rev = 0
 
         # name of this client
-        self.name = "AlertR Manger Client Database"
+        self.name = "AlertR Manager Client Database"
 
         # the instance of this client
         self.instance = "managerClientDatabase"

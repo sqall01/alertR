@@ -1,7 +1,7 @@
 # example unit file when systemd is used
 
 [Unit]
-Description=alertR Manger Client Template
+Description=AlertR Manager Client Template
 
 [Service]
 Type=simple
