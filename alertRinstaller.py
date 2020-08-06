@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
+import subprocess
 import sys
 import time
 import logging
@@ -853,19 +854,31 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
             # try to import needed module
             temp = None
             try:
-                logging.info("[%s]: Checking module '%s'." % (fileName, importName))
+                logging.info("[%s]: Checking module '%s'..." % (fileName, importName))
                 temp = importlib.import_module(importName)
 
             except Exception as e:
-                logging.error("[%s]: Module '%s' not installed." % (fileName, importName))
-                print("")
-                print("The needed module '%s' is not installed. " % importName, end="")
-                print("You can install the module by executing ", end="")
-                print("'pip3 install %s' " % packet, end="")
-                print("(if you do not have installed pip, you can install it ", end="")
-                print("on Debian like systems by executing ", end="")
-                print("'apt-get install python3-pip').")
-                return False
+                try:
+                    logging.info("[%s]: Module '%s' not installed. Trying to install it..." % (fileName, importName))
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", packet])
+                    temp = importlib.import_module(importName)
+                    
+                except Exception as e:
+                    logging.error("[%s]: Error installing module '%s'." % (fileName, importName))
+                    print("")
+                    print("The needed module '%s' is not installed. " % importName, end="")
+                    print("You can install the module by executing ", end="")
+                    print("'pip3 install %s' " % packet, end="")
+                    print("(if you do not have installed pip, you can install it ", end="")
+                    print("on Debian like systems by executing ", end="")
+                    print("'apt-get install python3-pip').")
+                    return False
+                                      
+                else:
+                    logging.info("[%s]: Successfully installed module '%s'." % (fileName, importName))
+                
+            else:
+                logging.info("[%s]: Module '%s' is installed" % (fileName, importName))    
 
             # if a version string is given in the instance information
             # => check if the installed version satisfies the needed version
@@ -893,8 +906,18 @@ def check_dependencies(dependencies: Dict[str, Any]) -> bool:
                             break
 
                         elif int(installedVersion[i]) < int(neededVersion[i]):
-                            versionCorrect = False
-                            break
+                            try:
+                                logging.info("[%s]: Module '%s' is too old. Trying to update it..." % (fileName, importName))
+                                subprocess.check_call([sys.executable, "-m", "pip", "install", packet, "--upgrade"])
+                                temp = importlib.import_module(importName)
+                                
+                            except Exception as e:
+                                logging.error("[%s]: Error updating module '%s'." % (fileName, importName))
+                                versionCorrect = False
+                                break
+                            
+                            else:
+                                logging.info("[%s]: Successfully updated module '%s'." % (fileName, importName))
 
                 except Exception as e:
                     logging.error("[%s]: Could not verify installed version of module '%s'." % (fileName, importName))
@@ -1030,18 +1053,21 @@ def check_requests_available() -> bool:
     :return: True if available
     """
 
-    import_name = "requests"
+    importName = "requests"
     version = requests_min_version
 
     # try to import needed module
     temp = None
     try:
-        logging.info("[%s]: Checking module '%s' installed." % (fileName, import_name))
-        temp = importlib.import_module(import_name)
+        logging.info("[%s]: Checking module '%s'..." % (fileName, importName))
+        temp = importlib.import_module(importName)
 
     except Exception as e:
-        logging.error("[%s]: Module '%s' not installed." % (fileName, import_name))
+        logging.error("[%s]: Module '%s' not installed." % (fileName, importName))
         return False
+        
+    else:
+        logging.info("[%s]: Module '%s' is installed" % (fileName, importName))    
 
     version_correct = False
     version_check_failed = False
@@ -1070,12 +1096,12 @@ def check_requests_available() -> bool:
                 break
 
     except Exception as e:
-        logging.error("[%s]: Could not verify installed version of module '%s'." % (fileName, import_name))
+        logging.error("[%s]: Could not verify installed version of module '%s'." % (fileName, importName))
         version_check_failed = True
 
     if version_check_failed:
         print("")
-        print("Could not automatically verify the installed version of the module '%s'." % import_name)
+        print("Could not automatically verify the installed version of the module '%s'." % importName)
         print("You have to verify the version yourself.")
         print("")
         print("Installed version: %s" % installed_version)
@@ -1133,9 +1159,9 @@ def list_all_instances(url: str) -> bool:
         idx = 1
         if "pip" in instance_info["dependencies"].keys():
             for pip in instance_info["dependencies"]["pip"]:
-                import_name = pip["import"]
+                importName = pip["import"]
                 packet = pip["packet"]
-                print("%d: %s (pip packet: %s)" % (idx, import_name, packet), end="")
+                print("%d: %s (pip packet: %s)" % (idx, importName, packet), end="")
                 if "version" in pip.keys():
                     print(" (lowest version: %s)" % pip["version"])
                 else:
@@ -1144,8 +1170,8 @@ def list_all_instances(url: str) -> bool:
 
         if "other" in instance_info["dependencies"].keys():
             for other in instance_info["dependencies"]["other"]:
-                import_name = other["import"]
-                print("%d: %s" % (idx, import_name), end="")
+                importName = other["import"]
+                print("%d: %s" % (idx, importName), end="")
                 if "version" in other.keys():
                     print("(lowest version: %s)" % other["version"])
                 else:
@@ -1333,7 +1359,7 @@ if __name__ == '__main__':
         rev = int(instance_info["rev"])
         dependencies = instance_info["dependencies"]
 
-        logging.info("[%s]: Checking the dependencies." % fileName)
+        logging.info("[%s]: Checking the dependencies..." % fileName)
 
         # check all dependencies this instance needs
         if options.force is False:
