@@ -1257,19 +1257,6 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    # Import requests if it is available.
-    if check_requests_available():
-        import requests
-
-    else:
-        print("")
-        print("The installation process needs the module 'requests' at least in version '%s' installed."
-              % requests_min_version)
-        print("You can install the module by executing 'pip3 install requests'.")
-        print("If you do not have installed pip, you can install it on Debian like systems by executing ", end="")
-        print("'apt-get install python3-pip'.")
-        sys.exit(1)
-
     # list all available instances in the used AlertR repository
     if options.list:
         if list_all_instances(url) is False:
@@ -1283,6 +1270,19 @@ if __name__ == '__main__':
 
         instance = options.instance
         targetLocation = options.targetDirectory
+        
+        # Import requests if it is available.
+        if check_requests_available():
+            import requests
+
+        else:
+            print("")
+            print("The installation process needs the module 'requests' at least in version '%s' installed."
+                  % requests_min_version)
+            print("You can install the module by executing 'pip3 install requests'.")
+            print("If you do not have installed pip, you can install it on Debian like systems by executing ", end="")
+            print("'apt-get install python3-pip'.")
+            sys.exit(1)
 
         # check if path is an absolute or relative path.
         if targetLocation[:1] != "/":
@@ -1364,4 +1364,10 @@ if __name__ == '__main__':
 
     # no option chosen
     else:
+        if options.instance is None:
+            logging.error("Missing -i INSTANCE argument")
+
+        if options.targetDirectory is None:
+            logging.error("Missing -t TARGETDIRECTORY argument")
+
         print("Use --help to get all available options.")
