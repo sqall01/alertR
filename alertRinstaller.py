@@ -1255,13 +1255,12 @@ if __name__ == '__main__':
     parser.add_option_group(installationGroup)
     parser.add_option_group(listGroup)
 
-    (options, args) = parser.parse_args()
+   (options, args) = parser.parse_args()
 
     # list all available instances in the used AlertR repository
     if options.list:
         if list_all_instances(url) is False:
-            print("")
-            print("Could not list repository information.")
+            logging.error("[%s]: Could not list repository information." % (fileName))
             sys.exit(1)
         sys.exit(0)
 
@@ -1271,6 +1270,15 @@ if __name__ == '__main__':
         instance = options.instance
         targetLocation = options.targetDirectory
         
+        # check if path is an absolute or relative path.
+        if targetLocation[:1] != "/":
+            targetLocation = os.path.join(os.path.dirname(os.path.abspath(__file__)), targetLocation)
+
+        # check if the chosen target location does exist
+        if os.path.exists(targetLocation) is False or os.path.isdir(targetLocation) is False:
+            logging.error("[%s]: Chosen target location [%s] does not exist." % (fileName, targetLocation))
+            sys.exit(1)
+            
         # Import requests if it is available.
         if check_requests_available():
             import requests
@@ -1284,16 +1292,6 @@ if __name__ == '__main__':
             print("'apt-get install python3-pip'.")
             sys.exit(1)
 
-        # check if path is an absolute or relative path.
-        if targetLocation[:1] != "/":
-            targetLocation = os.path.join(os.path.dirname(os.path.abspath(__file__)), targetLocation)
-
-        # check if the chosen target location does exist
-        if os.path.exists(targetLocation) is False or os.path.isdir(targetLocation) is False:
-            print("")
-            print("Chosen target location does not exist.")
-            sys.exit(1)
-
         # Use "server" as temporary instance for updater class to retrieve repository information.
         updater_obj = Updater(url, "server", targetLocation, retrieveInfo=False)
         try:
@@ -1302,8 +1300,7 @@ if __name__ == '__main__':
             print(e)
             repo_info = None
         if repo_info is None:
-            print("")
-            print("Could not download repository information from repository.")
+            logging.error("[%s]: Could not download repository information from repository." % (fileName))
             sys.exit(1)
 
         # get the correct case of the instance to install
@@ -1315,8 +1312,7 @@ if __name__ == '__main__':
                 break
         # check if chosen instance exists
         if not found:
-            print("")
-            print("Chosen AlertR instance '%s' does not exist in repository." % instance)
+            logging.error("[%s]: Chosen AlertR instance '%s' does not exist in repository." % (fileName, instance))
             sys.exit(1)
 
         # Overwrite instance and instance information to force update of instance information.
@@ -1324,8 +1320,7 @@ if __name__ == '__main__':
         instance_info = updater_obj.getInstanceInformation()
 
         if instance_info is None:
-            print("")
-            print("Could not download instance information from repository.")
+            logging.error("[%s]: Could not download instance information from repository." % (fileName))
             sys.exit(1)
 
         # extract needed data from instance information
@@ -1333,9 +1328,10 @@ if __name__ == '__main__':
         rev = int(instance_info["rev"])
         dependencies = instance_info["dependencies"]
 
-        logging.info("[%s]: Checking the dependencies." % fileName)
+        logging.info("[%s]: Checking the dependencies..." % fileName)
 
         # check all dependencies this instance needs
+        
         if options.force is False:
             if not check_dependencies(dependencies):
                 sys.exit(1)
