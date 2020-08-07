@@ -139,7 +139,7 @@ If you are interested in AlertR and its development, you can also read AlertR re
 # Supporting AlertR
 <a name="supporting_alertr"/>
 
-If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use AlertR (for example on [reddit](https://www.reddit.com/r/AlertR/)), writing code for it, and so on.
+If you like this project you can help to support it by contributing to it. You can contribute by writing tutorials, creating and documenting exciting new ideas to use AlertR (for example on [reddit](https://www.reddit.com/r/AlertR/)), writing code for it, and so on. Contributors have to agree to the [Contributor License Agreement](https://gist.github.com/sqall01/b9460c19690d6a7397a9040142122cb4) before their contribution is accepted.
 
 If you do not know how to do any of it or do not have the time, you can support the project by [donating](https://alertr.de/donations.php) or support me on [Patreon](https://www.patreon.com/sqall). Since services such as the push notification service have a monthly upkeep, the donation helps to keep these services free for everyone.
 
