@@ -350,4 +350,5 @@ class SensorFIFO(_PollingSensor, threading.Thread):
                                   % self.fileName
                                   + "FIFO file of sensor with id '%d'."
                                   % self.id)
+                logging.error("[%s]: Received data: %s" % (self.fileName, data))
                 continue
