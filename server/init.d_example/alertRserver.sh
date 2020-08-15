@@ -13,7 +13,7 @@
 set -e
 
 # change USER to the user which runs the alertRserver
-USER=someUser
+USER=alertr
 # change DAEMON to the path to run the alertRserver
 DAEMON=/absolute/path/to/alertRserver.py
 
