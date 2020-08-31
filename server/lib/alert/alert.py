@@ -11,10 +11,10 @@ import threading
 import os
 import time
 from typing import List, Optional
-from .server import AsynchronousSender
-from .localObjects import SensorAlert, AlertLevel
-from .globalData import GlobalData
-from .rules import RuleEngine
+from ..server import AsynchronousSender
+from ..localObjects import SensorAlert, AlertLevel
+from ..globalData import GlobalData
+from ..rules import RuleEngine
 
 
 class SensorAlertToHandle:

@@ -103,13 +103,18 @@ class AlertLevel:
         # this flag tells if the alert level has rules activated
         # that has to match before an alert is triggered (flag: True) or
         # if it just triggers when a sensor alert is received (flag: False)
-        self.rulesActivated = None  # type: Optional[bool]
+        self.rulesActivated = None  # type: Optional[bool] # TODO REMOVE
 
         # a list of rules (rule chain) that have to evaluate before the
         # alert level triggers a sensor alert
         # (the order in which the elements are stored in this list is the
         # order in which the rules have to evaluate)
         self.rules = list()
+
+
+
+        # TODO instrumentation settings
+        self.instrumentation_cmd = None  # type: Optional[str]
 
 
 # This class represents a single sensor alert that was triggered.
@@ -151,7 +156,7 @@ class SensorAlert:
         self.triggeredAlertLevels = list()  # type: List[int]
 
         # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None  # type: Optional[bool]
+        self.rulesActivated = None  # type: Optional[bool] # TODO REMOVE
 
         # Does this sensor alert hold the latest data of the sensor?
         self.hasLatestData = None  # type: Optional[bool]
@@ -159,6 +164,27 @@ class SensorAlert:
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Any
+
+    # Converts the SensorAlert object into a dictionary.
+    def convertToDict(self) -> Dict[str, Any]:
+        sensor_alert_dict = {"sensorAlertId": self.sensorAlertId,
+                             "nodeId": self.nodeId,
+                             "sensorId": self.sensorId,
+                             "description": self.description,
+                             "timeReceived": self.timeReceived,
+                             "alertDelay": self.alertDelay,
+                             "state": self.state,
+                             "hasOptionalData": self.hasOptionalData,
+                             "optionalData": self.optionalData,
+                             "changeState": self.changeState,
+                             "alertLevels": self.alertLevels,
+                             "triggeredAlertLevels": self.triggeredAlertLevels,
+                             "hasLatestData": self.hasLatestData,
+                             "dataType": self.dataType,
+                             "data": self.sensorData,
+        }
+
+        return sensor_alert_dict
 
 
 # This class represents sensor data.
