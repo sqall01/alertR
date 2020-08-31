@@ -115,6 +115,7 @@ class AlertLevel:
 
         # TODO instrumentation settings
         self.instrumentation_cmd = None  # type: Optional[str]
+        self.instrumentation_timeout = None  # type: Optional[int]
 
 
 # This class represents a single sensor alert that was triggered.
@@ -165,8 +166,34 @@ class SensorAlert:
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Any
 
-    # Converts the SensorAlert object into a dictionary.
-    def convertToDict(self) -> Dict[str, Any]:
+    @staticmethod
+    def convert_from_dict(sensor_alert_dict: Dict[str, Any]):
+        """
+        Creates a Sensor Alert object from a dictionary.
+        :param sensor_alert_dict:
+        :return: Sensor Alert object
+        """
+        sensor_alert = SensorAlert()
+        sensor_alert.sensorAlertId = sensor_alert_dict["sensorAlertId"]
+        sensor_alert.nodeId  = sensor_alert_dict["nodeId"]
+        sensor_alert.sensorId = sensor_alert_dict["sensorId"]
+        sensor_alert.description = sensor_alert_dict["description"]
+        sensor_alert.timeReceived = sensor_alert_dict["timeReceived"]
+        sensor_alert.alertDelay = sensor_alert_dict["alertDelay"]
+        sensor_alert.state = sensor_alert_dict["state"]
+        sensor_alert.hasOptionalData = sensor_alert_dict["hasOptionalData"]
+        sensor_alert.optionalData = sensor_alert_dict["optionalData"]
+        sensor_alert.changeState = sensor_alert_dict["changeState"]
+        sensor_alert.alertLevels = sensor_alert_dict["alertLevels"]
+        sensor_alert.triggeredAlertLevels = sensor_alert_dict["triggeredAlertLevels"]
+        sensor_alert.hasLatestData = sensor_alert_dict["hasLatestData"]
+        sensor_alert.dataType = sensor_alert_dict["dataType"]
+        sensor_alert.sensorData = sensor_alert_dict["data"]
+
+        return sensor_alert
+
+    # Converts the Sensor Alert object into a dictionary.
+    def convert_to_dict(self) -> Dict[str, Any]:
         sensor_alert_dict = {"sensorAlertId": self.sensorAlertId,
                              "nodeId": self.nodeId,
                              "sensorId": self.sensorId,
@@ -185,6 +212,65 @@ class SensorAlert:
         }
 
         return sensor_alert_dict
+
+    def verify_types(self):
+        """
+        Verifies data types of attributes (raises ValueError if attribute is wrong).
+        """
+        if not isinstance(self.sensorAlertId, int):
+            raise ValueError("sensorAlertId not valid")
+
+        if not isinstance(self.nodeId, int):
+            raise ValueError("nodeId not valid")
+
+        if not isinstance(self.sensorId, int):
+            raise ValueError("sensorId not valid")
+
+        if not isinstance(self.description, str):
+            raise ValueError("description not valid")
+
+        if not isinstance(self.timeReceived, int):
+            raise ValueError("timeReceived not valid")
+
+        if not isinstance(self.alertDelay, int):
+            raise ValueError("alertDelay not valid")
+
+        if (not isinstance(self.state, int)
+                or self.state not in [0, 1]):
+            raise ValueError("state not valid")
+
+        if not isinstance(self.hasOptionalData, bool):
+            raise ValueError("hasOptionalData not valid")
+
+        if not isinstance(self.alertDelay, int):
+            raise ValueError("alertDelay not valid") # TODO
+
+        if not isinstance(self.changeState, bool):
+            raise ValueError("changeState not valid")
+
+        if (not isinstance(self.alertLevels, list)
+                or not all(isinstance(item, int) for item in self.alertLevels)):
+            raise ValueError("alertLevels not valid")
+
+        if (not isinstance(self.triggeredAlertLevels, list)
+                or not all(isinstance(item, int) for item in self.triggeredAlertLevels)):
+            raise ValueError("triggeredAlertLevels not valid")
+
+        if not isinstance(self.hasLatestData, bool):
+            raise ValueError("hasLatestData not valid")
+
+        if (not isinstance(self.dataType, int)
+                or self.dataType not in [SensorDataType.NONE, SensorDataType.INT, SensorDataType.FLOAT]):
+            raise ValueError("dataType not valid")
+
+        if self.dataType == SensorDataType.NONE and self.sensorData is not None:
+            raise ValueError("data not valid")
+
+        if self.dataType == SensorDataType.INT and not isinstance(self.sensorData, int):
+            raise ValueError("data not valid")
+
+        if self.dataType == SensorDataType.FLOAT and not isinstance(self.sensorData, float):
+            raise ValueError("data not valid")
 
 
 # This class represents sensor data.
