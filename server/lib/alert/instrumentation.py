@@ -109,6 +109,10 @@ class Instrumentation:
             self._logger.exception("[%s]: Executing instrumentation for Alert Level '%d' failed."
                                    % (self._log_tag, self._alert_level.level))
             self._logger.error("[%s]: Command was: %s" % (self._log_tag, " ".join(temp_execute)))
+
+            # Set result.
+            self._promise.set_failed()
+
             return
 
         try:
@@ -134,6 +138,9 @@ class Instrumentation:
                 except Exception:
                     pass
 
+            # Set result.
+            self._promise.set_failed()
+
             return
 
         exit_code = process.poll()
@@ -142,13 +149,24 @@ class Instrumentation:
         err = err.decode("ascii")
 
         if exit_code == 0:
-            if not self._process_output(output):
+
+            new_sensor_alert = self._process_output(output)
+
+            if new_sensor_alert is not None:
                 self._logger.error("[%s]: Unable to process output from instrumentation for Alert Level '%d'."
                                    % (self._log_tag, self._alert_level.level))
                 self._logger.error("[%s]: Instrumentation for Alert Level '%d' stdout: %s"
                                    % (self._log_tag, self._alert_level.level, output))
                 self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
                                    % (self._log_tag, self._alert_level.level, err))
+
+                # Set result.
+                self._promise.set_new_sensor_alert(new_sensor_alert)
+                self._promise.set_success()
+
+            else:
+                # Set result.
+                self._promise.set_failed()
 
         else:
             self._logger.error("[%s]: Instrumentation for Alert Level '%d' exited with exit code '%d'."
@@ -158,7 +176,10 @@ class Instrumentation:
             self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
                                % (self._log_tag, self._alert_level.level, err))
 
-    def _process_output(self, output: str) -> bool:
+            # Set result.
+            self._promise.set_failed()
+
+    def _process_output(self, output: str) -> Optional[SensorAlert]:
         """
         Process output of instrumentation script.
         :param output: output of instrumentation script as string
@@ -207,18 +228,14 @@ class Instrumentation:
             if self._sensor_alert.dataType != new_sensor_alert.dataType:
                 raise ValueError("dataType not allowed to change")
 
-            # Set result.
-            self._promise.set_new_sensor_alert(new_sensor_alert)
-            self._promise.set_success()
-
         except Exception:
             self._logger.exception("[%s]: Could not parse received output from from instrumentation "
                                    % self._log_tag
                                    + "for Alert Level '%d'."
                                    % self._alert_level.level)
-            return False
+            return None
 
-        return True
+        return new_sensor_alert
 
     def execute(self) -> InstrumentationPromise:
         """

@@ -242,6 +242,9 @@ class SensorAlert:
         if not isinstance(self.hasOptionalData, bool):
             raise ValueError("hasOptionalData not valid")
 
+        if self.hasOptionalData and not isinstance(self.optionalData, dict):
+            raise ValueError("optionalData not valid")
+
         if not isinstance(self.alertDelay, int):
             raise ValueError("alertDelay not valid") # TODO
 
