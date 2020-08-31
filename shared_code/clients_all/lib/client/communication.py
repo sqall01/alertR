@@ -71,7 +71,7 @@ class Promise:
             return False
 
         else:
-            raise ValueError("Request not finisehd.")
+            raise ValueError("Request not finished.")
 
 
 class Communication:
