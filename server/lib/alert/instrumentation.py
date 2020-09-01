@@ -150,23 +150,31 @@ class Instrumentation:
 
         if exit_code == 0:
 
-            new_sensor_alert = self._process_output(output)
-
-            if new_sensor_alert is not None:
-                self._logger.error("[%s]: Unable to process output from instrumentation for Alert Level '%d'."
-                                   % (self._log_tag, self._alert_level.level))
-                self._logger.error("[%s]: Instrumentation for Alert Level '%d' stdout: %s"
-                                   % (self._log_tag, self._alert_level.level, output))
-                self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
-                                   % (self._log_tag, self._alert_level.level, err))
-
+            # Sensor Alert is suppressed if no output is given by instrumentation script.
+            if output == "":
                 # Set result.
-                self._promise.set_new_sensor_alert(new_sensor_alert)
                 self._promise.set_success()
 
+            # Parse output of instrumentation script if it exists to create new Sensor Alert object.
             else:
-                # Set result.
-                self._promise.set_failed()
+
+                new_sensor_alert = self._process_output(output)
+
+                if new_sensor_alert is not None:
+                    self._logger.error("[%s]: Unable to process output from instrumentation for Alert Level '%d'."
+                                       % (self._log_tag, self._alert_level.level))
+                    self._logger.error("[%s]: Instrumentation for Alert Level '%d' stdout: %s"
+                                       % (self._log_tag, self._alert_level.level, output))
+                    self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
+                                       % (self._log_tag, self._alert_level.level, err))
+
+                    # Set result.
+                    self._promise.set_new_sensor_alert(new_sensor_alert)
+                    self._promise.set_success()
+
+                else:
+                    # Set result.
+                    self._promise.set_failed()
 
         else:
             self._logger.error("[%s]: Instrumentation for Alert Level '%d' exited with exit code '%d'."
