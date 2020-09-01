@@ -161,6 +161,11 @@ class Instrumentation:
                 new_sensor_alert = self._process_output(output)
 
                 if new_sensor_alert is not None:
+                    # Set result.
+                    self._promise.set_new_sensor_alert(new_sensor_alert)
+                    self._promise.set_success()
+
+                else:
                     self._logger.error("[%s]: Unable to process output from instrumentation for Alert Level '%d'."
                                        % (self._log_tag, self._alert_level.level))
                     self._logger.error("[%s]: Instrumentation for Alert Level '%d' stdout: %s"
@@ -168,11 +173,6 @@ class Instrumentation:
                     self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
                                        % (self._log_tag, self._alert_level.level, err))
 
-                    # Set result.
-                    self._promise.set_new_sensor_alert(new_sensor_alert)
-                    self._promise.set_success()
-
-                else:
                     # Set result.
                     self._promise.set_failed()
 
