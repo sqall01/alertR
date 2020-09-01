@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 from unittest import TestCase
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.alert.instrumentation import Instrumentation, InstrumentationPromise
@@ -186,3 +187,22 @@ class TestInstrumentation(TestCase):
 
         # Test instrumentation script output processing.
         self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_execute_valid(self):
+        """
+        Tests a valid execution of an instrumentation script.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "mirror.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        promise = InstrumentationPromise(instrumentation._alert_level,
+                                         instrumentation._sensor_alert)
+        instrumentation._promise = promise
+
+        instrumentation._execute()
+
+        raise NotImplementedError("Does not work")
