@@ -6,7 +6,7 @@
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
-
+import copy
 from typing import Optional, List, Any, Dict
 
 
@@ -192,8 +192,11 @@ class SensorAlert:
 
         return sensor_alert
 
-    # Converts the Sensor Alert object into a dictionary.
     def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Sensor Alert object into a dictionary.
+        :return: dictionary representation of the Sensor Alert object.
+        """
         sensor_alert_dict = {"sensorAlertId": self.sensorAlertId,
                              "nodeId": self.nodeId,
                              "sensorId": self.sensorId,
@@ -213,56 +216,85 @@ class SensorAlert:
 
         return sensor_alert_dict
 
+    def deepcopy(self, sensor_alert):
+        """
+        Copies the values of the object given as parameter into this object.
+        :param sensor_alert: object to copy values from.
+        :return: pointer to this object
+        """
+        self.sensorAlertId = sensor_alert.sensorAlertId
+        self.nodeId = sensor_alert.nodeId
+        self.sensorId = sensor_alert.sensorId
+        self.description = sensor_alert.description
+        self.timeReceived = sensor_alert.timeReceived
+        self.alertDelay = sensor_alert.alertDelay
+        self.state = sensor_alert.state
+        self.hasOptionalData = sensor_alert.hasOptionalData
+        self.changeState = sensor_alert.changeState
+        self.alertLevels = list(sensor_alert.alertLevels)
+        self.triggeredAlertLevels = list(sensor_alert.triggeredAlertLevels)
+        self.hasLatestData = sensor_alert.hasLatestData
+        self.dataType = sensor_alert.dataType
+        self.sensorData = sensor_alert.sensorData
+
+        if type(sensor_alert.optionalData) == dict:
+            self.optionalData = copy.deepcopy(sensor_alert.optionalData)
+
+        else:
+            self.optionalData = None
+
+        return self
+
     def verify_types(self):
         """
         Verifies data types of attributes (raises ValueError if attribute is wrong).
         """
-        if not isinstance(self.sensorAlertId, int):
+        if type(self.sensorAlertId) != int:
             raise ValueError("sensorAlertId not valid")
 
-        if not isinstance(self.nodeId, int):
+        if type(self.nodeId) != int:
             raise ValueError("nodeId not valid")
 
-        if not isinstance(self.sensorId, int):
+        if type(self.sensorId) != int:
             raise ValueError("sensorId not valid")
 
-        if not isinstance(self.description, str):
+        if type(self.description) != str:
             raise ValueError("description not valid")
 
-        if not isinstance(self.timeReceived, int):
+        if type(self.timeReceived) != int:
             raise ValueError("timeReceived not valid")
 
-        if not isinstance(self.alertDelay, int):
+        if type(self.alertDelay) != int:
             raise ValueError("alertDelay not valid")
 
-        if (not isinstance(self.state, int)
+        if (type(self.state) != int
                 or self.state not in [0, 1]):
             raise ValueError("state not valid")
 
-        if not isinstance(self.hasOptionalData, bool):
+        if type(self.hasOptionalData) != bool:
             raise ValueError("hasOptionalData not valid")
 
-        if self.hasOptionalData and not isinstance(self.optionalData, dict):
+        if self.hasOptionalData and type(self.optionalData) != dict:
             raise ValueError("optionalData not valid")
 
-        if not isinstance(self.alertDelay, int):
+        if type(self.alertDelay) != int:
             raise ValueError("alertDelay not valid") # TODO
 
-        if not isinstance(self.changeState, bool):
+        if type(self.changeState) != bool:
             raise ValueError("changeState not valid")
 
-        if (not isinstance(self.alertLevels, list)
+        if (type(self.alertLevels) != list
                 or not all(isinstance(item, int) for item in self.alertLevels)):
             raise ValueError("alertLevels not valid")
 
-        if (not isinstance(self.triggeredAlertLevels, list)
+        if (type(self.triggeredAlertLevels) != list
                 or not all(isinstance(item, int) for item in self.triggeredAlertLevels)):
             raise ValueError("triggeredAlertLevels not valid")
 
-        if not isinstance(self.hasLatestData, bool):
+        if type(self.hasLatestData) != bool:
             raise ValueError("hasLatestData not valid")
 
-        if (not isinstance(self.dataType, int)
+        if (type(self.dataType) != int
                 or self.dataType not in [SensorDataType.NONE, SensorDataType.INT, SensorDataType.FLOAT]):
             raise ValueError("dataType not valid")
 

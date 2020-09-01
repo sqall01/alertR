@@ -7,11 +7,7 @@ from lib.alert.instrumentation import Instrumentation, InstrumentationPromise
 
 class TestInstrumentation(TestCase):
 
-    def test_process_output_valid(self):
-        """
-        Tests a valid output processing of an instrumentation script.
-        """
-
+    def _create_instrumentation_dummy(self) -> Instrumentation:
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "Instrumentation Alert Level"
@@ -39,7 +35,14 @@ class TestInstrumentation(TestCase):
 
         logger = logging.getLogger("Instrumentation Test Case")
 
-        instrumentation = Instrumentation(alert_level, sensor_alert, logger)
+        return Instrumentation(alert_level, sensor_alert, logger)
+
+    def test_process_output_valid(self):
+        """
+        Tests a valid output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
 
         # Test instrumentation script output processing.
         new_sensor_alert = instrumentation._process_output(json.dumps(sensor_alert.convert_to_dict()))
@@ -65,3 +68,121 @@ class TestInstrumentation(TestCase):
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
         self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
+
+    def test_process_output_invalid_sensor_alert_id(self):
+        """
+        Tests an invalid sensor alert id output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorAlertId = sensor_alert.sensorAlertId + 1
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_node_id(self):
+        """
+        Tests an invalid node id output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.nodeId = sensor_alert.nodeId + 1
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_sensor_id(self):
+        """
+        Tests an invalid sensor id output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorId = sensor_alert.sensorId + 1
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_description(self):
+        """
+        Tests an invalid description output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.description = sensor_alert.description + "_invalid"
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_time_received(self):
+        """
+        Tests an invalid time received output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.timeReceived = sensor_alert.timeReceived + 1
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_alert_delay(self):
+        """
+        Tests an invalid alert delay output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.alertDelay = sensor_alert.alertDelay + 1
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_alert_levels(self):
+        """
+        Tests an invalid alert levels output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.alertLevels.append(22)
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_triggered_alert_levels(self):
+        """
+        Tests an invalid triggered alert levels output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.triggeredAlertLevels.append(22)
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
+
+    def test_process_output_invalid_data_type(self):
+        """
+        Tests an invalid data type output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.dataType = SensorDataType.INT
+        invalid_sensor_alert.sensorData = 1
+
+        # Test instrumentation script output processing.
+        self.assertIsNone(instrumentation._process_output(json.dumps(invalid_sensor_alert.convert_to_dict())))
