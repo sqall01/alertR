@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+import time
 from unittest import TestCase
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.alert.instrumentation import Instrumentation, InstrumentationPromise
@@ -205,4 +206,106 @@ class TestInstrumentation(TestCase):
 
         instrumentation._execute()
 
-        raise NotImplementedError("Does not work")
+        self.assertTrue(promise.is_finished())
+        self.assertTrue(promise.was_successful())
+
+        sensor_alert = promise.orig_sensor_alert
+        new_sensor_alert = promise.new_sensor_alert
+        self.assertEqual(sensor_alert.sensorAlertId, new_sensor_alert.sensorAlertId)
+        self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
+        self.assertEqual(sensor_alert.sensorId, new_sensor_alert.sensorId)
+        self.assertEqual(sensor_alert.description, new_sensor_alert.description)
+        self.assertEqual(sensor_alert.timeReceived, new_sensor_alert.timeReceived)
+        self.assertEqual(sensor_alert.alertDelay, new_sensor_alert.alertDelay)
+        self.assertEqual(sensor_alert.state, new_sensor_alert.state)
+        self.assertEqual(sensor_alert.hasOptionalData, new_sensor_alert.hasOptionalData)
+        self.assertEqual(sensor_alert.optionalData, new_sensor_alert.optionalData)
+        self.assertEqual(sensor_alert.changeState, new_sensor_alert.changeState)
+        self.assertTrue(all(map(lambda x: x in sensor_alert.alertLevels,
+                                new_sensor_alert.alertLevels)))
+        self.assertTrue(all(map(lambda x: x in new_sensor_alert.alertLevels,
+                                sensor_alert.alertLevels)))
+        self.assertTrue(all(map(lambda x: x in sensor_alert.triggeredAlertLevels,
+                                new_sensor_alert.triggeredAlertLevels)))
+        self.assertTrue(all(map(lambda x: x in new_sensor_alert.triggeredAlertLevels,
+                                sensor_alert.triggeredAlertLevels)))
+        self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
+        self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
+        self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
+
+    def test_execute_invalid_no_cmd(self):
+        """
+        Tests an invalid execution of an instrumentation script (script does not exist).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "does_not_exist.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        promise = InstrumentationPromise(instrumentation._alert_level,
+                                         instrumentation._sensor_alert)
+        instrumentation._promise = promise
+
+        instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertFalse(promise.was_successful())
+
+    def test_execute_invalid_timeout_blocking(self):
+        """
+        Tests an invalid execution of an instrumentation script (script times out).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "timeout.py")
+
+        # timeout script waits 60 seconds.
+        timeout = 5
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        instrumentation._alert_level.instrumentation_timeout = timeout
+        promise = InstrumentationPromise(instrumentation._alert_level,
+                                         instrumentation._sensor_alert)
+        instrumentation._promise = promise
+
+        # Since we have a blocking execution, we do not need to wait here.
+        instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertFalse(promise.was_successful())
+
+    def test_execute_invalid_timeout_non_blocking(self):
+        """
+        Tests an invalid execution of an instrumentation script (script times out).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "timeout.py")
+
+        # timeout script waits 60 seconds.
+        timeout = 5
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        instrumentation._alert_level.instrumentation_timeout = timeout
+
+        # Execute instrumentation script non-blocking.
+        promise = instrumentation.execute()
+
+        time.sleep(timeout/2)
+
+        self.assertFalse(promise.is_finished())
+
+        self.assertTrue(promise.is_finished(timeout=timeout*2))
+        self.assertFalse(promise.was_successful())
+
+
+# TODO
+# * exit code != 0
+# * empty output
+# * invalid output

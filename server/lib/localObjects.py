@@ -190,6 +190,9 @@ class SensorAlert:
         sensor_alert.dataType = sensor_alert_dict["dataType"]
         sensor_alert.sensorData = sensor_alert_dict["data"]
 
+        # Verify data types of attributes (raises ValueError if type is wrong).
+        sensor_alert.verify_types()
+
         return sensor_alert
 
     def convert_to_dict(self) -> Dict[str, Any]:

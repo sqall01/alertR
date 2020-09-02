@@ -201,9 +201,6 @@ class Instrumentation:
             sensor_alert_dict = json.loads(output)
             new_sensor_alert = SensorAlert.convert_from_dict(sensor_alert_dict)
 
-            # Verify data types of attributes (raises ValueError if type is wrong).
-            new_sensor_alert.verify_types()
-
             # Check that certain sensor alert values have not changed.
             if self._sensor_alert.sensorAlertId != new_sensor_alert.sensorAlertId:
                 raise ValueError("sensorAlertId not allowed to change")
