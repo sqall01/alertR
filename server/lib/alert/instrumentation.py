@@ -145,8 +145,8 @@ class Instrumentation:
 
         exit_code = process.poll()
         output, err = process.communicate()
-        output = output.decode("ascii")
-        err = err.decode("ascii")
+        output = output.decode("ascii").strip()
+        err = err.decode("ascii").strip()
 
         if exit_code == 0:
 
@@ -254,5 +254,3 @@ class Instrumentation:
         self._thread.start()
 
         return self._promise
-
-# TODO test cases

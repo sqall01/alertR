@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Test instrumentation scripts which waits for 60 seconds before it outputs the received argument.
+Test instrumentation script which waits for 60 seconds before it outputs the received argument.
 """
 
 import sys
