@@ -88,7 +88,7 @@ class Instrumentation:
         self._logger = logger
         self._alert_level = alert_level
         self._sensor_alert = sensor_alert
-        self._promise = None  # type: Optional[InstrumentationPromise]
+        self._promise = InstrumentationPromise(self._alert_level, self._sensor_alert)
         self._thread = None  # type: Optional[threading.Thread]
 
     def _execute(self):
@@ -247,10 +247,12 @@ class Instrumentation:
         Execute instrumentation in a non-blocking way.
         :return: promise which contains the results after instrumentation finished execution.
         """
-        self._promise = InstrumentationPromise(self._alert_level, self._sensor_alert)
-
-        self._thread = threading.Thread(target=self._execute)
-        self._thread.daemon = True
-        self._thread.start()
+        if self._thread is None:
+            self._thread = threading.Thread(target=self._execute)
+            self._thread.daemon = True
+            self._thread.start()
 
         return self._promise
+
+# TODO
+# update test cases for promise is created in constructor now
