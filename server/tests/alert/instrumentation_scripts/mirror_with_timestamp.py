@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Test instrumentation script which simply outputs the received argument.
+Test instrumentation script which simply outputs the received argument with an additional timestamp.
 """
 
 import sys
