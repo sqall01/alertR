@@ -200,11 +200,8 @@ class TestInstrumentation(TestCase):
         # Prepare instrumentation object.
         instrumentation = self._create_instrumentation_dummy()
         instrumentation._alert_level.instrumentation_cmd = target_cmd
-        promise = InstrumentationPromise(instrumentation._alert_level,
-                                         instrumentation._sensor_alert)
-        instrumentation._promise = promise
 
-        instrumentation._execute()
+        promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
         self.assertTrue(promise.was_successful())
@@ -290,11 +287,8 @@ class TestInstrumentation(TestCase):
         # Prepare instrumentation object.
         instrumentation = self._create_instrumentation_dummy()
         instrumentation._alert_level.instrumentation_cmd = target_cmd
-        promise = InstrumentationPromise(instrumentation._alert_level,
-                                         instrumentation._sensor_alert)
-        instrumentation._promise = promise
 
-        instrumentation._execute()
+        promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
         self.assertTrue(promise.was_successful())
@@ -313,11 +307,8 @@ class TestInstrumentation(TestCase):
         # Prepare instrumentation object.
         instrumentation = self._create_instrumentation_dummy()
         instrumentation._alert_level.instrumentation_cmd = target_cmd
-        promise = InstrumentationPromise(instrumentation._alert_level,
-                                         instrumentation._sensor_alert)
-        instrumentation._promise = promise
 
-        instrumentation._execute()
+        promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_successful())
@@ -337,12 +328,9 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         instrumentation._alert_level.instrumentation_cmd = target_cmd
         instrumentation._alert_level.instrumentation_timeout = timeout
-        promise = InstrumentationPromise(instrumentation._alert_level,
-                                         instrumentation._sensor_alert)
-        instrumentation._promise = promise
 
         # Since we have a blocking execution, we do not need to wait here.
-        instrumentation._execute()
+        promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_successful())
@@ -380,18 +368,13 @@ class TestInstrumentation(TestCase):
         target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "instrumentation_scripts",
                                   "exit_code_1.py")
-        timeout = 5
 
         # Prepare instrumentation object.
         instrumentation = self._create_instrumentation_dummy()
         instrumentation._alert_level.instrumentation_cmd = target_cmd
-        instrumentation._alert_level.instrumentation_timeout = timeout
-        promise = InstrumentationPromise(instrumentation._alert_level,
-                                         instrumentation._sensor_alert)
-        instrumentation._promise = promise
 
         # Since we have a blocking execution, we do not need to wait here.
-        instrumentation._execute()
+        promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_successful())
@@ -403,18 +386,53 @@ class TestInstrumentation(TestCase):
         target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "instrumentation_scripts",
                                   "invalid_output.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+
+        # Since we have a blocking execution, we do not need to wait here.
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertFalse(promise.was_successful())
+
+    def test_execute_twice(self):
+        """
+        Tests a valid execution of an instrumentation script and if it is only executed once while called twice.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "mirror_with_timestamp.py")
+
         timeout = 5
 
         # Prepare instrumentation object.
         instrumentation = self._create_instrumentation_dummy()
         instrumentation._alert_level.instrumentation_cmd = target_cmd
         instrumentation._alert_level.instrumentation_timeout = timeout
-        promise = InstrumentationPromise(instrumentation._alert_level,
-                                         instrumentation._sensor_alert)
-        instrumentation._promise = promise
 
-        # Since we have a blocking execution, we do not need to wait here.
-        instrumentation._execute()
+        # Execute instrumentation script non-blocking.
+        promise_first = instrumentation.execute()
 
-        self.assertTrue(promise.is_finished())
-        self.assertFalse(promise.was_successful())
+        time.sleep(timeout+2)
+
+        self.assertTrue(promise_first.is_finished())
+        self.assertTrue(promise_first.was_successful())
+
+        timestamp_first = promise_first.new_sensor_alert.optionalData["timestamp"]
+
+        # Execute instrumentation script non-blocking.
+        promise_second = instrumentation.execute()
+
+        time.sleep(timeout+2)
+
+        self.assertTrue(promise_first.is_finished())
+        self.assertTrue(promise_first.was_successful())
+
+        self.assertEqual(promise_first, promise_second)
+
+        # Instrumentation script adds timestamp of execution to the output, check if they are the same
+        # to verify that the instrumentation script was only executed once.
+        timestamp_second = promise_second.new_sensor_alert.optionalData["timestamp"]
+        self.assertEqual(timestamp_first, timestamp_second)

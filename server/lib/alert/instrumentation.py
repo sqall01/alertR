@@ -91,10 +91,11 @@ class Instrumentation:
         self._promise = InstrumentationPromise(self._alert_level, self._sensor_alert)
         self._thread = None  # type: Optional[threading.Thread]
 
-    def _execute(self):
+    def _execute(self) -> InstrumentationPromise:
         """
         Execute instrumentation script with sensor alert as first argument in json format and
         process output of instrumentation script.
+        :return: promise which contains the results after instrumentation finished execution.
         """
         temp_execute = [self._alert_level.instrumentation_cmd, json.dumps(self._sensor_alert.convert_to_dict())]
         self._logger.debug("[%s]: Executing command '%s'." % (self._log_tag, " ".join(temp_execute)))
@@ -113,7 +114,7 @@ class Instrumentation:
             # Set result.
             self._promise.set_failed()
 
-            return
+            return self._promise
 
         try:
             process.wait(self._alert_level.instrumentation_timeout)
@@ -141,7 +142,7 @@ class Instrumentation:
             # Set result.
             self._promise.set_failed()
 
-            return
+            return self._promise
 
         exit_code = process.poll()
         output, err = process.communicate()
@@ -187,11 +188,13 @@ class Instrumentation:
             # Set result.
             self._promise.set_failed()
 
+        return self._promise
+
     def _process_output(self, output: str) -> Optional[SensorAlert]:
         """
         Process output of instrumentation script.
         :param output: output of instrumentation script as string
-        :return success or failure
+        :return new sensor alert object or none if processing fails
         """
 
         try:
@@ -245,6 +248,7 @@ class Instrumentation:
     def execute(self) -> InstrumentationPromise:
         """
         Execute instrumentation in a non-blocking way.
+        NOTE: class/function is not thread safe.
         :return: promise which contains the results after instrumentation finished execution.
         """
         if self._thread is None:
@@ -253,6 +257,3 @@ class Instrumentation:
             self._thread.start()
 
         return self._promise
-
-# TODO
-# update test cases for promise is created in constructor now
