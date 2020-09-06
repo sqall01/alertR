@@ -2180,7 +2180,6 @@ class Sqlite(_Storage):
                 sensorAlert.changeState = (resultTuple[8] == 1)
                 sensorAlert.hasLatestData = (resultTuple[9] == 1)
                 sensorAlert.dataType = resultTuple[10]
-                sensorAlert.rulesActivated = False
 
                 # Set optional data for sensor alert.
                 sensorAlert.hasOptionalData = False

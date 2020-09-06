@@ -14,7 +14,6 @@ from typing import List, Optional
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
 from ..globalData import GlobalData
-from ..rules import RuleEngine
 
 
 class SensorAlertToHandle:
@@ -52,8 +51,6 @@ class SensorAlertExecuter(threading.Thread):
 
         # set exit flag as false
         self.exit_flag = False
-
-        self.rule_engine = RuleEngine(globalData)
 
         self.sensor_alerts_to_handle = list()  # type: List[SensorAlertToHandle]
 
@@ -103,15 +100,8 @@ class SensorAlertExecuter(threading.Thread):
                             if not configured_alert_level.triggerAlertNormal and sensor_alert.state == 0:
                                 continue
 
-                            if not configured_alert_level.rulesActivated:
-                                # Create a list of sensor alerts to handle without rules activated.
-                                triggered_alert_levels.append(configured_alert_level)
-
-                            else:
-                                # Split sensor alerts into alerts with rules
-                                # (each alert level with a rule is handled as a single sensor alert
-                                # and processed by rule engine)
-                                self.rule_engine.add_sensor_alert(sensor_alert, configured_alert_level)
+                            # Create a list of sensor alerts to handle.
+                            triggered_alert_levels.append(configured_alert_level)
 
             # check if an alert level to trigger was found
             # if not => just ignore it
@@ -243,7 +233,6 @@ class SensorAlertExecuter(threading.Thread):
 
             # Check if no sensor alerts are to handle and exist in database.
             if (not self.sensor_alerts_to_handle
-               and not self.rule_engine.has_sensor_alerts_to_handle()
                and (sensor_alert_list is None or not sensor_alert_list)):
                 self.sensorAlertEvent.wait()
                 self.sensorAlertEvent.clear()
@@ -259,14 +248,11 @@ class SensorAlertExecuter(threading.Thread):
                 self.manager_update_executer.managerUpdateEvent.set()
 
             # when no sensor alerts exist to handle => restart loop
-            if not self.sensor_alerts_to_handle and not self.rule_engine.has_sensor_alerts_to_handle():
+            if not self.sensor_alerts_to_handle:
                 continue
 
             # Process sensor alerts that we have to handle.
             self._process_sensor_alerts()
-
-            # Process sensor alerts that affect rules.
-            self.rule_engine.processSensorAlertsRules()
 
             time.sleep(0.5)
 

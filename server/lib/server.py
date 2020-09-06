@@ -1143,51 +1143,33 @@ class ClientCommunication:
         :param sensorAlert:
         :return:
         """
-        # Differentiate payload of message when rules are activated or not.
-        if sensorAlert.rulesActivated:
+        # Differentiate payload of message when data transfer is
+        # activated or not.
+        if sensorAlert.hasOptionalData:
             payload = {"type": "request",
                        "sensorId": sensorAlert.sensorId,
                        "state": sensorAlert.state,
                        "alertLevels": sensorAlert.triggeredAlertLevels,
                        "description": sensorAlert.description,
-                       "rulesActivated": True,
-                       "hasOptionalData": sensorAlert.hasOptionalData,
+                       "hasOptionalData": True,
+                       "optionalData": sensorAlert.optionalData,
                        "changeState": sensorAlert.changeState,
                        "hasLatestData": sensorAlert.hasLatestData,
                        "dataType": sensorAlert.dataType,
                        "data": sensorAlert.sensorData
                        }
         else:
-
-            # Differentiate payload of message when data transfer is
-            # activated or not.
-            if sensorAlert.hasOptionalData:
-                payload = {"type": "request",
-                           "sensorId": sensorAlert.sensorId,
-                           "state": sensorAlert.state,
-                           "alertLevels": sensorAlert.triggeredAlertLevels,
-                           "description": sensorAlert.description,
-                           "rulesActivated": False,
-                           "hasOptionalData": True,
-                           "optionalData": sensorAlert.optionalData,
-                           "changeState": sensorAlert.changeState,
-                           "hasLatestData": sensorAlert.hasLatestData,
-                           "dataType": sensorAlert.dataType,
-                           "data": sensorAlert.sensorData
-                           }
-            else:
-                payload = {"type": "request",
-                           "sensorId": sensorAlert.sensorId,
-                           "state": sensorAlert.state,
-                           "alertLevels": sensorAlert.triggeredAlertLevels,
-                           "description": sensorAlert.description,
-                           "rulesActivated": False,
-                           "hasOptionalData": False,
-                           "changeState": sensorAlert.changeState,
-                           "hasLatestData": sensorAlert.hasLatestData,
-                           "dataType": sensorAlert.dataType,
-                           "data": sensorAlert.sensorData
-                           }
+            payload = {"type": "request",
+                       "sensorId": sensorAlert.sensorId,
+                       "state": sensorAlert.state,
+                       "alertLevels": sensorAlert.triggeredAlertLevels,
+                       "description": sensorAlert.description,
+                       "hasOptionalData": False,
+                       "changeState": sensorAlert.changeState,
+                       "hasLatestData": sensorAlert.hasLatestData,
+                       "dataType": sensorAlert.dataType,
+                       "data": sensorAlert.sensorData
+                       }
 
         utcTimestamp = int(time.time())
         message = {"serverTime": utcTimestamp,
@@ -1334,7 +1316,7 @@ class ClientCommunication:
             tempDict = {"alertLevel": self.alertLevels[i].level,
                         "name": self.alertLevels[i].name,
                         "triggerAlways": (1 if self.alertLevels[i].triggerAlways else 0),
-                        "rulesActivated": self.alertLevels[i].rulesActivated}
+                        "instrumentation": (1 if self.alertLevels[i].instrumentation_active else 0)}
             alertLevels.append(tempDict)
 
         self.logger.debug("[%s]: Sending status message (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))

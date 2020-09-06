@@ -100,20 +100,8 @@ class AlertLevel:
         # if the sensor goes to state "normal"
         self.triggerAlertNormal = None  # type: Optional[bool]
 
-        # this flag tells if the alert level has rules activated
-        # that has to match before an alert is triggered (flag: True) or
-        # if it just triggers when a sensor alert is received (flag: False)
-        self.rulesActivated = None  # type: Optional[bool] # TODO REMOVE
-
-        # a list of rules (rule chain) that have to evaluate before the
-        # alert level triggers a sensor alert
-        # (the order in which the elements are stored in this list is the
-        # order in which the rules have to evaluate)
-        self.rules = list()
-
-
-
-        # TODO instrumentation settings
+        # Instrumentation settings.
+        self.instrumentation_active = None  # type: Optional[bool]
         self.instrumentation_cmd = None  # type: Optional[str]
         self.instrumentation_timeout = None  # type: Optional[int]
 
@@ -125,7 +113,6 @@ class SensorAlert:
         self.sensorAlertId = None  # type: Optional[int]
         self.nodeId = None  # type: Optional[int]
 
-        # If rulesActivated = true => always set to -1.
         self.sensorId = None  # type: Optional[int]
 
         # Description of the sensor that raised this sensor alert.
@@ -138,11 +125,9 @@ class SensorAlert:
         self.alertDelay = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        # If rulesActivated = true => always set to 1.
         self.state = None  # type: Optional[int]
 
         # The optional data of the sensor alert (if it has any).
-        # If rulesActivated = true => always set to false.
         self.hasOptionalData = None  # type: Optional[bool]
         self.optionalData = None  # type: Dict[str, Any]
 
@@ -155,9 +140,6 @@ class SensorAlert:
         # List of alert levels (Integer) that are currently triggered
         # by this sensor alert.
         self.triggeredAlertLevels = list()  # type: List[int]
-
-        # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None  # type: Optional[bool] # TODO REMOVE
 
         # Does this sensor alert hold the latest data of the sensor?
         self.hasLatestData = None  # type: Optional[bool]
@@ -281,7 +263,7 @@ class SensorAlert:
             raise ValueError("optionalData not valid")
 
         if type(self.alertDelay) != int:
-            raise ValueError("alertDelay not valid") # TODO
+            raise ValueError("alertDelay not valid")
 
         if type(self.changeState) != bool:
             raise ValueError("changeState not valid")
