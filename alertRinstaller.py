@@ -777,8 +777,12 @@ class Updater:
                 self._releaseLock()
                 return False
 
-            # change permission of files that have to be executable
-            if fileToUpdate == "alertRclient.py" or fileToUpdate == "alertRserver.py":
+            # Change permission of files that have to be executable.
+            if fileToUpdate in ["alertRclient.py",
+                                "alertRserver.py",
+                                "alertRupdate.py",
+                                "graphExport.py",
+                                "manageUsers.py"]:
 
                 logging.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 
@@ -792,7 +796,7 @@ class Updater:
                     return False
 
             # Change permission of files that should not be accessible by others.
-            elif fileToUpdate == "config/config.xml.template":
+            elif fileToUpdate in ["config/config.xml.template"]:
 
                 logging.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 
