@@ -159,8 +159,8 @@ class SensorAlertExecuter(threading.Thread):
 
             self._logger.debug("[%s]: Sending sensor alert to manager/alert (%s:%d)."
                                % (self.log_tag,
-                                 server_session.clientComm.clientAddress,
-                                 server_session.clientComm.clientPort))
+                                  server_session.clientComm.clientAddress,
+                                  server_session.clientComm.clientPort))
             sensor_alert_process.start()
 
     def _update_suitable_alert_levels(self, sensor_alert_states: List[SensorAlertState]):

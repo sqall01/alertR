@@ -4,7 +4,7 @@ import os
 import time
 from unittest import TestCase
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
-from lib.alert.instrumentation import Instrumentation, InstrumentationPromise
+from lib.alert.instrumentation import Instrumentation
 
 
 class TestInstrumentation(TestCase):
