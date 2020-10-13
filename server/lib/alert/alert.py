@@ -10,15 +10,10 @@
 import threading
 import os
 import time
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
 from ..globalData import GlobalData
-
-
-
-
-
 
 
 class SensorAlertState:
@@ -35,7 +30,10 @@ class SensorAlertState:
             if alert_level.level in sensor_alert.alertLevels:
                 self._suitable_alert_levels.append(alert_level)
 
-        # TODO create state such as alert delay, instrumentation, ...
+        # Calculate initial time when the sensor alert should be triggered.
+        self._time_valid = sensor_alert.timeReceived + sensor_alert.alertDelay
+
+        # TODO create state for instrumentation, ...
 
     @property
     def suitable_alert_levels(self) -> List[AlertLevel]:
@@ -54,34 +52,26 @@ class SensorAlertState:
         # TODO: decide if we are using the initial or instrumented sensor alert
         return self._init_sensor_alert
 
+    def is_alert_delay_passed(self) -> bool:
+        return int(time.time()) >= self._time_valid
 
 
-
-
-class SensorAlertToHandle:
-
-    def __init__(self,
-                 sensor_alert: SensorAlert,
-                 alert_levels: List[AlertLevel]):
-        self.sensor_alert = sensor_alert
-        self.alert_levels = alert_levels
-
-
-# this class is woken up if a sensor alert is received
-# and executes all necessary steps
 class SensorAlertExecuter(threading.Thread):
+    """
+    This class is woken up if a sensor alert is received and executes all necessary steps
+    """
 
     def __init__(self,
                  globalData: GlobalData):
         threading.Thread.__init__(self)
 
         # get global configured data
-        self.globalData = globalData
-        self.logger = self.globalData.logger
-        self._manager_update_executer = self.globalData.managerUpdateExecuter
-        self.storage = self.globalData.storage
-        self._alert_levels = self.globalData.alertLevels  # type: List[AlertLevel]
-        self.server_sessions = self.globalData.serverSessions
+        self._global_data = globalData
+        self._logger = self._global_data.logger
+        self._manager_update_executer = self._global_data.managerUpdateExecuter
+        self._storage = self._global_data.storage
+        self._alert_levels = self._global_data.alertLevels  # type: List[AlertLevel]
+        self._server_sessions = self._global_data.serverSessions
 
         # file nme of this file (used for logging)
         self.log_tag = os.path.basename(__file__)
@@ -91,122 +81,8 @@ class SensorAlertExecuter(threading.Thread):
         self.sensorAlertEvent = threading.Event()
         self.sensorAlertEvent.clear()
 
-        # set exit flag as false
-        self.exit_flag = False
-
-        self.sensor_alerts_to_handle = list()  # type: List[SensorAlertToHandle]
-
-
-
-
-
-
-
-
-
+        self._exit_flag = False
         self._sensor_alert_states = list()  # type: List[SensorAlertState]
-
-
-
-
-
-
-
-
-    def _process_sensor_alerts(self):
-        """
-        Internal function that processes sensor alerts.
-        """
-        # get the flag if the system is active or not
-        is_alert_system_active = self.storage.isAlertSystemActive()
-
-        # check all sensor alerts to handle if they have to be triggered
-        for sensor_alert_to_handle in list(self.sensor_alerts_to_handle):
-            sensor_alert = sensor_alert_to_handle.sensor_alert
-
-            # get all alert levels that are triggered
-            # because of this sensor alert
-            triggered_alert_levels = list()
-            for configured_alert_level in self._alert_levels:
-                for sensor_alert_level in sensor_alert_to_handle.alert_levels:
-                    if configured_alert_level.level == sensor_alert_level.level:
-                        # check if alert system is active
-                        # or alert level triggers always
-                        if is_alert_system_active or configured_alert_level.triggerAlways:
-                            triggered_alert_levels.append(configured_alert_level)
-
-            # check if an alert level to trigger remains
-            # if not => just remove sensor alert to handle from the list
-            if not triggered_alert_levels:
-                self.logger.info("[%s]: No alert level to trigger remains." % self.log_tag)
-                self.sensor_alerts_to_handle.remove(sensor_alert_to_handle)
-                continue
-
-            # Update alert levels to trigger.
-            # If the sensor alert has a delay, we have to remove
-            # all alert levels that do not trigger anymore.
-            else:
-                sensor_alert_to_handle.alert_levels = triggered_alert_levels
-
-            # check if sensor alert has triggered
-            utc_timestamp = int(time.time())
-            if (utc_timestamp - sensor_alert.timeReceived) > sensor_alert.alertDelay:
-
-                # generate integer list of alert levels that have triggered
-                # (needed for sensor alert message)
-                sensor_alert.triggeredAlertLevels = list()
-                for triggeredAlertLevel in triggered_alert_levels:
-                    sensor_alert.triggeredAlertLevels.append(triggeredAlertLevel.level)
-
-                # send sensor alert to all manager and alert clients
-                for server_session in self.server_sessions:
-                    # ignore sessions which do not exist yet
-                    # and that are not managers
-                    if server_session.clientComm is None:
-                        continue
-                    if (server_session.clientComm.nodeType != "manager"
-                       and server_session.clientComm.nodeType != "alert"):
-                        continue
-                    if not server_session.clientComm.clientInitialized:
-                        continue
-
-                    # Only send a sensor alert to a client that actually
-                    # handles a triggered alert level.
-                    client_alert_levels = server_session.clientComm.clientAlertLevels
-                    at_least_one = any(al.level in client_alert_levels for al in triggered_alert_levels)
-                    if not at_least_one:
-                        continue
-
-                    # sending sensor alert to manager/alert node
-                    # via a thread to not block the sensor alert executer
-                    sensor_alert_process = AsynchronousSender(self.globalData, server_session.clientComm)
-                    # set thread to daemon
-                    # => threads terminates when main thread terminates
-                    sensor_alert_process.daemon = True
-                    sensor_alert_process.sendSensorAlert = True
-                    sensor_alert_process.sensorAlert = sensor_alert
-
-                    self.logger.debug("[%s]: Sending sensor alert to manager/alert (%s:%d)."
-                                      % (self.log_tag, server_session.clientComm.clientAddress,
-                                         server_session.clientComm.clientPort))
-                    sensor_alert_process.start()
-
-                # after sensor alert was triggered
-                # => remove sensor alert to handle
-                self.sensor_alerts_to_handle.remove(sensor_alert_to_handle)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def _filter_sensor_alerts(self, sensor_alert_states: List[SensorAlertState]) -> Tuple[List[SensorAlertState],
                                                                                           List[SensorAlertState]]:
@@ -229,12 +105,70 @@ class SensorAlertExecuter(threading.Thread):
 
         return new_sensor_alert_states, removed_sensor_alert_states
 
+    def _process_sensor_alert(self, sensor_alert_states: List[SensorAlertState]) -> List[SensorAlertState]:
+        """
+        Processes the sensor alert states by triggering them if the conditions are satisfied.
+        :param sensor_alert_states:
+        :return: list of sensor alert states that still need handling
+        """
+        new_sensor_alert_states = list()
+        for sensor_alert_state in sensor_alert_states:
+
+            if sensor_alert_state.is_alert_delay_passed():
+                self._trigger_sensor_alert(sensor_alert_state)
+
+            else:
+                new_sensor_alert_states.append(sensor_alert_state)
+
+        return new_sensor_alert_states
+
+    def _trigger_sensor_alert(self, sensor_alert_state: SensorAlertState):
+        """
+        Triggers the given sensor alert by sending messages to the appropriate clients.
+        :param sensor_alert_state: sensor alert to trigger
+        """
+        # Generate integer list of alert levels that have triggered (needed for sensor alert message).
+        triggered_alert_levels = set()
+        for suitable_alert_level in sensor_alert_state.suitable_alert_levels:
+            triggered_alert_levels.add(suitable_alert_level.level)
+
+        # Send sensor alert to all manager and alert clients.
+        for server_session in self._server_sessions:
+            # Ignore sessions which do not exist yet and that are not alert or manager clients.
+            if server_session.clientComm is None:
+                continue
+            if (server_session.clientComm.nodeType != "manager"
+               and server_session.clientComm.nodeType != "alert"):
+                continue
+            if not server_session.clientComm.clientInitialized:
+                continue
+
+            # Only send a sensor alert to a client that actually handles a triggered alert level.
+            client_alert_levels = server_session.clientComm.clientAlertLevels
+            at_least_one = any(al.level in client_alert_levels for al in triggered_alert_levels)
+            if not at_least_one:
+                continue
+
+            # Sending sensor alert to manager/alert node via a thread to not block the sensor alert executer.
+            sensor_alert_process = AsynchronousSender(self._global_data, server_session.clientComm)
+            # set thread to daemon
+            # => threads terminates when main thread terminates
+            sensor_alert_process.daemon = True
+            sensor_alert_process.sendSensorAlert = True
+            sensor_alert_process.sensorAlert = sensor_alert_state.sensor_alert
+
+            self._logger.debug("[%s]: Sending sensor alert to manager/alert (%s:%d)."
+                               % (self.log_tag,
+                                 server_session.clientComm.clientAddress,
+                                 server_session.clientComm.clientPort))
+            sensor_alert_process.start()
+
     def _update_suitable_alert_levels(self, sensor_alert_states: List[SensorAlertState]):
         """
         Updates the suitable alert levels of each sensor alert state.
         :param sensor_alert_states:
         """
-        is_alert_system_active = self.storage.isAlertSystemActive()
+        is_alert_system_active = self._storage.isAlertSystemActive()
 
         for sensor_alert_state in sensor_alert_states:
 
@@ -265,22 +199,22 @@ class SensorAlertExecuter(threading.Thread):
         while True:
 
             # check if thread should terminate
-            if self.exit_flag:
+            if self._exit_flag:
                 return
 
             # check if manager update executer object reference does exist
             # => if not get it from the global data
             if self._manager_update_executer is None:
-                self._manager_update_executer = self.globalData.managerUpdateExecuter
+                self._manager_update_executer = self._global_data.managerUpdateExecuter
 
             # Apply a processing state to each sensor alert from the database.
-            sensor_alert_list = self.storage.getSensorAlerts()
+            sensor_alert_list = self._storage.getSensorAlerts()
             for sensor_alert in sensor_alert_list:
 
                 # Delete sensor alert from the database.
-                if not self.storage.deleteSensorAlert(sensor_alert.sensorAlertId):
-                    self.logger.error("[%s]: Not able to delete sensor alert with id '%d' from database."
-                                      % (self.log_tag, sensor_alert.sensorAlertId))
+                if not self._storage.deleteSensorAlert(sensor_alert.sensorAlertId):
+                    self._logger.error("[%s]: Not able to delete sensor alert with id '%d' from database."
+                                       % (self.log_tag, sensor_alert.sensorAlertId))
                     continue
 
                 sensor_alert_state = SensorAlertState(sensor_alert, self._alert_levels)
@@ -300,26 +234,24 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
-            # TODO replace process_sensor_alerts()
-            # Process sensor alerts that we have to handle.
-            self._process_sensor_alerts()
+            # TODO process instrumentation
 
 
 
 
+            self._sensor_alert_states = self._process_sensor_alert(self._sensor_alert_states)
 
-            # TODO the following is new code
             # Add data and state of sensor alert to the queue for state changes of the manager update executer
             # if received sensor alert does change state or data.
             for sensor_alert_state in dropped_sensor_alert_states:
-                self.logger.info("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
-                                 % (self.log_tag, sensor_alert_state.sensor_alert.description))
+                self._logger.info("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
+                                  % (self.log_tag, sensor_alert_state.sensor_alert.description))
 
                 if self._manager_update_executer is not None:
                     if sensor_alert_state.sensor_alert.hasLatestData or sensor_alert_state.sensor_alert.changeState:
 
                         # Returns a sensor data object or None.
-                        sensor_data_obj = self.storage.getSensorData(sensor_alert_state.sensor_alert.sensorId)
+                        sensor_data_obj = self._storage.getSensorData(sensor_alert_state.sensor_alert.sensorId)
 
                         manager_state_tuple = (sensor_alert_state.sensor_alert.sensorId,
                                                sensor_alert_state.sensor_alert.state,
@@ -336,4 +268,10 @@ class SensorAlertExecuter(threading.Thread):
         """
         sets the exit flag to shut down the thread
         """
-        self.exit_flag = True
+        self._exit_flag = True
+
+
+# TODO
+# - test cases
+# - run code without instrumentation first
+# - add instrumentation
