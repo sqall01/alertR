@@ -137,8 +137,7 @@ class SensorAlert:
         # List of alert levels (Integer) that this sensor alert belongs to.
         self.alertLevels = list()  # type: List[int]
 
-        # List of alert levels (Integer) that are currently triggered
-        # by this sensor alert.
+        # List of alert levels (Integer) that are currently triggered by this sensor alert.
         self.triggeredAlertLevels = list()  # type: List[int]
 
         # Does this sensor alert hold the latest data of the sensor?
