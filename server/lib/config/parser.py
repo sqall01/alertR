@@ -314,7 +314,7 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
                                          % (log_tag, alertLevel.instrumentation_cmd))
                 return False
 
-            if not os.access(alertLevel.instrumentation_cmd, os.X_OK):
+            if alertLevel.instrumentation_active is True and not os.access(alertLevel.instrumentation_cmd, os.X_OK):
                 global_data.logger.error("[%s]: Alert Level instrumentation command '%s' not executable."
                                          % (log_tag, alertLevel.instrumentation_cmd))
                 return False
