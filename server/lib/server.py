@@ -1156,7 +1156,8 @@ class ClientCommunication:
                        "changeState": sensorAlert.changeState,
                        "hasLatestData": sensorAlert.hasLatestData,
                        "dataType": sensorAlert.dataType,
-                       "data": sensorAlert.sensorData
+                       "data": sensorAlert.sensorData,
+                       "rulesActivated": False, # TODO for testing to be compatible with protocol 0.6
                        }
         else:
             payload = {"type": "request",
@@ -1168,7 +1169,8 @@ class ClientCommunication:
                        "changeState": sensorAlert.changeState,
                        "hasLatestData": sensorAlert.hasLatestData,
                        "dataType": sensorAlert.dataType,
-                       "data": sensorAlert.sensorData
+                       "data": sensorAlert.sensorData,
+                       "rulesActivated": False,  # TODO for testing to be compatible with protocol 0.6
                        }
 
         utcTimestamp = int(time.time())
@@ -1316,6 +1318,7 @@ class ClientCommunication:
             tempDict = {"alertLevel": self.alertLevels[i].level,
                         "name": self.alertLevels[i].name,
                         "triggerAlways": (1 if self.alertLevels[i].triggerAlways else 0),
+                        "rulesActivated": False,  # TODO for testing to be compatible with protocol 0.6
                         "instrumentation": (1 if self.alertLevels[i].instrumentation_active else 0)}
             alertLevels.append(tempDict)
 
