@@ -8,6 +8,15 @@ from lib.globalData import GlobalData
 from lib.storage.core import _Storage
 
 
+def _callback_trigger_sensor_alert(_, sensor_alert_state: SensorAlertState):
+    """
+    Callback to overwrite _trigger_sensor_alert() of SensorAlertExecuter.
+    :param _: self of SensorAlertExecuter object
+    :param sensor_alert_state:
+    """
+    TestAlert._callback_trigger_sensor_alert_arg = sensor_alert_state
+
+
 class MockStorage(_Storage):
 
     def __init__(self):
@@ -21,11 +30,13 @@ class MockStorage(_Storage):
     def is_active(self, value: bool):
         self._is_active = value
 
-    def isAlertSystemActive(self, logger: logging.Logger = None):
+    def isAlertSystemActive(self, _: logging.Logger = None):
         return self._is_active
 
 
 class TestAlert(TestCase):
+
+    _callback_trigger_sensor_alert_arg = None
 
     def _create_sensor_alerts(self, num: int) -> Tuple[List[AlertLevel], List[SensorAlert]]:
         alert_levels = list()
@@ -330,3 +341,71 @@ class TestAlert(TestCase):
 
                 # Check if the suitable alert level is the one that is set to trigger for state "triggered"
                 self.assertTrue(suitable_alert_level.triggerAlertTriggered)
+
+    def test_process_sensor_alert(self):
+        """
+        Tests processing of sensor alerts.
+        """
+        TestAlert._callback_trigger_sensor_alert_arg = None
+
+        num = 1
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        sensor_alert_state = SensorAlertState(sensor_alerts[0], alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        sensor_alert_executer._process_sensor_alert(sensor_alert_states)
+
+        self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg)
+
+    def test_process_sensor_alert_alert_delay(self):
+        """
+        Tests processing of sensor alerts with an alert delay.
+        """
+        TestAlert._callback_trigger_sensor_alert_arg = None
+
+        num = 1
+        alert_delay = 2
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert = sensor_alerts[0]
+        sensor_alert.alertDelay = alert_delay
+
+        sensor_alert_states = list()
+        sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        sensor_alert_executer._process_sensor_alert(sensor_alert_states)
+
+        self.assertEqual(None, TestAlert._callback_trigger_sensor_alert_arg)
+
+        time.sleep(alert_delay)
+
+        sensor_alert_executer._process_sensor_alert(sensor_alert_states)
+
+        self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg)
