@@ -127,9 +127,6 @@ class SensorAlertExecuter(threading.Thread):
         Triggers the given sensor alert by sending messages to the appropriate clients.
         :param sensor_alert_state: sensor alert to trigger
         """
-        # Generate integer list of alert levels that have triggered (needed for sensor alert message).
-        sensor_alert_state.sensor_alert.triggeredAlertLevels = [al.level
-                                                                for al in sensor_alert_state.suitable_alert_levels]
 
         # Send sensor alert to all manager and alert clients.
         for server_session in self._server_sessions:
@@ -144,7 +141,7 @@ class SensorAlertExecuter(threading.Thread):
 
             # Only send a sensor alert to a client that actually handles a triggered alert level.
             client_alert_levels = server_session.clientComm.clientAlertLevels
-            at_least_one = any(al.level in client_alert_levels
+            at_least_one = any(al in client_alert_levels
                                for al in sensor_alert_state.sensor_alert.triggeredAlertLevels)
             if not at_least_one:
                 continue
@@ -277,3 +274,4 @@ class SensorAlertExecuter(threading.Thread):
 # - test cases
 # - run code without instrumentation first
 # - add instrumentation
+# - test cases
