@@ -271,7 +271,6 @@ class SensorAlertExecuter(threading.Thread):
 
 
 # TODO
-# - test cases
 # - run code without instrumentation first
 # - add instrumentation
 # - test cases
