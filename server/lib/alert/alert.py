@@ -10,7 +10,8 @@
 import threading
 import os
 import time
-from typing import List, Tuple
+from typing import List, Tuple, Optional
+from .instrumentation import Instrumentation, InstrumentationPromise
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
 from ..globalData import GlobalData
@@ -33,7 +34,19 @@ class SensorAlertState:
         # Calculate initial time when the sensor alert should be triggered.
         self._time_valid = sensor_alert.timeReceived + sensor_alert.alertDelay
 
-        # TODO create state for instrumentation, ...
+        # State information needed for sensor alert instrumentation.
+        self._uses_instrumentation = False
+        self._instrumentation_promise = None  # type: Optional[InstrumentationPromise]
+
+    @property
+    def instrumentation_promise(self) -> Optional[InstrumentationPromise]:
+        return self.instrumentation_promise
+
+    @instrumentation_promise.setter
+    def instrumentation_promise(self, value: InstrumentationPromise):
+        if self._uses_instrumentation is not None:
+            raise ValueError("Instrumentation promise already set.")
+        self._uses_instrumentation = value
 
     @property
     def suitable_alert_levels(self) -> List[AlertLevel]:
@@ -48,9 +61,38 @@ class SensorAlertState:
         self._suitable_alert_levels = value
 
     @property
-    def sensor_alert(self) -> SensorAlert:
-        # TODO: decide if we are using the initial or instrumented sensor alert
+    def uses_instrumentation(self) -> bool:
+        return self._uses_instrumentation
+
+    @uses_instrumentation.setter
+    def uses_instrumentation(self, value: bool):
+        self._uses_instrumentation = value
+
+    @property
+    def init_sensor_alert(self) -> SensorAlert:
         return self._init_sensor_alert
+
+    @property
+    def instrumentation_finished(self) -> bool:
+        if not self._uses_instrumentation:
+            return True
+        if self._instrumentation_promise is None:
+            return False
+        return self._instrumentation_promise.is_finished()
+
+    @property
+    def sensor_alert(self) -> Optional[SensorAlert]:
+        if self._uses_instrumentation:
+            if not self._instrumentation_promise.is_finished():
+                raise ValueError("Instrumentation not finished.")
+
+            if not self._instrumentation_promise.was_success():
+                raise ValueError("Instrumentation not successful.")
+
+            return self._instrumentation_promise.new_sensor_alert
+
+        else:
+            return self._init_sensor_alert
 
     def is_alert_delay_passed(self) -> bool:
         return int(time.time()) >= self._time_valid
@@ -74,7 +116,7 @@ class SensorAlertExecuter(threading.Thread):
         self._server_sessions = self._global_data.serverSessions
 
         # file nme of this file (used for logging)
-        self.log_tag = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # create an event that is used to wake this thread up
         # and reacte on sensor alert
@@ -84,25 +126,48 @@ class SensorAlertExecuter(threading.Thread):
         self._exit_flag = False
 
     def _filter_sensor_alerts(self, sensor_alert_states: List[SensorAlertState]) -> Tuple[List[SensorAlertState],
-                                                                                          List[SensorAlertState]]:
+                                                                                          List[SensorAlert]]:
         """
         Filters sensor alert states and removes each sensor alert that can no longer satisfy trigger conditions.
         :param sensor_alert_states:
-        :return: a new list of sensor alert states to further process and a list of sensor alert states that satisfy
-        no longer a trigger condition
+        :return: a new list of sensor alert states to further process and a list of sensor alert that satisfy
+        no longer a trigger condition but apply for state/data change messages.
         """
         new_sensor_alert_states = list()
-        removed_sensor_alert_states = list()
+        dropped_sensor_alerts = list()
         for sensor_alert_state in sensor_alert_states:
 
             # Remove sensor alerts that do not have any suitable alert level.
             if not sensor_alert_state.suitable_alert_levels:
-                removed_sensor_alert_states.append(sensor_alert_state)
+                dropped_sensor_alerts.append(sensor_alert_state.sensor_alert)
                 continue
+
+            # TODO what about sensor alert states that are instrumented and surpressed? still data/state change => yes
+
+            # TODO test case for instrumentation filtering
+
+            # TODO return types have changed, check test cases
+
+            # TODO check if code makes sense, I am tired :D
+
+            if sensor_alert_state.uses_instrumentation and sensor_alert_state.instrumentation_finished:
+                instrumentation_promise = sensor_alert_state.instrumentation_promise
+                if not instrumentation_promise.was_success():
+                    self._logger.error("[%s] Instrumentation for sensor alert '%s' failed."
+                                       % (self._log_tag, sensor_alert_state.init_sensor_alert.description))
+
+                    # TODO use internal sensor for errors here or use it in instrumentation class? => instrumentation class would be easier to provide additional information in alert
+
+                    continue
+
+                # Still update state/data of sensor if sensor alert was suppressed by instrumentation.
+                elif instrumentation_promise.new_sensor_alert is None:
+                    dropped_sensor_alerts.append(sensor_alert_state.init_sensor_alert)
+                    continue
 
             new_sensor_alert_states.append(sensor_alert_state)
 
-        return new_sensor_alert_states, removed_sensor_alert_states
+        return new_sensor_alert_states, dropped_sensor_alerts
 
     def _process_sensor_alert(self, sensor_alert_states: List[SensorAlertState]) -> List[SensorAlertState]:
         """
@@ -113,7 +178,7 @@ class SensorAlertExecuter(threading.Thread):
         new_sensor_alert_states = list()
         for sensor_alert_state in sensor_alert_states:
 
-            if sensor_alert_state.is_alert_delay_passed():
+            if sensor_alert_state.is_alert_delay_passed() and sensor_alert_state.instrumentation_finished:
                 self._trigger_sensor_alert(sensor_alert_state)
 
             else:
@@ -141,6 +206,7 @@ class SensorAlertExecuter(threading.Thread):
             for alert_level in list(base_sensor_alert_state.suitable_alert_levels):
                 if alert_level.instrumentation_active:
                     new_sensor_alert_state = SensorAlertState(base_sensor_alert_state.sensor_alert, [alert_level])
+                    new_sensor_alert_state.uses_instrumentation = True
                     new_sensor_alert_states.append(new_sensor_alert_state)
                 else:
                     not_instrumented_alert_levels.append(alert_level)
@@ -158,6 +224,16 @@ class SensorAlertExecuter(threading.Thread):
         Triggers the given sensor alert by sending messages to the appropriate clients.
         :param sensor_alert_state: sensor alert to trigger
         """
+
+        # Get sensor alert object from state.
+        sensor_alert = None
+        try:
+            sensor_alert = sensor_alert_state.sensor_alert
+
+        except ValueError:
+            self._logger.exception("[%s] Unable to get sensor alert object from sensor alert state."
+                                   % self._log_tag)
+            return
 
         # Send sensor alert to all manager and alert clients.
         for server_session in self._server_sessions:
@@ -183,10 +259,10 @@ class SensorAlertExecuter(threading.Thread):
             # => threads terminates when main thread terminates
             sensor_alert_process.daemon = True
             sensor_alert_process.sendSensorAlert = True
-            sensor_alert_process.sensorAlert = sensor_alert_state.sensor_alert
+            sensor_alert_process.sensorAlert = sensor_alert
 
             self._logger.debug("[%s]: Sending sensor alert to manager/alert (%s:%d)."
-                               % (self.log_tag,
+                               % (self._log_tag,
                                   server_session.clientComm.clientAddress,
                                   server_session.clientComm.clientPort))
             sensor_alert_process.start()
@@ -232,15 +308,33 @@ class SensorAlertExecuter(threading.Thread):
 
 
     def _update_instrumentation(self, sensor_alert_states: List[SensorAlertState]):
-        pass
+
+        for sensor_alert_state in sensor_alert_states:
+            if not sensor_alert_state.uses_instrumentation:
+                continue
+
+            # Ignore sensor alerts that have already a running instrumentation.
+            if sensor_alert_state.instrumentation_promise is not None:
+                continue
+
+            # Start instrumentation for sensor alert.
+            alert_level = sensor_alert_state.suitable_alert_levels[0]
+            instrumentation = Instrumentation(alert_level,
+                                              sensor_alert_state.sensor_alert,
+                                              self._logger)
+            sensor_alert_state.instrumentation_promise = instrumentation.execute()
+
+
+
+
 
         '''
         TODO
         
-        - check instrumentation already started
-        - add instrumentation finished state to sensor alert state (if no instrumentation it is directly finished)
-        - process_sensor_alert() checks this instrumentation finished
-        - filter out sensor alerts which are suppressed by instrumentation (for example in filter_sensor_alerts() function which can be run after _update_instrumentation()) 
+        - [x] check instrumentation already started
+        - [x] add instrumentation finished state to sensor alert state (if no instrumentation it is directly finished)
+        - [x] process_sensor_alert() checks this instrumentation finished
+        - [ ] filter out sensor alerts which are suppressed by instrumentation (for example in filter_sensor_alerts() function which can be run after _update_instrumentation()) 
         '''
 
 
@@ -272,7 +366,7 @@ class SensorAlertExecuter(threading.Thread):
                 # Delete sensor alert from the database.
                 if not self._storage.deleteSensorAlert(sensor_alert.sensorAlertId):
                     self._logger.error("[%s]: Not able to delete sensor alert with id '%d' from database."
-                                       % (self.log_tag, sensor_alert.sensorAlertId))
+                                       % (self._log_tag, sensor_alert.sensorAlertId))
                     continue
 
                 sensor_alert_state = SensorAlertState(sensor_alert, self._alert_levels)
@@ -292,10 +386,13 @@ class SensorAlertExecuter(threading.Thread):
             self._update_suitable_alert_levels(curr_sensor_alert_states)
 
             # Filter out sensor alert states that can no longer satisfy trigger condition.
-            curr_sensor_alert_states, dropped_sensor_alert_states = self._filter_sensor_alerts(curr_sensor_alert_states)
+            curr_sensor_alert_states, updatable_sensor_alerts = self._filter_sensor_alerts(curr_sensor_alert_states)
 
 
 
+
+
+            self._update_instrumentation(curr_sensor_alert_states)
 
             # TODO process instrumentation
 
@@ -306,23 +403,25 @@ class SensorAlertExecuter(threading.Thread):
 
             # Add data and state of sensor alert to the queue for state changes of the manager update executer
             # if received sensor alert does change state or data.
-            for sensor_alert_state in dropped_sensor_alert_states:
-                self._logger.info("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
-                                  % (self.log_tag, sensor_alert_state.sensor_alert.description))
+            for sensor_alert in updatable_sensor_alerts:
+                self._logger.debug("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
+                                  % (self._log_tag, sensor_alert.description))
 
                 if self._manager_update_executer is not None:
-                    if sensor_alert_state.sensor_alert.hasLatestData or sensor_alert_state.sensor_alert.changeState:
+
+                    # TODO what happens if sensor alert hasLatestData but not changeState (or vice versa), we send out state change and data change then which is wrong
+                    if sensor_alert.hasLatestData or sensor_alert.changeState:
 
                         # Returns a sensor data object or None.
-                        sensor_data_obj = self._storage.getSensorData(sensor_alert_state.sensor_alert.sensorId)
+                        sensor_data_obj = self._storage.getSensorData(sensor_alert.sensorId)
 
-                        manager_state_tuple = (sensor_alert_state.sensor_alert.sensorId,
-                                               sensor_alert_state.sensor_alert.state,
+                        manager_state_tuple = (sensor_alert.sensorId,
+                                               sensor_alert.state,
                                                sensor_data_obj)
                         self._manager_update_executer.queueStateChange.append(manager_state_tuple)
 
-            # Wake up manager update executer to transmit the state change
-            if dropped_sensor_alert_states and self._manager_update_executer is not None:
+            # Wake up manager update executer to transmit the state/data change.
+            if updatable_sensor_alerts and self._manager_update_executer is not None:
                 self._manager_update_executer.managerUpdateEvent.set()
 
             time.sleep(0.5)

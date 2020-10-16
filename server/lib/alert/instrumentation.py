@@ -37,15 +37,25 @@ class InstrumentationPromise:
         self._creation_time = int(time.time())
 
     @property
-    def alert_level(self):
+    def new_sensor_alert(self) -> Optional[SensorAlert]:
+        """
+        :return: sensor alert object created by instrumentation or none if instrumentation suppresses sensor alert
+        or none if instrumentation failed (which can be checked by was_success() method).
+        """
+        return self._new_sensor_alert
+
+    @new_sensor_alert.setter
+    def new_sensor_alert(self, sensor_alert: SensorAlert):
+        if self._new_sensor_alert is not None:
+            raise ValueError("New sensor alert object already set.")
+        self._new_sensor_alert = sensor_alert
+
+    @property
+    def alert_level(self) -> AlertLevel:
         return self._alert_level
 
     @property
-    def new_sensor_alert(self):
-        return self._new_sensor_alert
-
-    @property
-    def orig_sensor_alert(self):
+    def orig_sensor_alert(self) -> SensorAlert:
         return self._orig_sensor_alert
 
     def is_finished(self,
@@ -63,14 +73,11 @@ class InstrumentationPromise:
         self._state = PromiseState.FAILED
         self._finished_event.set()
 
-    def set_new_sensor_alert(self, sensor_alert: SensorAlert):
-        self._new_sensor_alert = sensor_alert
-
     def set_success(self):
         self._state = PromiseState.SUCCESS
         self._finished_event.set()
 
-    def was_successful(self):
+    def was_success(self) -> bool:
         if self._state == PromiseState.SUCCESS:
             return True
 
@@ -163,7 +170,7 @@ class Instrumentation:
 
                 if new_sensor_alert is not None:
                     # Set result.
-                    self._promise.set_new_sensor_alert(new_sensor_alert)
+                    self._promise.new_sensor_alert = new_sensor_alert
                     self._promise.set_success()
 
                 else:

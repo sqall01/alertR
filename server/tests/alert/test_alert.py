@@ -446,11 +446,13 @@ class TestAlert(TestCase):
             # Sensor alert states with a single suitable alert level should only have instrumented alert levels.
             if len(sensor_alert_state.suitable_alert_levels) == 1:
                 self.assertTrue(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
+                self.assertTrue(sensor_alert_state.uses_instrumentation)
 
             # Sensor alert states with multiple alert levels should not have instrumented alert levels left.
             else:
                 for suitable_alert_level in sensor_alert_state.suitable_alert_levels:
                     self.assertFalse(suitable_alert_level.instrumentation_active)
+                    self.assertFalse(sensor_alert_state.uses_instrumentation)
 
     def test_separate_instrumentation_alert_levels_complete(self):
         """
@@ -485,6 +487,7 @@ class TestAlert(TestCase):
             # Sensor alert states with a single suitable alert level should only have instrumented alert levels.
             if len(sensor_alert_state.suitable_alert_levels) == 1:
                 self.assertTrue(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
+                self.assertTrue(sensor_alert_state.uses_instrumentation)
 
             # Sensor alert states with multiple alert levels should not be left.
             else:
@@ -527,6 +530,7 @@ class TestAlert(TestCase):
             # Sensor alert states with multiple alert levels should not have instrumented alert levels left.
             else:
                 for suitable_alert_level in sensor_alert_state.suitable_alert_levels:
+                    self.assertFalse(sensor_alert_state.uses_instrumentation)
                     self.assertFalse(suitable_alert_level.instrumentation_active)
 
     def test_separate_instrumentation_alert_levels_single_none(self):
@@ -559,6 +563,7 @@ class TestAlert(TestCase):
 
             # Sensor alert states with a single suitable alert level should not exist.
             if len(sensor_alert_state.suitable_alert_levels) == 1:
+                self.assertFalse(sensor_alert_state.uses_instrumentation)
                 self.assertFalse(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
 
             else:

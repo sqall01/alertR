@@ -204,7 +204,7 @@ class TestInstrumentation(TestCase):
         promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
-        self.assertTrue(promise.was_successful())
+        self.assertTrue(promise.was_success())
 
         sensor_alert = promise.orig_sensor_alert
         new_sensor_alert = promise.new_sensor_alert
@@ -250,7 +250,7 @@ class TestInstrumentation(TestCase):
         time.sleep(timeout*2)
 
         self.assertTrue(promise.is_finished())
-        self.assertTrue(promise.was_successful())
+        self.assertTrue(promise.was_success())
 
         sensor_alert = promise.orig_sensor_alert
         new_sensor_alert = promise.new_sensor_alert
@@ -291,7 +291,7 @@ class TestInstrumentation(TestCase):
         promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
-        self.assertTrue(promise.was_successful())
+        self.assertTrue(promise.was_success())
 
         new_sensor_alert = promise.new_sensor_alert
         self.assertIsNone(new_sensor_alert)
@@ -311,7 +311,7 @@ class TestInstrumentation(TestCase):
         promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
-        self.assertFalse(promise.was_successful())
+        self.assertFalse(promise.was_success())
 
     def test_execute_invalid_timeout_blocking(self):
         """
@@ -333,7 +333,7 @@ class TestInstrumentation(TestCase):
         promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
-        self.assertFalse(promise.was_successful())
+        self.assertFalse(promise.was_success())
 
     def test_execute_invalid_timeout_non_blocking(self):
         """
@@ -359,7 +359,7 @@ class TestInstrumentation(TestCase):
         self.assertFalse(promise.is_finished())
 
         self.assertTrue(promise.is_finished(timeout=timeout*2))
-        self.assertFalse(promise.was_successful())
+        self.assertFalse(promise.was_success())
 
     def test_execute_invalid_exit_code(self):
         """
@@ -377,7 +377,7 @@ class TestInstrumentation(TestCase):
         promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
-        self.assertFalse(promise.was_successful())
+        self.assertFalse(promise.was_success())
 
     def test_execute_invalid_output(self):
         """
@@ -395,7 +395,7 @@ class TestInstrumentation(TestCase):
         promise = instrumentation._execute()
 
         self.assertTrue(promise.is_finished())
-        self.assertFalse(promise.was_successful())
+        self.assertFalse(promise.was_success())
 
     def test_execute_twice(self):
         """
@@ -418,7 +418,7 @@ class TestInstrumentation(TestCase):
         time.sleep(timeout+2)
 
         self.assertTrue(promise_first.is_finished())
-        self.assertTrue(promise_first.was_successful())
+        self.assertTrue(promise_first.was_success())
 
         timestamp_first = promise_first.new_sensor_alert.optionalData["timestamp"]
 
@@ -428,7 +428,7 @@ class TestInstrumentation(TestCase):
         time.sleep(timeout+2)
 
         self.assertTrue(promise_first.is_finished())
-        self.assertTrue(promise_first.was_successful())
+        self.assertTrue(promise_first.was_success())
 
         self.assertEqual(promise_first, promise_second)
 
