@@ -223,6 +223,31 @@ class SensorAlertExecuter(threading.Thread):
             sensor_alert_state.sensor_alert.triggeredAlertLevels = [al.level
                                                                     for al in sensor_alert_state.suitable_alert_levels]
 
+
+
+
+
+
+
+
+
+    def _update_instrumentation(self, sensor_alert_states: List[SensorAlertState]):
+        pass
+
+        '''
+        TODO
+        
+        - check instrumentation already started
+        - add instrumentation finished state to sensor alert state (if no instrumentation it is directly finished)
+        - process_sensor_alert() checks this instrumentation finished
+        - filter out sensor alerts which are suppressed by instrumentation (for example in filter_sensor_alerts() function which can be run after _update_instrumentation()) 
+        '''
+
+
+
+
+
+
     def run(self):
         """
         This function starts the endless loop of the alert executer thread.
