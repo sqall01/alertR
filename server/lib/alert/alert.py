@@ -121,11 +121,11 @@ class SensorAlertExecuter(threading.Thread):
 
         return new_sensor_alert_states
 
-    # TODO test cases
     def _separate_instrumentation_alert_levels(self,
                                                sensor_alert_states: List[SensorAlertState]) -> List[SensorAlertState]:
         """
         Splits sensor alerts into separated sensor alert states for each alert level that is instrumented.
+        NOTE: Does not update the triggered alert levels of the sensor alert object.
         :param sensor_alert_states:
         :return: modified list of sensor alert states
         """
@@ -135,12 +135,16 @@ class SensorAlertExecuter(threading.Thread):
                 new_sensor_alert_states.append(base_sensor_alert_state)
                 continue
 
-            # Split each sensor alert into separated sensor alerts for each alert level that is instrumented.
+            # Split each sensor alert into separated sensor alerts for each alert level that is instrumented
+            # and keep the not-instrumented ones for the base alert level.
+            not_instrumented_alert_levels = list()
             for alert_level in list(base_sensor_alert_state.suitable_alert_levels):
                 if alert_level.instrumentation_active:
                     new_sensor_alert_state = SensorAlertState(base_sensor_alert_state.sensor_alert, [alert_level])
                     new_sensor_alert_states.append(new_sensor_alert_state)
-                    base_sensor_alert_state.suitable_alert_levels.remove(alert_level)
+                else:
+                    not_instrumented_alert_levels.append(alert_level)
+            base_sensor_alert_state.suitable_alert_levels = not_instrumented_alert_levels
 
             # If no suitable alert level remains in the base sensor alert state(meaning all alert levels were
             # instrumented and hence have now a separated sensor alert state) remove it.
@@ -189,7 +193,8 @@ class SensorAlertExecuter(threading.Thread):
 
     def _update_suitable_alert_levels(self, sensor_alert_states: List[SensorAlertState]):
         """
-        Updates the suitable alert levels of each sensor alert state.
+        Updates the suitable alert levels of each sensor alert state as well as the triggered alert levels of
+        the sensor alert object.
         :param sensor_alert_states:
         """
         is_alert_system_active = self._storage.isAlertSystemActive()
@@ -254,11 +259,17 @@ class SensorAlertExecuter(threading.Thread):
                 self.sensorAlertEvent.clear()
                 continue
 
+            # Split sensor alert states into separated states for instrumented alert levels
+            # NOTE: does not update triggered alert levels of sensor alert object, hence performed in the beginning.
+            curr_sensor_alert_states = self._separate_instrumentation_alert_levels(curr_sensor_alert_states)
+
+            # Update suitable alert levels as well as triggered alert leves of sensor alert object.
             self._update_suitable_alert_levels(curr_sensor_alert_states)
 
+            # Filter out sensor alert states that can no longer satisfy trigger condition.
             curr_sensor_alert_states, dropped_sensor_alert_states = self._filter_sensor_alerts(curr_sensor_alert_states)
 
-            curr_sensor_alert_states = self._separate_instrumentation_alert_levels(curr_sensor_alert_states)
+
 
 
             # TODO process instrumentation

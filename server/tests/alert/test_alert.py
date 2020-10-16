@@ -409,3 +409,157 @@ class TestAlert(TestCase):
         sensor_alert_executer._process_sensor_alert(sensor_alert_states)
 
         self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg)
+
+    def test_separate_instrumentation_alert_levels_half(self):
+        """
+        Tests split instrumented alert levels into separated sensor alert states (with remaining alert levels).
+        """
+        num = 10
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        sensor_alert = sensor_alerts[0]
+        sensor_alert.alertLevels.clear()
+        num_instrumentation = 0
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.instrumentation_active = (i % 2 == 0)
+            sensor_alert.alertLevels.append(alert_level.level)
+            if alert_level.instrumentation_active:
+                num_instrumentation += 1
+
+        sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        new_sensor_alert_states = sensor_alert_executer._separate_instrumentation_alert_levels(sensor_alert_states)
+
+        self.assertEqual(num_instrumentation + 1, len(new_sensor_alert_states))
+
+        for sensor_alert_state in new_sensor_alert_states:
+
+            # Sensor alert states with a single suitable alert level should only have instrumented alert levels.
+            if len(sensor_alert_state.suitable_alert_levels) == 1:
+                self.assertTrue(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
+
+            # Sensor alert states with multiple alert levels should not have instrumented alert levels left.
+            else:
+                for suitable_alert_level in sensor_alert_state.suitable_alert_levels:
+                    self.assertFalse(suitable_alert_level.instrumentation_active)
+
+    def test_separate_instrumentation_alert_levels_complete(self):
+        """
+        Tests split instrumented alert levels into separated sensor alert states (without remaining alert levels).
+        """
+        num = 10
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        sensor_alert = sensor_alerts[0]
+        sensor_alert.alertLevels.clear()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.instrumentation_active = True
+            sensor_alert.alertLevels.append(alert_level.level)
+
+        sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        new_sensor_alert_states = sensor_alert_executer._separate_instrumentation_alert_levels(sensor_alert_states)
+
+        self.assertEqual(num, len(new_sensor_alert_states))
+
+        for sensor_alert_state in new_sensor_alert_states:
+
+            # Sensor alert states with a single suitable alert level should only have instrumented alert levels.
+            if len(sensor_alert_state.suitable_alert_levels) == 1:
+                self.assertTrue(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
+
+            # Sensor alert states with multiple alert levels should not be left.
+            else:
+                self.fail("Sensor Alert state with not instrumented alert level remaining.")
+
+    def test_separate_instrumentation_alert_levels_none(self):
+        """
+        Tests split instrumented alert levels into separated sensor alert states (only remaining alert levels).
+        """
+        num = 10
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        sensor_alert = sensor_alerts[0]
+        sensor_alert.alertLevels.clear()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.instrumentation_active = False
+            sensor_alert.alertLevels.append(alert_level.level)
+
+        sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        new_sensor_alert_states = sensor_alert_executer._separate_instrumentation_alert_levels(sensor_alert_states)
+
+        self.assertEqual(1, len(new_sensor_alert_states))
+
+        for sensor_alert_state in new_sensor_alert_states:
+
+            # Sensor alert states with a single suitable alert level should not exist.
+            if len(sensor_alert_state.suitable_alert_levels) == 1:
+                self.fail("Sensor Alert state with not instrumented alert level remaining.")
+
+            # Sensor alert states with multiple alert levels should not have instrumented alert levels left.
+            else:
+                for suitable_alert_level in sensor_alert_state.suitable_alert_levels:
+                    self.assertFalse(suitable_alert_level.instrumentation_active)
+
+    def test_separate_instrumentation_alert_levels_single_none(self):
+        """
+        Tests split instrumented alert levels into separated sensor alert states (only remaining alert levels).
+        """
+        num = 10
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.instrumentation_active = False
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_states.append(sensor_alert_state)
+
+        new_sensor_alert_states = sensor_alert_executer._separate_instrumentation_alert_levels(sensor_alert_states)
+
+        self.assertEqual(num, len(new_sensor_alert_states))
+
+        for sensor_alert_state in new_sensor_alert_states:
+
+            # Sensor alert states with a single suitable alert level should not exist.
+            if len(sensor_alert_state.suitable_alert_levels) == 1:
+                self.assertFalse(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
+
+            else:
+                self.fail("Sensor Alert state with multiple suitable alert levels found.")
