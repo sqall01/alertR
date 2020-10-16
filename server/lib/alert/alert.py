@@ -191,6 +191,19 @@ class SensorAlertExecuter(threading.Thread):
             sensor_alert_state.sensor_alert.triggeredAlertLevels = [al.level
                                                                     for al in sensor_alert_state.suitable_alert_levels]
 
+
+
+
+
+
+    def separate_instrumentation_alert_levels(self):
+        # TODO
+
+
+
+
+
+
     def run(self):
         """
         This function starts the endless loop of the alert executer thread.
