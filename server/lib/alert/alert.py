@@ -82,7 +82,6 @@ class SensorAlertExecuter(threading.Thread):
         self.sensorAlertEvent.clear()
 
         self._exit_flag = False
-        self._sensor_alert_states = list()  # type: List[SensorAlertState]
 
     def _filter_sensor_alerts(self, sensor_alert_states: List[SensorAlertState]) -> Tuple[List[SensorAlertState],
                                                                                           List[SensorAlertState]]:
@@ -119,6 +118,34 @@ class SensorAlertExecuter(threading.Thread):
 
             else:
                 new_sensor_alert_states.append(sensor_alert_state)
+
+        return new_sensor_alert_states
+
+    # TODO test cases
+    def _separate_instrumentation_alert_levels(self,
+                                               sensor_alert_states: List[SensorAlertState]) -> List[SensorAlertState]:
+        """
+        Splits sensor alerts into separated sensor alert states for each alert level that is instrumented.
+        :param sensor_alert_states:
+        :return: modified list of sensor alert states
+        """
+        new_sensor_alert_states = list()
+        for base_sensor_alert_state in sensor_alert_states:
+            if len(base_sensor_alert_state.suitable_alert_levels) == 1:
+                new_sensor_alert_states.append(base_sensor_alert_state)
+                continue
+
+            # Split each sensor alert into separated sensor alerts for each alert level that is instrumented.
+            for alert_level in list(base_sensor_alert_state.suitable_alert_levels):
+                if alert_level.instrumentation_active:
+                    new_sensor_alert_state = SensorAlertState(base_sensor_alert_state.sensor_alert, [alert_level])
+                    new_sensor_alert_states.append(new_sensor_alert_state)
+                    base_sensor_alert_state.suitable_alert_levels.remove(alert_level)
+
+            # If no suitable alert level remains in the base sensor alert state(meaning all alert levels were
+            # instrumented and hence have now a separated sensor alert state) remove it.
+            if base_sensor_alert_state.suitable_alert_levels:
+                new_sensor_alert_states.append(base_sensor_alert_state)
 
         return new_sensor_alert_states
 
@@ -191,23 +218,12 @@ class SensorAlertExecuter(threading.Thread):
             sensor_alert_state.sensor_alert.triggeredAlertLevels = [al.level
                                                                     for al in sensor_alert_state.suitable_alert_levels]
 
-
-
-
-
-
-    def separate_instrumentation_alert_levels(self):
-        # TODO
-
-
-
-
-
-
     def run(self):
         """
         This function starts the endless loop of the alert executer thread.
         """
+
+        curr_sensor_alert_states = list()  # type: List[SensorAlertState]
         while True:
 
             # check if thread should terminate
@@ -230,20 +246,19 @@ class SensorAlertExecuter(threading.Thread):
                     continue
 
                 sensor_alert_state = SensorAlertState(sensor_alert, self._alert_levels)
-                self._sensor_alert_states.append(sensor_alert_state)
+                curr_sensor_alert_states.append(sensor_alert_state)
 
             # Wait if we do not have any sensor alerts to process.
-            if not self._sensor_alert_states:
+            if not curr_sensor_alert_states:
                 self.sensorAlertEvent.wait()
                 self.sensorAlertEvent.clear()
                 continue
 
-            self._update_suitable_alert_levels(self._sensor_alert_states)
+            self._update_suitable_alert_levels(curr_sensor_alert_states)
 
-            self._sensor_alert_states, dropped_sensor_alert_states = \
-                self._filter_sensor_alerts(self._sensor_alert_states)
+            curr_sensor_alert_states, dropped_sensor_alert_states = self._filter_sensor_alerts(curr_sensor_alert_states)
 
-
+            curr_sensor_alert_states = self._separate_instrumentation_alert_levels(curr_sensor_alert_states)
 
 
             # TODO process instrumentation
@@ -251,7 +266,7 @@ class SensorAlertExecuter(threading.Thread):
 
 
 
-            self._sensor_alert_states = self._process_sensor_alert(self._sensor_alert_states)
+            curr_sensor_alert_states = self._process_sensor_alert(curr_sensor_alert_states)
 
             # Add data and state of sensor alert to the queue for state changes of the manager update executer
             # if received sensor alert does change state or data.
