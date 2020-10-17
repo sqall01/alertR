@@ -62,7 +62,7 @@ class SensorAlertState:
     @property
     def suitable_alert_levels(self) -> List[AlertLevel]:
         """
-        Returns a copy of the triggered alert levels
+        Returns a copy of the suitable alert levels
         :return:
         """
         return list(self._suitable_alert_levels)
