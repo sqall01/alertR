@@ -409,7 +409,13 @@ class SensorAlertExecuter(threading.Thread):
 
                 if self._manager_update_executer is not None:
 
+                    # TODO where is the sensor data updated in the database?
+
                     # TODO what happens if sensor alert hasLatestData but not changeState (or vice versa), we send out state change and data change then which is wrong
+
+                    # TODO only hasLatestData => get state from db for message
+                    # TODO only changeState => get data from db for message
+                    # TODO has both, use both from sensor alert object
                     if sensor_alert.hasLatestData or sensor_alert.changeState:
 
                         # Returns a sensor data object or None.
