@@ -98,7 +98,7 @@ class TestAlert(TestCase):
             self.assertEqual(i, len(dropped_states))
             self.assertEqual(len(sensor_alert_states) - i, len(new_states))
             for j in range(i):
-                self.assertEqual(j, dropped_states[j].sensor_alert.sensorAlertId)
+                self.assertEqual(j, dropped_states[j].sensorAlertId)
             for j in range(len(new_states)):
                 self.assertEqual(j+i, new_states[j].sensor_alert.sensorAlertId)
 

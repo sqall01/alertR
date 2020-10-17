@@ -144,10 +144,6 @@ class SensorAlertExecuter(threading.Thread):
 
             # TODO test case for instrumentation filtering
 
-            # TODO return types have changed, check test cases
-
-            # TODO check if code makes sense, I am tired :D
-
             if sensor_alert_state.uses_instrumentation and sensor_alert_state.instrumentation_finished:
                 instrumentation_promise = sensor_alert_state.instrumentation_promise
                 if not instrumentation_promise.was_success():
