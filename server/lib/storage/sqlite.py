@@ -2811,7 +2811,7 @@ class Sqlite(_Storage):
 
     def getSensorData(self,
                       sensorId: int,
-                      logger: logging.Logger = None) -> Optional[Any]:
+                      logger: logging.Logger = None) -> Optional[SensorData]:
 
         # Set logger instance to use.
         if not logger:

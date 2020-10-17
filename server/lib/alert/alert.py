@@ -142,8 +142,6 @@ class SensorAlertExecuter(threading.Thread):
                 dropped_sensor_alerts.append(sensor_alert_state.sensor_alert)
                 continue
 
-            # TODO what about sensor alert states that are instrumented and surpressed? still data/state change => yes
-
             # TODO test case for instrumentation filtering
 
             # TODO return types have changed, check test cases
@@ -153,7 +151,7 @@ class SensorAlertExecuter(threading.Thread):
             if sensor_alert_state.uses_instrumentation and sensor_alert_state.instrumentation_finished:
                 instrumentation_promise = sensor_alert_state.instrumentation_promise
                 if not instrumentation_promise.was_success():
-                    self._logger.error("[%s] Instrumentation for sensor alert '%s' failed."
+                    self._logger.error("[%s]: Instrumentation for sensor alert '%s' failed."
                                        % (self._log_tag, sensor_alert_state.init_sensor_alert.description))
 
                     # TODO use internal sensor for errors here or use it in instrumentation class? => instrumentation class would be easier to provide additional information in alert
@@ -231,7 +229,7 @@ class SensorAlertExecuter(threading.Thread):
             sensor_alert = sensor_alert_state.sensor_alert
 
         except ValueError:
-            self._logger.exception("[%s] Unable to get sensor alert object from sensor alert state."
+            self._logger.exception("[%s]: Unable to get sensor alert object from sensor alert state."
                                    % self._log_tag)
             return
 
@@ -407,24 +405,35 @@ class SensorAlertExecuter(threading.Thread):
                 self._logger.debug("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
                                   % (self._log_tag, sensor_alert.description))
 
-                if self._manager_update_executer is not None:
+                if (self._manager_update_executer is not None
+                        and (sensor_alert.hasLatestData or sensor_alert.changeState)):
 
-                    # TODO where is the sensor data updated in the database?
+                    # Get sensor data from the database which contains the correct data for the sensor
+                    # (either it was updated when the sensor alert message was received and hasLatestData flag was set
+                    # or it contains the last known data before this sensor alert message which is the correct one).
+                    sensor_data_obj = self._storage.getSensorData(sensor_alert.sensorId,
+                                                                  self._logger)
+                    if sensor_data_obj is None:
+                        self._logger.error("[%s]: Unable to get data for sensor '%d' from database. "
+                                           % (self._log_tag, sensor_alert.sensorId)
+                                           + "Skipping state change notification.")
+                        continue
 
-                    # TODO what happens if sensor alert hasLatestData but not changeState (or vice versa), we send out state change and data change then which is wrong
+                    # Get sensor state from the database which contains the correct state for the sensor
+                    # (either it was updated when the sensor alert message was received and changeState flag was set
+                    # or it contains the last known state before this sensor alert message which is the correct one).
+                    state = self._storage.getSensorState(sensor_alert.sensorId,
+                                                         self._logger)
+                    if state is None:
+                        self._logger.error("[%s]: Unable to get state for sensor '%d' from database. "
+                                           % (self._log_tag, sensor_alert.sensorId)
+                                           + "Skipping state change notification.")
+                        continue
 
-                    # TODO only hasLatestData => get state from db for message
-                    # TODO only changeState => get data from db for message
-                    # TODO has both, use both from sensor alert object
-                    if sensor_alert.hasLatestData or sensor_alert.changeState:
-
-                        # Returns a sensor data object or None.
-                        sensor_data_obj = self._storage.getSensorData(sensor_alert.sensorId)
-
-                        manager_state_tuple = (sensor_alert.sensorId,
-                                               sensor_alert.state,
-                                               sensor_data_obj)
-                        self._manager_update_executer.queueStateChange.append(manager_state_tuple)
+                    manager_state_tuple = (sensor_alert.sensorId,
+                                           state,
+                                           sensor_data_obj)
+                    self._manager_update_executer.queueStateChange.append(manager_state_tuple)
 
             # Wake up manager update executer to transmit the state/data change.
             if updatable_sensor_alerts and self._manager_update_executer is not None:
