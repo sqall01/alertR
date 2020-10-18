@@ -389,7 +389,7 @@ class SensorAlertExecuter(threading.Thread):
             # if received sensor alert does change state or data.
             for sensor_alert in updatable_sensor_alerts:
                 self._logger.debug("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
-                                  % (self._log_tag, sensor_alert.description))
+                                   % (self._log_tag, sensor_alert.description))
 
                 if (self._manager_update_executer is not None
                         and (sensor_alert.hasLatestData or sensor_alert.changeState)):
