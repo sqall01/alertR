@@ -313,6 +313,23 @@ class TestInstrumentation(TestCase):
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_success())
 
+    def test_execute_invalid_not_executable(self):
+        """
+        Tests an invalid execution of an instrumentation script (script is not executable).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "not_executable.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertFalse(promise.was_success())
+
     def test_execute_invalid_timeout_blocking(self):
         """
         Tests an invalid execution of an instrumentation script (script times out).

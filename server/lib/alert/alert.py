@@ -46,7 +46,7 @@ class SensorAlertState:
     @instrumentation.setter
     def instrumentation(self, value: Instrumentation):
         if self._instrumentation is not None:
-            raise ValueError("Instrumentation already set.")
+            raise ValueError("Instrumentation already set.") # TODO own exception class
         self._instrumentation = value
 
     @property
@@ -56,7 +56,7 @@ class SensorAlertState:
     @instrumentation_promise.setter
     def instrumentation_promise(self, value: InstrumentationPromise):
         if self._instrumentation_promise is not None:
-            raise ValueError("Instrumentation promise already set.")
+            raise ValueError("Instrumentation promise already set.") # TODO own exception class
         self._instrumentation_promise = value
 
     @property
@@ -95,13 +95,13 @@ class SensorAlertState:
     def sensor_alert(self) -> Optional[SensorAlert]:
         if self._uses_instrumentation:
             if self._instrumentation_promise is None:
-                raise ValueError("Instrumentation not run yet.")
+                raise ValueError("Instrumentation not run yet.") # TODO own exception class
 
             elif not self._instrumentation_promise.is_finished():
-                raise ValueError("Instrumentation not finished.")
+                raise ValueError("Instrumentation not finished.") # TODO own exception class
 
             elif not self._instrumentation_promise.was_success():
-                raise ValueError("Instrumentation not successful.")
+                raise ValueError("Instrumentation not successful.") # TODO own exception class
 
             return self._instrumentation_promise.new_sensor_alert
 
