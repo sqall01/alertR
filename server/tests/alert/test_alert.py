@@ -1,10 +1,11 @@
 import logging
 import time
+import os
 from unittest import TestCase
 from typing import Tuple, List
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
-from lib.alert.instrumentation import InstrumentationPromise
+from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
 from lib.storage.core import _Storage
 
@@ -33,6 +34,21 @@ class MockStorage(_Storage):
 
     def isAlertSystemActive(self, _: logging.Logger = None):
         return self._is_active
+
+
+class MockInstrumentationNotCallable(Instrumentation):
+
+    def __init__(self, alert_level: AlertLevel, sensor_alert: SensorAlert, logger: logging.Logger):
+        super().__init__(alert_level, sensor_alert, logger)
+
+    def _execute(self):
+        TestCase.fail(TestCase(), "Not callable.")
+
+    def _process_output(self, output: str):
+        TestCase.fail(TestCase(), "Not callable.")
+
+    def execute(self):
+        TestCase.fail(TestCase(), "Not callable.")
 
 
 class TestAlert(TestCase):
@@ -643,3 +659,130 @@ class TestAlert(TestCase):
 
             else:
                 self.fail("Sensor Alert state with multiple suitable alert levels found.")
+
+    def test_update_instrumentation_no_instrumentation(self):
+        """
+        Tests update of instrumentation when no instrumentation is used.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_states.append(sensor_alert_state)
+
+        sensor_alert_executer._update_instrumentation(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertIsNone(sensor_alert_state.instrumentation)
+
+    def test_update_instrumentation_no_suitable_alert_level(self):
+        """
+        Tests update of instrumentation when no suitable alert level in sensor alert state.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state.uses_instrumentation = True
+            sensor_alert_state._suitable_alert_levels.clear()
+            sensor_alert_states.append(sensor_alert_state)
+
+        sensor_alert_executer._update_instrumentation(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertIsNone(sensor_alert_state.instrumentation)
+
+    def test_update_instrumentation_already_executed(self):
+        """
+        Tests update of instrumentation when instrumentation was already executed.
+        """
+
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state.uses_instrumentation = True
+
+            # Simulate an already running instrumentation by setting an instrumentation promise and using a mock
+            # instrumentation that is not callable and crashes the test if it is called.
+            alert_level = sensor_alert_state.suitable_alert_levels[0]
+            sensor_alert_state.instrumentation_promise = InstrumentationPromise(alert_level, sensor_alert)
+            sensor_alert_state.instrumentation = MockInstrumentationNotCallable(alert_level,
+                                                                                sensor_alert,
+                                                                                global_data.logger)
+            sensor_alert_states.append(sensor_alert_state)
+
+        # Asserts if the instrumentation object is used.
+        sensor_alert_executer._update_instrumentation(sensor_alert_states)
+
+    def test_update_instrumentation(self):
+        """
+        Tests update of instrumentation.
+        """
+
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "mirror_with_timestamp.py")
+
+        for alert_level in alert_levels:
+            alert_level.instrumentation_active = True
+            alert_level.instrumentation_cmd = target_cmd
+            alert_level.instrumentation_timeout = 10
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state.uses_instrumentation = True
+            sensor_alert_states.append(sensor_alert_state)
+
+        sensor_alert_executer._update_instrumentation(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertIsNotNone(sensor_alert_state.instrumentation)
+
+            self.assertTrue(sensor_alert_state.instrumentation_promise.is_finished(blocking=False, timeout=5.0))
+            self.assertTrue(sensor_alert_state.instrumentation_promise.was_success())
+
+            init_sensor_alert = sensor_alert_state.init_sensor_alert
+            self.assertIsNotNone(init_sensor_alert)
+            self.assertFalse(init_sensor_alert.hasOptionalData)
+            self.assertIsNone(init_sensor_alert.optionalData)
+
+            sensor_alert = sensor_alert_state.sensor_alert
+            self.assertNotEqual(init_sensor_alert, sensor_alert)
+            self.assertIsNotNone(sensor_alert)
+            self.assertTrue(sensor_alert.hasOptionalData)
+            self.assertTrue("timestamp" in sensor_alert.optionalData.keys())

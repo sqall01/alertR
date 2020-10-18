@@ -94,10 +94,13 @@ class SensorAlertState:
     @property
     def sensor_alert(self) -> Optional[SensorAlert]:
         if self._uses_instrumentation:
-            if not self._instrumentation_promise.is_finished():
+            if self._instrumentation_promise is None:
+                raise ValueError("Instrumentation not run yet.")
+
+            elif not self._instrumentation_promise.is_finished():
                 raise ValueError("Instrumentation not finished.")
 
-            if not self._instrumentation_promise.was_success():
+            elif not self._instrumentation_promise.was_success():
                 raise ValueError("Instrumentation not successful.")
 
             return self._instrumentation_promise.new_sensor_alert
@@ -324,16 +327,16 @@ class SensorAlertExecuter(threading.Thread):
             # Start instrumentation for sensor alert.
             alert_level = sensor_alert_state.suitable_alert_levels[0]
             sensor_alert_state.instrumentation = Instrumentation(alert_level,
-                                                                 sensor_alert_state.sensor_alert,
+                                                                 sensor_alert_state.init_sensor_alert,
                                                                  self._logger)
             sensor_alert_state.instrumentation_promise = sensor_alert_state.instrumentation.execute()
-
-            # TODO test cases
 
     def run(self):
         """
         This function starts the endless loop of the alert executer thread.
         """
+
+        # TODO test cases
 
         curr_sensor_alert_states = list()  # type: List[SensorAlertState]
         while True:

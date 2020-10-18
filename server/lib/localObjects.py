@@ -129,7 +129,7 @@ class SensorAlert:
 
         # The optional data of the sensor alert (if it has any).
         self.hasOptionalData = None  # type: Optional[bool]
-        self.optionalData = None  # type: Dict[str, Any]
+        self.optionalData = None  # type: Optional[Dict[str, Any]]
 
         # Does this sensor alert change the state of the sensor?
         self.changeState = None  # type: Optional[bool]
