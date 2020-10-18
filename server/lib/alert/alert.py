@@ -51,13 +51,13 @@ class SensorAlertState:
 
     @property
     def instrumentation_promise(self) -> Optional[InstrumentationPromise]:
-        return self.instrumentation_promise
+        return self._instrumentation_promise
 
     @instrumentation_promise.setter
     def instrumentation_promise(self, value: InstrumentationPromise):
-        if self._uses_instrumentation is not None:
+        if self._instrumentation_promise is not None:
             raise ValueError("Instrumentation promise already set.")
-        self._uses_instrumentation = value
+        self._instrumentation_promise = value
 
     @property
     def suitable_alert_levels(self) -> List[AlertLevel]:
@@ -153,13 +153,12 @@ class SensorAlertExecuter(threading.Thread):
                 dropped_sensor_alerts.append(sensor_alert_state.sensor_alert)
                 continue
 
-            # TODO test case for instrumentation filtering
-
             if sensor_alert_state.uses_instrumentation and sensor_alert_state.instrumentation_finished:
                 instrumentation_promise = sensor_alert_state.instrumentation_promise
                 if not instrumentation_promise.was_success():
                     self._logger.error("[%s]: Instrumentation for Sensor Alert '%s' failed."
                                        % (self._log_tag, sensor_alert_state.init_sensor_alert.description))
+                    dropped_sensor_alerts.append(sensor_alert_state.init_sensor_alert)
 
                     # TODO use internal sensor for errors here or use it in instrumentation class? => instrumentation class would be easier to provide additional information in alert
 

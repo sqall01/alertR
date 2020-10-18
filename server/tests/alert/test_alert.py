@@ -4,6 +4,7 @@ from unittest import TestCase
 from typing import Tuple, List
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
+from lib.alert.instrumentation import InstrumentationPromise
 from lib.globalData import GlobalData
 from lib.storage.core import _Storage
 
@@ -70,9 +71,9 @@ class TestAlert(TestCase):
 
         return alert_levels, sensor_alerts
 
-    def test_filter_sensor_alerts(self):
+    def test_filter_sensor_alerts_suitable_alert_levels(self):
         """
-        Tests filtering of sensor alert states.
+        Tests filtering of sensor alert states through suitable alert levels.
         """
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
@@ -101,6 +102,80 @@ class TestAlert(TestCase):
                 self.assertEqual(j, dropped_states[j].sensorAlertId)
             for j in range(len(new_states)):
                 self.assertEqual(j+i, new_states[j].sensor_alert.sensorAlertId)
+
+    def test_filter_sensor_alerts_instrumentation_suppress(self):
+        """
+        Tests filtering of sensor alert states through instrumentation that suppress.
+        """
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(5)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state.uses_instrumentation = True
+            instrumentation_promise = InstrumentationPromise(sensor_alert_state.suitable_alert_levels[0],
+                                                             sensor_alert)
+            instrumentation_promise.new_sensor_alert = None
+            sensor_alert_state.instrumentation_promise = instrumentation_promise
+            sensor_alert_states.append(sensor_alert_state)
+
+        for i in range(len(sensor_alert_states)):
+
+            # Prepare sensor alert states to filter out.
+            for j in range(i):
+                sensor_alert_states[j]._instrumentation_promise.set_success()
+
+            # Execute actual filter function.
+            new_states, dropped_states = sensor_alert_executer._filter_sensor_alerts(sensor_alert_states)
+
+            self.assertEqual(i, len(dropped_states))
+            self.assertEqual(len(sensor_alert_states) - i, len(new_states))
+            for j in range(i):
+                self.assertEqual(j, dropped_states[j].sensorAlertId)
+            for j in range(len(new_states)):
+                self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorAlertId)
+
+    def test_filter_sensor_alerts_instrumentation_fail(self):
+        """
+        Tests filtering of sensor alert states through instrumentation that failure.
+        """
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(5)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state.uses_instrumentation = True
+            instrumentation_promise = InstrumentationPromise(sensor_alert_state.suitable_alert_levels[0],
+                                                             sensor_alert)
+            instrumentation_promise.new_sensor_alert = None
+            sensor_alert_state.instrumentation_promise = instrumentation_promise
+            sensor_alert_states.append(sensor_alert_state)
+
+        for i in range(len(sensor_alert_states)):
+
+            # Prepare sensor alert states to filter out.
+            for j in range(i):
+                sensor_alert_states[j]._instrumentation_promise.set_failed()
+
+            # Execute actual filter function.
+            new_states, dropped_states = sensor_alert_executer._filter_sensor_alerts(sensor_alert_states)
+
+            self.assertEqual(i, len(dropped_states))
+            self.assertEqual(len(sensor_alert_states) - i, len(new_states))
+            for j in range(i):
+                self.assertEqual(j, dropped_states[j].sensorAlertId)
+            for j in range(len(new_states)):
+                self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorAlertId)
 
     def test_update_suitable_alert_levels_deactivated(self):
         """
