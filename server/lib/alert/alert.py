@@ -365,7 +365,8 @@ class SensorAlertExecuter(threading.Thread):
 
             # Wait if we do not have any sensor alerts to process.
             if not curr_sensor_alert_states:
-                self.sensorAlertEvent.wait()
+                # Timeout after 10 seconds to make sure we see an exit flag change.
+                self.sensorAlertEvent.wait(10)
                 self.sensorAlertEvent.clear()
                 continue
 
@@ -384,6 +385,9 @@ class SensorAlertExecuter(threading.Thread):
             curr_sensor_alert_states, updatable_sensor_alerts = self._filter_sensor_alerts(curr_sensor_alert_states)
 
             curr_sensor_alert_states = self._process_sensor_alert(curr_sensor_alert_states)
+
+
+            # TODO move manager executer queue update logic into separate function to make testing easier
 
             # Add data and state of sensor alert to the queue for state changes of the manager update executer
             # if received sensor alert does change state or data.

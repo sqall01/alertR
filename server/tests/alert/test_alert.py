@@ -2,7 +2,7 @@ import logging
 import time
 import os
 from unittest import TestCase
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Optional
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
@@ -16,13 +16,14 @@ def _callback_trigger_sensor_alert(_, sensor_alert_state: SensorAlertState):
     :param _: self of SensorAlertExecuter object
     :param sensor_alert_state:
     """
-    TestAlert._callback_trigger_sensor_alert_arg = sensor_alert_state
+    TestAlert._callback_trigger_sensor_alert_arg.append(sensor_alert_state)
 
 
 class MockStorage(_Storage):
 
     def __init__(self):
         self._is_active = False
+        self._sensor_alerts = dict()  # type: Dict[int, SensorAlert]
 
     @property
     def is_active(self) -> bool:
@@ -32,8 +33,23 @@ class MockStorage(_Storage):
     def is_active(self, value: bool):
         self._is_active = value
 
+    def add_sensor_alert(self, sensor_alert: SensorAlert):
+        self._sensor_alerts[sensor_alert.sensorAlertId] = sensor_alert
+
     def isAlertSystemActive(self, _: logging.Logger = None):
         return self._is_active
+
+    def deleteSensorAlert(self,
+                          sensorAlertId: int,
+                          logger: logging.Logger = None) -> bool:
+        if sensorAlertId in self._sensor_alerts.keys():
+            del self._sensor_alerts[sensorAlertId]
+            return True
+        return False
+
+    def getSensorAlerts(self,
+                        _: logging.Logger = None)  -> Optional[List[SensorAlert]]:
+        return list(self._sensor_alerts.values())
 
 
 class MockInstrumentationNotCallable(Instrumentation):
@@ -53,7 +69,7 @@ class MockInstrumentationNotCallable(Instrumentation):
 
 class TestAlert(TestCase):
 
-    _callback_trigger_sensor_alert_arg = None
+    _callback_trigger_sensor_alert_arg = list()
 
     def _create_sensor_alerts(self, num: int) -> Tuple[List[AlertLevel], List[SensorAlert]]:
         alert_levels = list()
@@ -437,7 +453,7 @@ class TestAlert(TestCase):
         """
         Tests processing of sensor alerts.
         """
-        TestAlert._callback_trigger_sensor_alert_arg = None
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
 
         num = 1
 
@@ -460,13 +476,14 @@ class TestAlert(TestCase):
 
         sensor_alert_executer._process_sensor_alert(sensor_alert_states)
 
-        self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg)
+        self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
+        self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg[0])
 
     def test_process_sensor_alert_alert_delay(self):
         """
         Tests processing of sensor alerts with an alert delay.
         """
-        TestAlert._callback_trigger_sensor_alert_arg = None
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
 
         num = 1
         alert_delay = 2
@@ -493,13 +510,14 @@ class TestAlert(TestCase):
 
         sensor_alert_executer._process_sensor_alert(sensor_alert_states)
 
-        self.assertEqual(None, TestAlert._callback_trigger_sensor_alert_arg)
+        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
 
         time.sleep(alert_delay)
 
         sensor_alert_executer._process_sensor_alert(sensor_alert_states)
 
-        self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg)
+        self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
+        self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg[0])
 
     def test_separate_instrumentation_alert_levels_half(self):
         """
@@ -786,3 +804,130 @@ class TestAlert(TestCase):
             self.assertIsNotNone(sensor_alert)
             self.assertTrue(sensor_alert.hasOptionalData)
             self.assertTrue("timestamp" in sensor_alert.optionalData.keys())
+
+    def test_run_trigger_always(self):
+        """
+        Integration test that checks if trigger always sensor alerts are processed correctly.
+        """
+
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = False
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        gt_set = set()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = (i % 2 == 0)
+            if alert_level.triggerAlertTriggered:
+                gt_set.add(alert_level.level)
+
+        global_data.alertLevels = alert_levels
+        for sensor_alert in sensor_alerts:
+            sensor_alert.state = 1
+            global_data.storage.add_sensor_alert(sensor_alert)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(1)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(1)
+
+        self.assertEqual(len(gt_set), len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        test_set = set([sas.sensor_alert.sensorAlertId for sas in TestAlert._callback_trigger_sensor_alert_arg])
+        self.assertEqual(gt_set, test_set)
+
+        # Check sensor alerts in database were removed after processing.
+        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+    def test_run_trigger_active(self):
+        """
+        Integration test that checks if sensor alerts that trigger when alarm system is activated
+        are processed correctly.
+        """
+
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        gt_set = set()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.triggerAlertTriggered = False
+            alert_level.triggerAlertNormal = (i % 2 == 0)
+            if alert_level.triggerAlertNormal:
+                gt_set.add(alert_level.level)
+
+        global_data.alertLevels = alert_levels
+        for sensor_alert in sensor_alerts:
+            sensor_alert.state = 0
+            global_data.storage.add_sensor_alert(sensor_alert)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(1)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(1)
+
+        self.assertEqual(len(gt_set), len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        test_set = set([sas.sensor_alert.sensorAlertId for sas in TestAlert._callback_trigger_sensor_alert_arg])
+        self.assertEqual(gt_set, test_set)
+
+        # Check sensor alerts in database were removed after processing.
+        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+    def test_run_instrumentation(self):
+        """
+        Integration test that checks if sensor alerts with instrumentation are processed correctly.
+        """
+        self.fail("TODO")
+
+    def test_run_manager_updater(self):
+        """
+        Integration test that checks if sensor alerts that are dropped are send to the manager updater queue.
+        """
+        self.fail("TODO")
