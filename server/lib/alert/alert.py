@@ -292,7 +292,7 @@ class SensorAlertExecuter(threading.Thread):
 
                     # Only regard updated based on state when the instrumentation is finished
                     # (is always finished if no instrumentation is used).
-                    if sensor_alert_state.instrumentation_finished:
+                    if sensor_alert_state.instrumentation_finished and sensor_alert_state.sensor_alert is not None:
                         # If the alert level does not trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state, skip it.
                         if not alert_level.triggerAlertTriggered and sensor_alert_state.sensor_alert.state == 1:
@@ -309,10 +309,9 @@ class SensorAlertExecuter(threading.Thread):
 
             # Only update when the instrumentation is finished
             # (is always finished if no instrumentation is used).
-            if sensor_alert_state.instrumentation_finished:
+            if sensor_alert_state.instrumentation_finished and sensor_alert_state.sensor_alert is not None:
                 sensor_alert_state.sensor_alert.triggeredAlertLevels = \
                     [al.level for al in sensor_alert_state.suitable_alert_levels]
-
 
     def _update_instrumentation(self, sensor_alert_states: List[SensorAlertState]):
         """

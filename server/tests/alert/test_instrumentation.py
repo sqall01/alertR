@@ -276,13 +276,13 @@ class TestInstrumentation(TestCase):
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
         self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
 
-    def test_execute_valid_empty(self):
+    def test_execute_valid_surppress(self):
         """
         Tests a valid execution of an instrumentation script which suppresses a sensor alert.
         """
         target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "instrumentation_scripts",
-                                  "empty.py")
+                                  "suppress.py")
 
         # Prepare instrumentation object.
         instrumentation = self._create_instrumentation_dummy()

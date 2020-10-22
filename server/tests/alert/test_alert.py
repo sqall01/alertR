@@ -924,14 +924,17 @@ class TestAlert(TestCase):
         """
         Integration test that checks if sensor alerts with instrumentation are processed correctly.
         """
-
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
-        num = 5
+        num = 10
 
-        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  "instrumentation_scripts",
-                                  "mirror_with_timestamp.py")
+        trigger_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "instrumentation_scripts",
+                                   "mirror_with_timestamp.py")
+
+        suppress_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "instrumentation_scripts",
+                                    "suppress.py")
 
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
@@ -949,6 +952,7 @@ class TestAlert(TestCase):
         global_data.storage.add_sensor_alert(base_sensor_alert)
 
         gt_alert_level_set = set()
+        alert_levels_suppressed = list()
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
             base_sensor_alert.alertLevels.append(alert_level.level)
@@ -956,8 +960,12 @@ class TestAlert(TestCase):
             alert_level.triggerAlertTriggered = True
             alert_level.instrumentation_active = True
             alert_level.instrumentation_timeout = 10
-            alert_level.instrumentation_cmd = target_cmd
-            gt_alert_level_set.add(alert_level.level)
+            if (i % 2) == 0:
+                alert_level.instrumentation_cmd = trigger_cmd
+                gt_alert_level_set.add(alert_level.level)
+            else:
+                alert_level.instrumentation_cmd = suppress_cmd
+                alert_levels_suppressed.append(alert_level)
 
         global_data.alertLevels = alert_levels
 
@@ -979,7 +987,7 @@ class TestAlert(TestCase):
 
         time.sleep(1)
 
-        self.assertEqual(num, len(TestAlert._callback_trigger_sensor_alert_arg))
+        self.assertEqual(len(gt_alert_level_set), len(TestAlert._callback_trigger_sensor_alert_arg))
 
         test_alert_level_set = set()
         for sensor_alert_state in TestAlert._callback_trigger_sensor_alert_arg:
@@ -995,6 +1003,10 @@ class TestAlert(TestCase):
 
         # Check if each alert level was triggered.
         self.assertEqual(gt_alert_level_set, test_alert_level_set)
+
+        # Check no suppressed alert level got triggered.
+        for alert_level in alert_levels_suppressed:
+            self.assertFalse(alert_level.level in test_alert_level_set)
 
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
