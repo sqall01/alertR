@@ -204,6 +204,51 @@ class SensorAlertExecuter(threading.Thread):
 
         return new_sensor_alert_states
 
+    def _queue_manager_update(self, sensor_alerts: List[SensorAlert]):
+        """
+        Adds data and state of sensor alert to the queue for state changes of the manager update executer
+        if received sensor alert does change state or data.
+        :param sensor_alerts:
+        """
+
+        for sensor_alert in sensor_alerts:
+            self._logger.debug("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
+                               % (self._log_tag, sensor_alert.description))
+
+            if (self._manager_update_executer is not None
+                    and (sensor_alert.hasLatestData or sensor_alert.changeState)):
+
+                # Get sensor data from the database which contains the correct data for the sensor
+                # (either it was updated when the sensor alert message was received and hasLatestData flag was set
+                # or it contains the last known data before this sensor alert message which is the correct one).
+                sensor_data_obj = self._storage.getSensorData(sensor_alert.sensorId,
+                                                              self._logger)
+                if sensor_data_obj is None:
+                    self._logger.error("[%s]: Unable to get data for Sensor '%d' from database. "
+                                       % (self._log_tag, sensor_alert.sensorId)
+                                       + "Skipping state change notification.")
+                    continue
+
+                # Get sensor state from the database which contains the correct state for the sensor
+                # (either it was updated when the sensor alert message was received and changeState flag was set
+                # or it contains the last known state before this sensor alert message which is the correct one).
+                state = self._storage.getSensorState(sensor_alert.sensorId,
+                                                     self._logger)
+                if state is None:
+                    self._logger.error("[%s]: Unable to get state for Sensor '%d' from database. "
+                                       % (self._log_tag, sensor_alert.sensorId)
+                                       + "Skipping state change notification.")
+                    continue
+
+                manager_state_tuple = (sensor_alert.sensorId,
+                                       state,
+                                       sensor_data_obj)
+                self._manager_update_executer.queueStateChange.append(manager_state_tuple)
+
+        # Wake up manager update executer to transmit the state/data change.
+        if sensor_alerts and self._manager_update_executer is not None:
+            self._manager_update_executer.managerUpdateEvent.set()
+
     def _separate_instrumentation_alert_levels(self,
                                                sensor_alert_states: List[SensorAlertState]) -> List[SensorAlertState]:
         """
@@ -443,52 +488,12 @@ class SensorAlertExecuter(threading.Thread):
 
             # Filter out sensor alert states that can no longer satisfy trigger condition
             # (no suitable alert levels, instrumentation suppresses them, ...)
-            curr_sensor_alert_states, updatable_sensor_alerts = self._filter_sensor_alerts(curr_sensor_alert_states)
+            curr_sensor_alert_states, dropped_sensor_alerts = self._filter_sensor_alerts(curr_sensor_alert_states)
 
             curr_sensor_alert_states = self._process_sensor_alert(curr_sensor_alert_states)
 
-
-            # TODO move manager executer queue update logic into separate function to make testing easier
-
-            # Add data and state of sensor alert to the queue for state changes of the manager update executer
-            # if received sensor alert does change state or data.
-            for sensor_alert in updatable_sensor_alerts:
-                self._logger.debug("[%s]: Sensor Alert '%s' does not satisfy any trigger condition."
-                                   % (self._log_tag, sensor_alert.description))
-
-                if (self._manager_update_executer is not None
-                        and (sensor_alert.hasLatestData or sensor_alert.changeState)):
-
-                    # Get sensor data from the database which contains the correct data for the sensor
-                    # (either it was updated when the sensor alert message was received and hasLatestData flag was set
-                    # or it contains the last known data before this sensor alert message which is the correct one).
-                    sensor_data_obj = self._storage.getSensorData(sensor_alert.sensorId,
-                                                                  self._logger)
-                    if sensor_data_obj is None:
-                        self._logger.error("[%s]: Unable to get data for Sensor '%d' from database. "
-                                           % (self._log_tag, sensor_alert.sensorId)
-                                           + "Skipping state change notification.")
-                        continue
-
-                    # Get sensor state from the database which contains the correct state for the sensor
-                    # (either it was updated when the sensor alert message was received and changeState flag was set
-                    # or it contains the last known state before this sensor alert message which is the correct one).
-                    state = self._storage.getSensorState(sensor_alert.sensorId,
-                                                         self._logger)
-                    if state is None:
-                        self._logger.error("[%s]: Unable to get state for Sensor '%d' from database. "
-                                           % (self._log_tag, sensor_alert.sensorId)
-                                           + "Skipping state change notification.")
-                        continue
-
-                    manager_state_tuple = (sensor_alert.sensorId,
-                                           state,
-                                           sensor_data_obj)
-                    self._manager_update_executer.queueStateChange.append(manager_state_tuple)
-
-            # Wake up manager update executer to transmit the state/data change.
-            if updatable_sensor_alerts and self._manager_update_executer is not None:
-                self._manager_update_executer.managerUpdateEvent.set()
+            # Queue dropped sensor alerts for state/data updates to manager clients.
+            self._queue_manager_update(dropped_sensor_alerts)
 
             time.sleep(0.5)
 

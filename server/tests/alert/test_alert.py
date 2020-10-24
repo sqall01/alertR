@@ -1173,6 +1173,8 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
+        # TODO dropped sensor alerts should be used for manager updater
+
     def test_run_trigger_active(self):
         """
         Integration test that checks if sensor alerts that trigger when alarm system is activated
@@ -1230,6 +1232,8 @@ class TestAlert(TestCase):
 
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+        # TODO dropped sensor alerts should be used for manager updater
 
     def test_run_instrumentation(self):
         """
@@ -1323,6 +1327,8 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
+        # TODO dropped sensor alerts should be used for manager updater
+
     def test_run_instrumentation_toggle_state(self):
         """
         Integration test that checks if sensor alerts with instrumentation that
@@ -1414,6 +1420,8 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
+        # TODO dropped sensor alerts should be used for manager updater
+
     def test_run_instrumentation_timeout(self):
         """
         Integration test that checks if sensor alerts with instrumentation that times out is processed correctly
@@ -1478,7 +1486,7 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO should be used for manager updater
+        # TODO dropped sensor alerts should be used for manager updater
 
     def test_run_instrumentation_failed(self):
         """
@@ -1544,13 +1552,7 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO should be used for manager updater
+        # TODO dropped sensor alerts should be used for manager updater
 
-    def test_run_manager_updater(self):
-        """
-        Integration test that checks if sensor alerts that are dropped are send to the manager updater queue.
-        """
+    def test_queue_manager_update(self):
         self.fail("TODO")
-
-
-
