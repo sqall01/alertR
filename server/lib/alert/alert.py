@@ -215,6 +215,8 @@ class SensorAlertExecuter(threading.Thread):
         new_sensor_alert_states = list()
         for base_sensor_alert_state in sensor_alert_states:
             if len(base_sensor_alert_state.suitable_alert_levels) == 1:
+                if base_sensor_alert_state.suitable_alert_levels[0].instrumentation_active:
+                    base_sensor_alert_state.uses_instrumentation = True
                 new_sensor_alert_states.append(base_sensor_alert_state)
                 continue
 
@@ -299,35 +301,69 @@ class SensorAlertExecuter(threading.Thread):
             suitable_alert_levels = list()
             for alert_level in sensor_alert_state.suitable_alert_levels:
 
-                # If an instrumentation is used and it is finished, set it as processed since we now check
-                # if it would still satisfy trigger conditions (this is important because the instrumentation
-                # could negate the state of the original sensor alert and we need a state that says it was processed).
-                if sensor_alert_state.uses_instrumentation and sensor_alert_state.instrumentation_finished:
+                if sensor_alert_state.uses_instrumentation:
+
+                    if not sensor_alert_state.instrumentation_finished:
+                        suitable_alert_levels.append(alert_level)
+                        continue
+
+                    # If an instrumentation is used and it is finished, set it as processed since we now check
+                    # if it would still satisfy trigger conditions (this is important because the instrumentation
+                    # could negate the state of the original sensor alert and we need a state that says it was
+                    # processed).
                     sensor_alert_state.instrumentation_processed = True
 
-                if alert_level.triggerAlways or is_alert_system_active:
+                    # Instrumentation failed, but it is still suitable and will be filtered out later in the process.
+                    if not sensor_alert_state.instrumentation_promise.was_success():
+                        suitable_alert_levels.append(alert_level)
+                        continue
 
-                    # Only regard updated based on state when the instrumentation is finished
-                    # (is always finished if no instrumentation is used).
-                    if sensor_alert_state.instrumentation_finished and sensor_alert_state.sensor_alert is not None:
+                    # Instrumentation suppresses sensor alert, but it is still suitable
+                    # and will be filtered out later in the process.
+                    if sensor_alert_state.sensor_alert is None:
+                        suitable_alert_levels.append(alert_level)
+                        continue
 
-                        # If the alert level does not trigger a sensor alert message for a "triggered" state
-                        # while the sensor alert is for the "triggered" state, skip it.
-                        if not alert_level.triggerAlertTriggered and sensor_alert_state.sensor_alert.state == 1:
+                    if alert_level.triggerAlways or is_alert_system_active:
+
+                        # If the alert level does trigger a sensor alert message for a "triggered" state
+                        # while the sensor alert is for the "triggered" state.
+                        if alert_level.triggerAlertTriggered and sensor_alert_state.sensor_alert.state == 1:
+                            suitable_alert_levels.append(alert_level)
                             continue
 
-                        # If the alert level does not trigger a sensor alert message for a "normal" state
-                        # while the sensor alert is for the "normal" state, skip it.
-                        if not alert_level.triggerAlertNormal and sensor_alert_state.sensor_alert.state == 0:
+                        # If the alert level does trigger a sensor alert message for a "normal" state
+                        # while the sensor alert is for the "normal" state.
+                        if alert_level.triggerAlertNormal and sensor_alert_state.sensor_alert.state == 0:
+                            suitable_alert_levels.append(alert_level)
                             continue
 
-                    suitable_alert_levels.append(alert_level)
+                else:
+
+                    if alert_level.triggerAlways or is_alert_system_active:
+
+                        # If the alert level does trigger a sensor alert message for a "triggered" state
+                        # while the sensor alert is for the "triggered" state.
+                        if alert_level.triggerAlertTriggered and sensor_alert_state.sensor_alert.state == 1:
+                            suitable_alert_levels.append(alert_level)
+                            continue
+
+                        # If the alert level does trigger a sensor alert message for a "normal" state
+                        # while the sensor alert is for the "normal" state.
+                        if alert_level.triggerAlertNormal and sensor_alert_state.sensor_alert.state == 0:
+                            suitable_alert_levels.append(alert_level)
+                            continue
 
             sensor_alert_state.suitable_alert_levels = suitable_alert_levels
 
-            # Only update when the instrumentation is finished
-            # (is always finished if no instrumentation is used).
-            if sensor_alert_state.instrumentation_finished and sensor_alert_state.sensor_alert is not None:
+            if sensor_alert_state.uses_instrumentation:
+                if (sensor_alert_state.instrumentation_finished
+                        and sensor_alert_state.instrumentation_promise.was_success()
+                        and sensor_alert_state.sensor_alert is not None):
+                    sensor_alert_state.sensor_alert.triggeredAlertLevels = \
+                        [al.level for al in sensor_alert_state.suitable_alert_levels]
+
+            else:
                 sensor_alert_state.sensor_alert.triggeredAlertLevels = \
                     [al.level for al in sensor_alert_state.suitable_alert_levels]
 

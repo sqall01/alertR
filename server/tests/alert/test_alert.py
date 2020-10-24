@@ -756,6 +756,80 @@ class TestAlert(TestCase):
         self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
         self.assertEqual(sensor_alert_state, TestAlert._callback_trigger_sensor_alert_arg[0])
 
+    def test_separate_instrumentation_alert_levels_one(self):
+        """
+        Tests split instrumented alert levels into separated sensor alert states with only one existing alert level
+        which is instrumented.
+        """
+        num = 1
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        sensor_alert = sensor_alerts[0]
+        sensor_alert.alertLevels.clear()
+
+        alert_level = alert_levels[0]
+        sensor_alert.alertLevels.append(alert_level.level)
+        alert_level.instrumentation_active = True
+
+        sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        new_sensor_alert_states = sensor_alert_executer._separate_instrumentation_alert_levels(sensor_alert_states)
+
+        self.assertEqual(1, len(new_sensor_alert_states))
+
+        sensor_alert_state = new_sensor_alert_states[0]
+
+        self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
+
+        suitable_alert_level = sensor_alert_state.suitable_alert_levels[0]
+        self.assertTrue(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
+        self.assertTrue(sensor_alert_state.uses_instrumentation)
+
+    def test_separate_instrumentation_alert_levels_one_not_instrumented(self):
+        """
+        Tests split instrumented alert levels into separated sensor alert states with only one existing alert level
+        which is not instrumented.
+        """
+        num = 1
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        sensor_alert = sensor_alerts[0]
+        sensor_alert.alertLevels.clear()
+
+        alert_level = alert_levels[0]
+        sensor_alert.alertLevels.append(alert_level.level)
+        alert_level.instrumentation_active = False
+
+        sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+        sensor_alert_states.append(sensor_alert_state)
+
+        new_sensor_alert_states = sensor_alert_executer._separate_instrumentation_alert_levels(sensor_alert_states)
+
+        self.assertEqual(1, len(new_sensor_alert_states))
+
+        sensor_alert_state = new_sensor_alert_states[0]
+
+        self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
+
+        suitable_alert_level = sensor_alert_state.suitable_alert_levels[0]
+        self.assertFalse(suitable_alert_level.instrumentation_active)
+        self.assertFalse(sensor_alert_state.uses_instrumentation)
+
     def test_separate_instrumentation_alert_levels_half(self):
         """
         Tests split instrumented alert levels into separated sensor alert states (with remaining alert levels).
@@ -1159,7 +1233,8 @@ class TestAlert(TestCase):
 
     def test_run_instrumentation(self):
         """
-        Integration test that checks if sensor alerts with instrumentation are processed correctly.
+        Integration test that checks if sensor alerts with instrumentation (mirroring and suppression)
+        are processed correctly.
         """
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
@@ -1248,13 +1323,228 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
+    def test_run_instrumentation_toggle_state(self):
+        """
+        Integration test that checks if sensor alerts with instrumentation that
+        change the state are correctly processed (no longer satisfies trigger condition after instrumentation
+        and starts to satisfy trigger condition after instrumentation).
+        """
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
 
+        num = 10
 
+        toggle_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "toggle_state.py")
 
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
 
-    # TODO test case instrumentation sensor state toggle
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
 
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
+        # Only use one sensor alert with multiple alert levels.
+        base_sensor_alert = sensor_alerts[0]
+        base_sensor_alert.state = 1
+        base_sensor_alert.alertLevels.clear()
+        global_data.storage.add_sensor_alert(base_sensor_alert)
+
+        gt_alert_level_set = set()
+        alert_levels_no_longer_triggered = list()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            base_sensor_alert.alertLevels.append(alert_level.level)
+            alert_level.triggerAlways = True
+            if (i % 2) == 0:
+                alert_level.triggerAlertTriggered = False
+                alert_level.triggerAlertNormal = True
+                gt_alert_level_set.add(alert_level.level)
+            else:
+                alert_level.triggerAlertTriggered = True
+                alert_level.triggerAlertNormal = False
+                alert_levels_no_longer_triggered.append(alert_level)
+
+            alert_level.instrumentation_active = True
+            alert_level.instrumentation_timeout = 10
+            alert_level.instrumentation_cmd = toggle_cmd
+
+        global_data.alertLevels = alert_levels
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(3)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(2)
+
+        self.assertEqual(len(gt_alert_level_set), len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        test_alert_level_set = set()
+        for sensor_alert_state in TestAlert._callback_trigger_sensor_alert_arg:
+            self.assertIsNotNone(sensor_alert_state.sensor_alert)
+            self.assertEqual(0, sensor_alert_state.sensor_alert.state)
+            self.assertTrue(sensor_alert_state.uses_instrumentation)
+            self.assertEqual(base_sensor_alert, sensor_alert_state.init_sensor_alert)
+            self.assertNotEqual(base_sensor_alert, sensor_alert_state.sensor_alert)
+            self.assertEqual(1, len(sensor_alert_state.sensor_alert.triggeredAlertLevels))
+            test_alert_level_set.add(sensor_alert_state.sensor_alert.triggeredAlertLevels[0])
+            self.assertEqual(num, len(sensor_alert_state.sensor_alert.alertLevels))
+
+        # Check if each alert level was triggered.
+        self.assertEqual(gt_alert_level_set, test_alert_level_set)
+
+        # Check alert levels that no longer satisfy trigger conditions got triggered.
+        for alert_level in alert_levels_no_longer_triggered:
+            self.assertFalse(alert_level.level in test_alert_level_set)
+
+        # Check sensor alerts in database were removed after processing.
+        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+    def test_run_instrumentation_timeout(self):
+        """
+        Integration test that checks if sensor alerts with instrumentation that times out is processed correctly
+        """
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        num = 2
+
+        timeout_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "instrumentation_scripts",
+                                   "timeout.py")
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        # Only use one sensor alert with multiple alert levels.
+        base_sensor_alert = sensor_alerts[0]
+        base_sensor_alert.state = 1
+        base_sensor_alert.alertLevels.clear()
+        global_data.storage.add_sensor_alert(base_sensor_alert)
+
+        gt_alert_level_set = set()
+        alert_levels_no_longer_triggered = list()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            base_sensor_alert.alertLevels.append(alert_level.level)
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+            alert_level.triggerAlertNormal = False
+            alert_level.instrumentation_active = True
+            alert_level.instrumentation_timeout = 2
+            alert_level.instrumentation_cmd = timeout_cmd
+
+        global_data.alertLevels = alert_levels
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(5)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(2)
+
+        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        # Check sensor alerts in database were removed after processing.
+        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+        # TODO should be used for manager updater
+
+    def test_run_instrumentation_failed(self):
+        """
+        Integration test that checks if sensor alerts with instrumentation that fails is processed correctly
+        """
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        num = 2
+
+        timeout_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "instrumentation_scripts",
+                                   "not_executable.py")
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        # Only use one sensor alert with multiple alert levels.
+        base_sensor_alert = sensor_alerts[0]
+        base_sensor_alert.state = 1
+        base_sensor_alert.alertLevels.clear()
+        global_data.storage.add_sensor_alert(base_sensor_alert)
+
+        gt_alert_level_set = set()
+        alert_levels_no_longer_triggered = list()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            base_sensor_alert.alertLevels.append(alert_level.level)
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+            alert_level.triggerAlertNormal = False
+            alert_level.instrumentation_active = True
+            alert_level.instrumentation_timeout = 2
+            alert_level.instrumentation_cmd = timeout_cmd
+
+        global_data.alertLevels = alert_levels
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(5)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(2)
+
+        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        # Check sensor alerts in database were removed after processing.
+        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+        # TODO should be used for manager updater
 
     def test_run_manager_updater(self):
         """

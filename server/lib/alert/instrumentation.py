@@ -111,7 +111,8 @@ class Instrumentation:
         try:
             process = subprocess.Popen(temp_execute,
                                        stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+                                       stderr=subprocess.PIPE,
+                                       close_fds=True)
 
         except Exception:
             self._logger.exception("[%s]: Executing instrumentation for Alert Level '%d' failed."
@@ -120,6 +121,16 @@ class Instrumentation:
 
             # Set result.
             self._promise.set_failed()
+
+            try:
+                process.stdout.close()
+            except Exception:
+                pass
+
+            try:
+                process.stderr.close()
+            except Exception:
+                pass
 
             return self._promise
 
@@ -148,6 +159,16 @@ class Instrumentation:
 
             # Set result.
             self._promise.set_failed()
+
+            try:
+                process.stdout.close()
+            except Exception:
+                pass
+
+            try:
+                process.stderr.close()
+            except Exception:
+                pass
 
             return self._promise
 
@@ -194,6 +215,16 @@ class Instrumentation:
 
             # Set result.
             self._promise.set_failed()
+
+        try:
+            process.stdout.close()
+        except Exception:
+            pass
+
+        try:
+            process.stderr.close()
+        except Exception:
+            pass
 
         return self._promise
 
