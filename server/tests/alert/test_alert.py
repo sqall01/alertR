@@ -238,6 +238,7 @@ class TestAlert(TestCase):
 
         for sensor_alert_state in sensor_alert_states:
             self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
 
     def test_update_suitable_alert_levels_activated(self):
         """
@@ -273,6 +274,8 @@ class TestAlert(TestCase):
             self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
                              sensor_alert_state.suitable_alert_levels[0].level)
 
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
+
     def test_update_suitable_alert_levels_trigger_always_wrong_trigger_state(self):
         """
         Tests update of suitable alert levels when the alert system is deactivated,
@@ -303,6 +306,7 @@ class TestAlert(TestCase):
 
         for sensor_alert_state in sensor_alert_states:
             self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
 
     def test_update_suitable_alert_levels_trigger_always_correct_trigger_state(self):
         """
@@ -339,6 +343,8 @@ class TestAlert(TestCase):
             self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
                              sensor_alert_state.suitable_alert_levels[0].level)
 
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
+
     def test_update_suitable_alert_levels_trigger_always_wrong_normal_state(self):
         """
         Tests update of suitable alert levels when the alert system is deactivated,
@@ -369,6 +375,7 @@ class TestAlert(TestCase):
 
         for sensor_alert_state in sensor_alert_states:
             self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
 
     def test_update_suitable_alert_levels_trigger_always_correct_normal_state(self):
         """
@@ -405,6 +412,8 @@ class TestAlert(TestCase):
             self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
                              sensor_alert_state.suitable_alert_levels[0].level)
 
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
+
     def test_update_suitable_alert_levels_multiple_alert_levels(self):
         """
         Tests update of multiple suitable alert levels when the alert system is activated.
@@ -440,6 +449,7 @@ class TestAlert(TestCase):
 
         for sensor_alert_state in sensor_alert_states:
             self.assertEqual(num_suitable, len(sensor_alert_state.suitable_alert_levels))
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
 
             for suitable_alert_level in sensor_alert_state.suitable_alert_levels:
                 # Check if each suitable alert level is actually an alert level of the sensor alert.
@@ -448,6 +458,233 @@ class TestAlert(TestCase):
 
                 # Check if the suitable alert level is the one that is set to trigger for state "triggered"
                 self.assertTrue(suitable_alert_level.triggerAlertTriggered)
+
+    def test_update_suitable_alert_levels_instrumentation_unfinished(self):
+        """
+        Tests update of suitable alert levels when the sensor alert is instrumented and not finished.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = False
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state._init_sensor_alert.state = 1
+            sensor_alert_state.uses_instrumentation = True
+            for alert_level in alert_levels:
+                if alert_level.level in sensor_alert.alertLevels:
+                    sensor_alert_state.instrumentation_promise = InstrumentationPromise(
+                        alert_level,
+                        sensor_alert_state.init_sensor_alert)
+                    break
+            sensor_alert_states.append(sensor_alert_state)
+
+        for alert_level in alert_levels:
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+            alert_level.instrumentation_active = True
+
+        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
+
+            # Check if the only suitable alert level is actually the alert level of the sensor alert.
+            self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
+                             sensor_alert_state.suitable_alert_levels[0].level)
+
+            self.assertFalse(sensor_alert_state.instrumentation_processed)
+
+    def test_update_suitable_alert_levels_instrumentation_finished(self):
+        """
+        Tests update of suitable alert levels when the sensor alert is instrumented and finished.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = False
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state._init_sensor_alert.state = 1
+            sensor_alert_state.uses_instrumentation = True
+            for alert_level in alert_levels:
+                if alert_level.level in sensor_alert.alertLevels:
+                    sensor_alert_state.instrumentation_promise = InstrumentationPromise(
+                        alert_level,
+                        sensor_alert_state.init_sensor_alert)
+                    sensor_alert_state.instrumentation_promise.set_success()
+                    sensor_alert_state.instrumentation_promise.new_sensor_alert = sensor_alert_state.init_sensor_alert
+                    break
+            sensor_alert_states.append(sensor_alert_state)
+
+        for alert_level in alert_levels:
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+            alert_level.instrumentation_active = True
+
+        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
+
+            # Check if the only suitable alert level is actually the alert level of the sensor alert.
+            self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
+                             sensor_alert_state.suitable_alert_levels[0].level)
+
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
+
+    def test_update_suitable_alert_levels_instrumentation_finished_not_triggered(self):
+        """
+        Tests update of suitable alert levels when the sensor alert is instrumented, finished and does not
+        satisfy trigger conditions.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = False
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state._init_sensor_alert.state = 1
+            sensor_alert_state.uses_instrumentation = True
+            for alert_level in alert_levels:
+                if alert_level.level in sensor_alert.alertLevels:
+                    sensor_alert_state.instrumentation_promise = InstrumentationPromise(
+                        alert_level,
+                        sensor_alert_state.init_sensor_alert)
+                    sensor_alert_state.instrumentation_promise.set_success()
+                    sensor_alert_state.instrumentation_promise.new_sensor_alert = sensor_alert_state.init_sensor_alert
+                    break
+            sensor_alert_states.append(sensor_alert_state)
+
+        for alert_level in alert_levels:
+            alert_level.triggerAlways = False
+            alert_level.triggerAlertTriggered = True
+            alert_level.instrumentation_active = True
+
+        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
+
+    def test_update_suitable_alert_levels_instrumentation_toggle_state_not_triggered(self):
+        """
+        Tests update of suitable alert levels when the sensor alert is instrumented, finishes by toggling the state
+        and it does no longer satisfy the trigger conditions.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state._init_sensor_alert.state = 1
+            sensor_alert_state.uses_instrumentation = True
+            for alert_level in alert_levels:
+                if alert_level.level in sensor_alert.alertLevels:
+                    sensor_alert_state.instrumentation_promise = InstrumentationPromise(
+                        alert_level,
+                        sensor_alert_state.init_sensor_alert)
+                    sensor_alert_state.instrumentation_promise.set_success()
+                    sensor_alert_state.instrumentation_promise.new_sensor_alert = \
+                        SensorAlert().deepcopy(sensor_alert_state.init_sensor_alert)
+                    sensor_alert_state.instrumentation_promise.new_sensor_alert.state = 0
+                    break
+            sensor_alert_states.append(sensor_alert_state)
+
+        for alert_level in alert_levels:
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+            alert_level.triggerAlertNormal = False
+            alert_level.instrumentation_active = True
+
+        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
+
+    def test_update_suitable_alert_levels_instrumentation_toggle_state_triggered(self):
+        """
+        Tests update of suitable alert levels when the sensor alert is instrumented, finishes by toggling the state
+        and now it satisfies the trigger conditions.
+        """
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        sensor_alert_states = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state._init_sensor_alert.state = 1
+            sensor_alert_state.uses_instrumentation = True
+            for alert_level in alert_levels:
+                if alert_level.level in sensor_alert.alertLevels:
+                    sensor_alert_state.instrumentation_promise = InstrumentationPromise(
+                        alert_level,
+                        sensor_alert_state.init_sensor_alert)
+                    sensor_alert_state.instrumentation_promise.set_success()
+                    sensor_alert_state.instrumentation_promise.new_sensor_alert = \
+                        SensorAlert().deepcopy(sensor_alert_state.init_sensor_alert)
+                    sensor_alert_state.instrumentation_promise.new_sensor_alert.state = 0
+                    break
+            sensor_alert_states.append(sensor_alert_state)
+
+        for alert_level in alert_levels:
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = False
+            alert_level.triggerAlertNormal = True
+            alert_level.instrumentation_active = True
+
+        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+            self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
+
+            # Check if the only suitable alert level is actually the alert level of the sensor alert.
+            self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
+                             sensor_alert_state.suitable_alert_levels[0].level)
+
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
 
     def test_process_sensor_alert(self):
         """
@@ -1011,8 +1248,19 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
+
+
+
+
+    # TODO test case instrumentation sensor state toggle
+
+
+
     def test_run_manager_updater(self):
         """
         Integration test that checks if sensor alerts that are dropped are send to the manager updater queue.
         """
         self.fail("TODO")
+
+
+
