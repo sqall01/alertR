@@ -18,7 +18,6 @@ from ..users import CSVBackend
 from ..storage import Sqlite
 from ..globalData import GlobalData
 from ..localObjects import AlertLevel
-from ..rules import parse_rule
 from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor
 
 log_tag = fileName = os.path.basename(__file__)
@@ -295,20 +294,35 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
                                                         "triggerAlertTriggered"]).upper() == "TRUE")
             alertLevel.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
 
-            # check if rules are activated
-            # => parse rules
-            alertLevel.rulesActivated = (str(item.find("rules").attrib["activated"]).upper() == "TRUE")
-            if alertLevel.rulesActivated:
-                parse_rule(alertLevel,
-                           global_data,
-                           item,
-                           fileName)
+            # check if instrumentation is activated
+            # => parse instrumentation
+            alertLevel.instrumentation_active = (str(item.find("instrumentation").attrib[
+                                                         "activated"]).upper() == "TRUE")
+            if alertLevel.instrumentation_active:
+                alertLevel.instrumentation_cmd = str(item.find("instrumentation").attrib["cmd"])
+                alertLevel.instrumentation_timeout = int(item.find("instrumentation").attrib["timeout"])
 
-            # check if the alert level only exists once
+            # Check if the alert level only exists once.
             for tempAlertLevel in global_data.alertLevels:
                 if tempAlertLevel.level == alertLevel.level:
                     global_data.logger.error("[%s]: Alert Level must be unique." % log_tag)
                     return False
+
+            # Check instrumentation settings for sanity.
+            if alertLevel.instrumentation_active is True and os.path.exists(alertLevel.instrumentation_cmd) is False:
+                global_data.logger.error("[%s]: Alert Level instrumentation command '%s' does not exist."
+                                         % (log_tag, alertLevel.instrumentation_cmd))
+                return False
+
+            if alertLevel.instrumentation_active is True and not os.access(alertLevel.instrumentation_cmd, os.X_OK):
+                global_data.logger.error("[%s]: Alert Level instrumentation command '%s' not executable."
+                                         % (log_tag, alertLevel.instrumentation_cmd))
+                return False
+
+            if alertLevel.instrumentation_active is True and alertLevel.instrumentation_timeout <= 0:
+                global_data.logger.error("[%s]: Alert Level instrumentation timeout has to be greater than 0."
+                                         % log_tag)
+                return False
 
             global_data.alertLevels.append(alertLevel)
 

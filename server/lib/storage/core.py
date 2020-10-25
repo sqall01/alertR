@@ -9,7 +9,7 @@
 
 import logging
 from typing import Any, Optional, List, Union, Tuple, Dict
-from ..localObjects import Node, Alert, Manager, Sensor, SensorAlert, Option
+from ..localObjects import Node, Alert, Manager, Sensor, SensorAlert, Option, SensorData
 
 
 # Internal abstract class for new storage backends.
@@ -380,7 +380,7 @@ class _Storage:
 
     def getSensorData(self,
                       sensorId: int,
-                      logger: logging.Logger = None) -> Optional[Any]:
+                      logger: logging.Logger = None) -> Optional[SensorData]:
         """
         Gets the data of a sensor given by id.
 
