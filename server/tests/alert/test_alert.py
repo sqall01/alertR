@@ -1152,6 +1152,245 @@ class TestAlert(TestCase):
             self.assertTrue(sensor_alert.hasOptionalData)
             self.assertTrue("timestamp" in sensor_alert.optionalData.keys())
 
+    def test_queue_manager_update_no_change(self):
+        """
+        Tests that sensor alerts without any data/state change are not queued for state change processing.
+        """
+
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = False
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for sensor_alert in sensor_alerts:
+            sensor_alert.hasLatestData = False
+            sensor_alert.changeState = False
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
+        sensor_alert_executer._queue_manager_update(sensor_alerts)
+
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+
+        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+
+    def test_queue_manager_update_state_change(self):
+        """
+        Tests that sensor alerts with a state change are queued for state change processing.
+        """
+
+        # Use odd number to have different group sizes.
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        storage = MockStorage()
+        global_data.storage = storage
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(sensor_alerts)):
+            sensor_alert = sensor_alerts[i]
+            sensor_alert.hasLatestData = False
+            sensor_alert.changeState = True
+            sensor_alert.state = i % 2
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            if (i % 3) == 0:
+                sensor_data.dataType = SensorDataType.NONE
+            elif (i % 3) == 1:
+                sensor_data.dataType = SensorDataType.INT
+                sensor_data.data = i
+            else:
+                sensor_data.dataType = SensorDataType.FLOAT
+                sensor_data.data = float(i)
+            storage.add_sensor_data(sensor_data)
+
+            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
+        sensor_alert_executer._queue_manager_update(sensor_alerts)
+
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+
+        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+
+        for sensor_id, state, sensor_data in manager_update_executer.queueStateChange:
+            found = False
+            for sensor_alert in sensor_alerts:
+                if sensor_id == sensor_alert.sensorId:
+                    found = True
+                    self.assertEqual(sensor_alert.state, state)
+                    self.assertEqual(sensor_alert.sensorId, sensor_data.sensorId)
+                    gt_sensor_data = storage.getSensorData(sensor_id)
+                    self.assertEqual(gt_sensor_data.sensorId, sensor_data.sensorId)
+                    self.assertEqual(gt_sensor_data.dataType, sensor_data.dataType)
+                    self.assertEqual(gt_sensor_data.data, sensor_data.data)
+                    break
+            self.assertTrue(found)
+
+    def test_queue_manager_update_data_change(self):
+        """
+        Tests that sensor alerts with a data change are queued for state change processing.
+        """
+
+        # Use odd number to have different group sizes.
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        storage = MockStorage()
+        global_data.storage = storage
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(sensor_alerts)):
+            sensor_alert = sensor_alerts[i]
+            sensor_alert.hasLatestData = True
+            sensor_alert.changeState = False
+            sensor_alert.state = i % 2
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            if (i % 3) == 0:
+                sensor_data.dataType = SensorDataType.NONE
+            elif (i % 3) == 1:
+                sensor_data.dataType = SensorDataType.INT
+                sensor_data.data = i
+            else:
+                sensor_data.dataType = SensorDataType.FLOAT
+                sensor_data.data = float(i)
+            storage.add_sensor_data(sensor_data)
+
+            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
+        sensor_alert_executer._queue_manager_update(sensor_alerts)
+
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+
+        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+
+        for sensor_id, state, sensor_data in manager_update_executer.queueStateChange:
+            found = False
+            for sensor_alert in sensor_alerts:
+                if sensor_id == sensor_alert.sensorId:
+                    found = True
+                    self.assertEqual(sensor_alert.state, state)
+                    self.assertEqual(sensor_alert.sensorId, sensor_data.sensorId)
+                    gt_sensor_data = storage.getSensorData(sensor_id)
+                    self.assertEqual(gt_sensor_data.sensorId, sensor_data.sensorId)
+                    self.assertEqual(gt_sensor_data.dataType, sensor_data.dataType)
+                    self.assertEqual(gt_sensor_data.data, sensor_data.data)
+                    break
+            self.assertTrue(found)
+
+    def test_queue_manager_update_state_change_db_fail(self):
+        """
+        Tests that sensor alerts with a state change which a faulty database entry are
+        not queued for state change processing.
+        """
+
+        # Use odd number to have different group sizes.
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        storage = MockStorage()
+        global_data.storage = storage
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(sensor_alerts)):
+            sensor_alert = sensor_alerts[i]
+            sensor_alert.hasLatestData = False
+            sensor_alert.changeState = True
+            sensor_alert.state = i % 2
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            if (i % 3) == 0:
+                sensor_data.dataType = SensorDataType.NONE
+            elif (i % 3) == 1:
+                sensor_data.dataType = SensorDataType.INT
+                sensor_data.data = i
+            else:
+                sensor_data.dataType = SensorDataType.FLOAT
+                sensor_data.data = float(i)
+            storage.add_sensor_data(sensor_data)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
+        sensor_alert_executer._queue_manager_update(sensor_alerts)
+
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+
+        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+
+    def test_queue_manager_update_data_change_db_fail(self):
+        """
+        Tests that sensor alerts with a data change which a faulty database entry are
+        not queued for state change processing.
+        """
+
+        # Use odd number to have different group sizes.
+        num = 5
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        storage = MockStorage()
+        global_data.storage = storage
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(sensor_alerts)):
+            sensor_alert = sensor_alerts[i]
+            sensor_alert.hasLatestData = True
+            sensor_alert.changeState = False
+            sensor_alert.state = i % 2
+
+            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
+        sensor_alert_executer._queue_manager_update(sensor_alerts)
+
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+
+        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+
     def test_run_trigger_always(self):
         """
         Integration test that checks if trigger always sensor alerts are processed correctly.
@@ -1750,243 +1989,4 @@ class TestAlert(TestCase):
 
         # No sensor alert should was dropped that should trigger a state update.
         self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
-
-    def test_queue_manager_update_no_change(self):
-        """
-        Tests that sensor alerts without any data/state change are not queued for state change processing.
-        """
-
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        global_data.storage = MockStorage()
-        global_data.storage.is_active = False
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for sensor_alert in sensor_alerts:
-            sensor_alert.hasLatestData = False
-            sensor_alert.changeState = False
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-
-        sensor_alert_executer._queue_manager_update(sensor_alerts)
-
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
-
-    def test_queue_manager_update_state_change(self):
-        """
-        Tests that sensor alerts with a state change are queued for state change processing.
-        """
-
-        # Use odd number to have different group sizes.
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        storage = MockStorage()
-        global_data.storage = storage
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for i in range(len(sensor_alerts)):
-            sensor_alert = sensor_alerts[i]
-            sensor_alert.hasLatestData = False
-            sensor_alert.changeState = True
-            sensor_alert.state = i % 2
-
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
-            if (i % 3) == 0:
-                sensor_data.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
-                sensor_data.dataType = SensorDataType.INT
-                sensor_data.data = i
-            else:
-                sensor_data.dataType = SensorDataType.FLOAT
-                sensor_data.data = float(i)
-            storage.add_sensor_data(sensor_data)
-
-            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-
-        sensor_alert_executer._queue_manager_update(sensor_alerts)
-
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
-
-        for sensor_id, state, sensor_data in manager_update_executer.queueStateChange:
-            found = False
-            for sensor_alert in sensor_alerts:
-                if sensor_id == sensor_alert.sensorId:
-                    found = True
-                    self.assertEqual(sensor_alert.state, state)
-                    self.assertEqual(sensor_alert.sensorId, sensor_data.sensorId)
-                    gt_sensor_data = storage.getSensorData(sensor_id)
-                    self.assertEqual(gt_sensor_data.sensorId, sensor_data.sensorId)
-                    self.assertEqual(gt_sensor_data.dataType, sensor_data.dataType)
-                    self.assertEqual(gt_sensor_data.data, sensor_data.data)
-                    break
-            self.assertTrue(found)
-
-    def test_queue_manager_update_data_change(self):
-        """
-        Tests that sensor alerts with a data change are queued for state change processing.
-        """
-
-        # Use odd number to have different group sizes.
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        storage = MockStorage()
-        global_data.storage = storage
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for i in range(len(sensor_alerts)):
-            sensor_alert = sensor_alerts[i]
-            sensor_alert.hasLatestData = True
-            sensor_alert.changeState = False
-            sensor_alert.state = i % 2
-
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
-            if (i % 3) == 0:
-                sensor_data.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
-                sensor_data.dataType = SensorDataType.INT
-                sensor_data.data = i
-            else:
-                sensor_data.dataType = SensorDataType.FLOAT
-                sensor_data.data = float(i)
-            storage.add_sensor_data(sensor_data)
-
-            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-
-        sensor_alert_executer._queue_manager_update(sensor_alerts)
-
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
-
-        for sensor_id, state, sensor_data in manager_update_executer.queueStateChange:
-            found = False
-            for sensor_alert in sensor_alerts:
-                if sensor_id == sensor_alert.sensorId:
-                    found = True
-                    self.assertEqual(sensor_alert.state, state)
-                    self.assertEqual(sensor_alert.sensorId, sensor_data.sensorId)
-                    gt_sensor_data = storage.getSensorData(sensor_id)
-                    self.assertEqual(gt_sensor_data.sensorId, sensor_data.sensorId)
-                    self.assertEqual(gt_sensor_data.dataType, sensor_data.dataType)
-                    self.assertEqual(gt_sensor_data.data, sensor_data.data)
-                    break
-            self.assertTrue(found)
-
-    def test_queue_manager_update_state_change_db_fail(self):
-        """
-        Tests that sensor alerts with a state change which a faulty database entry are
-        not queued for state change processing.
-        """
-
-        # Use odd number to have different group sizes.
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        storage = MockStorage()
-        global_data.storage = storage
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for i in range(len(sensor_alerts)):
-            sensor_alert = sensor_alerts[i]
-            sensor_alert.hasLatestData = False
-            sensor_alert.changeState = True
-            sensor_alert.state = i % 2
-
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
-            if (i % 3) == 0:
-                sensor_data.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
-                sensor_data.dataType = SensorDataType.INT
-                sensor_data.data = i
-            else:
-                sensor_data.dataType = SensorDataType.FLOAT
-                sensor_data.data = float(i)
-            storage.add_sensor_data(sensor_data)
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-
-        sensor_alert_executer._queue_manager_update(sensor_alerts)
-
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
-
-    def test_queue_manager_update_data_change_db_fail(self):
-        """
-        Tests that sensor alerts with a data change which a faulty database entry are
-        not queued for state change processing.
-        """
-
-        # Use odd number to have different group sizes.
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        storage = MockStorage()
-        global_data.storage = storage
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for i in range(len(sensor_alerts)):
-            sensor_alert = sensor_alerts[i]
-            sensor_alert.hasLatestData = True
-            sensor_alert.changeState = False
-            sensor_alert.state = i % 2
-
-            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-
-        sensor_alert_executer._queue_manager_update(sensor_alerts)
-
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-
         self.assertEqual(0, len(manager_update_executer.queueStateChange))
