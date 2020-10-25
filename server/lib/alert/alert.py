@@ -442,8 +442,6 @@ class SensorAlertExecuter(threading.Thread):
         This function starts the endless loop of the alert executer thread.
         """
 
-        # TODO test cases
-
         curr_sensor_alert_states = list()  # type: List[SensorAlertState]
         while True:
 
@@ -505,5 +503,4 @@ class SensorAlertExecuter(threading.Thread):
 
 
 # TODO
-# - test cases
 # - internal sensor for instrumentation errors
