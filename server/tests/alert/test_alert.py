@@ -450,6 +450,8 @@ class TestAlert(TestCase):
         """
         Tests update of multiple suitable alert levels when the alert system is activated.
         """
+
+        # Use odd number to have different group sizes.
         num = 7
 
         global_data = GlobalData()
@@ -866,6 +868,8 @@ class TestAlert(TestCase):
         """
         Tests split instrumented alert levels into separated sensor alert states (with remaining alert levels).
         """
+
+        # Use odd number to have different group sizes.
         num = 11
 
         global_data = GlobalData()
@@ -1155,6 +1159,7 @@ class TestAlert(TestCase):
 
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
+        # Use odd number to have different group sizes.
         num = 5
 
         global_data = GlobalData()
@@ -1163,6 +1168,9 @@ class TestAlert(TestCase):
 
         global_data.storage = MockStorage()
         global_data.storage.is_active = False
+
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
@@ -1177,7 +1185,14 @@ class TestAlert(TestCase):
         global_data.alertLevels = alert_levels
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 1
+            sensor_alert.changeState = True
             global_data.storage.add_sensor_alert(sensor_alert)
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            sensor_data.dataType = SensorDataType.NONE
+            global_data.storage.add_sensor_data(sensor_data)
+            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1186,6 +1201,8 @@ class TestAlert(TestCase):
         func_type = type(sensor_alert_executer._trigger_sensor_alert)
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1205,7 +1222,9 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO dropped sensor alerts should be used for manager updater
+        # Sensor alerts that did not trigger should lead to an manager state update.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(num - len(gt_set), len(manager_update_executer.queueStateChange))
 
     def test_run_trigger_active(self):
         """
@@ -1215,6 +1234,7 @@ class TestAlert(TestCase):
 
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
+        # Use odd number to have different group sizes.
         num = 5
 
         global_data = GlobalData()
@@ -1223,6 +1243,9 @@ class TestAlert(TestCase):
 
         global_data.storage = MockStorage()
         global_data.storage.is_active = True
+
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
@@ -1237,7 +1260,14 @@ class TestAlert(TestCase):
         global_data.alertLevels = alert_levels
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 0
+            sensor_alert.changeState = True
             global_data.storage.add_sensor_alert(sensor_alert)
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            sensor_data.dataType = SensorDataType.NONE
+            global_data.storage.add_sensor_data(sensor_data)
+            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1246,6 +1276,8 @@ class TestAlert(TestCase):
         func_type = type(sensor_alert_executer._trigger_sensor_alert)
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1265,7 +1297,9 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO dropped sensor alerts should be used for manager updater
+        # Sensor alerts that did not trigger should lead to an manager state update.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(num - len(gt_set), len(manager_update_executer.queueStateChange))
 
     def test_run_instrumentation(self):
         """
@@ -1274,6 +1308,7 @@ class TestAlert(TestCase):
         """
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
+        # Use odd number to have different group sizes.
         num = 11
 
         trigger_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -1291,13 +1326,23 @@ class TestAlert(TestCase):
         global_data.storage = MockStorage()
         global_data.storage.is_active = False
 
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
         # Only use one sensor alert with multiple alert levels.
         base_sensor_alert = sensor_alerts[0]
         base_sensor_alert.state = 1
         base_sensor_alert.alertLevels.clear()
+        base_sensor_alert.changeState = True
         global_data.storage.add_sensor_alert(base_sensor_alert)
+
+        base_sensor_data = SensorData()
+        base_sensor_data.sensorId = base_sensor_alert.sensorId
+        base_sensor_data.dataType = SensorDataType.NONE
+        global_data.storage.add_sensor_data(base_sensor_data)
+        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
 
         gt_alert_level_set = set()
         alert_levels_suppressed = list()
@@ -1324,6 +1369,8 @@ class TestAlert(TestCase):
         func_type = type(sensor_alert_executer._trigger_sensor_alert)
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1359,7 +1406,9 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO dropped sensor alerts should be used for manager updater
+        # Sensor alerts that did not trigger should lead to an manager state update.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer.queueStateChange))
 
     def test_run_instrumentation_toggle_state(self):
         """
@@ -1369,6 +1418,7 @@ class TestAlert(TestCase):
         """
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
+        # Use odd number to have different group sizes.
         num = 11
 
         toggle_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -1382,13 +1432,23 @@ class TestAlert(TestCase):
         global_data.storage = MockStorage()
         global_data.storage.is_active = True
 
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
         # Only use one sensor alert with multiple alert levels.
         base_sensor_alert = sensor_alerts[0]
         base_sensor_alert.state = 1
         base_sensor_alert.alertLevels.clear()
+        base_sensor_alert.changeState = True
         global_data.storage.add_sensor_alert(base_sensor_alert)
+
+        base_sensor_data = SensorData()
+        base_sensor_data.sensorId = base_sensor_alert.sensorId
+        base_sensor_data.dataType = SensorDataType.NONE
+        global_data.storage.add_sensor_data(base_sensor_data)
+        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
 
         gt_alert_level_set = set()
         alert_levels_no_longer_triggered = list()
@@ -1418,6 +1478,8 @@ class TestAlert(TestCase):
         func_type = type(sensor_alert_executer._trigger_sensor_alert)
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1452,7 +1514,9 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO dropped sensor alerts should be used for manager updater
+        # Sensor alerts that did not trigger should lead to an manager state update.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(len(alert_levels_no_longer_triggered), len(manager_update_executer.queueStateChange))
 
     def test_run_instrumentation_timeout(self):
         """
@@ -1460,7 +1524,7 @@ class TestAlert(TestCase):
         """
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
-        num = 2
+        num = 3
 
         timeout_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                    "instrumentation_scripts",
@@ -1473,16 +1537,24 @@ class TestAlert(TestCase):
         global_data.storage = MockStorage()
         global_data.storage.is_active = True
 
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
         # Only use one sensor alert with multiple alert levels.
         base_sensor_alert = sensor_alerts[0]
         base_sensor_alert.state = 1
+        base_sensor_alert.changeState = True
         base_sensor_alert.alertLevels.clear()
         global_data.storage.add_sensor_alert(base_sensor_alert)
 
-        gt_alert_level_set = set()
-        alert_levels_no_longer_triggered = list()
+        base_sensor_data = SensorData()
+        base_sensor_data.sensorId = base_sensor_alert.sensorId
+        base_sensor_data.dataType = SensorDataType.NONE
+        global_data.storage.add_sensor_data(base_sensor_data)
+        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
+
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
             base_sensor_alert.alertLevels.append(alert_level.level)
@@ -1503,6 +1575,8 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
         # Start executer thread.
         sensor_alert_executer.daemon = True
         sensor_alert_executer.start()
@@ -1518,7 +1592,9 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO dropped sensor alerts should be used for manager updater
+        # Sensor alerts that did not trigger should lead to an manager state update.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(num, len(manager_update_executer.queueStateChange))
 
     def test_run_instrumentation_failed(self):
         """
@@ -1526,7 +1602,7 @@ class TestAlert(TestCase):
         """
         TestAlert._callback_trigger_sensor_alert_arg.clear()
 
-        num = 2
+        num = 3
 
         timeout_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                    "instrumentation_scripts",
@@ -1539,16 +1615,24 @@ class TestAlert(TestCase):
         global_data.storage = MockStorage()
         global_data.storage.is_active = True
 
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
         # Only use one sensor alert with multiple alert levels.
         base_sensor_alert = sensor_alerts[0]
         base_sensor_alert.state = 1
         base_sensor_alert.alertLevels.clear()
+        base_sensor_alert.changeState = True
         global_data.storage.add_sensor_alert(base_sensor_alert)
 
-        gt_alert_level_set = set()
-        alert_levels_no_longer_triggered = list()
+        base_sensor_data = SensorData()
+        base_sensor_data.sensorId = base_sensor_alert.sensorId
+        base_sensor_data.dataType = SensorDataType.NONE
+        global_data.storage.add_sensor_data(base_sensor_data)
+        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
+
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
             base_sensor_alert.alertLevels.append(alert_level.level)
@@ -1569,6 +1653,8 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
         # Start executer thread.
         sensor_alert_executer.daemon = True
         sensor_alert_executer.start()
@@ -1584,7 +1670,9 @@ class TestAlert(TestCase):
         # Check sensor alerts in database were removed after processing.
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-        # TODO dropped sensor alerts should be used for manager updater
+        # Sensor alerts that did not trigger should lead to an manager state update.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(num, len(manager_update_executer.queueStateChange))
 
     def test_run_alert_delay(self):
         """
@@ -1603,6 +1691,9 @@ class TestAlert(TestCase):
         global_data.storage = MockStorage()
         global_data.storage.is_active = False
 
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
         gt_set = set()
@@ -1616,7 +1707,14 @@ class TestAlert(TestCase):
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 1
             sensor_alert.alertDelay = delay
+            sensor_alert.changeState = True
             global_data.storage.add_sensor_alert(sensor_alert)
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            sensor_data.dataType = SensorDataType.NONE
+            global_data.storage.add_sensor_data(sensor_data)
+            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1625,6 +1723,8 @@ class TestAlert(TestCase):
         func_type = type(sensor_alert_executer._trigger_sensor_alert)
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1647,6 +1747,10 @@ class TestAlert(TestCase):
 
         test_set = set([sas.sensor_alert.sensorAlertId for sas in TestAlert._callback_trigger_sensor_alert_arg])
         self.assertEqual(gt_set, test_set)
+
+        # No sensor alert should was dropped that should trigger a state update.
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(0, len(manager_update_executer.queueStateChange))
 
     def test_queue_manager_update_no_change(self):
         """
@@ -1684,6 +1788,7 @@ class TestAlert(TestCase):
         Tests that sensor alerts with a state change are queued for state change processing.
         """
 
+        # Use odd number to have different group sizes.
         num = 5
 
         global_data = GlobalData()
@@ -1745,6 +1850,7 @@ class TestAlert(TestCase):
         Tests that sensor alerts with a data change are queued for state change processing.
         """
 
+        # Use odd number to have different group sizes.
         num = 5
 
         global_data = GlobalData()
@@ -1807,6 +1913,7 @@ class TestAlert(TestCase):
         not queued for state change processing.
         """
 
+        # Use odd number to have different group sizes.
         num = 5
 
         global_data = GlobalData()
@@ -1853,6 +1960,7 @@ class TestAlert(TestCase):
         not queued for state change processing.
         """
 
+        # Use odd number to have different group sizes.
         num = 5
 
         global_data = GlobalData()
