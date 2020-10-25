@@ -17,6 +17,18 @@ from ..localObjects import SensorAlert, AlertLevel
 from ..globalData import GlobalData
 
 
+class InstrumentationNotFinished(Exception):
+    pass
+
+
+class InstrumentationNotRun(Exception):
+    pass
+
+
+class InstrumentationNotSuccessful(Exception):
+    pass
+
+
 class SensorAlertState:
 
     def __init__(self,
@@ -47,7 +59,7 @@ class SensorAlertState:
     @instrumentation.setter
     def instrumentation(self, value: Instrumentation):
         if self._instrumentation is not None:
-            raise ValueError("Instrumentation already set.") # TODO own exception class
+            raise ValueError("Instrumentation already set.")
         self._instrumentation = value
 
     @property
@@ -57,7 +69,7 @@ class SensorAlertState:
     @instrumentation_promise.setter
     def instrumentation_promise(self, value: InstrumentationPromise):
         if self._instrumentation_promise is not None:
-            raise ValueError("Instrumentation promise already set.") # TODO own exception class
+            raise ValueError("Instrumentation promise already set.")
         self._instrumentation_promise = value
 
     @property
@@ -106,13 +118,13 @@ class SensorAlertState:
     def sensor_alert(self) -> Optional[SensorAlert]:
         if self._uses_instrumentation:
             if self._instrumentation_promise is None:
-                raise ValueError("Instrumentation not run yet.") # TODO own exception class
+                raise InstrumentationNotRun("Instrumentation not run yet.")
 
             elif not self._instrumentation_promise.is_finished():
-                raise ValueError("Instrumentation not finished.") # TODO own exception class
+                raise InstrumentationNotFinished("Instrumentation not finished.")
 
             elif not self._instrumentation_promise.was_success():
-                raise ValueError("Instrumentation not successful.") # TODO own exception class
+                raise InstrumentationNotSuccessful("Instrumentation not successful.")
 
             return self._instrumentation_promise.new_sensor_alert
 
@@ -295,7 +307,7 @@ class SensorAlertExecuter(threading.Thread):
         try:
             sensor_alert = sensor_alert_state.sensor_alert
 
-        except ValueError:
+        except Exception:
             self._logger.exception("[%s]: Unable to get Sensor Alert object from Sensor Alert state."
                                    % self._log_tag)
             return
