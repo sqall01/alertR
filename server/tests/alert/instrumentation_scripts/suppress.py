@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 """
-Test instrumentation script which outputs an empty string.
+Test instrumentation script that suppresses the sensor alert.
 """
 
-print("")
+import json
+
+print(json.dumps(dict()))

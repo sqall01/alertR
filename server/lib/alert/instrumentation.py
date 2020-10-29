@@ -13,7 +13,7 @@ import os
 import subprocess
 import threading
 import time
-from typing import Optional
+from typing import Optional, Tuple
 from ..localObjects import AlertLevel, SensorAlert
 
 
@@ -181,15 +181,20 @@ class Instrumentation:
 
             # Sensor Alert is suppressed if no output is given by instrumentation script.
             if output == "":
+                self._logger.error("[%s]: No output for instrumentation for Alert Level '%d'."
+                                   % (self._log_tag, self._alert_level.level))
+                self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
+                                   % (self._log_tag, self._alert_level.level, err))
+
                 # Set result.
-                self._promise.set_success()
+                self._promise.set_failed()
 
             # Parse output of instrumentation script if it exists to create new Sensor Alert object.
             else:
 
-                new_sensor_alert = self._process_output(output)
+                was_success, new_sensor_alert = self._process_output(output)
 
-                if new_sensor_alert is not None:
+                if was_success:
                     # Set result.
                     self._promise.new_sensor_alert = new_sensor_alert
                     self._promise.set_success()
@@ -228,11 +233,11 @@ class Instrumentation:
 
         return self._promise
 
-    def _process_output(self, output: str) -> Optional[SensorAlert]:
+    def _process_output(self, output: str) -> Tuple[bool, Optional[SensorAlert]]:
         """
         Process output of instrumentation script.
         :param output: output of instrumentation script as string
-        :return new sensor alert object or none if processing fails
+        :return tuple with success or failure and new sensor alert object or none if it was suppressed
         """
 
         try:
@@ -240,6 +245,11 @@ class Instrumentation:
                                % (self._log_tag, self._alert_level.level, output))
 
             sensor_alert_dict = json.loads(output)
+
+            # Check if sensor alert was suppressed.
+            if not sensor_alert_dict:
+                return True, None
+
             new_sensor_alert = SensorAlert.convert_from_dict(sensor_alert_dict)
 
             # Check that certain sensor alert values have not changed.
@@ -279,9 +289,9 @@ class Instrumentation:
                                    % self._log_tag
                                    + "for Alert Level '%d'."
                                    % self._alert_level.level)
-            return None
+            return False, None
 
-        return new_sensor_alert
+        return True, new_sensor_alert
 
     def execute(self) -> InstrumentationPromise:
         """
