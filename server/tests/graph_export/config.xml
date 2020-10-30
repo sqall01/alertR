@@ -1,0 +1,426 @@
+<?xml version="1.0"?>
+
+<config version="0.600">
+
+    <alertLevels>
+
+        <alertLevel>
+
+            <general
+                level="0"
+                name="Dummy"
+                triggerAlways="False"
+                triggerAlertTriggered="False"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="1"
+                name="Global Notification"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="2"
+                name="eMail Notification Service"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="3"
+                name="eMail Notification Intruder"
+                triggerAlways="False"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="4"
+                name="eMail Notification Water Leak"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="5"
+                name="Sirens (Only Activated)"
+                triggerAlways="False"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="6"
+                name="Sirens (Always)"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="7"
+                name="Alarm Deactivation Reminder"
+                triggerAlways="False"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="8"
+                name="Internet Connection Down"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="9"
+                name="Push Notification Service"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="10"
+                name="Push Notification Intruder"
+                triggerAlways="False"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="11"
+                name="Push Notification Water Leak"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="12"
+                name="Push Notification Information"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="13"
+                name="Alarm System Activation"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="14"
+                name="Alarm System Deactivation"
+                triggerAlways="True"
+                triggerAlertTriggered="False"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="15"
+                name="Bedroom Windows Open Reminder Filter"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="16"
+                name="Bedroom Windows Open Reminder"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="18"
+                name="Thermostat Office Window State"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="19"
+                name="Thermostat Office Set Temperature"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="20"
+                name="Thermostat Bedroom Window State"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="21"
+                name="Thermostat Bedroom Set Temperature"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="22"
+                name="Thermostat Bathroom Set Temperature"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="23"
+                name="Thermostat Kitchen/Living Room State"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="True" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="24"
+                name="Thermostat Kitchen Set Temperature"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="25"
+                name="Thermostat Living Room Set Temperature"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+        <alertLevel>
+
+            <general
+                level="26"
+                name="Thermostat Attic Boulder Set Temperature"
+                triggerAlways="True"
+                triggerAlertTriggered="True"
+                triggerAlertNormal="False" />
+
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
+
+        </alertLevel>
+
+    </alertLevels>
+
+</config>
+
