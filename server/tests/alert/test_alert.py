@@ -1976,6 +1976,8 @@ class TestAlert(TestCase):
             # Check sensor alerts in database were removed while processing.
             self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
+            self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
         time.sleep(2)
 
         sensor_alert_executer.exit()
@@ -1990,3 +1992,87 @@ class TestAlert(TestCase):
         # No sensor alert should was dropped that should trigger a state update.
         self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
         self.assertEqual(0, len(manager_update_executer.queueStateChange))
+
+    def test_run_alert_delay_canceled(self):
+        """
+        Integration test that checks if alert delay sensor alerts that satisfy all conditions in the beginning
+        but this changes during the delay are processed correctly.
+        """
+
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        num = 5
+        delay = 10
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        global_data.storage = MockStorage()
+        global_data.storage.is_active = True
+
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        gt_set = set()
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.triggerAlways = False
+            alert_level.triggerAlertTriggered = True
+            gt_set.add(alert_level.level)
+
+        global_data.alertLevels = alert_levels
+        for sensor_alert in sensor_alerts:
+            sensor_alert.state = 1
+            sensor_alert.alertDelay = delay
+            sensor_alert.changeState = True
+            global_data.storage.add_sensor_alert(sensor_alert)
+
+            sensor_data = SensorData()
+            sensor_data.sensorId = sensor_alert.sensorId
+            sensor_data.dataType = SensorDataType.NONE
+            global_data.storage.add_sensor_data(sensor_data)
+            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        for i in range(int(delay/2)):
+            self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+            time.sleep(1)
+
+            # Check sensor alerts in database were removed while processing.
+            self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+
+            self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+            self.assertEqual(0, len(manager_update_executer.queueStateChange))
+
+        # Deactivate alarm system to change trigger condition.
+        global_data.storage.is_active = False
+
+        for i in range(int(delay/2) + 1):
+            self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+            time.sleep(1)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(1)
+
+        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        # All sensor alerts should have been dropped.
+        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertEqual(num, len(manager_update_executer.queueStateChange))
