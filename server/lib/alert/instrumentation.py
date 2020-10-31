@@ -15,6 +15,7 @@ import threading
 import time
 from typing import Optional, Tuple
 from ..localObjects import AlertLevel, SensorAlert
+from ..internalSensors import AlertLevelInstrumentationErrorSensor
 
 
 class PromiseState:
@@ -90,13 +91,18 @@ class InstrumentationPromise:
 
 class Instrumentation:
 
-    def __init__(self, alert_level: AlertLevel, sensor_alert: SensorAlert, logger: logging.Logger):
+    def __init__(self,
+                 alert_level: AlertLevel,
+                 sensor_alert: SensorAlert,
+                 logger: logging.Logger,
+                 internal_sensor: Optional[AlertLevelInstrumentationErrorSensor] = None):
         self._log_tag = os.path.basename(__file__)
         self._logger = logger
         self._alert_level = alert_level
         self._sensor_alert = sensor_alert
         self._promise = InstrumentationPromise(self._alert_level, self._sensor_alert)
         self._thread = None  # type: Optional[threading.Thread]
+        self._internal_sensor = internal_sensor
 
     def _execute(self) -> InstrumentationPromise:
         """
@@ -119,6 +125,10 @@ class Instrumentation:
                                    % (self._log_tag, self._alert_level.level))
             self._logger.error("[%s]: Command was: %s" % (self._log_tag, " ".join(temp_execute)))
 
+            # Raise sensor alert (if internal sensor configured).
+            if self._internal_sensor is not None:
+                self._internal_sensor.raise_sensor_alert_execution_error(self._alert_level)
+
             # Set result.
             self._promise.set_failed()
 
@@ -140,6 +150,7 @@ class Instrumentation:
         except subprocess.TimeoutExpired:
             self._logger.error("[%s]: Instrumentation for Alert Level '%d' timed out."
                                % (self._log_tag, self._alert_level.level))
+
             process.terminate()
 
             # Give the process one second to terminate
@@ -156,6 +167,10 @@ class Instrumentation:
                     process.kill()
                 except Exception:
                     pass
+
+            # Raise sensor alert (if internal sensor configured).
+            if self._internal_sensor is not None:
+                self._internal_sensor.raise_sensor_alert_timeout(self._alert_level)
 
             # Set result.
             self._promise.set_failed()
@@ -186,6 +201,10 @@ class Instrumentation:
                 self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
                                    % (self._log_tag, self._alert_level.level, err))
 
+                # Raise sensor alert (if internal sensor configured).
+                if self._internal_sensor is not None:
+                    self._internal_sensor.raise_sensor_alert_output_empty(self._alert_level)
+
                 # Set result.
                 self._promise.set_failed()
 
@@ -207,6 +226,10 @@ class Instrumentation:
                     self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
                                        % (self._log_tag, self._alert_level.level, err))
 
+                    # Raise sensor alert (if internal sensor configured).
+                    if self._internal_sensor is not None:
+                        self._internal_sensor.raise_sensor_alert_invalid_output(self._alert_level)
+
                     # Set result.
                     self._promise.set_failed()
 
@@ -217,6 +240,10 @@ class Instrumentation:
                                % (self._log_tag, self._alert_level.level, output))
             self._logger.error("[%s]: Instrumentation for Alert Level '%d' stderr: %s"
                                % (self._log_tag, self._alert_level.level, err))
+
+            # Raise sensor alert (if internal sensor configured).
+            if self._internal_sensor is not None:
+                self._internal_sensor.raise_sensor_alert_exit_code(self._alert_level, exit_code)
 
             # Set result.
             self._promise.set_failed()

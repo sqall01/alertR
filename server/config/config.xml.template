@@ -490,6 +490,31 @@
 
         </versionInformer>
 
+        <!--
+            The alertLevelInstrumentationError Sensor is an internal Sensor
+            that triggers if an error occurs during the processing of an
+            Alert Level instrumentation. It allows you to get notified if
+            any of your instrumentation scripts do not work as intended.
+            Obviously, this Sensor only works if you are using instrumentation
+            for an Alert Level. Otherwise, it just lies dormant.
+            activated - This flags indicates if the internal Sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <alertLevelInstrumentationError
+            activated="True"
+            description="Internal: Alert Level Instrumentation Error">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>1</alertLevel>
+
+        </alertLevelInstrumentationError>
+
     </internalSensors>
 
 </config>

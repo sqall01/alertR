@@ -185,9 +185,6 @@ class SensorAlertExecuter(threading.Thread):
                     self._logger.error("[%s]: Instrumentation for Sensor Alert '%s' failed."
                                        % (self._log_tag, sensor_alert_state.init_sensor_alert.description))
                     dropped_sensor_alerts.append(sensor_alert_state.init_sensor_alert)
-
-                    # TODO use internal sensor for errors here or use it in instrumentation class? => instrumentation class would be easier to provide additional information in alert
-
                     continue
 
                 # Still update state/data of sensor if sensor alert was suppressed by instrumentation.
@@ -512,7 +509,3 @@ class SensorAlertExecuter(threading.Thread):
         sets the exit flag to shut down the thread
         """
         self._exit_flag = True
-
-
-# TODO
-# - internal sensor for instrumentation errors

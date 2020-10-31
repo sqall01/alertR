@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from .core import _InternalSensor
+from .alertLevelInstrumentationError import AlertLevelInstrumentationErrorSensor
 from .alertSystemActive import AlertSystemActiveSensor
 from .nodeTimeout import NodeTimeoutSensor
 from .sensorTimeout import SensorTimeoutSensor
