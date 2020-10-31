@@ -25,6 +25,8 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
         _InternalSensor.__init__(self)
 
         self.dataType = SensorDataType.NONE
+        self.alertDelay = 0
+        self.state = 0
 
         # file name of this file (used for logging)
         self._log_tag = os.path.basename(__file__)
@@ -143,4 +145,5 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
 
 # TODO
 # - test cases
-# - configuration during server start up
+#   * state time update in alert.py
+#   * behavior in instrumentation.py

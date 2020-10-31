@@ -18,7 +18,8 @@ from ..users import CSVBackend
 from ..storage import Sqlite
 from ..globalData import GlobalData
 from ..localObjects import AlertLevel
-from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor
+from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor, \
+    AlertLevelInstrumentationErrorSensor
 
 log_tag = fileName = os.path.basename(__file__)
 
@@ -524,6 +525,40 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             # Version informer sensor has always this fix internal id
             # (stored as remoteSensorId).
             sensor.remoteSensorId = 3
+
+            sensor.alertLevels = list()
+            for alertLevelXml in item.iterfind("alertLevel"):
+                sensor.alertLevels.append(int(alertLevelXml.text))
+
+            global_data.internalSensors.append(sensor)
+
+            # Create sensor dictionary element for database interaction.
+            temp = dict()
+            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["alertDelay"] = sensor.alertDelay
+            temp["alertLevels"] = sensor.alertLevels
+            temp["description"] = sensor.description
+            temp["state"] = 0
+            temp["dataType"] = sensor.dataType
+            dbSensors.append(temp)
+
+            # Add tuple to db state list to set initial states of the
+            # internal sensors.
+            dbInitialStateList.append((sensor.remoteSensorId, 0))
+
+        # Parse alert level instrumentation error sensor (if activated).
+        item = internalSensorsCfg.find("alertLevelInstrumentationError")
+        if str(item.attrib["activated"]).upper() == "TRUE":
+
+            sensor = AlertLevelInstrumentationErrorSensor(global_data)
+
+            sensor.nodeId = serverNodeId
+            sensor.lastStateUpdated = int(time.time())
+            sensor.description = str(item.attrib["description"])
+
+            # Alert level instrumentation error sensor has always this fix internal id
+            # (stored as remoteSensorId).
+            sensor.remoteSensorId = 4
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
