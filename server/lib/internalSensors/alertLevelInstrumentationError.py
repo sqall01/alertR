@@ -149,5 +149,4 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
 
 # TODO
 # - test cases
-#   * state time update in alert.py
 #   * behavior in instrumentation.py

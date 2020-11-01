@@ -10,6 +10,7 @@ from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
 from lib.storage.core import _Storage
+from lib.internalSensors import AlertLevelInstrumentationErrorSensor
 
 
 def _callback_trigger_sensor_alert(_, sensor_alert_state: SensorAlertState):
@@ -28,6 +29,7 @@ class MockStorage(_Storage):
         self._sensor_alerts = dict()  # type: Dict[int, SensorAlert]
         self._sensor_data = dict()  # type: Dict[int, SensorData]
         self._sensor_states = dict()  # type: Dict[int, int]
+        self._sensor_state_updates = dict()  # type: Dict[int, List[Tuple[int, int]]]
 
     @property
     def is_active(self) -> bool:
@@ -36,6 +38,10 @@ class MockStorage(_Storage):
     @is_active.setter
     def is_active(self, value: bool):
         self._is_active = value
+
+    @property
+    def sensor_state_updates(self) -> Dict[int, List[Tuple[int, int]]]:
+        return self._sensor_state_updates
 
     def add_sensor_alert(self, sensor_alert: SensorAlert):
         self._sensor_alerts[sensor_alert.sensorAlertId] = sensor_alert
@@ -75,6 +81,13 @@ class MockStorage(_Storage):
                         _: logging.Logger = None) -> Optional[List[SensorAlert]]:
         return list(self._sensor_alerts.values())
 
+    def updateSensorState(self,
+                          nodeId: int,
+                          stateList: List[Tuple[int, int]],
+                          logger: logging.Logger = None) -> bool:
+        self._sensor_state_updates[nodeId] = stateList
+        return True
+
 
 class MockInstrumentationNotCallable(Instrumentation):
 
@@ -98,6 +111,11 @@ class MockManagerUpdateExecuter:
         self.managerUpdateEvent = threading.Event()
         self.managerUpdateEvent.clear()
 
+
+class MockInternalSensor(AlertLevelInstrumentationErrorSensor):
+
+    def __init__(self, global_data: GlobalData):
+        super().__init__(global_data)
 
 class TestAlert(TestCase):
 
@@ -2076,3 +2094,143 @@ class TestAlert(TestCase):
         # All sensor alerts should have been dropped.
         self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
         self.assertEqual(num, len(manager_update_executer.queueStateChange))
+
+    def test_run_internal_sensor_update_last_state_time_unnecessary(self):
+        """
+        Integration test that checks if the state of the internal sensor is not unnecessarily updated.
+        """
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        # Use odd number to have different group sizes.
+        num = 1
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        storage = MockStorage()
+        storage.is_active = False
+        global_data.storage = storage
+
+        internal_sensor = MockInternalSensor(global_data)
+        internal_sensor.nodeId = 1
+        internal_sensor.remoteSensorId = 2
+        internal_sensor.state = 0
+        global_data.internalSensors.append(internal_sensor)
+
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+
+        global_data.alertLevels = alert_levels
+        for sensor_alert in sensor_alerts:
+            sensor_alert.state = 1
+            sensor_alert.changeState = True
+            global_data.storage.add_sensor_alert(sensor_alert)
+
+        gt_last_state_updated = int(time.time()) - 10
+        internal_sensor.lastStateUpdated = gt_last_state_updated
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(1)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(1)
+
+        # Make sure a full processing run was executed.
+        self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        self.assertEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
+
+        self.assertEqual(0, len(storage.sensor_state_updates.keys()))
+
+    def test_run_internal_sensor_update_last_state_time_necessary(self):
+        """
+        Integration test that checks if the state of the internal sensor is updated.
+        """
+        TestAlert._callback_trigger_sensor_alert_arg.clear()
+
+        # Use odd number to have different group sizes.
+        num = 1
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.managerUpdateExecuter = None
+
+        storage = MockStorage()
+        storage.is_active = False
+        global_data.storage = storage
+
+        internal_sensor = MockInternalSensor(global_data)
+        internal_sensor.nodeId = 1
+        internal_sensor.remoteSensorId = 2
+        internal_sensor.state = 0
+        global_data.internalSensors.append(internal_sensor)
+
+        manager_update_executer = MockManagerUpdateExecuter()
+        global_data.managerUpdateExecuter = manager_update_executer
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        for i in range(len(alert_levels)):
+            alert_level = alert_levels[i]
+            alert_level.triggerAlways = True
+            alert_level.triggerAlertTriggered = True
+
+        global_data.alertLevels = alert_levels
+        for sensor_alert in sensor_alerts:
+            sensor_alert.state = 1
+            sensor_alert.changeState = True
+            global_data.storage.add_sensor_alert(sensor_alert)
+
+        gt_last_state_updated = int(time.time()) - 31
+        internal_sensor.lastStateUpdated = gt_last_state_updated
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
+        # if a sensor alert is triggered.
+        func_type = type(sensor_alert_executer._trigger_sensor_alert)
+        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
+                                                                sensor_alert_executer)
+
+        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        # Start executer thread.
+        sensor_alert_executer.daemon = True
+        sensor_alert_executer.start()
+
+        time.sleep(1)
+
+        sensor_alert_executer.exit()
+
+        time.sleep(1)
+
+        # Make sure a full processing run was executed.
+        self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
+
+        self.assertNotEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
+
+        self.assertEqual(1, len(storage.sensor_state_updates.keys()))
+        self.assertEqual(internal_sensor.remoteSensorId, storage.sensor_state_updates[internal_sensor.nodeId][0][0])
+        self.assertEqual(internal_sensor.state, storage.sensor_state_updates[internal_sensor.nodeId][0][1])
