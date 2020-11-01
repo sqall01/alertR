@@ -45,6 +45,10 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
         Adds sensor alert for processing.
         :param optional_data: optional data
         """
+
+        self._logger.debug("[%s]: Triggering sensor alert for an instrumentation error of Alert Level '%d'."
+                           % (self._log_tag, optional_data["alert_level"]))
+
         data_json = json.dumps(optional_data)
 
         # Add sensor alert to database for processing and wake up sensor alert executer to process sensor alert.
