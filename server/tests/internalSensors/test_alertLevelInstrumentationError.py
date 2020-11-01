@@ -78,7 +78,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
 
         optional_data = dict()
-        optional_data["test_key"] = "test_value"
+        optional_data["alert_level"] = 1337
 
         internal_sensor._add_sensor_alert(optional_data)
 
@@ -94,8 +94,8 @@ class TestAlertLevelInstrumentationError(TestCase):
         self.assertFalse(sensor_alert.hasLatestData)
         self.assertEqual(SensorDataType.NONE, sensor_alert.dataType)
         self.assertTrue(sensor_alert.hasOptionalData)
-        self.assertTrue("test_key" in sensor_alert.optionalData.keys())
-        self.assertEqual("test_value", sensor_alert.optionalData["test_key"])
+        self.assertTrue("alert_level" in sensor_alert.optionalData.keys())
+        self.assertEqual(1337, sensor_alert.optionalData["alert_level"])
 
     def test_raise_sensor_alert_execution_error(self):
         """

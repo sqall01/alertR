@@ -145,8 +145,3 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
                          "instrumentation_timeout": alert_level.instrumentation_timeout}
 
         self._add_sensor_alert(optional_data)
-
-
-# TODO
-# - test cases
-#   * behavior in instrumentation.py

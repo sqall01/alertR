@@ -2,9 +2,28 @@ import logging
 import json
 import os
 import time
+from typing import Dict, Any, List
 from unittest import TestCase
+from lib.internalSensors import AlertLevelInstrumentationErrorSensor
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.alert.instrumentation import Instrumentation
+from lib.globalData import GlobalData
+
+
+class MockInternalSensor(AlertLevelInstrumentationErrorSensor):
+
+    def __init__(self):
+        global_data = GlobalData()
+        super().__init__(global_data)
+
+        self._optional_data = list()  # type: List[Dict[str, Any]]
+
+    @property
+    def optional_data(self) -> List[Dict[str, Any]]:
+        return self._optional_data
+
+    def _add_sensor_alert(self, optional_data: Dict[str, Any]):
+        self._optional_data.append(optional_data)
 
 
 class TestInstrumentation(TestCase):
@@ -358,6 +377,26 @@ class TestInstrumentation(TestCase):
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_success())
 
+    def test_execute_invalid_empty_internal_sensor(self):
+        """
+        Tests an invalid execution of an instrumentation script (script does not output anything) with internal sensor.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "empty.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        internal_sensor = MockInternalSensor()
+        instrumentation._internal_sensor = internal_sensor
+
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertEqual(1, len(internal_sensor.optional_data))
+        self.assertEqual(instrumentation._alert_level.level, internal_sensor.optional_data[0]["alert_level"])
+
     def test_execute_invalid_not_executable(self):
         """
         Tests an invalid execution of an instrumentation script (script is not executable).
@@ -374,6 +413,26 @@ class TestInstrumentation(TestCase):
 
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_success())
+
+    def test_execute_invalid_not_executable_internal_sensor(self):
+        """
+        Tests an invalid execution of an instrumentation script (script is not executable) with internal sensor.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "not_executable.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        internal_sensor = MockInternalSensor()
+        instrumentation._internal_sensor = internal_sensor
+
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertEqual(1, len(internal_sensor.optional_data))
+        self.assertEqual(instrumentation._alert_level.level, internal_sensor.optional_data[0]["alert_level"])
 
     def test_execute_invalid_timeout_blocking(self):
         """
@@ -396,6 +455,32 @@ class TestInstrumentation(TestCase):
 
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_success())
+
+    def test_execute_invalid_timeout_blocking_internal_sensor(self):
+        """
+        Tests an invalid execution of an instrumentation script (script times out) with internal sensor.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "timeout.py")
+
+        # timeout script waits 60 seconds.
+        timeout = 5
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        instrumentation._alert_level.instrumentation_timeout = timeout
+
+        internal_sensor = MockInternalSensor()
+        instrumentation._internal_sensor = internal_sensor
+
+        # Since we have a blocking execution, we do not need to wait here.
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertEqual(1, len(internal_sensor.optional_data))
+        self.assertEqual(instrumentation._alert_level.level, internal_sensor.optional_data[0]["alert_level"])
 
     def test_execute_invalid_timeout_non_blocking(self):
         """
@@ -441,9 +526,29 @@ class TestInstrumentation(TestCase):
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_success())
 
+    def test_execute_invalid_exit_code_internal_sensor(self):
+        """
+        Tests an invalid execution of an instrumentation script (exit code 1) with internal sensor.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "exit_code_1.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        internal_sensor = MockInternalSensor()
+        instrumentation._internal_sensor = internal_sensor
+
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertEqual(1, len(internal_sensor.optional_data))
+        self.assertEqual(instrumentation._alert_level.level, internal_sensor.optional_data[0]["alert_level"])
+
     def test_execute_invalid_output(self):
         """
-        Tests an invalid execution of an instrumentation script (exit code 1).
+        Tests an invalid execution of an instrumentation script (invalid output).
         """
         target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "instrumentation_scripts",
@@ -458,6 +563,26 @@ class TestInstrumentation(TestCase):
 
         self.assertTrue(promise.is_finished())
         self.assertFalse(promise.was_success())
+
+    def test_execute_invalid_output_internal_sensor(self):
+        """
+        Tests an invalid execution of an instrumentation script (invalid output) with internal sensor.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "instrumentation_scripts",
+                                  "invalid_output.py")
+
+        # Prepare instrumentation object.
+        instrumentation = self._create_instrumentation_dummy()
+        instrumentation._alert_level.instrumentation_cmd = target_cmd
+        internal_sensor = MockInternalSensor()
+        instrumentation._internal_sensor = internal_sensor
+
+        promise = instrumentation._execute()
+
+        self.assertTrue(promise.is_finished())
+        self.assertEqual(1, len(internal_sensor.optional_data))
+        self.assertEqual(instrumentation._alert_level.level, internal_sensor.optional_data[0]["alert_level"])
 
     def test_execute_twice(self):
         """

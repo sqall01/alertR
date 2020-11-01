@@ -1,4 +1,5 @@
 import logging
+import os
 import xml.etree.ElementTree
 from unittest import TestCase
 from lib import GlobalData, Sqlite
@@ -19,12 +20,14 @@ class TestFilter(TestCase):
         global_data.logger = logging.getLogger("graph")
 
         # Open database.
-        global_data.storage = Sqlite("./database.db",
+        db_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.db")
+        global_data.storage = Sqlite(db_location,
                                      global_data,
                                      read_only=True)
 
         # Read necessary configurations.
-        configRoot = xml.etree.ElementTree.parse("./config.xml").getroot()
+        config_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.xml")
+        configRoot = xml.etree.ElementTree.parse(config_location).getroot()
         configure_alert_levels(configRoot, global_data)
 
         self.alert_levels = {}
