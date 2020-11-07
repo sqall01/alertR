@@ -16,7 +16,7 @@ import logging
 import os
 import random
 import json
-from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert
+from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel
 from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
 from typing import Optional, Dict, Tuple, Any, List, Type
@@ -44,7 +44,7 @@ class ClientCommunication:
         self.userBackend = self.globalData.userBackend
         self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
         self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
-        self.alertLevels = self.globalData.alertLevels
+        self.alertLevels = self.globalData.alertLevels  # type: List[AlertLevel]
         self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
         self.asyncOptionExecutersLock = self.globalData.asyncOptionExecutersLock
         self.connectionWatchdog = self.globalData.connectionWatchdog
@@ -1156,8 +1156,7 @@ class ClientCommunication:
                        "changeState": sensorAlert.changeState,
                        "hasLatestData": sensorAlert.hasLatestData,
                        "dataType": sensorAlert.dataType,
-                       "data": sensorAlert.sensorData,
-                       "rulesActivated": False, # TODO for testing to be compatible with protocol 0.6
+                       "data": sensorAlert.sensorData
                        }
         else:
             payload = {"type": "request",
@@ -1170,7 +1169,6 @@ class ClientCommunication:
                        "hasLatestData": sensorAlert.hasLatestData,
                        "dataType": sensorAlert.dataType,
                        "data": sensorAlert.sensorData,
-                       "rulesActivated": False,  # TODO for testing to be compatible with protocol 0.6
                        }
 
         utcTimestamp = int(time.time())
@@ -1250,11 +1248,11 @@ class ClientCommunication:
                 pass
 
             return None
-        optionList = alertSystemInformation[0]
-        nodesList = alertSystemInformation[1]
-        sensorList = alertSystemInformation[2]
-        managerList = alertSystemInformation[3]
-        alertList = alertSystemInformation[4]
+        optionList = alertSystemInformation[0]  # type: List[Option]
+        nodesList = alertSystemInformation[1]  # type: List[Node]
+        sensorList = alertSystemInformation[2]  # type: List[Sensor]
+        managerList = alertSystemInformation[3]  # type: List[Manager]
+        alertList = alertSystemInformation[4]  # type: List[Alert]
 
         # Generating options list.
         options = list()
@@ -1318,8 +1316,9 @@ class ClientCommunication:
             tempDict = {"alertLevel": self.alertLevels[i].level,
                         "name": self.alertLevels[i].name,
                         "triggerAlways": (1 if self.alertLevels[i].triggerAlways else 0),
-                        "rulesActivated": False,  # TODO for testing to be compatible with protocol 0.6
-                        "instrumentation": (1 if self.alertLevels[i].instrumentation_active else 0)}
+                        "instrumentation_active": self.alertLevels[i].instrumentation_active,
+                        "instrumentation_cmd": self.alertLevels[i].instrumentation_cmd,
+                        "instrumentation_timeout": self.alertLevels[i].instrumentation_timeout}
             alertLevels.append(tempDict)
 
         self.logger.debug("[%s]: Sending status message (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
