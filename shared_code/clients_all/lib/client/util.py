@@ -76,11 +76,6 @@ class MsgChecker:
                 logging.error("[%s]: Received description invalid." % MsgChecker._log_tag)
                 return error_msg
 
-            error_msg = MsgChecker.check_rules_activated(message["payload"]["rulesActivated"])
-            if error_msg is not None:
-                logging.error("[%s]: Received rulesActivated invalid." % MsgChecker._log_tag)
-                return error_msg
-
             error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
@@ -351,6 +346,45 @@ class MsgChecker:
 
         return None
 
+    # Internal function to check sanity of the instrumentation_active.
+    @staticmethod
+    def check_instrumentation_active(instrumentation_active: bool) -> Optional[str]:
+
+        is_correct = True
+        if not isinstance(instrumentation_active, bool):
+            is_correct = False
+
+        if not is_correct:
+            return "instrumentation_active not valid"
+
+        return None
+
+    # Internal function to check sanity of the instrumentation_cmd.
+    @staticmethod
+    def check_instrumentation_cmd(instrumentation_cmd: str) -> Optional[str]:
+
+        is_correct = True
+        if not isinstance(instrumentation_cmd, str):
+            is_correct = False
+
+        if not is_correct:
+            return "instrumentation_cmd not valid"
+
+        return None
+
+    # Internal function to check sanity of the instrumentation_timeout.
+    @staticmethod
+    def check_instrumentation_timeout(instrumentation_timeout: int) -> Optional[str]:
+
+        is_correct = True
+        if not isinstance(instrumentation_timeout, int):
+            is_correct = False
+
+        if not is_correct:
+            return "instrumentation_timeout not valid"
+
+        return None
+
     # Internal function to check sanity of the lastStateUpdated.
     @staticmethod
     def check_last_state_updated(lastStateUpdated: int) -> Optional[str]:
@@ -535,19 +569,6 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the rulesActivated.
-    @staticmethod
-    def check_rules_activated(rulesActivated: bool) -> Optional[str]:
-
-        is_correct = True
-        if not isinstance(rulesActivated, bool):
-            is_correct = False
-
-        if not is_correct:
-            return "rulesActivated not valid"
-
-        return None
-
     # Internal function to check sanity of the sensor data.
     @staticmethod
     def check_sensor_data(data: Any, dataType: int) -> Optional[str]:
@@ -664,13 +685,30 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "rulesActivated" not in alertLevel.keys():
+            if "instrumentation_active" not in alertLevel.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_rules_activated(alertLevel["rulesActivated"]) is not None:
+            elif MsgChecker.check_instrumentation_active(alertLevel["instrumentation_active"]) is not None:
                 is_correct = False
                 break
+
+            if alertLevel["instrumentation_active"]:
+                if "instrumentation_cmd" not in alertLevel.keys():
+                    is_correct = False
+                    break
+
+                elif MsgChecker.check_instrumentation_cmd(alertLevel["instrumentation_cmd"]) is not None:
+                    is_correct = False
+                    break
+
+                if "instrumentation_timeout" not in alertLevel.keys():
+                    is_correct = False
+                    break
+
+                elif MsgChecker.check_instrumentation_timeout(alertLevel["instrumentation_timeout"]) is not None:
+                    is_correct = False
+                    break
 
             if alertLevel["alertLevel"] in alert_level_ids:
                 is_correct = False

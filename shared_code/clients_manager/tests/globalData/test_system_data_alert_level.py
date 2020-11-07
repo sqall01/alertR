@@ -17,7 +17,10 @@ class TestSystemDataAlertLevel(TestSystemDataCore):
             temp_alert_level = AlertLevel().deepcopy(self.alert_levels[i])
             temp_alert_level.name = "new_alert_level" + str(i + 1)
             temp_alert_level.triggerAlways = (i % 2)
-            temp_alert_level.rulesActivated = (((i+1) % 2) == 0)
+            temp_alert_level.instrumentation_active = (((i+1) % 2) == 0)
+            if temp_alert_level.instrumentation_active:
+                temp_alert_level.instrumentation_cmd = "instrumentation_cmd_" + str(i + 1)
+                temp_alert_level.instrumentation_timeout = i
             new_alert_levels.append(temp_alert_level)
 
         for i in range(len(new_alert_levels)):

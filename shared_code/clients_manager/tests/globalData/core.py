@@ -21,7 +21,9 @@ class TestSystemDataCore(TestCase):
         alert_level.level = 1
         alert_level.name = "alert_level_1"
         alert_level.triggerAlways = 1
-        alert_level.rulesActivated = True
+        alert_level.instrumentation_active = True
+        alert_level.instrumentation_cmd = "instrumentation_cmd_1"
+        alert_level.instrumentation_timeout = 1234
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(AlertLevel().deepcopy(alert_level))
 
@@ -29,7 +31,7 @@ class TestSystemDataCore(TestCase):
         alert_level.level = 2
         alert_level.name = "alert_level_2"
         alert_level.triggerAlways = 1
-        alert_level.rulesActivated = False
+        alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(AlertLevel().deepcopy(alert_level))
 
@@ -37,7 +39,7 @@ class TestSystemDataCore(TestCase):
         alert_level.level = 3
         alert_level.name = "alert_level_3"
         alert_level.triggerAlways = 1
-        alert_level.rulesActivated = False
+        alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(AlertLevel().deepcopy(alert_level))
 

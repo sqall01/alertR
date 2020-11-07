@@ -184,33 +184,30 @@ class SystemData:
                 raise ValueError("Alert Level %d corresponding to sensor alert does not exist."
                                  % alert_level)
 
-        # Sensor Alert is set to -1 if are rulesActivated.
-        if sensor_alert.sensorId != -1:
+        # Sanity check if sensor exists.
+        sensor = self.get_sensor_by_id(sensor_alert.sensorId)
+        if sensor is None:
+            raise ValueError("Sensor %d corresponding to sensor alert does not exist."
+                             % sensor_alert.sensorId)
 
-            # Sanity check if sensor exists.
-            sensor = self.get_sensor_by_id(sensor_alert.sensorId)
-            if sensor is None:
-                raise ValueError("Sensor %d corresponding to sensor alert does not exist."
-                                 % sensor_alert.sensorId)
+        # Sanity check if sensor handles received alert level.
+        for alert_level in sensor_alert.alertLevels:
+            if alert_level not in sensor.alertLevels:
+                raise ValueError("Sensor %d does not handle Alert Level %d."
+                                 % (sensor_alert.sensorId, alert_level))
 
-            # Sanity check if sensor handles received alert level.
-            for alert_level in sensor_alert.alertLevels:
-                if alert_level not in sensor.alertLevels:
-                    raise ValueError("Sensor %d does not handle Alert Level %d."
-                                     % (sensor_alert.sensorId, alert_level))
+        # Sanity check if data type is correct.
+        if sensor.dataType != sensor_alert.dataType:
+            raise ValueError("Sensor %d corresponding to sensor alert has different data type"
+                             % sensor_alert.sensorId)
 
-            # Sanity check if data type is correct.
-            if sensor.dataType != sensor_alert.dataType:
-                raise ValueError("Sensor %d corresponding to sensor alert has different data type"
-                                 % sensor_alert.sensorId)
+        # Update sensor data accordingly.
+        with self._data_lock:
+            if sensor_alert.changeState:
+                sensor.state = sensor_alert.state
 
-            # Update sensor data accordingly.
-            with self._data_lock:
-                if sensor_alert.changeState:
-                    sensor.state = sensor_alert.state
-
-                if sensor_alert.hasLatestData:
-                    sensor.data = sensor_alert.sensorData
+            if sensor_alert.hasLatestData:
+                sensor.data = sensor_alert.sensorData
 
         with self._data_lock:
             sensor_alert.internal_state = InternalState.STORED

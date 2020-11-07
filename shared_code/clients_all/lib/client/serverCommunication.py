@@ -455,7 +455,15 @@ class ServerCommunication(Communication):
                 level = alertLevelsRaw[i]["alertLevel"]
                 name = alertLevelsRaw[i]["name"]
                 triggerAlways = alertLevelsRaw[i]["triggerAlways"]
-                rulesActivated = alertLevelsRaw[i]["rulesActivated"]
+                instrumentation_active = alertLevelsRaw[i]["instrumentation_active"]
+
+                if instrumentation_active:
+                    instrumentation_cmd = alertLevelsRaw[i]["instrumentation_cmd"]
+                    instrumentation_timeout = alertLevelsRaw[i]["instrumentation_timeout"]
+
+                else:
+                    instrumentation_cmd = None
+                    instrumentation_timeout = None
 
             except Exception:
                 logging.exception("[%s]: Received alertLevel invalid." % self._log_tag)
@@ -468,7 +476,9 @@ class ServerCommunication(Communication):
             alertLevel.level = level
             alertLevel.name = name
             alertLevel.triggerAlways = triggerAlways
-            alertLevel.rulesActivated = rulesActivated
+            alertLevel.instrumentation_active = instrumentation_active
+            alertLevel.instrumentation_cmd = instrumentation_cmd
+            alertLevel.instrumentation_timeout = instrumentation_timeout
             alertLevels.append(alertLevel)
 
         # handle received status update
@@ -499,12 +509,9 @@ class ServerCommunication(Communication):
         try:
             serverTime = incomingMessage["serverTime"]
 
-            sensorAlert.rulesActivated = incomingMessage["payload"]["rulesActivated"]
-
             # always -1 when no sensor is responsible for sensor alert
             sensorAlert.sensorId = incomingMessage["payload"]["sensorId"]
 
-            # state of rule sensor alerts is always set to 1
             sensorAlert.state = incomingMessage["payload"]["state"]
 
             sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]

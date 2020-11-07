@@ -32,7 +32,9 @@ def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[AlertL
 
                 if (stored_alert_level.name != gt_alert_level.name
                         or stored_alert_level.triggerAlways != gt_alert_level.triggerAlways
-                        or stored_alert_level.rulesActivated != gt_alert_level.rulesActivated):
+                        or stored_alert_level.instrumentation_active != gt_alert_level.instrumentation_active
+                        or stored_alert_level.instrumentation_cmd != gt_alert_level.instrumentation_cmd
+                        or stored_alert_level.instrumentation_timeout != gt_alert_level.instrumentation_timeout):
                     context.fail("New object does not have correct content.")
 
                 break

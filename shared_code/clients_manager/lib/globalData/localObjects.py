@@ -160,14 +160,9 @@ class SensorAlert(LocalObject):
     def __init__(self):
         super().__init__()
 
-        # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None  # type: Optional[bool]
-
-        # If rulesActivated = true => always set to -1.
         self.sensorId = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        # If rulesActivated = true => always set to 1.
         self.state = None  # type: Optional[int]
 
         # Description of the sensor that raised this sensor alert.
@@ -181,7 +176,6 @@ class SensorAlert(LocalObject):
         self.alertLevels = list()  # type: List[int]
 
         # The optional data of the sensor alert (if it has any).
-        # If rulesActivated = true => always set to false.
         self.hasOptionalData = None  # type: Optional[bool]
         self.optionalData = None  # type: Dict[str, Any]
 
@@ -197,7 +191,6 @@ class SensorAlert(LocalObject):
 
     # This function copies all attributes of the given sensor alert to this object.
     def deepcopy(self, sensor_alert):
-        self.rulesActivated = sensor_alert.rulesActivated
         self.sensorId = sensor_alert.sensorId
         self.state = sensor_alert.state
         self.description = sensor_alert.description
@@ -226,12 +219,16 @@ class AlertLevel(LocalObject):
         self.level = None  # type: Optional[int]
         self.name = None  # type: Optional[str]
         self.triggerAlways = None  # type: Optional[int]
-        self.rulesActivated = None  # type: Optional[bool]
+        self.instrumentation_active = None  # type: Optional[bool]
+        self.instrumentation_cmd = None  # type: Optional[str]
+        self.instrumentation_timeout = None  # type: Optional[int]
 
     # This function copies all attributes of the given alert level to this object.
     def deepcopy(self, alert_level):
         self.level = alert_level.level
         self.name = alert_level.name
         self.triggerAlways = alert_level.triggerAlways
-        self.rulesActivated = alert_level.rulesActivated
+        self.instrumentation_active = alert_level.instrumentation_active
+        self.instrumentation_cmd = alert_level.instrumentation_cmd
+        self.instrumentation_timeout = alert_level.instrumentation_timeout
         return self

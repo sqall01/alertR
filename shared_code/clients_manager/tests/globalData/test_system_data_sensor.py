@@ -164,7 +164,6 @@ class TestSystemDataSensor(TestSystemDataCore):
         for i in range(len(self.sensors)):
             for j in range(number_sensor_alerts):
                 temp_sensor_alert = SensorAlert()
-                temp_sensor_alert.rulesActivated = False
                 temp_sensor_alert.sensorId = self.sensors[i % len(self.sensors)].sensorId
                 temp_sensor_alert.state = j % 2
                 temp_sensor_alert.alertLevels = list(self.sensors[i % len(self.sensors)].alertLevels)
@@ -222,7 +221,6 @@ class TestSystemDataSensor(TestSystemDataCore):
                 self.fail("Stored object does not have initially correct content.")
 
             sensor_alert = SensorAlert()
-            sensor_alert.rulesActivated = False
             sensor_alert.sensorId = curr_sensor.sensorId
             sensor_alert.state = 1 - curr_sensor.state
             sensor_alert.alertLevels = curr_sensor.alertLevels
