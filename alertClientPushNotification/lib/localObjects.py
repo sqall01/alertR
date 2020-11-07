@@ -21,7 +21,6 @@ class SensorDataType:
 class SensorAlert:
 
     def __init__(self):
-        # If rulesActivated = true => always set to -1.
         self.sensorId = None  # type: Optional[int]
 
         # Description of the sensor that raised this sensor alert.
@@ -31,11 +30,9 @@ class SensorAlert:
         self.timeReceived = None  # type: Optional[int]
 
         # State of the sensor alert ("triggered" = 1; "normal" = 0).
-        # If rulesActivated = true => always set to 1.
         self.state = None  # type: Optional[int]
 
         # The optional data of the sensor alert (if it has any).
-        # If rulesActivated = true => always set to false.
         self.hasOptionalData = None  # type: Optional[bool]
         self.optionalData = None
 
@@ -45,9 +42,6 @@ class SensorAlert:
         # List of alert levels (Integer) that are triggered
         # by this sensor alert.
         self.alertLevels = list()  # type: List[int]
-
-        # Are rules for this sensor alert activated (true or false)?
-        self.rulesActivated = None  # type: Optional[bool]
 
         # Does this sensor alert hold the latest data of the sensor?
         self.hasLatestData = None  # type: Optional[bool]
@@ -60,7 +54,6 @@ class SensorAlert:
     def convertToDict(self) -> Dict[str, Any]:
         sensorAlertDict = {"alertLevels": self.alertLevels,
                            "description": self.description,
-                           "rulesActivated": self.rulesActivated,
                            "sensorId": self.sensorId,
                            "state": self.state,
                            "hasOptionalData": self.hasOptionalData,

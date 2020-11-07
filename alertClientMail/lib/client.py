@@ -284,28 +284,6 @@ class ServerCommunication:
 
         return True
 
-    # Internal function to check sanity of the rulesActivated.
-    def _checkMsgRulesActivated(self, rulesActivated: bool, messageType: str) -> bool:
-
-        isCorrect = True
-        if not isinstance(rulesActivated, bool):
-            isCorrect = False
-
-        if not isCorrect:
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": messageType,
-                           "error": "rulesActivated not valid"}
-                self.client.send(json.dumps(message))
-            except Exception as e:
-                pass
-
-            return False
-
-        return True
-
     # Internal function to check sanity of the sensor data.
     def _checkMsgSensorData(self, data: Any, dataType: int, messageType: str) -> bool:
 
@@ -339,8 +317,8 @@ class ServerCommunication:
         if not isinstance(dataType, int):
             isCorrect = False
         elif not (SensorDataType.NONE == dataType
-             or SensorDataType.INT == dataType
-             or SensorDataType.FLOAT == dataType):
+                  or SensorDataType.INT == dataType
+                  or SensorDataType.FLOAT == dataType):
             isCorrect = False
 
         if not isCorrect:
@@ -835,11 +813,6 @@ class ServerCommunication:
                 logging.error("[%s]: Received description invalid." % self.fileName)
                 return False
 
-            if not self._checkMsgRulesActivated(incomingMessage["payload"]["rulesActivated"],
-                                                incomingMessage["message"]):
-                logging.error("[%s]: Received rulesActivated invalid." % self.fileName)
-                return False
-
             if not self._checkMsgSensorId(incomingMessage["payload"]["sensorId"], incomingMessage["message"]):
                 logging.error("[%s]: Received sensorId invalid." % self.fileName)
                 return False
@@ -886,7 +859,6 @@ class ServerCommunication:
             sensorAlert.state = incomingMessage["payload"]["state"]
             sensorAlert.description = incomingMessage["payload"]["description"]
             sensorAlert.changeState = incomingMessage["payload"]["changeState"]
-            sensorAlert.rulesActivated = incomingMessage["payload"]["rulesActivated"]
 
             # parse received data (if data transfer is activated)
             sensorAlert.optionalData = None
