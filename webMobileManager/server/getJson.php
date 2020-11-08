@@ -318,7 +318,9 @@ if(isset($_GET["data"])
                         "alertLevel" => $row["alertLevel"],
                         "name" => $row["name"],
                         "triggerAlways" => $row["triggerAlways"],
-                        "rulesActivated" => $row["rulesActivated"]);
+                        "instrumentation_active" => $row["instrumentation_active"],
+                        "instrumentation_cmd" => $row["instrumentation_cmd"],
+                        "instrumentation_timeout" => $row["instrumentation_timeout"]);
                     array_push($alertLevelsArray, $alertLevelEntry);
                 }
                 $alertSystemInformation["alertLevels"] = $alertLevelsArray;
