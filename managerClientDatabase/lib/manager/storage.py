@@ -652,11 +652,15 @@ class Mysql(_Storage):
                 self._cursor.execute("UPDATE alertLevels SET "
                                      + "name = %s, "
                                      + "triggerAlways = %s, "
-                                     + "rulesActivated = %s "
+                                     + "instrumentation_active = %s, "
+                                     + "instrumentation_cmd = %s, "
+                                     + "instrumentation_timeout = %s "
                                      + "WHERE alertLevel = %s",
                                      (alert_level.name,
                                       alert_level.triggerAlways,
-                                      1 if alert_level.rulesActivated else 0,
+                                      1 if alert_level.instrumentation_active else 0,
+                                      alert_level.instrumentation_cmd if alert_level.instrumentation_active else "",
+                                      alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0,
                                       alert_level.level))
 
             except Exception:
@@ -671,12 +675,16 @@ class Mysql(_Storage):
                                      + "alertLevel, "
                                      + "name, "
                                      + "triggerAlways, "
-                                     + "rulesActivated) "
-                                     + "VALUES (%s, %s, %s, %s)",
+                                     + "instrumentation_active, "
+                                     + "instrumentation_cmd, "
+                                     + "instrumentation_timeout) "
+                                     + "VALUES (%s, %s, %s, %s, %s, %s)",
                                      (alert_level.level,
                                       alert_level.name,
                                       alert_level.triggerAlways,
-                                      1 if alert_level.rulesActivated else 0))
+                                      1 if alert_level.instrumentation_active else 0,
+                                      alert_level.instrumentation_cmd if alert_level.instrumentation_active else "",
+                                      alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0))
 
             except Exception:
                 logging.exception("[%s]: Not able to add Alert Level %d."
@@ -1026,7 +1034,9 @@ class Mysql(_Storage):
                              + "alertLevel, "
                              + "name, "
                              + "triggerAlways, "
-                             + "rulesActivated "
+                             + "instrumentation_active, "
+                             + "instrumentation_cmd, "
+                             + "instrumentation_timeout "
                              + "FROM alertLevels")
         result = self._cursor.fetchall()
 
@@ -1035,7 +1045,15 @@ class Mysql(_Storage):
             alert_level.level = alert_level_tuple[0]
             alert_level.name = alert_level_tuple[1]
             alert_level.triggerAlways = alert_level_tuple[2]
-            alert_level.rulesActivated = (alert_level_tuple[3] == 1)
+            alert_level.instrumentation_active = (alert_level_tuple[3] == 1)
+
+            if alert_level.instrumentation_active:
+                alert_level.instrumentation_cmd = alert_level_tuple[4]
+                alert_level.instrumentation_timeout = alert_level_tuple[5]
+
+            else:
+                alert_level.instrumentation_cmd = None
+                alert_level.instrumentation_timeout = None
 
             self._system_data.update_alert_level(alert_level)
 
@@ -1348,7 +1366,9 @@ class Mysql(_Storage):
                                      + "alertLevel INTEGER PRIMARY KEY, "
                                      + "name VARCHAR(255) NOT NULL, "
                                      + "triggerAlways INTEGER NOT NULL, "
-                                     + "rulesActivated INTEGER NOT NULL)")
+                                     + "instrumentation_active INTEGER NOT NULL, "
+                                     + "instrumentation_cmd VARCHAR(255) NOT NULL, "
+                                     + "instrumentation_timeout INTEGER NOT NULL)")
 
             # commit all changes
             self._conn.commit()

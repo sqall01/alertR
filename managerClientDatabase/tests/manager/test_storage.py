@@ -75,7 +75,12 @@ class TestManagerStorage(TestManagerStorageCore):
             temp_alert_level = AlertLevel().deepcopy(alert_level)
             temp_alert_level.name = "new_alert_level_" + str(ctr + 1)
             temp_alert_level.triggerAlways = (ctr % 2)
-            temp_alert_level.rulesActivated = (ctr % 2) == 0
+            temp_alert_level.instrumentation_active = (ctr % 2) == 0
+
+            if temp_alert_level.instrumentation_active:
+                temp_alert_level.instrumentation_cmd = "alert_level_instrumentation_" + str(ctr + 1)
+                temp_alert_level.instrumentation_timeout = 123 + ctr
+
             system_data.update_alert_level(temp_alert_level)
             ctr += 1
 

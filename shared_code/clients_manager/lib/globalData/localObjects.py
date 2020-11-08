@@ -229,6 +229,11 @@ class AlertLevel(LocalObject):
         self.name = alert_level.name
         self.triggerAlways = alert_level.triggerAlways
         self.instrumentation_active = alert_level.instrumentation_active
-        self.instrumentation_cmd = alert_level.instrumentation_cmd
-        self.instrumentation_timeout = alert_level.instrumentation_timeout
+        if self.instrumentation_active:
+            self.instrumentation_cmd = alert_level.instrumentation_cmd
+            self.instrumentation_timeout = alert_level.instrumentation_timeout
+
+        else:
+            self.instrumentation_cmd = None
+            self.instrumentation_timeout = None
         return self
