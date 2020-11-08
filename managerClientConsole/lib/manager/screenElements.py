@@ -314,13 +314,19 @@ class SensorDetailedUrwid:
             temp.append(urwid.Text("Undefined"))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Rules Activated:"))
-        if alertLevel.rulesActivated == 0:
-            temp.append(urwid.Text("No"))
-        elif alertLevel.rulesActivated == 1:
-            temp.append(urwid.Text("Yes"))
-        else:
+        temp.append(urwid.Text("Instrumentation Activated:"))
+        if alertLevel.instrumentation_active is None:
             temp.append(urwid.Text("Undefined"))
+        elif alertLevel.instrumentation_active:
+            temp.append(urwid.Text("Yes"))
+            temp.append(urwid.Divider())
+            temp.append(urwid.Text("Instrumentation Cmd:"))
+            temp.append(urwid.Text(alertLevel.instrumentation_cmd))
+            temp.append(urwid.Divider())
+            temp.append(urwid.Text("Instrumentation Timeout:"))
+            temp.append(urwid.Text(str(alertLevel.instrumentation_timeout) + " Seconds"))
+        else:
+            temp.append(urwid.Text("No"))
 
         return temp
 
@@ -642,13 +648,19 @@ class AlertDetailedUrwid:
             temp.append(urwid.Text("Undefined"))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Rules Activated:"))
-        if alertLevel.rulesActivated == 0:
-            temp.append(urwid.Text("No"))
-        elif alertLevel.rulesActivated == 1:
-            temp.append(urwid.Text("Yes"))
-        else:
+        temp.append(urwid.Text("Instrumentation Activated:"))
+        if alertLevel.instrumentation_active is None:
             temp.append(urwid.Text("Undefined"))
+        elif alertLevel.instrumentation_active:
+            temp.append(urwid.Text("Yes"))
+            temp.append(urwid.Divider())
+            temp.append(urwid.Text("Instrumentation Cmd:"))
+            temp.append(urwid.Text(alertLevel.instrumentation_cmd))
+            temp.append(urwid.Divider())
+            temp.append(urwid.Text("Instrumentation Timeout:"))
+            temp.append(urwid.Text(str(alertLevel.instrumentation_timeout) + " Seconds"))
+        else:
+            temp.append(urwid.Text("No"))
 
         return temp
 
@@ -1136,13 +1148,19 @@ class AlertLevelDetailedUrwid:
             temp.append(urwid.Text("Undefined"))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Rules Activated:"))
-        if alertLevel.rulesActivated == 0:
-            temp.append(urwid.Text("No"))
-        elif alertLevel.rulesActivated == 1:
-            temp.append(urwid.Text("Yes"))
-        else:
+        temp.append(urwid.Text("Instrumentation Activated:"))
+        if alertLevel.instrumentation_active is None:
             temp.append(urwid.Text("Undefined"))
+        elif alertLevel.instrumentation_active:
+            temp.append(urwid.Text("Yes"))
+            temp.append(urwid.Divider())
+            temp.append(urwid.Text("Instrumentation Cmd:"))
+            temp.append(urwid.Text(alertLevel.instrumentation_cmd))
+            temp.append(urwid.Divider())
+            temp.append(urwid.Text("Instrumentation Timeout:"))
+            temp.append(urwid.Text(str(alertLevel.instrumentation_timeout) + " Seconds"))
+        else:
+            temp.append(urwid.Text("No"))
 
         return temp
 

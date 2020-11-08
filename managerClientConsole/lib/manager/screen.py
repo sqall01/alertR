@@ -1795,37 +1795,26 @@ class Console:
             # output all sensor alerts
             for sensorAlert in self.system_data.get_sensor_alerts_list():
 
-                description = ""
+                sensor = self.system_data.get_sensor_by_id(sensorAlert.sensorId)
 
-                # if rules of the triggered alert level are not activated
-                # => search for the sensor urwid object and update it
-                if not sensorAlert.rulesActivated:
-                    sensor = self.system_data.get_sensor_by_id(sensorAlert.sensorId)
+                # Only update sensor state information if the flag
+                # was set in the received message.
+                if sensorAlert.changeState:
+                    sensor.internal_data["urwid"].updateState(sensorAlert.state)
 
-                    # Only update sensor state information if the flag
-                    # was set in the received message.
-                    if sensorAlert.changeState:
-                        sensor.internal_data["urwid"].updateState(sensorAlert.state)
+                sensor.internal_data["urwid"].updateLastUpdated(sensorAlert.timeReceived)
 
-                    sensor.internal_data["urwid"].updateLastUpdated(sensorAlert.timeReceived)
+                # get description for the sensor alert to add
+                description = sensor.description
 
-                    # get description for the sensor alert to add
-                    description = sensor.description
-
-                    # differentiate if sensor alert was triggered
-                    # for a "triggered" or "normal" state
-                    if sensorAlert.state == 0:
-                        description += " (normal)"
-                    elif sensorAlert.state == 1:
-                        description += " (triggered)"
-                    else:
-                        description += " (undefined)"
-
-                # if rules of the triggered alert level are activated
-                # => use name of the first alert level for its description
+                # differentiate if sensor alert was triggered
+                # for a "triggered" or "normal" state
+                if sensorAlert.state == 0:
+                    description += " (normal)"
+                elif sensorAlert.state == 1:
+                    description += " (triggered)"
                 else:
-                    alertLevel = self.system_data.get_alert_level_by_level(sensorAlert.alertLevels[0])
-                    description = alertLevel.name
+                    description += " (undefined)"
 
                 # check if more sensor alerts are shown than are received
                 # => there still exists empty sensor alerts
