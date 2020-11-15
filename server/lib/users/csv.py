@@ -175,8 +175,15 @@ class CSVBackend(_userBackend):
                     return True
 
                 else:
+                    self.logger.error("[%s]: Node or instance invalid. Expected: '%s' and '%s'. "
+                                      % (self.fileName, userData.nodeType, userData.instance)
+                                      + "Received: '%s' and '%s'."
+                                      % (nodeType, instance))
+
                     self._releaseLock()
                     return False
+
+        self.logger.error("[%s]: User credentials for user '%s' not found." % (username, self.fileName))
 
         self._releaseLock()
         return False
