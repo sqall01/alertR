@@ -1012,7 +1012,7 @@ function requestData(content) {
 				+ "&data[]=nodes"
 				+ "&data[]=sensorAlerts"
 				+ "&sensorAlertsRangeStart=0"
-				+ "&sensorAlertsNumber=5"
+				+ "&sensorAlertsNumber=10"
 				+ "&data[]=sensors";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseOverview;
@@ -1912,6 +1912,7 @@ function outputOverview() {
 
 	// generate sensor alerts overview output
 	sensorAlerts.sort(compareSensorAlertsDesc);
+	sensors.sort(compareSensorsAsc);
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -1931,7 +1932,7 @@ function outputOverview() {
 	boxDiv.appendChild(sensorAlertsTable);
 
 	// add the last sensor alerts to the output
-	for(var i = 0; i < 5; i++) {
+	for(var i = 0; i < 10; i++) {
 		if(i >= sensorAlerts.length) {
 			break;
 		}
@@ -1939,6 +1940,8 @@ function outputOverview() {
 		var timeReceived = sensorAlerts[i]["timeReceived"];
 		var state = sensorAlerts[i]["state"];
 		var description = sensorAlerts[i]["description"];
+		var jsonData = sensorAlerts[i]["optionalData"];
+		var optionalData = JSON.parse(jsonData);
 
 		// generate date string from timestamp
 		localDate = new Date(timeReceived * 1000);
@@ -1961,17 +1964,24 @@ function outputOverview() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		newTd.appendChild(document.createTextNode(description));
+
+		// check if a message was sent along with the sensor alert
+		if(optionalData.hasOwnProperty("message")) {
+			newTd.appendChild(document.createTextNode(" (" + optionalData["message"] + ")"));
+		}
+		newTd.appendChild(document.createElement("br"));
+
 		if(state == 0) {
 			newTd.className = "normalTd";
-			newTd.appendChild(document.createTextNode(" (normal)"));
+			newTd.appendChild(document.createTextNode("Normal"));
 		}
 		else {
 			newTd.className = "triggeredTd";
-			newTd.appendChild(document.createTextNode(" (triggered)"));
+			newTd.appendChild(document.createTextNode("Triggered"));
 		}
 		newTd.appendChild(document.createElement("br"));
-		newTr.appendChild(newTd);
 		newTd.appendChild(document.createTextNode(timeReceivedString));
+		newTr.appendChild(newTd);
 		sensorAlertsTable.appendChild(newTr);
 	}
 
@@ -2020,6 +2030,7 @@ function outputOverview() {
 		for(j = 0; j < nodes.length; j++) {
 			if(nodes[j]["id"] == nodeId) {
 				var connected = nodes[j]["connected"];
+				break;
 			}
 		}
 
@@ -2231,6 +2242,7 @@ function outputSensorAlerts() {
 		var optionalData = JSON.parse(jsonData);
 		var dataType = sensorAlerts[i]["dataType"];
 		var sensorData = sensorAlerts[i]["data"];
+		var alertLevels = sensorAlerts[i]["alertLevels"];
 
 
 		var boxDiv = document.createElement("div");
@@ -2346,9 +2358,6 @@ function outputSensorAlerts() {
 		newTd.className = "neutralTd";
 		newTr.appendChild(newTd);
 		sensorAlertTable.appendChild(newTr);
-		newTd.className = "neutralTd";
-		newTr.appendChild(newTd);
-		sensorAlertTable.appendChild(newTr);
 
 
 		// check if a message was sent along with the sensor alert
@@ -2370,10 +2379,25 @@ function outputSensorAlerts() {
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorAlertTable.appendChild(newTr);
-			newTd.className = "neutralTd";
-			newTr.appendChild(newTd);
-			sensorAlertTable.appendChild(newTr);
 		}
+
+
+                // add alert levels to the sensor alert
+                var newTr = document.createElement("tr");
+                var newTd = document.createElement("td");
+                var newB = document.createElement("b");
+                newB.textContent = "Alert Levels:";
+                newTd.appendChild(newB);
+                newTd.className = "boxEntryTd";
+                newTr.appendChild(newTd);
+                sensorAlertTable.appendChild(newTr);
+
+                var newTr = document.createElement("tr");
+                var newTd = document.createElement("td");
+                newTd.textContent = alertLevels.map(String).join(", ");
+                newTd.className = "neutralTd";
+                newTr.appendChild(newTd);
+                sensorAlertTable.appendChild(newTr);
 
 
 		// add sensor alert to the content table
