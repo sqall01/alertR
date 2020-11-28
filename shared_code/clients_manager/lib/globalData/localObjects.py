@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import copy
+import threading
 from typing import Optional, List, Any, Dict
 
 
@@ -30,6 +31,9 @@ class LocalObject:
         # Internal data used by the manager.
         self.internal_state = InternalState.NOT_USED
         self.internal_data = dict()
+
+        # To lock internal data structure if necessary for multi threaded programs.
+        self.internal_data_lock = threading.Lock()
 
     def is_deleted(self):
         return self.internal_state == InternalState.DELETED
