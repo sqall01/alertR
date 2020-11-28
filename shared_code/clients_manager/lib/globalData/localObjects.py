@@ -35,7 +35,7 @@ class LocalObject:
         return self.internal_state == InternalState.DELETED
 
     def is_stored(self):
-        return self.internal_data == InternalState.STORED
+        return self.internal_state == InternalState.STORED
 
     def deepcopy(self, obj):
         raise NotImplementedError("Abstract class.")
@@ -188,6 +188,19 @@ class SensorAlert(LocalObject):
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Any
+
+    def __str__(self):
+        tmp = "Sensor Alert (Description: '%s'; " \
+              % self.description \
+              + "SensorID: %s; " \
+              % str(self.sensorId) if self.sensorId is not None else "None" \
+              + "State: %s; " \
+              % str(self.state) if self.state is not None else "None" \
+              + "Time Received: %s; " \
+              % str(self.timeReceived) if self.timeReceived is not None else "None" \
+              + "Alert Levels: %s)" \
+              % ", ".join(map(str, self.alertLevels))
+        return tmp
 
     # This function copies all attributes of the given sensor alert to this object.
     def deepcopy(self, sensor_alert):
