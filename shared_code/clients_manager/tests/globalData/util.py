@@ -1,6 +1,6 @@
 from unittest import TestCase
 from typing import List
-from lib.globalData.localObjects import Option, Alert, Manager, Sensor, Node, AlertLevel
+from lib.globalData.localObjects import Option, Alert, Manager, Sensor, Node, AlertLevel, SensorAlert
 
 
 def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[AlertLevel], new_alert_levels: List[AlertLevel]):
@@ -197,6 +197,41 @@ def compare_options_content(context: TestCase, gt_options: List[Option], new_opt
 
         if not found:
             context.fail("Not able to find modified Option object.")
+
+
+def compare_sensor_alerts_content(context: TestCase,
+                                  gt_sensor_alerts: List[SensorAlert],
+                                  new_sensor_alerts: List[SensorAlert]):
+    """
+    Compares two lists of Sensor Alert objects.
+    :param context:
+    :param gt_sensor_alerts:
+    :param new_sensor_alerts:
+    """
+    if len(gt_sensor_alerts) != len(new_sensor_alerts):
+        context.fail("Wrong number of objects.")
+
+    for new_sensor_alert in new_sensor_alerts:
+        found = False
+        for gt_sensor_alert in gt_sensor_alerts:
+
+            if (new_sensor_alert.sensorId == gt_sensor_alert.sensorId
+                    and new_sensor_alert.state == gt_sensor_alert.state
+                    and new_sensor_alert.description == gt_sensor_alert.description
+                    and new_sensor_alert.timeReceived == gt_sensor_alert.timeReceived
+                    and new_sensor_alert.hasOptionalData == gt_sensor_alert.hasOptionalData
+                    and new_sensor_alert.changeState == gt_sensor_alert.changeState
+                    and new_sensor_alert.hasLatestData == gt_sensor_alert.hasLatestData
+                    and new_sensor_alert.dataType == gt_sensor_alert.dataType
+                    and new_sensor_alert.sensorData == gt_sensor_alert.sensorData
+                    and any(map(lambda x: x in gt_sensor_alert.alertLevels, new_sensor_alert.alertLevels))
+                    and any(map(lambda x: x in new_sensor_alert.alertLevels, gt_sensor_alert.alertLevels))):
+
+                found = True
+                break
+
+        if not found:
+            context.fail("Lists of Sensor Alert objects do not have the same content.")
 
 
 def compare_sensors_content(context: TestCase, gt_sensors: List[Sensor], new_sensors: List[Sensor]):

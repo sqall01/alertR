@@ -197,11 +197,11 @@ class SensorAlert(LocalObject):
         tmp = "Sensor Alert (Description: '%s'; " \
               % self.description \
               + "SensorID: %s; " \
-              % str(self.sensorId) if self.sensorId is not None else "None" \
+              % (str(self.sensorId) if self.sensorId is not None else "None") \
               + "State: %s; " \
-              % str(self.state) if self.state is not None else "None" \
+              % (str(self.state) if self.state is not None else "None") \
               + "Time Received: %s; " \
-              % str(self.timeReceived) if self.timeReceived is not None else "None" \
+              % (str(self.timeReceived) if self.timeReceived is not None else "None") \
               + "Alert Levels: %s)" \
               % ", ".join(map(str, self.alertLevels))
         return tmp
