@@ -1384,7 +1384,7 @@ class Mysql(_Storage):
                                   alerts: List[Alert],
                                   managers: List[Manager],
                                   alert_levels: List[AlertLevel],
-                                  sensorAlerts: List[SensorAlert]) -> bool:
+                                  sensor_alerts: List[SensorAlert]) -> bool:
         """
         Updates the received server information.
 
@@ -1395,7 +1395,7 @@ class Mysql(_Storage):
         :param alerts:
         :param managers:
         :param alert_levels:
-        :param sensorAlerts:
+        :param sensor_alerts:
         :return: Success or Failure
         """
         with self._lock:
@@ -1544,13 +1544,25 @@ class Mysql(_Storage):
                     self._close_connection()
                     return False
 
-            for sensor_alert in sensorAlerts:
-                try:
-                    self._add_sensor_alert(sensor_alert)
+            for sensor_alert in sensor_alerts:
 
-                except Exception:
-                    self._close_connection()
-                    return False
+                # Since we do not have a unique identifier for sensor alerts, we have to mark it as already stored
+                # in the database to prevent storing it multiple times.
+                with sensor_alert.internal_data_lock:
+
+                    if "stored_db" in sensor_alert.internal_data.keys() and sensor_alert.internal_data["stored_db"]:
+                        continue
+
+                    sensor_alert.internal_data["stored_db"] = False
+
+                    try:
+                        self._add_sensor_alert(sensor_alert)
+
+                    except Exception:
+                        self._close_connection()
+                        return False
+
+                    sensor_alert.internal_data["stored_db"] = True
 
             # commit all changes
             self._conn.commit()
