@@ -185,13 +185,17 @@ class Mysql(_Storage):
                                  + "state, "
                                  + "description, "
                                  + "timeReceived, "
+                                 + "changeState, "
+                                 + "hasLatestData, "
                                  + "dataJson, "
                                  + "dataType) "
-                                 + "VALUES (%s, %s, %s, %s, %s, %s)",
+                                 + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                                  (sensor_alert.sensorId,
                                   sensor_alert.state,
                                   sensor_alert.description,
                                   sensor_alert.timeReceived,
+                                  1 if sensor_alert.changeState else 0,
+                                  1 if sensor_alert.hasLatestData else 0,
                                   dataJson,
                                   sensor_alert.dataType))
             db_sensor_alert_id = self._cursor.lastrowid
@@ -529,6 +533,65 @@ class Mysql(_Storage):
         self._cursor.execute("DROP TABLE IF EXISTS managers")
         self._cursor.execute("DROP TABLE IF EXISTS alertLevels")
         self._cursor.execute("DROP TABLE IF EXISTS nodes")
+
+    def _get_sensor_alerts(self) -> List[SensorAlert]:
+        """
+        Internal function that gets a list of Sensor Alerts from the database. Does not catch exceptions.
+
+        :return: Sensor Alerts
+        """
+        sensor_alerts = list()
+
+        # create node objects from db
+        self._cursor.execute("SELECT * FROM sensorAlerts")
+        result = self._cursor.fetchall()
+
+        for sensor_alert_tuple in result:
+            sensor_alert_id = sensor_alert_tuple[0]
+
+            sensor_alert = SensorAlert()
+            sensor_alert.sensorId = sensor_alert_tuple[1]
+            sensor_alert.state = sensor_alert_tuple[2]
+            sensor_alert.description = sensor_alert_tuple[3]
+            sensor_alert.timeReceived = sensor_alert_tuple[4]
+            sensor_alert.changeState = (sensor_alert_tuple[5] == 1)
+            sensor_alert.hasLatestData = (sensor_alert_tuple[6] == 1)
+            sensor_alert.optionalData = json.loads(sensor_alert_tuple[7])
+            sensor_alert.dataType = sensor_alert_tuple[8]
+
+            if not sensor_alert.optionalData:
+                sensor_alert.hasOptionalData = False
+
+            else:
+                sensor_alert.hasOptionalData = True
+
+            # Get Alert Levels of Sensor Alert.
+            sensor_alert.alertLevels = list()
+            self._cursor.execute("SELECT alertLevel FROM sensorAlertsAlertLevels WHERE sensorAlertId = %s",
+                                 (sensor_alert_id, ))
+            result_alert_levels = self._cursor.fetchall()
+            for alert_level_tuple in result_alert_levels:
+                sensor_alert.alertLevels.append(alert_level_tuple[0])
+
+            # Get data of Sensor Alert.
+            if sensor_alert.dataType == SensorDataType.NONE:
+                sensor_alert.sensorData = None
+
+            elif sensor_alert.dataType == SensorDataType.INT:
+                self._cursor.execute("SELECT data FROM sensorAlertsDataInt WHERE sensorAlertId = %s",
+                                     (sensor_alert_id, ))
+                result_data = self._cursor.fetchall()
+                sensor_alert.sensorData = result_data[0][0]
+
+            elif sensor_alert.dataType == SensorDataType.FLOAT:
+                self._cursor.execute("SELECT data FROM sensorAlertsDataFloat WHERE sensorAlertId = %s",
+                                     (sensor_alert_id, ))
+                result_data = self._cursor.fetchall()
+                sensor_alert.sensorData = result_data[0][0]
+
+            sensor_alerts.append(sensor_alert)
+
+        return sensor_alerts
 
     def _open_connection(self):
         """
@@ -1286,6 +1349,8 @@ class Mysql(_Storage):
                                      + "state INTEGER NOT NULL, "
                                      + "description TEXT NOT NULL,"
                                      + "timeReceived INTEGER NOT NULL, "
+                                     + "changeState INTEGER NOT NULL, "
+                                     + "hasLatestData INTEGER NOT NULL, "
                                      + "dataJson TEXT NOT NULL, "
                                      + "dataType INTEGER NOT NULL)")
 
