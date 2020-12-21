@@ -12,7 +12,7 @@ import subprocess
 import time
 import logging
 from .core import _PollingSensor
-from ..localObjects import SensorAlert, StateChange, SensorDataType
+from ..globalData import SensorAlert, StateChange, SensorDataType
 from typing import Optional
 
 
