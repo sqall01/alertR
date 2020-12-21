@@ -17,7 +17,7 @@ from .core import Client
 from .util import MsgBuilder
 from .communication import Communication, Promise
 from .eventHandler import EventHandler
-from ..globalData import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, AlertLevel
+from ..globalData import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, StateChange, AlertLevel
 from ..globalData import GlobalData
 
 
@@ -64,8 +64,13 @@ class ServerCommunication(Communication):
         # file nme of this file (used for logging)
         self._log_tag = os.path.basename(__file__)
 
-        # Description of this manager.
-        self._description = self._global_data.description
+        # Set node type specific data.
+        if self._nodeType.lower() == "manager":
+            # Description of this manager.
+            self._description = self._global_data.description
+
+        elif self._nodeType.lower() == "sensor":
+            self._polling_sensors = self._global_data.sensors
 
         self._initialization_lock = threading.Lock()
 
@@ -685,10 +690,18 @@ class ServerCommunication(Communication):
                 return False
 
             # Build registration message.
-            regMessage = MsgBuilder.build_reg_msg(self._description,
-                                                  self._nodeType,
-                                                  self._instance,
-                                                  self._persistent)
+            regMessage = ""
+            if self._nodeType.lower() == "manager":
+                regMessage = MsgBuilder.build_reg_msg_manager(self._description,
+                                                              self._nodeType,
+                                                              self._instance,
+                                                              self._persistent)
+
+            elif self._nodeType.lower() == "sensor":
+                regMessage = MsgBuilder.build_reg_msg_sensor(self._polling_sensors,
+                                                             self._nodeType,
+                                                             self._instance,
+                                                             self._persistent)
 
             # First check version and authenticate.
             if not self._verify_version_and_auth(len(regMessage)):
@@ -753,17 +766,6 @@ class ServerCommunication(Communication):
 
         return self.initialize()
 
-    def send_ping(self) -> Promise:
-        """
-        Sends a keep alive (PING request) to the server to keep the connection alive and to check
-        if the connection is still alive.
-
-        :return: Promise that the request will be sent and that contains the state of the send request
-        """
-        ping_message = MsgBuilder.build_ping_msg()
-
-        return self.send_request("ping", ping_message)
-
     def send_option(self,
                     optionType: str,
                     optionValue: float,
@@ -781,3 +783,40 @@ class ServerCommunication(Communication):
         option_message = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
 
         return self.send_request("option", option_message)
+
+    def send_ping(self) -> Promise:
+        """
+        Sends a keep alive (PING request) to the server to keep the connection alive and to check
+        if the connection is still alive.
+
+        :return: Promise that the request will be sent and that contains the state of the send request
+        """
+        ping_message = MsgBuilder.build_ping_msg()
+
+        return self.send_request("ping", ping_message)
+
+    def send_sensor_alert(self,
+                          sensor_alert: SensorAlert) -> Promise:
+        """
+        This function sends a sensor alert to the server.
+
+        :param sensor_alert:
+        :return: Promise that the request will be sent and that contains the state of the send request
+        """
+
+        sensor_alert_message = MsgBuilder.build_sensor_alert_msg_sensor(sensor_alert)
+
+        return self.send_request("sensoralert", sensor_alert_message)
+
+    def send_state_change(self,
+                          state_change: StateChange) -> Promise:
+        """
+        This function sends a state change to the server for example to update the sensor state or data.
+
+        :param state_change:
+        :return: Promise that the request will be sent and that contains the state of the send request
+        """
+
+        state_change_message = MsgBuilder.build_state_change_msg_sensor(state_change)
+
+        return self.send_request("statechange", state_change_message)

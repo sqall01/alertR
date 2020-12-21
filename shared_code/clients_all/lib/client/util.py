@@ -14,7 +14,7 @@ import socket
 import os
 import logging
 from typing import List, Dict, Any, Optional
-from ..globalData import SensorDataType
+from ..globalData import SensorDataType, StateChange, SensorAlert
 
 
 class MsgChecker:
@@ -1125,14 +1125,22 @@ class MsgChecker:
 
 class MsgBuilder:
 
-    # Internal function that builds the client authentication message.
     @staticmethod
     def build_auth_msg(username: str,
                        password: str,
                        version: float,
                        rev: int,
                        regMessageSize: int) -> str:
+        """
+        Internal function that builds the client authentication message.
 
+        :param username:
+        :param password:
+        :param version:
+        :param rev:
+        :param regMessageSize:
+        :return:
+        """
         payload = {"type": "request",
                    "version": version,
                    "rev": rev,
@@ -1145,12 +1153,18 @@ class MsgBuilder:
                    "payload": payload}
         return json.dumps(message)
 
-    # Internal function that builds the option message.
     @staticmethod
     def build_option_msg(optionType: str,
                          optionValue: float,
                          optionDelay: int) -> str:
+        """
+        Internal function that builds the option message.
 
+        :param optionType:
+        :param optionValue:
+        :param optionDelay:
+        :return:
+        """
         payload = {"type": "request",
                    "optionType": optionType,
                    "value": float(optionValue),
@@ -1161,10 +1175,13 @@ class MsgBuilder:
                    "payload": payload}
         return json.dumps(message)
 
-    # Internal function that builds the ping message.
     @staticmethod
     def build_ping_msg() -> str:
+        """
+        Internal function that builds the ping message.
 
+        :return:
+        """
         payload = {"type": "request"}
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
@@ -1172,13 +1189,20 @@ class MsgBuilder:
                    "payload": payload}
         return json.dumps(message)
 
-    # Internal function that builds the client registration message.
     @staticmethod
-    def build_reg_msg(description: str,
-                      node_type: str,
-                      instance: str,
-                      persistent: int) -> str:
+    def build_reg_msg_manager(description: str,
+                              node_type: str,
+                              instance: str,
+                              persistent: int) -> str:
+        """
+        Internal function that builds the client registration message for manager nodes.
 
+        :param description:
+        :param node_type:
+        :param instance:
+        :param persistent:
+        :return:
+        """
         # build manager dict for the message
         manager = dict()
         manager["description"] = description
@@ -1189,8 +1213,106 @@ class MsgBuilder:
                    "instance": instance,
                    "persistent": persistent,
                    "manager": manager}
+
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
                    "message": "initialization",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
+    def build_reg_msg_sensor(polling_sensors,
+                             node_type: str,
+                             instance: str,
+                             persistent: int) -> str:
+        """
+        Internal function that builds the client registration message for sensor nodes.
+
+        :param polling_sensors:
+        :param node_type:
+        :param instance:
+        :param persistent:
+        :return:
+        """
+        # build sensors list for the message
+        msg_sensors = list()
+        for sensor in polling_sensors:
+            tempSensor = dict()
+            tempSensor["clientSensorId"] = sensor.id
+            tempSensor["alertDelay"] = sensor.alertDelay
+            tempSensor["alertLevels"] = sensor.alertLevels
+            tempSensor["description"] = sensor.description
+            tempSensor["state"] = sensor.state
+
+            # Only add data field if sensor data type is not "none".
+            tempSensor["dataType"] = sensor.sensorDataType
+            if sensor.sensorDataType != SensorDataType.NONE:
+                tempSensor["data"] = sensor.sensorData
+
+            msg_sensors.append(tempSensor)
+
+        payload = {"type": "request",
+                   "hostname": socket.gethostname(),
+                   "nodeType": node_type,
+                   "instance": instance,
+                   "persistent": persistent,
+                   "sensors": msg_sensors}
+
+        utcTimestamp = int(time.time())
+        message = {"clientTime": utcTimestamp,
+                   "message": "initialization",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
+    def build_state_change_msg_sensor(state_change: StateChange) -> str:
+        """
+        Internal function that builds a state change message for sensor nodes.
+
+        :param state_change:
+        """
+
+        payload = {"type": "request",
+                   "clientSensorId": state_change.clientSensorId,
+                   "state": state_change.state,
+                   "dataType": state_change.dataType}
+
+        # Only add data field if sensor data type is not "none".
+        if state_change.dataType != SensorDataType.NONE:
+            payload["data"] = state_change.sensorData
+
+        utcTimestamp = int(time.time())
+        message = {"clientTime": utcTimestamp,
+                   "message": "statechange",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
+    def build_sensor_alert_msg_sensor(sensor_alert: SensorAlert) -> str:
+        """
+        Internal function that builds a sensor alert message for sensor nodes.
+
+        :param sensor_alert:
+        """
+
+        payload = {"type": "request",
+                   "clientSensorId": sensor_alert.clientSensorId,
+                   "state": sensor_alert.state,
+                   "hasOptionalData": sensor_alert.hasOptionalData,
+                   "changeState": sensor_alert.changeState,
+                   "hasLatestData": sensor_alert.hasLatestData,
+                   "dataType": sensor_alert.dataType}
+
+        # Only add optional data field if it should be transfered.
+        if sensor_alert.hasOptionalData:
+            payload["optionalData"] = sensor_alert.optionalData
+
+        # Only add data field if sensor data type is not "none".
+        if sensor_alert.dataType != SensorDataType.NONE:
+            payload["data"] = sensor_alert.sensorData
+
+        utcTimestamp = int(time.time())
+        message = {"clientTime": utcTimestamp,
+                   "message": "sensoralert",
                    "payload": payload}
         return json.dumps(message)

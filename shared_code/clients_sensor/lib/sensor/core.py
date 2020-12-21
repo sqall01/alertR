@@ -12,8 +12,7 @@ import os
 import logging
 import threading
 from ..client import AsynchronousSender
-from ..localObjects import SensorAlert, StateChange
-from ..globalData import GlobalData
+from ..globalData import GlobalData, SensorAlert, StateChange
 from typing import Optional, List
 
 
