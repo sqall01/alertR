@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 """
 Test instrumentation script which simply outputs the received argument with an toggled state.
