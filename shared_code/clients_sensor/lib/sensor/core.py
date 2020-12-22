@@ -11,9 +11,12 @@ import time
 import os
 import logging
 import threading
-from ..client import AsynchronousSender
-from ..globalData import GlobalData, SensorAlert, StateChange
-from typing import Optional, List
+from ..globalData import GlobalData
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
+    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor
+from ..client import EventHandler
+from typing import Optional, List, Any
 
 
 # Internal class that holds the important attributes
@@ -110,7 +113,7 @@ class _PollingSensor:
     #
     # Returns an object of class SensorAlert if a sensor alert should be sent
     # or None.
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         raise NotImplementedError("Function not implemented yet.")
 
     # This function decides if an update for this sensor should be sent
@@ -119,7 +122,7 @@ class _PollingSensor:
     #
     # Returns an object of class StateChange if a sensor alert should be sent
     # or None.
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         raise NotImplementedError("Function not implemented yet.")
 
 
@@ -174,17 +177,7 @@ class SensorExecuter(threading.Thread):
                 # => update already known state and continue
                 sensorAlert = sensor.forceSendAlert()
                 if sensorAlert:
-                    oldState = currentState
-
-                    asyncSenderProcess = AsynchronousSender(
-                        self.connection, self.globalData)
-                    # set thread to daemon
-                    # => threads terminates when main thread terminates 
-                    asyncSenderProcess.daemon = True
-                    asyncSenderProcess.sendSensorAlert = True
-                    asyncSenderProcess.sendSensorAlertSensorAlert = sensorAlert
-                    asyncSenderProcess.start()
-
+                    self.connection.send_sensor_alert(sensorAlert)
                     continue
 
                 # check if the current state is the same
@@ -205,11 +198,10 @@ class SensorExecuter(threading.Thread):
                     # => send sensor alert to server
                     if sensor.triggerAlert:
 
-                        logging.info("[%s]: Sensor alert " % self.fileName
-                            + "triggered by '%s'." % sensor.description)
+                        logging.info("[%s]: Sensor alert triggered by '%s'." % (self.fileName, sensor.description))
 
                         # Create sensor alert object to send to the server.
-                        sensorAlert = SensorAlert()
+                        sensorAlert = SensorObjSensorAlert()
                         sensorAlert.clientSensorId = sensor.id
                         sensorAlert.state = 1
                         sensorAlert.hasOptionalData = sensor.hasOptionalData
@@ -219,39 +211,22 @@ class SensorExecuter(threading.Thread):
                         sensorAlert.dataType = sensor.sensorDataType
                         sensorAlert.sensorData = sensor.sensorData
 
-                        asyncSenderProcess = AsynchronousSender(
-                            self.connection, self.globalData)
-                        # set thread to daemon
-                        # => threads terminates when main thread terminates 
-                        asyncSenderProcess.daemon = True
-                        asyncSenderProcess.sendSensorAlert = True
-                        asyncSenderProcess.sendSensorAlertSensorAlert = \
-                            sensorAlert
-                        asyncSenderProcess.start()
+                        self.connection.send_sensor_alert(sensorAlert)
 
                     # if sensor does not trigger sensor alert
                     # => just send changed state to server
                     else:
 
-                        logging.debug("[%s]: State " % self.fileName
-                            + "changed by '%s'." % sensor.description)
+                        logging.debug("[%s]: State changed by '%s'." % (self.fileName, sensor.description))
 
                         # Create state change object to send to the server.
-                        stateChange = StateChange()
+                        stateChange = SensorObjStateChange()
                         stateChange.clientSensorId = sensor.id
                         stateChange.state = 1
                         stateChange.dataType = sensor.sensorDataType
                         stateChange.sensorData = sensor.sensorData
 
-                        asyncSenderProcess = AsynchronousSender(
-                            self.connection, self.globalData)
-                        # set thread to daemon
-                        # => threads terminates when main thread terminates 
-                        asyncSenderProcess.daemon = True
-                        asyncSenderProcess.sendStateChange = True
-                        asyncSenderProcess.sendStateChangeStateChange = \
-                            stateChange
-                        asyncSenderProcess.start()
+                        self.connection.send_state_change(stateChange)
 
                 # only possible situation left => sensor changed
                 # back from triggering state to a normal state
@@ -263,11 +238,11 @@ class SensorExecuter(threading.Thread):
                     if sensor.triggerAlertNormal:
 
                         logging.info("[%s]: Sensor alert " % self.fileName
-                            + "for normal state "
-                            + "triggered by '%s'." % sensor.description)
+                                     + "for normal state "
+                                     + "triggered by '%s'." % sensor.description)
 
                         # Create sensor alert object to send to the server.
-                        sensorAlert = SensorAlert()
+                        sensorAlert = SensorObjSensorAlert()
                         sensorAlert.clientSensorId = sensor.id
                         sensorAlert.state = 0
                         sensorAlert.hasOptionalData = sensor.hasOptionalData
@@ -277,40 +252,23 @@ class SensorExecuter(threading.Thread):
                         sensorAlert.dataType = sensor.sensorDataType
                         sensorAlert.sensorData = sensor.sensorData
 
-                        asyncSenderProcess = AsynchronousSender(
-                            self.connection, self.globalData)
-                        # set thread to daemon
-                        # => threads terminates when main thread terminates 
-                        asyncSenderProcess.daemon = True
-                        asyncSenderProcess.sendSensorAlert = True
-                        asyncSenderProcess.sendSensorAlertSensorAlert = \
-                            sensorAlert
-                        asyncSenderProcess.start()
+                        self.connection.send_sensor_alert(sensorAlert)
 
                     # if sensor does not trigger sensor alert when
                     # state is back to normal
                     # => just send changed state to server
                     else:
 
-                        logging.debug("[%s]: State " % self.fileName
-                            + "changed by '%s'." % sensor.description)
+                        logging.debug("[%s]: State changed by '%s'." % (self.fileName, sensor.description))
 
                         # Create state change object to send to the server.
-                        stateChange = StateChange()
+                        stateChange = SensorObjStateChange()
                         stateChange.clientSensorId = sensor.id
                         stateChange.state = 0
                         stateChange.dataType = sensor.sensorDataType
                         stateChange.sensorData = sensor.sensorData
 
-                        asyncSenderProcess = AsynchronousSender(
-                            self.connection, self.globalData)
-                        # set thread to daemon
-                        # => threads terminates when main thread terminates 
-                        asyncSenderProcess.daemon = True
-                        asyncSenderProcess.sendStateChange = True
-                        asyncSenderProcess.sendStateChangeStateChange = \
-                            stateChange
-                        asyncSenderProcess.start()
+                        self.connection.send_state_change(stateChange)
 
             # Poll all sensors if they want to force an update that should
             # be send to the server.
@@ -318,32 +276,53 @@ class SensorExecuter(threading.Thread):
 
                 stateChange = sensor.forceSendState()
                 if stateChange:
-                    asyncSenderProcess = AsynchronousSender(
-                        self.connection, self.globalData)
-                    # set thread to daemon
-                    # => threads terminates when main thread terminates 
-                    asyncSenderProcess.daemon = True
-                    asyncSenderProcess.sendStateChange = True
-                    asyncSenderProcess.sendStateChangeStateChange = stateChange
-                    asyncSenderProcess.start()
+                    self.connection.send_state_change(stateChange)
 
             # check if the last state that was sent to the server
             # is older than 60 seconds => send state update
             utcTimestamp = int(time.time())
             if (utcTimestamp - lastFullStateSent) > 60:
 
-                logging.debug("[%s]: Last state " % self.fileName
-                    + "timed out.")
+                logging.debug("[%s]: Last state timed out." % self.fileName)
 
-                asyncSenderProcess = AsynchronousSender(
-                    self.connection, self.globalData)
-                # set thread to daemon
-                # => threads terminates when main thread terminates 
-                asyncSenderProcess.daemon = True
-                asyncSenderProcess.sendSensorsState = True
-                asyncSenderProcess.start()
+                self.connection.send_sensors_status_update()
 
                 # update time on which the full state update was sent
                 lastFullStateSent = utcTimestamp
                 
             time.sleep(0.5)
+
+
+class BaseSensorEventHandler(EventHandler):
+
+    def __init__(self):
+        super().__init__()
+
+    def status_update(self,
+                      server_time: int,
+                      options: List[ManagerObjOption],
+                      nodes: List[ManagerObjNode],
+                      sensors: List[ManagerObjSensor],
+                      managers: List[ManagerObjManager],
+                      alerts: List[ManagerObjAlert],
+                      alert_levels: List[ManagerObjAlertLevel]) -> bool:
+        return True
+
+    def sensor_alert(self,
+                     server_time: int,
+                     sensor_alert: ManagerObjSensorAlert) -> bool:
+        return True
+
+    def state_change(self,
+                     server_time: int,
+                     sensor_id: int,
+                     state: int,
+                     data_type: SensorDataType,
+                     sensor_data: Any) -> bool:
+        return True
+
+    def close_connection(self):
+        pass
+
+    def new_connection(self):
+        pass

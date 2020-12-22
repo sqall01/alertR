@@ -105,4 +105,3 @@ class Client(Connection):
         if self.sslSocket is not None:
             # closing SSLSocket will also close the underlying socket
             self.sslSocket.close()
-

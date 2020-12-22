@@ -201,5 +201,6 @@ if __name__ == '__main__':
     logging.info("[%s] Client started." % fileName)
 
     # generate receiver to handle incoming data (for example status updates)
+    # (note: we will not return from the receiver unless the client is terminated)
     receiver = Receiver(globalData.serverComm)
     receiver.run()

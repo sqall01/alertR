@@ -14,7 +14,7 @@ import socket
 import os
 import logging
 from typing import List, Dict, Any, Optional
-from ..globalData import SensorDataType, StateChange, SensorAlert
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 
 
 class MsgChecker:
@@ -1193,7 +1193,7 @@ class MsgBuilder:
     def build_reg_msg_manager(description: str,
                               node_type: str,
                               instance: str,
-                              persistent: int) -> str:
+                              persistent: int) -> str:  # TODO: manager
         """
         Internal function that builds the client registration message for manager nodes.
 
@@ -1224,7 +1224,7 @@ class MsgBuilder:
     def build_reg_msg_sensor(polling_sensors,
                              node_type: str,
                              instance: str,
-                             persistent: int) -> str:
+                             persistent: int) -> str:  # TODO: sensor
         """
         Internal function that builds the client registration message for sensor nodes.
 
@@ -1265,7 +1265,7 @@ class MsgBuilder:
         return json.dumps(message)
 
     @staticmethod
-    def build_state_change_msg_sensor(state_change: StateChange) -> str:
+    def build_state_change_msg_sensor(state_change: SensorObjStateChange) -> str:  # TODO: sensor
         """
         Internal function that builds a state change message for sensor nodes.
 
@@ -1288,7 +1288,7 @@ class MsgBuilder:
         return json.dumps(message)
 
     @staticmethod
-    def build_sensor_alert_msg_sensor(sensor_alert: SensorAlert) -> str:
+    def build_sensor_alert_msg_sensor(sensor_alert: SensorObjSensorAlert) -> str:  # TODO: sensor
         """
         Internal function that builds a sensor alert message for sensor nodes.
 
@@ -1314,5 +1314,39 @@ class MsgBuilder:
         utcTimestamp = int(time.time())
         message = {"clientTime": utcTimestamp,
                    "message": "sensoralert",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
+    def build_status_update_msg_sensor(polling_sensors) -> str:  # TODO: sensor
+        """
+        Internal function that builds a sensor alert message for sensor nodes.
+
+        :param polling_sensors:
+        """
+        # build sensors list for the message
+        sensors = list()
+        for sensor in polling_sensors:
+            temp_sensor = dict()
+            temp_sensor["clientSensorId"] = sensor.id
+
+            # convert the internal trigger state to the state
+            # convention of the alert system (1 = trigger, 0 = normal)
+            if sensor.triggerState == sensor.state:
+                temp_sensor["state"] = 1
+            else:
+                temp_sensor["state"] = 0
+
+            # Only add data field if sensor data type is not "none".
+            temp_sensor["dataType"] = sensor.sensorDataType
+            if sensor.sensorDataType != SensorDataType.NONE:
+                temp_sensor["data"] = sensor.sensorData
+
+            sensors.append(temp_sensor)
+
+        payload = {"type": "request", "sensors": sensors}
+        utcTimestamp = int(time.time())
+        message = {"clientTime": utcTimestamp,
+                   "message": "status",
                    "payload": payload}
         return json.dumps(message)

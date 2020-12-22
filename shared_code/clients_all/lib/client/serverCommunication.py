@@ -17,7 +17,9 @@ from .core import Client
 from .util import MsgBuilder
 from .communication import Communication, Promise
 from .eventHandler import EventHandler
-from ..globalData import SensorDataType, Option, Node, Sensor, Manager, Alert, SensorAlert, StateChange, AlertLevel
+from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
+    ManagerObjAlertLevel, ManagerObjSensorAlert
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 from ..globalData import GlobalData
 
 
@@ -65,11 +67,11 @@ class ServerCommunication(Communication):
         self._log_tag = os.path.basename(__file__)
 
         # Set node type specific data.
-        if self._nodeType.lower() == "manager":
+        if self._nodeType.lower() == "manager": # TODO: Manager
             # Description of this manager.
             self._description = self._global_data.description
 
-        elif self._nodeType.lower() == "sensor":
+        elif self._nodeType.lower() == "sensor": # TODO: Sensor
             self._polling_sensors = self._global_data.sensors
 
         self._initialization_lock = threading.Lock()
@@ -319,7 +321,7 @@ class ServerCommunication(Communication):
 
             logging.debug("[%s]: Received option information: '%s':%d." % (self._log_tag, optionType, optionValue))
 
-            option = Option()
+            option = ManagerObjOption()
             option.type = optionType
             option.value = optionValue
             options.append(option)
@@ -347,7 +349,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Received node information: %d:'%s':'%s':%d:%d."
                           % (self._log_tag, nodeId, hostname, nodeType, connected, persistent))
 
-            node = Node()
+            node = ManagerObjNode()
             node.nodeId = nodeId
             node.hostname = hostname
             node.nodeType = nodeType
@@ -387,7 +389,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d:%d."
                           % (self._log_tag, nodeId, sensorId, alertDelay, description, lastStateUpdated, state))
 
-            sensor = Sensor()
+            sensor = ManagerObjSensor()
             sensor.nodeId = nodeId
             sensor.sensorId = sensorId
             sensor.remoteSensorId = remoteSensorId
@@ -418,7 +420,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Received manager information: %d:%d:'%s'."
                           % (self._log_tag, nodeId, managerId, description))
 
-            manager = Manager()
+            manager = ManagerObjManager()
             manager.nodeId = nodeId
             manager.managerId = managerId
             manager.description = description
@@ -443,7 +445,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Received alert information: %d:%d:'%s'."
                           % (self._log_tag, nodeId, alertId, description))
 
-            alert = Alert()
+            alert = ManagerObjAlert()
             alert.nodeId = nodeId
             alert.alertId = alertId
             alert.remoteAlertId = remoteAlertId
@@ -477,7 +479,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Received alertLevel information: %d:'%s':%d."
                           % (self._log_tag, level, name, triggerAlways))
 
-            alertLevel = AlertLevel()
+            alertLevel = ManagerObjAlertLevel()
             alertLevel.level = level
             alertLevel.name = name
             alertLevel.triggerAlways = triggerAlways
@@ -509,7 +511,7 @@ class ServerCommunication(Communication):
         logging.info("[%s]: Received sensor alert." % self._log_tag)
 
         # extract sensor alert values
-        sensorAlert = SensorAlert()
+        sensorAlert = ManagerObjSensorAlert()
         sensorAlert.timeReceived = int(time.time())
         try:
             serverTime = incomingMessage["serverTime"]
@@ -690,27 +692,27 @@ class ServerCommunication(Communication):
                 return False
 
             # Build registration message.
-            regMessage = ""
+            reg_message = ""
             if self._nodeType.lower() == "manager":
-                regMessage = MsgBuilder.build_reg_msg_manager(self._description,
+                reg_message = MsgBuilder.build_reg_msg_manager(self._description,
                                                               self._nodeType,
                                                               self._instance,
                                                               self._persistent)
 
             elif self._nodeType.lower() == "sensor":
-                regMessage = MsgBuilder.build_reg_msg_sensor(self._polling_sensors,
+                reg_message = MsgBuilder.build_reg_msg_sensor(self._polling_sensors,
                                                              self._nodeType,
                                                              self._instance,
                                                              self._persistent)
 
             # First check version and authenticate.
-            if not self._verify_version_and_auth(len(regMessage)):
+            if not self._verify_version_and_auth(len(reg_message)):
                 logging.error("[%s]: Version verification and authentication failed." % self._log_tag)
                 self.close()
                 return False
 
             # Second register node.
-            if not self._register_node(regMessage):
+            if not self._register_node(reg_message):
                 logging.error("[%s]: Registration failed." % self._log_tag)
                 self.close()
                 return False
@@ -766,6 +768,7 @@ class ServerCommunication(Communication):
 
         return self.initialize()
 
+    # TODO: Manager
     def send_option(self,
                     optionType: str,
                     optionValue: float,
@@ -795,8 +798,9 @@ class ServerCommunication(Communication):
 
         return self.send_request("ping", ping_message)
 
+    # TODO: Sensor
     def send_sensor_alert(self,
-                          sensor_alert: SensorAlert) -> Promise:
+                          sensor_alert: SensorObjSensorAlert) -> Promise:
         """
         This function sends a sensor alert to the server.
 
@@ -808,8 +812,9 @@ class ServerCommunication(Communication):
 
         return self.send_request("sensoralert", sensor_alert_message)
 
+    # TODO: Sensor
     def send_state_change(self,
-                          state_change: StateChange) -> Promise:
+                          state_change: SensorObjStateChange) -> Promise:
         """
         This function sends a state change to the server for example to update the sensor state or data.
 
@@ -820,3 +825,15 @@ class ServerCommunication(Communication):
         state_change_message = MsgBuilder.build_state_change_msg_sensor(state_change)
 
         return self.send_request("statechange", state_change_message)
+
+    # TODO: Sensor
+    def send_sensors_status_update(self) -> Promise:
+        """
+        This function sends a status update of all sensors to the server.
+
+        :return: Promise that the request will be sent and that contains the state of the send request
+        """
+
+        status_update_message = MsgBuilder.build_status_update_msg_sensor(self._polling_sensors)
+
+        return self.send_request("status", status_update_message)

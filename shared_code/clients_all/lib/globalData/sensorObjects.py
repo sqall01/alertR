@@ -63,6 +63,7 @@ class SensorObjSensorAlert(LocalObject):
 
         return self
 
+
 # This class represents a state change of the sensor.
 class SensorObjStateChange(LocalObject):
 
