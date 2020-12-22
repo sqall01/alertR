@@ -162,7 +162,7 @@ class SensorExecuter(threading.Thread):
 
             # check if the client is connected to the server
             # => wait and continue loop until client is connected
-            if not self.connection.isConnected():
+            if not self.connection.is_connected:
                 time.sleep(0.5)
                 continue
 
