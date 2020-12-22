@@ -8,4 +8,5 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from .globalData import GlobalData
-from .localObjects import Node, Option, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from .managerObjects import ManagerObjNode, ManagerObjOption, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert
+from .sensorObjects import SensorDataType, SensorObjSensorAlert, SensorObjStateChange

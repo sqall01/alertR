@@ -1,14 +1,14 @@
 from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_managers_content
 from lib.globalData.systemData import SystemData
-from lib.globalData.localObjects import Node, Manager
+from lib.globalData.managerObjects import ManagerObjNode, ManagerObjManager
 
 
 class TestSystemDataManager(TestSystemDataCore):
 
     def _invalid_node_missing(self, system_data: SystemData):
         # Test non-existing node.
-        manager = Manager()
+        manager = ManagerObjManager()
         manager.nodeId = 99
         manager.managerId = 1
         manager.description = "manager_1"
@@ -22,7 +22,7 @@ class TestSystemDataManager(TestSystemDataCore):
 
     def _invalid_wrong_node_type(self, system_data: SystemData):
         # Test invalid node type.
-        node = Node()
+        node = ManagerObjNode()
         node.nodeId = 1
         node.hostname = "hostname_1"
         node.nodeType = "sensor"
@@ -34,7 +34,7 @@ class TestSystemDataManager(TestSystemDataCore):
         node.persistent = 1
         system_data.update_node(node)
 
-        manager = Manager()
+        manager = ManagerObjManager()
         manager.nodeId = 1
         manager.managerId = 1
         manager.description = "manager_1"
@@ -75,7 +75,7 @@ class TestSystemDataManager(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_managers = []
         for i in range(len(self.managers)):
-            temp_manager = Manager().deepcopy(self.managers[i])
+            temp_manager = ManagerObjManager().deepcopy(self.managers[i])
             temp_manager.description = "new_manager_" + str(i + 1)
             new_managers.append(temp_manager)
 

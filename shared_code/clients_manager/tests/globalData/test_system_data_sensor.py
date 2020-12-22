@@ -1,14 +1,15 @@
 from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.systemData import SystemData
-from lib.globalData.localObjects import Node, Sensor, SensorDataType, SensorAlert
+from lib.globalData.managerObjects import ManagerObjNode, ManagerObjSensor, ManagerObjSensorAlert
+from lib.globalData.sensorObjects import SensorDataType
 
 
 class TestSystemDataSensor(TestSystemDataCore):
 
     def _invalid_wrong_node_type(self, system_data: SystemData):
         # Test invalid node type.
-        node = Node()
+        node = ManagerObjNode()
         node.nodeId = 1
         node.hostname = "hostname_1"
         node.nodeType = "alert"
@@ -20,7 +21,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         node.persistent = 1
         system_data.update_node(node)
 
-        sensor = Sensor()
+        sensor = ManagerObjSensor()
         sensor.nodeId = 1
         sensor.sensorId = 1
         sensor.remoteSensorId = 1
@@ -42,7 +43,7 @@ class TestSystemDataSensor(TestSystemDataCore):
 
     def _invalid_node_missing(self, system_data: SystemData):
         # Test non-existing node.
-        sensor = Sensor()
+        sensor = ManagerObjSensor()
         sensor.nodeId = 99
         sensor.sensorId = 1
         sensor.remoteSensorId = 1
@@ -62,7 +63,7 @@ class TestSystemDataSensor(TestSystemDataCore):
 
     def _invalid_alert_level_missing(self, system_data: SystemData):
         # Test non-existing alert level.
-        node = Node()
+        node = ManagerObjNode()
         node.nodeId = 1
         node.hostname = "hostname_1"
         node.nodeType = "sensor"
@@ -74,7 +75,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         node.persistent = 1
         system_data.update_node(node)
 
-        sensor = Sensor()
+        sensor = ManagerObjSensor()
         sensor.nodeId = 1
         sensor.sensorId = 1
         sensor.remoteSensorId = 1
@@ -127,7 +128,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_sensors = []
         for i in range(len(self.sensors)):
-            temp_sensor = Sensor().deepcopy(self.sensors[i])
+            temp_sensor = ManagerObjSensor().deepcopy(self.sensors[i])
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.remoteSensorId = i
             temp_sensor.alertDelay = i + 10
@@ -163,7 +164,7 @@ class TestSystemDataSensor(TestSystemDataCore):
 
         for i in range(len(self.sensors)):
             for j in range(number_sensor_alerts):
-                temp_sensor_alert = SensorAlert()
+                temp_sensor_alert = ManagerObjSensorAlert()
                 temp_sensor_alert.sensorId = self.sensors[i % len(self.sensors)].sensorId
                 temp_sensor_alert.state = j % 2
                 temp_sensor_alert.alertLevels = list(self.sensors[i % len(self.sensors)].alertLevels)
@@ -220,7 +221,7 @@ class TestSystemDataSensor(TestSystemDataCore):
                     or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
                 self.fail("Stored object does not have initially correct content.")
 
-            sensor_alert = SensorAlert()
+            sensor_alert = ManagerObjSensorAlert()
             sensor_alert.sensorId = curr_sensor.sensorId
             sensor_alert.state = 1 - curr_sensor.state
             sensor_alert.alertLevels = curr_sensor.alertLevels

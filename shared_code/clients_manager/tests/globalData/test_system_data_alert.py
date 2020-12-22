@@ -1,14 +1,14 @@
 from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_alerts_content
 from lib.globalData.systemData import SystemData
-from lib.globalData.localObjects import Node, Alert
+from lib.globalData.managerObjects import ManagerObjNode, ManagerObjAlert
 
 
 class TestSystemDataAlert(TestSystemDataCore):
 
     def _invalid_alert_level_missing(self, system_data: SystemData):
         # Test non-existing alert level.
-        node = Node()
+        node = ManagerObjNode()
         node.nodeId = 1
         node.hostname = "hostname_1"
         node.nodeType = "alert"
@@ -20,7 +20,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         node.persistent = 1
         system_data.update_node(node)
 
-        alert = Alert()
+        alert = ManagerObjAlert()
         alert.nodeId = 1
         alert.alertId = 1
         alert.remoteAlertId = 1
@@ -36,7 +36,7 @@ class TestSystemDataAlert(TestSystemDataCore):
 
     def _invalid_node_missing(self, system_data: SystemData):
         # Test non-existing node.
-        alert = Alert()
+        alert = ManagerObjAlert()
         alert.nodeId = 99
         alert.alertId = 1
         alert.remoteAlertId = 1
@@ -52,7 +52,7 @@ class TestSystemDataAlert(TestSystemDataCore):
 
     def _invalid_wrong_node_type(self, system_data: SystemData):
         # Test wrong node type.
-        node = Node()
+        node = ManagerObjNode()
         node.nodeId = 1
         node.hostname = "hostname_1"
         node.nodeType = "sensor"
@@ -64,7 +64,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         node.persistent = 1
         system_data.update_node(node)
 
-        alert = Alert()
+        alert = ManagerObjAlert()
         alert.nodeId = 1
         alert.alertId = 1
         alert.remoteAlertId = 1
@@ -113,7 +113,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_alerts = []
         for i in range(len(self.alerts)):
-            temp_alert = Alert().deepcopy(self.alerts[i])
+            temp_alert = ManagerObjAlert().deepcopy(self.alerts[i])
             temp_alert.description = "new_alert_" + str(i + 1)
             temp_alert.remoteAlertId = i
             # We started the alert levels in our test data with level 1.

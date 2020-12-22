@@ -1,6 +1,6 @@
 from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_options_content
-from lib.globalData.localObjects import Option
+from lib.globalData.managerObjects import ManagerObjOption
 
 
 class TestSystemDataOption(TestSystemDataCore):
@@ -14,7 +14,7 @@ class TestSystemDataOption(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_options = []
         for i in range(len(self.options)):
-            temp_option = Option().deepcopy(self.options[i])
+            temp_option = ManagerObjOption().deepcopy(self.options[i])
             temp_option.value = float(i+5)
             new_options.append(temp_option)
 

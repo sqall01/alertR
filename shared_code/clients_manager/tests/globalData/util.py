@@ -1,9 +1,10 @@
 from unittest import TestCase
 from typing import List
-from lib.globalData.localObjects import Option, Alert, Manager, Sensor, Node, AlertLevel, SensorAlert
+from lib.globalData.managerObjects import ManagerObjOption, ManagerObjAlert, ManagerObjManager, ManagerObjSensor, \
+    ManagerObjNode, ManagerObjAlertLevel, ManagerObjSensorAlert
 
 
-def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[AlertLevel], new_alert_levels: List[AlertLevel]):
+def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[ManagerObjAlertLevel], new_alert_levels: List[ManagerObjAlertLevel]):
     """
     Compares two lists of AlertLevel objects.
     :param context:
@@ -43,7 +44,7 @@ def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[AlertL
             context.fail("Not able to find modified Alert Level object.")
 
 
-def compare_alerts_content(context: TestCase, gt_alerts: List[Alert], new_alerts: List[Alert]):
+def compare_alerts_content(context: TestCase, gt_alerts: List[ManagerObjAlert], new_alerts: List[ManagerObjAlert]):
     """
     Compares two lists of Alert objects.
     :param context:
@@ -83,7 +84,7 @@ def compare_alerts_content(context: TestCase, gt_alerts: List[Alert], new_alerts
             context.fail("Not able to find modified Alert object.")
 
 
-def compare_managers_content(context: TestCase, gt_managers: List[Manager], new_managers: List[Manager]):
+def compare_managers_content(context: TestCase, gt_managers: List[ManagerObjManager], new_managers: List[ManagerObjManager]):
     """
     Compares two lists of Manager objects.
     :param context:
@@ -119,7 +120,7 @@ def compare_managers_content(context: TestCase, gt_managers: List[Manager], new_
             context.fail("Not able to find modified Manager object.")
 
 
-def compare_nodes_content(context: TestCase, gt_nodes: List[Node], new_nodes: List[Node]):
+def compare_nodes_content(context: TestCase, gt_nodes: List[ManagerObjNode], new_nodes: List[ManagerObjNode]):
     """
     Compares two lists of Node objects.
     :param context:
@@ -163,7 +164,7 @@ def compare_nodes_content(context: TestCase, gt_nodes: List[Node], new_nodes: Li
             context.fail("Not able to find modified Node object.")
 
 
-def compare_options_content(context: TestCase, gt_options: List[Option], new_options: List[Option]):
+def compare_options_content(context: TestCase, gt_options: List[ManagerObjOption], new_options: List[ManagerObjOption]):
     """
     Compares two lists of Option objects.
     :param context:
@@ -200,8 +201,8 @@ def compare_options_content(context: TestCase, gt_options: List[Option], new_opt
 
 
 def compare_sensor_alerts_content(context: TestCase,
-                                  gt_sensor_alerts: List[SensorAlert],
-                                  new_sensor_alerts: List[SensorAlert]):
+                                  gt_sensor_alerts: List[ManagerObjSensorAlert],
+                                  new_sensor_alerts: List[ManagerObjSensorAlert]):
     """
     Compares two lists of Sensor Alert objects.
     :param context:
@@ -234,7 +235,7 @@ def compare_sensor_alerts_content(context: TestCase,
             context.fail("Lists of Sensor Alert objects do not have the same content.")
 
 
-def compare_sensors_content(context: TestCase, gt_sensors: List[Sensor], new_sensors: List[Sensor]):
+def compare_sensors_content(context: TestCase, gt_sensors: List[ManagerObjSensor], new_sensors: List[ManagerObjSensor]):
     """
     Compares two lists of Sensor objects.
     :param context:

@@ -1,6 +1,6 @@
 from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_alert_levels_content
-from lib.globalData.localObjects import AlertLevel
+from lib.globalData.managerObjects import ManagerObjAlertLevel
 
 
 class TestSystemDataAlertLevel(TestSystemDataCore):
@@ -14,7 +14,7 @@ class TestSystemDataAlertLevel(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_alert_levels = []
         for i in range(len(self.alert_levels)):
-            temp_alert_level = AlertLevel().deepcopy(self.alert_levels[i])
+            temp_alert_level = ManagerObjAlertLevel().deepcopy(self.alert_levels[i])
             temp_alert_level.name = "new_alert_level" + str(i + 1)
             temp_alert_level.triggerAlways = (i % 2)
             temp_alert_level.instrumentation_active = (((i+1) % 2) == 0)

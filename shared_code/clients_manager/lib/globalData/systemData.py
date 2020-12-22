@@ -9,7 +9,10 @@
 
 import threading
 from typing import Any, Dict, List, Optional
-from .localObjects import Alert, AlertLevel, Manager, Node, Sensor, SensorAlert, Option, InternalState, SensorDataType
+from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
+    ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption
+from .baseObjects import InternalState
+from .sensorObjects import SensorDataType
 
 
 class SystemData:
@@ -17,28 +20,28 @@ class SystemData:
     def __init__(self):
 
         # key: type
-        self._options = dict()  # type: Dict[str, Option]
+        self._options = dict()  # type: Dict[str, ManagerObjOption]
 
         # key: nodeId
-        self._nodes = dict()  # type: Dict[int, Node]
+        self._nodes = dict()  # type: Dict[int, ManagerObjNode]
 
         # key: sensorId
-        self._sensors = dict()  # type: Dict[int, Sensor]
+        self._sensors = dict()  # type: Dict[int, ManagerObjSensor]
 
         # key: managerId
-        self._managers = dict()  # type: Dict[int, Manager]
+        self._managers = dict()  # type: Dict[int, ManagerObjManager]
 
         # key: alertId
-        self._alerts = dict()  # type: Dict[int, Alert]
+        self._alerts = dict()  # type: Dict[int, ManagerObjAlert]
 
         # key: level
-        self._alert_levels = dict()  # type: Dict[int, AlertLevel]
+        self._alert_levels = dict()  # type: Dict[int, ManagerObjAlertLevel]
 
-        self._sensor_alerts = list()  # type: List[SensorAlert]
+        self._sensor_alerts = list()  # type: List[ManagerObjSensorAlert]
 
         self._data_lock = threading.Lock()
 
-    def _alert_sanity_check(self, alert: Alert):
+    def _alert_sanity_check(self, alert: ManagerObjAlert):
         # Does corresponding node exist?
         if alert.nodeId not in self._nodes.keys():
             raise ValueError("Node %d for corresponding alert %d does not exist."
@@ -139,13 +142,13 @@ class SystemData:
             self._sensors[sensor_id].internal_state = InternalState.DELETED
             del self._sensors[sensor_id]
 
-    def _get_node_by_username(self, username: str) -> Optional[Node]:
+    def _get_node_by_username(self, username: str) -> Optional[ManagerObjNode]:
         for _, node in self._nodes.items():
             if node.username == username:
                 return node
         return None
 
-    def _manager_sanity_check(self, manager: Manager):
+    def _manager_sanity_check(self, manager: ManagerObjManager):
         # Does corresponding node exist?
         if manager.nodeId not in self._nodes.keys():
             raise ValueError("Node %d for corresponding manager %d does not exist."
@@ -156,7 +159,7 @@ class SystemData:
             raise ValueError("Node %d not of correct type for corresponding manager %d."
                              % (manager.nodeId, manager.managerId))
 
-    def _sensor_sanity_check(self, sensor: Sensor):
+    def _sensor_sanity_check(self, sensor: ManagerObjSensor):
         # Does corresponding node exist?
         if sensor.nodeId not in self._nodes.keys():
             raise ValueError("Node %d for corresponding sensor %d does not exist."
@@ -173,7 +176,7 @@ class SystemData:
                 raise ValueError("Alert Level %d does not exist for sensor %d."
                                  % (alert_level, sensor.sensorId))
 
-    def add_sensor_alert(self, sensor_alert: SensorAlert):
+    def add_sensor_alert(self, sensor_alert: ManagerObjSensorAlert):
         """
         Adds the sensor alert and updates sensor data accordingly.
         :param sensor_alert:
@@ -298,7 +301,7 @@ class SystemData:
         with self._data_lock:
             self._delete_sensor_by_id(sensor_id)
 
-    def get_alert_by_id(self, alert_id: int) -> Optional[Alert]:
+    def get_alert_by_id(self, alert_id: int) -> Optional[ManagerObjAlert]:
         """
         Gets Alert object corresponding to given id.
         :param alert_id:
@@ -309,7 +312,7 @@ class SystemData:
                 return None
             return self._alerts[alert_id]
 
-    def get_alert_by_remote_id(self, username: str, remote_id: int) -> Optional[Alert]:
+    def get_alert_by_remote_id(self, username: str, remote_id: int) -> Optional[ManagerObjAlert]:
         """
         Gets Alert object corresponding to given username and remote id.
         :param username:
@@ -325,7 +328,7 @@ class SystemData:
                     return alert
             return None
 
-    def get_alerts_by_node_id(self, node_id: int) -> List[Alert]:
+    def get_alerts_by_node_id(self, node_id: int) -> List[ManagerObjAlert]:
         """
         Gets Alert objects corresponding to given node id.
         :param node_id:
@@ -343,7 +346,7 @@ class SystemData:
         return result
 
     def get_alerts_list(self,
-                        order_by_desc: bool = False) -> List[Alert]:
+                        order_by_desc: bool = False) -> List[ManagerObjAlert]:
         """
         Gets list of all alert objects.
         :return: List of objects.
@@ -354,7 +357,7 @@ class SystemData:
                 temp.sort(key=lambda x: x.description.lower())
             return temp
 
-    def get_alert_level_by_level(self, level: int) -> Optional[AlertLevel]:
+    def get_alert_level_by_level(self, level: int) -> Optional[ManagerObjAlertLevel]:
         """
         Gets AlertLevel object corresponding to given id.
         :param level:
@@ -366,7 +369,7 @@ class SystemData:
             return self._alert_levels[level]
 
     def get_alert_levels_list(self,
-                              order_by_level: bool = False) -> List[AlertLevel]:
+                              order_by_level: bool = False) -> List[ManagerObjAlertLevel]:
         """
         Gets list of all alert level objects.
         :return: List of objects.
@@ -377,7 +380,7 @@ class SystemData:
                 temp.sort(key=lambda x: x.level)
             return temp
 
-    def get_manager_by_id(self, manager_id: int) -> Optional[Manager]:
+    def get_manager_by_id(self, manager_id: int) -> Optional[ManagerObjManager]:
         """
         Gets Manager object corresponding to given id.
         :param manager_id:
@@ -388,7 +391,7 @@ class SystemData:
                 return None
             return self._managers[manager_id]
 
-    def get_managers_by_node_id(self, node_id: int) -> List[Manager]:
+    def get_managers_by_node_id(self, node_id: int) -> List[ManagerObjManager]:
         """
         Gets Manager objects corresponding to given node id.
         :param node_id:
@@ -406,7 +409,7 @@ class SystemData:
         return result
 
     def get_managers_list(self,
-                          order_by_desc: bool = False) -> List[Manager]:
+                          order_by_desc: bool = False) -> List[ManagerObjManager]:
         """
         Gets list of all manager objects.
         :return: List of objects.
@@ -417,7 +420,7 @@ class SystemData:
                 temp.sort(key=lambda x: x.description.lower())
             return temp
 
-    def get_nodes_list(self) -> List[Node]:
+    def get_nodes_list(self) -> List[ManagerObjNode]:
         """
         Gets list of all node objects.
         :return: List of objects.
@@ -425,7 +428,7 @@ class SystemData:
         with self._data_lock:
             return list(self._nodes.values())
 
-    def get_node_by_id(self, node_id: int) -> Optional[Node]:
+    def get_node_by_id(self, node_id: int) -> Optional[ManagerObjNode]:
         """
         Gets Node object corresponding to given id.
         :param node_id:
@@ -436,7 +439,7 @@ class SystemData:
                 return None
             return self._nodes[node_id]
 
-    def get_node_by_username(self, username: str) -> Optional[Node]:
+    def get_node_by_username(self, username: str) -> Optional[ManagerObjNode]:
         """
         Gets Node object corresponding to given username.
         :param username:
@@ -445,7 +448,7 @@ class SystemData:
         with self._data_lock:
             return self._get_node_by_username(username)
 
-    def get_options_list(self) -> List[Option]:
+    def get_options_list(self) -> List[ManagerObjOption]:
         """
         Gets list of all option objects.
         :return: List of objects.
@@ -453,7 +456,7 @@ class SystemData:
         with self._data_lock:
             return list(self._options.values())
 
-    def get_option_by_type(self, option_type: str) -> Optional[Option]:
+    def get_option_by_type(self, option_type: str) -> Optional[ManagerObjOption]:
         """
         Gets Option object corresponding to given type.
         :param option_type:
@@ -464,7 +467,7 @@ class SystemData:
                 return None
             return self._options[option_type]
 
-    def get_sensor_alerts_list(self) -> List[SensorAlert]:
+    def get_sensor_alerts_list(self) -> List[ManagerObjSensorAlert]:
         """
         Gets list of all Sensor Alert objects.
         :return: List of objects.
@@ -472,7 +475,7 @@ class SystemData:
         with self._data_lock:
             return list(self._sensor_alerts)
 
-    def get_sensor_by_id(self, sensor_id: int) -> Optional[Sensor]:
+    def get_sensor_by_id(self, sensor_id: int) -> Optional[ManagerObjSensor]:
         """
         Gets Sensor object corresponding to given id.
         :param sensor_id:
@@ -483,7 +486,7 @@ class SystemData:
                 return None
             return self._sensors[sensor_id]
 
-    def get_sensor_by_remote_id(self, username: str, remote_id: int) -> Optional[Sensor]:
+    def get_sensor_by_remote_id(self, username: str, remote_id: int) -> Optional[ManagerObjSensor]:
         """
         Gets Sensor object corresponding to given username and remote id.
         :param username:
@@ -499,7 +502,7 @@ class SystemData:
                     return sensor
             return None
 
-    def get_sensors_by_node_id(self, node_id: int) -> List[Sensor]:
+    def get_sensors_by_node_id(self, node_id: int) -> List[ManagerObjSensor]:
         """
         Gets Sensor objects corresponding to given node id.
         :param node_id:
@@ -517,7 +520,7 @@ class SystemData:
         return result
 
     def get_sensors_list(self,
-                         order_by_desc: bool = False) -> List[Sensor]:
+                         order_by_desc: bool = False) -> List[ManagerObjSensor]:
         """
         Gets list of all sensor objects.
         :return: List of objects.
@@ -549,7 +552,7 @@ class SystemData:
             sensor.state = state
             sensor.data = sensor_data
 
-    def update_alert(self, alert: Alert):
+    def update_alert(self, alert: ManagerObjAlert):
         """
         Updates the given alert data.
         :param alert:
@@ -569,7 +572,7 @@ class SystemData:
                 # to make sure others can work on the same object.
                 self._alerts[alert.alertId].deepcopy(alert)
 
-    def update_alert_level(self, alert_level: AlertLevel):
+    def update_alert_level(self, alert_level: ManagerObjAlertLevel):
         """
         Updates the given alert level data.
         :param alert_level:
@@ -587,7 +590,7 @@ class SystemData:
                 # to make sure others can work on the same object.
                 self._alert_levels[alert_level.level].deepcopy(alert_level)
 
-    def update_manager(self, manager: Manager):
+    def update_manager(self, manager: ManagerObjManager):
         """
         Updates the given manager data.
         :param manager:
@@ -607,7 +610,7 @@ class SystemData:
                 # to make sure others can work on the same object.
                 self._managers[manager.managerId].deepcopy(manager)
 
-    def update_node(self, node: Node):
+    def update_node(self, node: ManagerObjNode):
         """
         Updates the given node data.
         :param node:
@@ -631,7 +634,7 @@ class SystemData:
                 # to make sure others can work on the same object.
                 self._nodes[node.nodeId].deepcopy(node)
 
-    def update_option(self, option: Option):
+    def update_option(self, option: ManagerObjOption):
         """
         Updates the given option data.
         :param option:
@@ -648,7 +651,7 @@ class SystemData:
             else:
                 self._options[option.type].deepcopy(option)
 
-    def update_sensor(self, sensor: Sensor):
+    def update_sensor(self, sensor: ManagerObjSensor):
         """
         Updates the given sensor data.
         :param sensor:

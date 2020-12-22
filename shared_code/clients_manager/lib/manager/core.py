@@ -9,7 +9,8 @@
 
 import os
 import logging
-from ..globalData import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
+    ManagerObjAlertLevel, ManagerObjSensorAlert, SensorDataType
 from ..client import EventHandler
 from ..globalData import GlobalData
 from typing import List, Any
@@ -33,12 +34,12 @@ class BaseManagerEventHandler(EventHandler):
 
     def status_update(self,
                       server_time: int,
-                      options: List[Option],
-                      nodes: List[Node],
-                      sensors: List[Sensor],
-                      managers: List[Manager],
-                      alerts: List[Alert],
-                      alert_levels: List[AlertLevel]) -> bool:
+                      options: List[ManagerObjOption],
+                      nodes: List[ManagerObjNode],
+                      sensors: List[ManagerObjSensor],
+                      managers: List[ManagerObjManager],
+                      alerts: List[ManagerObjAlert],
+                      alert_levels: List[ManagerObjAlertLevel]) -> bool:
 
         self.server_time = server_time
 
@@ -132,7 +133,7 @@ class BaseManagerEventHandler(EventHandler):
 
     def sensor_alert(self,
                      server_time: int,
-                     sensor_alert: SensorAlert) -> bool:
+                     sensor_alert: ManagerObjSensorAlert) -> bool:
 
         self.server_time = server_time
 

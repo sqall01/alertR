@@ -1,5 +1,6 @@
 from tests.globalData.core import TestSystemDataCore
-from lib.globalData.localObjects import Node, InternalState
+from lib.globalData.managerObjects import ManagerObjNode
+from lib.globalData.baseObjects import InternalState
 
 
 class TestSystemDataNode(TestSystemDataCore):
@@ -20,7 +21,7 @@ class TestSystemDataNode(TestSystemDataCore):
                 self.fail("Node does not exist.")
 
             # Update node type.
-            new_node = Node().deepcopy(target_node)
+            new_node = ManagerObjNode().deepcopy(target_node)
             new_node.nodeType = new_node_type
             system_data.update_node(new_node)
 
@@ -51,7 +52,7 @@ class TestSystemDataNode(TestSystemDataCore):
                 self.fail("Node does not exist.")
 
             # Update node type.
-            new_node = Node().deepcopy(target_node)
+            new_node = ManagerObjNode().deepcopy(target_node)
             new_node.nodeType = new_node_type
             system_data.update_node(new_node)
 
@@ -83,7 +84,7 @@ class TestSystemDataNode(TestSystemDataCore):
                 self.fail("Node does not exist.")
 
             # Update node type.
-            new_node = Node().deepcopy(target_node)
+            new_node = ManagerObjNode().deepcopy(target_node)
             new_node.nodeType = new_node_type
             system_data.update_node(new_node)
 

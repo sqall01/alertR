@@ -1,13 +1,15 @@
 from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
-from lib.globalData.localObjects import Node, SensorAlert, SensorDataType, InternalState
+from lib.globalData.managerObjects import ManagerObjSensorAlert
+from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.baseObjects import InternalState
 
 
 class TestSystemDataSensorAlert(TestSystemDataCore):
 
     def _invalid_alert_level_missing(self, system_data: SystemData):
         # Test non-existing alert level.
-        sensor_alert = SensorAlert()
+        sensor_alert = ManagerObjSensorAlert()
         sensor_alert.sensorId = self.sensors[0].sensorId
         sensor_alert.state = 0
         sensor_alert.alertLevels = [99]
@@ -28,7 +30,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
 
     def _invalid_sensor_missing(self, system_data: SystemData):
         # Test non-existing sensor.
-        sensor_alert = SensorAlert()
+        sensor_alert = ManagerObjSensorAlert()
         sensor_alert.sensorId = 99
         sensor_alert.state = 0
         sensor_alert.alertLevels = [self.alert_levels[0].level]
@@ -49,7 +51,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
 
     def _invalid_sensor_missing_alert_level(self, system_data: SystemData):
         # Test sensor does not handle alert level.
-        sensor_alert = SensorAlert()
+        sensor_alert = ManagerObjSensorAlert()
         sensor_alert.sensorId = self.sensors[0].sensorId
         sensor_alert.state = 0
         sensor_alert.alertLevels = []
@@ -73,7 +75,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
 
     def _invalid_wrong_data_type(self, system_data: SystemData):
         # Test data type mismatch.
-        sensor_alert = SensorAlert()
+        sensor_alert = ManagerObjSensorAlert()
         sensor_alert.sensorId = self.sensors[0].sensorId
         sensor_alert.state = 0
         sensor_alert.alertLevels = [self.sensors[0].alertLevels[0]]
@@ -102,7 +104,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         # Create objects that should be added.
         new_sensor_alerts = []
         for i in range(len(self.sensors)):
-            temp_sensor_alert = SensorAlert()
+            temp_sensor_alert = ManagerObjSensorAlert()
             temp_sensor_alert.sensorId = self.sensors[i % len(self.sensors)].sensorId
             temp_sensor_alert.state = i % 2
             temp_sensor_alert.alertLevels = list(self.sensors[i % len(self.sensors)].alertLevels)
@@ -143,7 +145,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         # Create objects.
         new_sensor_alerts = []
         for i in range(number_sensor_alerts):
-            temp_sensor_alert = SensorAlert()
+            temp_sensor_alert = ManagerObjSensorAlert()
             temp_sensor_alert.sensorId = self.sensors[i % len(self.sensors)].sensorId
             temp_sensor_alert.state = i % 2
             temp_sensor_alert.alertLevels = list(self.sensors[i % len(self.sensors)].alertLevels)
