@@ -15,7 +15,7 @@ from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, Alert
                             ManagerUrwid, ManagerDetailedUrwid, AlertLevelUrwid, AlertLevelDetailedUrwid, \
                             SensorAlertUrwid, SearchViewUrwid
 from .eventHandler import ManagerEventHandler
-from ..globalData import Sensor, Alert, AlertLevel
+from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel
 from ..globalData import GlobalData
 from ..client import ServerCommunication
 from typing import Any, List
@@ -482,7 +482,7 @@ class Console:
 
     # get a list of alert level objects that belong to the given
     # object (object has to have attribute alertLevels)
-    def _getAlertLevelsOfObj(self, obj: Any) -> List[AlertLevel]:
+    def _getAlertLevelsOfObj(self, obj: Any) -> List[ManagerObjAlertLevel]:
 
         # get all alert levels the focused sensor belongs to
         currentAlertLevels = list()
@@ -494,7 +494,7 @@ class Console:
 
     # get a list of alert objects that belong to the given
     # alert level
-    def _getAlertsOfAlertLevel(self, alertLevel: AlertLevel) -> List[Alert]:
+    def _getAlertsOfAlertLevel(self, alertLevel: ManagerObjAlertLevel) -> List[ManagerObjAlert]:
 
         # get all alerts that belong to the focused alert level
         currentAlerts = list()
@@ -506,7 +506,7 @@ class Console:
 
     # get a list of sensor objects that belong to the given
     # alert level
-    def _getSensorsOfAlertLevel(self, alertLevel: AlertLevel) -> List[Sensor]:
+    def _getSensorsOfAlertLevel(self, alertLevel: ManagerObjAlertLevel) -> List[ManagerObjSensor]:
 
         # get all sensors that belong to the focused alert level
         currentSensors = list()

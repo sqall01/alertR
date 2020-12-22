@@ -10,7 +10,8 @@
 from typing import List, Any
 from .screenUpdater import ScreenUpdater
 from .core import BaseManagerEventHandler
-from ..globalData import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
+    ManagerObjAlertLevel, ManagerObjSensorAlert, SensorDataType
 from ..globalData import GlobalData
 
 
@@ -29,12 +30,12 @@ class ManagerEventHandler(BaseManagerEventHandler):
     # is called when a status update event was received from the server
     def status_update(self,
                       server_time: int,
-                      options: List[Option],
-                      nodes: List[Node],
-                      sensors: List[Sensor],
-                      managers: List[Manager],
-                      alerts: List[Alert],
-                      alert_levels: List[AlertLevel]) -> bool:
+                      options: List[ManagerObjOption],
+                      nodes: List[ManagerObjNode],
+                      sensors: List[ManagerObjSensor],
+                      managers: List[ManagerObjManager],
+                      alerts: List[ManagerObjAlert],
+                      alert_levels: List[ManagerObjAlertLevel]) -> bool:
 
         result = super().status_update(server_time,
                                        options,
@@ -49,7 +50,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
         return result
 
     # is called when a sensor alert event was received from the server
-    def sensor_alert(self, server_time: int, sensor_alert: SensorAlert) -> bool:
+    def sensor_alert(self, server_time: int, sensor_alert: ManagerObjSensorAlert) -> bool:
 
         result = super().sensor_alert(server_time,
                                       sensor_alert)

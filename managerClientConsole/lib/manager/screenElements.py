@@ -12,7 +12,8 @@ import urwid
 import types
 from typing import Any, List
 from .eventHandler import ManagerEventHandler
-from ..globalData import Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, ManagerObjAlertLevel, \
+    ManagerObjSensorAlert, SensorDataType
 
 
 # this class is an urwid object for a status
@@ -66,8 +67,8 @@ class StatusUrwid:
 class SensorUrwid:
 
     def __init__(self,
-                 sensor: Sensor,
-                 node: Node,
+                 sensor: ManagerObjSensor,
+                 node: ManagerObjNode,
                  connectionTimeout: int,
                  serverEventHandler: ManagerEventHandler):
 
@@ -233,7 +234,7 @@ class SensorUrwid:
 # this class is an urwid object for a detailed sensor output
 class SensorDetailedUrwid:
 
-    def __init__(self, sensor: Sensor, node: Node, alertLevels: List[AlertLevel]):
+    def __init__(self, sensor: ManagerObjSensor, node: ManagerObjNode, alertLevels: List[ManagerObjAlertLevel]):
 
         self.node = node
         self.sensor = sensor
@@ -275,7 +276,7 @@ class SensorDetailedUrwid:
 
     # this function creates the detailed output of all alert level objects
     # in a list
-    def _createAlertLevelsWidgetList(self, alertLevels: List[AlertLevel]) -> List[urwid.Widget]:
+    def _createAlertLevelsWidgetList(self, alertLevels: List[ManagerObjAlertLevel]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -293,7 +294,7 @@ class SensorDetailedUrwid:
 
     # this function creates the detailed output of a alert level object
     # in a list
-    def _createAlertLevelWidgetList(self, alertLevel: AlertLevel) -> List[urwid.Widget]:
+    def _createAlertLevelWidgetList(self, alertLevel: ManagerObjAlertLevel) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -332,7 +333,7 @@ class SensorDetailedUrwid:
 
     # this function creates the detailed output of a node object
     # in a list
-    def _createNodeWidgetList(self, node: Node) -> List[urwid.Widget]:
+    def _createNodeWidgetList(self, node: ManagerObjNode) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -385,7 +386,7 @@ class SensorDetailedUrwid:
 
     # this function creates the detailed output of a sensor object
     # in a list
-    def _createSensorWidgetList(self, sensor: Sensor) -> List[urwid.Widget]:
+    def _createSensorWidgetList(self, sensor: ManagerObjSensor) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -444,13 +445,13 @@ class SensorDetailedUrwid:
         return self.detailedBox
 
     # this function updates all internal widgets
-    def updateCompleteWidget(self, alertLevels: List[AlertLevel]):
+    def updateCompleteWidget(self, alertLevels: List[ManagerObjAlertLevel]):
         self.updateNodeDetails()
         self.updateSensorDetails()
         self.updateAlertLevelsDetails(alertLevels)
 
     # this function updates the alert levels information shown
-    def updateAlertLevelsDetails(self, alertLevels: List[AlertLevel]):
+    def updateAlertLevelsDetails(self, alertLevels: List[ManagerObjAlertLevel]):
 
         # crate new sensor pile content
         temp = self._createAlertLevelsWidgetList(alertLevels)
@@ -495,7 +496,7 @@ class SensorDetailedUrwid:
 # this class is an urwid object for an alert
 class AlertUrwid:
 
-    def __init__(self, alert: Alert, node: Node):
+    def __init__(self, alert: ManagerObjAlert, node: ManagerObjNode):
 
         # store reference to alert object and node object
         self.alert = alert
@@ -567,7 +568,7 @@ class AlertUrwid:
 # this class is an urwid object for a detailed alert output
 class AlertDetailedUrwid:
 
-    def __init__(self, alert: Alert, node: Node, alertLevels: List[AlertLevel]):
+    def __init__(self, alert: ManagerObjAlert, node: ManagerObjNode, alertLevels: List[ManagerObjAlertLevel]):
 
         self.node = node
         self.alert = alert
@@ -609,7 +610,7 @@ class AlertDetailedUrwid:
 
     # this function creates the detailed output of all alert level objects
     # in a list
-    def _createAlertLevelsWidgetList(self, alertLevels: List[AlertLevel]) -> List[urwid.Widget]:
+    def _createAlertLevelsWidgetList(self, alertLevels: List[ManagerObjAlertLevel]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -627,7 +628,7 @@ class AlertDetailedUrwid:
 
     # this function creates the detailed output of a alert level object
     # in a list
-    def _createAlertLevelWidgetList(self, alertLevel: AlertLevel) -> List[urwid.Widget]:
+    def _createAlertLevelWidgetList(self, alertLevel: ManagerObjAlertLevel) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -666,7 +667,7 @@ class AlertDetailedUrwid:
 
     # this function creates the detailed output of a alert object
     # in a list
-    def _createAlertWidgetList(self, alert: Alert) -> List[urwid.Widget]:
+    def _createAlertWidgetList(self, alert: ManagerObjAlert) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -685,7 +686,7 @@ class AlertDetailedUrwid:
 
     # this function creates the detailed output of a node object
     # in a list
-    def _createNodeWidgetList(self, node: Node) -> List[urwid.Widget]:
+    def _createNodeWidgetList(self, node: ManagerObjNode) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -745,7 +746,7 @@ class AlertDetailedUrwid:
         return self.detailedBox
 
     # this function updates all internal widgets
-    def updateCompleteWidget(self, alertLevels: List[AlertLevel]):
+    def updateCompleteWidget(self, alertLevels: List[ManagerObjAlertLevel]):
 
         self.updateNodeDetails()
         self.updateAlertDetails()
@@ -766,7 +767,7 @@ class AlertDetailedUrwid:
         self.alertPileWidget.contents.extend(temp)
 
     # this function updates the alert levels information shown
-    def updateAlertLevelsDetails(self, alertLevels: List[AlertLevel]):
+    def updateAlertLevelsDetails(self, alertLevels: List[ManagerObjAlertLevel]):
 
         # crate new sensor pile content
         temp = self._createAlertLevelsWidgetList(alertLevels)
@@ -797,7 +798,7 @@ class AlertDetailedUrwid:
 # this class is an urwid object for a manager
 class ManagerUrwid:
 
-    def __init__(self, manager: Manager, node: Node):
+    def __init__(self, manager: ManagerObjManager, node: ManagerObjNode):
 
         # store reference to manager object and node object
         self.manager = manager
@@ -870,7 +871,7 @@ class ManagerUrwid:
 # this class is an urwid object for a detailed manager output
 class ManagerDetailedUrwid:
 
-    def __init__(self, manager: Manager, node: Node):
+    def __init__(self, manager: ManagerObjManager, node: ManagerObjNode):
 
         self.node = node
         self.manager = manager
@@ -900,7 +901,7 @@ class ManagerDetailedUrwid:
 
     # this function creates the detailed output of a alert object
     # in a list
-    def _createManagerWidgetList(self, manager: Manager) -> List[urwid.Widget]:
+    def _createManagerWidgetList(self, manager: ManagerObjManager) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -915,7 +916,7 @@ class ManagerDetailedUrwid:
 
     # this function creates the detailed output of a node object
     # in a list
-    def _createNodeWidgetList(self, node: Node) -> List[urwid.Widget]:
+    def _createNodeWidgetList(self, node: ManagerObjNode) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1008,7 +1009,7 @@ class ManagerDetailedUrwid:
 # this class is an urwid object for an alert level
 class AlertLevelUrwid:
 
-    def __init__(self, alertLevel: AlertLevel):
+    def __init__(self, alertLevel: ManagerObjAlertLevel):
 
         # store reference to alert level object
         self.alertLevel = alertLevel
@@ -1082,7 +1083,10 @@ class AlertLevelUrwid:
 # this class is an urwid object for a detailed alert level output
 class AlertLevelDetailedUrwid:
 
-    def __init__(self, alertLevel: AlertLevel, sensors: List[Sensor], alerts: List[Alert]):
+    def __init__(self,
+                 alertLevel: ManagerObjAlertLevel,
+                 sensors: List[ManagerObjSensor],
+                 alerts: List[ManagerObjAlert]):
 
         self.alertLevel = alertLevel
 
@@ -1127,7 +1131,7 @@ class AlertLevelDetailedUrwid:
 
     # this function creates the detailed output of a alert level object
     # in a list
-    def _createAlertLevelWidgetList(self, alertLevel: AlertLevel) -> List[urwid.Widget]:
+    def _createAlertLevelWidgetList(self, alertLevel: ManagerObjAlertLevel) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1166,7 +1170,7 @@ class AlertLevelDetailedUrwid:
 
     # this function creates the detailed output of all alert objects
     # in a list
-    def _createAlertsWidgetList(self, alerts: List[Alert]) -> List[urwid.Widget]:
+    def _createAlertsWidgetList(self, alerts: List[ManagerObjAlert]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -1184,7 +1188,7 @@ class AlertLevelDetailedUrwid:
 
     # this function creates the detailed output of a alert object
     # in a list
-    def _createAlertWidgetList(self, alert: Alert) -> List[urwid.Widget]:
+    def _createAlertWidgetList(self, alert: ManagerObjAlert) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1203,7 +1207,7 @@ class AlertLevelDetailedUrwid:
 
     # this function creates the detailed output of all sensor objects
     # in a list
-    def _createSensorsWidgetList(self, sensors: List[Sensor]) -> List[urwid.Widget]:
+    def _createSensorsWidgetList(self, sensors: List[ManagerObjSensor]) -> List[urwid.Widget]:
 
         temp = list()
         first = True
@@ -1221,7 +1225,7 @@ class AlertLevelDetailedUrwid:
 
     # this function creates the detailed output of a sensor object
     # in a list
-    def _createSensorWidgetList(self, sensor: Sensor) -> List[urwid.Widget]:
+    def _createSensorWidgetList(self, sensor: ManagerObjSensor) -> List[urwid.Widget]:
 
         temp = list()
 
@@ -1280,7 +1284,7 @@ class AlertLevelDetailedUrwid:
         return self.detailedBox
 
     # this function updates all internal widgets
-    def updateCompleteWidget(self, sensors: List[Sensor], alerts: List[Alert]):
+    def updateCompleteWidget(self, sensors: List[ManagerObjSensor], alerts: List[ManagerObjAlert]):
         self.updateAlertLevelDetails()
         self.updateSensorsDetails(sensors)
         self.updateAlertsDetails(alerts)
@@ -1300,7 +1304,7 @@ class AlertLevelDetailedUrwid:
         self.alertLevelPileWidget.contents.extend(temp)
 
     # this function updates the node information shown
-    def updateAlertsDetails(self, alerts: List[Alert]):
+    def updateAlertsDetails(self, alerts: List[ManagerObjAlert]):
 
         # crate new sensor pile content
         temp = self._createAlertsWidgetList(alerts)
@@ -1314,7 +1318,7 @@ class AlertLevelDetailedUrwid:
         self.alertsPileWidget.contents.extend(temp)
 
     # this function updates the sensor information shown
-    def updateSensorsDetails(self, sensors: List[Sensor]):
+    def updateSensorsDetails(self, sensors: List[ManagerObjSensor]):
 
         # crate new sensor pile content
         temp = self._createSensorsWidgetList(sensors)
@@ -1331,7 +1335,7 @@ class AlertLevelDetailedUrwid:
 # this class is an urwid object for a sensor alert
 class SensorAlertUrwid:
 
-    def __init__(self, sensorAlert: SensorAlert, description: str, timeShowSensorAlert: int):
+    def __init__(self, sensorAlert: ManagerObjSensorAlert, description: str, timeShowSensorAlert: int):
 
         self.sensorAlert = sensorAlert
         self.description = description
