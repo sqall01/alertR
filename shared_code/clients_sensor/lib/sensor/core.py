@@ -237,9 +237,8 @@ class SensorExecuter(threading.Thread):
                     # => send sensor alert to server
                     if sensor.triggerAlertNormal:
 
-                        logging.info("[%s]: Sensor alert " % self.fileName
-                                     + "for normal state "
-                                     + "triggered by '%s'." % sensor.description)
+                        logging.info("[%s]: Sensor alert for normal state triggered by '%s'."
+                                     % (self.fileName, sensor.description))
 
                         # Create sensor alert object to send to the server.
                         sensorAlert = SensorObjSensorAlert()
