@@ -67,11 +67,12 @@ class ServerCommunication(Communication):
         self._log_tag = os.path.basename(__file__)
 
         # Set node type specific data.
-        if self._nodeType.lower() == "manager": # TODO: Manager
-            # Description of this manager.
+        if self._nodeType.lower() == "manager":
+            # noinspection PyUnresolvedReferences
             self._description = self._global_data.description
 
-        elif self._nodeType.lower() == "sensor": # TODO: Sensor
+        elif self._nodeType.lower() == "sensor":
+            # noinspection PyUnresolvedReferences
             self._polling_sensors = self._global_data.sensors
 
         self._initialization_lock = threading.Lock()
@@ -768,7 +769,6 @@ class ServerCommunication(Communication):
 
         return self.initialize()
 
-    # TODO: Manager
     def send_option(self,
                     optionType: str,
                     optionValue: float,
@@ -783,7 +783,7 @@ class ServerCommunication(Communication):
         :return: Promise that the request will be sent and that contains the state of the send request
         """
 
-        option_message = MsgBuilder.build_option_msg(optionType, optionValue, optionDelay)
+        option_message = MsgBuilder.build_option_msg_manager(optionType, optionValue, optionDelay)
 
         return self.send_request("option", option_message)
 
@@ -798,7 +798,6 @@ class ServerCommunication(Communication):
 
         return self.send_request("ping", ping_message)
 
-    # TODO: Sensor
     def send_sensor_alert(self,
                           sensor_alert: SensorObjSensorAlert) -> Promise:
         """
@@ -812,7 +811,6 @@ class ServerCommunication(Communication):
 
         return self.send_request("sensoralert", sensor_alert_message)
 
-    # TODO: Sensor
     def send_state_change(self,
                           state_change: SensorObjStateChange) -> Promise:
         """
@@ -826,7 +824,6 @@ class ServerCommunication(Communication):
 
         return self.send_request("statechange", state_change_message)
 
-    # TODO: Sensor
     def send_sensors_status_update(self) -> Promise:
         """
         This function sends a status update of all sensors to the server.

@@ -1146,19 +1146,19 @@ class MsgBuilder:
                    "rev": rev,
                    "username": username,
                    "password": password}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "size": regMessageSize,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
 
     @staticmethod
-    def build_option_msg(optionType: str,
-                         optionValue: float,
-                         optionDelay: int) -> str:
+    def build_option_msg_manager(optionType: str,
+                                 optionValue: float,
+                                 optionDelay: int) -> str:
         """
-        Internal function that builds the option message.
+        Internal function that builds the option message for manager nodes.
 
         :param optionType:
         :param optionValue:
@@ -1169,8 +1169,8 @@ class MsgBuilder:
                    "optionType": optionType,
                    "value": float(optionValue),
                    "timeDelay": optionDelay}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "message": "option",
                    "payload": payload}
         return json.dumps(message)
@@ -1183,8 +1183,8 @@ class MsgBuilder:
         :return:
         """
         payload = {"type": "request"}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "message": "ping",
                    "payload": payload}
         return json.dumps(message)
@@ -1193,7 +1193,7 @@ class MsgBuilder:
     def build_reg_msg_manager(description: str,
                               node_type: str,
                               instance: str,
-                              persistent: int) -> str:  # TODO: manager
+                              persistent: int) -> str:
         """
         Internal function that builds the client registration message for manager nodes.
 
@@ -1214,8 +1214,8 @@ class MsgBuilder:
                    "persistent": persistent,
                    "manager": manager}
 
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
@@ -1224,7 +1224,7 @@ class MsgBuilder:
     def build_reg_msg_sensor(polling_sensors,
                              node_type: str,
                              instance: str,
-                             persistent: int) -> str:  # TODO: sensor
+                             persistent: int) -> str:
         """
         Internal function that builds the client registration message for sensor nodes.
 
@@ -1258,37 +1258,14 @@ class MsgBuilder:
                    "persistent": persistent,
                    "sensors": msg_sensors}
 
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
 
     @staticmethod
-    def build_state_change_msg_sensor(state_change: SensorObjStateChange) -> str:  # TODO: sensor
-        """
-        Internal function that builds a state change message for sensor nodes.
-
-        :param state_change:
-        """
-
-        payload = {"type": "request",
-                   "clientSensorId": state_change.clientSensorId,
-                   "state": state_change.state,
-                   "dataType": state_change.dataType}
-
-        # Only add data field if sensor data type is not "none".
-        if state_change.dataType != SensorDataType.NONE:
-            payload["data"] = state_change.sensorData
-
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
-                   "message": "statechange",
-                   "payload": payload}
-        return json.dumps(message)
-
-    @staticmethod
-    def build_sensor_alert_msg_sensor(sensor_alert: SensorObjSensorAlert) -> str:  # TODO: sensor
+    def build_sensor_alert_msg_sensor(sensor_alert: SensorObjSensorAlert) -> str:
         """
         Internal function that builds a sensor alert message for sensor nodes.
 
@@ -1311,14 +1288,37 @@ class MsgBuilder:
         if sensor_alert.dataType != SensorDataType.NONE:
             payload["data"] = sensor_alert.sensorData
 
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "message": "sensoralert",
                    "payload": payload}
         return json.dumps(message)
 
     @staticmethod
-    def build_status_update_msg_sensor(polling_sensors) -> str:  # TODO: sensor
+    def build_state_change_msg_sensor(state_change: SensorObjStateChange) -> str:
+        """
+        Internal function that builds a state change message for sensor nodes.
+
+        :param state_change:
+        """
+
+        payload = {"type": "request",
+                   "clientSensorId": state_change.clientSensorId,
+                   "state": state_change.state,
+                   "dataType": state_change.dataType}
+
+        # Only add data field if sensor data type is not "none".
+        if state_change.dataType != SensorDataType.NONE:
+            payload["data"] = state_change.sensorData
+
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
+                   "message": "statechange",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
+    def build_status_update_msg_sensor(polling_sensors) -> str:
         """
         Internal function that builds a sensor alert message for sensor nodes.
 
@@ -1345,8 +1345,8 @@ class MsgBuilder:
             sensors.append(temp_sensor)
 
         payload = {"type": "request", "sensors": sensors}
-        utcTimestamp = int(time.time())
-        message = {"clientTime": utcTimestamp,
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
                    "message": "status",
                    "payload": payload}
         return json.dumps(message)
