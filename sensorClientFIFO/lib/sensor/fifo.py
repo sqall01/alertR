@@ -34,14 +34,12 @@ class SensorFIFO(_PollingSensor, threading.Thread):
         self.temporaryState = None
 
         # Used to force a state change to be sent to the server.
-        self.forceSendStateLock = threading.Semaphore(1)
-        self.shouldForceSendState = False
-        self.stateChange = None
+        self._state_changes_lock = threading.Lock()
+        self._state_changes = None
 
         # Used to force a sensor alert to be sent to the server.
-        self.forceSendAlertLock = threading.Semaphore(1)
-        self.shouldForceSendAlert = False
-        self.sensorAlert = None
+        self._sensor_alerts_lock = threading.Lock()
+        self._sensor_alerts = list()
 
     def _checkDataType(self, dataType: int) -> int:
         if not isinstance(dataType, int):
@@ -127,24 +125,18 @@ class SensorFIFO(_PollingSensor, threading.Thread):
         self.state = self.temporaryState
 
     def forceSendAlert(self) -> Optional[SensorAlert]:
-        self.forceSendAlertLock.acquire()
-        returnValue = None
-        if self.shouldForceSendAlert:
-            returnValue = self.sensorAlert
-            self.sensorAlert = None
-            self.shouldForceSendAlert = False
-        self.forceSendAlertLock.release()
-        return returnValue
+        with self._sensor_alerts_lock:
+            ret_value = None
+            if self._sensor_alerts:
+                ret_value = self._sensor_alerts.pop(0)
+        return ret_value
 
     def forceSendState(self) -> Optional[StateChange]:
-        self.forceSendStateLock.acquire()
-        returnValue = None
-        if self.shouldForceSendState:
-            returnValue = self.stateChange
-            self.stateChange = None
-            self.shouldForceSendState = False
-        self.forceSendStateLock.release()
-        return returnValue
+        with self._state_changes_lock:
+            ret_value = None
+            if self._state_changes:
+                ret_value = self._state_changes.pop(0)
+        return ret_value
 
     def run(self):
 
@@ -217,22 +209,20 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
                     # Force state change sending if the data could be changed
                     # or the state has changed.
-                    if (self.sensorDataType != SensorDataType.NONE
-                        or self.state != self.temporaryState):
+                    if self.sensorDataType != SensorDataType.NONE or self.state != self.temporaryState:
 
                         # Create state change object that is
                         # send to the server.
-                        self.forceSendStateLock.acquire()
-                        self.stateChange = StateChange()
-                        self.stateChange.clientSensorId = self.id
+                        temp_state_change = StateChange()
+                        temp_state_change.clientSensorId = self.id
                         if tempInputState == self.triggerState:
-                            self.stateChange.state = 1
+                            temp_state_change.state = 1
                         else:
-                            self.stateChange.state = 0
-                        self.stateChange.dataType = tempDataType
-                        self.stateChange.sensorData = self.sensorData
-                        self.shouldForceSendState = True
-                        self.forceSendStateLock.release()
+                            temp_state_change.state = 0
+                        temp_state_change.dataType = tempDataType
+                        temp_state_change.sensorData = self.sensorData
+                        with self._state_changes_lock:
+                            self._state_changes.append(temp_state_change)
 
                 # Type: sensoralert
                 elif str(message["message"]).upper() == "SENSORALERT":
@@ -325,21 +315,21 @@ class SensorFIFO(_PollingSensor, threading.Thread):
                         self.temporaryState = tempInputState
 
                     # Create sensor alert object that is send to the server.
-                    self.forceSendAlertLock.acquire()
-                    self.sensorAlert = SensorAlert()
-                    self.sensorAlert.clientSensorId = self.id
+                    temp_sensor_alert = SensorAlert()
+                    temp_sensor_alert.clientSensorId = self.id
                     if tempInputState == self.triggerState:
-                        self.sensorAlert.state = 1
+                        temp_sensor_alert.state = 1
                     else:
-                        self.sensorAlert.state = 0
-                    self.sensorAlert.hasOptionalData = tempHasOptionalData
-                    self.sensorAlert.optionalData = tempOptionalData
-                    self.sensorAlert.changeState = tempChangeState
-                    self.sensorAlert.hasLatestData = tempHasLatestData
-                    self.sensorAlert.dataType = tempDataType
-                    self.sensorAlert.sensorData = tempSensorData
-                    self.shouldForceSendAlert = True
-                    self.forceSendAlertLock.release()
+                        temp_sensor_alert.state = 0
+                    temp_sensor_alert.hasOptionalData = tempHasOptionalData
+                    temp_sensor_alert.optionalData = tempOptionalData
+                    temp_sensor_alert.changeState = tempChangeState
+                    temp_sensor_alert.hasLatestData = tempHasLatestData
+                    temp_sensor_alert.dataType = tempDataType
+                    temp_sensor_alert.sensorData = tempSensorData
+
+                    with self._sensor_alerts_lock:
+                        self._sensor_alerts.append(temp_sensor_alert)
 
                 # Type: invalid
                 else:
