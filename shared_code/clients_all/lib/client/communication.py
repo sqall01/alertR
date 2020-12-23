@@ -190,8 +190,8 @@ class Communication:
         # check if RTS is acknowledged by a CTS
         # => exit transaction initiation loop
         if (received_transaction_id == transaction_id
-           and received_message_type == messageType
-           and received_payload_type == "CTS"):
+                and received_message_type == messageType
+                and received_payload_type == "CTS"):
 
             logging.debug("[%s]: Initiate transaction succeeded." % self._log_tag)
             self._last_communication = int(time.time())
