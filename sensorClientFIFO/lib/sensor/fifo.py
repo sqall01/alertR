@@ -13,7 +13,7 @@ import logging
 import json
 import threading
 from .core import _PollingSensor
-from ..localObjects import SensorAlert, StateChange, SensorDataType
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 from typing import Optional
 
 
@@ -124,14 +124,14 @@ class SensorFIFO(_PollingSensor, threading.Thread):
     def updateState(self):
         self.state = self.temporaryState
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         with self._sensor_alerts_lock:
             ret_value = None
             if self._sensor_alerts:
                 ret_value = self._sensor_alerts.pop(0)
         return ret_value
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         with self._state_changes_lock:
             ret_value = None
             if self._state_changes:
@@ -213,7 +213,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
 
                         # Create state change object that is
                         # send to the server.
-                        temp_state_change = StateChange()
+                        temp_state_change = SensorObjStateChange()
                         temp_state_change.clientSensorId = self.id
                         if tempInputState == self.triggerState:
                             temp_state_change.state = 1
@@ -315,7 +315,7 @@ class SensorFIFO(_PollingSensor, threading.Thread):
                         self.temporaryState = tempInputState
 
                     # Create sensor alert object that is send to the server.
-                    temp_sensor_alert = SensorAlert()
+                    temp_sensor_alert = SensorObjSensorAlert()
                     temp_sensor_alert.clientSensorId = self.id
                     if tempInputState == self.triggerState:
                         temp_sensor_alert.state = 1
