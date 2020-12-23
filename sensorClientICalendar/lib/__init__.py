@@ -7,8 +7,8 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
+from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .sensor import ICalendarSensor, SensorExecuter
+from .sensor import ICalendarSensor, SensorExecuter, BaseSensorEventHandler
 from .update import Updater
 from .globalData import GlobalData
