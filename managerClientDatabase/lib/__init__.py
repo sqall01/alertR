@@ -14,4 +14,5 @@ from .manager import ManagerEventHandler
 from .smtp import SMTPAlert
 from .update import Updater
 from .globalData import GlobalData
-from .globalData import Option, Node, Sensor, Manager, Alert, AlertLevel
+from .globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
+    ManagerObjAlertLevel

@@ -8,7 +8,6 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-import collections
 from typing import Optional
 from .systemData import SystemData
 

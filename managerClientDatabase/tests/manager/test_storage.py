@@ -4,7 +4,9 @@ from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_nodes_content, compare_alerts_content, compare_managers_content, \
                                   compare_sensors_content, compare_alert_levels_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import Node, Alert, AlertLevel, Manager, Sensor, SensorDataType, Option
+from lib.globalData.managerObjects import ManagerObjNode, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, \
+    ManagerObjSensor, ManagerObjOption
+from lib.globalData.sensorObjects import SensorDataType
 
 
 class TestManagerStorage(TestManagerStorageCore):
@@ -66,13 +68,13 @@ class TestManagerStorage(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for option in system_data.get_options_list():
-            temp_option = Option().deepcopy(option)
+            temp_option = ManagerObjOption().deepcopy(option)
             temp_option.value = float(ctr)
             system_data.update_option(temp_option)
             ctr += 1
 
         for alert_level in system_data.get_alert_levels_list():
-            temp_alert_level = AlertLevel().deepcopy(alert_level)
+            temp_alert_level = ManagerObjAlertLevel().deepcopy(alert_level)
             temp_alert_level.name = "new_alert_level_" + str(ctr + 1)
             temp_alert_level.triggerAlways = (ctr % 2)
             temp_alert_level.instrumentation_active = (ctr % 2) == 0
@@ -85,7 +87,7 @@ class TestManagerStorage(TestManagerStorageCore):
             ctr += 1
 
         for node in system_data.get_nodes_list():
-            temp_node = Node().deepcopy(node)
+            temp_node = ManagerObjNode().deepcopy(node)
             temp_node.hostname = "new_hostname_" + str(ctr + 1)
             temp_node.nodeType = ["alert", "manager", "sensor", "server"][ctr % 4]
             temp_node.instance = "new_instance_" + str(ctr + 1)
@@ -98,7 +100,7 @@ class TestManagerStorage(TestManagerStorageCore):
             ctr += 1
 
         for alert in system_data.get_alerts_list():
-            temp_alert = Alert().deepcopy(alert)
+            temp_alert = ManagerObjAlert().deepcopy(alert)
             temp_alert.description = "new_alert_" + str(ctr + 1)
             temp_alert.remoteAlertId = ctr
             # We started the alert levels in our test data with level 1.
@@ -107,13 +109,13 @@ class TestManagerStorage(TestManagerStorageCore):
             ctr += 1
 
         for manager in system_data.get_managers_list():
-            temp_manager = Manager().deepcopy(manager)
+            temp_manager = ManagerObjManager().deepcopy(manager)
             temp_manager.description = "new_manager_" + str(ctr + 1)
             system_data.update_manager(temp_manager)
             ctr += 1
 
         for sensor in system_data.get_sensors_list():
-            temp_sensor = Sensor().deepcopy(sensor)
+            temp_sensor = ManagerObjSensor().deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
             temp_sensor.remoteSensorId = ctr
             temp_sensor.alertDelay = ctr + 10

@@ -3,7 +3,7 @@ from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_managers_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import Manager
+from lib.globalData.managerObjects import ManagerObjManager
 from lib.manager.storage import Mysql
 
 
@@ -49,7 +49,7 @@ class TestManagerStorageManager(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for manager in system_data.get_managers_list():
-            temp_manager = Manager().deepcopy(manager)
+            temp_manager = ManagerObjManager().deepcopy(manager)
             temp_manager.description = "new_manager_" + str(ctr + 1)
             system_data.update_manager(temp_manager)
             ctr += 1

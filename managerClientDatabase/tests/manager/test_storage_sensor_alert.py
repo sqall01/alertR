@@ -4,7 +4,8 @@ from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_sensor_alerts_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import SensorAlert, SensorDataType
+from lib.globalData.managerObjects import ManagerObjSensorAlert
+from lib.globalData.sensorObjects import SensorDataType
 from lib.manager.storage import Mysql
 
 
@@ -37,7 +38,7 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
         for i in range(len(sensor_list)):
             target_sensor = sensor_list[i % len(sensor_list)]
 
-            sensor_alert = SensorAlert()
+            sensor_alert = ManagerObjSensorAlert()
             sensor_alert.sensorId = target_sensor.sensorId
             sensor_alert.state = (i % 2)
             sensor_alert.description = "Sensor Alert %d" % i
@@ -81,7 +82,7 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
         for i in range(len(sensor_list)):
             target_sensor = sensor_list[i % len(sensor_list)]
 
-            sensor_alert = SensorAlert()
+            sensor_alert = ManagerObjSensorAlert()
             sensor_alert.sensorId = target_sensor.sensorId
             sensor_alert.state = (i % 2)
             sensor_alert.description = "Sensor Alert %d" % i

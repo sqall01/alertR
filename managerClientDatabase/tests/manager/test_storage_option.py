@@ -3,7 +3,7 @@ from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_options_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import Option
+from lib.globalData.managerObjects import ManagerObjOption
 from lib.manager.storage import Mysql
 
 
@@ -47,7 +47,7 @@ class TestManagerStorageOption(TestManagerStorageCore):
         # Update local objects.
         ctr = 5
         for option in system_data.get_options_list():
-            temp_option = Option().deepcopy(option)
+            temp_option = ManagerObjOption().deepcopy(option)
             temp_option.value = float(ctr)
             system_data.update_option(temp_option)
             ctr += 1

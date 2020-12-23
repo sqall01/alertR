@@ -3,7 +3,7 @@ from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_alerts_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import Alert
+from lib.globalData.managerObjects import ManagerObjAlert
 from lib.manager.storage import Mysql
 
 
@@ -52,7 +52,7 @@ class TestManagerStorageAlert(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for alert in system_data.get_alerts_list():
-            temp_alert = Alert().deepcopy(alert)
+            temp_alert = ManagerObjAlert().deepcopy(alert)
             temp_alert.description = "new_alert_" + str(ctr + 1)
             temp_alert.remoteAlertId = ctr
             # We started the alert levels in our test data with level 1.

@@ -4,7 +4,7 @@ from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_nodes_content, compare_alerts_content, compare_managers_content, \
                                   compare_sensors_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import Node
+from lib.globalData.managerObjects import ManagerObjNode
 from lib.manager.storage import Mysql
 
 
@@ -65,7 +65,7 @@ class TestManagerStorageNode(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for node in system_data.get_nodes_list():
-            temp_node = Node().deepcopy(node)
+            temp_node = ManagerObjNode().deepcopy(node)
             temp_node.hostname = "new_hostname_" + str(ctr + 1)
             temp_node.nodeType = ["alert", "manager", "sensor", "server"][ctr % 4]
             temp_node.instance = "new_instance_" + str(ctr + 1)

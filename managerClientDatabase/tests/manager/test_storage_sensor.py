@@ -3,7 +3,8 @@ from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import Sensor, SensorDataType
+from lib.globalData.managerObjects import ManagerObjSensor
+from lib.globalData.sensorObjects import SensorDataType
 from lib.manager.storage import Mysql
 
 
@@ -52,7 +53,7 @@ class TestManagerStorageSensor(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for sensor in system_data.get_sensors_list():
-            temp_sensor = Sensor().deepcopy(sensor)
+            temp_sensor = ManagerObjSensor().deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
             temp_sensor.remoteSensorId = ctr
             temp_sensor.alertDelay = ctr + 10

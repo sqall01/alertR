@@ -3,7 +3,7 @@ from tests.util import config_logging
 from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_alert_levels_content
 from lib.globalData.globalData import SystemData
-from lib.globalData.localObjects import AlertLevel
+from lib.globalData.managerObjects import ManagerObjAlertLevel
 from lib.manager.storage import Mysql
 
 
@@ -47,7 +47,7 @@ class TestManagerStorageAlertLevel(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for alert_level in system_data.get_alert_levels_list():
-            temp_alert_level = AlertLevel().deepcopy(alert_level)
+            temp_alert_level = ManagerObjAlertLevel().deepcopy(alert_level)
             temp_alert_level.name = "new_alert_level" + str(ctr + 1)
             temp_alert_level.triggerAlways = (ctr % 2)
             temp_alert_level.instrumentation_active = (((ctr+1) % 2) == 0)

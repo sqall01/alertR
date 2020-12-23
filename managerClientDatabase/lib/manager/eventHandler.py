@@ -13,7 +13,9 @@ import time
 import threading
 from typing import List, Any
 from .core import BaseManagerEventHandler
-from ..globalData.localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, \
+    ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert
+from ..globalData import SensorDataType
 from ..globalData import GlobalData
 
 
@@ -67,12 +69,12 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
     def status_update(self,
                       server_time: int,
-                      options: List[Option],
-                      nodes: List[Node],
-                      sensors: List[Sensor],
-                      managers: List[Manager],
-                      alerts: List[Alert],
-                      alert_levels: List[AlertLevel]) -> bool:
+                      options: List[ManagerObjOption],
+                      nodes: List[ManagerObjNode],
+                      sensors: List[ManagerObjSensor],
+                      managers: List[ManagerObjManager],
+                      alerts: List[ManagerObjAlert],
+                      alert_levels: List[ManagerObjAlertLevel]) -> bool:
 
         result = super().status_update(server_time,
                                        options,
@@ -88,7 +90,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
     def sensor_alert(self,
                      server_time: int,
-                     sensor_alert: SensorAlert) -> bool:
+                     sensor_alert: ManagerObjSensorAlert) -> bool:
 
         result = super().sensor_alert(server_time,
                                       sensor_alert)

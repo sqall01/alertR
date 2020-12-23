@@ -14,7 +14,9 @@ import time
 import json
 import MySQLdb
 from typing import List, Optional
-from ..globalData.localObjects import Option, Node, Sensor, Alert, Manager, AlertLevel, SensorAlert, SensorDataType
+from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjAlert, ManagerObjManager, \
+    ManagerObjAlertLevel, ManagerObjSensorAlert
+from ..globalData import SensorDataType
 from ..globalData import GlobalData
 
 
@@ -40,13 +42,13 @@ class _Storage:
 
     def update_server_information(self,
                                   serverTime: int,
-                                  options: List[Option],
-                                  nodes: List[Node],
-                                  sensors: List[Sensor],
-                                  alerts: List[Alert],
-                                  managers: List[Manager],
-                                  alertLevels: List[AlertLevel],
-                                  sensorAlerts: List[SensorAlert]) -> bool:
+                                  options: List[ManagerObjOption],
+                                  nodes: List[ManagerObjNode],
+                                  sensors: List[ManagerObjSensor],
+                                  alerts: List[ManagerObjAlert],
+                                  managers: List[ManagerObjManager],
+                                  alertLevels: List[ManagerObjAlertLevel],
+                                  sensorAlerts: List[ManagerObjSensorAlert]) -> bool:
         """
         Updates the received server information.
 
@@ -93,12 +95,12 @@ class Mysql(_Storage):
         self._connection_retries = self._global_data.storageBackendMysqlRetries
 
         # Hold a copy of the alert system objects locally to know which data we have stored in the database.
-        self._db_copy_options = list()  # type: List[Option]
-        self._db_copy_nodes = list()  # type: List[Node]
-        self._db_copy_alerts = list()  # type: List[Alert]
-        self._db_copy_managers = list()  # type: List[Manager]
-        self._db_copy_sensors = list()  # type: List[Sensor]
-        self._db_copy_alert_levels = list()  # type: List[AlertLevel]
+        self._db_copy_options = list()  # type: List[ManagerObjOption]
+        self._db_copy_nodes = list()  # type: List[ManagerObjNode]
+        self._db_copy_alerts = list()  # type: List[ManagerObjAlert]
+        self._db_copy_managers = list()  # type: List[ManagerObjManager]
+        self._db_copy_sensors = list()  # type: List[ManagerObjSensor]
+        self._db_copy_alert_levels = list()  # type: List[ManagerObjAlertLevel]
 
         # mysql lock
         self._lock = threading.Lock()
@@ -164,7 +166,7 @@ class Mysql(_Storage):
 
             self.create_storage()
 
-    def _add_sensor_alert(self, sensor_alert: SensorAlert):
+    def _add_sensor_alert(self, sensor_alert: ManagerObjSensorAlert):
         """
         Internal function that adds a Sensor Alert to the database. Does not catch exceptions.
 
@@ -225,7 +227,7 @@ class Mysql(_Storage):
             logging.exception("[%s]: Not able to add Sensor Alert." % self._log_tag)
             raise
 
-    def _add_sensor_data(self, sensor: Sensor):
+    def _add_sensor_data(self, sensor: ManagerObjSensor):
         """
         Internal function that adds the data of the sensor to the database. Does not catch exceptions.
 
@@ -534,7 +536,7 @@ class Mysql(_Storage):
         self._cursor.execute("DROP TABLE IF EXISTS alertLevels")
         self._cursor.execute("DROP TABLE IF EXISTS nodes")
 
-    def _get_sensor_alerts(self) -> List[SensorAlert]:
+    def _get_sensor_alerts(self) -> List[ManagerObjSensorAlert]:
         """
         Internal function that gets a list of Sensor Alerts from the database. Does not catch exceptions.
 
@@ -549,7 +551,7 @@ class Mysql(_Storage):
         for sensor_alert_tuple in result:
             sensor_alert_id = sensor_alert_tuple[0]
 
-            sensor_alert = SensorAlert()
+            sensor_alert = ManagerObjSensorAlert()
             sensor_alert.sensorId = sensor_alert_tuple[1]
             sensor_alert.state = sensor_alert_tuple[2]
             sensor_alert.description = sensor_alert_tuple[3]
@@ -623,7 +625,7 @@ class Mysql(_Storage):
 
                 time.sleep(5)
 
-    def _update_alert(self, alert: Alert):
+    def _update_alert(self, alert: ManagerObjAlert):
         """
         Internal function that updates an Alert in the database. Does not catch exceptions.
 
@@ -692,7 +694,7 @@ class Mysql(_Storage):
                                   % (self._log_tag, alert.alertId))
                 raise
 
-    def _update_alert_level(self, alert_level: AlertLevel):
+    def _update_alert_level(self, alert_level: ManagerObjAlertLevel):
         """
         Internal function that updates an Alert Level in the database. Does not catch exceptions.
 
@@ -754,7 +756,7 @@ class Mysql(_Storage):
                                   % (self._log_tag, alert_level.level))
                 raise
 
-    def _update_manager(self, manager: Manager):
+    def _update_manager(self, manager: ManagerObjManager):
         """
         Internal function that updates a Manager in the database. Does not catch exceptions.
 
@@ -802,7 +804,7 @@ class Mysql(_Storage):
                                   % (self._log_tag, manager.managerId))
                 raise
 
-    def _update_node(self, node: Node):
+    def _update_node(self, node: ManagerObjNode):
         """
         Internal function that updates a Node in the database. Does not catch exceptions.
 
@@ -908,7 +910,7 @@ class Mysql(_Storage):
                                   % (self._log_tag, node.nodeId))
                 raise
 
-    def _update_option(self, option: Option):
+    def _update_option(self, option: ManagerObjOption):
         """
         Internal function that updates an Option in the database. Does not catch exceptions.
 
@@ -950,7 +952,7 @@ class Mysql(_Storage):
                                   % (self._log_tag, option.type))
                 raise
 
-    def _update_sensor(self, sensor: Sensor):
+    def _update_sensor(self, sensor: ManagerObjSensor):
         """
         Internal function that updates a Sensor in the database. Does not catch exceptions.
 
@@ -1086,7 +1088,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         for option_tuple in result:
-            option = Option()
+            option = ManagerObjOption()
             option.type = option_tuple[0]
             option.value = option_tuple[1]
 
@@ -1104,7 +1106,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         for alert_level_tuple in result:
-            alert_level = AlertLevel()
+            alert_level = ManagerObjAlertLevel()
             alert_level.level = alert_level_tuple[0]
             alert_level.name = alert_level_tuple[1]
             alert_level.triggerAlways = alert_level_tuple[2]
@@ -1125,7 +1127,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         for node_tuple in result:
-            node = Node()
+            node = ManagerObjNode()
             node.nodeId = node_tuple[0]
             node.hostname = node_tuple[1]
             node.nodeType = node_tuple[2]
@@ -1152,7 +1154,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         for sensor_tuple in result:
-            sensor = Sensor()
+            sensor = ManagerObjSensor()
             sensor.sensorId = sensor_tuple[0]
             sensor.nodeId = sensor_tuple[1]
             sensor.remoteSensorId = sensor_tuple[2]
@@ -1203,7 +1205,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         for alert_tuple in result:
-            alert = Alert()
+            alert = ManagerObjAlert()
             alert.alertId = alert_tuple[0]
             alert.nodeId = alert_tuple[1]
             alert.remoteAlertId = alert_tuple[2]
@@ -1228,7 +1230,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         for manager_tuple in result:
-            manager = Manager()
+            manager = ManagerObjManager()
             manager.managerId = manager_tuple[0]
             manager.nodeId = manager_tuple[1]
             manager.description = manager_tuple[2]
@@ -1443,13 +1445,13 @@ class Mysql(_Storage):
 
     def update_server_information(self,
                                   server_time: int,
-                                  options: List[Option],
-                                  nodes: List[Node],
-                                  sensors: List[Sensor],
-                                  alerts: List[Alert],
-                                  managers: List[Manager],
-                                  alert_levels: List[AlertLevel],
-                                  sensor_alerts: List[SensorAlert]) -> bool:
+                                  options: List[ManagerObjOption],
+                                  nodes: List[ManagerObjNode],
+                                  sensors: List[ManagerObjSensor],
+                                  alerts: List[ManagerObjAlert],
+                                  managers: List[ManagerObjManager],
+                                  alert_levels: List[ManagerObjAlertLevel],
+                                  sensor_alerts: List[ManagerObjSensorAlert]) -> bool:
         """
         Updates the received server information.
 
