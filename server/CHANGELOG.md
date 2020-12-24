@@ -1,3 +1,9 @@
+## 0.700-0
+
+Features:
+
+* Removed rules from Alert Levels and replaced it with instrumentation (more flexible form to achieve the same).
+
 ## 0.600-3
 
 Features:
