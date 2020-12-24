@@ -37,7 +37,11 @@ class GlobalData:
         self.nodeType = "sensor"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "..",
+                                       "config",
+                                       "config.xml")  # type: str
 
         # instance of the email alerting object
         self.smtpAlert = None

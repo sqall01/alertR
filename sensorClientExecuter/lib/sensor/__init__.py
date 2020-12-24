@@ -7,5 +7,5 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import SensorExecuter
+from .core import SensorExecuter, BaseSensorEventHandler
 from .executer import ExecuterSensor
