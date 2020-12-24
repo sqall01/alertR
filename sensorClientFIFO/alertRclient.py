@@ -251,12 +251,6 @@ if __name__ == '__main__':
     watchdog.daemon = True
     watchdog.start()
 
-    logging.info("[%s] Starting sensor threads." % fileName)
-    # start all sensor threads
-    for sensor in globalData.sensors:
-        sensor.daemon = True
-        sensor.start()
-
     # set up sensor executer and execute it
     executer = SensorExecuter(globalData)
     # set thread to daemon
