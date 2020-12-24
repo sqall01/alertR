@@ -36,13 +36,24 @@ class Promise:
         self._msg_type = msg_type.lower()
         self._creation_time = int(time.time())
 
+        # Store transaction id to refer to this id if we have a multi-part transaction.
+        # (Multi-part transactions do not exist at the moment, perhaps we need them later)
+        self._transaction_id = None  # type: Optional[int]
+
     @property
-    def msg(self):
+    def msg(self) -> str:
         return self._msg
 
     @property
-    def msg_type(self):
+    def msg_type(self) -> str:
         return self._msg_type
+
+    @property
+    def transaction_id(self) -> Optional[int]:
+        return self._transaction_id
+
+    def clear_transaction_id(self):
+        self._transaction_id = None
 
     def is_finished(self,
                     blocking: bool = False,
@@ -62,6 +73,11 @@ class Promise:
     def set_success(self):
         self._state = PromiseState.SUCCESS
         self._finished_event.set()
+
+    def set_transaction_id(self, transaction_id: int):
+        if self._transaction_id is not None:
+            raise ValueError("Transaction id already set.")
+        self._transaction_id = transaction_id
 
     def was_successful(self):
         if self._state == PromiseState.SUCCESS:
@@ -101,6 +117,9 @@ class Communication:
         self._msg_queue = []
         self._msg_queue_lock = threading.Lock()
 
+        self._transaction_ids = dict()
+        self._transaction_ids_lock = threading.Lock()
+
         # Timestamp when the last communication with the other side occurred.
         self._last_communication = 0
 
@@ -127,31 +146,25 @@ class Communication:
         return self._last_communication
 
     # noinspection PyBroadException
-    def _initiate_transaction(self,
-                              messageType: str,
-                              messageSize: int) -> bool:
+    def _initiate_transaction(self, promise: Promise) -> bool:
         """
         This internal function tries to initiate a transaction with the other side.
 
-        :param messageType:
-        :param messageSize:
+        :param promise:
         :return:
         """
-
-        # generate a random "unique" transaction id
-        # for this transaction
+        # Generate a random "unique" transaction id for this transaction.
         transaction_id = random.randint(0, 0xffffffff)
 
         # send RTS (request to send) message
-        logging.debug("[%s]: Sending RTS %d message."
-                      % (self._log_tag, transaction_id))
+        logging.debug("[%s]: Sending RTS %d message." % (self._log_tag, transaction_id))
         try:
             payload = {"type": "rts",
                        "id": transaction_id}
             utc_timestamp = int(time.time())
             message = {self._key_msg_time: utc_timestamp,
-                       "size": messageSize,
-                       "message": messageType,
+                       "size": len(promise.msg),
+                       "message": promise.msg_type,
                        "payload": payload}
             self._connection.send(json.dumps(message))
 
@@ -190,11 +203,12 @@ class Communication:
         # check if RTS is acknowledged by a CTS
         # => exit transaction initiation loop
         if (received_transaction_id == transaction_id
-                and received_message_type == messageType
+                and received_message_type == promise.msg_type
                 and received_payload_type == "CTS"):
 
             logging.debug("[%s]: Initiate transaction succeeded." % self._log_tag)
             self._last_communication = int(time.time())
+            promise.set_transaction_id(transaction_id)
             return True
 
         # if RTS was not acknowledged
@@ -257,8 +271,9 @@ class Communication:
 
                     # Initiate transaction with other side.
                     backoff = False
-                    if not self._initiate_transaction(promise.msg_type, len(promise.msg)):
+                    if not self._initiate_transaction(promise):
                         with self._msg_queue_lock:
+                            promise.clear_transaction_id()
                             self._msg_queue.insert(0, promise)
                         backoff = True
                         continue
@@ -272,6 +287,7 @@ class Communication:
                         logging.exception("[%s]: Sending message of type '%s' failed (retrying)."
                                           % (self._log_tag, promise.msg_type))
                         with self._msg_queue_lock:
+                            promise.clear_transaction_id()
                             self._msg_queue.insert(0, promise)
                         self._has_channel = False
                         break
@@ -302,8 +318,8 @@ class Communication:
 
                             # Send error message back.
                             try:
-                                utcTimestamp = int(time.time())
-                                message = {self._key_msg_time: utcTimestamp,
+                                utc_timestamp = int(time.time())
+                                message = {self._key_msg_time: utc_timestamp,
                                            "message": message["message"],
                                            "error": "%s message expected" % promise.msg_type}
                                 self._connection.send(json.dumps(message))
@@ -321,8 +337,8 @@ class Communication:
 
                             # Send error message back
                             try:
-                                utcTimestamp = int(time.time())
-                                message = {self._key_msg_time: utcTimestamp,
+                                utc_timestamp = int(time.time())
+                                message = {self._key_msg_time: utc_timestamp,
                                            "message": message["message"],
                                            "error": "response expected"}
                                 self._connection.send(json.dumps(message))
@@ -356,6 +372,7 @@ class Communication:
                         logging.exception("[%s]: Receiving response for message of type '%s' failed (retrying)."
                                           % (self._log_tag, promise.msg_type))
                         with self._msg_queue_lock:
+                            promise.clear_transaction_id()
                             self._msg_queue.insert(0, promise)
                         self._has_channel = False
                         break
@@ -604,6 +621,7 @@ class Communication:
         :param msg_type: Type of the message we are sending.
         :return: promise which contains the results after it was send and data was received.
         """
+
         promise = Promise(msg_type, msg)
         with self._msg_queue_lock:
             self._msg_queue.append(promise)
