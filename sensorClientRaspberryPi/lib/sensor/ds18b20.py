@@ -13,7 +13,7 @@ import os
 import logging
 import time
 from .core import _PollingSensor
-from ..localObjects import SensorDataType, SensorAlert, StateChange, Ordering
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, SensorOrdering
 from typing import Optional
 
 
@@ -149,21 +149,21 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
             # Sensor is currently triggered.
             # Check if it is "normal" again.
             if self.state == self.triggerState:
-                if self.ordering == Ordering.LT:
+                if self.ordering == SensorOrdering.LT:
                     if self.sensorData >= self.threshold:
                         self.state = 1 - self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is above threshold (back to normal).")
 
-                elif self.ordering == Ordering.EQ:
+                elif self.ordering == SensorOrdering.EQ:
                     if self.sensorData != self.threshold:
                         self.state = 1 - self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is unequal to threshold (back to normal).")
 
-                elif self.ordering == Ordering.GT:
+                elif self.ordering == SensorOrdering.GT:
                     if self.sensorData <= self.threshold:
                         self.state = 1 - self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
@@ -176,21 +176,21 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
             # Sensor is currently not triggered.
             # Check if it has to be triggered.
             else:
-                if self.ordering == Ordering.LT:
+                if self.ordering == SensorOrdering.LT:
                     if self.sensorData < self.threshold:
                         self.state = self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is below threshold (triggered).")
 
-                elif self.ordering == Ordering.EQ:
+                elif self.ordering == SensorOrdering.EQ:
                     if self.sensorData == self.threshold:
                         self.state = self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is equal to threshold (triggered).")
 
-                elif self.ordering == Ordering.GT:
+                elif self.ordering == SensorOrdering.GT:
                     if self.sensorData > self.threshold:
                         self.state = self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
@@ -200,15 +200,15 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
                 else:
                     logging.error("[%s]: Do not know how to check threshold. Skipping check." % self.fileName)
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         return None
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         utcTimestamp = int(time.time())
         if (utcTimestamp - self.lastUpdate) > self.interval:
             self.lastUpdate = utcTimestamp
 
-            stateChange = StateChange()
+            stateChange = SensorObjStateChange()
             stateChange.clientSensorId = self.id
             if self.state == self.triggerState:
                 stateChange.state = 1

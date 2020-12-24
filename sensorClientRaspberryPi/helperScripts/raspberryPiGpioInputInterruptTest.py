@@ -8,7 +8,6 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import RPi.GPIO as GPIO
-import time
 
 # NOTE: this is the actual pin number (not the number of the GPIO)
 inputPin = 18

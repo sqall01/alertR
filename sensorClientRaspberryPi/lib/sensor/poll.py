@@ -9,7 +9,7 @@
 
 import RPi.GPIO as GPIO
 from .core import _PollingSensor
-from ..localObjects import SensorDataType, SensorAlert, StateChange
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 from typing import Optional
 
 # class that controls one sensor at a gpio pin of the raspberry pi
@@ -56,8 +56,8 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
         else:
             self.currStateCtr = 0
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         return None
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         return None

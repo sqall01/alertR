@@ -19,6 +19,14 @@ class SensorDataType:
     FLOAT = 2
 
 
+# This enum class gives the different orderings used to check if the data of a
+# sensor exceeds a threshold.
+class SensorOrdering:
+    LT = 0
+    EQ = 1
+    GT = 2
+
+
 # This class represents a triggered sensor alert of the sensor.
 class SensorObjSensorAlert(LocalObject):
 

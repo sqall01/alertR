@@ -12,7 +12,7 @@ import os
 import logging
 import time
 from .core import _PollingSensor
-from ..localObjects import SensorDataType, SensorAlert, StateChange
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 from typing import Optional
 
 
@@ -137,8 +137,8 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
         # update state to internal state
         self.state = self._internalState
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         return None
 
-    def forceSendState(self)  -> Optional[StateChange]:
+    def forceSendState(self)  -> Optional[SensorObjStateChange]:
         return None

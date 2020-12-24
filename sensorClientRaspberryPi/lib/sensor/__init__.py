@@ -7,7 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import SensorExecuter
+from .core import SensorExecuter, BaseSensorEventHandler
 from .poll import RaspberryPiGPIOPollingSensor
 from .interrupt import RaspberryPiGPIOInterruptSensor
 from .ds18b20 import RaspberryPiDS18b20Sensor
