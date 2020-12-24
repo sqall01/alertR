@@ -1,11 +1,11 @@
-## 0.601
+## 0.700-0
 
 Features:
 
-* Removed storing of events on manager database (long term plan is to move event creation to server)
 * Refactored client code to get a more resilient connection.
 * Unified client code to make it more maintainable.
 * Guarantee that requests are send to server in timely order.
+* Removed storing of events on manager database (long term plan is to move event creation to server)
 
 ## 0.600-2
 

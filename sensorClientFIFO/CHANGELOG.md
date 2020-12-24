@@ -1,3 +1,12 @@
+## 0.700-0
+
+Features:
+
+* Refactored client code to get a more resilient connection.
+* Unified client code to make it more maintainable.
+* Guarantee that requests are send to server in timely order.
+* Separated FIFO reading and processing to make blocking of FIFO file shorter.
+
 ## 0.600-2
 
 Features:
