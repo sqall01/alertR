@@ -7,11 +7,11 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
+from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
 from .sensor import TempPollingSensor, HumidityPollingSensor, ForecastTempPollingSensor, ForecastRainPollingSensor
-from .sensor import SensorExecuter
+from .sensor import SensorExecuter, BaseSensorEventHandler
+from .sensor import WundergroundDataCollector, DarkskyDataCollector
 from .update import Updater
 from .globalData import GlobalData
-from .localObjects import Ordering
-from .provider import WundergroundDataCollector, DarkskyDataCollector
+from .globalData import SensorOrdering

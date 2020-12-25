@@ -10,7 +10,7 @@
 import os
 import logging
 from .core import _PollingSensor
-from ..localObjects import SensorDataType, Ordering, SensorAlert, StateChange
+from ..globalData import SensorDataType, SensorOrdering, SensorObjSensorAlert, SensorObjStateChange
 from typing import Optional
 
 
@@ -88,21 +88,21 @@ class ForecastTempPollingSensor(_PollingSensor):
             # Sensor is currently triggered.
             # Check if it is "normal" again.
             if self.state == self.triggerState:
-                if self.ordering == Ordering.LT:
+                if self.ordering == SensorOrdering.LT:
                     if self.sensorData >= self.threshold and self.sensorData >= -273.0:
                         self.state = 1 - self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is above threshold (back to normal).")
 
-                elif self.ordering == Ordering.EQ:
+                elif self.ordering == SensorOrdering.EQ:
                     if self.sensorData != self.threshold and self.sensorData >= -273.0:
                         self.state = 1 - self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is unequal to threshold (back to normal).")
 
-                elif self.ordering == Ordering.GT:
+                elif self.ordering == SensorOrdering.GT:
                     if -273.0 <= self.sensorData <= self.threshold:
                         self.state = 1 - self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
@@ -117,21 +117,21 @@ class ForecastTempPollingSensor(_PollingSensor):
             # Sensor is currently not triggered.
             # Check if it has to be triggered.
             else:
-                if self.ordering == Ordering.LT:
+                if self.ordering == SensorOrdering.LT:
                     if -273.0 <= self.sensorData < self.threshold:
                         self.state = self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is below threshold (triggered).")
 
-                elif self.ordering == Ordering.EQ:
+                elif self.ordering == SensorOrdering.EQ:
                     if self.sensorData == self.threshold and self.sensorData >= -273.0:
                         self.state = self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
                                      % (self.fileName, self.sensorData, self.description)
                                      + "is equal to threshold (triggered).")
 
-                elif self.ordering == Ordering.GT:
+                elif self.ordering == SensorOrdering.GT:
                     if self.sensorData > self.threshold and self.sensorData >= -273.0:
                         self.state = self.triggerState
                         logging.info("[%s]: Temperature %.3f of sensor '%s' "
@@ -143,14 +143,14 @@ class ForecastTempPollingSensor(_PollingSensor):
                                   % self.fileName
                                   + "Skipping check.")
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         return None
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         if self._forceSendState:
             self._forceSendState = False
 
-            stateChange = StateChange()
+            stateChange = SensorObjStateChange()
             stateChange.clientSensorId = self.id
             if self.state == self.triggerState:
                 stateChange.state = 1

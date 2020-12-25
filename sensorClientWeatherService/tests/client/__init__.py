@@ -1,0 +1,1 @@
+../../../shared_code/clients_all/tests/client/__init__.py

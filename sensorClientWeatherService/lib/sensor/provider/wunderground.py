@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from .core import DataCollector
-from ..globalData import GlobalData
+from ...globalData import GlobalData
 import threading
 import logging
 import requests

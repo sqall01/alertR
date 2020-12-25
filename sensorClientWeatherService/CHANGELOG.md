@@ -1,3 +1,10 @@
+## 0.700-0
+
+Features:
+
+* Refactored client code to get a more resilient connection.
+* Unified client code to make it more maintainable.
+
 ## 0.600-2
 
 Features:

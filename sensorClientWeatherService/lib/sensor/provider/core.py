@@ -7,7 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from ..globalData import GlobalData
+from ...globalData import GlobalData
 import threading
 import os
 
