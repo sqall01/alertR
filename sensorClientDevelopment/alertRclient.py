@@ -10,9 +10,9 @@
 import sys
 import os
 import stat
-from lib import ServerCommunication, ConnectionWatchdog
+from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import SensorDataType, SensorDev, SensorExecuter
+from lib import SensorDataType, SensorDev, SensorExecuter, BaseSensorEventHandler
 from lib import GlobalData
 import logging
 import time
@@ -209,18 +209,19 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
+                                                BaseSensorEventHandler(),
                                                 globalData)
     connectionRetries = 1
-    logging.info("[%s] Connecting to server." % fileName)
+    logging.info("[%s]: Connecting to server." % fileName)
     while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-           and (connectionRetries % 5) == 0):
+                and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-        if globalData.serverComm.initializeCommunication() is True:
+        if globalData.serverComm.initialize() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
             if globalData.smtpAlert is not None:
@@ -230,13 +231,12 @@ if __name__ == '__main__':
             break
         connectionRetries += 1
 
-        logging.critical("[%s]: Connecting to server failed. " % fileName
-                         + "Try again in 5 seconds.")
+        logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)
         time.sleep(5)
 
     # when connected => generate watchdog object to monitor the
     # server connection
-    logging.info("[%s] Starting watchdog thread." % fileName)
+    logging.info("[%s]: Starting watchdog thread." % fileName)
     watchdog = ConnectionWatchdog(globalData.serverComm,
                                   globalData.pingInterval,
                                   globalData.smtpAlert)
@@ -245,17 +245,25 @@ if __name__ == '__main__':
     watchdog.daemon = True
     watchdog.start()
 
-    # Set up sensor executer and execute it.
-    logging.info("[%s] Starting sensor thread." % fileName)
-    sensorExecuter = SensorExecuter(globalData)
-    sensorExecuter.daemon = True
-    sensorExecuter.start()
+    # set up sensor executer and execute it
+    executer = SensorExecuter(globalData)
+    # set thread to daemon
+    # => threads terminates when main thread terminates
+    executer.daemon = True
+    executer.start()
+
+    # set up sensor executer and execute it
+    receiver = Receiver(globalData.serverComm)
+    # set thread to daemon
+    # => threads terminates when main thread terminates
+    receiver.daemon = True
+    receiver.start()
 
     # Wait until thread is initialized.
-    while not sensorExecuter.isInitialized():
+    while not executer.isInitialized():
         time.sleep(0.1)
 
-    logging.info("[%s] Client started." % fileName)
+    logging.info("[%s]: Client started." % fileName)
 
     # read keyboard input and toggle the sensors accordingly
     while True:
