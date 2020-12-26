@@ -53,8 +53,12 @@ class SensorObjSensorAlert(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[int, float]
 
-    # This function copies all attributes of the given state change to this object.
     def deepcopy(self, sensor_alert):
+        """
+        This function copies all attributes of the given state change to this object.
+        :param sensor_alert:
+        :return:
+        """
         self.clientSensorId = sensor_alert.clientSensorId
         self.state = sensor_alert.state
         self.hasOptionalData = sensor_alert.hasOptionalData
@@ -88,8 +92,12 @@ class SensorObjStateChange(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[int, float]
 
-    # This function copies all attributes of the given state change to this object.
     def deepcopy(self, state_change):
+        """
+        This function copies all attributes of the given state change to this object.
+        :param state_change:
+        :return:
+        """
         self.clientSensorId = state_change.clientSensorId
         self.state = state_change.clientSensorId
         self.dataType = state_change.dataType

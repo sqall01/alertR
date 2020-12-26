@@ -1,0 +1,1 @@
+../../../shared_code/clients_all/lib/globalData/managerObjects.py

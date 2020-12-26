@@ -119,6 +119,17 @@ class MsgChecker:
                 logging.error("[%s]: Received changeState invalid." % MsgChecker._log_tag)
                 return error_msg
 
+        # Check "SENSORALERTSOFF" message.
+        elif request == "sensoralertsoff":
+            if "serverTime" not in message.keys():
+                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
+                return "serverTime expected"
+
+            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            if error_msg is not None:
+                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
         # Check "STATECHANGE" message.
         elif request == "statechange":
             if "serverTime" not in message.keys():
@@ -1190,6 +1201,42 @@ class MsgBuilder:
         return json.dumps(message)
 
     @staticmethod
+    def build_reg_msg_alert(local_alerts,
+                            node_type: str,
+                            instance: str,
+                            persistent: int) -> str:
+        """
+        Internal function that builds the client registration message for alert nodes.
+
+        :param local_alerts: the objects representing the local alerts.
+        :param node_type:
+        :param instance:
+        :param persistent:
+        :return:
+        """
+        # build alerts list for the message
+        alerts = list()
+        for alert in local_alerts:
+            temp_alert = dict()
+            temp_alert["clientAlertId"] = alert.id
+            temp_alert["description"] = alert.description
+            temp_alert["alertLevels"] = alert.alertLevels
+            alerts.append(temp_alert)
+
+        payload = {"type": "request",
+                   "hostname": socket.gethostname(),
+                   "nodeType": node_type,
+                   "instance": instance,
+                   "persistent": persistent,
+                   "alerts": alerts}
+
+        utc_timestamp = int(time.time())
+        message = {"clientTime": utc_timestamp,
+                   "message": "initialization",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
     def build_reg_msg_manager(description: str,
                               node_type: str,
                               instance: str,
@@ -1197,7 +1244,7 @@ class MsgBuilder:
         """
         Internal function that builds the client registration message for manager nodes.
 
-        :param description:
+        :param description: the description of the manager.
         :param node_type:
         :param instance:
         :param persistent:
@@ -1228,7 +1275,7 @@ class MsgBuilder:
         """
         Internal function that builds the client registration message for sensor nodes.
 
-        :param polling_sensors:
+        :param polling_sensors: the objects representing the local sensors.
         :param node_type:
         :param instance:
         :param persistent:

@@ -22,6 +22,11 @@ class ManagerObjOption(LocalObject):
         self.value = None  # type: Optional[float]
 
     def deepcopy(self, option):
+        """
+        This function copies all attributes of the given option to this object.
+        :param option:
+        :return:
+        """
         self.type = option.type
         self.value = option.value
         return self
@@ -43,8 +48,12 @@ class ManagerObjNode(LocalObject):
         self.username = None  # type: Optional[str]
         self.persistent = None  # type: Optional[int]
 
-    # This function copies all attributes of the given node to this object.
     def deepcopy(self, node):
+        """
+        This function copies all attributes of the given node to this object.
+        :param node:
+        :return:
+        """
         self.nodeId = node.nodeId
         self.hostname = node.hostname
         self.nodeType = node.nodeType
@@ -73,8 +82,12 @@ class ManagerObjSensor(LocalObject):
         self.dataType = None  # type: Optional[SensorDataType]
         self.data = None  # type: Any
 
-    # This function copies all attributes of the given sensor to this object.
     def deepcopy(self, sensor):
+        """
+        This function copies all attributes of the given sensor to this object.
+        :param sensor:
+        :return:
+        """
         self.nodeId = sensor.nodeId
         self.sensorId = sensor.sensorId
         self.remoteSensorId = sensor.remoteSensorId
@@ -116,8 +129,12 @@ class ManagerObjAlert(LocalObject):
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
 
-    # This function copies all attributes of the given alert to this object.
     def deepcopy(self, alert):
+        """
+        This function copies all attributes of the given alert to this object.
+        :param alert:
+        :return:
+        """
         self.nodeId = alert.nodeId
         self.alertId = alert.alertId
         self.remoteAlertId = alert.remoteAlertId
@@ -174,8 +191,32 @@ class ManagerObjSensorAlert(LocalObject):
               % ", ".join(map(str, self.alertLevels))
         return tmp
 
-    # This function copies all attributes of the given sensor alert to this object.
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the SensorAlert object into a dictionary.
+        :return:
+        """
+        sensor_alert_dict = {"alertLevels": self.alertLevels,
+                             "description": self.description,
+                             "sensorId": self.sensorId,
+                             "state": self.state,
+                             "hasOptionalData": self.hasOptionalData,
+                             "optionalData": self.optionalData,
+                             "dataType": self.dataType,
+                             "data": self.sensorData,
+                             "hasLatestData": self.hasLatestData,
+                             "changeState": self.changeState
+                            }
+
+        return sensor_alert_dict
+
     def deepcopy(self, sensor_alert):
+        """
+        This function copies all attributes of the given sensor alert to this object.
+
+        :param sensor_alert:
+        :return:
+        """
         self.sensorId = sensor_alert.sensorId
         self.state = sensor_alert.state
         self.description = sensor_alert.description
@@ -208,8 +249,12 @@ class ManagerObjAlertLevel(LocalObject):
         self.instrumentation_cmd = None  # type: Optional[str]
         self.instrumentation_timeout = None  # type: Optional[int]
 
-    # This function copies all attributes of the given alert level to this object.
     def deepcopy(self, alert_level):
+        """
+        This function copies all attributes of the given alert level to this object.
+        :param alert_level:
+        :return:
+        """
         self.level = alert_level.level
         self.name = alert_level.name
         self.triggerAlways = alert_level.triggerAlways

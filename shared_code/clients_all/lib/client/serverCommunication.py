@@ -63,17 +63,21 @@ class ServerCommunication(Communication):
         # create the object that handles all incoming server events
         self._event_handler = event_handler
 
-        # file nme of this file (used for logging)
+        # file name of this file (used for logging)
         self._log_tag = os.path.basename(__file__)
 
         # Set node type specific data.
-        if self._nodeType.lower() == "manager":
+        if self._nodeType == "manager":
             # noinspection PyUnresolvedReferences
             self._description = self._global_data.description
 
-        elif self._nodeType.lower() == "sensor":
+        elif self._nodeType == "sensor":
             # noinspection PyUnresolvedReferences
             self._polling_sensors = self._global_data.sensors
+
+        elif self._nodeType == "alert":
+            # noinspection PyUnresolvedReferences
+            self._local_alerts = self._global_data.alerts
 
         self._initialization_lock = threading.Lock()
 
@@ -85,200 +89,120 @@ class ServerCommunication(Communication):
     def is_connected(self) -> bool:
         return self.has_channel
 
-    def _verify_version_and_auth(self,
-                                 regMessageSize: int) -> bool:
+    def _handler_sensor_alert(self,
+                              incomingMessage: Dict[str, Any]) -> bool:
         """
-        Internal function to verify the server/client version and authenticate.
+        Internal function that handles received sensor alerts.
 
-        :param regMessageSize:
-        :return:
-        """
-        authMessage = MsgBuilder.build_auth_msg(self._username,
-                                                self._password,
-                                                self._version,
-                                                self._rev,
-                                                regMessageSize)
-
-        # send user credentials and version
-        try:
-            logging.debug("[%s]: Sending user credentials and version." % self._log_tag)
-            self.send_raw(authMessage)
-
-        except Exception:
-            logging.exception("[%s]: Sending user credentials "
-                              % self._log_tag
-                              + "and version failed.")
-            return False
-
-        # get authentication response from server
-        try:
-            data = self.recv_raw()
-            message = json.loads(data)
-            # check if an error was received
-            if "error" in message.keys():
-                logging.error("[%s]: Error received: '%s'."
-                              % (self._log_tag, message["error"]))
-                return False
-
-            if str(message["message"]).lower() != "initialization":
-                logging.error("[%s]: Wrong authentication message: '%s'."
-                              % (self._log_tag, message["message"]))
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
-                               "error": "initialization message expected"}
-                    self.send_raw(json.dumps(message))
-                except Exception:
-                    pass
-
-                return False
-
-            # check if the received type is the correct one
-            if str(message["payload"]["type"]).lower() != "response":
-                logging.error("[%s]: response expected." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
-                               "error": "response expected"}
-                    self.send_raw(json.dumps(message))
-                except Exception:
-                    pass
-
-                return False
-
-            # check if status message was correctly received
-            if str(message["payload"]["result"]).lower() != "ok":
-                logging.error("[%s]: Result not ok: '%s'."
-                              % (self._log_tag, message["payload"]["result"]))
-                return False
-
-        except Exception:
-            logging.exception("[%s]: Receiving authentication response failed." % self._log_tag)
-            return False
-
-        # verify version
-        try:
-            version = float(message["payload"]["version"])
-            rev = int(message["payload"]["rev"])
-
-            logging.debug("[%s]: Received server version: '%.3f-%d'."
-                          % (self._log_tag, version, rev))
-
-            # check if used protocol version is compatible
-            if int(self._version * 10) != int(version * 10):
-
-                logging.error("[%s]: Version not compatible. " % self._log_tag
-                              + "Client has version: '%.3f-%d' "
-                              % (self._version, self._rev)
-                              + "and server has '%.3f-%d"
-                              % (version, rev))
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
-                               "error": "version not compatible"}
-                    self.send_raw(json.dumps(message))
-                except Exception:
-                    pass
-
-                return False
-
-        except Exception:
-
-            logging.exception("[%s]: Version not valid." % self._log_tag)
-
-            # send error message back
-            try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": message["message"],
-                           "error": "version not valid"}
-                self.send_raw(json.dumps(message))
-            except Exception:
-                pass
-
-            return False
-
-        return True
-
-    def _register_node(self,
-                       regMessage: str) -> bool:
-        """
-        Internal function to register the node.
-
-        :param regMessage:
+        :param incomingMessage:
         :return: success or failure
         """
-        # Send registration message.
+        logging.info("[%s]: Received sensor alert." % self._log_tag)
+
+        # extract sensor alert values
+        sensorAlert = ManagerObjSensorAlert()
+        sensorAlert.timeReceived = int(time.time())
         try:
-            logging.debug("[%s]: Sending registration message." % self._log_tag)
-            self.send_raw(regMessage)
+            serverTime = incomingMessage["serverTime"]
+
+            # always -1 when no sensor is responsible for sensor alert
+            sensorAlert.sensorId = incomingMessage["payload"]["sensorId"]
+
+            sensorAlert.state = incomingMessage["payload"]["state"]
+
+            sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
+
+            sensorAlert.description = incomingMessage["payload"]["description"]
+
+            # parse transfer data
+            sensorAlert.hasOptionalData = incomingMessage["payload"]["hasOptionalData"]
+            if sensorAlert.hasOptionalData:
+                sensorAlert.optionalData = incomingMessage["payload"]["optionalData"]
+            else:
+                sensorAlert.optionalData = dict()
+
+            sensorAlert.changeState = incomingMessage["payload"]["changeState"]
+            sensorAlert.hasLatestData = incomingMessage["payload"]["hasLatestData"]
+            sensorAlert.dataType = incomingMessage["payload"]["dataType"]
+
+            sensorAlert.sensorData = None
+            if sensorAlert.dataType == SensorDataType.INT:
+                sensorAlert.sensorData = incomingMessage["payload"]["data"]
+            elif sensorAlert.dataType == SensorDataType.FLOAT:
+                sensorAlert.sensorData = incomingMessage["payload"]["data"]
 
         except Exception:
-            logging.exception("[%s]: Sending registration message." % self._log_tag)
+            logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
             return False
 
-        # get registration response from server
+        # handle received sensor alert
+        if self._event_handler.sensor_alert(serverTime, sensorAlert):
+            return True
+
+        return False
+
+    def _handler_sensor_alerts_off(self,
+                                   incomingMessage: Dict[str, Any]) -> bool:
+        """
+        Internal function that handles received sensor alerts off messages for alert nodes.
+
+        :param incomingMessage:
+        :return:
+        """
+        logging.debug("[%s]: Received sensor alerts off." % self._log_tag)
+
         try:
-            data = self.recv_raw()
-            message = json.loads(data)
-            # check if an error was received
-            if "error" in message.keys():
-                logging.error("[%s]: Error received: '%s'." % (self._log_tag, message["error"]))
-                return False
-
-            if str(message["message"]).lower() != "initialization":
-                logging.error("[%s]: Wrong registration message: '%s'."
-                              % (self._log_tag, message["message"]))
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
-                               "error": "initialization message expected"}
-                    self.send_raw(json.dumps(message))
-                except Exception:
-                    pass
-
-                return False
-
-            # Check if the received type is the correct one.
-            if str(message["payload"]["type"]).lower() != "response":
-                logging.error("[%s]: response expected." % self._log_tag)
-
-                # send error message back
-                try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
-                               "error": "response expected"}
-                    self.send_raw(json.dumps(message))
-                except Exception:
-                    pass
-
-                return False
-
-            # check if status message was correctly received
-            if str(message["payload"]["result"]).lower() != "ok":
-                logging.error("[%s]: Result not ok: '%s'." % (self._log_tag, message["payload"]["result"]))
-                return False
+            serverTime = incomingMessage["serverTime"]
 
         except Exception:
-            logging.exception("[%s]: Receiving registration response failed." % self._log_tag)
+            logging.exception("[%s]: Received sensor alerts off invalid." % self._log_tag)
             return False
 
-        return True
+        # handle received state change
+        if self._event_handler.sensor_alerts_off(serverTime):
+            return True
 
-    def _status_update_handler(self,
+        return False
+
+    def _handler_state_change(self,
+                              incomingMessage: Dict[str, Any]) -> bool:
+        """
+        Internal function that handles received state changes of sensors.
+
+        :param incomingMessage:
+        :return: success or failure
+        """
+        logging.debug("[%s]: Received state change." % self._log_tag)
+
+        # extract state change values
+        try:
+            serverTime = incomingMessage["serverTime"]
+
+            sensorId = incomingMessage["payload"]["sensorId"]
+            state = incomingMessage["payload"]["state"]
+            dataType = incomingMessage["payload"]["dataType"]
+
+            sensorData = None
+            if dataType == SensorDataType.INT:
+                sensorData = incomingMessage["payload"]["data"]
+            elif dataType == SensorDataType.FLOAT:
+                sensorData = incomingMessage["payload"]["data"]
+
+        except Exception:
+            logging.exception("[%s]: Received state change invalid." % self._log_tag)
+            return False
+
+        # handle received state change
+        if self._event_handler.state_change(serverTime,
+                                            sensorId,
+                                            state,
+                                            dataType,
+                                            sensorData):
+            return True
+
+        return False
+
+    def _handler_status_update(self,
                                incomingMessage: Dict[str, Any]):
         """
         Internal function that handles received status updates.
@@ -501,95 +425,198 @@ class ServerCommunication(Communication):
 
         return True
 
-    def _sensorAlertHandler(self,
-                            incomingMessage: Dict[str, Any]) -> bool:
+    def _register_node(self,
+                       regMessage: str) -> bool:
         """
-        Internal function that handles received sensor alerts.
+        Internal function to register the node.
 
-        :param incomingMessage:
+        :param regMessage:
         :return: success or failure
         """
-        logging.info("[%s]: Received sensor alert." % self._log_tag)
-
-        # extract sensor alert values
-        sensorAlert = ManagerObjSensorAlert()
-        sensorAlert.timeReceived = int(time.time())
+        # Send registration message.
         try:
-            serverTime = incomingMessage["serverTime"]
-
-            # always -1 when no sensor is responsible for sensor alert
-            sensorAlert.sensorId = incomingMessage["payload"]["sensorId"]
-
-            sensorAlert.state = incomingMessage["payload"]["state"]
-
-            sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
-
-            sensorAlert.description = incomingMessage["payload"]["description"]
-
-            # parse transfer data
-            sensorAlert.hasOptionalData = incomingMessage["payload"]["hasOptionalData"]
-            if sensorAlert.hasOptionalData:
-                sensorAlert.optionalData = incomingMessage["payload"]["optionalData"]
-            else:
-                sensorAlert.optionalData = dict()
-
-            sensorAlert.changeState = incomingMessage["payload"]["changeState"]
-            sensorAlert.hasLatestData = incomingMessage["payload"]["hasLatestData"]
-            sensorAlert.dataType = incomingMessage["payload"]["dataType"]
-
-            sensorAlert.sensorData = None
-            if sensorAlert.dataType == SensorDataType.INT:
-                sensorAlert.sensorData = incomingMessage["payload"]["data"]
-            elif sensorAlert.dataType == SensorDataType.FLOAT:
-                sensorAlert.sensorData = incomingMessage["payload"]["data"]
+            logging.debug("[%s]: Sending registration message." % self._log_tag)
+            self.send_raw(regMessage)
 
         except Exception:
-            logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
+            logging.exception("[%s]: Sending registration message." % self._log_tag)
             return False
 
-        # handle received sensor alert
-        if self._event_handler.sensor_alert(serverTime, sensorAlert):
-            return True
-
-        return False
-
-    def _state_change_handler(self,
-                              incomingMessage: Dict[str, Any]) -> bool:
-        """
-        Internal function that handles received state changes of sensors.
-
-        :param incomingMessage:
-        :return: success or failure
-        """
-        logging.debug("[%s]: Received state change." % self._log_tag)
-
-        # extract state change values
+        # get registration response from server
         try:
-            serverTime = incomingMessage["serverTime"]
+            data = self.recv_raw()
+            message = json.loads(data)
+            # check if an error was received
+            if "error" in message.keys():
+                logging.error("[%s]: Error received: '%s'." % (self._log_tag, message["error"]))
+                return False
 
-            sensorId = incomingMessage["payload"]["sensorId"]
-            state = incomingMessage["payload"]["state"]
-            dataType = incomingMessage["payload"]["dataType"]
+            if str(message["message"]).lower() != "initialization":
+                logging.error("[%s]: Wrong registration message: '%s'."
+                              % (self._log_tag, message["message"]))
 
-            sensorData = None
-            if dataType == SensorDataType.INT:
-                sensorData = incomingMessage["payload"]["data"]
-            elif dataType == SensorDataType.FLOAT:
-                sensorData = incomingMessage["payload"]["data"]
+                # send error message back
+                try:
+                    utcTimestamp = int(time.time())
+                    message = {"clientTime": utcTimestamp,
+                               "message": message["message"],
+                               "error": "initialization message expected"}
+                    self.send_raw(json.dumps(message))
+                except Exception:
+                    pass
+
+                return False
+
+            # Check if the received type is the correct one.
+            if str(message["payload"]["type"]).lower() != "response":
+                logging.error("[%s]: response expected." % self._log_tag)
+
+                # send error message back
+                try:
+                    utcTimestamp = int(time.time())
+                    message = {"clientTime": utcTimestamp,
+                               "message": message["message"],
+                               "error": "response expected"}
+                    self.send_raw(json.dumps(message))
+                except Exception:
+                    pass
+
+                return False
+
+            # check if status message was correctly received
+            if str(message["payload"]["result"]).lower() != "ok":
+                logging.error("[%s]: Result not ok: '%s'." % (self._log_tag, message["payload"]["result"]))
+                return False
 
         except Exception:
-            logging.exception("[%s]: Received state change invalid." % self._log_tag)
+            logging.exception("[%s]: Receiving registration response failed." % self._log_tag)
             return False
 
-        # handle received state change
-        if self._event_handler.state_change(serverTime,
-                                            sensorId,
-                                            state,
-                                            dataType,
-                                            sensorData):
-            return True
+        return True
 
-        return False
+    def _verify_version_and_auth(self,
+                                 regMessageSize: int) -> bool:
+        """
+        Internal function to verify the server/client version and authenticate.
+
+        :param regMessageSize:
+        :return:
+        """
+        authMessage = MsgBuilder.build_auth_msg(self._username,
+                                                self._password,
+                                                self._version,
+                                                self._rev,
+                                                regMessageSize)
+
+        # send user credentials and version
+        try:
+            logging.debug("[%s]: Sending user credentials and version." % self._log_tag)
+            self.send_raw(authMessage)
+
+        except Exception:
+            logging.exception("[%s]: Sending user credentials "
+                              % self._log_tag
+                              + "and version failed.")
+            return False
+
+        # get authentication response from server
+        try:
+            data = self.recv_raw()
+            message = json.loads(data)
+            # check if an error was received
+            if "error" in message.keys():
+                logging.error("[%s]: Error received: '%s'."
+                              % (self._log_tag, message["error"]))
+                return False
+
+            if str(message["message"]).lower() != "initialization":
+                logging.error("[%s]: Wrong authentication message: '%s'."
+                              % (self._log_tag, message["message"]))
+
+                # send error message back
+                try:
+                    utcTimestamp = int(time.time())
+                    message = {"clientTime": utcTimestamp,
+                               "message": message["message"],
+                               "error": "initialization message expected"}
+                    self.send_raw(json.dumps(message))
+                except Exception:
+                    pass
+
+                return False
+
+            # check if the received type is the correct one
+            if str(message["payload"]["type"]).lower() != "response":
+                logging.error("[%s]: response expected." % self._log_tag)
+
+                # send error message back
+                try:
+                    utcTimestamp = int(time.time())
+                    message = {"clientTime": utcTimestamp,
+                               "message": message["message"],
+                               "error": "response expected"}
+                    self.send_raw(json.dumps(message))
+                except Exception:
+                    pass
+
+                return False
+
+            # check if status message was correctly received
+            if str(message["payload"]["result"]).lower() != "ok":
+                logging.error("[%s]: Result not ok: '%s'."
+                              % (self._log_tag, message["payload"]["result"]))
+                return False
+
+        except Exception:
+            logging.exception("[%s]: Receiving authentication response failed." % self._log_tag)
+            return False
+
+        # verify version
+        try:
+            version = float(message["payload"]["version"])
+            rev = int(message["payload"]["rev"])
+
+            logging.debug("[%s]: Received server version: '%.3f-%d'."
+                          % (self._log_tag, version, rev))
+
+            # check if used protocol version is compatible
+            if int(self._version * 10) != int(version * 10):
+
+                logging.error("[%s]: Version not compatible. " % self._log_tag
+                              + "Client has version: '%.3f-%d' "
+                              % (self._version, self._rev)
+                              + "and server has '%.3f-%d"
+                              % (version, rev))
+
+                # send error message back
+                try:
+                    utcTimestamp = int(time.time())
+                    message = {"clientTime": utcTimestamp,
+                               "message": message["message"],
+                               "error": "version not compatible"}
+                    self.send_raw(json.dumps(message))
+                except Exception:
+                    pass
+
+                return False
+
+        except Exception:
+
+            logging.exception("[%s]: Version not valid." % self._log_tag)
+
+            # send error message back
+            try:
+                utcTimestamp = int(time.time())
+                message = {"clientTime": utcTimestamp,
+                           "message": message["message"],
+                           "error": "version not valid"}
+                self.send_raw(json.dumps(message))
+            except Exception:
+                pass
+
+            return False
+
+        return True
 
     def close(self):
         """
@@ -637,8 +664,18 @@ class ServerCommunication(Communication):
 
             # Handle SENSORALERT request.
             if request.lower() == "sensoralert":
-                if not self._sensorAlertHandler(message):
+                if not self._handler_sensor_alert(message):
                     logging.error("[%s]: Receiving sensor alert failed."
+                                  % self._log_tag)
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
+            # Handle SENSORALERTSOFF request.
+            elif request.lower() == "sensoralertsoff":
+                if not self._handler_sensor_alerts_off(message):
+                    logging.error("[%s]: Receiving sensor alerts off failed."
                                   % self._log_tag)
 
                     # clean up session before exiting
@@ -647,7 +684,7 @@ class ServerCommunication(Communication):
 
             # Handle STATUS request.
             elif request.lower() == "status":
-                if not self._status_update_handler(message):
+                if not self._handler_status_update(message):
                     logging.error("[%s]: Receiving status update failed."
                                   % self._log_tag)
 
@@ -657,7 +694,7 @@ class ServerCommunication(Communication):
 
             # Handle STATECHANGE request.
             elif request.lower() == "statechange":
-                if not self._state_change_handler(message):
+                if not self._handler_state_change(message):
                     logging.error("[%s]: Receiving state change failed."
                                   % self._log_tag)
 
@@ -694,14 +731,20 @@ class ServerCommunication(Communication):
 
             # Build registration message.
             reg_message = ""
-            if self._nodeType.lower() == "manager":
+            if self._nodeType == "manager":
                 reg_message = MsgBuilder.build_reg_msg_manager(self._description,
+                                                               self._nodeType,
+                                                               self._instance,
+                                                               self._persistent)
+
+            elif self._nodeType == "sensor":
+                reg_message = MsgBuilder.build_reg_msg_sensor(self._polling_sensors,
                                                               self._nodeType,
                                                               self._instance,
                                                               self._persistent)
 
-            elif self._nodeType.lower() == "sensor":
-                reg_message = MsgBuilder.build_reg_msg_sensor(self._polling_sensors,
+            elif self._nodeType == "alert":
+                reg_message = MsgBuilder.build_reg_msg_alert(self._local_alerts,
                                                              self._nodeType,
                                                              self._instance,
                                                              self._persistent)
@@ -745,7 +788,7 @@ class ServerCommunication(Communication):
                     self.close()
                     return False
 
-                if not self._status_update_handler(message):
+                if not self._handler_status_update(message):
                     logging.error("[%s]: Initial status update failed." % self._log_tag)
                     self.close()
                     return False

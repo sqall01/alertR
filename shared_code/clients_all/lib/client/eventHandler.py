@@ -40,6 +40,15 @@ class EventHandler:
         """
         raise NotImplementedError("Abstract class.")
 
+    def sensor_alerts_off(self,
+                          server_time: int) -> bool:
+        """
+        Is called when a sensor alerts off message was received.
+
+        :param server_time:
+        """
+        raise NotImplementedError("Abstract class.")
+
     def state_change(self,
                      server_time: int,
                      sensor_id: int,
