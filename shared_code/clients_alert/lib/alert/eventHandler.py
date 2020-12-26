@@ -43,11 +43,14 @@ class AlertEventHandler(EventHandler):
                       managers: List[ManagerObjManager],
                       alerts: List[ManagerObjAlert],
                       alert_levels: List[ManagerObjAlertLevel]) -> bool:
-        return True
+        raise NotImplementedError("Not supported by node of type 'alert'.")
 
     def sensor_alert(self,
                      server_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
+
+        # TODO implement
+
         return True
 
     def sensor_alerts_off(self,
@@ -71,7 +74,7 @@ class AlertEventHandler(EventHandler):
                      state: int,
                      data_type: SensorDataType,
                      sensor_data: Any) -> bool:
-        return True
+        raise NotImplementedError("Not supported by node of type 'alert'.")
 
     def close_connection(self):
         pass

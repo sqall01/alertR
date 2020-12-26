@@ -11,7 +11,7 @@ import os
 import threading
 import logging
 from typing import Optional
-from ..localObjects import SensorAlert
+from ..globalData import ManagerObjSensorAlert
 
 
 # internal class that holds the important attributes
@@ -24,7 +24,7 @@ class _Alert(object):
         self.description = None  # type: Optional[str]
         self.alertLevels = list()
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -32,7 +32,7 @@ class _Alert(object):
         """
         raise NotImplementedError("Function not implemented yet.")
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 
@@ -74,7 +74,7 @@ class AsynchronousAlertExecuter(threading.Thread):
 
         # this options are used to transfer data from the received
         # sensor alert to the alert that is triggered
-        self.sensorAlert = None  # type: Optional[SensorAlert]
+        self.sensorAlert = None  # type: Optional[ManagerObjSensorAlert]
 
     def run(self):
 

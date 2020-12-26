@@ -9,3 +9,4 @@
 
 from .core import AsynchronousAlertExecuter
 from .template import TemplateAlert
+from .eventHandler import AlertEventHandler
