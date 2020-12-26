@@ -146,6 +146,10 @@ class BaseManagerEventHandler(EventHandler):
 
         return True
 
+    def sensor_alerts_off(self,
+                          server_time: int) -> bool:
+        raise NotImplementedError("Not supported by node of type 'manager'.")
+
     def state_change(self,
                      server_time: int,
                      sensor_id: int,

@@ -305,12 +305,16 @@ class BaseSensorEventHandler(EventHandler):
                       managers: List[ManagerObjManager],
                       alerts: List[ManagerObjAlert],
                       alert_levels: List[ManagerObjAlertLevel]) -> bool:
-        return True
+        raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     def sensor_alert(self,
                      server_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
-        return True
+        raise NotImplementedError("Not supported by node of type 'sensor'.")
+
+    def sensor_alerts_off(self,
+                          server_time: int) -> bool:
+        raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     def state_change(self,
                      server_time: int,
@@ -318,7 +322,7 @@ class BaseSensorEventHandler(EventHandler):
                      state: int,
                      data_type: SensorDataType,
                      sensor_data: Any) -> bool:
-        return True
+        raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     def close_connection(self):
         pass
