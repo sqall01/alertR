@@ -39,7 +39,7 @@ Features:
 
 * Removed fixed TLS version.
 
-## 0.501
+## 0.501-0
 
 Features:
 
@@ -52,7 +52,7 @@ Features:
 
 * Changed timeout setting in order to have a more stable connection recovery.
 
-## 0.500
+## 0.500-0
 
 Features:
 
@@ -66,7 +66,7 @@ Features:
 * User paths can now be relative paths.
 * Added start up log entries.
 
-## 0.400
+## 0.400-0
 
 Features:
 

@@ -9,6 +9,6 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .alert import KodiAlert
+from .alert import KodiAlert, AlertEventHandler
 from .update import Updater
 from .globalData import GlobalData
