@@ -11,8 +11,8 @@ import time
 import os
 import logging
 import smtplib
-from ..localObjects import SensorDataType
-from .core import _Alert, SensorAlert
+from ..globalData import SensorDataType, ManagerObjSensorAlert
+from .core import _Alert
 
 
 # this class represents an alert that sends a notification via mail
@@ -35,7 +35,7 @@ class MailAlert(_Alert):
         # Body text for send mails.
         self.body_text = None
 
-    def _replace_wildcards(self, sensor_alert: SensorAlert, message: str) -> str:
+    def _replace_wildcards(self, sensor_alert: ManagerObjSensorAlert, message: str) -> str:
         """
         Internal function that replaces the wildcards in the message with the corresponding values.
 
@@ -77,7 +77,7 @@ class MailAlert(_Alert):
 
         return temp_msg
 
-    def _process_alert(self, sensor_alert: SensorAlert):
+    def _process_alert(self, sensor_alert: ManagerObjSensorAlert):
 
         # replace wildcards with the actual values
         temp_msg = self._replace_wildcards(sensor_alert, self.body_text)
@@ -101,7 +101,7 @@ class MailAlert(_Alert):
         with open(self.templateFile, 'r') as fp:
             self.body_text = fp.read()
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -109,7 +109,7 @@ class MailAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 
