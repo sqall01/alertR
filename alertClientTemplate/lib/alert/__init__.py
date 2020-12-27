@@ -7,6 +7,5 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import AsynchronousAlertExecuter
 from .template import TemplateAlert
 from .eventHandler import AlertEventHandler

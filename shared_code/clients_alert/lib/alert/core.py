@@ -7,9 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import os
-import threading
-import logging
 from typing import Optional
 from ..globalData import ManagerObjSensorAlert
 
@@ -52,44 +49,3 @@ class _Alert(object):
         Is called when Alert Client is started to initialize the Alert object.
         """
         raise NotImplementedError("Function not implemented yet.")
-
-
-# this class is used to trigger or stop an alert
-# in an own thread to not block the initiating thread
-class AsynchronousAlertExecuter(threading.Thread):
-
-    def __init__(self, alert: _Alert):
-        threading.Thread.__init__(self)
-
-        self.fileName = os.path.basename(__file__)
-        self.alert = alert
-
-        # this option is used when the thread should
-        # trigger an alert
-        self.triggerAlert = False
-
-        # this option is used when the thread should
-        # stop an alert
-        self.stopAlert = False
-
-        # this options are used to transfer data from the received
-        # sensor alert to the alert that is triggered
-        self.sensorAlert = None  # type: Optional[ManagerObjSensorAlert]
-
-    def run(self):
-
-        # check if an alert should be triggered
-        if self.triggerAlert:
-            if self.sensorAlert.state == 1:
-                self.alert.alert_triggered(self.sensorAlert)
-
-            elif self.sensorAlert.state == 0:
-                self.alert.alert_normal(self.sensorAlert)
-
-            else:
-                logging.error("[%s]: State '%s' of received alert unknown."
-                              % (self.fileName, str(self.sensorAlert.state)))
-
-        # check if an alert should be stopped
-        elif self.stopAlert:
-            self.alert.alert_off()

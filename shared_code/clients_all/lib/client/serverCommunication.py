@@ -92,7 +92,7 @@ class ServerCommunication(Communication):
     def _handler_sensor_alert(self,
                               incomingMessage: Dict[str, Any]) -> bool:
         """
-        Internal function that handles received sensor alerts.
+        Internal function that handles received sensor alerts (for nodes of type manager or alert).
 
         :param incomingMessage:
         :return: success or failure
@@ -105,13 +105,9 @@ class ServerCommunication(Communication):
         try:
             serverTime = incomingMessage["serverTime"]
 
-            # always -1 when no sensor is responsible for sensor alert
             sensorAlert.sensorId = incomingMessage["payload"]["sensorId"]
-
             sensorAlert.state = incomingMessage["payload"]["state"]
-
             sensorAlert.alertLevels = incomingMessage["payload"]["alertLevels"]
-
             sensorAlert.description = incomingMessage["payload"]["description"]
 
             # parse transfer data
@@ -127,9 +123,9 @@ class ServerCommunication(Communication):
 
             sensorAlert.sensorData = None
             if sensorAlert.dataType == SensorDataType.INT:
-                sensorAlert.sensorData = incomingMessage["payload"]["data"]
+                sensorAlert.sensorData = int(incomingMessage["payload"]["data"])
             elif sensorAlert.dataType == SensorDataType.FLOAT:
-                sensorAlert.sensorData = incomingMessage["payload"]["data"]
+                sensorAlert.sensorData = float(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
@@ -144,7 +140,7 @@ class ServerCommunication(Communication):
     def _handler_sensor_alerts_off(self,
                                    incomingMessage: Dict[str, Any]) -> bool:
         """
-        Internal function that handles received sensor alerts off messages for alert nodes.
+        Internal function that handles received sensor alerts off messages (for nodes of type alert).
 
         :param incomingMessage:
         :return:
@@ -167,7 +163,7 @@ class ServerCommunication(Communication):
     def _handler_state_change(self,
                               incomingMessage: Dict[str, Any]) -> bool:
         """
-        Internal function that handles received state changes of sensors.
+        Internal function that handles received state changes of sensors (for nodes of type manager).
 
         :param incomingMessage:
         :return: success or failure
@@ -205,7 +201,7 @@ class ServerCommunication(Communication):
     def _handler_status_update(self,
                                incomingMessage: Dict[str, Any]):
         """
-        Internal function that handles received status updates.
+        Internal function that handles received status updates (for nodes of type manager).
 
         :param incomingMessage:
         :return: success or failure

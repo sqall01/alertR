@@ -132,6 +132,7 @@ class Updater:
             if os.path.exists(os.path.join(self.instanceLocation, clientFile)):
 
                 f = open(os.path.join(self.instanceLocation, clientFile), 'rb')
+                # noinspection PyTypeChecker
                 sha256Hash = self._sha256File(f)
                 f.close()
 
@@ -757,6 +758,7 @@ class Updater:
 
             # check if the hash of the copied file is correct
             f = open(os.path.join(self.instanceLocation, fileToUpdate), 'rb')
+            # noinspection PyTypeChecker
             sha256Hash = self._sha256File(f)
             f.close()
             if sha256Hash != self.newestFiles[fileToUpdate]:
