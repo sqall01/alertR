@@ -2,6 +2,7 @@
 
 import sys
 import os
+import subprocess
 
 # list of resolv.conf files
 # for example because postfix under Debian systems is chroot'ed
