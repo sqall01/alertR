@@ -13,8 +13,8 @@ import logging
 import threading
 import re
 from lightweightpush import LightweightPush, ErrorCodes
-from .core import _Alert, SensorAlert
-from ..localObjects import SensorDataType
+from .core import _Alert
+from ..globalData import SensorDataType, ManagerObjSensorAlert
 
 
 # This class represents an alert that sends a notification to the push service
@@ -58,7 +58,7 @@ class PushAlert(_Alert):
         else:
             raise ValueError("Channel '%s' contains illegal characters." % value)
 
-    def _replace_wildcards(self, sensor_alert: SensorAlert, message: str) -> str:
+    def _replace_wildcards(self, sensor_alert: ManagerObjSensorAlert, message: str) -> str:
         """
         Internal function that replaces the wildcards in the message with the corresponding values.
 
@@ -101,7 +101,7 @@ class PushAlert(_Alert):
 
         return temp_msg
 
-    def _send_message(self, subject: str, msg: str, sensor_alert: SensorAlert) -> int:
+    def _send_message(self, subject: str, msg: str, sensor_alert: ManagerObjSensorAlert) -> int:
         """
         Internal function that sends the message to the push server.
 
@@ -164,7 +164,7 @@ class PushAlert(_Alert):
         # Return last error code (used by the testPushConfiguration.py script).
         return error_code
 
-    def _process_alert(self, sensor_alert: SensorAlert):
+    def _process_alert(self, sensor_alert: ManagerObjSensorAlert):
         temp_msg = self._replace_wildcards(sensor_alert, self.msgText)
         temp_sbj = self._replace_wildcards(sensor_alert, self.subject)
 
@@ -185,7 +185,7 @@ class PushAlert(_Alert):
                                             self.password,
                                             self.encSecret)
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -193,7 +193,7 @@ class PushAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 
