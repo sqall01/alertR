@@ -9,6 +9,6 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .alert import DbusAlert
+from .alert import DbusAlert, AlertEventHandler
 from .update import Updater
 from .globalData import GlobalData
