@@ -12,7 +12,7 @@ import os
 import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import RaspberryPiGPIOAlert
+from lib import RaspberryPiGPIOAlert, AlertEventHandler
 from lib import GlobalData
 import logging
 import time
@@ -242,18 +242,19 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
+                                                AlertEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
-    logging.info("[%s] Connecting to server." % fileName)
+    logging.info("[%s]: Connecting to server." % fileName)
     while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-           and (connectionRetries % 5) == 0):
+                and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-        if globalData.serverComm.initializeCommunication() is True:
+        if globalData.serverComm.initialize() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
             if globalData.smtpAlert is not None:
@@ -261,6 +262,7 @@ if __name__ == '__main__':
 
             connectionRetries = 1
             break
+
         connectionRetries += 1
 
         logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)
@@ -268,7 +270,7 @@ if __name__ == '__main__':
 
     # when connected => generate watchdog object to monitor the
     # server connection
-    logging.info("[%s] Starting watchdog thread." % fileName)
+    logging.info("[%s]: Starting watchdog thread." % fileName)
     watchdog = ConnectionWatchdog(globalData.serverComm,
                                   globalData.pingInterval,
                                   globalData.smtpAlert)
@@ -282,8 +284,9 @@ if __name__ == '__main__':
     for alert in globalData.alerts:
         alert.initialize()
 
-    logging.info("[%s] Client started." % fileName)
+    logging.info("[%s]: Client started." % fileName)
 
     # generate receiver to handle incoming data (for example status updates)
+    # (note: we will not return from the receiver unless the client is terminated)
     receiver = Receiver(globalData.serverComm)
     receiver.run()
