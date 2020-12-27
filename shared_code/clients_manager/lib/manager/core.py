@@ -146,8 +146,10 @@ class BaseManagerEventHandler(EventHandler):
 
         return True
 
+    # noinspection PyTypeChecker
     def sensor_alerts_off(self,
                           server_time: int) -> bool:
+        logging.critical("[%s]: status_update() not supported by node of type 'manager'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'manager'.")
 
     def state_change(self,

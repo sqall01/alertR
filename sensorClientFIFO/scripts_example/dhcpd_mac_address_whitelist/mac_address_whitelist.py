@@ -3,7 +3,6 @@
 import sys
 import csv
 import os
-import subprocess
 import time
 import fcntl
 import smtplib

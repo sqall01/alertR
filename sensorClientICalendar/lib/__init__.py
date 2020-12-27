@@ -9,6 +9,6 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .sensor import ICalendarSensor, SensorExecuter, BaseSensorEventHandler
+from .sensor import ICalendarSensor, SensorExecuter, SensorEventHandler
 from .update import Updater
 from .globalData import GlobalData

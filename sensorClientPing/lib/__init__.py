@@ -9,6 +9,6 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .sensor import PingSensor, SensorExecuter, BaseSensorEventHandler
+from .sensor import PingSensor, SensorExecuter, SensorEventHandler
 from .update import Updater
 from .globalData import GlobalData

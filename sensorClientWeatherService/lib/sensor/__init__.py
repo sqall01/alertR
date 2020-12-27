@@ -7,7 +7,8 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import SensorExecuter, BaseSensorEventHandler
+from .core import SensorExecuter
+from .eventHandler import SensorEventHandler
 from .temp import TempPollingSensor
 from .humidity import HumidityPollingSensor
 from .tempForecast import ForecastTempPollingSensor

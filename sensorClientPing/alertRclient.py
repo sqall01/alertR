@@ -12,7 +12,7 @@ import os
 import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import PingSensor, SensorExecuter, BaseSensorEventHandler
+from lib import PingSensor, SensorExecuter, SensorEventHandler
 from lib import GlobalData
 import logging
 import time
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
-                                                BaseSensorEventHandler(),
+                                                SensorEventHandler(),
                                                 globalData)
     connectionRetries = 1
     logging.info("[%s]: Connecting to server." % fileName)

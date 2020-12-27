@@ -13,7 +13,7 @@ import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
-    RaspberryPiDS18b20Sensor, SensorExecuter, BaseSensorEventHandler
+    RaspberryPiDS18b20Sensor, SensorExecuter, SensorEventHandler
 from lib import GlobalData
 from lib import SensorOrdering
 import logging
@@ -294,7 +294,7 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
-                                                BaseSensorEventHandler(),
+                                                SensorEventHandler(),
                                                 globalData)
     connectionRetries = 1
     logging.info("[%s]: Connecting to server." % fileName)

@@ -389,8 +389,10 @@ class ICalendarSensor(_PollingSensor):
 
         # Set htaccess authentication object.
         if self.htaccessAuth == "BASIC":
+            # noinspection PyUnresolvedReferences
             self.htaccessData = requests.auth.HTTPBasicAuth(self.htaccessUser, self.htaccessPass)
         elif self.htaccessAuth == "DIGEST":
+            # noinspection PyUnresolvedReferences
             self.htaccessData = requests.auth.HTTPDigestAuth(self.htaccessUser, self.htaccessPass)
         elif self.htaccessAuth == "NONE":
             self.htaccessData = None

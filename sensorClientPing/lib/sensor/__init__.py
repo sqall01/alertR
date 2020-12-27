@@ -7,5 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import BaseSensorEventHandler, SensorExecuter
+from .core import SensorExecuter
+from .eventHandler import SensorEventHandler
 from .ping import PingSensor

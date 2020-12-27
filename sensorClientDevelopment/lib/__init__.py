@@ -9,7 +9,7 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .sensor import SensorDev, SensorExecuter, BaseSensorEventHandler
+from .sensor import SensorDev, SensorExecuter, SensorEventHandler
 from .globalData import SensorDataType
 from .update import Updater
 from .globalData import GlobalData

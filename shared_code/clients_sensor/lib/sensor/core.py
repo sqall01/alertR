@@ -11,12 +11,9 @@ import time
 import os
 import logging
 import threading
+from typing import Optional, List
 from ..globalData import GlobalData
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
-from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
-    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor
-from ..client import EventHandler
-from typing import Optional, List, Any
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange
 
 
 # Internal class that holds the important attributes
@@ -290,42 +287,3 @@ class SensorExecuter(threading.Thread):
                 lastFullStateSent = utcTimestamp
                 
             time.sleep(0.5)
-
-
-class BaseSensorEventHandler(EventHandler):
-
-    def __init__(self):
-        super().__init__()
-
-    def status_update(self,
-                      server_time: int,
-                      options: List[ManagerObjOption],
-                      nodes: List[ManagerObjNode],
-                      sensors: List[ManagerObjSensor],
-                      managers: List[ManagerObjManager],
-                      alerts: List[ManagerObjAlert],
-                      alert_levels: List[ManagerObjAlertLevel]) -> bool:
-        raise NotImplementedError("Not supported by node of type 'sensor'.")
-
-    def sensor_alert(self,
-                     server_time: int,
-                     sensor_alert: ManagerObjSensorAlert) -> bool:
-        raise NotImplementedError("Not supported by node of type 'sensor'.")
-
-    def sensor_alerts_off(self,
-                          server_time: int) -> bool:
-        raise NotImplementedError("Not supported by node of type 'sensor'.")
-
-    def state_change(self,
-                     server_time: int,
-                     sensor_id: int,
-                     state: int,
-                     data_type: SensorDataType,
-                     sensor_data: Any) -> bool:
-        raise NotImplementedError("Not supported by node of type 'sensor'.")
-
-    def close_connection(self):
-        pass
-
-    def new_connection(self):
-        pass

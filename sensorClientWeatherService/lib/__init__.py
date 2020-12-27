@@ -10,7 +10,7 @@
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
 from .sensor import TempPollingSensor, HumidityPollingSensor, ForecastTempPollingSensor, ForecastRainPollingSensor
-from .sensor import SensorExecuter, BaseSensorEventHandler
+from .sensor import SensorExecuter, SensorEventHandler
 from .sensor import WundergroundDataCollector, DarkskyDataCollector
 from .update import Updater
 from .globalData import GlobalData
