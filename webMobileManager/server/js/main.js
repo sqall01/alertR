@@ -25,12 +25,12 @@ var sensorAlerts = null;
 var sensors = null;
 
 // needed to check the time out of the alertR database instance
-var serverTime = 0.0;
-var lastServerTime = 0.0;
-var lastServerTimeUpdate = null;
+var msgTime = 0.0;
+var lastmsgTime = 0.0;
+var lastmsgTimeUpdate = null;
 var online = false;
 var timeoutInterval = 80 // in seconds
-var serverTimeTd = null;
+var msgTimeTd = null;
 var onlineTd = null;
 
 // gives the output that is currently shown
@@ -46,7 +46,7 @@ function addMenu(newBody, current) {
 	checkOnline();
 
 	// generate date string from timestamp
-	localDate = new Date(serverTime * 1000);
+	localDate = new Date(msgTime * 1000);
 	yearString = localDate.getFullYear();
 	monthString =
 		("0" + (localDate.getMonth() + 1)).slice(-2);
@@ -58,7 +58,7 @@ function addMenu(newBody, current) {
 		("0" + localDate.getMinutes()).slice(-2);
 	secondsString =
 		("0" + localDate.getSeconds()).slice(-2);
-	serverTimeString = monthString + "/" + dateString + "/" +
+	msgTimeString = monthString + "/" + dateString + "/" +
 		yearString + " " + hoursString + ":" +
 		minutesString + ":" + secondsString;
 
@@ -93,27 +93,27 @@ function addMenu(newBody, current) {
 	newTr.appendChild(onlineTd);
 	menuTable.appendChild(newTr);
 
-	// add server time output
+	// add msg time output
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
 	var newB = document.createElement("b");
-	newB.textContent = "Server Time:";
+	newB.textContent = "Last Message Received:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
 	menuTable.appendChild(newTr);
 
 	var newTr = document.createElement("tr");
-	serverTimeTd = document.createElement("td");
+	msgTimeTd = document.createElement("td");
 	if(online) {
-		serverTimeTd.className = "normalTd";
-		serverTimeTd.textContent = serverTimeString;
+		msgTimeTd.className = "normalTd";
+		msgTimeTd.textContent = msgTimeString;
 	}
 	else {
-		serverTimeTd.className = "failTd";
-		serverTimeTd.textContent = serverTimeString;
+		msgTimeTd.className = "failTd";
+		msgTimeTd.textContent = msgTimeString;
 	}
-	newTr.appendChild(serverTimeTd);
+	newTr.appendChild(msgTimeTd);
 	menuTable.appendChild(newTr);
 
 	// process options of the alert system
@@ -516,15 +516,15 @@ function checkOnline() {
 
 	window.clearTimeout(setTimeoutIdOnlineCheck);
 
-	// update last server time if it has changed
-	if(serverTime > lastServerTime) {
-		lastServerTime = serverTime;
-		lastServerTimeUpdate = new Date();
+	// update last msg time if it has changed
+	if(msgTime > lastmsgTime) {
+		lastmsgTime = msgTime;
+		lastmsgTimeUpdate = new Date();
 		online = true;
 
-		if(serverTimeTd != null) {
+		if(msgTimeTd != null) {
 			// generate date string from timestamp
-			localDate = new Date(serverTime * 1000);
+			localDate = new Date(msgTime * 1000);
 			yearString = localDate.getFullYear();
 			monthString =
 				("0" + (localDate.getMonth() + 1)).slice(-2);
@@ -536,12 +536,12 @@ function checkOnline() {
 				("0" + localDate.getMinutes()).slice(-2);
 			secondsString =
 				("0" + localDate.getSeconds()).slice(-2);
-			serverTimeString = monthString + "/" + dateString + "/" +
+			msgTimeString = monthString + "/" + dateString + "/" +
 				yearString + " " + hoursString + ":" +
 				minutesString + ":" + secondsString;
 
-			serverTimeTd.className = "normalTd";
-			serverTimeTd.textContent = serverTimeString;
+			msgTimeTd.className = "normalTd";
+			msgTimeTd.textContent = msgTimeString;
 		}
 
 		if(onlineTd != null) {
@@ -550,10 +550,10 @@ function checkOnline() {
 		}
 	}
 
-	// check if server time has not changed since timeout interval
+	// check if msg time has not changed since timeout interval
 	var temp = new Date();
-	if(lastServerTimeUpdate && temp.getTime() > 
-		(lastServerTimeUpdate.getTime() + (timeoutInterval * 1000))) {
+	if(lastmsgTimeUpdate && temp.getTime() > 
+		(lastmsgTimeUpdate.getTime() + (timeoutInterval * 1000))) {
 		online = false;
 
 		if(onlineTd != null) {
@@ -1047,10 +1047,10 @@ function outputAlertLevels() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -1167,10 +1167,10 @@ function outputAlerts() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -1455,10 +1455,10 @@ function outputManagers() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -1673,10 +1673,10 @@ function outputNodes() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"] == "serverTime") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -1900,10 +1900,10 @@ function outputOverview() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2048,7 +2048,7 @@ function outputOverview() {
 			newTd.appendChild(document.createElement("br"));
 			newTd.appendChild(document.createTextNode(" (not connected)"));
 		}
-		else if(lastStateUpdated < (serverTime - 2* 60)) {
+		else if(lastStateUpdated < (msgTime - 2* 60)) {
 			newTd.className = "failTd";
 			newTd.appendChild(document.createElement("br"));
 			newTd.appendChild(document.createTextNode(" (timed out)"));
@@ -2101,10 +2101,10 @@ function outputSensorAlerts() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"] == "serverTime") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2432,10 +2432,10 @@ function outputSensors() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2699,7 +2699,7 @@ function outputSensors() {
 			newTr.appendChild(newTd);
 			sensorTable.appendChild(newTr);
 			// set color to red if the sensor has timed out
-			if(lastStateUpdated < (serverTime - 2* 60)) {
+			if(lastStateUpdated < (msgTime - 2* 60)) {
 				newTd.className = "failTd";
 			}
 			else {
