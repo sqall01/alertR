@@ -1,8 +1,10 @@
 import logging
+import json
 import threading
 import time
 from unittest import TestCase
 from lib.client.util import MsgBuilder
+from lib.client.communication import MsgState
 from tests.util import config_logging
 from tests.client.core import create_basic_communication, create_simulated_error_communication, \
                               msg_receiver, create_simulated_communication
@@ -47,6 +49,8 @@ class TestCommunicationBasic(TestCase):
         recv_msg = comm_server.recv_request()
         if recv_msg is None:
             self.fail("Receiving message failed.")
+
+        self.assertEqual(recv_msg["msgState"], MsgState.OK)
 
         if "ping" != recv_msg["message"]:
             self.fail("Expected 'ping' message.")
@@ -404,3 +408,45 @@ class TestCommunicationBasic(TestCase):
 
         time_elapsed = time.time() - start_timer
         logging.info("Needed %.2f seconds to send/receive messages." % time_elapsed)
+
+    def test_recv_too_old(self):
+        """
+        Tests communication expired handling by letting the client send a ping request to the server
+        which is too old.
+        """
+        config_logging(logging.WARNING)
+
+        comm_client, comm_server = create_simulated_communication()
+
+        ping_msg = MsgBuilder.build_ping_msg()
+        json_msg = json.loads(ping_msg)
+        json_msg["msgTime"] = int(time.time()) - (comm_server._msg_expiration + 1)
+        promise = comm_client.send_request("ping", json.dumps(json_msg))
+
+        recv_msg = comm_server.recv_request()
+        self.assertIsNotNone(recv_msg)
+        self.assertEqual(recv_msg["msgState"], MsgState.EXPIRED)
+        self.assertEqual(recv_msg["message"], "ping")
+        self.assertTrue(promise.is_finished(timeout=5.0))
+        self.assertFalse(promise.was_successful())
+
+    def test_recv_too_young(self):
+        """
+        Tests communication expired handling by letting the client send a ping request to the server
+        which is too young.
+        """
+        config_logging(logging.WARNING)
+
+        comm_client, comm_server = create_simulated_communication()
+
+        ping_msg = MsgBuilder.build_ping_msg()
+        json_msg = json.loads(ping_msg)
+        json_msg["msgTime"] = int(time.time()) + comm_server._msg_expiration + 5
+        promise = comm_client.send_request("ping", json.dumps(json_msg))
+
+        recv_msg = comm_server.recv_request()
+        self.assertIsNotNone(recv_msg)
+        self.assertEqual(recv_msg["msgState"], MsgState.EXPIRED)
+        self.assertEqual(recv_msg["message"], "ping")
+        self.assertTrue(promise.is_finished(timeout=5.0))
+        self.assertFalse(promise.was_successful())

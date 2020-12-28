@@ -15,7 +15,7 @@ import threading
 from typing import Dict, Any
 from .core import Client
 from .util import MsgBuilder
-from .communication import Communication, Promise
+from .communication import Communication, Promise, MsgState
 from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
     ManagerObjAlertLevel, ManagerObjSensorAlert
@@ -646,6 +646,16 @@ class ServerCommunication(Communication):
             if message is None:
                 self.close()
                 return
+
+            # Do not process received message if it is expired.
+            if message["msgState"] == MsgState.EXPIRED:
+                continue
+
+            # Close connection if the message is not 'ok'.
+            elif message["msgState"] != MsgState.OK:
+                self.close()
+                return
+
             request = message["message"]
 
             # Handle SENSORALERT request.
@@ -756,6 +766,15 @@ class ServerCommunication(Communication):
                 logging.debug("[%s]: Receiving initial status update." % self._log_tag)
 
                 message = self.recv_request()
+                if message is None:
+                    self.close()
+                    return False
+
+                # Do not further process received message if it is not 'ok'.
+                if message["msgState"] != MsgState.OK:
+                    self.close()
+                    return False
+
                 message_type = message["message"]
                 if message_type != "status":
                     logging.error("[%s]: Receiving status update failed. Server sent: '%s'" % (self._log_tag, str(message)))

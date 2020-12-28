@@ -7,6 +7,7 @@ from tests.util import config_logging
 from tests.client.core import create_simulated_communication, create_simulated_error_communication, \
                               msg_receiver
 from lib.client.util import MsgBuilder
+from lib.client.communication import MsgState
 
 
 class TestCommunicationStress(TestCase):
@@ -98,6 +99,9 @@ class TestCommunicationStress(TestCase):
             send_msg = json.loads(promise.msg)
             recv_msg = msgs_recv_server[i]
 
+            self.assertIsNotNone(recv_msg)
+            self.assertEqual(recv_msg["msgState"], MsgState.OK)
+
             if promise.msg_type != recv_msg["message"]:
                 self.fail("Message type from send and receive different (client -> server).")
 
@@ -109,6 +113,9 @@ class TestCommunicationStress(TestCase):
             promise = requests_server[i]
             send_msg = json.loads(promise.msg)
             recv_msg = msgs_recv_client[i]
+
+            self.assertIsNotNone(recv_msg)
+            self.assertEqual(recv_msg["msgState"], MsgState.OK)
 
             if promise.msg_type != recv_msg["message"]:
                 self.fail("Message type from send and receive different (server -> client).")

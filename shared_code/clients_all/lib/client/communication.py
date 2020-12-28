@@ -18,6 +18,11 @@ from .core import BUFSIZE, RecvTimeout, Connection
 from .util import MsgChecker
 
 
+class MsgState:
+    OK = 1
+    EXPIRED = 2
+
+
 class PromiseState:
     SUCCESS = 1
     FAILED = 2
@@ -104,6 +109,11 @@ class Communication:
         else:
             self._backoff_min = 1000
             self._backoff_max = 2000
+
+        # Time in seconds a message is considered fresh and thus will be processed.
+        # Since messages are queued if no connection to the client/server is available,
+        # we want to discard too old messages.
+        self._msg_expiration = 600
 
         self._connection_lock = threading.Lock()
         self._connection = connection
@@ -575,25 +585,55 @@ class Communication:
                     self._has_channel = False
                     return None
 
-                # TODO check expired here
-                msg_time = recv_message["msgTime"]
-
                 request_type = recv_message["message"]
                 logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
 
-                # sending sensor alert response
-                logging.debug("[%s]: Sending response message of type '%s'." % (self._log_tag, request_type))
-                try:
-                    payload = {"type": "response",
-                               "result": "ok"}
-                    message = {"message": request_type,
-                               "payload": payload}
-                    self._connection.send(json.dumps(message))
+                # Sending response.
+                msg_time = recv_message["msgTime"]
+                time_diff = int(time.time()) - msg_time
+                # Consider time differences in both directions:
+                # 1) if message is too old, it was either hold too long in the queue because of a disconnect or
+                # the time of both hosts are too far out of sync
+                # 2) if message is too young, the time of both hosts are too far out of sync
+                if time_diff > self._msg_expiration or time_diff < (-1 * self._msg_expiration):
 
-                except Exception:
-                    logging.exception("[%s]: Sending response message of type '%s' failed." % (self._log_tag, request_type))
-                    self._has_channel = False
-                    return None
+                    logging.warning("[%s]: Received request message of type '%s' is expired "
+                                    % (self._log_tag, request_type)
+                                    + "(%d seconds difference, allowed (+/-)%d seconds)."
+                                    % (time_diff, self._msg_expiration))
+
+                    logging.debug("[%s]: Sending 'expired' response message of type '%s'." % (self._log_tag, request_type))
+                    try:
+                        payload = {"type": "response",
+                                   "result": "expired"}
+                        message = {"message": request_type,
+                                   "payload": payload}
+                        self._connection.send(json.dumps(message))
+
+                    except Exception:
+                        logging.exception("[%s]: Sending 'expired' response message of type '%s' failed."
+                                          % (self._log_tag, request_type))
+                        self._has_channel = False
+                        return None
+
+                    recv_message["msgState"] = MsgState.EXPIRED
+
+                else:
+                    logging.debug("[%s]: Sending 'ok' response message of type '%s'." % (self._log_tag, request_type))
+                    try:
+                        payload = {"type": "response",
+                                   "result": "ok"}
+                        message = {"message": request_type,
+                                   "payload": payload}
+                        self._connection.send(json.dumps(message))
+
+                    except Exception:
+                        logging.exception("[%s]: Sending 'ok' response message of type '%s' failed."
+                                          % (self._log_tag, request_type))
+                        self._has_channel = False
+                        return None
+
+                    recv_message["msgState"] = MsgState.OK
 
                 self._last_communication = int(time.time())
                 return recv_message
