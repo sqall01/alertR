@@ -41,25 +41,25 @@ class _Storage:
         raise NotImplemented("Function not implemented yet.")
 
     def update_server_information(self,
-                                  serverTime: int,
+                                  msg_time: int,
                                   options: List[ManagerObjOption],
                                   nodes: List[ManagerObjNode],
                                   sensors: List[ManagerObjSensor],
                                   alerts: List[ManagerObjAlert],
                                   managers: List[ManagerObjManager],
-                                  alertLevels: List[ManagerObjAlertLevel],
-                                  sensorAlerts: List[ManagerObjSensorAlert]) -> bool:
+                                  alert_levels: List[ManagerObjAlertLevel],
+                                  sensor_alerts: List[ManagerObjSensorAlert]) -> bool:
         """
         Updates the received server information.
 
-        :param serverTime:
+        :param msg_time:
         :param options:
         :param nodes:
         :param sensors:
         :param alerts:
         :param managers:
-        :param alertLevels:
-        :param sensorAlerts:
+        :param alert_levels:
+        :param sensor_alerts:
         :return Success or Failure
         """
         raise NotImplemented("Function not implemented yet.")
@@ -1049,16 +1049,16 @@ class Mysql(_Storage):
                                   % (self._log_tag, sensor.sensorId))
                 raise
 
-    def _update_server_time(self, server_time: int):
+    def _update_msg_time(self, msg_time: int):
         """
-        Internal function that updates server time in the database. Does not catch exceptions.
+        Internal function that updates msg time in the database. Does not catch exceptions.
 
-        :param server_time:
+        :param msg_time:
         """
         self._cursor.execute("UPDATE internals SET "
                              + "value = %s "
                              + "WHERE type = %s",
-                             (server_time, "serverTime"))
+                             (msg_time, "msgTime"))
 
     def synchronize_database_to_system_data(self):
         """
@@ -1073,12 +1073,12 @@ class Mysql(_Storage):
         # connect to the database
         self._open_connection()
 
-        # get last stored server time
+        # get last stored msg time
         self._cursor.execute("SELECT "
                              + "value "
-                             + "FROM internals WHERE type = 'serverTime'")
+                             + "FROM internals WHERE type = 'msgTime'")
         result = self._cursor.fetchall()
-        server_time = result[0][0]
+        msg_time = result[0][0]
 
         # create option objects from db
         self._cursor.execute("SELECT "
@@ -1163,7 +1163,6 @@ class Mysql(_Storage):
             sensor.lastStateUpdated = sensor_tuple[5]
             sensor.alertDelay = sensor_tuple[6]
             sensor.dataType = sensor_tuple[7]
-            sensor.serverTime = server_time
 
             self._cursor.execute("SELECT "
                                  + "alertLevel "
@@ -1266,11 +1265,11 @@ class Mysql(_Storage):
                                      + "type VARCHAR(255) NOT NULL UNIQUE, "
                                      + "value DOUBLE NOT NULL)")
 
-                # insert server time field
+                # insert msg time field
                 self._cursor.execute("INSERT INTO internals ("
                                      + "type, "
                                      + "value) VALUES (%s, %s)",
-                                     ("serverTime", 0.0))
+                                     ("msgTime", 0.0))
 
                 # insert version field
                 self._cursor.execute("INSERT INTO internals ("
@@ -1444,7 +1443,7 @@ class Mysql(_Storage):
             self._close_connection()
 
     def update_server_information(self,
-                                  server_time: int,
+                                  msg_time: int,
                                   options: List[ManagerObjOption],
                                   nodes: List[ManagerObjNode],
                                   sensors: List[ManagerObjSensor],
@@ -1455,7 +1454,7 @@ class Mysql(_Storage):
         """
         Updates the received server information.
 
-        :param server_time:
+        :param msg_time:
         :param options:
         :param nodes:
         :param sensors:
@@ -1476,12 +1475,12 @@ class Mysql(_Storage):
                 self._close_connection()
                 return False
 
-            # Update server time.
+            # Update msg time.
             try:
-                self._update_server_time(server_time)
+                self._update_msg_time(msg_time)
 
             except Exception:
-                logging.exception("[%s]: Not able to update server time." % self._log_tag)
+                logging.exception("[%s]: Not able to update message time." % self._log_tag)
                 self._close_connection()
                 return False
 

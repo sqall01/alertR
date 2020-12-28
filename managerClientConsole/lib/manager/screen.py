@@ -870,6 +870,7 @@ class Console:
     # Creates an overlayed view with the search field.
     def _showSearchView(self):
 
+        # noinspection PyTypeChecker
         self.searchView = SearchViewUrwid(self._callbackSearchFieldChange)
 
         # show search view as an overlay

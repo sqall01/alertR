@@ -45,7 +45,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
             self._system_data.delete_sensor_alerts_received_before(int(time.time()) + 1)
 
         # Update the local server information.
-        if not self.storage.update_server_information(self.server_time,
+        if not self.storage.update_server_information(self.msg_time,
                                                       self._system_data.get_options_list(),
                                                       self._system_data.get_nodes_list(),
                                                       self._system_data.get_sensors_list(),

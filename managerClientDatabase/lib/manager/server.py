@@ -11,7 +11,6 @@ import socketserver
 import logging
 import os
 import json
-import time
 import socket
 from typing import Type
 from ..globalData import GlobalData
@@ -70,9 +69,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "only option message valid"}
                     self.request.send(json.dumps(message).encode('ascii'))
 
@@ -86,9 +83,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": "unknown",
+                message = {"message": "unknown",
                            "error": "received json message invalid"}
                 self.request.send(json.dumps(message).encode('ascii'))
 
@@ -108,9 +103,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received attributes invalid"}
                 self.request.send(json.dumps(message).encode('ascii'))
 
@@ -124,9 +117,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "only option type 'alertSystemActive' allowed"}
                 self.request.send(json.dumps(message).encode('ascii'))
 
@@ -143,9 +134,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             # send response to client
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "payload": {"type": "response",
                                        "result": "ok"}}
                 self.request.send(json.dumps(message).encode('ascii'))
@@ -158,9 +147,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "sending message to server failed"}
                 self.request.send(json.dumps(message).encode('ascii'))
 

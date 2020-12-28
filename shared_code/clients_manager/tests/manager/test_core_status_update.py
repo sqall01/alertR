@@ -145,7 +145,7 @@ class TestManagerCoreStatusUpdate(TestSystemDataCore):
                                            self.alert_levels):
             self.fail("Status update failed.")
 
-        if event_handler.server_time != 1337:
+        if event_handler.msg_time != 1337:
             self.fail("Server time update failed.")
 
         # Check changes are stored.
