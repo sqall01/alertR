@@ -44,7 +44,7 @@ class AlertEventHandler(EventHandler):
 
     # noinspection PyTypeChecker
     def status_update(self,
-                      server_time: int,
+                      msg_time: int,
                       options: List[ManagerObjOption],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
@@ -55,7 +55,7 @@ class AlertEventHandler(EventHandler):
         raise NotImplementedError("Not supported by node of type 'alert'.")
 
     def sensor_alert(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
 
         at_least_once_triggered = False
@@ -80,7 +80,7 @@ class AlertEventHandler(EventHandler):
         return True
 
     def sensor_alerts_off(self,
-                          server_time: int) -> bool:
+                          msg_time: int) -> bool:
 
         # Stop all alerts.
         for alert in self._local_alerts:
@@ -95,7 +95,7 @@ class AlertEventHandler(EventHandler):
 
     # noinspection PyTypeChecker
     def state_change(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_id: int,
                      state: int,
                      data_type: SensorDataType,

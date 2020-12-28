@@ -26,7 +26,7 @@ class SensorEventHandler(EventHandler):
 
     # noinspection PyTypeChecker
     def status_update(self,
-                      server_time: int,
+                      msg_time: int,
                       options: List[ManagerObjOption],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
@@ -38,20 +38,20 @@ class SensorEventHandler(EventHandler):
 
     # noinspection PyTypeChecker
     def sensor_alert(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
         logging.critical("[%s]: status_update() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     # noinspection PyTypeChecker
     def sensor_alerts_off(self,
-                          server_time: int) -> bool:
+                          msg_time: int) -> bool:
         logging.critical("[%s]: status_update() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     # noinspection PyTypeChecker
     def state_change(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_id: int,
                      state: int,
                      data_type: SensorDataType,

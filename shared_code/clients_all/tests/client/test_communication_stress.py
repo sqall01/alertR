@@ -66,9 +66,6 @@ class TestCommunicationStress(TestCase):
         for i in range(count):
             ping_msg = MsgBuilder.build_ping_msg()
             ping_dict = json.loads(ping_msg)
-            # Since the server is sending the message, swap clientTime with serverTime
-            ping_dict["serverTime"] = ping_dict["clientTime"]
-            del ping_dict["clientTime"]
             # Insert bogus field to uniquely identify messages on the other side.
             ping_dict["test_msg_name"] = "server_" + str(i)
             ping_msg = json.dumps(ping_dict)

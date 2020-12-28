@@ -127,10 +127,6 @@ class Communication:
         self._has_channel = False
 
         self._is_server = is_server
-        if is_server:
-            self._key_msg_time = "serverTime"
-        else:
-            self._key_msg_time = "clientTime"
 
         # Start request sender thread.
         self._thread_request_sender = threading.Thread(target=self._request_sender,
@@ -161,9 +157,7 @@ class Communication:
         try:
             payload = {"type": "rts",
                        "id": transaction_id}
-            utc_timestamp = int(time.time())
-            message = {self._key_msg_time: utc_timestamp,
-                       "size": len(promise.msg),
+            message = {"size": len(promise.msg),
                        "message": promise.msg_type,
                        "payload": payload}
             self._connection.send(json.dumps(message))
@@ -318,9 +312,7 @@ class Communication:
 
                             # Send error message back.
                             try:
-                                utc_timestamp = int(time.time())
-                                message = {self._key_msg_time: utc_timestamp,
-                                           "message": message["message"],
+                                message = {"message": message["message"],
                                            "error": "%s message expected" % promise.msg_type}
                                 self._connection.send(json.dumps(message))
                             except Exception:
@@ -337,9 +329,7 @@ class Communication:
 
                             # Send error message back
                             try:
-                                utc_timestamp = int(time.time())
-                                message = {self._key_msg_time: utc_timestamp,
-                                           "message": message["message"],
+                                message = {"message": message["message"],
                                            "error": "response expected"}
                                 self._connection.send(json.dumps(message))
 
@@ -512,9 +502,7 @@ class Communication:
                         # send CTS (clear to send) message
                         payload = {"type": "cts",
                                    "id": received_transaction_id}
-                        utc_timestamp = int(time.time())
-                        message = {self._key_msg_time: utc_timestamp,
-                                   "message": str(message["message"]),
+                        message = {"message": str(message["message"]),
                                    "payload": payload}
                         self._connection.send(json.dumps(message))
 
@@ -578,9 +566,7 @@ class Communication:
 
                     # send error message back
                     try:
-                        utc_timestamp = int(time.time())
-                        message = {self._key_msg_time: utc_timestamp,
-                                   "message": request_type,
+                        message = {"message": request_type,
                                    "error": error_msg}
                         self._connection.send(json.dumps(message))
                     except Exception:
@@ -588,6 +574,9 @@ class Communication:
 
                     self._has_channel = False
                     return None
+
+                # TODO check expired here
+                msg_time = recv_message["msgTime"]
 
                 request_type = recv_message["message"]
                 logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
@@ -597,9 +586,7 @@ class Communication:
                 try:
                     payload = {"type": "response",
                                "result": "ok"}
-                    utc_timestamp = int(time.time())
-                    message = {self._key_msg_time: utc_timestamp,
-                               "message": request_type,
+                    message = {"message": request_type,
                                "payload": payload}
                     self._connection.send(json.dumps(message))
 

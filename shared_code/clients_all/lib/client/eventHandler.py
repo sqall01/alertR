@@ -30,27 +30,27 @@ class EventHandler:
         raise NotImplementedError("Abstract class.")
 
     def sensor_alert(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
         """
         Is called when a sensor alert message was received.
 
-        :param server_time:
+        :param msg_time:
         :param sensor_alert:
         """
         raise NotImplementedError("Abstract class.")
 
     def sensor_alerts_off(self,
-                          server_time: int) -> bool:
+                          msg_time: int) -> bool:
         """
         Is called when a sensor alerts off message was received.
 
-        :param server_time:
+        :param msg_time:
         """
         raise NotImplementedError("Abstract class.")
 
     def state_change(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_id: int,
                      state: int,
                      data_type: SensorDataType,
@@ -58,7 +58,7 @@ class EventHandler:
         """
         Is called when a state change message was received.
 
-        :param server_time:
+        :param msg_time:
         :param sensor_id:
         :param state:
         :param data_type:
@@ -67,7 +67,7 @@ class EventHandler:
         raise NotImplementedError("Abstract class.")
 
     def status_update(self,
-                      server_time: int,
+                      msg_time: int,
                       options: List[ManagerObjOption],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
@@ -77,7 +77,7 @@ class EventHandler:
         """
         Is called when a status update message was received.
 
-        :param server_time:
+        :param msg_time:
         :param options:
         :param nodes:
         :param sensors:

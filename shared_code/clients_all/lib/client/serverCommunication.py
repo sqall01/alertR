@@ -103,7 +103,7 @@ class ServerCommunication(Communication):
         sensorAlert = ManagerObjSensorAlert()
         sensorAlert.timeReceived = int(time.time())
         try:
-            serverTime = incomingMessage["serverTime"]
+            msg_time = incomingMessage["msgTime"]
 
             sensorAlert.sensorId = incomingMessage["payload"]["sensorId"]
             sensorAlert.state = incomingMessage["payload"]["state"]
@@ -132,7 +132,7 @@ class ServerCommunication(Communication):
             return False
 
         # handle received sensor alert
-        if self._event_handler.sensor_alert(serverTime, sensorAlert):
+        if self._event_handler.sensor_alert(msg_time, sensorAlert):
             return True
 
         return False
@@ -148,14 +148,15 @@ class ServerCommunication(Communication):
         logging.debug("[%s]: Received sensor alerts off." % self._log_tag)
 
         try:
-            serverTime = incomingMessage["serverTime"]
+            msg_time = incomingMessage["msgTime"]
 
         except Exception:
             logging.exception("[%s]: Received sensor alerts off invalid." % self._log_tag)
+
             return False
 
         # handle received state change
-        if self._event_handler.sensor_alerts_off(serverTime):
+        if self._event_handler.sensor_alerts_off(msg_time):
             return True
 
         return False
@@ -172,7 +173,7 @@ class ServerCommunication(Communication):
 
         # extract state change values
         try:
-            serverTime = incomingMessage["serverTime"]
+            msg_time = incomingMessage["msgTime"]
 
             sensorId = incomingMessage["payload"]["sensorId"]
             state = incomingMessage["payload"]["state"]
@@ -189,7 +190,7 @@ class ServerCommunication(Communication):
             return False
 
         # handle received state change
-        if self._event_handler.state_change(serverTime,
+        if self._event_handler.state_change(msg_time,
                                             sensorId,
                                             state,
                                             dataType,
@@ -215,7 +216,8 @@ class ServerCommunication(Communication):
 
         # extract status values
         try:
-            serverTime = incomingMessage["serverTime"]
+            msg_time = incomingMessage["msgTime"]
+
             optionsRaw = incomingMessage["payload"]["options"]
             nodesRaw = incomingMessage["payload"]["nodes"]
             sensorsRaw = incomingMessage["payload"]["sensors"]
@@ -410,7 +412,7 @@ class ServerCommunication(Communication):
             alertLevels.append(alertLevel)
 
         # handle received status update
-        if not self._event_handler.status_update(serverTime,
+        if not self._event_handler.status_update(msg_time,
                                                  options,
                                                  nodes,
                                                  sensors,
@@ -453,9 +455,7 @@ class ServerCommunication(Communication):
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "initialization message expected"}
                     self.send_raw(json.dumps(message))
                 except Exception:
@@ -469,9 +469,7 @@ class ServerCommunication(Communication):
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "response expected"}
                     self.send_raw(json.dumps(message))
                 except Exception:
@@ -531,9 +529,7 @@ class ServerCommunication(Communication):
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "initialization message expected"}
                     self.send_raw(json.dumps(message))
                 except Exception:
@@ -547,9 +543,7 @@ class ServerCommunication(Communication):
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "response expected"}
                     self.send_raw(json.dumps(message))
                 except Exception:
@@ -586,9 +580,7 @@ class ServerCommunication(Communication):
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"clientTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "version not compatible"}
                     self.send_raw(json.dumps(message))
                 except Exception:
@@ -602,9 +594,7 @@ class ServerCommunication(Communication):
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"clientTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "version not valid"}
                 self.send_raw(json.dumps(message))
             except Exception:
@@ -772,9 +762,7 @@ class ServerCommunication(Communication):
 
                     # send error message back
                     try:
-                        utc_timestamp = int(time.time())
-                        message = {"clientTime": utc_timestamp,
-                                   "message": message_type,
+                        message = {"message": message_type,
                                    "error": "initial status update expected"}
                         self.send_raw(json.dumps(message))
 

@@ -29,11 +29,11 @@ class BaseManagerEventHandler(EventHandler):
         self._global_data = global_data
         self._system_data = self._global_data.system_data
 
-        # Keep track of the server time.
-        self.server_time = 0.0
+        # Keep track of the last time a message was sent by the other side.
+        self.msg_time = 0.0
 
     def status_update(self,
-                      server_time: int,
+                      msg_time: int,
                       options: List[ManagerObjOption],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
@@ -41,7 +41,7 @@ class BaseManagerEventHandler(EventHandler):
                       alerts: List[ManagerObjAlert],
                       alert_levels: List[ManagerObjAlertLevel]) -> bool:
 
-        self.server_time = server_time
+        self.msg_time = msg_time
 
         # Update system data storage with received data.
         options_type = []
@@ -132,10 +132,10 @@ class BaseManagerEventHandler(EventHandler):
         return True
 
     def sensor_alert(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
 
-        self.server_time = server_time
+        self.msg_time = msg_time
 
         try:
             self._system_data.add_sensor_alert(sensor_alert)
@@ -148,18 +148,18 @@ class BaseManagerEventHandler(EventHandler):
 
     # noinspection PyTypeChecker
     def sensor_alerts_off(self,
-                          server_time: int) -> bool:
+                          msg_time: int) -> bool:
         logging.critical("[%s]: status_update() not supported by node of type 'manager'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'manager'.")
 
     def state_change(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_id: int,
                      state: int,
                      data_type: SensorDataType,
                      sensor_data: Any) -> bool:
 
-        self.server_time = server_time
+        self.msg_time = msg_time
 
         try:
             self._system_data.sensor_state_change(sensor_id, state, data_type, sensor_data)

@@ -42,28 +42,23 @@ class MsgChecker:
         # check "PING" message.
         if request == "ping":
             error_msg = None
-            if "serverTime" in message.keys():
-                error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            if "msgTime" in message.keys():
+                error_msg = MsgChecker.check_msg_time(message["msgTime"])
                 if error_msg is not None:
-                    logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
-                    return error_msg
-            elif "clientTime" in message.keys():
-                error_msg = MsgChecker.check_client_server_time(message["clientTime"])
-                if error_msg is not None:
-                    logging.error("[%s]: Received clientTime invalid." % MsgChecker._log_tag)
+                    logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                     return error_msg
             else:
-                return "clientTime/serverTime expected"
+                return "msgTime expected"
 
         # Check "SENSORALERT" message.
         elif request == "sensoralert":
-            if "serverTime" not in message.keys():
-                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
-                return "serverTime expected"
+            if "msgTime" not in message.keys():
+                logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
+                return "msgTime expected"
 
-            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            error_msg = MsgChecker.check_msg_time(message["msgTime"])
             if error_msg is not None:
-                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
             error_msg = MsgChecker.check_alert_levels(message["payload"]["alertLevels"])
@@ -121,24 +116,24 @@ class MsgChecker:
 
         # Check "SENSORALERTSOFF" message.
         elif request == "sensoralertsoff":
-            if "serverTime" not in message.keys():
-                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
-                return "serverTime expected"
+            if "msgTime" not in message.keys():
+                logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
+                return "msgTime expected"
 
-            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            error_msg = MsgChecker.check_msg_time(message["msgTime"])
             if error_msg is not None:
-                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
         # Check "STATECHANGE" message.
         elif request == "statechange":
-            if "serverTime" not in message.keys():
-                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
-                return "serverTime expected"
+            if "msgTime" not in message.keys():
+                logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
+                return "msgTime expected"
 
-            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            error_msg = MsgChecker.check_msg_time(message["msgTime"])
             if error_msg is not None:
-                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
             error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
@@ -165,13 +160,13 @@ class MsgChecker:
 
         # Check "STATUS" message.
         elif request == "status":
-            if "serverTime" not in message.keys():
-                logging.error("[%s]: serverTime missing." % MsgChecker._log_tag)
-                return "serverTime expected"
+            if "msgTime" not in message.keys():
+                logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
+                return "msgTime expected"
 
-            error_msg = MsgChecker.check_client_server_time(message["serverTime"])
+            error_msg = MsgChecker.check_msg_time(message["msgTime"])
             if error_msg is not None:
-                logging.error("[%s]: Received serverTime invalid." % MsgChecker._log_tag)
+                logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
             error_msg = MsgChecker.check_status_options_list(message["payload"]["options"])
@@ -627,16 +622,16 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the serverTime.
+    # Internal function to check sanity of the msgTime.
     @staticmethod
-    def check_client_server_time(client_server_time: int) -> Optional[str]:
+    def check_msg_time(msg_time: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(client_server_time, int):
+        if not isinstance(msg_time, int):
             is_correct = False
 
         if not is_correct:
-            return "clientTime/serverTime not valid"
+            return "msg_time not valid"
 
         return None
 
@@ -1158,7 +1153,7 @@ class MsgBuilder:
                    "username": username,
                    "password": password}
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "size": regMessageSize,
                    "message": "initialization",
                    "payload": payload}
@@ -1181,7 +1176,7 @@ class MsgBuilder:
                    "value": float(optionValue),
                    "timeDelay": optionDelay}
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "option",
                    "payload": payload}
         return json.dumps(message)
@@ -1195,7 +1190,7 @@ class MsgBuilder:
         """
         payload = {"type": "request"}
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "ping",
                    "payload": payload}
         return json.dumps(message)
@@ -1231,7 +1226,7 @@ class MsgBuilder:
                    "alerts": alerts}
 
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
@@ -1262,7 +1257,7 @@ class MsgBuilder:
                    "manager": manager}
 
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
@@ -1306,7 +1301,7 @@ class MsgBuilder:
                    "sensors": msg_sensors}
 
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
@@ -1336,7 +1331,7 @@ class MsgBuilder:
             payload["data"] = sensor_alert.sensorData
 
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "sensoralert",
                    "payload": payload}
         return json.dumps(message)
@@ -1359,7 +1354,7 @@ class MsgBuilder:
             payload["data"] = state_change.sensorData
 
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "statechange",
                    "payload": payload}
         return json.dumps(message)
@@ -1393,7 +1388,7 @@ class MsgBuilder:
 
         payload = {"type": "request", "sensors": sensors}
         utc_timestamp = int(time.time())
-        message = {"clientTime": utc_timestamp,
+        message = {"msgTime": utc_timestamp,
                    "message": "status",
                    "payload": payload}
         return json.dumps(message)
