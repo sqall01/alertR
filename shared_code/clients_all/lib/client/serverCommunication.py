@@ -642,25 +642,25 @@ class ServerCommunication(Communication):
                     self.close()
                 return
 
-            message = self.recv_request()
-            if message is None:
+            msg_request = self.recv_request()
+            if msg_request is None:
                 self.close()
                 return
 
             # Do not process received message if it is expired.
-            if message["msgState"] == MsgState.EXPIRED:
+            if msg_request.state == MsgState.EXPIRED:
                 continue
 
             # Close connection if the message is not 'ok'.
-            elif message["msgState"] != MsgState.OK:
+            elif msg_request.state != MsgState.OK:
                 self.close()
                 return
 
-            request = message["message"]
+            request = msg_request.msg_dict["message"]
 
             # Handle SENSORALERT request.
             if request.lower() == "sensoralert":
-                if not self._handler_sensor_alert(message):
+                if not self._handler_sensor_alert(msg_request.msg_dict):
                     logging.error("[%s]: Receiving sensor alert failed."
                                   % self._log_tag)
 
@@ -670,7 +670,7 @@ class ServerCommunication(Communication):
 
             # Handle SENSORALERTSOFF request.
             elif request.lower() == "sensoralertsoff":
-                if not self._handler_sensor_alerts_off(message):
+                if not self._handler_sensor_alerts_off(msg_request.msg_dict):
                     logging.error("[%s]: Receiving sensor alerts off failed."
                                   % self._log_tag)
 
@@ -680,7 +680,7 @@ class ServerCommunication(Communication):
 
             # Handle STATUS request.
             elif request.lower() == "status":
-                if not self._handler_status_update(message):
+                if not self._handler_status_update(msg_request.msg_dict):
                     logging.error("[%s]: Receiving status update failed."
                                   % self._log_tag)
 
@@ -690,7 +690,7 @@ class ServerCommunication(Communication):
 
             # Handle STATECHANGE request.
             elif request.lower() == "statechange":
-                if not self._handler_state_change(message):
+                if not self._handler_state_change(msg_request.msg_dict):
                     logging.error("[%s]: Receiving state change failed."
                                   % self._log_tag)
 
@@ -700,7 +700,8 @@ class ServerCommunication(Communication):
 
             # Unkown request.
             else:
-                logging.error("[%s]: Received unknown request. Server sent: %s" % (self._log_tag, str(message)))
+                logging.error("[%s]: Received unknown request. Server sent: %s"
+                              % (self._log_tag, str(msg_request.msg_dict)))
 
                 # clean up session before exiting
                 self.close()
@@ -765,19 +766,20 @@ class ServerCommunication(Communication):
 
                 logging.debug("[%s]: Receiving initial status update." % self._log_tag)
 
-                message = self.recv_request()
-                if message is None:
+                msg_request = self.recv_request()
+                if msg_request is None:
                     self.close()
                     return False
 
                 # Do not further process received message if it is not 'ok'.
-                if message["msgState"] != MsgState.OK:
+                if msg_request.state != MsgState.OK:
                     self.close()
                     return False
 
-                message_type = message["message"]
+                message_type = msg_request.msg_dict["message"]
                 if message_type != "status":
-                    logging.error("[%s]: Receiving status update failed. Server sent: '%s'" % (self._log_tag, str(message)))
+                    logging.error("[%s]: Receiving status update failed. Server sent: '%s'"
+                                  % (self._log_tag, str(msg_request.msg_dict)))
 
                     # send error message back
                     try:
@@ -791,7 +793,7 @@ class ServerCommunication(Communication):
                     self.close()
                     return False
 
-                if not self._handler_status_update(message):
+                if not self._handler_status_update(msg_request.msg_dict):
                     logging.error("[%s]: Initial status update failed." % self._log_tag)
                     self.close()
                     return False

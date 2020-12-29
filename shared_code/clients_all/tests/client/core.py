@@ -2,9 +2,9 @@ import threading
 import time
 import logging
 import json
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple
 from lib.client.core import Connection, RecvTimeout
-from lib.client.communication import Communication
+from lib.client.communication import Communication, MsgRequest
 
 
 class BasicConnection(Connection):
@@ -221,7 +221,7 @@ def msg_receiver(**kwargs):
 
     count = kwargs["count"]  # type: int
     comm = kwargs["comm"]  # type: Communication
-    recv_msgs = kwargs["recv_msgs"]  # type: List[Dict[str, Any]]
+    msg_requests = kwargs["msg_requests"]  # type: List[MsgRequest]
     sync = kwargs["sync"]  # type: threading.Event
 
     # Wait until we are clear to receive messages.
@@ -233,5 +233,5 @@ def msg_receiver(**kwargs):
         while not comm.has_channel:
             time.sleep(0.5)
 
-        recv_msg = comm.recv_request()
-        recv_msgs.append(recv_msg)
+        msg_request = comm.recv_request()
+        msg_requests.append(msg_request)

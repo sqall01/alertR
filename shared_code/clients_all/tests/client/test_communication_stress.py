@@ -4,8 +4,7 @@ import threading
 import json
 from unittest import TestCase
 from tests.util import config_logging
-from tests.client.core import create_simulated_communication, create_simulated_error_communication, \
-                              msg_receiver
+from tests.client.core import create_simulated_communication, create_simulated_error_communication, msg_receiver
 from lib.client.util import MsgBuilder
 from lib.client.communication import MsgState
 
@@ -28,20 +27,20 @@ class TestCommunicationStress(TestCase):
         receiving_sync = threading.Event()
         receiving_sync.clear()
 
-        msgs_recv_server = []
+        msg_requests_server = []
         kwargs = {"count": count,
                   "comm": comm_server,
-                  "recv_msgs": msgs_recv_server,
+                  "msg_requests": msg_requests_server,
                   "sync": receiving_sync}
         server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
                                            daemon=True)
         server_receiver.start()
 
-        msgs_recv_client = []
+        msg_requests_client = []
         kwargs = {"count": count,
                   "comm": comm_client,
-                  "recv_msgs": msgs_recv_client,
+                  "msg_requests": msg_requests_client,
                   "sync": receiving_sync}
         client_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
@@ -87,40 +86,40 @@ class TestCommunicationStress(TestCase):
         if server_receiver.isAlive():
             self.fail("Server timed out while receiving messages.")
 
-        if len(requests_client) != len(msgs_recv_server):
+        if len(requests_client) != len(msg_requests_server):
             self.fail("Client requests differ from messages received by server.")
 
-        if len(requests_server) != len(msgs_recv_client):
+        if len(requests_server) != len(msg_requests_client):
             self.fail("Server requests differ from messages received by client.")
 
         # Check requests send by the client.
         for i in range(len(requests_client)):
             promise = requests_client[i]
             send_msg = json.loads(promise.msg)
-            recv_msg = msgs_recv_server[i]
+            msg_request = msg_requests_server[i]
 
-            self.assertIsNotNone(recv_msg)
-            self.assertEqual(recv_msg["msgState"], MsgState.OK)
+            self.assertIsNotNone(msg_request)
+            self.assertEqual(msg_request.state, MsgState.OK)
 
-            if promise.msg_type != recv_msg["message"]:
+            if promise.msg_type != msg_request.msg_dict["message"]:
                 self.fail("Message type from send and receive different (client -> server).")
 
-            if send_msg["test_msg_name"] != recv_msg["test_msg_name"]:
+            if send_msg["test_msg_name"] != msg_request.msg_dict["test_msg_name"]:
                 self.fail("Messages sent and received different or different order (client -> server).")
 
         # Check requests send by the server.
         for i in range(len(requests_client)):
             promise = requests_server[i]
             send_msg = json.loads(promise.msg)
-            recv_msg = msgs_recv_client[i]
+            msg_request = msg_requests_client[i]
 
-            self.assertIsNotNone(recv_msg)
-            self.assertEqual(recv_msg["msgState"], MsgState.OK)
+            self.assertIsNotNone(msg_request)
+            self.assertEqual(msg_request.state, MsgState.OK)
 
-            if promise.msg_type != recv_msg["message"]:
+            if promise.msg_type != msg_request.msg_dict["message"]:
                 self.fail("Message type from send and receive different (server -> client).")
 
-            if send_msg["test_msg_name"] != recv_msg["test_msg_name"]:
+            if send_msg["test_msg_name"] != msg_request.msg_dict["test_msg_name"]:
                 self.fail("Messages sent and received different or different order (server -> client).")
 
         time_elapsed = time.time() - start_timer
@@ -145,10 +144,10 @@ class TestCommunicationStress(TestCase):
         receiving_sync = threading.Event()
         receiving_sync.clear()
 
-        msgs_recv_server = []
+        msg_requests_server = []
         kwargs = {"count": 5,  # we receive 5 messages: 4x None because of the errors and the ping
                   "comm": comm_server,
-                  "recv_msgs": msgs_recv_server,
+                  "msg_requests": msg_requests_server,
                   "sync": receiving_sync}
         server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
@@ -191,20 +190,22 @@ class TestCommunicationStress(TestCase):
         if reconnect_server_ctr > 4:
             self.fail("Server had to re-connect more than four times with client.")
 
-        if not msgs_recv_server:
+        if not msg_requests_server:
             self.fail("Received no message.")
 
-        if len(msgs_recv_server) != 5:
+        if len(msg_requests_server) != 5:
             self.fail("Expected five messages.")
 
-        if any(map(lambda x: x is not None, msgs_recv_server[:4])):
+        if any(map(lambda x: x is not None, msg_requests_server[:4])):
             self.fail("Expected None as first four received messages.")
 
-        recv_msg = msgs_recv_server[4]
-        if recv_msg is None:
+        msg_request = msg_requests_server[4]
+        if msg_request is None:
             self.fail("Receiving message failed.")
 
-        if "ping" != recv_msg["message"]:
+        self.assertEqual(msg_request.state, MsgState.OK)
+
+        if "ping" != msg_request.msg_dict["message"]:
             self.fail("Expected 'ping' message.")
 
         if not promise.is_finished(timeout=5.0):

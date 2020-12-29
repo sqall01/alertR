@@ -46,13 +46,13 @@ class TestCommunicationBasic(TestCase):
         ping_msg = MsgBuilder.build_ping_msg()
         promise = comm_client.send_request("ping", ping_msg)
 
-        recv_msg = comm_server.recv_request()
-        if recv_msg is None:
+        msg_request = comm_server.recv_request()
+        if msg_request is None:
             self.fail("Receiving message failed.")
 
-        self.assertEqual(recv_msg["msgState"], MsgState.OK)
+        self.assertEqual(msg_request.state, MsgState.OK)
 
-        if "ping" != recv_msg["message"]:
+        if "ping" != msg_request.msg_dict["message"]:
             self.fail("Expected 'ping' message.")
 
         if not promise.is_finished(timeout=5.0):
@@ -77,10 +77,10 @@ class TestCommunicationBasic(TestCase):
         receiving_sync = threading.Event()
         receiving_sync.clear()
 
-        msgs_recv_server = []
+        msg_requests_server = []
         kwargs = {"count": 2,  # we receive 2 messages: None because of the error and the ping
                   "comm": comm_server,
-                  "recv_msgs": msgs_recv_server,
+                  "msg_requests": msg_requests_server,
                   "sync": receiving_sync}
         server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
@@ -123,20 +123,22 @@ class TestCommunicationBasic(TestCase):
         if reconnect_server_ctr > 1:
             self.fail("Server had to re-connect more than once with client.")
 
-        if not msgs_recv_server:
+        if not msg_requests_server:
             self.fail("Received no message.")
 
-        if len(msgs_recv_server) != 2:
+        if len(msg_requests_server) != 2:
             self.fail("Expected two messages.")
 
-        if msgs_recv_server[0] is not None:
+        if msg_requests_server[0] is not None:
             self.fail("Expected None as first received message.")
 
-        recv_msg = msgs_recv_server[1]
-        if recv_msg is None:
+        msg_request = msg_requests_server[1]
+        if msg_request is None:
             self.fail("Receiving message failed.")
 
-        if "ping" != recv_msg["message"]:
+        self.assertEqual(msg_request.state, MsgState.OK)
+
+        if "ping" != msg_request.msg_dict["message"]:
             self.fail("Expected 'ping' message.")
 
         if not promise.is_finished(timeout=5.0):
@@ -164,10 +166,10 @@ class TestCommunicationBasic(TestCase):
         receiving_sync = threading.Event()
         receiving_sync.clear()
 
-        msgs_recv_server = []
+        msg_requests_server = []
         kwargs = {"count": 2,  # we receive 2 messages: None because of the error and the ping
                   "comm": comm_server,
-                  "recv_msgs": msgs_recv_server,
+                  "msg_requests": msg_requests_server,
                   "sync": receiving_sync}
         server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
@@ -210,20 +212,22 @@ class TestCommunicationBasic(TestCase):
         if reconnect_server_ctr > 1:
             self.fail("Server had to re-connect more than once with client.")
 
-        if not msgs_recv_server:
+        if not msg_requests_server:
             self.fail("Received no message.")
 
-        if len(msgs_recv_server) != 2:
+        if len(msg_requests_server) != 2:
             self.fail("Expected two messages.")
 
-        if msgs_recv_server[0] is not None:
+        if msg_requests_server[0] is not None:
             self.fail("Expected None as first received message.")
 
-        recv_msg = msgs_recv_server[1]
-        if recv_msg is None:
+        msg_request = msg_requests_server[1]
+        if msg_request is None:
             self.fail("Receiving message failed.")
 
-        if "ping" != recv_msg["message"]:
+        self.assertEqual(msg_request.state, MsgState.OK)
+
+        if "ping" != msg_request.msg_dict["message"]:
             self.fail("Expected 'ping' message.")
 
         if not promise.is_finished(timeout=5.0):
@@ -251,10 +255,10 @@ class TestCommunicationBasic(TestCase):
         receiving_sync = threading.Event()
         receiving_sync.clear()
 
-        msgs_recv_server = []
+        msg_requests_server = []
         kwargs = {"count": 2,  # we receive 2 messages: None because of the error and the ping
                   "comm": comm_server,
-                  "recv_msgs": msgs_recv_server,
+                  "msg_requests": msg_requests_server,
                   "sync": receiving_sync}
         server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
@@ -297,20 +301,22 @@ class TestCommunicationBasic(TestCase):
         if reconnect_server_ctr > 1:
             self.fail("Server had to re-connect more than once with client.")
 
-        if not msgs_recv_server:
+        if not msg_requests_server:
             self.fail("Received no message.")
 
-        if len(msgs_recv_server) != 2:
+        if len(msg_requests_server) != 2:
             self.fail("Expected two messages.")
 
-        if msgs_recv_server[0] is not None:
+        if msg_requests_server[0] is not None:
             self.fail("Expected None as first received message.")
 
-        recv_msg = msgs_recv_server[1]
-        if recv_msg is None:
+        msg_request = msg_requests_server[1]
+        if msg_request is None:
             self.fail("Receiving message failed.")
 
-        if "ping" != recv_msg["message"]:
+        self.assertEqual(msg_request.state, MsgState.OK)
+
+        if "ping" != msg_request.msg_dict["message"]:
             self.fail("Expected 'ping' message.")
 
         if not promise.is_finished(timeout=5.0):
@@ -338,10 +344,10 @@ class TestCommunicationBasic(TestCase):
         receiving_sync = threading.Event()
         receiving_sync.clear()
 
-        msgs_recv_server = []
+        msg_requests_server = []
         kwargs = {"count": 2,  # we receive 2 messages: None because of the error and the ping
                   "comm": comm_server,
-                  "recv_msgs": msgs_recv_server,
+                  "msg_requests": msg_requests_server,
                   "sync": receiving_sync}
         server_receiver = threading.Thread(target=msg_receiver,
                                            kwargs=kwargs,
@@ -384,20 +390,22 @@ class TestCommunicationBasic(TestCase):
         if reconnect_server_ctr > 1:
             self.fail("Server had to re-connect more than once with client.")
 
-        if not msgs_recv_server:
+        if not msg_requests_server:
             self.fail("Received no message.")
 
-        if len(msgs_recv_server) != 2:
+        if len(msg_requests_server) != 2:
             self.fail("Expected two messages.")
 
-        if msgs_recv_server[0] is not None:
+        if msg_requests_server[0] is not None:
             self.fail("Expected None as first received message.")
 
-        recv_msg = msgs_recv_server[1]
-        if recv_msg is None:
+        msg_request = msg_requests_server[1]
+        if msg_request is None:
             self.fail("Receiving message failed.")
 
-        if "ping" != recv_msg["message"]:
+        self.assertEqual(msg_request.state, MsgState.OK)
+
+        if "ping" != msg_request.msg_dict["message"]:
             self.fail("Expected 'ping' message.")
 
         if not promise.is_finished(timeout=5.0):
@@ -423,10 +431,10 @@ class TestCommunicationBasic(TestCase):
         json_msg["msgTime"] = int(time.time()) - (comm_server._msg_expiration + 1)
         promise = comm_client.send_request("ping", json.dumps(json_msg))
 
-        recv_msg = comm_server.recv_request()
-        self.assertIsNotNone(recv_msg)
-        self.assertEqual(recv_msg["msgState"], MsgState.EXPIRED)
-        self.assertEqual(recv_msg["message"], "ping")
+        msg_request = comm_server.recv_request()
+        self.assertIsNotNone(msg_request)
+        self.assertEqual(msg_request.state, MsgState.EXPIRED)
+        self.assertEqual(msg_request.msg_dict["message"], "ping")
         self.assertTrue(promise.is_finished(timeout=5.0))
         self.assertFalse(promise.was_successful())
 
@@ -444,9 +452,9 @@ class TestCommunicationBasic(TestCase):
         json_msg["msgTime"] = int(time.time()) + comm_server._msg_expiration + 5
         promise = comm_client.send_request("ping", json.dumps(json_msg))
 
-        recv_msg = comm_server.recv_request()
-        self.assertIsNotNone(recv_msg)
-        self.assertEqual(recv_msg["msgState"], MsgState.EXPIRED)
-        self.assertEqual(recv_msg["message"], "ping")
+        msg_request = comm_server.recv_request()
+        self.assertIsNotNone(msg_request)
+        self.assertEqual(msg_request.state, MsgState.EXPIRED)
+        self.assertEqual(msg_request.msg_dict["message"], "ping")
         self.assertTrue(promise.is_finished(timeout=5.0))
         self.assertFalse(promise.was_successful())

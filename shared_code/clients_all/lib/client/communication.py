@@ -23,6 +23,21 @@ class MsgState:
     EXPIRED = 2
 
 
+class MsgRequest:
+
+    def __init__(self, msg_dict: Dict[str, Any], state: int):
+        self._msg_dict = msg_dict
+        self._state = state
+
+    @property
+    def msg_dict(self) -> Dict[str, Any]:
+        return self._msg_dict
+
+    @property
+    def state(self) -> int:
+        return self._state
+
+
 class PromiseState:
     SUCCESS = 1
     FAILED = 2
@@ -453,7 +468,7 @@ class Communication:
         return data
 
     # noinspection PyBroadException
-    def recv_request(self) -> Optional[Dict[str, Any]]:
+    def recv_request(self) -> Optional[MsgRequest]:
         """
         Returns received request as string. Blocking until request is received or error occurs.
         Does not block the channel. Handles RTS/CTS messages with other side.
@@ -589,6 +604,7 @@ class Communication:
                 logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
 
                 # Sending response.
+                msg_request = None
                 msg_time = recv_message["msgTime"]
                 time_diff = int(time.time()) - msg_time
                 # Consider time differences in both directions:
@@ -616,7 +632,7 @@ class Communication:
                         self._has_channel = False
                         return None
 
-                    recv_message["msgState"] = MsgState.EXPIRED
+                    msg_request = MsgRequest(recv_message, MsgState.EXPIRED)
 
                 else:
                     logging.debug("[%s]: Sending 'ok' response message of type '%s'." % (self._log_tag, request_type))
@@ -633,10 +649,10 @@ class Communication:
                         self._has_channel = False
                         return None
 
-                    recv_message["msgState"] = MsgState.OK
+                    msg_request = MsgRequest(recv_message, MsgState.OK)
 
                 self._last_communication = int(time.time())
-                return recv_message
+                return msg_request
 
     def send_request(self,
                      msg_type: str,
