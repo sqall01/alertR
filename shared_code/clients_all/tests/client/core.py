@@ -49,7 +49,7 @@ class SimulatedConnection(Connection):
         self._tag = tag
 
     def connect(self):
-        raise NotImplementedError("Abstract class.")
+        pass
 
     def send(self,
              data: str):

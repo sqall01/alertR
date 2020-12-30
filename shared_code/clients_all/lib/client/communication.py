@@ -610,7 +610,7 @@ class Communication:
                 # Consider time differences in both directions:
                 # 1) if message is too old, it was either hold too long in the queue because of a disconnect or
                 # the time of both hosts are too far out of sync
-                # 2) if message is too young, the time of both hosts are too far out of sync
+                # 2) if message lies in the future, the time of both hosts are too far out of sync
                 if time_diff > self._msg_expiration or time_diff < (-1 * self._msg_expiration):
 
                     logging.warning("[%s]: Received request message of type '%s' is expired "

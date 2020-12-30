@@ -5,7 +5,7 @@ import time
 from unittest import TestCase
 from lib.client.util import MsgBuilder
 from lib.client.communication import MsgState
-from tests.util import config_logging
+from tests.util import config_logging, Timer
 from tests.client.core import create_basic_communication, create_simulated_error_communication, \
                               msg_receiver, create_simulated_communication
 
@@ -438,10 +438,10 @@ class TestCommunicationBasic(TestCase):
         self.assertTrue(promise.is_finished(timeout=5.0))
         self.assertFalse(promise.was_successful())
 
-    def test_recv_too_young(self):
+    def test_recv_future(self):
         """
         Tests communication expired handling by letting the client send a ping request to the server
-        which is too young.
+        which has a message time in the future.
         """
         config_logging(logging.WARNING)
 
@@ -458,3 +458,47 @@ class TestCommunicationBasic(TestCase):
         self.assertEqual(msg_request.msg_dict["message"], "ping")
         self.assertTrue(promise.is_finished(timeout=5.0))
         self.assertFalse(promise.was_successful())
+
+    def test_disconnect_communication(self):
+        """
+        Tests requests sending if the communication channel is disconnected and if they are transfered as soon
+        as the channel is available.
+        """
+        config_logging(logging.CRITICAL)
+        num_msgs = 5
+
+        comm_client, comm_server = create_simulated_communication()
+
+        # Disconnect client from server.
+        comm_client._has_channel = False
+
+        # Send messages.
+        promises = list()
+        for i in range(num_msgs):
+            ping_msg = MsgBuilder.build_ping_msg()
+            ping_dict = json.loads(ping_msg)
+            ping_dict["num_msg"] = i
+            promises.append(comm_client.send_request("ping", json.dumps(ping_dict)))
+
+        for i in range(num_msgs):
+            promise = promises[i]
+            self.assertFalse(promise.is_finished(timeout=1.0))
+
+        # Connect client.
+        self.assertTrue(comm_client.connect())
+        comm_client.set_connected()
+
+        # Receive and check messages.
+        Timer.start_timer(self, "receive_msgs", 10)
+        for i in range(num_msgs):
+            msg_request = comm_server.recv_request()
+
+            self.assertIsNotNone(msg_request)
+            self.assertEqual(msg_request.state, MsgState.OK)
+            self.assertEqual(msg_request.msg_dict["message"], "ping")
+            self.assertEqual(msg_request.msg_dict["num_msg"], i)
+
+            promise = promises[i]
+            self.assertTrue(promise.is_finished(timeout=5.0))
+            self.assertTrue(promise.was_successful())
+        Timer.stop_timer("receive_msgs")
