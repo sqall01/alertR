@@ -2919,7 +2919,10 @@ class ClientCommunication:
                 return False
 
             # check if status message was correctly received
-            if str(message["payload"]["result"]).upper() != "OK":
+            if str(message["payload"]["result"]).upper() == "EXPIRED":
+                self.logger.warning("[%s]: Client reported 'status' messages as expired." % self.fileName)
+
+            elif str(message["payload"]["result"]).upper() != "OK":
                 self.logger.error("[%s]: Result not ok: '%s' (%s:%d)."
                                   % (self.fileName, message["payload"]["result"], self.clientAddress, self.clientPort))
                 return False
@@ -2995,7 +2998,10 @@ class ClientCommunication:
                 return False
 
             # check if status message was correctly received
-            if str(message["payload"]["result"]).upper() != "OK":
+            if str(message["payload"]["result"]).upper() == "EXPIRED":
+                self.logger.warning("[%s]: Client reported 'statechange' messages as expired." % self.fileName)
+
+            elif str(message["payload"]["result"]).upper() != "OK":
                 self.logger.error("[%s]: Result not ok: '%s' (%s:%d)."
                                   % (self.fileName, message["payload"]["result"], self.clientAddress, self.clientPort))
                 return False
@@ -3074,7 +3080,10 @@ class ClientCommunication:
                 return False
 
             # check if status message was correctly received
-            if str(message["payload"]["result"]).upper() != "OK":
+            if str(message["payload"]["result"]).upper() == "EXPIRED":
+                self.logger.warning("[%s]: Client reported 'sensoralertsoff' messages as expired." % self.fileName)
+
+            elif str(message["payload"]["result"]).upper() != "OK":
                 self.logger.error("[%s]: Result not ok: '%s' (%s:%d)."
                                   % (self.fileName, message["payload"]["result"], self.clientAddress, self.clientPort))
                 return False
@@ -3232,7 +3241,10 @@ class ClientCommunication:
                 return False
 
             # check if status message was correctly received
-            if str(message["payload"]["result"]).upper() != "OK":
+            if str(message["payload"]["result"]).upper() == "EXPIRED":
+                self.logger.warning("[%s]: Client reported 'sensoralert' messages as expired." % self.fileName)
+
+            elif str(message["payload"]["result"]).upper() != "OK":
                 self.logger.error("[%s]: Result not ok: '%s' (%s:%d)."
                                   % (self.fileName, message["payload"]["result"], self.clientAddress, self.clientPort))
                 self._releaseLock()
