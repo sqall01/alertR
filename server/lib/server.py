@@ -159,9 +159,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "alertDelay not valid"}
                 self._send(json.dumps(message))
 
@@ -192,9 +190,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "alertLevels not valid"}
                 self._send(json.dumps(message))
 
@@ -222,9 +218,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "changeState not valid"}
                 self._send(json.dumps(message))
 
@@ -252,9 +246,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "clientAlertId not valid"}
                 self._send(json.dumps(message))
 
@@ -282,9 +274,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "clientSensorId not valid"}
                 self._send(json.dumps(message))
 
@@ -312,9 +302,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "description not valid"}
                 self._send(json.dumps(message))
 
@@ -342,9 +330,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "hasLatestData not valid"}
                 self._send(json.dumps(message))
 
@@ -372,9 +358,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "hostname not valid"}
                 self._send(json.dumps(message))
 
@@ -402,9 +386,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "instance not valid"}
                 self._send(json.dumps(message))
 
@@ -436,9 +418,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "nodeType not valid"}
                 self._send(json.dumps(message))
 
@@ -469,9 +449,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "optionType not valid"}
                 self._send(json.dumps(message))
 
@@ -499,9 +477,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "timeDelay not valid"}
                 self._send(json.dumps(message))
 
@@ -532,9 +508,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "value not valid"}
                 self._send(json.dumps(message))
 
@@ -565,9 +539,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "persistent not valid"}
                 self._send(json.dumps(message))
 
@@ -629,9 +601,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "alerts list not valid"}
                 self._send(json.dumps(message))
 
@@ -668,9 +638,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "manager dictionary not valid"}
                 self._send(json.dumps(message))
 
@@ -769,9 +737,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "sensors list not valid"}
                 self._send(json.dumps(message))
 
@@ -807,9 +773,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "data not valid"}
                 self._send(json.dumps(message))
 
@@ -842,9 +806,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "dataType not valid"}
                 self._send(json.dumps(message))
 
@@ -918,9 +880,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "sensors list not valid"}
                 self._send(json.dumps(message))
 
@@ -951,9 +911,7 @@ class ClientCommunication:
         if not isCorrect:
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": messageType,
+                message = {"message": messageType,
                            "error": "state not valid"}
                 self._send(json.dumps(message))
 
@@ -1043,9 +1001,7 @@ class ClientCommunication:
             try:
                 payload = {"type": "rts",
                            "id": transactionId}
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "size": messageSize,
+                message = {"size": messageSize,
                            "message": messageType,
                            "payload": payload}
                 self._send(json.dumps(message))
@@ -1171,8 +1127,8 @@ class ClientCommunication:
                        "data": sensorAlert.sensorData,
                        }
 
-        utcTimestamp = int(time.time())
-        message = {"serverTime": utcTimestamp,
+        utc_time = int(time.time())
+        message = {"msgTime": utc_time,
                    "message": "sensoralert",
                    "payload": payload}
         return json.dumps(message)
@@ -1184,8 +1140,8 @@ class ClientCommunication:
         :return:
         """
         payload = {"type": "request"}
-        utcTimestamp = int(time.time())
-        message = {"serverTime": utcTimestamp,
+        utc_time = int(time.time())
+        message = {"msgTime": utc_time,
                    "message": "sensoralertsoff",
                    "payload": payload}
 
@@ -1211,8 +1167,8 @@ class ClientCommunication:
                    "dataType": dataType}
         if dataType != SensorDataType.NONE:
             payload["data"] = data
-        utcTimestamp = int(time.time())
-        message = {"serverTime": utcTimestamp,
+        utc_time = int(time.time())
+        message = {"msgTime": utc_time,
                    "message": "statechange",
                    "payload": payload}
 
@@ -1238,9 +1194,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": "status",
+                message = {"message": "status",
                            "error": "not able to get alert system data from database"}
                 self._send(json.dumps(message))
 
@@ -1330,8 +1284,8 @@ class ClientCommunication:
                    "managers": managers,
                    "alerts": alerts,
                    "alertLevels": alertLevels}
-        utcTimestamp = int(time.time())
-        message = {"serverTime": utcTimestamp,
+        utc_time = int(time.time())
+        message = {"msgTime": utc_time,
                    "message": "status",
                    "payload": payload}
 
@@ -1420,9 +1374,7 @@ class ClientCommunication:
 
             # Send error message back.
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "message header malformed"}
                 self._send(json.dumps(message))
 
@@ -1439,9 +1391,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "initialization message expected"}
                     self._send(json.dumps(message))
 
@@ -1457,9 +1407,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "request expected"}
                     self._send(json.dumps(message))
 
@@ -1475,9 +1423,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "message not valid"}
                 self._send(json.dumps(message))
 
@@ -1501,9 +1447,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "version not compatible"}
                     self._send(json.dumps(message))
 
@@ -1518,9 +1462,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "version not valid"}
                 self._send(json.dumps(message))
 
@@ -1543,9 +1485,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "no user credentials"}
                 self._send(json.dumps(message))
 
@@ -1572,9 +1512,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "username already in use"}
                     self._send(json.dumps(message))
 
@@ -1590,9 +1528,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "invalid user credentials"}
                 self._send(json.dumps(message))
 
@@ -1607,9 +1543,7 @@ class ClientCommunication:
                        "result": "ok",
                        "version": self.serverVersion,
                        "rev": self.serverRev}
-            utcTimestamp = int(time.time())
-            message = {"serverTime": utcTimestamp,
-                       "message": "initialization",
+            message = {"message": "initialization",
                        "payload": payload}
             self._send(json.dumps(message))
 
@@ -1667,9 +1601,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "initialization message expected"}
                     self._send(json.dumps(message))
 
@@ -1685,9 +1617,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "request expected"}
                     self._send(json.dumps(message))
 
@@ -1702,9 +1632,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "message not valid"}
                 self._send(json.dumps(message))
 
@@ -1750,9 +1678,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "registration message not valid"}
                 self._send(json.dumps(message))
             except Exception as e:
@@ -1769,9 +1695,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "invalid node type or instance"}
                 self._send(json.dumps(message))
 
@@ -1796,9 +1720,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "unable to add node to database"}
                 self._send(json.dumps(message))
 
@@ -1816,9 +1738,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "unable to get node id from database"}
                 self._send(json.dumps(message))
 
@@ -1847,9 +1767,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "no sensors in message"}
                     self._send(json.dumps(message))
 
@@ -1885,9 +1803,7 @@ class ClientCommunication:
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": message["message"],
+                        message = {"message": message["message"],
                                    "error": "sensor data invalid"}
                         self._send(json.dumps(message))
 
@@ -1915,9 +1831,7 @@ class ClientCommunication:
 
                         # send error message back
                         try:
-                            utcTimestamp = int(time.time())
-                            message = {"serverTime": utcTimestamp,
-                                       "message": message["message"],
+                            message = {"message": message["message"],
                                        "error": "alert level does not exist"}
                             self._send(json.dumps(message))
 
@@ -1950,9 +1864,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "unable to add sensors to database"}
                     self._send(json.dumps(message))
 
@@ -1979,9 +1891,7 @@ class ClientCommunication:
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": message["message"],
+                        message = {"message": message["message"],
                                    "error": "unable to get sensor id from database"}
                         self._send(json.dumps(message))
 
@@ -2011,9 +1921,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "no alerts in message"}
                     self._send(json.dumps(message))
 
@@ -2049,9 +1957,7 @@ class ClientCommunication:
 
                             # send error message back
                             try:
-                                utcTimestamp = int(time.time())
-                                message = {"serverTime": utcTimestamp,
-                                           "message": message["message"],
+                                message = {"message": message["message"],
                                            "error": "alert level does not exist"}
                                 self._send(json.dumps(message))
 
@@ -2066,9 +1972,7 @@ class ClientCommunication:
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": message["message"],
+                        message = {"message": message["message"],
                                    "error": "alert data invalid"}
                         self._send(json.dumps(message))
 
@@ -2089,9 +1993,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "unable to add alerts to database"}
                     self._send(json.dumps(message))
 
@@ -2125,9 +2027,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "no manager in message"}
                     self._send(json.dumps(message))
 
@@ -2146,9 +2046,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "manager data invalid"}
                     self._send(json.dumps(message))
 
@@ -2169,9 +2067,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "unable to add manager to database"}
                     self._send(json.dumps(message))
 
@@ -2191,9 +2087,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": message["message"],
+                message = {"message": message["message"],
                            "error": "node type not known"}
                 self._send(json.dumps(message))
 
@@ -2206,9 +2100,7 @@ class ClientCommunication:
         try:
             payload = {"type": "response",
                        "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"serverTime": utcTimestamp,
-                       "message": "initialization",
+            message = {"message": "initialization",
                        "payload": payload}
             self._send(json.dumps(message))
 
@@ -2256,9 +2148,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received option invalid"}
                 self._send(json.dumps(message))
 
@@ -2295,9 +2185,7 @@ class ClientCommunication:
         try:
             payload = {"type": "response",
                        "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"serverTime": utcTimestamp,
-                       "message": "option",
+            message = {"message": "option",
                        "payload": payload}
             self._send(json.dumps(message))
 
@@ -2332,9 +2220,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received status invalid"}
                 self._send(json.dumps(message))
 
@@ -2349,9 +2235,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "count of sensors not correct"}
                 self._send(json.dumps(message))
 
@@ -2381,9 +2265,7 @@ class ClientCommunication:
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": incomingMessage["message"],
+                        message = {"message": incomingMessage["message"],
                                    "error": "unknown client sensor id"}
                         self._send(json.dumps(message))
 
@@ -2404,9 +2286,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received sensor state invalid"}
                 self._send(json.dumps(message))
 
@@ -2427,9 +2307,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "not able to update sensor state in database"}
                 self._send(json.dumps(message))
 
@@ -2464,9 +2342,7 @@ class ClientCommunication:
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": incomingMessage["message"],
+                        message = {"message": incomingMessage["message"],
                                    "error": "received sensor data type wrong"}
                         self._send(json.dumps(message))
 
@@ -2493,9 +2369,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received sensor data invalid"}
                 self._send(json.dumps(message))
 
@@ -2517,9 +2391,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "not able to update sensor data in database"}
                     self._send(json.dumps(message))
 
@@ -2532,9 +2404,7 @@ class ClientCommunication:
         try:
             payload = {"type": "response",
                        "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"serverTime": utcTimestamp,
-                       "message": "status",
+            message = {"message": "status",
                        "payload": payload}
             self._send(json.dumps(message))
 
@@ -2616,9 +2486,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "unknown client sensor id"}
                     self._send(json.dumps(message))
 
@@ -2634,9 +2502,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "received sensor data type wrong"}
                     self._send(json.dumps(message))
 
@@ -2655,9 +2521,7 @@ class ClientCommunication:
                 if not isinstance(optionalData, dict):
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": incomingMessage["message"],
+                        message = {"message": incomingMessage["message"],
                                    "error": "optionalData not of type dict"}
                         self._send(json.dumps(message))
 
@@ -2678,9 +2542,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received sensor alert invalid"}
                 self._send(json.dumps(message))
 
@@ -2705,9 +2567,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "not able to update sensor state in database"}
                     self._send(json.dumps(message))
 
@@ -2729,9 +2589,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "not able to update sensor data in database"}
                     self._send(json.dumps(message))
 
@@ -2747,9 +2605,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "not able to update sensor time in database"}
                 self._send(json.dumps(message))
 
@@ -2773,9 +2629,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "not able to add sensor alert to database"}
                 self._send(json.dumps(message))
 
@@ -2791,9 +2645,7 @@ class ClientCommunication:
         try:
             payload = {"type": "response",
                        "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"serverTime": utcTimestamp,
-                       "message": "sensoralert",
+            message = {"message": "sensoralert",
                        "payload": payload}
             self._send(json.dumps(message))
 
@@ -2860,9 +2712,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "unknown client sensor id"}
                     self._send(json.dumps(message))
 
@@ -2878,9 +2728,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "received sensor data type wrong"}
                     self._send(json.dumps(message))
 
@@ -2900,9 +2748,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "received state change invalid"}
                 self._send(json.dumps(message))
 
@@ -2934,9 +2780,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "not able to change sensor state in database"}
                 self._send(json.dumps(message))
 
@@ -2958,9 +2802,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": incomingMessage["message"],
+                    message = {"message": incomingMessage["message"],
                                "error": "not able to change sensor data in database"}
                     self._send(json.dumps(message))
 
@@ -2980,9 +2822,7 @@ class ClientCommunication:
 
             # send error message back
             try:
-                utcTimestamp = int(time.time())
-                message = {"serverTime": utcTimestamp,
-                           "message": incomingMessage["message"],
+                message = {"message": incomingMessage["message"],
                            "error": "not able to get sensor id from database"}
                 self._send(json.dumps(message))
 
@@ -2995,9 +2835,7 @@ class ClientCommunication:
         try:
             payload = {"type": "response",
                        "result": "ok"}
-            utcTimestamp = int(time.time())
-            message = {"serverTime": utcTimestamp,
-                       "message": "statechange",
+            message = {"message": "statechange",
                        "payload": payload}
             self._send(json.dumps(message))
 
@@ -3055,9 +2893,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "status message expected"}
                     self._send(json.dumps(message))
 
@@ -3073,9 +2909,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "response expected"}
                     self._send(json.dumps(message))
 
@@ -3135,9 +2969,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "state change message expected"}
                     self._send(json.dumps(message))
 
@@ -3153,9 +2985,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "response expected"}
                     self._send(json.dumps(message))
 
@@ -3218,9 +3048,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "sensor alerts off message expected"}
                     self._send(json.dumps(message))
 
@@ -3236,9 +3064,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "response expected"}
                     self._send(json.dumps(message))
 
@@ -3378,9 +3204,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "sensor alert message expected"}
                     self._send(json.dumps(message))
 
@@ -3397,9 +3221,7 @@ class ClientCommunication:
 
                 # send error message back
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "response expected"}
                     self._send(json.dumps(message))
 
@@ -3581,9 +3403,7 @@ class ClientCommunication:
                     # send CTS (clear to send) message
                     payload = {"type": "cts",
                                "id": receivedTransactionId}
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": str(message["message"]),
+                    message = {"message": str(message["message"]),
                                "payload": payload}
                     self._send(json.dumps(message))
 
@@ -3671,9 +3491,7 @@ class ClientCommunication:
 
                     # send error message back
                     try:
-                        utcTimestamp = int(time.time())
-                        message = {"serverTime": utcTimestamp,
-                                   "message": message["message"],
+                        message = {"message": message["message"],
                                    "error": "request expected"}
                         self._send(json.dumps(message))
 
@@ -3708,9 +3526,7 @@ class ClientCommunication:
                 try:
                     payload = {"type": "response",
                                "result": "ok"}
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": "ping",
+                    message = {"message": "ping",
                                "payload": payload}
                     self._send(json.dumps(message))
 
@@ -3789,9 +3605,7 @@ class ClientCommunication:
                                   % (self.fileName, data, self.clientAddress, self.clientPort))
 
                 try:
-                    utcTimestamp = int(time.time())
-                    message = {"serverTime": utcTimestamp,
-                               "message": message["message"],
+                    message = {"message": message["message"],
                                "error": "unknown command/message type"}
                     self._send(json.dumps(message))
 
