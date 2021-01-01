@@ -1059,8 +1059,8 @@ class ClientCommunication:
             # check if RTS is acknowledged by a CTS
             # => exit transaction initiation loop
             if (receivedTransactionId == transactionId
-               and receivedMessageType == messageType
-               and receivedPayloadType == "CTS"):
+                    and receivedMessageType == messageType
+                    and receivedPayloadType == "CTS"):
 
                 self.logger.debug("[%s]: Initiate transaction succeeded (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
