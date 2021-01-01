@@ -3,6 +3,10 @@
 Features:
 
 * Removed rules from Alert Levels and replaced it with instrumentation (more flexible form to achieve the same).
+* Removed clientTime/serverTime from messages.
+* Introduced msgTime into messages to check expiration.
+* Removed clientTime/serverTime from messages.
+* Introduced msgTime into messages to check expiration.
 
 ## 0.600-3
 
@@ -17,14 +21,13 @@ Features:
 * Added symlink support to updater/installer to make maintaining repository easier
 * Added repository version and repository compatibility list to updater/installer 
 
-
 ## 0.600-1
 
 Features:
 
 * Added graphExport.py utility.
 
-## 0.600
+## 0.600-0
 
 Features:
 
@@ -44,7 +47,7 @@ Features:
 
 * Introducing database layout version in order to make updates easier.
 
-## 0.504
+## 0.504-0
 
 Features:
 
@@ -97,7 +100,6 @@ Features:
 
 * Added alert system state as an internal sensor in order to generate sensor alerts if alert system changes state (activated/deactivated).
 
-
 ## 0.500-1
 
 Features:
@@ -105,15 +107,13 @@ Features:
 * Changed timeout setting in order to have a more stable connection recovery.
 * Fixed problem with multiple log entries.
 
-
 ## 0.400-1
 
 Features:
 
 * User paths can now be relative paths.
 
-
-## 0.400
+## 0.400-0
 
 Features:
 
@@ -123,8 +123,7 @@ Features:
 * Changed logging system to have separated log files for each client connection.
 * Removed eMail notification option in alertLevels (is now moved to a separate alert client with eMail templating).
 
-
-## 0.300
+## 0.300-0
 
 Features:
 

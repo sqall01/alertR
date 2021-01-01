@@ -5,6 +5,8 @@ Features:
 * Refactored client code to get a more resilient connection.
 * Unified client code to make it more maintainable.
 * Guarantee that requests are send to server in timely order.
+* Removed clientTime/serverTime from messages.
+* Introduced msgTime into messages to check expiration.
 
 ## 0.600-2
 
@@ -19,7 +21,7 @@ Features:
 * Added symlink support to updater/installer to make maintaining repository easier
 * Added repository version and repository compatibility list to updater/installer 
 
-## 0.600
+## 0.600-0
 
 Features:
 
@@ -45,7 +47,7 @@ Features:
 
 * Removed fixed TLS version.
 
-## 0.501
+## 0.501-0
 
 Features:
 
@@ -60,7 +62,7 @@ Features:
 * Added message truncation if it is too long.
 * Changed timeout setting in order to have a more stable connection recovery.
 
-## 0.500
+## 0.500-0
 
 Features:
 
