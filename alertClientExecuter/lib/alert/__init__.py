@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -7,5 +7,5 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import AsynchronousAlertExecuter
+from .eventHandler import AlertEventHandler
 from .executer import ExecuterAlert

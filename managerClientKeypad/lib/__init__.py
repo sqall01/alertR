@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -11,5 +11,4 @@ from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
 from .update import Updater
 from .globalData import GlobalData
-from .manager import AudioOutput, AudioOptions, ServerEventHandler, ScreenUpdater, Console
-from .localObjects import SensorWarningState, Option, Node, Sensor, Manager, Alert, AlertLevel
+from .manager import AudioOutput, ManagerEventHandler, ScreenUpdater, Console, SensorWarningState

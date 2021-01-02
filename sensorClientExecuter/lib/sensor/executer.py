@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -13,7 +13,7 @@ import time
 import logging
 import json
 from .core import _PollingSensor
-from ..localObjects import SensorAlert, StateChange, SensorDataType
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 from typing import Optional
 
 
@@ -137,7 +137,7 @@ class ExecuterSensor(_PollingSensor):
 
                     # Create state change object that is
                     # send to the server.
-                    self.stateChange = StateChange()
+                    self.stateChange = SensorObjStateChange()
                     self.stateChange.clientSensorId = self.id
                     if tempInputState == self.triggerState:
                         self.stateChange.state = 1
@@ -238,7 +238,7 @@ class ExecuterSensor(_PollingSensor):
                     self.state = tempInputState
 
                 # Create sensor alert object that is send to the server.
-                self.sensorAlert = SensorAlert()
+                self.sensorAlert = SensorObjSensorAlert()
                 self.sensorAlert.clientSensorId = self.id
                 if tempInputState == self.triggerState:
                     self.sensorAlert.state = 1
@@ -376,7 +376,7 @@ class ExecuterSensor(_PollingSensor):
                         self.state = self.triggerState
 
                         # Generate sensor alert object.
-                        self.sensorAlert = SensorAlert()
+                        self.sensorAlert = SensorObjSensorAlert()
                         self.sensorAlert.clientSensorId = self.id
                         self.sensorAlert.state = 1
                         self.sensorAlert.hasOptionalData = True
@@ -419,7 +419,7 @@ class ExecuterSensor(_PollingSensor):
                 # in the next state update
                 self.process = None
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         returnValue = None
         if self.shouldForceSendAlert:
             returnValue = self.sensorAlert
@@ -427,7 +427,7 @@ class ExecuterSensor(_PollingSensor):
             self.shouldForceSendAlert = False
         return returnValue
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         returnValue = None
         if self.shouldForceSendState:
             returnValue = self.stateChange

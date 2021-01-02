@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -14,7 +14,7 @@ import xml.etree.cElementTree
 import sys
 from lib import GlobalData
 from lib import PushAlert
-from lib.localObjects import SensorAlert
+from lib.globalData import ManagerObjSensorAlert
 from lightweightpush import ErrorCodes
 
 
@@ -132,9 +132,9 @@ if __name__ == '__main__':
         alertObj.templateFile = alert["templateFile"]
         alertObj.alertLevels = list()
         alertObj.subject = subject
-        alertObj.initializeAlert()
+        alertObj.initialize()
 
-        sensorAlert = SensorAlert()
+        sensorAlert = ManagerObjSensorAlert()
         sensorAlert.state = 1
         sensorAlert.timeReceived = int(time.time())
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -12,7 +12,7 @@ import subprocess
 import time
 import logging
 from .core import _PollingSensor
-from ..localObjects import SensorAlert, StateChange, SensorDataType
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 from typing import Optional
 
 
@@ -139,8 +139,8 @@ class PingSensor(_PollingSensor):
                 # in the next state update
                 self.process = None
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
         return None
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         return None

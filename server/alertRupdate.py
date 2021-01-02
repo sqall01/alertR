@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -153,7 +153,6 @@ def checkDependencies(oldDependencies, newDependencies):
                     # check the needed version and the installed version
                     for i in range(maxLength):
                         if int(installedVersion[i]) > int(neededVersion[i]):
-                            versionCorrect = True
                             break
                         elif int(installedVersion[i]) < int(neededVersion[i]):
                             versionCorrect = False
@@ -279,7 +278,6 @@ def checkDependencies(oldDependencies, newDependencies):
                     # check the needed version and the installed version
                     for i in range(maxLength):
                         if int(installedVersion[i]) > int(neededVersion[i]):
-                            versionCorrect = True
                             break
                         elif int(installedVersion[i]) < int(neededVersion[i]):
                             versionCorrect = False

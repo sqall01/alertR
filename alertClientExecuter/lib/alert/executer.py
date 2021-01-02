@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -11,8 +11,9 @@ import os
 import logging
 import subprocess
 import json
-from .core import _Alert, SensorAlert
 from typing import List
+from .core import _Alert
+from ..globalData import ManagerObjSensorAlert
 
 
 # class that executes an command when an alert is triggered or all alerts
@@ -86,7 +87,7 @@ class ExecuterAlert(_Alert):
             if element.upper() == "$SENSORALERT$":
                 self.cmd_off_replace_list.append(i)
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -101,11 +102,11 @@ class ExecuterAlert(_Alert):
         temp_execute = list(self.cmd_triggered_list)
         for i in self.cmd_triggered_replace_list:
             if temp_execute[i].upper() == "$SENSORALERT$":
-                temp_execute[i] = json.dumps(sensor_alert.convertToDict())
+                temp_execute[i] = json.dumps(sensor_alert.convert_to_dict())
 
         self._execute_cmd(temp_execute)
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 
@@ -120,7 +121,7 @@ class ExecuterAlert(_Alert):
         temp_execute = list(self.cmd_normal_list)
         for i in self.cmd_normal_replace_list:
             if temp_execute[i].upper() == "$SENSORALERT$":
-                temp_execute[i] = json.dumps(sensor_alert.convertToDict())
+                temp_execute[i] = json.dumps(sensor_alert.convert_to_dict())
 
         self._execute_cmd(temp_execute)
 

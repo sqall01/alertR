@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -8,4 +8,5 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from .core import SensorExecuter
+from .eventHandler import SensorEventHandler
 from .dev import SensorDev

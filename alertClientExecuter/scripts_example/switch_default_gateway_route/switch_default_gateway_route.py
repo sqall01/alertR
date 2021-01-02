@@ -1,7 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys
 import os
+import subprocess
 
 # list of resolv.conf files
 # for example because postfix under Debian systems is chroot'ed

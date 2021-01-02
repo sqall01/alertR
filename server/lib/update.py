@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -764,8 +764,12 @@ class Updater:
                 self._releaseLock()
                 return False
 
-            # change permission of files that have to be executable
-            if fileToUpdate == "alertRclient.py" or fileToUpdate == "alertRserver.py":
+            # Change permission of files that have to be executable.
+            if fileToUpdate in ["alertRclient.py",
+                                "alertRserver.py",
+                                "alertRupdate.py",
+                                "graphExport.py",
+                                "manageUsers.py"]:
 
                 self.logger.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 
@@ -779,7 +783,7 @@ class Updater:
                     return False
 
             # Change permission of files that should not be accessible by others.
-            elif fileToUpdate == "config/config.xml.template":
+            elif fileToUpdate in ["config/config.xml.template"]:
 
                 self.logger.debug("[%s]: Changing permissions of '%s'." % (self.fileName, fileToUpdate))
 

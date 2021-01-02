@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -19,7 +19,7 @@ import queue
 import calendar
 import pytz
 from .core import _PollingSensor
-from ..localObjects import SensorAlert, StateChange, SensorDataType
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 from typing import Optional
 
 
@@ -360,7 +360,7 @@ class ICalendarSensor(_PollingSensor):
                     msg = "Reminder for event '%s' at %s" % (title, eventDateStr)
 
                     # Create sensor alert.
-                    sensorAlert = SensorAlert()
+                    sensorAlert = SensorObjSensorAlert()
                     sensorAlert.clientSensorId = self.id
                     sensorAlert.state = 1
                     sensorAlert.hasOptionalData = True
@@ -389,8 +389,10 @@ class ICalendarSensor(_PollingSensor):
 
         # Set htaccess authentication object.
         if self.htaccessAuth == "BASIC":
+            # noinspection PyUnresolvedReferences
             self.htaccessData = requests.auth.HTTPBasicAuth(self.htaccessUser, self.htaccessPass)
         elif self.htaccessAuth == "DIGEST":
+            # noinspection PyUnresolvedReferences
             self.htaccessData = requests.auth.HTTPDigestAuth(self.htaccessUser, self.htaccessPass)
         elif self.htaccessAuth == "NONE":
             self.htaccessData = None
@@ -437,7 +439,7 @@ class ICalendarSensor(_PollingSensor):
             if (currentDatetime - self.timedelta2day) >= triggerDatetime:
                 self.alreadyTriggered.remove(triggeredTuple)
 
-    def forceSendAlert(self) -> Optional[SensorAlert]:
+    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
 
         # Check if we have exceeded the threshold of failed calendar
         # retrieval attempts and create a sensor alert if we have.
@@ -450,7 +452,7 @@ class ICalendarSensor(_PollingSensor):
                             + "'%d' failed calendar fetching attempts."
                             % self.failedCounter)
 
-            sensorAlert = SensorAlert()
+            sensorAlert = SensorObjSensorAlert()
             sensorAlert.clientSensorId = self.id
             sensorAlert.state = 1
             sensorAlert.hasOptionalData = True
@@ -476,7 +478,7 @@ class ICalendarSensor(_PollingSensor):
                             % self.fileName
                             + "multiple failed attempts. Triggering sensor alert.")
 
-            sensorAlert = SensorAlert()
+            sensorAlert = SensorObjSensorAlert()
             sensorAlert.clientSensorId = self.id
             sensorAlert.state = 0
             sensorAlert.hasOptionalData = True
@@ -501,5 +503,5 @@ class ICalendarSensor(_PollingSensor):
 
         return sensorAlert
 
-    def forceSendState(self) -> Optional[StateChange]:
+    def forceSendState(self) -> Optional[SensorObjStateChange]:
         return None

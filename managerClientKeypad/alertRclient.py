@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -17,6 +17,7 @@ from lib import Console
 from lib import GlobalData
 from lib import AudioOutput
 from lib import SensorWarningState
+from lib import ManagerEventHandler
 import logging
 import time
 import random
@@ -227,10 +228,6 @@ if __name__ == '__main__':
     # generate a screen updater thread (that generates the GUI)
     logging.info("[%s] Starting screen updater thread." % fileName)
     globalData.screenUpdater = ScreenUpdater(globalData)
-    # set thread to daemon
-    # => threads terminates when main thread terminates
-    globalData.screenUpdater.daemon = True
-    globalData.screenUpdater.start()
 
     # generate object for the communication to the server and connect to it
     globalData.serverComm = ServerCommunication(server,
@@ -240,6 +237,7 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
+                                                ManagerEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
     logging.info("[%s] Connecting to server." % fileName)
@@ -252,7 +250,7 @@ if __name__ == '__main__':
            and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-        if globalData.serverComm.initializeCommunication() is True:
+        if globalData.serverComm.initialize() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
             if globalData.smtpAlert is not None:

@@ -4,19 +4,8 @@ var setTimeoutIdRequest = null;
 var setTimeoutIdOnlineCheck = null;
 var sensorAlertsNumber = 50;
 var sensorAlertsRangeStart = 0;
-var eventsNumber = 50;
-var eventsRangeStart = 0;
 var configUnixSocketActive =
 	(document.body.dataset.configunixsocketactive == "true");
-var eventTypes = new Array("changeAlert", "changeManager", "changeNode",
-	"changeOption", "changeSensor", "connectedChange", "deleteAlert",
-	"deleteManager", "deleteNode", "deleteSensor", "newAlert", "newManager",
-	"newNode", "newOption", "newSensor", "newVersion", "sensorAlert",
-	"sensorTimeOut", "stateChange");
-var eventTypesFilter = new Object();
-for(var i = 0; i < eventTypes.length; i++) {
-	eventTypesFilter[eventTypes[i]] = true;
-}
 
 // This enum gives the different data types of a sensor.
 var SensorDataType = {
@@ -28,7 +17,6 @@ var SensorDataType = {
 // global objects filled with server responses
 var alertLevels = null;
 var alerts = null;
-var events = null;
 var internals = null;
 var managers = null;
 var nodes = null;
@@ -37,12 +25,12 @@ var sensorAlerts = null;
 var sensors = null;
 
 // needed to check the time out of the alertR database instance
-var serverTime = 0.0;
-var lastServerTime = 0.0;
-var lastServerTimeUpdate = null;
+var msgTime = 0.0;
+var lastmsgTime = 0.0;
+var lastmsgTimeUpdate = null;
 var online = false;
 var timeoutInterval = 80 // in seconds
-var serverTimeTd = null;
+var msgTimeTd = null;
 var onlineTd = null;
 
 // gives the output that is currently shown
@@ -58,7 +46,7 @@ function addMenu(newBody, current) {
 	checkOnline();
 
 	// generate date string from timestamp
-	localDate = new Date(serverTime * 1000);
+	localDate = new Date(msgTime * 1000);
 	yearString = localDate.getFullYear();
 	monthString =
 		("0" + (localDate.getMonth() + 1)).slice(-2);
@@ -70,7 +58,7 @@ function addMenu(newBody, current) {
 		("0" + localDate.getMinutes()).slice(-2);
 	secondsString =
 		("0" + localDate.getSeconds()).slice(-2);
-	serverTimeString = monthString + "/" + dateString + "/" +
+	msgTimeString = monthString + "/" + dateString + "/" +
 		yearString + " " + hoursString + ":" +
 		minutesString + ":" + secondsString;
 
@@ -105,27 +93,27 @@ function addMenu(newBody, current) {
 	newTr.appendChild(onlineTd);
 	menuTable.appendChild(newTr);
 
-	// add server time output
+	// add msg time output
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
 	var newB = document.createElement("b");
-	newB.textContent = "Server Time:";
+	newB.textContent = "Last Message Received:";
 	newTd.appendChild(newB);
 	newTd.className = "boxEntryTd";
 	newTr.appendChild(newTd);
 	menuTable.appendChild(newTr);
 
 	var newTr = document.createElement("tr");
-	serverTimeTd = document.createElement("td");
+	msgTimeTd = document.createElement("td");
 	if(online) {
-		serverTimeTd.className = "normalTd";
-		serverTimeTd.textContent = serverTimeString;
+		msgTimeTd.className = "normalTd";
+		msgTimeTd.textContent = msgTimeString;
 	}
 	else {
-		serverTimeTd.className = "failTd";
-		serverTimeTd.textContent = serverTimeString;
+		msgTimeTd.className = "failTd";
+		msgTimeTd.textContent = msgTimeString;
 	}
-	newTr.appendChild(serverTimeTd);
+	newTr.appendChild(msgTimeTd);
 	menuTable.appendChild(newTr);
 
 	// process options of the alert system
@@ -299,23 +287,6 @@ function addMenu(newBody, current) {
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
-	if(current == "events") {
-		newTd.className = "buttonActiveTd";
-	}
-	else {
-		newTd.className = "buttonTd";
-	}
-	var newA = document.createElement("a");
-	newA.className = "buttonA";
-	newA.textContent = "Events";
-	newA.href = "javascript:void(0)";
-	newA.onclick = function(){ changeOutput("events"); };
-	newTd.appendChild(newA);
-	newTr.appendChild(newTd);
-	menuTable.appendChild(newTr);
-
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
 	if(current == "overview") {
 		newTd.className = "buttonActiveTd";
 	}
@@ -355,48 +326,6 @@ function addMenu(newBody, current) {
 	newTd.appendChild(boxDiv);
 	newTr.appendChild(newTd);
 	contentTableObj.appendChild(newTr);
-
-}
-
-
-// changes the global configuration variable (eventsNumber)
-function changeEventsNumber(number) {
-
-	if(eventsNumber == number) {
-		outputEvents();
-	}
-	else {
-		eventsNumber = number;
-
-		// get new data because of the changed number 
-		requestData("events");	
-	}
-}
-
-
-// changes the global configuration variable (eventTypesFilter)
-// and updates the filter
-function changeEventTypesFilter(eventType) {
-
-	var usedTd = document.getElementById(eventType + "_td");
-
-	// toggle entry
-	if(eventTypesFilter[eventType]) {
-		eventTypesFilter[eventType] = false;
-		usedTd.className = "buttonTd";
-	}
-	else {
-		eventTypesFilter[eventType] = true;
-		usedTd.className = "buttonActiveTd";
-	}
-
-	// check if objects are set before output them
-	if(events == null || internals == null) {
-		requestData("events");
-	}
-	else {
-		outputEvents();
-	}
 
 }
 
@@ -453,27 +382,6 @@ function changeOutput(content) {
 				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
 
 				outputAlerts();
-			}
-			break;
-		case "events":
-			currentOutput = "events";
-			if(internals == null
-				|| options == null
-				|| events == null
-				|| events.length < eventsNumber
-				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
-				requestData("events");
-			}
-			else {
-				// clear timeout if it is set
-				if(setTimeoutIdRequest != null) {
-					window.clearTimeout(setTimeoutIdRequest);
-				}
-				nextContent = "events";
-				nextRequest = "requestData(\"" + nextContent + "\")";
-				setTimeoutIdRequest = window.setTimeout(nextRequest, 10000);
-
-				outputEvents();
 			}
 			break;
 		case "managers":
@@ -608,15 +516,15 @@ function checkOnline() {
 
 	window.clearTimeout(setTimeoutIdOnlineCheck);
 
-	// update last server time if it has changed
-	if(serverTime > lastServerTime) {
-		lastServerTime = serverTime;
-		lastServerTimeUpdate = new Date();
+	// update last msg time if it has changed
+	if(msgTime > lastmsgTime) {
+		lastmsgTime = msgTime;
+		lastmsgTimeUpdate = new Date();
 		online = true;
 
-		if(serverTimeTd != null) {
+		if(msgTimeTd != null) {
 			// generate date string from timestamp
-			localDate = new Date(serverTime * 1000);
+			localDate = new Date(msgTime * 1000);
 			yearString = localDate.getFullYear();
 			monthString =
 				("0" + (localDate.getMonth() + 1)).slice(-2);
@@ -628,12 +536,12 @@ function checkOnline() {
 				("0" + localDate.getMinutes()).slice(-2);
 			secondsString =
 				("0" + localDate.getSeconds()).slice(-2);
-			serverTimeString = monthString + "/" + dateString + "/" +
+			msgTimeString = monthString + "/" + dateString + "/" +
 				yearString + " " + hoursString + ":" +
 				minutesString + ":" + secondsString;
 
-			serverTimeTd.className = "normalTd";
-			serverTimeTd.textContent = serverTimeString;
+			msgTimeTd.className = "normalTd";
+			msgTimeTd.textContent = msgTimeString;
 		}
 
 		if(onlineTd != null) {
@@ -642,10 +550,10 @@ function checkOnline() {
 		}
 	}
 
-	// check if server time has not changed since timeout interval
+	// check if msg time has not changed since timeout interval
 	var temp = new Date();
-	if(lastServerTimeUpdate && temp.getTime() > 
-		(lastServerTimeUpdate.getTime() + (timeoutInterval * 1000))) {
+	if(lastmsgTimeUpdate && temp.getTime() > 
+		(lastmsgTimeUpdate.getTime() + (timeoutInterval * 1000))) {
 		online = false;
 
 		if(onlineTd != null) {
@@ -687,28 +595,6 @@ function compareAlertsAsc(a, b) {
 	}
 	if(a["id"] > b["id"]) {
 		return 1;
-	}
-
-	return 0;
-}
-
-
-// function to compare event objects
-function compareEventsDesc(a, b) {
-
-	if(a["timeOccurred"] < b["timeOccurred"]) {
-		return 1;
-	}
-	if(a["timeOccurred"] > b["timeOccurred"]) {
-		return -1;
-	}
-
-	// case timeOccurred == timeOccurred
-	if(a["id"] < b["id"]) {
-		return 1;
-	}
-	if(a["id"] > b["id"]) {
-		return -1;
 	}
 
 	return 0;
@@ -905,32 +791,6 @@ function processResponseAlerts() {
 
 
 // processes the response of the server for the
-// requested "events" data
-function processResponseEvents() {
-
-	if (request.readyState == 4) {
-
-		// update time we received the last response
-		lastResponse = new Date();
-
-		// get JSON response and parse it
-		var response = request.responseText;
-		var alertSystemInformation = JSON.parse(response);
-		internals = alertSystemInformation["internals"];
-		options = alertSystemInformation["options"];
-		events = alertSystemInformation["events"];
-
-		// only output received data if it is the current output
-		if(currentOutput == "events") {
-			// output received data
-			outputEvents();
-		}
-
-	}
-}
-
-
-// processes the response of the server for the
 // requested "managers" data
 function processResponseManagers() {
 	
@@ -1095,25 +955,6 @@ function requestData(content) {
 			request.onreadystatechange = processResponseAlerts;
 			nextContent = content;
 			break;
-		case "events":
-			if(eventsNumber < 0) {
-				var url = "./getJson.php"
-					+ "?data[]=internals"
-					+ "&data[]=options"
-					+ "&data[]=events";
-			}
-			else {
-				var url = "./getJson.php"
-					+ "?data[]=internals"
-					+ "&data[]=options"
-					+ "&data[]=events"
-					+ "&eventsRangeStart=" + eventsRangeStart
-					+ "&eventsNumber=" + eventsNumber;
-			}
-			request.open("GET", url, true);
-			request.onreadystatechange = processResponseEvents;
-			nextContent = content;
-			break;
 		case "managers":
 			var url = "./getJson.php"
 				+ "?data[]=internals"
@@ -1171,7 +1012,7 @@ function requestData(content) {
 				+ "&data[]=nodes"
 				+ "&data[]=sensorAlerts"
 				+ "&sensorAlertsRangeStart=0"
-				+ "&sensorAlertsNumber=5"
+				+ "&sensorAlertsNumber=10"
 				+ "&data[]=sensors";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseOverview;
@@ -1206,10 +1047,10 @@ function outputAlertLevels() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -1326,10 +1167,10 @@ function outputAlerts() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -1595,498 +1436,6 @@ function outputAlerts() {
 }
 
 
-// outputs the "events" data
-function outputEvents() {
-
-	// hide loader and show content
-	var loaderObj = document.getElementById("loader");
-	loaderObj.className = "elementHidden";
-	var contentObj = document.getElementById("content");
-	contentObj.className = "elementShown";
-
-	// remove old content output
-	// and generate a new clear one
-	var contentTableObj = document.getElementById("contentTable");
-	var newBody = document.createElement("tbody");
-	var oldBody = document.getElementById("contentTableBody");
-	oldBody.removeAttribute("id");
-	newBody.setAttribute("id", "contentTableBody");
-	contentTableObj.replaceChild(newBody, oldBody);
-	delete oldBody;
-
-	// get server time
-	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"] == "serverTime") {
-			serverTime = internals[i]["value"]
-		}
-	}
-
-	// add header of site
-	addMenu(newBody, "events");
-
-	// generate menu for number of shown sensor alerts output
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	var newB = document.createElement("b");
-	newB.textContent = "Number Shown Events:";
-	newTd.appendChild(newB);
-	newTr.appendChild(newTd);
-	newBody.appendChild(newTr);
-
-	var boxDiv = document.createElement("div");
-	boxDiv.className = "box";
-
-	var numbersTable = document.createElement("table");
-	numbersTable.style.width = "100%";
-	numbersTable.setAttribute("border", "0");
-	boxDiv.appendChild(numbersTable);
-
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	newTd.className = "neutralTd";
-	newTr.appendChild(newTd);
-	numbersTable.appendChild(newTr);
-
-	// create a temporary table to have the
-	// buttons next to each other
-	var tempTable = document.createElement("table");
-	tempTable.style.width = "100%";
-	tempTable.setAttribute("border", "0");
-	newTd.appendChild(tempTable);
-
-	var newTr = document.createElement("tr");
-	tempTable.appendChild(newTr)
-
-	var newTd = document.createElement("td");
-	newTd.style.width = "25%";
-	if(eventsNumber == 50) {
-		newTd.className = "buttonActiveTd";
-	}
-	else {
-	newTd.className = "buttonTd";
-	}
-	var newA = document.createElement("a");
-	newA.className = "buttonA";
-	newA.textContent = "50";
-	newA.href = "javascript:void(0)";
-	newA.onclick = function(){ changeEventsNumber(50); };
-	newTd.appendChild(newA);
-	newTr.appendChild(newTd);
-
-	var newTd = document.createElement("td");
-	newTd.style.width = "25%";
-	if(eventsNumber == 100) {
-		newTd.className = "buttonActiveTd";
-	}
-	else {
-		newTd.className = "buttonTd";
-	}
-	var newA = document.createElement("a");
-	newA.className = "buttonA";
-	newA.textContent = "100";
-	newA.href = "javascript:void(0)";
-	newA.onclick = function(){ changeEventsNumber(100); };
-	newTd.appendChild(newA);
-	newTr.appendChild(newTd);
-
-	var newTd = document.createElement("td");
-	newTd.style.width = "25%";
-	if(eventsNumber == 200) {
-		newTd.className = "buttonActiveTd";
-	}
-	else {
-		newTd.className = "buttonTd";
-	}
-	var newA = document.createElement("a");
-	newA.className = "buttonA";
-	newA.textContent = "200";
-	newA.href = "javascript:void(0)";
-	newA.onclick = function(){ changeEventsNumber(200); };
-	newTd.appendChild(newA);
-	newTr.appendChild(newTd);
-
-	var newTd = document.createElement("td");
-	newTd.style.width = "25%";
-	if(eventsNumber == -1) {
-		newTd.className = "buttonActiveTd";
-	}
-	else {
-		newTd.className = "buttonTd";
-	}
-	var newA = document.createElement("a");
-	newA.className = "buttonA";
-	newA.textContent = "all";
-	newA.href = "javascript:void(0)";
-	newA.onclick = function(){ changeEventsNumber(-1); };
-	newTd.appendChild(newA);
-	newTr.appendChild(newTd);
-
-	// add output to the content table
-	var contentTableObj =
-		document.getElementById("contentTableBody");
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	newTd.appendChild(boxDiv);
-	newTr.appendChild(newTd);
-	contentTableObj.appendChild(newTr);
-
-
-	// generate menu for the filter for type of events that are shown
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	var newB = document.createElement("b");
-	newB.textContent = "Types Shown Filter:";
-	newTd.appendChild(newB);
-	newTr.appendChild(newTd);
-	newBody.appendChild(newTr);
-
-	var boxDiv = document.createElement("div");
-	boxDiv.className = "box";
-
-	var typesTable = document.createElement("table");
-	typesTable.style.width = "100%";
-	typesTable.setAttribute("border", "0");
-	boxDiv.appendChild(typesTable);
-
-
-	newTr = document.createElement("tr");
-	newTd = document.createElement("td");
-	newTd.className = "neutralTd";
-	newTr.appendChild(newTd);
-	typesTable.appendChild(newTr);
-
-
-	// create a form for the filter options
-	var newForm = document.createElement("form");
-	newForm.setAttribute("action", "#");
-	newTd.appendChild(newForm);
-
-	var tempTable = document.createElement("table");
-	tempTable.style.width = "100%";
-	tempTable.setAttribute("border", "0");
-	newForm.appendChild(tempTable);
-
-	// output all filter options
-	eventTypes.forEach(function(eventType) {
-
-		newTr = document.createElement("tr");
-		newTd = document.createElement("td");
-		newTd.setAttribute("id", eventType + "_td");
-
-		var newLabel = document.createElement("label");
-		newLabel.className = "filterLabel";
-		newLabel.setAttribute("for", eventType + "_id");
-		newTd.appendChild(newLabel);
-
-		var newInput = document.createElement("input");
-		newInput.setAttribute("type", "checkbox");
-		newInput.setAttribute("name", "event_type_filter");
-		newInput.setAttribute("value", "1");
-		newInput.setAttribute("id", eventType + "_id");
-
-		// check global variable if filter is checked
-		if(eventTypesFilter[eventType]) {
-			newInput.setAttribute("checked", "");
-			newTd.className = "buttonActiveTd";
-		}
-		else {
-			newTd.className = "buttonTd";
-		}
-
-		newInput.onchange =
-			function(){ changeEventTypesFilter( eventType ); };
-
-		newLabel.appendChild(newInput);
-		newLabel.appendChild(document.createTextNode(eventType));
-
-		newTr.appendChild(newTd);
-		tempTable.appendChild(newTr);
-
-	});
-
-	// add output to the content table
-	var contentTableObj =
-		document.getElementById("contentTableBody");
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	newTd.appendChild(boxDiv);
-	newTr.appendChild(newTd);
-	contentTableObj.appendChild(newTr);
-
-
-	// generate events output
-	var newTr = document.createElement("tr");
-	var newTd = document.createElement("td");
-	var newB = document.createElement("b");
-	newB.textContent = "Events:";
-	newTd.appendChild(newB);
-	newTr.appendChild(newTd);
-	newBody.appendChild(newTr);
-
-	events.sort(compareEventsDesc);
-
-	// add all events to the output
-	for(var i = 0; i < events.length; i++) {
-
-		var eventId = events[i]["id"];
-		var timeOccurred = events[i]["timeOccurred"];
-		var type = events[i]["type"];
-
-		// skip if filter disables this type
-		if(!eventTypesFilter[type]) {
-			continue;
-		}
-
-		var boxDiv = document.createElement("div");
-		boxDiv.className = "box";
-
-		var eventsTable = document.createElement("table");
-		eventsTable.style.width = "100%";
-		eventsTable.setAttribute("border", "0");
-		boxDiv.appendChild(eventsTable);
-
-
-		// add id to the event
-		newTr = document.createElement("tr");
-		newTd = document.createElement("td");
-		newTd.textContent = "Event: " + eventId;
-		newTd.className = "boxHeaderTd";
-		newTr.appendChild(newTd);
-		eventsTable.appendChild(newTr);
-
-
-		// generate date string from timestamp
-		localDate = new Date(timeOccurred * 1000);
-		yearString = localDate.getFullYear();
-		monthString =
-			("0" + (localDate.getMonth() + 1)).slice(-2);
-		dateString =
-			("0" + localDate.getDate()).slice(-2);
-		hoursString =
-			("0" + localDate.getHours()).slice(-2);
-		minutesString =
-			("0" + localDate.getMinutes()).slice(-2);
-		secondsString =
-			("0" + localDate.getSeconds()).slice(-2);
-
-
-		// add type to the events
-		newTr = document.createElement("tr");
-		newTd = document.createElement("td");
-		newB = document.createElement("b");
-		newB.textContent = "Type:";
-		newTd.appendChild(newB);
-		newTd.className = "boxEntryTd";
-		newTr.appendChild(newTd);
-		eventsTable.appendChild(newTr);
-
-		newTr = document.createElement("tr");
-		newTd = document.createElement("td");
-		newTd.textContent = type;
-		newTd.className = "neutralTd";
-		newTr.appendChild(newTd);
-		eventsTable.appendChild(newTr);
-
-
-		// add time received to the events
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		var newB = document.createElement("b");
-		newB.textContent = "Time Occurred:";
-		newTd.appendChild(newB);
-		newTd.className = "boxEntryTd";
-		newTr.appendChild(newTd);
-		eventsTable.appendChild(newTr);
-
-		var newTr = document.createElement("tr");
-		var newTd = document.createElement("td");
-		newTd.textContent = monthString + "/" + dateString + "/" +
-			yearString + " " + hoursString + ":" +
-			minutesString + ":" + secondsString;
-		newTd.className = "neutralTd";
-		newTr.appendChild(newTd);
-		eventsTable.appendChild(newTr);
-		newTd.className = "neutralTd";
-		newTr.appendChild(newTd);
-		eventsTable.appendChild(newTr);
-
-
-		// add output of the specific type to the events
-		switch(type) {
-			case "changeAlert":
-				var oldDescription = events[i]["oldDescription"];
-				var newDescription = events[i]["newDescription"];
-				addEventChangeAlert(eventsTable, oldDescription,
-					newDescription);
-				break;
-
-			case "changeManager":
-				var oldDescription = events[i]["oldDescription"];
-				var newDescription = events[i]["newDescription"];
-				addEventChangeManager(eventsTable, oldDescription,
-					newDescription);
-				break;
-
-			case "changeNode":
-				var oldHostname = events[i]["oldHostname"];
-				var oldNodeType = events[i]["oldNodeType"];
-				var oldInstance = events[i]["oldInstance"];
-				var oldVersion = events[i]["oldVersion"];
-				var oldRev = events[i]["oldRev"];
-				var oldUsername = events[i]["oldUsername"];
-				var oldPersistent = events[i]["oldPersistent"];
-				var newHostname = events[i]["newHostname"];
-				var newNodeType = events[i]["newNodeType"];
-				var newInstance = events[i]["newInstance"];
-				var newVersion = events[i]["newVersion"];
-				var newRev = events[i]["newRev"];
-				var newUsername = events[i]["newUsername"];
-				var newPersistent = events[i]["newPersistent"];
-				addEventChangeNode(eventsTable, oldHostname, oldNodeType,
-					oldInstance, oldVersion, oldRev, oldUsername,
-					oldPersistent, newHostname, newNodeType, newInstance,
-					newVersion, newRev, newUsername, newPersistent);
-				break;
-
-			case "changeOption":
-				var optionType = events[i]["optionType"];
-				var oldValue = events[i]["oldValue"];
-				var newValue = events[i]["newValue"];
-				addEventChangeOption(eventsTable, optionType, oldValue,
-					newValue);
-				break;
-
-			case "changeSensor":
-				var oldAlertDelay = events[i]["oldAlertDelay"];
-				var oldDescription = events[i]["oldDescription"];
-				var newAlertDelay = events[i]["newAlertDelay"];
-				var newDescription = events[i]["newDescription"];
-				addEventChangeSensor(eventsTable, oldAlertDelay,
-					oldDescription, newAlertDelay, newDescription);
-				break;
-
-			case "connectedChange":
-				var hostname = events[i]["hostname"];
-				var nodeType = events[i]["nodeType"];
-				var instance = events[i]["instance"];
-				var connected = events[i]["connected"];
-				addEventConnectedChange(eventsTable, hostname, nodeType,
-					instance, connected);
-				break;
-
-			case "deleteAlert":
-				var description = events[i]["description"];
-				addEventDeleteAlert(eventsTable, description);
-				break;
-
-			case "deleteManager":
-				var description = events[i]["description"];
-				addEventDeleteManager(eventsTable, description);
-				break;
-
-			case "deleteNode":
-				var hostname = events[i]["hostname"];
-				var nodeType = events[i]["nodeType"];
-				var instance = events[i]["instance"];
-				addEventDeleteNode(eventsTable, hostname, nodeType,
-					instance);
-				break;
-
-			case "deleteSensor":
-				var description = events[i]["description"];
-				addEventDeleteSensor(eventsTable, description);
-				break;
-
-			case "newAlert":
-				var hostname = events[i]["hostname"];
-				var description = events[i]["description"];
-				addEventNewAlert(eventsTable, hostname, description);
-				break;
-
-			case "newManager":
-				var hostname = events[i]["hostname"];
-				var description = events[i]["description"];
-				addEventNewManager(eventsTable, hostname, description);
-				break;
-
-			case "newNode":
-				var hostname = events[i]["hostname"];
-				var nodeType = events[i]["nodeType"];
-				var instance = events[i]["instance"];
-				addEventNewNode(eventsTable, hostname, nodeType, instance);
-				break;
-
-			case "newOption":
-				var optionType = events[i]["optionType"];
-				var value = events[i]["value"];
-				addEventNewOption(eventsTable, optionType, value);
-				break;
-
-			case "newSensor":
-				var hostname = events[i]["hostname"];
-				var description = events[i]["description"];
-				var state = events[i]["state"];
-				addEventNewSensor(eventsTable, hostname, description,
-					state);
-				break;
-
-			case "newVersion":
-				var usedVersion = events[i]["usedVersion"];
-				var usedRev = events[i]["usedRev"];
-				var newVersion = events[i]["newVersion"];
-				var newRev = events[i]["newRev"];
-				var instance = events[i]["instance"];
-				var hostname = events[i]["hostname"];
-				addEventNewVersion(eventsTable, usedVersion, usedRev,
-					newVersion, newRev, instance, hostname);
-				break;
-
-			case "sensorAlert":
-				var description = events[i]["description"];
-				var state = events[i]["state"];
-				var dataType = events[i]["dataType"];
-				var sensorData = events[i]["data"];
-				addEventSensorAlert(eventsTable, description, state,
-					dataType, sensorData);
-				break;
-
-			case "sensorTimeOut":
-				var hostname = events[i]["hostname"];
-				var description = events[i]["description"];
-				var state = events[i]["state"];
-				addEventSensorTimeOut(eventsTable, hostname, description,
-					state);
-				break;
-
-			case "stateChange":
-				var hostname = events[i]["hostname"];
-				var description = events[i]["description"];
-				var state = events[i]["state"];
-				var dataType = events[i]["dataType"];
-				var sensorData = events[i]["data"];
-				addEventStateChange(eventsTable, hostname, description,
-					state, dataType, sensorData)
-				break;
-
-			default:
-				break;
-		}
-
-
-		// add events to the content table
-		contentTableObj =
-			document.getElementById("contentTableBody");
-		newTr = document.createElement("tr");
-		newTd = document.createElement("td");
-		newTd.appendChild(boxDiv);
-		newTr.appendChild(newTd);
-		contentTableObj.appendChild(newTr);
-
-	}
-
-}
-
-
 // outputs the "managers" data
 function outputManagers() {
 
@@ -2106,10 +1455,10 @@ function outputManagers() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2324,10 +1673,10 @@ function outputNodes() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"] == "serverTime") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2551,10 +1900,10 @@ function outputOverview() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2563,6 +1912,7 @@ function outputOverview() {
 
 	// generate sensor alerts overview output
 	sensorAlerts.sort(compareSensorAlertsDesc);
+	sensors.sort(compareSensorsAsc);
 
 	var newTr = document.createElement("tr");
 	var newTd = document.createElement("td");
@@ -2582,7 +1932,7 @@ function outputOverview() {
 	boxDiv.appendChild(sensorAlertsTable);
 
 	// add the last sensor alerts to the output
-	for(var i = 0; i < 5; i++) {
+	for(var i = 0; i < 10; i++) {
 		if(i >= sensorAlerts.length) {
 			break;
 		}
@@ -2590,6 +1940,8 @@ function outputOverview() {
 		var timeReceived = sensorAlerts[i]["timeReceived"];
 		var state = sensorAlerts[i]["state"];
 		var description = sensorAlerts[i]["description"];
+		var jsonData = sensorAlerts[i]["optionalData"];
+		var optionalData = JSON.parse(jsonData);
 
 		// generate date string from timestamp
 		localDate = new Date(timeReceived * 1000);
@@ -2612,17 +1964,24 @@ function outputOverview() {
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		newTd.appendChild(document.createTextNode(description));
+
+		// check if a message was sent along with the sensor alert
+		if(optionalData.hasOwnProperty("message")) {
+			newTd.appendChild(document.createTextNode(" (" + optionalData["message"] + ")"));
+		}
+		newTd.appendChild(document.createElement("br"));
+
 		if(state == 0) {
 			newTd.className = "normalTd";
-			newTd.appendChild(document.createTextNode(" (normal)"));
+			newTd.appendChild(document.createTextNode("Normal"));
 		}
 		else {
 			newTd.className = "triggeredTd";
-			newTd.appendChild(document.createTextNode(" (triggered)"));
+			newTd.appendChild(document.createTextNode("Triggered"));
 		}
 		newTd.appendChild(document.createElement("br"));
-		newTr.appendChild(newTd);
 		newTd.appendChild(document.createTextNode(timeReceivedString));
+		newTr.appendChild(newTd);
 		sensorAlertsTable.appendChild(newTr);
 	}
 
@@ -2671,6 +2030,7 @@ function outputOverview() {
 		for(j = 0; j < nodes.length; j++) {
 			if(nodes[j]["id"] == nodeId) {
 				var connected = nodes[j]["connected"];
+				break;
 			}
 		}
 
@@ -2688,7 +2048,7 @@ function outputOverview() {
 			newTd.appendChild(document.createElement("br"));
 			newTd.appendChild(document.createTextNode(" (not connected)"));
 		}
-		else if(lastStateUpdated < (serverTime - 2* 60)) {
+		else if(lastStateUpdated < (msgTime - 2* 60)) {
 			newTd.className = "failTd";
 			newTd.appendChild(document.createElement("br"));
 			newTd.appendChild(document.createTextNode(" (timed out)"));
@@ -2741,10 +2101,10 @@ function outputSensorAlerts() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"] == "serverTime") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -2882,6 +2242,7 @@ function outputSensorAlerts() {
 		var optionalData = JSON.parse(jsonData);
 		var dataType = sensorAlerts[i]["dataType"];
 		var sensorData = sensorAlerts[i]["data"];
+		var alertLevels = sensorAlerts[i]["alertLevels"];
 
 
 		var boxDiv = document.createElement("div");
@@ -2997,9 +2358,6 @@ function outputSensorAlerts() {
 		newTd.className = "neutralTd";
 		newTr.appendChild(newTd);
 		sensorAlertTable.appendChild(newTr);
-		newTd.className = "neutralTd";
-		newTr.appendChild(newTd);
-		sensorAlertTable.appendChild(newTr);
 
 
 		// check if a message was sent along with the sensor alert
@@ -3021,10 +2379,25 @@ function outputSensorAlerts() {
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorAlertTable.appendChild(newTr);
-			newTd.className = "neutralTd";
-			newTr.appendChild(newTd);
-			sensorAlertTable.appendChild(newTr);
 		}
+
+
+                // add alert levels to the sensor alert
+                var newTr = document.createElement("tr");
+                var newTd = document.createElement("td");
+                var newB = document.createElement("b");
+                newB.textContent = "Alert Levels:";
+                newTd.appendChild(newB);
+                newTd.className = "boxEntryTd";
+                newTr.appendChild(newTd);
+                sensorAlertTable.appendChild(newTr);
+
+                var newTr = document.createElement("tr");
+                var newTd = document.createElement("td");
+                newTd.textContent = alertLevels.map(String).join(", ");
+                newTd.className = "neutralTd";
+                newTr.appendChild(newTd);
+                sensorAlertTable.appendChild(newTr);
 
 
 		// add sensor alert to the content table
@@ -3059,10 +2432,10 @@ function outputSensors() {
 	contentTableObj.replaceChild(newBody, oldBody);
 	delete oldBody;
 
-	// get server time
+	// get msg time
 	for(var i = 0; i < internals.length; i++) {
-		if(internals[i]["type"].toUpperCase() == "SERVERTIME") {
-			serverTime = internals[i]["value"]
+		if(internals[i]["type"].toUpperCase() == "MSGTIME") {
+			msgTime = internals[i]["value"]
 		}
 	}
 
@@ -3326,7 +2699,7 @@ function outputSensors() {
 			newTr.appendChild(newTd);
 			sensorTable.appendChild(newTr);
 			// set color to red if the sensor has timed out
-			if(lastStateUpdated < (serverTime - 2* 60)) {
+			if(lastStateUpdated < (msgTime - 2* 60)) {
 				newTd.className = "failTd";
 			}
 			else {

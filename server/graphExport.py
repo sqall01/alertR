@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -61,7 +61,7 @@ class GraphAlertLevel:
                + "Trigger Always: " + str(self.alert_level.triggerAlways) + "\l" \
                + "Alert for Triggered: " + str(self.alert_level.triggerAlertTriggered) + "\l" \
                + "Alert for Normal: " + str(self.alert_level.triggerAlertNormal) + "\l" \
-               + "Has Rules: " + str(self.alert_level.rulesActivated) + "\l\""
+               + "Instrumented: " + str(self.alert_level.instrumentation_active) + "\l\""
         return temp
 
     def __eq__(self, other):

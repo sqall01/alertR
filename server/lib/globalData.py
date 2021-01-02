@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -58,10 +58,10 @@ class GlobalData:
     def __init__(self):
 
         # version of the used server (and protocol)
-        self.version = 0.600  # type: float
+        self.version = 0.700  # type: float
 
         # revision of the used server
-        self.rev = 3  # type: int
+        self.rev = 0  # type: int
 
         # Used database layout version.
         self.dbVersion = 1  # type: int

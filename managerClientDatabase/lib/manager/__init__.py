@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -7,6 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import ServerEventHandler
+from .eventHandler import ManagerEventHandler
 from .server import LocalServerSession, ThreadedUnixStreamServer
 from .storage import Mysql

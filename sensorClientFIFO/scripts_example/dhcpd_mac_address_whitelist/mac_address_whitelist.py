@@ -1,9 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys
 import csv
 import os
-import subprocess
 import time
 import fcntl
 import smtplib

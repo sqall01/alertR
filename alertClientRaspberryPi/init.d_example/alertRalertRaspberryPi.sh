@@ -13,7 +13,9 @@
 set -e
 
 # change USER to the user which runs the alertRclient
-USER=root # need root permissions to access the gpios on a raspberry pi
+# NOTE: older versions of the Raspberry Pi packages need to be run as "root"
+# in order to access the GPIO pins
+USER=alertr
 # change DAEMON to the path to run the alertRclient
 DAEMON=/absolute/path/to/alertRclient.py
 

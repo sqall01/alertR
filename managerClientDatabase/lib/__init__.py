@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -10,8 +10,9 @@
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .manager import LocalServerSession, ThreadedUnixStreamServer
 from .manager import Mysql
-from .manager import ServerEventHandler
+from .manager import ManagerEventHandler
 from .smtp import SMTPAlert
-from .localObjects import Option, Node, Sensor, Manager, Alert, AlertLevel
 from .update import Updater
 from .globalData import GlobalData
+from .globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
+    ManagerObjAlertLevel

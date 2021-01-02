@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -2180,7 +2180,6 @@ class Sqlite(_Storage):
                 sensorAlert.changeState = (resultTuple[8] == 1)
                 sensorAlert.hasLatestData = (resultTuple[9] == 1)
                 sensorAlert.dataType = resultTuple[10]
-                sensorAlert.rulesActivated = False
 
                 # Set optional data for sensor alert.
                 sensorAlert.hasOptionalData = False
@@ -2812,7 +2811,7 @@ class Sqlite(_Storage):
 
     def getSensorData(self,
                       sensorId: int,
-                      logger: logging.Logger = None) -> Optional[Any]:
+                      logger: logging.Logger = None) -> Optional[SensorData]:
 
         # Set logger instance to use.
         if not logger:

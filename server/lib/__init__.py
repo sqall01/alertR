@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -12,7 +12,8 @@ from .server import ServerSession, ThreadedTCPServer, AsynchronousSender
 from .storage import Sqlite
 from .alert import SensorAlertExecuter
 from .localObjects import SensorDataType, Sensor, AlertLevel
-from .internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor
+from .internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor, \
+    AlertLevelInstrumentationErrorSensor
 from .config import parse_config
 from .users import CSVBackend
 from .manager import ManagerUpdateExecuter

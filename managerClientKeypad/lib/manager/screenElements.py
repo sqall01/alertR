@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -128,6 +128,8 @@ class PinUrwid(urwid.Edit):
 
         # set time the screen was unlocked
         self.console.screenUnlockedTime = int(time.time())
+
+        logging.info("[%s] Unlocking screen." % self.fileName)
 
         # show menu
         self.console.showMenuView()

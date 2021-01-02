@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -11,7 +11,8 @@ import time
 import os
 import logging
 import kodijson
-from .core import _Alert, SensorAlert
+from .core import _Alert
+from ..globalData import ManagerObjSensorAlert
 
 
 # this function class an alert that controls a kodi instance
@@ -45,7 +46,7 @@ class KodiAlert(_Alert):
         # File location of icon to display.
         self.icon = ""  # type: str
 
-    def _process_alert(self, sensor_alert: SensorAlert):
+    def _process_alert(self, sensor_alert: ManagerObjSensorAlert):
 
         # only execute if the last triggered alert was more than
         # the configured trigger delay ago
@@ -140,7 +141,7 @@ class KodiAlert(_Alert):
         # set the time of the trigger
         self.triggered = 0.0
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -148,7 +149,7 @@ class KodiAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 

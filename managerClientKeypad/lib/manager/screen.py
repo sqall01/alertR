@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -10,208 +10,30 @@
 import threading
 import logging
 import os
-import time
 import urwid
-from .audio import AudioOptions
+import time
+from .audio import AudioOutput
 from .screenElements import PinUrwid, StatusUrwid, WarningUrwid
 from ..globalData import GlobalData
-from typing import Optional
-
-
-# this class is used by the urwid console thread
-# to process actions concurrently and do not block the console thread
-class ScreenActionExecuter(threading.Thread):
-
-    def __init__(self, globalData: GlobalData):
-        threading.Thread.__init__(self)
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # get global configured data
-        self.globalData = globalData
-        self.serverComm = self.globalData.serverComm
-        self.audioOutput = self.globalData.audioOutput
-
-        # this options are used when the thread should
-        # send a new option to the server
-        self.sendOption = False
-        self.optionType = None  # type: Optional[str]
-        self.optionValue = None  # type: Optional[float]
-
-        # this options are used when the thread should
-        # send delayed a new option to the server
-        self.sendOptionDelayed = False
-        self.optionTypeDelayed = None  # type: Optional[str]
-        self.optionValueDelayed = None  # type: Optional[float]
-        self.optionDelayDelayed = None  # type: Optional[int]
-
-        # this options are used when the thread should
-        # output audio
-        self.outputAudio = False
-        self.audioType = None  # type: Optional[int]
-
-    def run(self):
-
-        # check if an option message should be send to the server
-        if self.sendOption:
-
-            # check if the server communication object is available
-            if self.serverComm is None:
-                logging.error("[%s]: Sending option change to server failed. No server communication object available."
-                              % self.fileName)
-                return
-
-            # send option change to server
-            if not self.serverComm.sendOption(self.optionType, self.optionValue):
-                logging.error("[%s]: Sending option change to the server failed." % self.fileName)
-                return
-
-        # check if an option message should be send delayed to the server
-        elif self.sendOptionDelayed:
-
-            # check if the server communication object is available
-            if self.serverComm is None:
-                logging.error("[%s]: Sending delayed option change to server failed. "
-                              % self.fileName
-                              + "No server communication object available.")
-                return
-
-            # send option change to server
-            if not self.serverComm.sendOption(self.optionTypeDelayed, self.optionValueDelayed, self.optionDelayDelayed):
-                logging.error("[%s]: Sending option change delayed to the server failed."
-                              % self.fileName)
-                return
-
-        # check if audio should be outputted
-        elif self.outputAudio:
-            if self.audioType == AudioOptions.activating:
-                self.audioOutput.audioActivating()
-
-            elif self.audioType == AudioOptions.activatingDelayed:
-                self.audioOutput.audioActivatingDelayed()
-
-            elif self.audioType == AudioOptions.deactivating:
-                self.audioOutput.audioDeactivating()
-
-            elif self.audioType == AudioOptions.warning:
-                self.audioOutput.audioWarning()
-
-
-# this class handles the screen updates
-class ScreenUpdater(threading.Thread):
-
-    def __init__(self, globalData: GlobalData):
-        threading.Thread.__init__(self)
-
-        # get global configured data
-        self.globalData = globalData
-        self.sensorAlerts = self.globalData.sensorAlerts
-        self.console = self.globalData.console
-        self.serverComm = self.globalData.serverComm
-        self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # create an event that is used to wake this thread up
-        # and update the screen
-        self.screenUpdaterEvent = threading.Event()
-        self.screenUpdaterEvent.clear()
-
-        # set exit flag as false
-        self.exitFlag = False
-
-    def run(self):
-
-        while True:
-            if self.exitFlag:
-                return
-
-            # wait until thread is woken up by an event to update the screen
-            # or 5 seconds elapsed
-            self.screenUpdaterEvent.wait(5)
-            self.screenUpdaterEvent.clear()
-
-            # if reference to console object does not exist
-            # => get it from global data or if it does not exist continue loop
-            if self.console is None:
-                if self.globalData.console is not None:
-                    self.console = self.globalData.console
-
-                else:
-                    continue
-
-            # check if the screen is unlocked
-            # and the screen unlocked time has timed out
-            # => lock screen
-            utcTimestamp = int(time.time())
-            if (not self.console.inPinView
-               and (utcTimestamp - self.console.screenUnlockedTime) > self.unlockedScreenTimeout):
-
-                logging.info("[%s]: Timeout for unlocked screen." % self.fileName)
-
-                if not self.console.updateScreen("lockscreen"):
-                    logging.error("[%s]: Locking screen failed." % self.fileName)
-
-            # check if a sensor alert was received
-            # => update screen with sensor alert
-            if len(self.sensorAlerts) != 0:
-                logging.info("[%s]: Updating screen with sensor alert." % self.fileName)
-
-                if not self.console.updateScreen("sensoralert"):
-                    logging.error("[%s]: Updating screen with sensor alert failed." % self.fileName)
-
-                # do not use the old status information from the server
-                # to update the screen => wait for new status update
-                continue
-
-            # update screen normally
-            logging.debug("[%s]: Updating screen." % self.fileName)
-            if not self.console.updateScreen("status"):
-                logging.error("[%s]: Updating screen failed." % self.fileName)
-
-            # if reference to server communication object does not exist
-            # => get it from global data or if it does not exist continue loop 
-            if self.serverComm is None:
-                if self.globalData.serverComm is not None:
-                    self.serverComm = self.globalData.serverComm
-
-                else:
-                    continue
-
-            # check if the client is not connected to the server
-            # => update screen to connection failure
-            if not self.serverComm.isConnected:
-                logging.debug("[%s]: Updating screen for connection failure." % self.fileName)
-
-                if not self.console.updateScreen("connectionfail"):
-                    logging.error("[%s]: Updating screen failed." % self.fileName)
-
-    # sets the exit flag to shut down the thread
-    def exit(self):
-        self.exitFlag = True
+from ..client import ServerCommunication
 
 
 # this class handles the complete screen/console
 class Console:
 
-    def __init__(self, globalData: GlobalData):
+    def __init__(self, global_data: GlobalData):
         self.fileName = os.path.basename(__file__)
 
         # get global configured data
-        self.globalData = globalData
-        self.options = self.globalData.options
-        self.nodes = self.globalData.nodes
-        self.sensors = self.globalData.sensors
-        self.managers = self.globalData.managers
-        self.alerts = self.globalData.alerts
-        self.sensorAlerts = self.globalData.sensorAlerts
-        self.serverComm = self.globalData.serverComm
+        self.globalData = global_data
+        self.serverComm = self.globalData.serverComm  # type: ServerCommunication
+        self.audioOutput = self.globalData.audioOutput  # type: AudioOutput
         self.pins = self.globalData.pins
         self.timeDelayedActivation = self.globalData.timeDelayedActivation
         self.audioOutput = self.globalData.audioOutput
         self.sensorWarningStates = self.globalData.sensorWarningStates
+        self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
+        self.system_data = self.globalData.system_data
 
         # lock that is being used so only one thread can update the screen
         self.consoleLock = threading.BoundedSemaphore(1)
@@ -298,25 +120,8 @@ class Console:
         statesNotSatisfied = list()
         for sensorWarningState in self.sensorWarningStates:
 
-            # get the node corresponding to sensor warning state
-            currentNode = None
-            for node in self.nodes:
-                if node.username == sensorWarningState.username:
-                    currentNode = node
-                    break
-
-            # skip warning state if node is not found
-            if currentNode is None:
-                logging.warning("[%s]: Not able to find node for username '%s'."
-                                % (self.fileName, sensorWarningState.username))
-                continue
-
-            # get the sensor corresponding to sensor warning state
-            currentSensor = None
-            for sensor in self.sensors:
-                if sensor.nodeId == currentNode.nodeId and sensor.remoteSensorId == sensorWarningState.remoteSensorId:
-                    currentSensor = sensor
-                    break
+            currentSensor = self.system_data.get_sensor_by_remote_id(sensorWarningState.username,
+                                                                     sensorWarningState.remoteSensorId)
 
             # skip warning state if sensor is not found
             if currentSensor is None:
@@ -342,26 +147,9 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.activating
-            audioProcess.start()
+            self.audioOutput.audioActivating()
 
-        # send option message to server via a thread to not block
-        # the urwid console thread
-        updateProcess = ScreenActionExecuter(self.globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates 
-        updateProcess.daemon = True
-        updateProcess.sendOption = True
-        updateProcess.optionType = "alertSystemActive"
-        updateProcess.optionValue = 1
-        updateProcess.start()
+        self.serverComm.send_option("alertSystemActive", 1.0)
 
     # internal function that executes option 2 of the menu
     def _executeOption2(self):
@@ -370,26 +158,9 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.deactivating
-            audioProcess.start()
+            self.audioOutput.audioDeactivating()
 
-        # send option message to server via a thread to not block
-        # the urwid console thread
-        updateProcess = ScreenActionExecuter(self.globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates 
-        updateProcess.daemon = True
-        updateProcess.sendOption = True
-        updateProcess.optionType = "alertSystemActive"
-        updateProcess.optionValue = 0
-        updateProcess.start()
+        self.serverComm.send_option("alertSystemActive", 0.0)
 
     # internal function that executes option 3 of the menu
     def _executeOption3(self):
@@ -398,27 +169,9 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.activatingDelayed
-            audioProcess.start()
+            self.audioOutput.audioActivatingDelayed()
 
-        # send option message to server via a thread to not block
-        # the urwid console thread
-        updateProcess = ScreenActionExecuter(self.globalData)
-        # set thread to daemon
-        # => threads terminates when main thread terminates 
-        updateProcess.daemon = True
-        updateProcess.sendOptionDelayed = True
-        updateProcess.optionTypeDelayed = "alertSystemActive"
-        updateProcess.optionValueDelayed = 1
-        updateProcess.optionDelayDelayed = self.timeDelayedActivation
-        updateProcess.start()
+        self.serverComm.send_option("alertSystemActive", 1.0, self.timeDelayedActivation)
 
     # internal function that handles the keypress for the menu view
     def _handleMenuKeypress(self, key: str):
@@ -498,6 +251,19 @@ class Console:
         logging.debug("[%s]: Release lock." % self.fileName)
         self.consoleLock.release()
 
+    def _thread_screen_unlock_checker(self):
+        while True:
+            utcTimestamp = int(time.time())
+            if (not self.inPinView
+                    and (utcTimestamp - self.screenUnlockedTime) > self.unlockedScreenTimeout):
+
+                logging.info("[%s]: Timeout for unlocked screen." % self.fileName)
+
+                if not self.updateScreen("lockscreen"):
+                    logging.error("[%s]: Locking screen failed." % self.fileName)
+
+            time.sleep(5)
+
     # this function checks if the given pin is in the list of allowed pins
     def checkPin(self, inputPin: str) -> bool:
         if inputPin in self.pins:
@@ -560,21 +326,21 @@ class Console:
             self.connectionStatus.updateStatusValue("Online")
             self.connectionStatus.turnNeutral()
 
-            # update all option widgets
-            for option in self.options:
-                # change alert system active widget according
-                # to received status
-                if option.type == "alertSystemActive":
-                    if option.value == 0:
-                        self.alertSystemActive.updateStatusValue("Deactivated")
-                        self.alertSystemActive.turnRed()
+            option = self.system_data.get_option_by_type("alertSystemActive")
+            if option is None:
+                logging.error("[%s]: No alert system status option." % self.fileName)
 
-                    else:
-                        self.alertSystemActive.updateStatusValue("Activated")
-                        self.alertSystemActive.turnGreen()
+            else:
+                if option.value == 0:
+                    self.alertSystemActive.updateStatusValue("Deactivated")
+                    self.alertSystemActive.turnRed()
+
+                else:
+                    self.alertSystemActive.updateStatusValue("Activated")
+                    self.alertSystemActive.turnGreen()
 
         # check if the connection to the server failed
-        if received_str == "connectionfail":
+        elif received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
@@ -585,14 +351,14 @@ class Console:
             self.alertSystemActive.turnGray()
 
         # check if a sensor alert was received from the server
-        if received_str == "sensoralert":
+        elif received_str == "sensoralert":
             logging.debug("[%s]: Sensor alert received. Removing it." % self.fileName)
 
             # remove all sensor alerts
-            del self.sensorAlerts[:]
+            self.system_data.delete_sensor_alerts_received_before(int(time.time() + 1))
 
         # check if the screen should be locked
-        if received_str == "lockscreen":
+        elif received_str == "lockscreen":
             logging.debug("[%s]: Locking screen." % self.fileName)
 
             self.showPinView()
@@ -616,6 +382,8 @@ class Console:
 
     # show the pin view
     def showPinView(self):
+
+        logging.info("[%s] Locking screen." % self.fileName)
 
         self.inMenuView = False
         self.inPinView = True
@@ -643,15 +411,7 @@ class Console:
 
         # check if output is activated
         if self.audioOutput is not None:
-            # output audio via a thread to not block
-            # the urwid console thread
-            audioProcess = ScreenActionExecuter(self.globalData)
-            # set thread to daemon
-            # => threads terminates when main thread terminates 
-            audioProcess.daemon = True
-            audioProcess.outputAudio = True
-            audioProcess.audioType = AudioOptions.warning
-            audioProcess.start()
+            self.audioOutput.audioWarning()
 
         # remove views from the screen
         self._clearEditPartScreen()
@@ -665,19 +425,19 @@ class Console:
     def startConsole(self):
 
         # generate widget to show the status of the alert system
-        for option in self.options:
-            if option.type == "alertSystemActive":
-                if option.value == 0:
-                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-                    self.alertSystemActive.turnRed()
-
-                else:
-                    self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-                    self.alertSystemActive.turnGreen()
-
-        if self.alertSystemActive is None:
+        option = self.system_data.get_option_by_type("alertSystemActive")
+        if option is None:
             logging.error("[%s]: No alert system status option." % self.fileName)
             return
+
+        if option.type == "alertSystemActive":
+            if option.value == 0:
+                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
+                self.alertSystemActive.turnRed()
+
+            else:
+                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
+                self.alertSystemActive.turnGreen()
 
         # generate widget to show the status of the connection
         self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
@@ -739,6 +499,11 @@ class Console:
         self.inMenuView = False
         self.inWarningView = False
 
+        # Start unlock checker thread.
+        thread = threading.Thread(target=self._thread_screen_unlock_checker)
+        thread.daemon = True
+        thread.start()
+
         # run urwid loop
         self.mainLoop.run()
 
@@ -752,4 +517,5 @@ class Console:
 
             os.write(self.screenFd, status.encode("ascii"))
             return True
+
         return False

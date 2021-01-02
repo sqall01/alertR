@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the server
 -->
-<config version="0.600">
+<config version="0.700">
 
     <!--
         in this section general options are configured
@@ -162,20 +162,24 @@
                 triggerAlertNormal="True" />
 
             <!--
-                rule chain settings for this alert level
-                activated - sets if rules are activated for this alert level
-                    ("True or "False)
-                NOTE: the rules of the rule chain are event based on sensor
-                triggers. This means that each rule chain has to have at least
-                one sensor (and this sensor is not allowed to be negated by
-                a NOT).
+                Setting if Sensor Alerts for this Alert Level are instrumented (meaning the given instrumentation
+                script is executed with the contents of the Sensor Alert and the output of the instrumentation script
+                is then used for further processing).
+                activated - This flag indicates if this Alert Level is instrumented.
+                    ("True" or "False")
+                cmd - Path to the instrumentation script or executable.
+                    NOTE: execute permission has to be set for the script or executable.
+                timeout - timeout in seconds that the instrumentation script can take during the execution
+                    NOTE: the server delays the processing of the received Sensor Alert until the instrumentation script
+                    is either finished or the timeout is reached. Hence the introduced processing delay is at maximum
+                    the set timeout.
             -->
-            <rules
-                activated="False">
-            </rules>
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
 
         </alertLevel>
-
 
         <!--
             a single alert level is configured in an "alertLevel" element
@@ -227,20 +231,24 @@
                 triggerAlertNormal="False"  />
 
             <!--
-                rule chain settings for this alert level
-                activated - sets if rules are activated for this alert level
-                    ("True or "False)
-                NOTE: the rules of the rule chain are event based on sensor
-                triggers. This means that each rule chain has to have at least
-                one sensor (and this sensor is not allowed to be negated by
-                a NOT).
+                Setting if Sensor Alerts for this Alert Level are instrumented (meaning the given instrumentation
+                script is executed with the contents of the Sensor Alert and the output of the instrumentation script
+                is then used for further processing).
+                activated - This flag indicates if this Alert Level is instrumented.
+                    ("True" or "False")
+                cmd - Path to the instrumentation script or executable.
+                    NOTE: execute permission has to be set for the script or executable.
+                timeout - timeout in seconds that the instrumentation script can take during the execution
+                    NOTE: the server delays the processing of the received Sensor Alert until the instrumentation script
+                    is either finished or the timeout is reached. Hence the introduced processing delay is at maximum
+                    the set timeout.
             -->
-            <rules
-                activated="False">
-            </rules>
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
 
         </alertLevel>
-
 
         <!--
             a single alert level is configured in an "alertLevel" element
@@ -292,17 +300,22 @@
                 triggerAlertNormal="False"  />
 
             <!--
-                rule chain settings for this alert level
-                activated - sets if rules are activated for this alert level
-                    ("True or "False)
-                NOTE: the rules of the rule chain are event based on sensor
-                triggers. This means that each rule chain has to have at least
-                one sensor (and this sensor is not allowed to be negated by
-                a NOT).
+                Setting if Sensor Alerts for this Alert Level are instrumented (meaning the given instrumentation
+                script is executed with the contents of the Sensor Alert and the output of the instrumentation script
+                is then used for further processing).
+                activated - This flag indicates if this Alert Level is instrumented.
+                    ("True" or "False")
+                cmd - Path to the instrumentation script or executable.
+                    NOTE: execute permission has to be set for the script or executable.
+                timeout - timeout in seconds that the instrumentation script can take during the execution
+                    NOTE: the server delays the processing of the received Sensor Alert until the instrumentation script
+                    is either finished or the timeout is reached. Hence the introduced processing delay is at maximum
+                    the set timeout.
             -->
-            <rules
-                activated="False">
-            </rules>
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
 
         </alertLevel>
 
@@ -357,383 +370,22 @@
                 triggerAlertNormal="False"  />
 
             <!--
-                rule chain settings for this alert level
-                activated - sets if rules are activated for this alert level
-                    ("True or "False)
-                NOTE: the rules of the rule chain are event based on sensor
-                triggers. This means that each rule chain has to have at least
-                one sensor (and this sensor is not allowed to be negated by
-                a NOT).
+                Setting if Sensor Alerts for this Alert Level are instrumented (meaning the given instrumentation
+                script is executed with the contents of the Sensor Alert and the output of the instrumentation script
+                is then used for further processing).
+                activated - This flag indicates if this Alert Level is instrumented.
+                    ("True" or "False")
+                cmd - Path to the instrumentation script or executable.
+                    NOTE: execute permission has to be set for the script or executable.
+                timeout - timeout in seconds that the instrumentation script can take during the execution
+                    NOTE: the server delays the processing of the received Sensor Alert until the instrumentation script
+                    is either finished or the timeout is reached. Hence the introduced processing delay is at maximum
+                    the set timeout.
             -->
-            <rules
-                activated="True">
-
-                <!--
-                    one rule of the rule chain
-                    order - gives the order in which the rules are evaluated
-                        (ascending order)
-                    maxTimeAfterPrev - gives the maximum amount of time
-                        (in seconds) that can be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a maximum time of 5 seconds, then 5 seconds can
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    minTimeAfterPrev - gives the minimum amount of time
-                        (in seconds) that have to be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a minimum time of 2 seconds, then 2 seconds have
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    counterActivated - sets if this rule uses a counter
-                    counterLimit - sets the limit of the counter. When it is
-                        reached, the rule does not trigger
-                    counterWaitTime - sets the time (in seconds) how long
-                        the counter have to wait until it can remove a counter
-                        token (and therefore can trigger again when the
-                        limit is reached)
-                -->
-                <rule
-                    order="0"
-                    maxTimeAfterPrev="0.0"
-                    minTimeAfterPrev="0.0"
-                    counterActivated="False"
-                    counterLimit="0"
-                    counterWaitTime="0" >
-
-                    <!--
-                        a boolean operator of the rule (possible boolean
-                        operators are <and>, <or> and <not>)
-                        (NOTE: the <not> operator can only have one rule
-                        element in it)
-                    -->
-                    <and>
-
-                        <!--
-                        a sensor rule element
-                        timeTriggeredFor - the time (in seconds) sets how long
-                            this rule element counts as triggered for the
-                            rule engine when a sensor alert for it is received
-                            (NOTE: do not set this value to low)
-                        username - the username of the sensor client that
-                            handles this sensor
-                        remoteSensorId - the sensor id of the sensor that is
-                            configured on the client side
-                        -->
-                        <sensor
-                            timeTriggeredFor="5.0"
-                            username="sensordev"
-                            remoteSensorId="0" />
-
-                        <!--
-                        a sensor rule element
-                        timeTriggeredFor - the time (in seconds) sets how long
-                            this rule element counts as triggered for the
-                            rule engine when a sensor alert for it is received
-                            (NOTE: do not set this value to low)
-                        username - the username of the sensor client that
-                            handles this sensor
-                        remoteSensorId - the sensor id of the sensor that is
-                            configured on the client side
-                        -->
-                        <sensor
-                            timeTriggeredFor="5.0"
-                            username="sensordev"
-                            remoteSensorId="0" />
-                    </and>
-
-                </rule>
-
-                <!--
-                    one rule of the rule chain
-                    order - gives the order in which the rules are evaluated
-                        (ascending order)
-                    maxTimeAfterPrev - gives the maximum amount of time
-                        (in seconds) that can be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a maximum time of 5 seconds, then 5 seconds can
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    minTimeAfterPrev - gives the minimum amount of time
-                        (in seconds) that have to be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a minimum time of 2 seconds, then 2 seconds have
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    counterActivated - sets if this rule uses a counter
-                    counterLimit - sets the limit of the counter. When it is
-                        reached, the rule does not trigger
-                    counterWaitTime - sets the time (in seconds) how long
-                        the counter have to wait until it can remove a counter
-                        token (and therefore can trigger again when the
-                        limit is reached)
-                -->
-                <rule
-                    order="1"
-                    maxTimeAfterPrev="5.0"
-                    minTimeAfterPrev="0.0"
-                    counterActivated="False"
-                    counterLimit="0"
-                    counterWaitTime="0" >
-
-                    <!--
-                        a boolean operator of the rule (possible boolean
-                        operators are <and>, <or> and <not>)
-                        (NOTE: the <not> operator can only have one rule
-                        element in it)
-                    -->
-                    <or>
-
-                        <!--
-                            gives the day of the week
-                            time - sets the timezone that is used
-                                ("utc" or "local")
-                            weekday - sets the day of the week
-                                (0 = Monday, ..., 6 = Sunday)
-                        -->
-                        <weekday
-                            time="utc"
-                            weekday="0" />
-
-                        <!--
-                            gives the day of the week
-                            time - sets the timezone that is used
-                                ("utc" or "local")
-                            weekday - sets the day of the week
-                                (0 = Monday, ..., 6 = Sunday)
-                        -->
-                        <weekday
-                            time="utc"
-                            weekday="1" />
-
-                        <!--
-                            gives the day of the week
-                            time - sets the timezone that is used
-                                ("utc" or "local")
-                            weekday - sets the day of the week
-                                (0 = Monday, ..., 6 = Sunday)
-                        -->
-                        <weekday
-                            time="utc"
-                            weekday="2" />
-
-                        <!--
-                            gives the day of the week
-                            time - sets the timezone that is used
-                                ("utc" or "local")
-                            weekday - sets the day of the week
-                                (0 = Monday, ..., 6 = Sunday)
-                        -->
-                        <weekday
-                            time="utc"
-                            weekday="3" />
-
-                        <!--
-                            gives the day of the week
-                            time - sets the timezone that is used
-                                ("utc" or "local")
-                            weekday - sets the day of the week
-                                (0 = Monday, ..., 6 = Sunday)
-                        -->
-                        <weekday
-                            time="utc"
-                            weekday="4" />
-
-                    </or>
-
-                </rule>
-
-                <!--
-                    one rule of the rule chain
-                    order - gives the order in which the rules are evaluated
-                        (ascending order)
-                    maxTimeAfterPrev - gives the maximum amount of time
-                        (in seconds) that can be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a maximum time of 5 seconds, then 5 seconds can
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    minTimeAfterPrev - gives the minimum amount of time
-                        (in seconds) that have to be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a minimum time of 2 seconds, then 2 seconds have
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    counterActivated - sets if this rule uses a counter
-                    counterLimit - sets the limit of the counter. When it is
-                        reached, the rule does not trigger
-                    counterWaitTime - sets the time (in seconds) how long
-                        the counter have to wait until it can remove a counter
-                        token (and therefore can trigger again when the
-                        limit is reached)
-                -->
-                <rule
-                    order="2"
-                    maxTimeAfterPrev="5.0"
-                    minTimeAfterPrev="0.0"
-                    counterActivated="False"
-                    counterLimit="0"
-                    counterWaitTime="0" >
-
-                    <!--
-                        a boolean operator of the rule (possible boolean
-                        operators are <and>, <or> and <not>)
-                        (NOTE: the <not> operator can only have one rule
-                        element in it)
-                    -->
-                    <and>
-
-                        <!--
-                            gives the hour of the day
-                            time - sets the timezone that is used
-                                ("utc" or "local")
-                            start - the start of the valid hour
-                                (values: 0 - 23)
-                            end - the end of the valid hour
-                                (values: 0 - 23)
-                                (NOTE: end >= start)
-                        -->
-                        <hour
-                            time="utc"
-                            start="15"
-                            end="20" />
-
-                        <!--
-                            gives the minute of the day
-                            start - the start of the valid minute
-                                (values: 0 - 59)
-                            end - the end of the valid minute
-                                (values: 0 - 59)
-                                (NOTE: end >= start)
-                        -->
-                        <minute
-                            start="0"
-                            end="59" />
-
-                        <!--
-                            gives the second of the day
-                            start - the start of the valid second
-                                (values: 0 - 59)
-                            end - the end of the valid second
-                                (values: 0 - 59)
-                                (NOTE: end >= start)
-                        -->
-                        <second
-                            start="0"
-                            end="20" />
-
-                    </and>
-
-                </rule>
-
-                <!--
-                    one rule of the rule chain
-                    order - gives the order in which the rules are evaluated
-                        (ascending order)
-                    maxTimeAfterPrev - gives the maximum amount of time
-                        (in seconds) that can be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a maximum time of 5 seconds, then 5 seconds can
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    minTimeAfterPrev - gives the minimum amount of time
-                        (in seconds) that have to be passed after the previous
-                        rule has triggered. For example when the previous rule
-                        of the rule chain has trigged and the current rule
-                        has a minimum time of 2 seconds, then 2 seconds have
-                        be passed before this rule has to be triggered (in
-                        order to trigger the whole rule chain)
-                        (NOTE: the first rule of the rule chain has no
-                        previous rule and therefore this value for it
-                        is ignored)
-                    counterActivated - sets if this rule uses a counter
-                    counterLimit - sets the limit of the counter. When it is
-                        reached, the rule does not trigger
-                    counterWaitTime - sets the time (in seconds) how long
-                        the counter have to wait until it can remove a counter
-                        token (and therefore can trigger again when the
-                        limit is reached)
-                -->
-                <rule
-                    order="3"
-                    maxTimeAfterPrev="5.0"
-                    minTimeAfterPrev="0.0"
-                    counterActivated="True"
-                    counterLimit="1"
-                    counterWaitTime="82800" >
-
-                    <!--
-                        a boolean operator of the rule (possible boolean
-                        operators are <and>, <or> and <not>)
-                        (NOTE: the <not> operator can only have one rule
-                        element in it)
-                    -->
-                    <not>
-
-                        <!--
-                            a boolean operator of the rule (possible boolean
-                            operators are <and>, <or> and <not>)
-                            (NOTE: the <not> operator can only have one rule
-                            element in it)
-                        -->
-                        <or>
-
-                            <!--
-                                gives the day of the month
-                                time - sets the timezone that is used
-                                    ("utc" or "local")
-                                monthday - sets the day of the month
-                                    (values: 1 - 31)
-                            -->
-                            <monthday
-                                time="utc"
-                                monthday="1" />
-
-                            <!--
-                                gives the day of the month
-                                time - sets the timezone that is used
-                                    ("utc" or "local")
-                                monthday - sets the day of the month
-                                    (values: 1 - 31)
-                            -->
-                            <monthday
-                                time="utc"
-                                monthday="2" />
-
-                        </or>
-
-                    </not>
-
-                </rule>
-
-            </rules>
+            <instrumentation
+                activated="False"
+                cmd="/path/to/script.py"
+                timeout="10" />
 
         </alertLevel>
 
@@ -837,6 +489,31 @@
             <alertLevel>0</alertLevel>
 
         </versionInformer>
+
+        <!--
+            The alertLevelInstrumentationError Sensor is an internal Sensor
+            that triggers if an error occurs during the processing of an
+            Alert Level instrumentation. It allows you to get notified if
+            any of your instrumentation scripts do not work as intended.
+            Obviously, this Sensor only works if you are using instrumentation
+            for an Alert Level. Otherwise, it just lies dormant.
+            activated - This flags indicates if the internal Sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <alertLevelInstrumentationError
+            activated="True"
+            description="Internal: Alert Level Instrumentation Error">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>1</alertLevel>
+
+        </alertLevelInstrumentationError>
 
     </internalSensors>
 

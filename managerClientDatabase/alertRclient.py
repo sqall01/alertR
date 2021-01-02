@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -15,6 +15,7 @@ from lib import LocalServerSession, ThreadedUnixStreamServer
 from lib import Mysql
 from lib import SMTPAlert
 from lib import GlobalData
+from lib import ManagerEventHandler
 import logging
 import time
 import random
@@ -155,14 +156,9 @@ if __name__ == '__main__':
         if globalData.sensorAlertLifeSpan < 0:
             raise ValueError("Option 'sensorAlertLifeSpan' has to be greater or equal to 0.")
 
-        globalData.eventsLifeSpan = int(configRoot.find("manager").find("options").attrib["eventsLifeSpan"])
-
-        if globalData.eventsLifeSpan < 0:
-            raise ValueError("Option 'eventsLifeSpan' has to be greater or equal to 0.")
-
         # configure storage backend (check which backend is configured)
         userBackendMethod = str(configRoot.find("manager").find("storage").attrib["method"])
-        if userBackendMethod.upper() == "MYSQL":
+        if userBackendMethod.lower() == "mysql":
 
             backendUsername = str(configRoot.find("manager").find("storage").attrib["username"])
             backendPassword = str(configRoot.find("manager").find("storage").attrib["password"])
@@ -200,18 +196,19 @@ if __name__ == '__main__':
                                                 password,
                                                 clientCertFile,
                                                 clientKeyFile,
+                                                ManagerEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
-    logging.info("[%s] Connecting to server." % fileName)
+    logging.info("[%s]: Connecting to server." % fileName)
     while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-           and (connectionRetries % 5) == 0):
+                and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
-        if globalData.serverComm.initializeCommunication() is True:
+        if globalData.serverComm.initialize() is True:
             # if smtp alert is activated
             # => send email that communication problems are solved
             if globalData.smtpAlert is not None:
@@ -219,6 +216,7 @@ if __name__ == '__main__':
 
             connectionRetries = 1
             break
+
         connectionRetries += 1
 
         logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)
@@ -226,7 +224,7 @@ if __name__ == '__main__':
 
     # when connected => generate watchdog object to monitor the
     # server connection
-    logging.info("[%s] Starting watchdog thread." % fileName)
+    logging.info("[%s]: Starting watchdog thread." % fileName)
     watchdog = ConnectionWatchdog(globalData.serverComm,
                                   globalData.pingInterval,
                                   globalData.smtpAlert)
@@ -276,8 +274,9 @@ if __name__ == '__main__':
         serverThread.daemon = True
         serverThread.start()
 
-    logging.info("[%s] Client started." % fileName)
+    logging.info("[%s]: Client started." % fileName)
 
     # generate receiver to handle incoming data (for example status updates)
+    # (note: we will not return from the receiver unless the client is terminated)
     receiver = Receiver(globalData.serverComm)
     receiver.run()

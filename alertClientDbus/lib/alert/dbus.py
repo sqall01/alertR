@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -11,8 +11,9 @@ import time
 import os
 import logging
 import dbus
-from .core import _Alert, SensorAlert
 from typing import Optional
+from .core import _Alert
+from ..globalData import ManagerObjSensorAlert
 
 
 # this class represents an alert that sends notifications via dbus
@@ -38,7 +39,7 @@ class DbusAlert(_Alert):
         # File location of icon to display.
         self.icon = None  # type: Optional[str]
 
-    def _process_alert(self, sensor_alert: SensorAlert):
+    def _process_alert(self, sensor_alert: ManagerObjSensorAlert):
 
         # only execute if the last triggered alert was more than
         # the configured trigger delay ago
@@ -118,7 +119,7 @@ class DbusAlert(_Alert):
         self.triggered = 0.0
 
     # this function is called when this alert is triggered
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -126,7 +127,7 @@ class DbusAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 

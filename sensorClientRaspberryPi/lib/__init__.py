@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -7,10 +7,10 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .client import ServerCommunication, ConnectionWatchdog, AsynchronousSender
+from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
 from .sensor import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, RaspberryPiDS18b20Sensor
-from .sensor import SensorExecuter
+from .sensor import SensorExecuter, SensorEventHandler
 from .update import Updater
 from .globalData import GlobalData
-from .localObjects import Ordering
+from .globalData import SensorOrdering

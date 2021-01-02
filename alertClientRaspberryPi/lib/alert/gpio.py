@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -12,8 +12,9 @@ import os
 import logging
 import threading
 import RPi.GPIO as GPIO
-from .core import _Alert, SensorAlert
 from typing import Optional
+from .core import _Alert
+from ..globalData import ManagerObjSensorAlert
 
 
 # this function represents an alert that sets the Raspberry Pi GPIO to high
@@ -124,7 +125,7 @@ class RaspberryPiGPIOAlert(_Alert):
         else:
             logging.debug("[%s]: Alert '%d' already in state %d." % (self.log_tag, self.id, curr_state))
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 1.
 
@@ -135,7 +136,7 @@ class RaspberryPiGPIOAlert(_Alert):
 
         self._process_state_change(self.recv_triggered_state)
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
         """
         Is called when Alert Client receives a "sensoralert" message with the state set to 0.
 

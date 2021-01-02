@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # written by sqall
 # twitter: https://twitter.com/sqall01
@@ -8,7 +8,8 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from typing import Optional
-from .core import _Alert, SensorAlert
+from .core import _Alert
+from ..globalData import ManagerObjSensorAlert
 
 
 # This class represents an example alert
@@ -34,7 +35,7 @@ class TemplateAlert(_Alert):
 
         # PLACE YOUR CODE HERE
 
-    def alert_triggered(self, sensor_alert: SensorAlert):
+    def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
 
         if self.state == 0:
             # Set state of alert to "triggered"
@@ -44,7 +45,7 @@ class TemplateAlert(_Alert):
 
         # PLACE YOUR CODE HERE
 
-    def alert_normal(self, sensor_alert: SensorAlert):
+    def alert_normal(self, sensor_alert: ManagerObjSensorAlert):
 
         if self.state == 1:
             # Set state of alert to "normal"
