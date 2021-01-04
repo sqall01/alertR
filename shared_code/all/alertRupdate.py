@@ -396,7 +396,7 @@ if __name__ == '__main__':
         if configVersion != globalData.version:
             raise ValueError("Config version '%.3f' not "
                              % configVersion
-                             + "compatible with client version '%.3f'."
+                             + "compatible with installed version '%.3f'."
                              % globalData.version)
 
         # parse update options
@@ -457,6 +457,12 @@ if __name__ == '__main__':
         # check if the update changes the configuration file
         if updater.newestVersion > globalData.version:
             configUpdate = True
+
+        # If changelog data is available, display it.
+        if "changelog" in newInstanceInfo.keys():
+            logging.info("[%s]: Changelog:" % fileName)
+            for line in newInstanceInfo["changelog"].strip().split("\n"):
+                logging.info("[%s]: %s" % (fileName, line))
 
         # if the update changes the protocol
         # => notify user and ask for confirmation
