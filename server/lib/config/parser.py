@@ -306,6 +306,15 @@ def configure_profiles(configRoot: xml.etree.ElementTree.Element, global_data: G
         global_data.logger.exception("[%s]: Configuring Profiles failed." % log_tag)
         return False
 
+    has_id_zero = False
+    for profile in global_data.profiles:
+        if profile.id == 0:
+            has_id_zero = True
+            break
+    if not has_id_zero:
+        global_data.logger.error("[%s]: Profile with id '0' has to exist." % log_tag)
+        return False
+
     return True
 
 
