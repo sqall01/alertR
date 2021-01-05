@@ -21,6 +21,13 @@ class ManagerObjOption(LocalObject):
         self.type = None  # type: Optional[str]
         self.value = None  # type: Optional[float]
 
+    def __str__(self) -> str:
+        tmp = "Option (Type: '%s'; " \
+              % (str(self.type) if self.type is not None else "None") \
+              + "Value: %s)" \
+              % (str(self.value) if self.value is not None else "None")
+        return tmp
+
     def deepcopy(self, option):
         """
         This function copies all attributes of the given option to this object.
@@ -39,6 +46,13 @@ class ManagerObjProfile(LocalObject):
         super().__init__()
         self.id = None  # type: Optional[id]
         self.name = None  # type: Optional[str]
+
+    def __str__(self) -> str:
+        tmp = "Profile (Id: %s; " \
+              % (str(self.id) if self.id is not None else "None") \
+              + "Name: '%s')" \
+              % (str(self.name) if self.name is not None else "None")
+        return tmp
 
     def deepcopy(self, profile):
         """
@@ -66,6 +80,19 @@ class ManagerObjNode(LocalObject):
         self.rev = None  # type: Optional[int]
         self.username = None  # type: Optional[str]
         self.persistent = None  # type: Optional[int]
+
+    def __str__(self) -> str:
+        tmp = "Node (Node Id: %s; " \
+              % (str(self.nodeId) if self.nodeId is not None else "None") \
+              + "Hostname: '%s'; " \
+              % (str(self.hostname) if self.hostname is not None else "None") \
+              + "Node Type: '%s'; " \
+              % (str(self.nodeType) if self.nodeType is not None else "None") \
+              + "Instance: '%s'; " \
+              % (str(self.instance) if self.instance is not None else "None") \
+              + "Username: '%s')" \
+              % (str(self.username) if self.username is not None else "None")
+        return tmp
 
     def deepcopy(self, node):
         """
@@ -101,6 +128,21 @@ class ManagerObjSensor(LocalObject):
         self.dataType = None  # type: Optional[SensorDataType]
         self.data = None  # type: Any
 
+    def __str__(self) -> str:
+        tmp = "Sensor (Node Id: %s; " \
+              % (str(self.nodeId) if self.nodeId is not None else "None") \
+              + "Sensor Id: %s; " \
+              % (str(self.sensorId) if self.sensorId is not None else "None") \
+              + "Remote Sensor Id: %s; " \
+              % (str(self.remoteSensorId) if self.remoteSensorId is not None else "None") \
+              + "description: '%s'; " \
+              % (str(self.description) if self.description is not None else "None") \
+              + "State: %s; " \
+              % (str(self.state) if self.state is not None else "None") \
+              + "Data: '%s')" \
+              % (str(self.data) if self.data is not None else "None")
+        return tmp
+
     def deepcopy(self, sensor):
         """
         This function copies all attributes of the given sensor to this object.
@@ -129,6 +171,15 @@ class ManagerObjManager(LocalObject):
         self.managerId = None  # type: Optional[int]
         self.description = None  # type: Optional[str]
 
+    def __str__(self) -> str:
+        tmp = "Manager (Node Id: %s; " \
+              % (str(self.nodeId) if self.nodeId is not None else "None") \
+              + "Manager Id: %s; " \
+              % (str(self.managerId) if self.managerId is not None else "None") \
+              + "description: '%s'; " \
+              % (str(self.description) if self.description is not None else "None")
+        return tmp
+
     # This function copies all attributes of the given manager to this object.
     def deepcopy(self, manager):
         self.nodeId = manager.nodeId
@@ -147,6 +198,17 @@ class ManagerObjAlert(LocalObject):
         self.remoteAlertId = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
+
+    def __str__(self) -> str:
+        tmp = "Alert (Node Id: %s; " \
+              % (str(self.nodeId) if self.nodeId is not None else "None") \
+              + "Alert Id: %s; " \
+              % (str(self.alertId) if self.alertId is not None else "None") \
+              + "Remote Alert Id: %s; " \
+              % (str(self.remoteAlertId) if self.remoteAlertId is not None else "None") \
+              + "description: '%s'; " \
+              % (str(self.description) if self.description is not None else "None")
+        return tmp
 
     def deepcopy(self, alert):
         """
@@ -197,7 +259,7 @@ class ManagerObjSensorAlert(LocalObject):
         self.dataType = None  # type: Optional[SensorDataType]
         self.sensorData = None  # type: Any
 
-    def __str__(self):
+    def __str__(self) -> str:
         tmp = "Sensor Alert (Description: '%s'; " \
               % self.description \
               + "SensorID: %s; " \
@@ -268,6 +330,17 @@ class ManagerObjAlertLevel(LocalObject):
         self.instrumentation_active = None  # type: Optional[bool]
         self.instrumentation_cmd = None  # type: Optional[str]
         self.instrumentation_timeout = None  # type: Optional[int]
+
+    def __str__(self) -> str:
+        tmp = "Alert Level (Level: %s; " \
+              % (str(self.level) if self.level is not None else "None") \
+              + "Name: '%s'; " \
+              % (str(self.name) if self.name is not None else "None") \
+              + "Profiles: %s; " \
+              % ", ".join(map(str, self.profiles)) \
+              + "Instrumentation: %s)" \
+              % (str(self.instrumentation_active) if self.instrumentation_active is not None else "None")
+        return tmp
 
     def deepcopy(self, alert_level):
         """
