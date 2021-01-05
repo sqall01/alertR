@@ -16,7 +16,8 @@ import logging
 import os
 import random
 import json
-from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel
+from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel, \
+    Profile
 from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
 from typing import Optional, Dict, Tuple, Any, List, Type
@@ -45,6 +46,7 @@ class ClientCommunication:
         self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
         self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
         self.alertLevels = self.globalData.alertLevels  # type: List[AlertLevel]
+        self.profiles = self.globalData.profiles  # type: List[Profile]
         self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
         self.asyncOptionExecutersLock = self.globalData.asyncOptionExecutersLock
         self.connectionWatchdog = self.globalData.connectionWatchdog
@@ -1264,12 +1266,20 @@ class ClientCommunication:
                         "alertLevels": alertObj.alertLevels}
             alerts.append(tempDict)
 
+        # Generating profiles list
+        profiles = list()
+        for profile_obj in self.profiles:
+            temp_dict = {"id": profile_obj.id,
+                         "name": profile_obj.name}
+            profiles.append(temp_dict)
+
         # Generating alertLevels list.
         alertLevels = list()
         for i in range(len(self.alertLevels)):
             tempDict = {"alertLevel": self.alertLevels[i].level,
                         "name": self.alertLevels[i].name,
                         "triggerAlways": (1 if self.alertLevels[i].triggerAlways else 0),
+                        "profiles": self.alertLevels[i].profiles,
                         "instrumentation_active": self.alertLevels[i].instrumentation_active,
                         "instrumentation_cmd": self.alertLevels[i].instrumentation_cmd,
                         "instrumentation_timeout": self.alertLevels[i].instrumentation_timeout}
@@ -1279,6 +1289,7 @@ class ClientCommunication:
 
         payload = {"type": "request",
                    "options": options,
+                   "profiles": profiles,
                    "nodes": nodes,
                    "sensors": sensors,
                    "managers": managers,
