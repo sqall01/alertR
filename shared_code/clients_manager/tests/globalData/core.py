@@ -2,7 +2,7 @@ from unittest import TestCase
 from typing import Optional
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjOption, ManagerObjAlertLevel, ManagerObjNode, ManagerObjAlert, \
-    ManagerObjManager, ManagerObjSensor
+    ManagerObjManager, ManagerObjSensor, ManagerObjProfile
 from lib.globalData.sensorObjects import SensorDataType
 
 
@@ -11,18 +11,13 @@ class TestSystemDataCore(TestCase):
     def _create_alert_levels(self, system_data: Optional[SystemData] = None) -> SystemData:
 
         if system_data is None:
-            system_data = SystemData()
-            self.alert_levels = []
-            self.alerts = []
-            self.managers = []
-            self.nodes = []
-            self.options = []
-            self.sensors = []
+            system_data = self._create_profiles()
 
         alert_level = ManagerObjAlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
         alert_level.triggerAlways = 1
+        alert_level.profiles = [0]
         alert_level.instrumentation_active = True
         alert_level.instrumentation_cmd = "instrumentation_cmd_1"
         alert_level.instrumentation_timeout = 1234
@@ -33,6 +28,7 @@ class TestSystemDataCore(TestCase):
         alert_level.level = 2
         alert_level.name = "alert_level_2"
         alert_level.triggerAlways = 1
+        alert_level.profiles = [1]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(ManagerObjAlertLevel().deepcopy(alert_level))
@@ -41,6 +37,7 @@ class TestSystemDataCore(TestCase):
         alert_level.level = 3
         alert_level.name = "alert_level_3"
         alert_level.triggerAlways = 1
+        alert_level.profiles = [0, 1]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(ManagerObjAlertLevel().deepcopy(alert_level))
@@ -129,6 +126,7 @@ class TestSystemDataCore(TestCase):
             self.managers = []
             self.nodes = []
             self.options = []
+            self.profiles = []
             self.sensors = []
 
         node = ManagerObjNode()
@@ -365,6 +363,7 @@ class TestSystemDataCore(TestCase):
             self.managers = []
             self.nodes = []
             self.options = []
+            self.profiles = []
             self.sensors = []
 
         option = ManagerObjOption()
@@ -387,8 +386,41 @@ class TestSystemDataCore(TestCase):
 
         return system_data
 
+    def _create_profiles(self, system_data: Optional[SystemData] = None) -> SystemData:
+
+        if system_data is None:
+            system_data = SystemData()
+            self.alert_levels = []
+            self.alerts = []
+            self.managers = []
+            self.nodes = []
+            self.options = []
+            self.profiles = []
+            self.sensors = []
+
+        profile = ManagerObjProfile()
+        profile.id = 0
+        profile.name = "profile_0"
+        self.profiles.append(profile)
+        system_data.update_profile(ManagerObjProfile().deepcopy(profile))
+
+        profile = ManagerObjProfile()
+        profile.id = 1
+        profile.name = "profile_1"
+        self.profiles.append(profile)
+        system_data.update_profile(ManagerObjProfile().deepcopy(profile))
+
+        profile = ManagerObjProfile()
+        profile.id = 2
+        profile.name = "profile_2"
+        self.profiles.append(profile)
+        system_data.update_profile(ManagerObjProfile().deepcopy(profile))
+
+        return system_data
+
     def _create_system_data(self) -> SystemData:
         system_data = self._create_options()
+        system_data = self._create_profiles(system_data)
         system_data = self._create_alert_levels(system_data)
         system_data = self._create_alerts(system_data)
         system_data = self._create_managers(system_data)

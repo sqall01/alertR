@@ -9,7 +9,7 @@
 
 from typing import List, Any
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
 
 
 class EventHandler:
@@ -69,6 +69,7 @@ class EventHandler:
     def status_update(self,
                       msg_time: int,
                       options: List[ManagerObjOption],
+                      profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
                       managers: List[ManagerObjManager],
@@ -79,6 +80,7 @@ class EventHandler:
 
         :param msg_time:
         :param options:
+        :param profiles:
         :param nodes:
         :param sensors:
         :param managers:

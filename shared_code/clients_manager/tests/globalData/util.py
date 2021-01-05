@@ -1,7 +1,7 @@
 from unittest import TestCase
 from typing import List
 from lib.globalData.managerObjects import ManagerObjOption, ManagerObjAlert, ManagerObjManager, ManagerObjSensor, \
-    ManagerObjNode, ManagerObjAlertLevel, ManagerObjSensorAlert
+    ManagerObjNode, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 
 
 def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[ManagerObjAlertLevel], new_alert_levels: List[ManagerObjAlertLevel]):
@@ -33,6 +33,8 @@ def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[Manage
 
                 if (stored_alert_level.name != gt_alert_level.name
                         or stored_alert_level.triggerAlways != gt_alert_level.triggerAlways
+                        or any(map(lambda x: x not in gt_alert_level.profiles, stored_alert_level.profiles))
+                        or any(map(lambda x: x not in stored_alert_level.profiles, gt_alert_level.profiles))
                         or stored_alert_level.instrumentation_active != gt_alert_level.instrumentation_active
                         or stored_alert_level.instrumentation_cmd != gt_alert_level.instrumentation_cmd
                         or stored_alert_level.instrumentation_timeout != gt_alert_level.instrumentation_timeout):
@@ -198,6 +200,42 @@ def compare_options_content(context: TestCase, gt_options: List[ManagerObjOption
 
         if not found:
             context.fail("Not able to find modified Option object.")
+
+
+def compare_profiles_content(context: TestCase, gt_profiles: List[ManagerObjProfile], new_profiles: List[ManagerObjProfile]):
+    """
+    Compares two lists of Profile objects.
+    :param context:
+    :param gt_profiles:
+    :param new_profiles:
+    """
+    if len(new_profiles) != len(gt_profiles):
+        context.fail("Wrong number of objects.")
+
+    already_processed = []
+    for stored_profile in new_profiles:
+        found = False
+        for gt_profile in gt_profiles:
+            if stored_profile.id == gt_profile.id:
+                found = True
+
+                # Check which objects we already processed to see if we hold an object with
+                # duplicated values.
+                if gt_profile in already_processed:
+                    context.fail("Duplicated object.")
+                already_processed.append(gt_profile)
+
+                # Only the content of the object should have changed, not the object itself.
+                if stored_profile == gt_profile:
+                    context.fail("Changed ground truth object, not content of existing object.")
+
+                if stored_profile.name != gt_profile.name:
+                    context.fail("New object does not have correct content.")
+
+                break
+
+        if not found:
+            context.fail("Not able to find modified Profile object.")
 
 
 def compare_sensor_alerts_content(context: TestCase,

@@ -19,6 +19,18 @@ class TestSystemDataGeneral(TestSystemDataCore):
             if not found:
                 self.fail("Option %s not stored." % created_option.type)
 
+        # Check if created profiles are stored.
+        stored_profiles = system_data.get_profiles_list()
+        for created_profile in self.profiles:
+            found = False
+            for stored_profile in stored_profiles:
+                if (stored_profile.id == created_profile.id
+                        and stored_profile.internal_state == InternalState.STORED):
+                    found = True
+                    break
+            if not found:
+                self.fail("Profile %s not stored." % created_profile.id)
+
         # Check if created alert levels are stored.
         stored_alert_levels = system_data.get_alert_levels_list()
         for created_alert_level in self.alert_levels:
