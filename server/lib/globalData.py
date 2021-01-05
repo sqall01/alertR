@@ -142,6 +142,9 @@ class GlobalData:
         # a list of all alert levels that are configured on this server
         self.alertLevels = list()
 
+        # A list of all profiles that are configured on this server.
+        self.profiles = list()
+
         # time the server is waiting on receives until a time out occurs
         self.serverReceiveTimeout = 50.0
 

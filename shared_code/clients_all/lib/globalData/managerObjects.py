@@ -32,6 +32,25 @@ class ManagerObjOption(LocalObject):
         return self
 
 
+# this class represents a profile of the server
+class ManagerObjProfile(LocalObject):
+
+    def __init__(self):
+        super().__init__()
+        self.id = None  # type: Optional[id]
+        self.name = None  # type: Optional[str]
+
+    def deepcopy(self, profile):
+        """
+        This function copies all attributes of the given profile to this object.
+        :param profile:
+        :return:
+        """
+        self.id = profile.id
+        self.name = profile.name
+        return self
+
+
 # this class represents an node/client of the alert system
 # which can be either a sensor, alert or manager
 class ManagerObjNode(LocalObject):

@@ -105,6 +105,10 @@ class AlertLevel:
         self.instrumentation_cmd = None  # type: Optional[str]
         self.instrumentation_timeout = None  # type: Optional[int]
 
+        # List of profile ids for which this alert level triggers a sensor alert.
+        # Meaning the system has to use one of the profiles in this list before the alert level triggers a sensor alert.
+        self.profiles = list()  # type: List[int]
+
 
 # This class represents a single sensor alert that was triggered.
 class SensorAlert:
@@ -306,3 +310,10 @@ class Option:
     def __init__(self):
         self.type = None  # type: Optional[str]
         self.value = None  # type: Optional[float]
+
+
+class Profile:
+
+    def __init__(self):
+        self.id = None  # type: Optional[id]
+        self.name = None  # type: Optional[str]
