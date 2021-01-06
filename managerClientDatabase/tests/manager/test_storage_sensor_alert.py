@@ -13,6 +13,9 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
 
     def _create_objects(self, storage: Mysql, system_data: SystemData):
         storage._open_connection()
+        for profile in system_data.get_profiles_list():
+            storage._update_profile(profile)
+
         for alert_level in system_data.get_alert_levels_list():
             storage._update_alert_level(alert_level)
 
@@ -97,6 +100,7 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
 
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),
@@ -109,6 +113,7 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
         # Add same list of sensor alerts again for duplication test.
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),

@@ -23,6 +23,7 @@ class TestManagerStorage(TestManagerStorageCore):
         system_data = self._create_system_data()
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),
@@ -58,6 +59,7 @@ class TestManagerStorage(TestManagerStorageCore):
         system_data = self._create_system_data()
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),
@@ -131,6 +133,7 @@ class TestManagerStorage(TestManagerStorageCore):
         # Update database objects.
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),
@@ -169,6 +172,7 @@ class TestManagerStorage(TestManagerStorageCore):
         system_data = self._create_system_data()
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),
@@ -182,6 +186,7 @@ class TestManagerStorage(TestManagerStorageCore):
 
             storage.update_server_information(0,
                                               system_data.get_options_list(),
+                                              system_data.get_profiles_list(),
                                               system_data.get_nodes_list(),
                                               system_data.get_sensors_list(),
                                               system_data.get_alerts_list(),
@@ -218,6 +223,7 @@ class TestManagerStorage(TestManagerStorageCore):
         system_data = self._create_system_data()
         storage.update_server_information(0,
                                           system_data.get_options_list(),
+                                          system_data.get_profiles_list(),
                                           system_data.get_nodes_list(),
                                           system_data.get_sensors_list(),
                                           system_data.get_alerts_list(),
@@ -231,6 +237,7 @@ class TestManagerStorage(TestManagerStorageCore):
 
             storage.update_server_information(0,
                                               system_data.get_options_list(),
+                                              system_data.get_profiles_list(),
                                               system_data.get_nodes_list(),
                                               system_data.get_sensors_list(),
                                               system_data.get_alerts_list(),

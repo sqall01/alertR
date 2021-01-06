@@ -12,6 +12,9 @@ class TestManagerStorageNode(TestManagerStorageCore):
 
     def _create_objects(self, storage: Mysql, system_data: SystemData):
         storage._open_connection()
+        for profile in system_data.get_profiles_list():
+            storage._update_profile(profile)
+
         for alert_level in system_data.get_alert_levels_list():
             storage._update_alert_level(alert_level)
 
