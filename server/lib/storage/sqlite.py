@@ -476,11 +476,18 @@ class Sqlite(_Storage):
                             + "type TEXT NOT NULL UNIQUE, "
                             + "value REAL NOT NULL)")
 
+        # TODO remove
         # insert option to activate/deactivate alert system
         # (0 = deactivated, 1 = activated)
         self.cursor.execute("INSERT INTO options ("
                             + "type, "
                             + "value) VALUES (?, ?)", ("alertSystemActive", 0))
+
+        # Insert option which profile is currently used by the system.
+        # NOTE: at least one profile with id 0 is enforced during configuration parsing.
+        self.cursor.execute("INSERT INTO options ("
+                            + "type, "
+                            + "value) VALUES (?, ?)", ("profile", 0))
 
         # create nodes table
         self.cursor.execute("CREATE TABLE nodes ("
