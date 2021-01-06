@@ -37,7 +37,7 @@ class TestSystemDataCore(TestCase):
         alert_level.level = 3
         alert_level.name = "alert_level_3"
         alert_level.triggerAlways = 1
-        alert_level.profiles = [0, 1]
+        alert_level.profiles = [0, 2]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
         system_data.update_alert_level(ManagerObjAlertLevel().deepcopy(alert_level))
