@@ -174,6 +174,11 @@ class MsgChecker:
                 logging.error("[%s]: Received options invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            error_msg = MsgChecker.check_status_profiles_list(message["payload"]["profiles"])
+            if error_msg is not None:
+                logging.error("[%s]: Received profiles invalid." % MsgChecker._log_tag)
+                return error_msg
+
             error_msg = MsgChecker.check_status_nodes_list(message["payload"]["nodes"])
             if error_msg is not None:
                 logging.error("[%s]: Received nodes invalid." % MsgChecker._log_tag)
@@ -521,6 +526,56 @@ class MsgChecker:
 
         return None
 
+    @staticmethod
+    def check_profile_id(profile_id: int) -> Optional[str]:
+        """
+        Internal function to check sanity of the profile id.
+        :param profile_id:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profile_id, int):
+            is_correct = False
+
+        if not is_correct:
+            return "profile id not valid"
+
+        return None
+
+    @staticmethod
+    def check_profile_name(profile_name: str) -> Optional[str]:
+        """
+        Internal function to check sanity of the profile name.
+        :param profile_name:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profile_name, str):
+            is_correct = False
+
+        if not is_correct:
+            return "profile name not valid"
+
+        return None
+
+    @staticmethod
+    def check_profiles(profiles: List[int]) -> Optional[str]:
+        """
+        Internal function to check sanity of the profiles integer list.
+        :param profiles:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profiles, list):
+            is_correct = False
+        elif not all(isinstance(item, int) for item in profiles):
+            is_correct = False
+
+        if not is_correct:
+            return "profiles not valid"
+
+        return None
+
     # Internal function to check sanity of the persistent.
     @staticmethod
     def check_persistent(persistent: int) -> Optional[str]:
@@ -688,6 +743,14 @@ class MsgChecker:
                 break
 
             elif MsgChecker.check_trigger_always(alertLevel["triggerAlways"]) is not None:
+                is_correct = False
+                break
+
+            if "profiles" not in alertLevel.keys():
+                is_correct = False
+                break
+
+            elif MsgChecker.check_profiles(alertLevel["profiles"]) is not None:
                 is_correct = False
                 break
 
@@ -976,6 +1039,45 @@ class MsgChecker:
 
         if not is_correct:
             return "options list not valid"
+
+        return None
+
+    @staticmethod
+    def check_status_profiles_list(profiles: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        # Internal function to check sanity of the status profiles list.
+        :param profiles:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profiles, list):
+            is_correct = False
+
+        # Check each profile if correct.
+        for profile in profiles:
+
+            if not isinstance(profile, dict):
+                is_correct = False
+                break
+
+            if "id" not in profile.keys():
+                is_correct = False
+                break
+
+            elif MsgChecker.check_profile_id(profile["id"]) is not None:
+                is_correct = False
+                break
+
+            if "name" not in profile.keys():
+                is_correct = False
+                break
+
+            elif MsgChecker.check_profile_name(profile["name"]) is not None:
+                is_correct = False
+                break
+
+        if not is_correct:
+            return "profiles list not valid"
 
         return None
 
