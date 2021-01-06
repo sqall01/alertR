@@ -14,7 +14,7 @@ import threading
 from typing import List, Any
 from .core import BaseManagerEventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, \
-    ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert
+    ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import SensorDataType
 from ..globalData import GlobalData
 
@@ -47,6 +47,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
         # Update the local server information.
         if not self.storage.update_server_information(self.msg_time,
                                                       self._system_data.get_options_list(),
+                                                      self._system_data.get_profiles_list(),
                                                       self._system_data.get_nodes_list(),
                                                       self._system_data.get_sensors_list(),
                                                       self._system_data.get_alerts_list(),
@@ -70,6 +71,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
     def status_update(self,
                       server_time: int,
                       options: List[ManagerObjOption],
+                      profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
                       managers: List[ManagerObjManager],
@@ -78,6 +80,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         result = super().status_update(server_time,
                                        options,
+                                       profiles,
                                        nodes,
                                        sensors,
                                        managers,
