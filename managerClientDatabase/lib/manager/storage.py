@@ -792,7 +792,6 @@ class Mysql(_Storage):
                                       alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0))
 
                 for profile in alert_level.profiles:
-                    print(profile) # TODO debug
                     self._cursor.execute("INSERT INTO alertLevelsProfiles ("
                                          + "alertLevel, "
                                          + "profileId) "
@@ -1409,7 +1408,7 @@ class Mysql(_Storage):
             result = self._cursor.fetchall()
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE profiles ("
-                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+                                     + "id INTEGER PRIMARY KEY, "
                                      + "name VARCHAR(255) NOT NULL)")
 
             # create nodes table if it does not exist

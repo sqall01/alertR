@@ -31,7 +31,7 @@ class GlobalData:
         self.instance = "managerClientDatabase"
 
         # interval in which a ping should be send when 
-        # no data was received/send     
+        # no data was received/send
         self.pingInterval = 30
 
         # type of this node/client
