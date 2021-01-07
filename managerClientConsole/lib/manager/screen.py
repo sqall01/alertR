@@ -15,8 +15,9 @@ from .elementAlert import AlertDetailedUrwid, AlertUrwid
 from .elementAlertLevel import AlertLevelDetailedUrwid, AlertLevelUrwid
 from .elementCore import SearchViewUrwid
 from .elementManager import ManagerDetailedUrwid, ManagerUrwid
-from .elementProfile import StatusUrwid
+from .elementStatus import StatusUrwid
 from .elementSensor import SensorDetailedUrwid, SensorUrwid
+from .elementSensorAlert import SensorAlertUrwid
 from .eventHandler import ManagerEventHandler
 from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel
 from ..globalData import GlobalData
@@ -63,8 +64,8 @@ class Console:
         # urwid object that shows the connection status
         self.connectionStatus = None
 
-        # urwid object that shows if the alert system is active
-        self.alertSystemActive = None
+        # urwid object that shows the currently used system profile
+        self._profile_urwid = None
 
         # A list of all urwid sensor objects.
         self.sensorUrwidObjects = list()
@@ -188,6 +189,10 @@ class Console:
 
         # The keyword that is currently searched for.
         self.searchKeyword = ""
+
+        # Color palettes for profiles.
+        # Depending on the id of the profile, a color is chosen.
+        self._profile_colors = ["profile_0", "profile_1", "profile_2", "profile_3", "profile_4"]
 
     # set the focus to the sensors
     def _focusSensors(self):
@@ -1343,24 +1348,26 @@ class Console:
         # build box around the sensor alerts grid with title
         sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile, title="List of Triggered Sensor Alerts")
 
-        # generate widget to show the status of the alert system
-        option = self.system_data.get_option_by_type("alertSystemActive")
+        # Generate widget to show the profile which is currently used by the system.
+        option = self.system_data.get_option_by_type("profile")
         if option is None:
-            logging.error("[%s]: No alert system status option." % self.fileName)
+            logging.error("[%s]: No profile option." % self.fileName)
             return
-        if option.value == 0:
-            self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-            self.alertSystemActive.turnRed()
-        else:
-            self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-            self.alertSystemActive.turnGreen()
+
+        profile = self.system_data.get_profile_by_id(int(option.value))
+        if profile is None:
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+            return
+
+        self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+        self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
 
         # generate widget to show the status of the connection
-        self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
-        self.connectionStatus.turnNeutral()
+        self.connectionStatus = StatusUrwid("Connection Status", "Status", "Online")
+        self.connectionStatus.set_color("neutral")
 
         # generate a column for the status widgets
-        statusColumn = urwid.Columns([self.alertSystemActive.get(), self.connectionStatus.get()])
+        statusColumn = urwid.Columns([self._profile_urwid.get(), self.connectionStatus.get()])
 
         # generate right part of the display
         self.rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox, self.alertsBox, self.alertLevelsBox])
@@ -1401,6 +1408,11 @@ class Console:
             ('timedout', 'black', 'dark magenta'),
             ('timedout_focus', 'black', 'light magenta'),
             ('neutral', '', ''),
+            ('profile_0', 'black', 'dark green'),
+            ('profile_1', 'black', 'dark red'),
+            ('profile_2', 'black', 'dark cyan'),
+            ('profile_3', 'black', 'dark magenta'),
+            ('profile_4', 'black', 'yellow'),
         ]
 
         # set focus on sensor
@@ -1431,19 +1443,22 @@ class Console:
             logging.debug("[%s]: Status update received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Online")
-            self.connectionStatus.turnNeutral()
+            self.connectionStatus.update_value("Online")
+            self.connectionStatus.set_color("neutral")
 
-            # change alert system active widget according
-            # to received status
-            option = self.system_data.get_option_by_type("alertSystemActive")
-            if option.type == "alertSystemActive":
-                if option.value == 0:
-                    self.alertSystemActive.updateStatusValue("Deactivated")
-                    self.alertSystemActive.turnRed()
+            # Change active system profile widget according to received data.
+            option = self.system_data.get_option_by_type("profile")
+            if option is None:
+                logging.error("[%s]: No profile option." % self.fileName)
+
+            else:
+                profile = self.system_data.get_profile_by_id(int(option.value))
+                if profile is None:
+                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+
                 else:
-                    self.alertSystemActive.updateStatusValue("Activated")
-                    self.alertSystemActive.turnGreen()
+                    self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+                    self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
 
             # remove sensor alerts if they are too old
             for sensorAlertUrwid in self.sensorAlertUrwidObjects:
@@ -1769,11 +1784,11 @@ class Console:
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Offline")
-            self.connectionStatus.turnRed()
+            self.connectionStatus.update_value("Offline")
+            self.connectionStatus.set_color("redColor")
 
             # update alert system active widget
-            self.alertSystemActive.turnGray()
+            self._profile_urwid.set_color("grayColor")
 
             # update all sensor urwid widgets
             for sensorUrwidObject in self.sensorUrwidObjects:
