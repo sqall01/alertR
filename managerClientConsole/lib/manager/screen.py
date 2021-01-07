@@ -15,6 +15,7 @@ from .elementAlert import AlertDetailedUrwid, AlertUrwid
 from .elementAlertLevel import AlertLevelDetailedUrwid, AlertLevelUrwid
 from .elementCore import SearchViewUrwid
 from .elementManager import ManagerDetailedUrwid, ManagerUrwid
+from .elementProfile import ProfileChoiceUrwid
 from .elementStatus import StatusUrwid
 from .elementSensor import SensorDetailedUrwid, SensorUrwid
 from .elementSensorAlert import SensorAlertUrwid
@@ -181,6 +182,9 @@ class Console:
         # Flag that signalizes if the search view is shown or not
         self.inSearchView = False
 
+        # Flag that indicates if the profile choice view is shown or not.
+        self._in_profile_choice_view = False
+
         # the urwid object of the detailed view
         self.detailedView = None
 
@@ -189,6 +193,9 @@ class Console:
 
         # The keyword that is currently searched for.
         self.searchKeyword = ""
+
+        # The urwid object of the profile choice view.
+        self._profile_choice_view = None
 
         # Color palettes for profiles.
         # Depending on the id of the profile, a color is chosen.
@@ -321,6 +328,11 @@ class Console:
         self.mainLoop.widget = self.mainFrame
         self.inSearchView = False
         self.searchView = None
+
+    def _close_profile_choice_view(self):
+        self.mainLoop.widget = self.mainFrame
+        self._in_profile_choice_view = False
+        self._profile_choice_view = None
 
     # Shows the results of the search.
     def _showSearchResult(self):
@@ -875,6 +887,25 @@ class Console:
         # update shown managers
         self._showManagersAtPageIndex(self.currentManagerPage)
 
+    def _show_profile_choice_view(self):
+        """
+        Creates an overlayed view with all profiles to choose from.
+        """
+        self._profile_choice_view = ProfileChoiceUrwid(self.system_data.get_profiles_list(order_by_id=True),
+                                                       self._profile_colors)
+
+        # show search view as an overlay
+        overlayView = urwid.Overlay(self._profile_choice_view.get(),
+                                    self.mainFrame,
+                                    align="center",
+                                    width=("relative", 80),
+                                    min_width=80,
+                                    valign="middle",
+                                    height=("relative", 5),
+                                    min_height=5)
+        self.mainLoop.widget = overlayView
+        self._in_profile_choice_view = True
+
     # Creates an overlayed view with the search field.
     def _showSearchView(self):
 
@@ -1009,21 +1040,9 @@ class Console:
     # this function is called if a key/mouse input was made
     def handleKeypress(self, key: str) -> bool:
 
-        # check if key 1 is pressed => send alert system activation to server 
-        if key in ["1"]:
-            if not self.inDetailView:
-                logging.info("[%s]: Activating alert system." % self.fileName)
-                self.serverComm.send_option("alertSystemActive", 1.0)
-
-        # check if key 2 is pressed => send alert system deactivation to server
-        elif key in ["2"]:
-            if not self.inDetailView:
-                logging.info("[%s]: Deactivating alert system." % self.fileName)
-                self.serverComm.send_option("alertSystemActive", 0.0)
-
         # check if key b/B is pressed => show previous page of focused elements
-        elif key in ["b", "B"]:
-            if not self.inDetailView:
+        if key in ["b", "B"]:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 if self.currentFocused == FocusedElement.sensors:
                     self._showSensorsPreviousPage()
 
@@ -1038,7 +1057,7 @@ class Console:
 
         # check if key n/N is pressed => show next page of focused elements
         elif key in ["n", "N"]:
-            if not self.inDetailView:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 if self.currentFocused == FocusedElement.sensors:
                     self._showSensorsNextPage()
 
@@ -1054,14 +1073,14 @@ class Console:
         # change focus to next element group
         # order: (sensors, alerts, managers, alert levels)
         elif key in ["tab"]:
-            if not self.inDetailView and not self.inSearchView:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 if self.searchKeyword != "":
                     self._resetSearchResult()
                 self._switchFocusedElementGroup()
 
         # move focus to next element in the element group
         elif key in ["up", "down", "left", "right"]:
-            if not self.inDetailView:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 self._moveFocus(key)
 
         # when an overlayed view is shown
@@ -1079,6 +1098,9 @@ class Console:
             elif self.searchKeyword != "":
                 self._resetSearchResult()
 
+            elif self._in_profile_choice_view:
+                self._close_profile_choice_view()
+
             else:
                 raise urwid.ExitMainLoop()
 
@@ -1094,12 +1116,17 @@ class Console:
 
                 self._closeSearchView()
 
-            else:
+            elif not self.inDetailView and not self._in_profile_choice_view:
                 self._showDetailedView()
 
         # Open overlayed view with search field.
         elif key in ["s", "S"]:
-            self._showSearchView()
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
+                self._showSearchView()
+
+        elif key in ["p", "P"]:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
+                self._show_profile_choice_view()
 
         return True
 
@@ -1379,8 +1406,7 @@ class Console:
         # generate header and footer
         header = urwid.Text("AlertR Console Manager", align="center")
         footer = urwid.Text("Keys: "
-                            + "1 - Activate, "
-                            + "2 - Deactivate, "
+                            + "P - Change Profile, "
                             + "ESC - Back/Quit, "
                             + "TAB - Next Elements, "
                             + "Up/Down/Left/Right - Move Cursor, "
