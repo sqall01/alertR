@@ -11,9 +11,12 @@ import threading
 import logging
 import os
 import urwid
-from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, AlertUrwid, AlertDetailedUrwid, \
-                            ManagerUrwid, ManagerDetailedUrwid, AlertLevelUrwid, AlertLevelDetailedUrwid, \
-                            SensorAlertUrwid, SearchViewUrwid
+from .elementAlert import AlertDetailedUrwid, AlertUrwid
+from .elementAlertLevel import AlertLevelDetailedUrwid, AlertLevelUrwid
+from .elementCore import SearchViewUrwid
+from .elementManager import ManagerDetailedUrwid, ManagerUrwid
+from .elementProfile import StatusUrwid
+from .elementSensor import SensorDetailedUrwid, SensorUrwid
 from .eventHandler import ManagerEventHandler
 from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel
 from ..globalData import GlobalData

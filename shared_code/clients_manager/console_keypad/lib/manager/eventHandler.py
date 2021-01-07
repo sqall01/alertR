@@ -11,7 +11,7 @@ from typing import List, Any
 from .screenUpdater import ScreenUpdater
 from .core import BaseManagerEventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
 from ..globalData import GlobalData
 
 
@@ -31,6 +31,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
     def status_update(self,
                       server_time: int,
                       options: List[ManagerObjOption],
+                      profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
                       managers: List[ManagerObjManager],
@@ -39,6 +40,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         result = super().status_update(server_time,
                                        options,
+                                       profiles,
                                        nodes,
                                        sensors,
                                        managers,

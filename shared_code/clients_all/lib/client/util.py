@@ -502,9 +502,6 @@ class MsgChecker:
         if not isinstance(optionType, str):
             is_correct = False
 
-        if optionType != "alertSystemActive":
-            is_correct = False
-
         if not is_correct:
             return "optionType not valid"
 
