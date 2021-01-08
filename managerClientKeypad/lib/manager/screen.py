@@ -12,8 +12,11 @@ import logging
 import os
 import urwid
 import time
+from typing import Optional
 from .audio import AudioOutput
-from .screenElements import PinUrwid, StatusUrwid, WarningUrwid
+from .elementPin import PinUrwid
+from .elementStatus import StatusUrwid
+from .elementWarning import WarningUrwid
 from ..globalData import GlobalData
 from ..client import ServerCommunication
 
@@ -39,10 +42,10 @@ class Console:
         self.consoleLock = threading.BoundedSemaphore(1)
 
         # urwid object that shows the connection status
-        self.connectionStatus = None
+        self._connection_status = None  # type: Optional[StatusUrwid]
 
-        # urwid object that shows if the alert system is active
-        self.alertSystemActive = None
+        # urwid object that shows the currently used system profile
+        self._profile_urwid = None  # type: Optional[StatusUrwid]
 
         # the file descriptor for the urwid callback to update the screen
         self.screenFd = None
@@ -89,6 +92,10 @@ class Console:
         # list of sensors that are in the warning state and need user
         # confirmation
         self.sensorsToWarn = list()
+
+        # Color palettes for profiles.
+        # Depending on the id of the profile, a color is chosen.
+        self._profile_colors = ["profile_0", "profile_1", "profile_2", "profile_3", "profile_4"]
 
     # internal function that acquires the lock
     def _acquireLock(self):
@@ -323,32 +330,33 @@ class Console:
             logging.debug("[%s]: Status update received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Online")
-            self.connectionStatus.turnNeutral()
+            self._connection_status.update_value("Online")
+            self._connection_status.set_color("neutral")
 
-            option = self.system_data.get_option_by_type("alertSystemActive")
+            # Change active system profile widget according to received data.
+            option = self.system_data.get_option_by_type("profile")
             if option is None:
-                logging.error("[%s]: No alert system status option." % self.fileName)
+                logging.error("[%s]: No profile option." % self.fileName)
 
             else:
-                if option.value == 0:
-                    self.alertSystemActive.updateStatusValue("Deactivated")
-                    self.alertSystemActive.turnRed()
+                profile = self.system_data.get_profile_by_id(int(option.value))
+                if profile is None:
+                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
 
                 else:
-                    self.alertSystemActive.updateStatusValue("Activated")
-                    self.alertSystemActive.turnGreen()
+                    self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+                    self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
 
         # check if the connection to the server failed
         elif received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Offline")
-            self.connectionStatus.turnRed()
+            self._connection_status.update_value("Offline")
+            self._connection_status.set_color("redColor")
 
             # update alert system active widget
-            self.alertSystemActive.turnGray()
+            self._profile_urwid.set_color("grayColor")
 
         # check if a sensor alert was received from the server
         elif received_str == "sensoralert":
@@ -424,24 +432,23 @@ class Console:
     # return unless the client is terminated)
     def startConsole(self):
 
-        # generate widget to show the status of the alert system
-        option = self.system_data.get_option_by_type("alertSystemActive")
+        # Generate widget to show the profile which is currently used by the system.
+        option = self.system_data.get_option_by_type("profile")
         if option is None:
-            logging.error("[%s]: No alert system status option." % self.fileName)
+            logging.error("[%s]: No profile option." % self.fileName)
             return
 
-        if option.type == "alertSystemActive":
-            if option.value == 0:
-                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-                self.alertSystemActive.turnRed()
+        profile = self.system_data.get_profile_by_id(int(option.value))
+        if profile is None:
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+            return
 
-            else:
-                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-                self.alertSystemActive.turnGreen()
+        self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+        self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
 
         # generate widget to show the status of the connection
-        self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
-        self.connectionStatus.turnNeutral()
+        self._connection_status = StatusUrwid("Connection Status", "Status", "Online")
+        self._connection_status.set_color("neutral")
 
         # generate pin field
         self.pinEdit = PinUrwid("Enter PIN:\n",
@@ -459,13 +466,13 @@ class Console:
 
         # generate edit/menu part of the screen
         self.editPartScreen = urwid.Pile([self.pinEdit])
-        boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="menu")
+        boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="Menu")
 
         # initialize warning view urwid
         self.warningView = WarningUrwid()
 
         # generate final body object
-        self.finalBody = urwid.Pile([self.alertSystemActive.get(), self.connectionStatus.get(), boxedEditPartScreen])
+        self.finalBody = urwid.Pile([self._profile_urwid.get(), self._connection_status.get(), boxedEditPartScreen])
         fillerBody = urwid.Filler(self.finalBody, "top")
 
         # generate header
@@ -485,6 +492,11 @@ class Console:
             ('connectionfail', 'black', 'light gray'),
             ('timedout', 'black', 'dark red'),
             ('neutral', '', ''),
+            ('profile_0', 'black', 'dark green'),
+            ('profile_1', 'black', 'dark red'),
+            ('profile_2', 'black', 'dark cyan'),
+            ('profile_3', 'black', 'dark magenta'),
+            ('profile_4', 'black', 'yellow'),
         ]
 
         # create urwid main loop for the rendering
