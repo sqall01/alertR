@@ -445,9 +445,6 @@ class ClientCommunication:
         if not isinstance(optionType, str):
             isCorrect = False
 
-        if optionType != "alertSystemActive":
-            isCorrect = False
-
         if not isCorrect:
             # send error message back
             try:
