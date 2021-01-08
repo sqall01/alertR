@@ -847,8 +847,7 @@ class ServerCommunication(Communication):
                     optionValue: float,
                     optionDelay: int = 0) -> Promise:
         """
-        This function sends an option change to the server for example
-        to activate the alert system or deactivate it.
+        This function sends an option change to the server for example to change the active system profile.
 
         :param optionType:
         :param optionValue:

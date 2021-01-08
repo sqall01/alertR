@@ -20,7 +20,7 @@ from .elementStatus import StatusUrwid
 from .elementSensor import SensorDetailedUrwid, SensorUrwid
 from .elementSensorAlert import SensorAlertUrwid
 from .eventHandler import ManagerEventHandler
-from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel
+from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile
 from ..globalData import GlobalData
 from ..client import ServerCommunication
 from typing import Any, List
@@ -492,13 +492,27 @@ class Console:
         logging.debug("[%s]: Release lock." % self.fileName)
         self.consoleLock.release()
 
-    # Callback function for the search field that is called whenever
-    # the state of the field changes (a user presses a new key).
-    # This function searches instantly for the entered keyword and
-    # shows the result.
+
     def _callbackSearchFieldChange(self, editElement, state: str, userData):
+        """
+        Callback function for the search field that is called whenever
+        the state of the field changes (a user presses a new key).
+        This function searches instantly for the entered keyword and shows the result.
+        :param editElement:
+        :param state:
+        :param userData:
+        """
         self.searchKeyword = state.lower()
         self._showSearchResult()
+
+    def _callback_profile_choice(self, button: urwid.Button, profile: ManagerObjProfile):
+        """
+        Callback function for the profile choice overlay that is called if a button is pressed.
+        :param button:
+        :param profile:
+        """
+        logging.info("[%s]: Changing system profile to '%s'." % (self.fileName, profile.name))
+        self.serverComm.send_option("profile", float(profile.id))
 
     # get a list of alert level objects that belong to the given
     # object (object has to have attribute alertLevels)
@@ -892,16 +906,17 @@ class Console:
         Creates an overlayed view with all profiles to choose from.
         """
         self._profile_choice_view = ProfileChoiceUrwid(self.system_data.get_profiles_list(order_by_id=True),
-                                                       self._profile_colors)
+                                                       self._profile_colors,
+                                                       self._callback_profile_choice)
 
         # show search view as an overlay
         overlayView = urwid.Overlay(self._profile_choice_view.get(),
                                     self.mainFrame,
                                     align="center",
-                                    width=("relative", 80),
+                                    width=("relative", 40),
                                     min_width=80,
                                     valign="middle",
-                                    height=("relative", 5),
+                                    height=("relative", 20),
                                     min_height=5)
         self.mainLoop.widget = overlayView
         self._in_profile_choice_view = True
@@ -1406,7 +1421,7 @@ class Console:
         # generate header and footer
         header = urwid.Text("AlertR Console Manager", align="center")
         footer = urwid.Text("Keys: "
-                            + "P - Change Profile, "
+                            + "p - Change Profile, "
                             + "ESC - Back/Quit, "
                             + "TAB - Next Elements, "
                             + "Up/Down/Left/Right - Move Cursor, "
@@ -1806,7 +1821,7 @@ class Console:
                     self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
         # check if the connection to the server failed
-        if received_str == "connectionfail":
+        elif received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
