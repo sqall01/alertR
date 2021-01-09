@@ -23,10 +23,11 @@ class PinUrwid(urwid.Edit):
         self.console = console
 
     # this functions handles the key presses
-    def keypress(self, size: int, key: str) -> str:
+    def keypress(self, size: int, key: str):
 
         if key != "enter":
-            return super(PinUrwid, self).keypress(size, key)
+            super(PinUrwid, self).keypress(size, key)
+            return
 
         # get user input and clear pin field
         inputPin = self.edit_text.strip()
@@ -34,7 +35,7 @@ class PinUrwid(urwid.Edit):
 
         # check given pin
         if not self.console.checkPin(inputPin):
-            return ""
+            return
 
         # set time the screen was unlocked
         self.console.screenUnlockedTime = int(time.time())
@@ -44,4 +45,4 @@ class PinUrwid(urwid.Edit):
         # show menu
         self.console.showMenuView()
 
-        return ""
+        return

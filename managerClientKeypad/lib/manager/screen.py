@@ -15,6 +15,7 @@ import time
 from typing import Optional
 from .audio import AudioOutput
 from .elementPin import PinUrwid
+from .elementProfile import ProfileChoiceUrwid
 from .elementStatus import StatusUrwid
 from .elementWarning import WarningUrwid
 from ..globalData import GlobalData
@@ -73,7 +74,10 @@ class Console:
         self.mainFrame = None
 
         # the urwid object of the warning view
-        self.warningView = None
+        self.warningView = None  # type: Optional[WarningUrwid]
+
+        # this is the urwid object of the profile choice field
+        self._profile_choice_view = None  # type: Optional[ProfileChoiceUrwid]
 
         # flag that signalizes if the pin view is shown or not
         self.inPinView = True
@@ -83,6 +87,9 @@ class Console:
 
         # flag that signalizes if the warning view is shown or not
         self.inWarningView = False
+
+        # Flag that indicates if the profile choice view is shown or not.
+        self._in_profile_choice_view = False
 
         # callback function of the action that is chosen during the menu view
         # (is used to show warnings if some sensors are not in
@@ -102,6 +109,26 @@ class Console:
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.consoleLock.acquire()
 
+    def _callback_profile_choice(self, profile_id: int, delay: int):
+        """
+        Internal callback function used by the profile choice view.
+        :param profile_id: profile id to change to
+        :param delay: delay in seconds send in the option message
+        :return:
+        """
+        profile = self.system_data.get_profile_by_id(profile_id)
+        if profile is None:
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, profile_id))
+            self.showPinView()
+            return
+
+        logging.info("[%s]: Changing system profile to '%s' in %d seconds."
+                     % (self.fileName, profile.name, delay))
+
+        # TODO send profile change
+
+        self.showPinView()
+
     # internal function that clears the edit/menu part of the screen
     def _clearEditPartScreen(self):
 
@@ -116,6 +143,10 @@ class Console:
                 continue
 
             elif self.warningView.get() == pileTuple[0]:
+                self.editPartScreen.contents.remove(pileTuple)
+                continue
+
+            elif self._profile_choice_view.get() == pileTuple[0]:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
@@ -158,17 +189,6 @@ class Console:
 
         self.serverComm.send_option("alertSystemActive", 1.0)
 
-    # internal function that executes option 2 of the menu
-    def _executeOption2(self):
-
-        logging.info("[%s]: Deactivating alert system." % self.fileName)
-
-        # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioDeactivating()
-
-        self.serverComm.send_option("alertSystemActive", 0.0)
-
     # internal function that executes option 3 of the menu
     def _executeOption3(self):
 
@@ -183,9 +203,12 @@ class Console:
     # internal function that handles the keypress for the menu view
     def _handleMenuKeypress(self, key: str):
 
-        # check if option 1 was chosen => activate alert system
+        # Check if option 1 was chosen => change system profile
         if key == '1':
+            self._show_profile_choice_view(0)
 
+            # TODO handle warning states
+            '''
             # get all sensors that do not satisfy the
             # configured warning states 
             self.sensorsToWarn = self._checkSensorStatesSatisfied()
@@ -205,16 +228,14 @@ class Console:
 
                 # let the user confirm all warning states
                 self._handleWarningStates()
+            '''
 
-        # check if option 2 was chosen => deactivate alert system
+        # Check if option 2 was chosen => change system profile in x seconds
         elif key == '2':
+            self._show_profile_choice_view(self.timeDelayedActivation)
+            # TODO
 
-            self._executeOption2()
-            self.showPinView()
-
-        # check if option 3 was chosen
-        elif key == '3':
-
+            '''
             # get all sensors that do not satisfy the
             # configured warning states 
             self.sensorsToWarn = self._checkSensorStatesSatisfied()
@@ -234,6 +255,7 @@ class Console:
 
                 # let the user confirm all warning states
                 self._handleWarningStates()
+            '''
 
     # internal function that handles all sensors in warning states
     def _handleWarningStates(self):
@@ -381,6 +403,7 @@ class Console:
         self.inMenuView = True
         self.inPinView = False
         self.inWarningView = False
+        self._in_profile_choice_view = False
 
         # remove views from the screen
         self._clearEditPartScreen()
@@ -396,6 +419,7 @@ class Console:
         self.inMenuView = False
         self.inPinView = True
         self.inWarningView = False
+        self._in_profile_choice_view = False
 
         # reset unlock time
         self.screenUnlockedTime = 0
@@ -410,12 +434,33 @@ class Console:
         # show pin view
         self.editPartScreen.contents.append((self.pinEdit, self.editPartScreen.options()))
 
+    def _show_profile_choice_view(self, delay: int):
+        """
+        Internal function that shows the profile choice view.
+        :param delay: delay in seconds that is used for the option message send for the profile change
+        """
+        self.inMenuView = False
+        self.inPinView = False
+        self.inWarningView = False
+        self._in_profile_choice_view = True
+
+        # remove views from the screen
+        self._clearEditPartScreen()
+
+        # Show profile choice view.
+        self._profile_choice_view = ProfileChoiceUrwid(self.system_data.get_profiles_list(order_by_id=True),
+                                                       self._profile_colors,
+                                                       self._callback_profile_choice,
+                                                       delay)
+        self.editPartScreen.contents.append((self._profile_choice_view.get(), self.editPartScreen.options()))
+
     # show the warning view
     def showWarningView(self):
 
         self.inMenuView = False
         self.inPinView = False
         self.inWarningView = True
+        self._in_profile_choice_view = False
 
         # check if output is activated
         if self.audioOutput is not None:
@@ -456,13 +501,12 @@ class Console:
                                 "*",
                                 self)
 
-        # generate menu
-        option1 = urwid.Text("1. Activate alert system")
-        option2 = urwid.Text("2. Deactivate alert system")
-        option3 = urwid.Text("3. Activate alert system in %d seconds" % self.timeDelayedActivation)
+        # Generate menu.
+        option1 = urwid.Text("1. Change system profile")
+        option2 = urwid.Text("2. Change system profile in %d seconds" % self.timeDelayedActivation)
         separator = urwid.Text("")
         instruction = urwid.Text("Please, choose an option.")
-        self.menuPile = urwid.Pile([option1, option2, option3, separator, instruction])
+        self.menuPile = urwid.Pile([option1, option2, separator, instruction])
 
         # generate edit/menu part of the screen
         self.editPartScreen = urwid.Pile([self.pinEdit])
@@ -510,6 +554,7 @@ class Console:
         self.inPinView = True
         self.inMenuView = False
         self.inWarningView = False
+        self._in_profile_choice_view = False
 
         # Start unlock checker thread.
         thread = threading.Thread(target=self._thread_screen_unlock_checker)
