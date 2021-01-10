@@ -23,7 +23,7 @@ from .eventHandler import ManagerEventHandler
 from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile
 from ..globalData import GlobalData
 from ..client import ServerCommunication
-from typing import Any, List
+from typing import Any, List, Optional
 
 
 class FocusedElement:
@@ -66,7 +66,7 @@ class Console:
         self.connectionStatus = None
 
         # urwid object that shows the currently used system profile
-        self._profile_urwid = None
+        self._profile_urwid = None  # type: Optional[StatusUrwid]
 
         # A list of all urwid sensor objects.
         self.sensorUrwidObjects = list()
@@ -513,6 +513,8 @@ class Console:
         """
         logging.info("[%s]: Changing system profile to '%s'." % (self.fileName, profile.name))
         self.serverComm.send_option("profile", float(profile.id))
+
+        self._close_profile_choice_view()
 
     # get a list of alert level objects that belong to the given
     # object (object has to have attribute alertLevels)
@@ -1498,7 +1500,7 @@ class Console:
                     logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
 
                 else:
-                    self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+                    self._profile_urwid.update_value(profile.name)
                     self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
 
             # remove sensor alerts if they are too old

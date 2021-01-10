@@ -501,9 +501,6 @@ class ClientCommunication:
         if not isinstance(value, float):
             isCorrect = False
 
-        if not 0.0 <= value <= 1.0:
-            isCorrect = False
-
         if not isCorrect:
             # send error message back
             try:

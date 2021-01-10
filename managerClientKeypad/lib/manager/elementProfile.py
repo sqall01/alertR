@@ -7,7 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import logging
 import os
 import urwid
 from typing import List
@@ -33,7 +32,7 @@ class _ProfileEditUrwid(urwid.Edit):
 
     def keypress(self, size, key):
 
-        if key in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+        if key in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "backspace"]:
             super().keypress(size, key)
             return
 

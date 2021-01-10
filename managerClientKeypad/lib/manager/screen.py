@@ -125,7 +125,15 @@ class Console:
         logging.info("[%s]: Changing system profile to '%s' in %d seconds."
                      % (self.fileName, profile.name, delay))
 
-        # TODO send profile change
+        # check if output is activated
+        if self.audioOutput is not None:
+            if delay == 0:
+                self.audioOutput.audioActivating()  # TODO change to "changing system profile"
+
+            else:
+                self.audioOutput.audioActivatingDelayed()  # TODO change to "delayed system profile change"
+
+        self.serverComm.send_option("profile", float(profile.id), delay)
 
         self.showPinView()
 
@@ -177,28 +185,6 @@ class Console:
                               % (sensorWarningState.username, currentSensor.description))
 
         return statesNotSatisfied
-
-    # internal function that executes option 1 of the menu
-    def _executeOption1(self):
-
-        logging.info("[%s]: Activating alert system." % self.fileName)
-
-        # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioActivating()
-
-        self.serverComm.send_option("alertSystemActive", 1.0)
-
-    # internal function that executes option 3 of the menu
-    def _executeOption3(self):
-
-        logging.info("[%s]: Activating alert system in %d seconds." % (self.fileName, self.timeDelayedActivation))
-
-        # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioActivatingDelayed()
-
-        self.serverComm.send_option("alertSystemActive", 1.0, self.timeDelayedActivation)
 
     # internal function that handles the keypress for the menu view
     def _handleMenuKeypress(self, key: str):
@@ -366,7 +352,7 @@ class Console:
                     logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
 
                 else:
-                    self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+                    self._profile_urwid.update_value(profile.name)
                     self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
 
         # check if the connection to the server failed

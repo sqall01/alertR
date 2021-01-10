@@ -515,9 +515,6 @@ class MsgChecker:
         if not isinstance(value, float):
             is_correct = False
 
-        if not 0.0 <= value <= 1.0:
-            is_correct = False
-
         if not is_correct:
             return "value not valid"
 
