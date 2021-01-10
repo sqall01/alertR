@@ -39,7 +39,7 @@ class Console:
         self.system_data = self.globalData.system_data
 
         # lock that is being used so only one thread can update the screen
-        self.consoleLock = threading.BoundedSemaphore(1)
+        self.consoleLock = threading.Lock()
 
         # urwid object that shows the connection status
         self._connection_status = None  # type: Optional[StatusUrwid]
