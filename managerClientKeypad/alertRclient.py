@@ -185,15 +185,12 @@ if __name__ == '__main__':
         audioActivated = (str(configRoot.find("manager").find("audio").attrib["enabled"]).upper() == "TRUE")
         audioPlaySilence = (str(configRoot.find("manager").find("audio").attrib["playSilence"]).upper() == "TRUE")
         if audioActivated is True:
-            globalData.audioOutput = AudioOutput()
-
             # Play silence as a workaround for HDMI delays.
-            if audioPlaySilence is True:
-                globalData.audioOutput.playSilence()
+            globalData.audioOutput = AudioOutput(audioPlaySilence)
 
         # get settings for the keypad
-        globalData.timeDelayedActivation = int(configRoot.find("manager").find(
-                                           "keypad").attrib["timeDelayedActivation"])
+        globalData.time_delayed_change = int(configRoot.find("manager").find(
+                                           "keypad").attrib["timeDelayedChange"])
 
         # parse all pins
         for item in configRoot.find("manager").find("keypad").iterfind("pin"):

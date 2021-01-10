@@ -150,12 +150,13 @@
 
         <!--
             keypad specific settings
-            timeDelayedActivation - this value gives the seconds of the 3rd
-                option (delayed activation of the alert system) which are used
-                to activate the alert system after the given time
+            timeDelayedChange - this value gives the delay in seconds of the delayed
+                profile change option (if AlertR is used in an alarm system context, this can be used
+                to change to the "alarm system active" profile after given seconds for example to leave
+                the building before the alarm system is activated).
         -->
         <keypad
-            timeDelayedActivation="30">
+            timeDelayedChange="30">
 
             <!--
                 a single pin that is configured to login to the manager

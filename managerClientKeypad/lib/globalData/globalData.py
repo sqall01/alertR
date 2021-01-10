@@ -73,9 +73,9 @@ class GlobalData:
         self.pins = list()
 
         # the time given in seconds which are used by the time delayed
-        # activation of the alert system (this option is given to the user
+        # change of the system profile (this option is given to the user
         # in the menu)
-        self.timeDelayedActivation = None  # type: Optional[int]
+        self.time_delayed_change = None  # type: Optional[int]
 
         # the object that is used to output audio (if activated)
         self.audioOutput = None

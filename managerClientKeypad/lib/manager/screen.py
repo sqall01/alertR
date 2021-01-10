@@ -31,10 +31,9 @@ class Console:
         # get global configured data
         self.globalData = global_data
         self.serverComm = self.globalData.serverComm  # type: ServerCommunication
-        self.audioOutput = self.globalData.audioOutput  # type: AudioOutput
+        self._audio_output = self.globalData.audioOutput  # type: Optional[AudioOutput]
         self.pins = self.globalData.pins
-        self.timeDelayedActivation = self.globalData.timeDelayedActivation
-        self.audioOutput = self.globalData.audioOutput
+        self._time_delayed_profile_change = self.globalData.time_delayed_change
         self.sensorWarningStates = self.globalData.sensorWarningStates
         self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
         self.system_data = self.globalData.system_data
@@ -126,12 +125,12 @@ class Console:
                      % (self.fileName, profile.name, delay))
 
         # check if output is activated
-        if self.audioOutput is not None:
+        if self._audio_output is not None:
             if delay == 0:
-                self.audioOutput.audioActivating()  # TODO change to "changing system profile"
+                self._audio_output.audio_profile_change()
 
             else:
-                self.audioOutput.audioActivatingDelayed()  # TODO change to "delayed system profile change"
+                self._audio_output.audio_profile_change_delayed()
 
         self.serverComm.send_option("profile", float(profile.id), delay)
 
@@ -218,7 +217,7 @@ class Console:
 
         # Check if option 2 was chosen => change system profile in x seconds
         elif key == '2':
-            self._show_profile_choice_view(self.timeDelayedActivation)
+            self._show_profile_choice_view(self._time_delayed_profile_change)
             # TODO
 
             '''
@@ -449,8 +448,8 @@ class Console:
         self._in_profile_choice_view = False
 
         # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioWarning()
+        if self._audio_output is not None:
+            self._audio_output.audio_warning()
 
         # remove views from the screen
         self._clearEditPartScreen()
@@ -489,7 +488,7 @@ class Console:
 
         # Generate menu.
         option1 = urwid.Text("1. Change system profile")
-        option2 = urwid.Text("2. Change system profile in %d seconds" % self.timeDelayedActivation)
+        option2 = urwid.Text("2. Change system profile in %d seconds" % self._time_delayed_profile_change)
         separator = urwid.Text("")
         instruction = urwid.Text("Please, choose an option.")
         self.menuPile = urwid.Pile([option1, option2, separator, instruction])
