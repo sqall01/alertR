@@ -14,3 +14,4 @@ class SensorWarningState:
         self.username = None
         self.remoteSensorId = None
         self.warningState = None
+        self.profiles = list()

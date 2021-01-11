@@ -206,8 +206,16 @@ if __name__ == '__main__':
             temp.remoteSensorId = int(item.attrib["remoteSensorId"])
             if str(item.attrib["warningState"]).upper() == "TRUE":
                 temp.warningState = 1
+
             else:
                 temp.warningState = 0
+
+            for profile_xml in item.iterfind("profile"):
+                temp.profiles.append(int(profile_xml.text))
+
+            if not temp.profiles:
+                raise ValueError("No profile given for sensor warning state.")
+
             globalData.sensorWarningStates.append(temp)
 
     except Exception as e:

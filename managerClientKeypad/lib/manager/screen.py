@@ -12,13 +12,14 @@ import logging
 import os
 import urwid
 import time
-from typing import Optional
+from typing import Optional, List
 from .audio import AudioOutput
 from .elementPin import PinUrwid
 from .elementProfile import ProfileChoiceUrwid
 from .elementStatus import StatusUrwid
 from .elementWarning import WarningUrwid
 from ..globalData import GlobalData
+from .localObjects import SensorWarningState
 from ..client import ServerCommunication
 
 
@@ -34,7 +35,7 @@ class Console:
         self._audio_output = self.globalData.audioOutput  # type: Optional[AudioOutput]
         self.pins = self.globalData.pins
         self._time_delayed_profile_change = self.globalData.time_delayed_change
-        self.sensorWarningStates = self.globalData.sensorWarningStates
+        self._sensor_warning_states = self.globalData.sensorWarningStates  # type: List[SensorWarningState]
         self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
         self.system_data = self.globalData.system_data
 
@@ -73,7 +74,7 @@ class Console:
         self.mainFrame = None
 
         # the urwid object of the warning view
-        self.warningView = None  # type: Optional[WarningUrwid]
+        self._warning_view = None  # type: Optional[WarningUrwid]
 
         # this is the urwid object of the profile choice field
         self._profile_choice_view = None  # type: Optional[ProfileChoiceUrwid]
@@ -85,7 +86,7 @@ class Console:
         self.inMenuView = False
 
         # flag that signalizes if the warning view is shown or not
-        self.inWarningView = False
+        self._in_warning_view = False
 
         # Flag that indicates if the profile choice view is shown or not.
         self._in_profile_choice_view = False
@@ -108,11 +109,12 @@ class Console:
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.consoleLock.acquire()
 
-    def _callback_profile_choice(self, profile_id: int, delay: int):
+    def _callback_profile_choice(self, profile_id: int, delay: int, force: bool = False):
         """
         Internal callback function used by the profile choice view.
         :param profile_id: profile id to change to
         :param delay: delay in seconds send in the option message
+        :param force: ignore sensor state checks
         :return:
         """
         profile = self.system_data.get_profile_by_id(profile_id)
@@ -120,6 +122,38 @@ class Console:
             logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, profile_id))
             self.showPinView()
             return
+
+        if not force:
+            # Get a list of sensors that do not satisfy the warning states.
+            states_not_satisfied = list()
+            for sensor_warning_state in self._sensor_warning_states:
+
+                current_sensor = self.system_data.get_sensor_by_remote_id(sensor_warning_state.username,
+                                                                          sensor_warning_state.remoteSensorId)
+
+                # Skip warning state if sensor is not found.
+                if current_sensor is None:
+                    logging.warning("[%s]: Not able to find sensor with remote id '%d' for username '%s'."
+                                    % (self.fileName, sensor_warning_state.remoteSensorId, sensor_warning_state.username))
+                    continue
+
+                # Check if the sensor is in the warning state
+                if (current_sensor.state == sensor_warning_state.warningState
+                        and profile_id in sensor_warning_state.profiles):
+                    states_not_satisfied.append(current_sensor)
+
+                    logging.debug("[%s]: Sensor with remote id '%d' "
+                                  % (self.fileName, sensor_warning_state.remoteSensorId)
+                                  + "for username '%s' and description '%s' in warning state."
+                                  % (sensor_warning_state.username, current_sensor.description))
+
+            # Let the user confirm all warning states if any exists.
+            if states_not_satisfied:
+                self._warning_view.set_sensor_warning_states(states_not_satisfied)
+                self._warning_view.prepare_next_warning_state()
+                self._warning_view.set_callback_fct(self._callback_profile_choice, (profile_id, delay, True))
+                self.showWarningView()
+                return
 
         logging.info("[%s]: Changing system profile to '%s' in %d seconds."
                      % (self.fileName, profile.name, delay))
@@ -149,7 +183,7 @@ class Console:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
-            elif self.warningView.get() == pileTuple[0]:
+            elif self._warning_view.get() == pileTuple[0]:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
@@ -163,7 +197,7 @@ class Console:
 
         # get a list of sensors that do not satisfy the warning states
         statesNotSatisfied = list()
-        for sensorWarningState in self.sensorWarningStates:
+        for sensorWarningState in self._sensor_warning_states:
 
             currentSensor = self.system_data.get_sensor_by_remote_id(sensorWarningState.username,
                                                                      sensorWarningState.remoteSensorId)
@@ -192,73 +226,9 @@ class Console:
         if key == '1':
             self._show_profile_choice_view(0)
 
-            # TODO handle warning states
-            '''
-            # get all sensors that do not satisfy the
-            # configured warning states 
-            self.sensorsToWarn = self._checkSensorStatesSatisfied()
-
-            # check if no sensor is in the warning state
-            # => execute chosen action
-            if not self.sensorsToWarn:
-                self._executeOption1()
-                self.showPinView()
-
-            # at least one sensor is in the warning state
-            # => ask for user confirmation
-            else:
-
-                # set the function to execute when all warnings are confirmed
-                self.callbackOptionToExecute = self._executeOption1
-
-                # let the user confirm all warning states
-                self._handleWarningStates()
-            '''
-
         # Check if option 2 was chosen => change system profile in x seconds
         elif key == '2':
             self._show_profile_choice_view(self._time_delayed_profile_change)
-            # TODO
-
-            '''
-            # get all sensors that do not satisfy the
-            # configured warning states 
-            self.sensorsToWarn = self._checkSensorStatesSatisfied()
-
-            # check if no sensor is in the warning state
-            # => execute chosen action
-            if not self.sensorsToWarn:
-                self._executeOption3()
-                self.showPinView()
-
-            # at least one sensor is in the warning state
-            # => ask for user confirmation
-            else:
-
-                # set the function to execute when all warnings are confirmed
-                self.callbackOptionToExecute = self._executeOption3
-
-                # let the user confirm all warning states
-                self._handleWarningStates()
-            '''
-
-    # internal function that handles all sensors in warning states
-    def _handleWarningStates(self):
-
-        # check if a sensor that is in the warning state still exists
-        # => warn about sensor
-        if self.sensorsToWarn:
-
-            sensorToWarn = self.sensorsToWarn.pop()
-            self.warningView.setSensorData(sensorToWarn.description, sensorToWarn.state)
-            self.showWarningView()
-
-        # if no sensor in a warning state remains
-        # => execute chosen action
-        else:
-
-            self.callbackOptionToExecute()
-            self.showPinView()
 
     # internal function that releases the lock
     def _releaseLock(self):
@@ -310,10 +280,14 @@ class Console:
             self._handleMenuKeypress(key)
 
         # check if we are in the warning view
-        elif self.inWarningView:
+        elif self._in_warning_view:
             # option 1 continues the chosen action
             if key == "1":
-                self._handleWarningStates()
+                if self._warning_view.prepare_next_warning_state():
+                    self.showWarningView()
+
+                else:
+                    self._warning_view.execute_callback_fct()
 
             # option 2 aborts the chosen action
             elif key == "2":
@@ -387,7 +361,7 @@ class Console:
 
         self.inMenuView = True
         self.inPinView = False
-        self.inWarningView = False
+        self._in_warning_view = False
         self._in_profile_choice_view = False
 
         # remove views from the screen
@@ -403,7 +377,7 @@ class Console:
 
         self.inMenuView = False
         self.inPinView = True
-        self.inWarningView = False
+        self._in_warning_view = False
         self._in_profile_choice_view = False
 
         # reset unlock time
@@ -426,7 +400,7 @@ class Console:
         """
         self.inMenuView = False
         self.inPinView = False
-        self.inWarningView = False
+        self._in_warning_view = False
         self._in_profile_choice_view = True
 
         # remove views from the screen
@@ -444,7 +418,7 @@ class Console:
 
         self.inMenuView = False
         self.inPinView = False
-        self.inWarningView = True
+        self._in_warning_view = True
         self._in_profile_choice_view = False
 
         # check if output is activated
@@ -455,7 +429,7 @@ class Console:
         self._clearEditPartScreen()
 
         # show pin view
-        self.editPartScreen.contents.append((self.warningView.get(), self.editPartScreen.options()))
+        self.editPartScreen.contents.append((self._warning_view.get(), self.editPartScreen.options()))
 
     # this function initializes the urwid objects and displays
     # them (it starts also the urwid main loop and will not
@@ -498,7 +472,7 @@ class Console:
         boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="Menu")
 
         # initialize warning view urwid
-        self.warningView = WarningUrwid()
+        self._warning_view = WarningUrwid()
 
         # generate final body object
         self.finalBody = urwid.Pile([self._profile_urwid.get(), self._connection_status.get(), boxedEditPartScreen])
@@ -538,7 +512,7 @@ class Console:
         # set the correct view in which we are
         self.inPinView = True
         self.inMenuView = False
-        self.inWarningView = False
+        self._in_warning_view = False
         self._in_profile_choice_view = False
 
         # Start unlock checker thread.
