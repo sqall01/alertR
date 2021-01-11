@@ -545,7 +545,7 @@ class SystemData:
     def get_profile_by_id(self, profile_id: int) -> Optional[ManagerObjProfile]:
         """
         Gets Profile object corresponding to given id.
-        :param sensor_id:
+        :param profile_id:
         :return:
         """
         with self._data_lock:
