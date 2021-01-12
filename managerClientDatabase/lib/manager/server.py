@@ -14,6 +14,7 @@ import json
 import socket
 from typing import Type
 from ..globalData import GlobalData
+from ..client import ServerCommunication
 
 BUFSIZE = 1024
 
@@ -23,15 +24,15 @@ BUFSIZE = 1024
 class ThreadedUnixStreamServer(socketserver.ThreadingMixIn,
                                socketserver.UnixStreamServer):
     
-    def __init__(self, globalData: GlobalData,
-                 serverAddress: str,
+    def __init__(self, global_data: GlobalData,
+                 server_address: str,
                  RequestHandlerClass: Type[socketserver.BaseRequestHandler]):
 
         # get reference to global data object
-        self.globalData = globalData
+        self.global_data = global_data
 
         socketserver.TCPServer.__init__(self,
-                                        serverAddress,
+                                        server_address,
                                         RequestHandlerClass)
 
 
@@ -40,32 +41,30 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
     def __init__(self,
                  request: socket,
-                 clientAddress: str,
+                 client_address: str,
                  server: ThreadedUnixStreamServer):
 
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # get reference to global data object
-        self.globalData = server.globalData
-        self.serverComm = self.globalData.serverComm
+        self._global_data = server.global_data
+        self._server_comm = self._global_data.serverComm  # type: ServerCommunication
 
-        socketserver.BaseRequestHandler.__init__(self, request, clientAddress, server)
+        socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def handle(self):
 
-        logging.info("[%s]: Client connected." % self.fileName)
+        logging.info("[%s]: Client connected." % self._log_tag)
 
-        # get received data
-        data_raw = self.request.recv(BUFSIZE)
-        data = data_raw.decode("ascii")
-
-        # convert data to json
+        # Get received data.
         try:
+            data_raw = self.request.recv(BUFSIZE)
+            data = data_raw.decode("ascii")
+
             incomingMessage = json.loads(data)
 
-            # at the moment only option messages are allowed
-            if incomingMessage["message"] != "option":
+            # At the moment only option messages are allowed.
+            if incomingMessage["message"].lower() != "option":
 
                 # send error message back
                 try:
@@ -79,12 +78,12 @@ class LocalServerSession(socketserver.BaseRequestHandler):
                 return
 
         except Exception:
-            logging.exception("[%s]: Received message invalid." % self.fileName)
+            logging.exception("[%s]: Received message invalid." % self._log_tag)
 
             # send error message back
             try:
                 message = {"message": "unknown",
-                           "error": "received json message invalid"}
+                           "error": "received message invalid"}
                 self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception:
@@ -92,14 +91,14 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             return
 
-        # extract option type and value from message
+        # Extract option type and value from message.
         try:
-            optionType = str(incomingMessage["payload"]["optionType"])
-            optionValue = float(incomingMessage["payload"]["value"])
-            optionDelay = int(incomingMessage["payload"]["timeDelay"])
+            option_type = str(incomingMessage["payload"]["optionType"]).lower()
+            option_value = float(incomingMessage["payload"]["value"])
+            option_delay = int(incomingMessage["payload"]["timeDelay"])
 
         except Exception:
-            logging.exception("[%s]: Attributes of option message invalid." % self.fileName)
+            logging.exception("[%s]: Attributes of option message invalid." % self._log_tag)
 
             # send error message back
             try:
@@ -112,13 +111,13 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             return
 
-        # at the moment only "alertSystemActive" is an allowed option type
-        if optionType != "alertSystemActive":
+        # At the moment only "profile" is an allowed option type.
+        if option_type != "profile":
 
             # send error message back
             try:
                 message = {"message": incomingMessage["message"],
-                           "error": "only option type 'alertSystemActive' allowed"}
+                           "error": "only option type 'profile' allowed"}
                 self.request.send(json.dumps(message).encode('ascii'))
 
             except Exception:
@@ -126,30 +125,15 @@ class LocalServerSession(socketserver.BaseRequestHandler):
 
             return
 
-        # send option message to server
-        promise = self.serverComm.send_option(optionType, optionValue, optionDelay)
-        promise.is_finished(blocking=True)
+        # Send option message to server.
+        self._server_comm.send_option(option_type, option_value, option_delay)
 
-        if promise.was_successful():
+        # Send response to client.
+        try:
+            message = {"message": incomingMessage["message"],
+                       "payload": {"type": "response",
+                                   "result": "ok"}}
+            self.request.send(json.dumps(message).encode('ascii'))
 
-            # send response to client
-            try:
-                message = {"message": incomingMessage["message"],
-                           "payload": {"type": "response",
-                                       "result": "ok"}}
-                self.request.send(json.dumps(message).encode('ascii'))
-
-            except Exception:
-                logging.exception("[%s]: Sending response message failed." % self.fileName)
-
-        else:
-            logging.error("[%s]: Sending message to server failed." % self.fileName)
-
-            # send error message back
-            try:
-                message = {"message": incomingMessage["message"],
-                           "error": "sending message to server failed"}
-                self.request.send(json.dumps(message).encode('ascii'))
-
-            except Exception:
-                pass
+        except Exception:
+            logging.exception("[%s]: Sending response message failed." % self._log_tag)
