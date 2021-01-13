@@ -51,18 +51,15 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
 
         data_json = json.dumps(optional_data)
 
-        # Add sensor alert to database for processing and wake up sensor alert executer to process sensor alert.
-        if self._storage.addSensorAlert(self.nodeId,  # nodeId
-                                        self.sensorId,  # sensorId
-                                        1,  # state
-                                        data_json,  # dataJson
-                                        False,  # changeState
-                                        False,  # hasLatestData
-                                        self.dataType,  # sensorData
-                                        self._logger):  # logger
-            self._sensor_alert_executer.sensorAlertEvent.set()
-
-        else:
+        if not self._sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                            self.sensorId,
+                                                            1,
+                                                            data_json,
+                                                            False,
+                                                            False,
+                                                            self.dataType,
+                                                            self.data,
+                                                            self._logger):
             self._logger.error("[%s]: Not able to add sensor alert for "
                                % self._log_tag
                                + "internal alert level instrumentation error sensor.")

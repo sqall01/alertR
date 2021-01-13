@@ -159,5 +159,4 @@ class CSVWatchdog(threading.Thread):
                         if self._syncUsernamesAndDatabase():
                             # Wake up manager update executer if
                             # we removed a node.
-                            self.managerUpdateExecuter.forceStatusUpdate = True
-                            self.managerUpdateExecuter.managerUpdateEvent.set()
+                            self.managerUpdateExecuter.force_status_update()

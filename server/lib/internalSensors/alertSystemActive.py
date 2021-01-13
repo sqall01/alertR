@@ -58,16 +58,14 @@ class AlertSystemActiveSensor(_InternalSensor):
             self.logger.error("[%s]: Not able to change sensor state for internal alert system active sensor."
                               % self.log_tag)
 
-        if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                       self.sensorId,  # sensorId
-                                       state,  # state
-                                       "",  # dataJson
-                                       True,  # changeState
-                                       False,  # hasLatestData
-                                       SensorDataType.NONE,  # sensorData
-                                       None):  # logger
-            self.sensor_alert_executer.sensorAlertEvent.set()
-
-        else:
+        if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                           self.sensorId,
+                                                           state,
+                                                           "",
+                                                           True,
+                                                           False,
+                                                           SensorDataType.NONE,
+                                                           None,
+                                                           None):
             self.logger.error("[%s]: Not able to add sensor alert for internal alert system active sensor."
                               % self.log_tag)

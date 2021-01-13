@@ -12,8 +12,8 @@ from lib.globalData import GlobalData
 class MockSensorAlertExecuter:
 
     def __init__(self):
-        self.sensorAlertEvent = threading.Event()
-        self.sensorAlertEvent.clear()
+        self._sensor_alert_event = threading.Event()
+        self._sensor_alert_event.clear()
 
 
 class MockStorage(_Storage):
@@ -75,7 +75,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
         self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertFalse(sensor_alert_executer._sensor_alert_event.is_set())
 
         optional_data = dict()
         optional_data["alert_level"] = 1337
@@ -83,7 +83,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         internal_sensor._add_sensor_alert(optional_data)
 
         self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertTrue(sensor_alert_executer._sensor_alert_event.is_set())
 
         sensor_alert = storage.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
@@ -106,7 +106,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
         self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertFalse(sensor_alert_executer._sensor_alert_event.is_set())
 
         alert_level = AlertLevel()
         alert_level.level = 1
@@ -121,7 +121,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         internal_sensor.raise_sensor_alert_execution_error(alert_level)
 
         self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertTrue(sensor_alert_executer._sensor_alert_event.is_set())
 
         sensor_alert = storage.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
@@ -146,7 +146,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
         self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertFalse(sensor_alert_executer._sensor_alert_event.is_set())
 
         alert_level = AlertLevel()
         alert_level.level = 1
@@ -161,7 +161,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         internal_sensor.raise_sensor_alert_exit_code(alert_level, 1337)
 
         self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertTrue(sensor_alert_executer._sensor_alert_event.is_set())
 
         sensor_alert = storage.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
@@ -187,7 +187,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
         self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertFalse(sensor_alert_executer._sensor_alert_event.is_set())
 
         alert_level = AlertLevel()
         alert_level.level = 1
@@ -202,7 +202,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         internal_sensor.raise_sensor_alert_invalid_output(alert_level)
 
         self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertTrue(sensor_alert_executer._sensor_alert_event.is_set())
 
         sensor_alert = storage.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
@@ -227,7 +227,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
         self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertFalse(sensor_alert_executer._sensor_alert_event.is_set())
 
         alert_level = AlertLevel()
         alert_level.level = 1
@@ -242,7 +242,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         internal_sensor.raise_sensor_alert_output_empty(alert_level)
 
         self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertTrue(sensor_alert_executer._sensor_alert_event.is_set())
 
         sensor_alert = storage.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
@@ -267,7 +267,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
         self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertFalse(sensor_alert_executer._sensor_alert_event.is_set())
 
         alert_level = AlertLevel()
         alert_level.level = 1
@@ -282,7 +282,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         internal_sensor.raise_sensor_alert_timeout(alert_level)
 
         self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertTrue(sensor_alert_executer._sensor_alert_event.is_set())
 
         sensor_alert = storage.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)

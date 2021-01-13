@@ -66,7 +66,6 @@ class NodeTimeoutSensor(_InternalSensor):
 
         :param node_obj:
         """
-        process_sensor_alerts = False
 
         # If internal sensor is in state "normal", change the
         # state to "triggered" with the raised sensor alert.
@@ -93,24 +92,17 @@ class NodeTimeoutSensor(_InternalSensor):
                                 "instance": node_obj.instance,
                                 "nodeType": node_obj.nodeType})
 
-        # Add sensor alert to database for processing.
-        if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                       self.sensorId,  # sensorId
-                                       1,  # state
-                                       data_json,  # dataJson
-                                       change_state,  # changeState
-                                       False,  # hasLatestData
-                                       SensorDataType.NONE,  # sensorData
-                                       self.logger):  # logger
-            process_sensor_alerts = True
-
-        else:
+        if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                           self.sensorId,
+                                                           1,
+                                                           data_json,
+                                                           change_state,
+                                                           False,
+                                                           SensorDataType.NONE,
+                                                           None,
+                                                           self.logger):
             self.logger.error("[%s]: Not able to add sensor alert for internal node timeout sensor."
                               % self.log_tag)
-
-        # Wake up sensor alert executer to process sensor alerts.
-        if process_sensor_alerts:
-            self.sensor_alert_executer.sensorAlertEvent.set()
 
     def node_back(self,
                   node_obj: Node):
@@ -119,7 +111,6 @@ class NodeTimeoutSensor(_InternalSensor):
 
         :param node_obj:
         """
-        process_sensor_alerts = False
 
         # If internal sensor is in state "triggered" and there is no
         # timed out node left, change the state to "normal" with the raised sensor alert.
@@ -144,30 +135,22 @@ class NodeTimeoutSensor(_InternalSensor):
                                 "instance": node_obj.instance,
                                 "nodeType": node_obj.nodeType})
 
-        # Add sensor alert to database for processing.
-        if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                       self.sensorId,  # sensorId
-                                       0,  # state
-                                       data_json,  # dataJson
-                                       change_state,  # changeState
-                                       False,  # hasLatestData
-                                       SensorDataType.NONE,  # sensorData
-                                       self.logger):  # logger
-            process_sensor_alerts = True
-
-        else:
+        if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                           self.sensorId,
+                                                           0,
+                                                           data_json,
+                                                           change_state,
+                                                           False,
+                                                           SensorDataType.NONE,
+                                                           None,
+                                                           self.logger):
             self.logger.error("[%s]: Not able to add sensor alert for internal node timeout sensor."
                               % self.log_tag)
-
-        # Wake up sensor alert executer to process sensor alerts.
-        if process_sensor_alerts:
-            self.sensor_alert_executer.sensorAlertEvent.set()
 
     def reminder(self):
         """
         Public function that handles a sensor alert as a reminder for all timed out nodes.
         """
-        process_sensor_alerts = False
 
         # Create message and nodes field for sensor alert.
         message = "%d node(s) still timed out:" % len(self._timeout_node_ids)
@@ -197,21 +180,14 @@ class NodeTimeoutSensor(_InternalSensor):
         data_json = json.dumps({"message": message,
                                 "nodes": nodes_field})
 
-        # Add sensor alert to database for processing.
-        if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                       self.sensorId,  # sensorId
-                                       1,  # state
-                                       data_json,  # dataJson
-                                       False,  # changeState
-                                       False,  # hasLatestData
-                                       SensorDataType.NONE,  # sensorData
-                                       self.logger):  # logger
-            process_sensor_alerts = True
-
-        else:
+        if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                           self.sensorId,
+                                                           1,
+                                                           data_json,
+                                                           False,
+                                                           False,
+                                                           SensorDataType.NONE,
+                                                           None,
+                                                           self.logger):
             self.logger.error("[%s]: Not able to add sensor alert for internal node timeout sensor."
                               % self.log_tag)
-
-        # Wake up sensor alert executer to process sensor alerts.
-        if process_sensor_alerts:
-            self.sensor_alert_executer.sensorAlertEvent.set()

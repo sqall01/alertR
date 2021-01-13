@@ -11,8 +11,10 @@ import threading
 import os
 import time
 import collections
+from typing import Optional
 from .server import AsynchronousSender
 from .globalData import GlobalData
+from .localObjects import SensorData
 
 
 # this class is woken up if a sensor alert or state change is received
@@ -34,8 +36,8 @@ class ManagerUpdateExecuter(threading.Thread):
 
         # create an event that is used to wake this thread up
         # and reacte on state changes/sensor alerts
-        self.managerUpdateEvent = threading.Event()
-        self.managerUpdateEvent.clear()
+        self._manager_update_event = threading.Event()
+        self._manager_update_event.clear()
 
         # set exit flag as false
         self.exitFlag = False
@@ -46,11 +48,11 @@ class ManagerUpdateExecuter(threading.Thread):
 
         # this is used to know if a full status update has to be sent to
         # the manager clients (ignoring the time interval)
-        self.forceStatusUpdate = False
+        self._force_status_update = False
 
         # this is a queue that is used to signalize the state changes
         # that should be sent to the manager clients
-        self.queueStateChange = collections.deque()
+        self._queue_state_change = collections.deque()
 
     def run(self):
 
@@ -62,29 +64,29 @@ class ManagerUpdateExecuter(threading.Thread):
 
             # check if state change queue is empty before waiting
             # for event (or timeout)
-            if len(self.queueStateChange) == 0:
+            if len(self._queue_state_change) == 0:
                 # wait 10 seconds before checking if a
                 # status update to all manager nodes has to be sent
                 # or check it when the event is triggered
-                self.managerUpdateEvent.wait(10)
-                self.managerUpdateEvent.clear()
+                self._manager_update_event.wait(10)
+                self._manager_update_event.clear()
 
             # check if last status update has timed out
             # or a status update is forced
             # => send status update to all manager
             utcTimestamp = int(time.time())
-            if (utcTimestamp - self.managerUpdateInterval) > self.lastStatusUpdateSend or self.forceStatusUpdate:
+            if (utcTimestamp - self.managerUpdateInterval) > self.lastStatusUpdateSend or self._force_status_update:
 
                 # update time when last status update was sent
                 self.lastStatusUpdateSend = utcTimestamp
 
                 # reset new client variable
-                self.forceStatusUpdate = False
+                self._force_status_update = False
 
                 # empty current state queue
                 # (because the state changes are also transmitted
                 # during the full state update)
-                self.queueStateChange.clear()
+                self._queue_state_change.clear()
 
                 for serverSession in self.serverSessions:
                     # ignore sessions which do not exist yet
@@ -112,8 +114,8 @@ class ManagerUpdateExecuter(threading.Thread):
 
             # if status change queue is not empty
             # => send status changes to manager clients
-            while len(self.queueStateChange) != 0:
-                managerStateTuple = self.queueStateChange.popleft()
+            while len(self._queue_state_change) != 0:
+                managerStateTuple = self._queue_state_change.popleft()
                 sensorId = managerStateTuple[0]
                 state = managerStateTuple[1]
                 sensorDataObj = managerStateTuple[2]
@@ -144,3 +146,24 @@ class ManagerUpdateExecuter(threading.Thread):
     # sets the exit flag to shut down the thread
     def exit(self):
         self.exitFlag = True
+
+    def force_status_update(self):
+        """
+        Force status update for manager clients.
+        """
+        self._force_status_update = True
+        self._manager_update_event.set()
+
+    def queue_state_change(self,
+                           sensor_id: int,
+                           state: int,
+                           sensor_data: Optional[SensorData]):
+        """
+        Queues state change to send it to all connected manager clients.
+
+        :param sensor_id:
+        :param state:
+        :param sensor_data:
+        """
+        self._queue_state_change.append((sensor_id, state, sensor_data))
+        self._manager_update_event.set()

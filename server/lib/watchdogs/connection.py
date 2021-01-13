@@ -407,8 +407,7 @@ class ConnectionWatchdog(threading.Thread):
         # Wake up manager update executer and force to send an update to
         # all managers.
         if sendManagerUpdates:
-            self.managerUpdateExecuter.forceStatusUpdate = True
-            self.managerUpdateExecuter.managerUpdateEvent.set()
+            self.managerUpdateExecuter.force_status_update()
 
     def addNodeTimeout(self,
                        nodeId: int):

@@ -107,15 +107,23 @@ class MockInstrumentationNotCallable(Instrumentation):
 class MockManagerUpdateExecuter:
 
     def __init__(self):
-        self.queueStateChange = collections.deque()
-        self.managerUpdateEvent = threading.Event()
-        self.managerUpdateEvent.clear()
+        self._queue_state_change = collections.deque()
+        self._manager_update_event = threading.Event()
+        self._manager_update_event.clear()
+
+    def queue_state_change(self,
+                           sensor_id: int,
+                           state: int,
+                           sensor_data: Optional[SensorData]):
+        self._queue_state_change.append((sensor_id, state, sensor_data))
+        self._manager_update_event.set()
 
 
 class MockInternalSensor(AlertLevelInstrumentationErrorSensor):
 
     def __init__(self, global_data: GlobalData):
         super().__init__(global_data)
+
 
 class TestAlert(TestCase):
 
@@ -1193,13 +1201,13 @@ class TestAlert(TestCase):
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         sensor_alert_executer._queue_manager_update(sensor_alerts)
 
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+        self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
     def test_queue_manager_update_state_change(self):
         """
@@ -1241,15 +1249,15 @@ class TestAlert(TestCase):
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         sensor_alert_executer._queue_manager_update(sensor_alerts)
 
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
 
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+        self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-        for sensor_id, state, sensor_data in manager_update_executer.queueStateChange:
+        for sensor_id, state, sensor_data in manager_update_executer._queue_state_change:
             found = False
             for sensor_alert in sensor_alerts:
                 if sensor_id == sensor_alert.sensorId:
@@ -1303,15 +1311,15 @@ class TestAlert(TestCase):
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         sensor_alert_executer._queue_manager_update(sensor_alerts)
 
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
 
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+        self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-        for sensor_id, state, sensor_data in manager_update_executer.queueStateChange:
+        for sensor_id, state, sensor_data in manager_update_executer._queue_state_change:
             found = False
             for sensor_alert in sensor_alerts:
                 if sensor_id == sensor_alert.sensorId:
@@ -1364,13 +1372,13 @@ class TestAlert(TestCase):
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         sensor_alert_executer._queue_manager_update(sensor_alerts)
 
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+        self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
     def test_queue_manager_update_data_change_db_fail(self):
         """
@@ -1401,13 +1409,13 @@ class TestAlert(TestCase):
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         sensor_alert_executer._queue_manager_update(sensor_alerts)
 
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+        self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
     def test_run_trigger_always(self):
         """
@@ -1459,7 +1467,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1480,8 +1488,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(num - len(gt_set), len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(num - len(gt_set), len(manager_update_executer._queue_state_change))
 
     def test_run_trigger_active(self):
         """
@@ -1534,7 +1542,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1555,8 +1563,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(num - len(gt_set), len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(num - len(gt_set), len(manager_update_executer._queue_state_change))
 
     def test_run_instrumentation(self):
         """
@@ -1627,7 +1635,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1664,8 +1672,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer._queue_state_change))
 
     def test_run_instrumentation_toggle_state(self):
         """
@@ -1736,7 +1744,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1772,8 +1780,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(len(alert_levels_no_longer_triggered), len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(len(alert_levels_no_longer_triggered), len(manager_update_executer._queue_state_change))
 
     def test_run_instrumentation_timeout(self):
         """
@@ -1832,7 +1840,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1850,8 +1858,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
     def test_run_instrumentation_failed(self):
         """
@@ -1910,7 +1918,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1928,8 +1936,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
     def test_run_alert_delay(self):
         """
@@ -1981,7 +1989,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -1994,7 +2002,7 @@ class TestAlert(TestCase):
             # Check sensor alerts in database were removed while processing.
             self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-            self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+            self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         time.sleep(2)
 
@@ -2008,8 +2016,8 @@ class TestAlert(TestCase):
         self.assertEqual(gt_set, test_set)
 
         # No sensor alert should was dropped that should trigger a state update.
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(0, len(manager_update_executer.queueStateChange))
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
     def test_run_alert_delay_canceled(self):
         """
@@ -2062,7 +2070,7 @@ class TestAlert(TestCase):
         sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
                                                                 sensor_alert_executer)
 
-        self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
+        self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         # Start executer thread.
         sensor_alert_executer.daemon = True
@@ -2075,8 +2083,8 @@ class TestAlert(TestCase):
             # Check sensor alerts in database were removed while processing.
             self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
-            self.assertFalse(manager_update_executer.managerUpdateEvent.is_set())
-            self.assertEqual(0, len(manager_update_executer.queueStateChange))
+            self.assertFalse(manager_update_executer._manager_update_event.is_set())
+            self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
         # Deactivate alarm system to change trigger condition.
         global_data.storage.is_active = False
@@ -2092,8 +2100,8 @@ class TestAlert(TestCase):
         self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
 
         # All sensor alerts should have been dropped.
-        self.assertTrue(manager_update_executer.managerUpdateEvent.is_set())
-        self.assertEqual(num, len(manager_update_executer.queueStateChange))
+        self.assertTrue(manager_update_executer._manager_update_event.is_set())
+        self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
     def test_run_internal_sensor_update_last_state_time_unnecessary(self):
         """

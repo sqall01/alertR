@@ -930,8 +930,7 @@ class ClientCommunication:
         self.clientInitialized = False
 
         # wake up manager update executer
-        self.managerUpdateExecuter.forceStatusUpdate = True
-        self.managerUpdateExecuter.managerUpdateEvent.set()
+        self.managerUpdateExecuter.force_status_update()
 
     def _initiateTransaction(self,
                              messageType: str,
@@ -2619,32 +2618,26 @@ class ClientCommunication:
 
             return False
 
-        # add sensor alert to database
-        if not self.storage.addSensorAlert(self.nodeId,
-                                           sensor.sensorId,
-                                           state,
-                                           dataJson,
-                                           changeState,
-                                           hasLatestData,
-                                           sensorDataType,
-                                           sensorData,
-                                           logger=self.logger):
-            self.logger.error("[%s]: Not able to add sensor alert (%s:%d)."
-                              % (self.fileName, self.clientAddress, self.clientPort))
+        if not self.sensorAlertExecuter.add_sensor_alert(self.nodeId,
+                                                         sensor.sensorId,
+                                                         state,
+                                                         dataJson,
+                                                         changeState,
+                                                         hasLatestData,
+                                                         sensorDataType,
+                                                         sensorData,
+                                                         self.logger):
 
             # send error message back
             try:
                 message = {"message": incomingMessage["message"],
-                           "error": "not able to add sensor alert to database"}
+                           "error": "not able to add sensor alert for processing"}
                 self._send(json.dumps(message))
 
             except Exception as e:
                 pass
 
             return False
-
-        # wake up sensor alert executer
-        self.sensorAlertExecuter.sensorAlertEvent.set()
 
         # send sensor alert response
         try:
@@ -2854,9 +2847,7 @@ class ClientCommunication:
         sensorDataObj.data = sensor.data
 
         # add state change to queue and wake up manager update executer
-        managerStateTuple = (sensor.sensorId, sensor.state, sensorDataObj)
-        self.managerUpdateExecuter.queueStateChange.append(managerStateTuple)
-        self.managerUpdateExecuter.managerUpdateEvent.set()
+        self.managerUpdateExecuter.queue_state_change(sensor.sensorId, sensor.state, sensorDataObj)
 
         return True
 
@@ -3362,8 +3353,7 @@ class ClientCommunication:
         # => send full status update to all manager clients
         else:
             # wake up manager update executer
-            self.managerUpdateExecuter.forceStatusUpdate = True
-            self.managerUpdateExecuter.managerUpdateEvent.set()
+            self.managerUpdateExecuter.force_status_update()
 
         # Set flag that the initialization process of the client is finished.
         self.clientInitialized = True
@@ -4011,5 +4001,4 @@ class AsynchronousOptionExecuter(threading.Thread):
                     alertSystemActiveSensor.set_state(1)
 
         # wake up manager update executer
-        self.managerUpdateExecuter.forceStatusUpdate = True
-        self.managerUpdateExecuter.managerUpdateEvent.set()
+        self.managerUpdateExecuter.force_status_update()
