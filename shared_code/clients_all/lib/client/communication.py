@@ -25,9 +25,15 @@ class MsgState:
 
 class MsgRequest:
 
-    def __init__(self, msg_dict: Dict[str, Any], state: int):
+    def __init__(self,
+                 msg_dict: Dict[str, Any],
+                 transaction_id: int,
+                 time_received: int,
+                 state: int):
         self._msg_dict = msg_dict
         self._state = state
+        self._transaction_id = transaction_id
+        self._time_received = time_received
 
     @property
     def msg_dict(self) -> Dict[str, Any]:
@@ -497,6 +503,7 @@ class Communication:
 
             with self._connection_lock:
 
+                received_transaction_id = None
                 try:
                     data = self._connection.recv(BUFSIZE, timeout=0.5)
                     if not data:
@@ -602,6 +609,7 @@ class Communication:
 
                 request_type = recv_message["message"]
                 logging.debug("[%s]: Received request message of type '%s'." % (self._log_tag, request_type))
+                time_received = int(time.time())
 
                 # Sending response.
                 msg_request = None
@@ -632,7 +640,10 @@ class Communication:
                         self._has_channel = False
                         return None
 
-                    msg_request = MsgRequest(recv_message, MsgState.EXPIRED)
+                    msg_request = MsgRequest(recv_message,
+                                             received_transaction_id,
+                                             time_received,
+                                             MsgState.EXPIRED)
 
                 else:
                     logging.debug("[%s]: Sending 'ok' response message of type '%s'." % (self._log_tag, request_type))
@@ -649,7 +660,10 @@ class Communication:
                         self._has_channel = False
                         return None
 
-                    msg_request = MsgRequest(recv_message, MsgState.OK)
+                    msg_request = MsgRequest(recv_message,
+                                             received_transaction_id,
+                                             time_received,
+                                             MsgState.OK)
 
                 self._last_communication = int(time.time())
                 return msg_request
