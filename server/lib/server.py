@@ -20,7 +20,6 @@ from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Optio
     Profile
 from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
-from .option import OptionExecuter
 from typing import Optional, Dict, Tuple, Any, List, Type
 
 BUFSIZE = 4096
@@ -50,7 +49,7 @@ class ClientCommunication:
         self.profiles = self.globalData.profiles  # type: List[Profile]
         self.connectionWatchdog = self.globalData.connectionWatchdog
         self.serverSessions = self.globalData.serverSessions
-        self._option_executer = self.globalData.option_executer  # type: OptionExecuter
+        self._option_executer = self.globalData.option_executer
 
         # Time the last message was received by the server. Since the 
         # connection counts as a message, set it to the current time
@@ -2161,7 +2160,7 @@ class ClientCommunication:
 
             return False
 
-        self.logger.info("[%s]: Option change for type %s to value %.3f in %d seconds."
+        self.logger.info("[%s]: Option change for type '%s' to value %.3f in %d seconds."
                          % (self.fileName, optionType, optionValue, optionDelay))
 
         self._option_executer.add_option(optionType,

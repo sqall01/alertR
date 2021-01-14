@@ -114,6 +114,8 @@ class OptionExecuter(threading.Thread):
         with self._options_queue_lock:
             self._options_queue[option.type] = (option, time_to_change)
 
+        self._option_event.set()
+
     def run(self):
         """
         This function starts the endless loop of the option executer thread.
@@ -154,6 +156,10 @@ class OptionExecuter(threading.Thread):
 
                 has_option_changes = True
 
+                # Remove option from queue.
+                with self._options_queue_lock:
+                    del self._options_queue[option_type]
+
                 # Special handling of "profile" options.
                 if option.type == "profile":
                     self._process_profile_option(option)
@@ -165,6 +171,8 @@ class OptionExecuter(threading.Thread):
             # Only wake up manager update executer if we have any option changes.
             if has_option_changes:
                 self._manager_update_executer.force_status_update()
+
+            self._option_event.clear()
 
     def exit(self):
         """
