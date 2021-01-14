@@ -17,6 +17,7 @@ from .internalSensors import SensorTimeoutSensor, NodeTimeoutSensor, AlertSystem
 from .config import parse_config
 from .users import CSVBackend
 from .manager import ManagerUpdateExecuter
+from .option import OptionExecuter
 from .update import Updater
 from .globalData import GlobalData
 from .survey import SurveyExecuter

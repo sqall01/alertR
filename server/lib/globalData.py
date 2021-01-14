@@ -84,6 +84,9 @@ class GlobalData:
         # instance of the thread that handles manager updates
         self.managerUpdateExecuter = None
 
+        # Object that handles option message processing.
+        self.option_executer = None
+
         # this is the time in seconds when the client times out
         self.connectionTimeout = 90
 
@@ -147,10 +150,6 @@ class GlobalData:
 
         # time the server is waiting on receives until a time out occurs
         self.serverReceiveTimeout = 50.0
-
-        # list and lock of/for the asynchronous option executer
-        self.asyncOptionExecutersLock = threading.BoundedSemaphore(1)
-        self.asyncOptionExecuters = list()
 
         # List of the server's internal sensors.
         self.internalSensors = list()

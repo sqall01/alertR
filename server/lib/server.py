@@ -20,6 +20,7 @@ from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Optio
     Profile
 from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
+from .option import OptionExecuter
 from typing import Optional, Dict, Tuple, Any, List, Type
 
 BUFSIZE = 4096
@@ -47,10 +48,9 @@ class ClientCommunication:
         self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
         self.alertLevels = self.globalData.alertLevels  # type: List[AlertLevel]
         self.profiles = self.globalData.profiles  # type: List[Profile]
-        self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
-        self.asyncOptionExecutersLock = self.globalData.asyncOptionExecutersLock
         self.connectionWatchdog = self.globalData.connectionWatchdog
         self.serverSessions = self.globalData.serverSessions
+        self._option_executer = self.globalData.option_executer  # type: OptionExecuter
 
         # Time the last message was received by the server. Since the 
         # connection counts as a message, set it to the current time
@@ -2164,26 +2164,9 @@ class ClientCommunication:
         self.logger.info("[%s]: Option change for type %s to value %.3f in %d seconds."
                          % (self.fileName, optionType, optionValue, optionDelay))
 
-        # check if this option should already be changed by another
-        # thread => set flag to abort the change of this thread
-        # (acquire and release lock to make the list operations thread safe)
-        self.asyncOptionExecutersLock.acquire()
-        for asyncOptionExecuter in self.asyncOptionExecuters:
-            if asyncOptionExecuter.optionType == optionType:
-                asyncOptionExecuter.abortOptionChange = True
-
-        self.asyncOptionExecutersLock.release()
-
-        # start a thread to change the option asynchronously
-        asyncOptionExecuter = AsynchronousOptionExecuter(self.globalData,
-                                                         optionType,
-                                                         optionValue,
-                                                         optionDelay)
-        # set thread to daemon
-        # => threads terminates when main thread terminates
-        asyncOptionExecuter.daemon = True
-        self.asyncOptionExecuters.append(asyncOptionExecuter)
-        asyncOptionExecuter.start()
+        self._option_executer.add_option(optionType,
+                                         optionValue,
+                                         optionDelay)
 
         # send option response
         try:
@@ -3892,113 +3875,3 @@ class AsynchronousSender(threading.Thread):
                 self.logger.error("[%s]: Sending sensor alert off to alert client failed (%s:%d)."
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
-
-
-# this class is used to change an option
-# in an asynchronous way to avoid blockings
-class AsynchronousOptionExecuter(threading.Thread):
-
-    def __init__(self,
-                 globalData: GlobalData,
-                 optionType: str,
-                 optionValue: float,
-                 optionDelay: int):
-        threading.Thread.__init__(self)
-
-        # file nme of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
-
-        # get global configured data
-        self.globalData = globalData
-        self.logger = self.globalData.logger
-        self.storage = self.globalData.storage
-        self.asyncOptionExecuters = self.globalData.asyncOptionExecuters
-        self.asyncOptionExecutersLock = self.globalData.asyncOptionExecutersLock
-        self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
-        self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
-        self.internalSensors = self.globalData.internalSensors
-        self.serverSessions = self.globalData.serverSessions
-
-        # get option data to change
-        self.optionType = optionType
-        self.optionValue = optionValue
-        self.optionDelay = optionDelay
-
-        # this flag tells the asynchronous option executer
-        # if the option should still be changed or the change be aborted
-        # (for example if the option was changed in the time
-        # this thread was waiting the given delay time before
-        # it changes the option)
-        self.abortOptionChange = False
-
-    def run(self):
-        self.logger.debug("[%s]: Changing option '%s' to %d in %d seconds."
-                          % (self.fileName, self.optionType, self.optionValue, self.optionDelay))
-
-        # wait time before changing option
-        time.sleep(self.optionDelay)
-
-        # remove this thread from the list of active async option executers
-        # (acquire and release lock to make the list operations thread safe)
-        self.asyncOptionExecutersLock.acquire()
-        self.asyncOptionExecuters.remove(self)
-        self.asyncOptionExecutersLock.release()
-
-        # check if the option change should be aborted
-        if self.abortOptionChange:
-            self.logger.debug("[%s]: Changing option '%s' to %d was aborted."
-                              % (self.fileName, self.optionType, self.optionValue))
-            return
-
-        self.logger.debug("[%s]: Changing option '%s' to %d now."
-                          % (self.fileName, self.optionType, self.optionValue))
-
-        # change option in the database
-        if not self.storage.changeOption(self.optionType, self.optionValue):
-            self.logger.error("[%s]: Not able to change option." % self.fileName)
-
-        # check if the alert system was deactivated
-        # => send sensor alerts off to alert clients
-        if self.optionType == "alertSystemActive" and self.optionValue == 0:
-            for serverSession in self.serverSessions:
-                # ignore sessions which do not exist yet
-                # and that are not managers
-                if serverSession.clientComm is None:
-                    continue
-                if serverSession.clientComm.nodeType != "alert":
-                    continue
-                if not serverSession.clientComm.clientInitialized:
-                    continue
-
-                # sending sensor alerts off to alert client
-                # via a thread to not block this one
-                sensorAlertsOffProcess = AsynchronousSender(self.globalData, serverSession.clientComm)
-                # set thread to daemon
-                # => threads terminates when main thread terminates
-                sensorAlertsOffProcess.daemon = True
-                sensorAlertsOffProcess.sendAlertSensorAlertsOff = True
-                self.logger.debug("[%s]: Sending sensor alerts off to alert client (%s:%d)."
-                                  % (self.fileName, serverSession.clientComm.clientAddress,
-                                     serverSession.clientComm.clientPort))
-                sensorAlertsOffProcess.start()
-
-        # Check if the alert system was acitvated/deactivated
-        # => generate sensor alert if internal sensor is activated.
-        if self.optionType == "alertSystemActive":
-            # Get internal sensor object if activated.
-            alertSystemActiveSensor = None
-            for internalSensor in self.internalSensors:
-                if isinstance(internalSensor, AlertSystemActiveSensor):
-                    alertSystemActiveSensor = internalSensor
-                    break
-
-            # Change sensor state and add sensor alert to database for processing if internal sensor is active.
-            if alertSystemActiveSensor:
-                if self.optionValue == 0.0:
-                    alertSystemActiveSensor.set_state(0)
-
-                else:
-                    alertSystemActiveSensor.set_state(1)
-
-        # wake up manager update executer
-        self.managerUpdateExecuter.force_status_update()
