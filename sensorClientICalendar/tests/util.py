@@ -1,1 +1,1 @@
-../../shared_code/clients_all/tests/util.py
+../../shared_code/all/tests/util.py
