@@ -2160,8 +2160,8 @@ class ClientCommunication:
 
             return False
 
-        self.logger.info("[%s]: Option change for type '%s' to value %.3f in %d seconds."
-                         % (self.fileName, optionType, optionValue, optionDelay))
+        self.logger.debug("[%s]: Option change for type '%s' to value %.3f in %d seconds."
+                          % (self.fileName, optionType, optionValue, optionDelay))
 
         self._option_executer.add_option(optionType,
                                          optionValue,

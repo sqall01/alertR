@@ -31,7 +31,7 @@ class OptionExecuter(threading.Thread):
         self._logger = self._global_data.logger
         self._storage = self._global_data.storage
         self._manager_update_executer = self._global_data.managerUpdateExecuter
-        self._server_sessions = self._global_data.serverSessions  # type:
+        self._server_sessions = self._global_data.serverSessions
 
         # file nme of this file (used for logging)
         self._log_tag = os.path.basename(__file__)
@@ -145,13 +145,18 @@ class OptionExecuter(threading.Thread):
                 if current_time < time_to_change:
                     continue
 
-                self._logger.debug("[%s]: Changing option '%s' to %.3f."
-                                   % (self._log_tag, option.type, option.value))
+                self._logger.info("[%s]: Changing option '%s' to %.3f."
+                                  % (self._log_tag, option.type, option.value))
 
                 # Change option in database.
                 if not self._storage.changeOption(option.type, option.value):
                     self._logger.error("[%s]: Not able to change option '%s' to %.3f."
                                        % (self._log_tag, option.type, option.value))
+
+                    # Remove option from queue.
+                    with self._options_queue_lock:
+                        del self._options_queue[option_type]
+
                     continue
 
                 has_option_changes = True
@@ -179,3 +184,4 @@ class OptionExecuter(threading.Thread):
         sets the exit flag to shut down the thread
         """
         self._exit_flag = True
+        self._option_event.set()
