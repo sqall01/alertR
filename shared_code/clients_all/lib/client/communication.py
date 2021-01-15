@@ -440,6 +440,7 @@ class Communication:
         """
         self._exit_flag = True
         self.close()
+        self._new_msg_event.set()
 
     # noinspection PyBroadException
     def close(self):
