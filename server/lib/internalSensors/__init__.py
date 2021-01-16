@@ -9,7 +9,7 @@
 
 from .core import _InternalSensor
 from .alertLevelInstrumentationError import AlertLevelInstrumentationErrorSensor
-from .alertSystemActive import AlertSystemActiveSensor
 from .nodeTimeout import NodeTimeoutSensor
+from .profileChange import ProfileChange
 from .sensorTimeout import SensorTimeoutSensor
 from .versionInformer import VersionInformerSensor
