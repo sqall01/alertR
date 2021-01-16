@@ -18,7 +18,7 @@ from ..users import CSVBackend
 from ..storage import Sqlite
 from ..globalData import GlobalData
 from ..localObjects import AlertLevel, Profile
-from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChange, VersionInformerSensor, \
+from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChangeSensor, VersionInformerSensor, \
     AlertLevelInstrumentationErrorSensor
 
 log_tag = os.path.basename(__file__)
@@ -551,7 +551,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
         item = internalSensorsCfg.find("profileChange")
         if str(item.attrib["activated"]).upper() == "TRUE":
 
-            sensor = ProfileChange(global_data)
+            sensor = ProfileChangeSensor(global_data)
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0

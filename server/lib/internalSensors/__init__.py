@@ -10,6 +10,6 @@
 from .core import _InternalSensor
 from .alertLevelInstrumentationError import AlertLevelInstrumentationErrorSensor
 from .nodeTimeout import NodeTimeoutSensor
-from .profileChange import ProfileChange
+from .profileChange import ProfileChangeSensor
 from .sensorTimeout import SensorTimeoutSensor
 from .versionInformer import VersionInformerSensor

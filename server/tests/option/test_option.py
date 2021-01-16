@@ -7,7 +7,7 @@ from lib.localObjects import Option
 from lib.option.option import OptionExecuter
 from lib.globalData import GlobalData
 from lib.storage.core import _Storage
-from lib.internalSensors import ProfileChange
+from lib.internalSensors import ProfileChangeSensor
 
 
 class MockManagerUpdateExecuter:
@@ -19,7 +19,7 @@ class MockManagerUpdateExecuter:
         self._force_status_update_calls += 1
 
 
-class MockProfileChangeSensor(ProfileChange):
+class MockProfileChangeSensorSensor(ProfileChangeSensor):
 
     def __init__(self, global_data: GlobalData):
         super().__init__(global_data)
@@ -68,7 +68,7 @@ class TestAlert(TestCase):
         global_data.storage = MockStorage()
         global_data.managerUpdateExecuter = MockManagerUpdateExecuter()
 
-        internal_sensor = MockProfileChangeSensor(global_data)
+        internal_sensor = MockProfileChangeSensorSensor(global_data)
         global_data.internalSensors.append(internal_sensor)
 
         option_executer = OptionExecuter(global_data)

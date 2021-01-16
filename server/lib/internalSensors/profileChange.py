@@ -15,7 +15,7 @@ from ..localObjects import SensorDataType, Option, Profile
 from .core import _InternalSensor
 
 
-class ProfileChange(_InternalSensor):
+class ProfileChangeSensor(_InternalSensor):
     """
     Class that represents the internal sensor that is responsible to trigger sensor alerts if the
     system profile changes.
@@ -65,14 +65,14 @@ class ProfileChange(_InternalSensor):
                                % (self._log_tag, int(option.value)))
             return
 
-        self.data = curr_profile.id
-
         if not self.storage.updateSensorData(self.nodeId,  # nodeId
-                                             [(self.remoteSensorId, self.data)],  # dataList
+                                             [(self.remoteSensorId, curr_profile.id)],  # dataList
                                              self._logger):  # logger
             self._logger.error("[%s]: Not able to change sensor data for internal profile change sensor."
                                % self._log_tag)
             return
+
+        self.data = curr_profile.id
 
         message = "Changing system profile to '%s'." % curr_profile.name
 

@@ -12,7 +12,7 @@ import os
 import time
 from typing import Optional
 from ..globalData import GlobalData
-from ..internalSensors import ProfileChange
+from ..internalSensors import ProfileChangeSensor
 from ..localObjects import Option
 from ..server import AsynchronousSender
 
@@ -46,9 +46,9 @@ class OptionExecuter(threading.Thread):
         self._options_queue_lock = threading.Lock()
 
         # Get instance of the internal profile change sensor (if exists).
-        self._internal_sensor = None  # type: Optional[ProfileChange]
+        self._internal_sensor = None  # type: Optional[ProfileChangeSensor]
         for internal_sensor in self._global_data.internalSensors:
-            if isinstance(internal_sensor, ProfileChange):
+            if isinstance(internal_sensor, ProfileChangeSensor):
                 self._internal_sensor = internal_sensor
 
     def _send_profile_change(self, option: Option):
