@@ -336,6 +336,17 @@ class _Storage:
         """
         raise NotImplemented("Function not implemented yet.")
 
+    def get_option_by_type(self,
+                           option_type: str,
+                           logger: logging.Logger = None) -> Optional[Option]:
+        """
+        Gets the option from the database given by type.
+
+        :param option_type:
+        :param logger:
+        :return: an option object or None
+        """
+
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:
         """

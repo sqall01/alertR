@@ -18,7 +18,6 @@ import random
 import json
 from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel, \
     Profile
-from .internalSensors import AlertSystemActiveSensor
 from .globalData import GlobalData
 from typing import Optional, Dict, Tuple, Any, List, Type
 

@@ -1,16 +1,13 @@
 import logging
 import time
-import os
-import collections
-import threading
 from unittest import TestCase
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple
 from tests.util import config_logging
 from lib.localObjects import Option
 from lib.option.option import OptionExecuter
 from lib.globalData import GlobalData
 from lib.storage.core import _Storage
-from lib.internalSensors import AlertLevelInstrumentationErrorSensor
+from lib.internalSensors import ProfileChange
 
 
 class MockManagerUpdateExecuter:
@@ -20,6 +17,20 @@ class MockManagerUpdateExecuter:
 
     def force_status_update(self):
         self._force_status_update_calls += 1
+
+
+class MockProfileChangeSensor(ProfileChange):
+
+    def __init__(self, global_data: GlobalData):
+        super().__init__(global_data)
+        self._options = list()
+
+    @property
+    def options(self):
+        return list(self._options)
+
+    def process_option(self, option: Option):
+        self._options.append(option)
 
 
 class MockStorage(_Storage):
@@ -56,6 +67,9 @@ class TestAlert(TestCase):
         global_data.logger = logging.getLogger("Option Test Case")
         global_data.storage = MockStorage()
         global_data.managerUpdateExecuter = MockManagerUpdateExecuter()
+
+        internal_sensor = MockProfileChangeSensor(global_data)
+        global_data.internalSensors.append(internal_sensor)
 
         option_executer = OptionExecuter(global_data)
         option_executer.daemon = True
@@ -183,8 +197,35 @@ class TestAlert(TestCase):
         self.assertEqual(global_data.managerUpdateExecuter._force_status_update_calls, 0)
         self.assertEqual(len(global_data.storage.options), 0)
 
+    def test_internal_sensor_profile_change(self):
+        """
+        Tests usage of the internal sensor for profile changes.
+        """
+
+        option_executer, global_data = self._create_option_executer()
+
+        option = Option()
+        option.type = "profile"
+        option.value = 2.0
+
+        options = global_data.internalSensors[0].options
+        self.assertEqual(len(options), 0)
+
+        option_executer._sensor_profile_change(option)
+
+        options = global_data.internalSensors[0].options
+        self.assertEqual(len(options), 1)
+        self.assertEqual(options[0].type, "profile")
+        self.assertEqual(options[0].value, 2.0)
+
+    def test_send_profile_change(self):
+        """
+        Tests sending of profile change messages.
+        """
+        self.skipTest("Implement test when server communication was refactored.")
+
     def test_option_handling_profile(self):
         """
         Tests special handling of profile option.
         """
-        raise NotImplementedError("TODO")
+        self.skipTest("Implement test when server communication was refactored.")

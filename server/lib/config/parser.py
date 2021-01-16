@@ -18,7 +18,7 @@ from ..users import CSVBackend
 from ..storage import Sqlite
 from ..globalData import GlobalData
 from ..localObjects import AlertLevel, Profile
-from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor, \
+from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChange, VersionInformerSensor, \
     AlertLevelInstrumentationErrorSensor
 
 log_tag = os.path.basename(__file__)
@@ -308,11 +308,11 @@ def configure_profiles(configRoot: xml.etree.ElementTree.Element, global_data: G
 
     has_id_zero = False
     for profile in global_data.profiles:
-        if profile.id == 0:
+        if profile.id == 1:
             has_id_zero = True
             break
     if not has_id_zero:
-        global_data.logger.error("[%s]: Profile with id '0' has to exist." % log_tag)
+        global_data.logger.error("[%s]: Profile with id '1' has to exist." % log_tag)
         return False
 
     return True
@@ -548,17 +548,18 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             dbInitialStateList.append((sensor.remoteSensorId, 0))
 
         # Parse alert system active sensor (if activated).
-        item = internalSensorsCfg.find("alertSystemActive")
+        item = internalSensorsCfg.find("profileChange")
         if str(item.attrib["activated"]).upper() == "TRUE":
 
-            sensor = AlertSystemActiveSensor(global_data)
+            sensor = ProfileChange(global_data)
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0
+            sensor.state = 0
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Alert system active sensor has always this fix internal id
+            # Profile change sensor has always this fix internal id
             # (stored as remoteSensorId).
             sensor.remoteSensorId = 2
 
@@ -581,6 +582,15 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             global_data.internalSensors.append(sensor)
 
+            # Set initial state of the internal sensor to the state
+            # of the alert system.
+            option = global_data.storage.get_option_by_type("profile")
+            if option is None:
+                global_data.logger.error("[%s]: Unable to get 'profile' option from database." % log_tag)
+                return False
+
+            sensor.data = int(option.value)
+
             # Create sensor dictionary element for database interaction.
             temp = dict()
             temp["clientSensorId"] = sensor.remoteSensorId
@@ -589,14 +599,8 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
+            temp["data"] = sensor.data
             dbSensors.append(temp)
-
-            # Set initial state of the internal sensor to the state
-            # of the alert system.
-            if global_data.storage.isAlertSystemActive():
-                sensor.state = 1
-            else:
-                sensor.state = 0
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
@@ -610,7 +614,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0
-            sensor.state = 0
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
             sensor.repo_url = global_data.update_url

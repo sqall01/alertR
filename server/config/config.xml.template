@@ -448,17 +448,18 @@
         </nodeTimeout>
 
         <!--
-            The alertSystemActive sensor is an internal sensor that triggers
-            when the alarm system changes its state (activated/deactivated).
-            It allows you to utilize the global alarm system state changes.
+            The profileChange sensor is an internal sensor that triggers
+            when the system profile changes.
+            It allows you to utilize AlertR system profile changes.
+            The currently used profile ID is stored as data in this sensor.
             activated - This flags indicates if the internal sensor is
                 activated or not.
                 ("True" or "False")
             description - Description of this sensor.
         -->
-        <alertSystemActive
+        <profileChange
             activated="True"
-            description="Internal: Alert System Active">
+            description="Internal: Profile Change">
 
             <!--
                 The alertLevel that is triggered by the sensor
@@ -466,7 +467,7 @@
             -->
             <alertLevel>0</alertLevel>
 
-        </alertSystemActive>
+        </profileChange>
 
         <!--
             The versionInformer sensor is an internal sensor that triggers

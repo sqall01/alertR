@@ -251,6 +251,37 @@ class Sqlite(_Storage):
 
         return None
 
+    def _get_option_by_type(self,
+                            option_type: str,
+                            logger: logging.Logger = None) -> Optional[Option]:
+        """
+        Internal function that gets the option from the database given by its type.
+
+        :param option_type:
+        :param logger:
+        :return: an option object or None
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        option = None
+        try:
+            self.cursor.execute("SELECT type, value FROM options WHERE type = ?", (option_type, ))
+
+            result = self.cursor.fetchall()
+
+            if len(result) == 1:
+                option = Option()
+                option.type = result[0][0]
+                option.value = result[0][1]
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to get option with type %s." % (self.log_tag, option_type))
+            return None
+
+        return option
+
     def _getSensorById(self,
                        sensorId: int,
                        logger: logging.Logger = None) -> Optional[Sensor]:
@@ -484,10 +515,10 @@ class Sqlite(_Storage):
                             + "value) VALUES (?, ?)", ("alertSystemActive", 0))
 
         # Insert option which profile is currently used by the system.
-        # NOTE: at least one profile with id 0 is enforced during configuration parsing.
+        # NOTE: at least one profile with id 1 is enforced during configuration parsing.
         self.cursor.execute("INSERT INTO options ("
                             + "type, "
-                            + "value) VALUES (?, ?)", ("profile", 0))
+                            + "value) VALUES (?, ?)", ("profile", 1))
 
         # create nodes table
         self.cursor.execute("CREATE TABLE nodes ("
@@ -2624,6 +2655,18 @@ class Sqlite(_Storage):
 
         # return a sensor object or None
         return result
+
+    def get_option_by_type(self,
+                           option_type: str,
+                           logger: logging.Logger = None) -> Optional[Option]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            return self._get_option_by_type(option_type,
+                                            logger)
 
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:

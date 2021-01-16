@@ -12,7 +12,7 @@ import os
 import time
 from typing import Optional
 from ..globalData import GlobalData
-from ..internalSensors import AlertSystemActiveSensor
+from ..internalSensors import ProfileChange
 from ..localObjects import Option
 from ..server import AsynchronousSender
 
@@ -45,19 +45,26 @@ class OptionExecuter(threading.Thread):
         self._options_queue = dict()
         self._options_queue_lock = threading.Lock()
 
-        # TODO old processing has to be updated
-        # Get instance of the internal alert level instrumentation error sensor (if exists).
-        self._internal_sensor = None  # type: Optional[AlertSystemActiveSensor]
+        # Get instance of the internal profile change sensor (if exists).
+        self._internal_sensor = None  # type: Optional[ProfileChange]
         for internal_sensor in self._global_data.internalSensors:
-            if isinstance(internal_sensor, AlertSystemActiveSensor):
+            if isinstance(internal_sensor, ProfileChange):
                 self._internal_sensor = internal_sensor
 
-    def _process_profile_option(self, option: Option):
+    def _send_profile_change(self, option: Option):
         """
-        Internal function for special handling of "profile" options.
+        Internal function that sends a profile change message to all alert clients.
         :param option:
         """
         pass  # TODO
+
+    def _sensor_profile_change(self, option: Option):
+        """
+        Internal function that triggers the internal sensor for profile changes.
+        :param option:
+        """
+        if self._internal_sensor is not None:
+            self._internal_sensor.process_option(option)
 
     # TODO old processing, has to be removed and updated
     def _process_alert_system_active_option(self, option: Option):
@@ -85,15 +92,6 @@ class OptionExecuter(threading.Thread):
                                    % (self._log_tag, server_session.clientComm.clientAddress,
                                       server_session.clientComm.clientPort))
                 sensorAlertsOffProcess.start()
-
-        # Check if the alert system was acitvated/deactivated
-        # => generate sensor alert if internal sensor is activated.
-        if self._internal_sensor is not None:
-            if option.value == 0.0:
-                self._internal_sensor.set_state(0)
-
-            else:
-                self._internal_sensor.set_state(1)
 
     def add_option(self,
                    option_type: str,
@@ -167,11 +165,8 @@ class OptionExecuter(threading.Thread):
 
                 # Special handling of "profile" options.
                 if option.type == "profile":
-                    self._process_profile_option(option)
-
-                # TODO remove
-                if option.type == "alertSystemActive":
-                    self._process_alert_system_active_option(option)
+                    self._sensor_profile_change(option)
+                    self._send_profile_change(option)
 
             # Only wake up manager update executer if we have any option changes.
             if has_option_changes:
