@@ -811,7 +811,12 @@ class Console:
             # get all alerts that belong to the focused alert level
             currentAlerts = self._getAlertsOfAlertLevel(currentElement.alertLevel)
 
-            self.detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel, currentSensors, currentAlerts)
+            curr_profiles = list(filter(lambda x: x.id in currentElement.alertLevel.profiles,
+                                        self.system_data.get_profiles_list(order_by_id=True)))
+            self.detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel,
+                                                        currentSensors,
+                                                        currentAlerts,
+                                                        curr_profiles)
 
         # show detailed view as an overlay
         overlayView = urwid.Overlay(self.detailedView.get(),

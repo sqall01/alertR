@@ -10,7 +10,7 @@
 import time
 import urwid
 from typing import List
-from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, SensorDataType
+from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile, SensorDataType
 
 
 # this class is an urwid object for an alert level
@@ -91,7 +91,8 @@ class AlertLevelDetailedUrwid:
     def __init__(self,
                  alertLevel: ManagerObjAlertLevel,
                  sensors: List[ManagerObjSensor],
-                 alerts: List[ManagerObjAlert]):
+                 alerts: List[ManagerObjAlert],
+                 profiles: List[ManagerObjProfile]):
 
         self.alertLevel = alertLevel
 
@@ -103,6 +104,18 @@ class AlertLevelDetailedUrwid:
         temp = self._createAlertLevelWidgetList(alertLevel)
         self.alertLevelPileWidget = urwid.Pile(temp)
         content.append(self.alertLevelPileWidget)
+
+        content.append(urwid.Divider())
+        content.append(urwid.Divider("="))
+        content.append(urwid.Text("Profiles"))
+        content.append(urwid.Divider("="))
+        temp = self._create_profiles_widget_list(profiles)
+        self._profiles_pile_widget = None
+        if temp:
+            self._profiles_pile_widget = urwid.Pile(temp)
+        else:
+            self._profiles_pile_widget = urwid.Pile([urwid.Text("None")])
+        content.append(self._profiles_pile_widget)
 
         content.append(urwid.Divider())
         content.append(urwid.Divider("="))
@@ -157,6 +170,11 @@ class AlertLevelDetailedUrwid:
             temp.append(urwid.Text("Undefined"))
         temp.append(urwid.Divider())
 
+        temp.append(urwid.Text("Profiles:"))
+        profile_str = ", ".join(map(lambda x: str(x), alertLevel.profiles))
+        temp.append(urwid.Text(profile_str))
+        temp.append(urwid.Divider())
+
         temp.append(urwid.Text("Instrumentation Activated:"))
         if alertLevel.instrumentation_active is None:
             temp.append(urwid.Text("Undefined"))
@@ -207,6 +225,37 @@ class AlertLevelDetailedUrwid:
 
         temp.append(urwid.Text("Description:"))
         temp.append(urwid.Text(alert.description))
+
+        return temp
+
+    # this function creates the detailed output of all profile objects in a list
+    def _create_profiles_widget_list(self, profiles: List[ManagerObjProfile]) -> List[urwid.Widget]:
+
+        temp = list()
+        first = True
+        for profile in profiles:
+
+            if first:
+                first = False
+            else:
+                temp.append(urwid.Divider())
+                temp.append(urwid.Divider("-"))
+
+            temp.extend(self._create_profile_widget_list(profile))
+
+        return temp
+
+    # this function creates the detailed output of a profile object in a list
+    def _create_profile_widget_list(self, profile: ManagerObjProfile) -> List[urwid.Widget]:
+
+        temp = list()
+
+        temp.append(urwid.Text("Profile ID:"))
+        temp.append(urwid.Text(str(profile.id)))
+        temp.append(urwid.Divider())
+
+        temp.append(urwid.Text("Name:"))
+        temp.append(urwid.Text(profile.name))
 
         return temp
 
