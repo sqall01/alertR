@@ -32,6 +32,7 @@ class OptionExecuter(threading.Thread):
         self._storage = self._global_data.storage
         self._manager_update_executer = self._global_data.managerUpdateExecuter
         self._server_sessions = self._global_data.serverSessions
+        self._profiles = self._global_data.profiles
 
         # file nme of this file (used for logging)
         self._log_tag = os.path.basename(__file__)
@@ -56,7 +57,38 @@ class OptionExecuter(threading.Thread):
         Internal function that sends a profile change message to all alert clients.
         :param option:
         """
-        pass  # TODO
+
+        curr_profile = None
+        for profile in self._profiles:
+            if profile.id == int(option.value):
+                curr_profile = profile
+                break
+        if curr_profile is None:
+            self._logger.error("[%s]: Not able to find profile with id %d for profile change message."
+                               % (self._log_tag, int(option.value)))
+            return
+
+        for server_session in self._server_sessions:
+            # ignore sessions which do not exist yet and that are not alerts.
+            if server_session.clientComm is None:
+                continue
+            if server_session.clientComm.nodeType != "alert":
+                continue
+            if not server_session.clientComm.clientInitialized:
+                continue
+
+            # sending sensor alerts off to alert client
+            # via a thread to not block this one
+            sender = AsynchronousSender(self._global_data, server_session.clientComm)
+            # set thread to daemon
+            # => threads terminates when main thread terminates
+            sender.daemon = True
+            sender.send_profile_change = True
+            sender.profile = curr_profile
+            self._logger.debug("[%s]: Sending profile change to alert client (%s:%d)."
+                               % (self._log_tag, server_session.clientComm.clientAddress,
+                                  server_session.clientComm.clientPort))
+            sender.start()
 
     def _sensor_profile_change(self, option: Option):
         """
@@ -65,33 +97,6 @@ class OptionExecuter(threading.Thread):
         """
         if self._internal_sensor is not None:
             self._internal_sensor.process_option(option)
-
-    # TODO old processing, has to be removed and updated
-    def _process_alert_system_active_option(self, option: Option):
-        # check if the alert system was deactivated
-        # => send sensor alerts off to alert clients
-        if option.value == 0.0:
-            for server_session in self._server_sessions:
-                # ignore sessions which do not exist yet
-                # and that are not managers
-                if server_session.clientComm is None:
-                    continue
-                if server_session.clientComm.nodeType != "alert":
-                    continue
-                if not server_session.clientComm.clientInitialized:
-                    continue
-
-                # sending sensor alerts off to alert client
-                # via a thread to not block this one
-                sensorAlertsOffProcess = AsynchronousSender(self._global_data, server_session.clientComm)
-                # set thread to daemon
-                # => threads terminates when main thread terminates
-                sensorAlertsOffProcess.daemon = True
-                sensorAlertsOffProcess.sendAlertSensorAlertsOff = True
-                self._logger.debug("[%s]: Sending sensor alerts off to alert client (%s:%d)."
-                                   % (self._log_tag, server_session.clientComm.clientAddress,
-                                      server_session.clientComm.clientPort))
-                sensorAlertsOffProcess.start()
 
     def add_option(self,
                    option_type: str,

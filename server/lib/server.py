@@ -956,8 +956,8 @@ class ClientCommunication:
             if self.transactionInitiation:
 
                 self.logger.warning("[%s]: Transaction initiation "
-                                % self.fileName
-                                + "already tried by another thread. Backing off.")
+                                    % self.fileName
+                                    + "already tried by another thread. Backing off.")
 
                 # check if locks should be handled or not
                 if acquireLock:
@@ -1126,16 +1126,17 @@ class ClientCommunication:
                    "payload": payload}
         return json.dumps(message)
 
-    def _buildSensorAlertsOffMessage(self) -> str:
+    def _build_profile_change_message(self, profile: Profile) -> str:
         """
-        Internal function that builds the sensor alerts off message.
+        Internal function that builds the profile change message.
 
         :return:
         """
-        payload = {"type": "request"}
+        payload = {"type": "request",
+                   "profileId": profile.id}
         utc_time = int(time.time())
         message = {"msgTime": utc_time,
-                   "message": "sensoralertsoff",
+                   "message": "profilechange",
                    "payload": payload}
 
         return json.dumps(message)
@@ -2992,27 +2993,27 @@ class ClientCommunication:
 
         return True
 
-    def _sendAlertSensorAlertsOff(self,
-                                  sensorAlertsOffMessage: str) -> bool:
+    def _send_profile_change(self,
+                             profile_change_message: str) -> bool:
         """
-        internal function to send a sensor alert off to a alert client
+        internal function to send a profile change to an alert client
 
-        :param sensorAlertsOffMessage:
+        :param profile_change_message:
         :return:
         """
-        # Send sensor alert off message.
+        # Send profile change message.
         try:
-            self.logger.debug("[%s]: Sending sensor alerts off message (%s:%d)."
+            self.logger.debug("[%s]: Sending profile change message (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
-            self._send(sensorAlertsOffMessage)
+            self._send(profile_change_message)
 
         except Exception as e:
-            self.logger.exception("[%s]: Sending sensor alerts off message failed (%s:%d)."
+            self.logger.exception("[%s]: Sending profile change message failed (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
             return False
 
-        # get sensor alert off acknowledgement
-        self.logger.debug("[%s]: Receiving sensor alerts off response (%s:%d)."
+        # get profile change acknowledgement
+        self.logger.debug("[%s]: Receiving profile change response (%s:%d)."
                           % (self.fileName, self.clientAddress, self.clientPort))
 
         try:
@@ -3025,14 +3026,14 @@ class ClientCommunication:
                 return False
 
             # check if the received message type is the correct one
-            if str(message["message"]).upper() != "SENSORALERTSOFF":
-                self.logger.error("[%s]: sensor alerts off message expected (%s:%d)."
+            if str(message["message"]).upper() != "PROFILECHANGE":
+                self.logger.error("[%s]: profile change message expected (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
 
                 # send error message back
                 try:
                     message = {"message": message["message"],
-                               "error": "sensor alerts off message expected"}
+                               "error": "profile change message expected"}
                     self._send(json.dumps(message))
 
                 except Exception as e:
@@ -3058,7 +3059,7 @@ class ClientCommunication:
 
             # check if status message was correctly received
             if str(message["payload"]["result"]).upper() == "EXPIRED":
-                self.logger.warning("[%s]: Client reported 'sensoralertsoff' messages as expired." % self.fileName)
+                self.logger.warning("[%s]: Client reported 'profilechange' messages as expired." % self.fileName)
 
             elif str(message["payload"]["result"]).upper() != "OK":
                 self.logger.error("[%s]: Result not ok: '%s' (%s:%d)."
@@ -3066,7 +3067,7 @@ class ClientCommunication:
                 return False
 
         except Exception as e:
-            self.logger.exception("[%s]: Receiving sensor alerts off response failed (%s:%d)."
+            self.logger.exception("[%s]: Receiving profile change response failed (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
             return False
 
@@ -3104,21 +3105,21 @@ class ClientCommunication:
         self._releaseLock()
         return returnValue
 
-    def sendAlertSensorAlertsOff(self) -> bool:
+    def send_profile_change(self, profile: Profile) -> bool:
         """
-        function that sends a sensor alert of to a alert client
+        Function that sends a profile change to an alert client
 
         :return:
         """
-        sensorAlertsOffMessage = self._buildSensorAlertsOffMessage()
+        profile_change_msg = self._build_profile_change_message(profile)
 
         # initiate transaction with client and acquire lock
-        if not self._initiateTransaction("sensoralertsoff",
-                                         len(sensorAlertsOffMessage),
+        if not self._initiateTransaction("profilechange",
+                                         len(profile_change_msg),
                                          acquireLock=True):
             return False
 
-        returnValue = self._sendAlertSensorAlertsOff(sensorAlertsOffMessage)
+        returnValue = self._send_profile_change(profile_change_msg)
 
         self._releaseLock()
         return returnValue
@@ -3809,9 +3810,10 @@ class AsynchronousSender(threading.Thread):
         self.sendManagerStateChangeDataType = None
         self.sendManagerStateChangeData = None
 
-        # this option is used when the thread should
-        # send a sensor alert off to the client
-        self.sendAlertSensorAlertsOff = False
+        # This option is used when the thread should
+        # send a change profile to the client
+        self.send_profile_change = False
+        self.profile = None
 
     def run(self):
 
@@ -3859,17 +3861,17 @@ class AsynchronousSender(threading.Thread):
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
 
-        # check if a sensor alert off to an alert client should be send
-        elif self.sendAlertSensorAlertsOff:
+        # check if a profile change to an alert client should be send
+        elif self.send_profile_change:
             if self.clientComm.nodeType != "alert":
-                self.logger.error("[%s]: Sending sensor alert off to alert failed. Client is not a "
+                self.logger.error("[%s]: Sending profile change to alert failed. Client is not a "
                                   % self.fileName
                                   + "'alert' node (%s:%d)."
                                   % (self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
 
-            # sending sensor alert off to alert client
-            if not self.clientComm.sendAlertSensorAlertsOff():
-                self.logger.error("[%s]: Sending sensor alert off to alert client failed (%s:%d)."
+            # sending profile change to alert client
+            if not self.clientComm.send_profile_change(self.profile):
+                self.logger.error("[%s]: Sending profile change to alert client failed (%s:%d)."
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return

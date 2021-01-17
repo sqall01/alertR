@@ -60,6 +60,7 @@ class ProfileChangeSensor(_InternalSensor):
         for profile in self._profiles:
             if profile.id == int(option.value):
                 curr_profile = profile
+                break
         if curr_profile is None:
             self._logger.error("[%s]: Not able to find profile with id %d for internal profile change sensor."
                                % (self._log_tag, int(option.value)))
