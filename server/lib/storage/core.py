@@ -346,6 +346,7 @@ class _Storage:
         :param logger:
         :return: an option object or None
         """
+        raise NotImplemented("Function not implemented yet.")
 
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:
@@ -458,16 +459,6 @@ class _Storage:
         Deletes a node given by its node id.
 
         :param nodeId:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplemented("Function not implemented yet.")
-
-    def isAlertSystemActive(self,
-                            logger: logging.Logger = None) -> bool:
-        """
-        Checks if the alert system is active or not.
-
         :param logger:
         :return Success or Failure
         """

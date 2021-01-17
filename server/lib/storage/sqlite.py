@@ -507,13 +507,6 @@ class Sqlite(_Storage):
                             + "type TEXT NOT NULL UNIQUE, "
                             + "value REAL NOT NULL)")
 
-        # TODO remove
-        # insert option to activate/deactivate alert system
-        # (0 = deactivated, 1 = activated)
-        self.cursor.execute("INSERT INTO options ("
-                            + "type, "
-                            + "value) VALUES (?, ?)", ("alertSystemActive", 0))
-
         # Insert option which profile is currently used by the system.
         # NOTE: at least one profile with id 1 is enforced during configuration parsing.
         self.cursor.execute("INSERT INTO options ("
@@ -2369,34 +2362,6 @@ class Sqlite(_Storage):
         self.conn.commit()
         self._releaseLock(logger)
         return True
-
-    def isAlertSystemActive(self,
-                            logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        try:
-            self.cursor.execute("SELECT value FROM options WHERE type = ?",
-                                ("alertSystemActive", ))
-            result = self.cursor.fetchall()
-            alertSystemActive = result[0][0]
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to check if alert system is active." % self.log_tag)
-            self._releaseLock(logger)
-            return False
-
-        self._releaseLock(logger)
-
-        if alertSystemActive == 1:
-            return True
-
-        elif alertSystemActive == 0:
-            return False
 
     def getAllAlertsAlertLevels(self,
                                 logger: logging.Logger = None) -> Optional[List[int]]:

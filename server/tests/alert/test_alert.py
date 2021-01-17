@@ -5,7 +5,7 @@ import collections
 import threading
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData
+from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
@@ -25,19 +25,19 @@ def _callback_trigger_sensor_alert(_, sensor_alert_state: SensorAlertState):
 class MockStorage(_Storage):
 
     def __init__(self):
-        self._is_active = False
+        self._profile = 1
         self._sensor_alerts = dict()  # type: Dict[int, SensorAlert]
         self._sensor_data = dict()  # type: Dict[int, SensorData]
         self._sensor_states = dict()  # type: Dict[int, int]
         self._sensor_state_updates = dict()  # type: Dict[int, List[Tuple[int, int]]]
 
     @property
-    def is_active(self) -> bool:
-        return self._is_active
+    def profile(self):
+        return self._profile
 
-    @is_active.setter
-    def is_active(self, value: bool):
-        self._is_active = value
+    @profile.setter
+    def profile(self, profile: int):
+        self._profile = profile
 
     @property
     def sensor_state_updates(self) -> Dict[int, List[Tuple[int, int]]]:
@@ -52,9 +52,6 @@ class MockStorage(_Storage):
     def add_sensor_state(self, sensor_id: int, state: int):
         self._sensor_states[sensor_id] = state
 
-    def isAlertSystemActive(self, _: logging.Logger = None):
-        return self._is_active
-
     def deleteSensorAlert(self,
                           sensorAlertId: int,
                           logger: logging.Logger = None) -> bool:
@@ -62,6 +59,16 @@ class MockStorage(_Storage):
             del self._sensor_alerts[sensorAlertId]
             return True
         return False
+
+    def get_option_by_type(self,
+                           option_type: str,
+                           logger: logging.Logger = None) -> Optional[Option]:
+        if option_type == "profile":
+            option = Option()
+            option.type = option_type
+            option.value = self._profile
+            return option
+        return None
 
     def getSensorData(self,
                       sensorId: int,
@@ -139,6 +146,7 @@ class TestAlert(TestCase):
             alert_level.triggerAlertTriggered = False
             alert_level.triggerAlertNormal = False
             alert_level.instrumentation_active = False
+            alert_level.profiles = [1]
             alert_levels.append(alert_level)
 
         utc_now = int(time.time())
@@ -267,16 +275,16 @@ class TestAlert(TestCase):
             for j in range(len(new_states)):
                 self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorAlertId)
 
-    def test_update_suitable_alert_levels_deactivated(self):
+    def test_update_suitable_alert_levels_wrong_profile(self):
         """
-        Tests update of suitable alert levels when the alert system is deactivated.
+        Tests update of suitable alert levels when the system profile does not match the one of the alert level.
         """
         num = 5
 
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -298,16 +306,16 @@ class TestAlert(TestCase):
             self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
             self.assertTrue(sensor_alert_state.instrumentation_processed)
 
-    def test_update_suitable_alert_levels_activated(self):
+    def test_update_suitable_alert_levels_correct_profile(self):
         """
-        Tests update of suitable alert levels when the alert system is activated.
+        Tests update of suitable alert levels when the system profile does match the one of the alert level.
         """
         num = 5
 
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -336,7 +344,7 @@ class TestAlert(TestCase):
 
     def test_update_suitable_alert_levels_trigger_always_wrong_trigger_state(self):
         """
-        Tests update of suitable alert levels when the alert system is deactivated,
+        Tests update of suitable alert levels when the system profile does not match,
         trigger always is set in alert level and the state is wrong.
         """
         num = 5
@@ -344,7 +352,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -368,7 +376,7 @@ class TestAlert(TestCase):
 
     def test_update_suitable_alert_levels_trigger_always_correct_trigger_state(self):
         """
-        Tests update of suitable alert levels when the alert system is deactivated,
+        Tests update of suitable alert levels when the system profile does not match,
         trigger always is set in alert level and the state is correct.
         """
         num = 5
@@ -376,7 +384,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -405,7 +413,7 @@ class TestAlert(TestCase):
 
     def test_update_suitable_alert_levels_trigger_always_wrong_normal_state(self):
         """
-        Tests update of suitable alert levels when the alert system is deactivated,
+        Tests update of suitable alert levels when the system profile does not match,
         trigger always is set in alert level and the state is wrong.
         """
         num = 5
@@ -413,7 +421,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -437,7 +445,7 @@ class TestAlert(TestCase):
 
     def test_update_suitable_alert_levels_trigger_always_correct_normal_state(self):
         """
-        Tests update of suitable alert levels when the alert system is deactivated,
+        Tests update of suitable alert levels when the system profile does not match,
         trigger always is set in alert level and the state is correct.
         """
         num = 5
@@ -445,7 +453,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -474,7 +482,7 @@ class TestAlert(TestCase):
 
     def test_update_suitable_alert_levels_multiple_alert_levels(self):
         """
-        Tests update of multiple suitable alert levels when the alert system is activated.
+        Tests update of multiple suitable alert levels when the system profile does match.
         """
 
         # Use odd number to have different group sizes.
@@ -483,7 +491,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -528,7 +536,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -572,7 +580,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -619,7 +627,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -661,7 +669,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -706,7 +714,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1191,7 +1199,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = manager_update_executer
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
@@ -1432,7 +1440,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1491,9 +1499,9 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num - len(gt_set), len(manager_update_executer._queue_state_change))
 
-    def test_run_trigger_active(self):
+    def test_run_trigger_correct_profile(self):
         """
-        Integration test that checks if sensor alerts that trigger when alarm system is activated
+        Integration test that checks if sensor alerts that trigger when the system profile does match
         are processed correctly.
         """
 
@@ -1507,7 +1515,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1589,7 +1597,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1695,7 +1703,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1800,7 +1808,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1878,7 +1886,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1954,7 +1962,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = False
+        global_data.storage.profile = 2
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -2035,7 +2043,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.is_active = True
+        global_data.storage.profile = 1
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -2086,8 +2094,8 @@ class TestAlert(TestCase):
             self.assertFalse(manager_update_executer._manager_update_event.is_set())
             self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
-        # Deactivate alarm system to change trigger condition.
-        global_data.storage.is_active = False
+        # Change system profile to change trigger condition.
+        global_data.storage.profile = 2
 
         for i in range(int(delay/2) + 1):
             self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
@@ -2117,7 +2125,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         storage = MockStorage()
-        storage.is_active = False
+        storage.profile = 2
         global_data.storage = storage
 
         internal_sensor = MockInternalSensor(global_data)
@@ -2186,7 +2194,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         storage = MockStorage()
-        storage.is_active = False
+        storage.profile = 2
         global_data.storage = storage
 
         internal_sensor = MockInternalSensor(global_data)

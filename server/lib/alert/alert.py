@@ -349,7 +349,12 @@ class SensorAlertExecuter(threading.Thread):
         the sensor alert object.
         :param sensor_alert_states:
         """
-        is_alert_system_active = self._storage.isAlertSystemActive()
+
+        option = self._storage.get_option_by_type("profile")
+        if option is None:
+            self._logger.error("[%s]: Unable to get 'profile' option from database." % self._log_tag)
+            return
+        curr_profile_id = int(option.value)
 
         for sensor_alert_state in sensor_alert_states:
 
@@ -380,7 +385,7 @@ class SensorAlertExecuter(threading.Thread):
                         suitable_alert_levels.append(alert_level)
                         continue
 
-                    if alert_level.triggerAlways or is_alert_system_active:
+                    if alert_level.triggerAlways or curr_profile_id in alert_level.profiles:
 
                         # If the alert level does trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state.
@@ -396,7 +401,7 @@ class SensorAlertExecuter(threading.Thread):
 
                 else:
 
-                    if alert_level.triggerAlways or is_alert_system_active:
+                    if alert_level.triggerAlways or curr_profile_id in alert_level.profiles:
 
                         # If the alert level does trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state.
