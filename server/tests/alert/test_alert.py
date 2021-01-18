@@ -342,6 +342,12 @@ class TestAlert(TestCase):
 
             self.assertTrue(sensor_alert_state.instrumentation_processed)
 
+    def test_update_suitable_alert_levels_multiple_profiles(self):
+        """
+        Tests update of suitable alert levels when the alert level has multiple system profiles.
+        """
+        raise NotImplementedError("TODO")
+
     def test_update_suitable_alert_levels_trigger_always_wrong_trigger_state(self):
         """
         Tests update of suitable alert levels when the system profile does not match,
