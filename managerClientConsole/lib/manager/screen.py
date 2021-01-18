@@ -1797,7 +1797,10 @@ class Console:
                         # get all alerts that belong to the focused alert level
                         currentAlerts = self._getAlertsOfAlertLevel(alertLevelUrwidObject.alertLevel)
 
-                        self.detailedView.updateCompleteWidget(currentSensors, currentAlerts)
+                        curr_profiles = list(filter(lambda x: x.id in alertLevelUrwidObject.alertLevel.profiles,
+                                                    self.system_data.get_profiles_list(order_by_id=True)))
+
+                        self.detailedView.updateCompleteWidget(currentSensors, currentAlerts, curr_profiles)
 
             # add all alert levels that were newly added
             for alertLevel in self.system_data.get_alert_levels_list(order_by_level=True):

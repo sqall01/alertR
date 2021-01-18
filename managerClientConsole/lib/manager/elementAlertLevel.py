@@ -338,10 +338,14 @@ class AlertLevelDetailedUrwid:
         return self.detailedBox
 
     # this function updates all internal widgets
-    def updateCompleteWidget(self, sensors: List[ManagerObjSensor], alerts: List[ManagerObjAlert]):
+    def updateCompleteWidget(self,
+                             sensors: List[ManagerObjSensor],
+                             alerts: List[ManagerObjAlert],
+                             profiles: List[ManagerObjProfile]):
         self.updateAlertLevelDetails()
         self.updateSensorsDetails(sensors)
         self.updateAlertsDetails(alerts)
+        self.update_profile_details(profiles)
 
     # this function updates the alert level information shown
     def updateAlertLevelDetails(self):
@@ -370,6 +374,22 @@ class AlertLevelDetailedUrwid:
         # empty pile widget contents and replace it with the new widgets
         del self.alertsPileWidget.contents[:]
         self.alertsPileWidget.contents.extend(temp)
+
+    def update_profile_details(self, profiles: List[ManagerObjProfile]):
+        """
+        This function updates the profile information shown.
+
+        :param profiles:
+        """
+        temp = self._create_profiles_widget_list(profiles)
+
+        # Create a list of tuples for the pile widget.
+        pile_options = self._profiles_pile_widget.options()
+        new_profiles_list = [(x, pile_options) for x in temp]
+
+        # Empty pile widget contents and replace it with the new widgets.
+        del self._profiles_pile_widget.contents[:]
+        self._profiles_pile_widget.contents.extend(new_profiles_list)
 
     # this function updates the sensor information shown
     def updateSensorsDetails(self, sensors: List[ManagerObjSensor]):
