@@ -311,6 +311,16 @@ class Option:
         self.type = None  # type: Optional[str]
         self.value = None  # type: Optional[float]
 
+    def deepcopy(self, option):
+        """
+        This function copies all attributes of the given option to this object.
+        :param option:
+        :return:
+        """
+        self.type = option.type
+        self.value = option.value
+        return self
+
 
 class Profile:
 

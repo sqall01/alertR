@@ -28,7 +28,7 @@ class Sqlite(_Storage):
     def __init__(self,
                  storagePath: str,
                  globalData: GlobalData,
-                 read_only: bool=False):
+                 read_only: bool = False):
 
         self.globalData = globalData
         self.logger = self.globalData.logger
@@ -45,7 +45,7 @@ class Sqlite(_Storage):
         self.storagePath = storagePath
 
         # sqlite is not thread safe => use lock
-        self.dbLock = threading.Semaphore(1)
+        self.dbLock = threading.Lock()
 
         mode = ""
         if read_only:
@@ -282,6 +282,35 @@ class Sqlite(_Storage):
 
         return option
 
+    def _get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+        """
+        Internal function that gets the options from the database.
+
+        :param logger:
+        :return: list of option objects or None
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        options = list()
+        try:
+            self.cursor.execute("SELECT type, value FROM options")
+
+            result = self.cursor.fetchall()
+
+            for option_tuple in result:
+                option = Option()
+                option.type = option_tuple[0]
+                option.value = option_tuple[1]
+                options.append(option)
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to get options ." % self.log_tag)
+            return None
+
+        return options
+
     def _getSensorById(self,
                        sensorId: int,
                        logger: logging.Logger = None) -> Optional[Sensor]:
@@ -505,7 +534,7 @@ class Sqlite(_Storage):
         self.cursor.execute("CREATE TABLE options ("
                             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                             + "type TEXT NOT NULL UNIQUE, "
-                            + "value REAL NOT NULL)")
+                            + "value REAL NOT NULL)")  # TODO primary key type
 
         # Insert option which profile is currently used by the system.
         # NOTE: at least one profile with id 1 is enforced during configuration parsing.
@@ -690,6 +719,29 @@ class Sqlite(_Storage):
 
         except Exception as e:
             logger.exception("[%s]: Not able to delete manager for node with id %d." % (self.log_tag, nodeId))
+            return False
+
+        return True
+
+    def _delete_option_by_type(self,
+                              option_type: str,
+                              logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes option given by type.
+
+        :param option_type:
+        :param logger:
+        :return: Success or Failure
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("DELETE FROM options WHERE type = ?", (option_type, ))
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to delete option with type '%s'." % (self.log_tag, option_type))
             return False
 
         return True
@@ -904,6 +956,54 @@ class Sqlite(_Storage):
         else:
             logger.error("[%s]: Data type not known. Not able to add sensorAlert." % self.log_tag)
 
+            return False
+
+        return True
+
+    def _update_option(self,
+                       option: Option,
+                       logger: logging.Logger = None) -> bool:
+        """
+        Internal function that updates option data.
+
+        :param option:
+        :param logger:
+        :return: success of failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            # check if option does exist
+            self.cursor.execute("SELECT type "
+                                + "FROM options "
+                                + "WHERE type = ?",
+                                (option.type, ))
+            result = self.cursor.fetchall()
+
+            # Insert option data.
+            if len(result) == 0:
+                self.cursor.execute("INSERT INTO options ("
+                                    + "type, "
+                                    + "value) "
+                                    + "VALUES (?, ?)",
+                                    (option.type, option.value))
+
+            # Update option data.
+            elif len(result) == 1:
+                self.cursor.execute("UPDATE options SET "
+                                    + "value = ? "
+                                    + "WHERE type = ?",
+                                    (option.value, option.type))
+
+            else:
+                raise ValueError("Option type not unique.")
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to update option with type '%s' in database."
+                             % (self.log_tag, option.type))
             return False
 
         return True
@@ -2363,6 +2463,20 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
         return True
 
+    def delete_option_by_type(self,
+                              option_type: str,
+                              logger: logging.Logger = None) -> bool:
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            if self._delete_option_by_type(option_type, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
     def getAllAlertsAlertLevels(self,
                                 logger: logging.Logger = None) -> Optional[List[int]]:
 
@@ -2632,6 +2746,15 @@ class Sqlite(_Storage):
         with self.dbLock:
             return self._get_option_by_type(option_type,
                                             logger)
+
+    def get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            return self._get_options_list(logger)
 
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:
@@ -2917,3 +3040,38 @@ class Sqlite(_Storage):
         self.conn.close()
 
         self._releaseLock(logger)
+
+    def update_option(self,
+                      option_type: str,
+                      option_value: float,
+                      logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        option = Option()
+        option.type = option_type
+        option.value = option_value
+
+        with self.dbLock:
+            if self._update_option(option, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
+    def update_option_by_obj(self,
+                             option: Option,
+                             logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            if self._update_option(option, logger):
+                self.conn.commit()
+                return True
+
+        return False

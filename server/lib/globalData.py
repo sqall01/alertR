@@ -64,7 +64,7 @@ class GlobalData:
         self.rev = 0  # type: int
 
         # Used database layout version.
-        self.dbVersion = 1  # type: int
+        self.dbVersion = 1  # type: int  # TODO increase version
 
         # name of this server
         self.name = "AlertR Server"  # type: str
@@ -107,17 +107,22 @@ class GlobalData:
         self.configCheckInterval = 60.0
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "config",
+                                       "config.xml")
 
         # path to the csv user credentials file (if csv is used as backend)
-        self.userBackendCsvFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/users.csv"
+        self.userBackendCsvFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                               "..",
+                                               "config",
+                                               "users.csv")
 
         # path to the sqlite database file (if sqlite is used as backend)
-        self.storageBackendSqliteFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/database.db"
-
-        # How often the alertR server should try to connect to the
-        # MySQL server when the connection establishment fails.
-        self.storageBackendMysqlRetries = 5
+        self.storageBackendSqliteFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                     "..",
+                                                     "config",
+                                                     "database.db")
 
         # location of the certifiacte file
         self.serverCertFile = None  # type: Optional[str]
