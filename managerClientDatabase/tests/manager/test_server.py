@@ -47,6 +47,8 @@ class TestManagerServer(TestCase):
                                          daemon=True)
         server_thread.start()
 
+        self.addCleanup(self._destroy_server, server, global_data)
+
         return server, global_data
 
     def _destroy_server(self, server: ThreadedUnixStreamServer, global_data: GlobalData):
@@ -102,7 +104,6 @@ class TestManagerServer(TestCase):
             self.assertEqual(options[i][2], delay)
 
             sock.close()
-        self._destroy_server(server, global_data)
 
     def test_send_option_not_profile(self):
         """
@@ -139,7 +140,6 @@ class TestManagerServer(TestCase):
         self.assertEqual(len(options), 0)
 
         sock.close()
-        self._destroy_server(server, global_data)
 
     def test_send_option_missing_value(self):
         """
@@ -174,7 +174,6 @@ class TestManagerServer(TestCase):
         self.assertEqual(len(options), 0)
 
         sock.close()
-        self._destroy_server(server, global_data)
 
     def test_send_option_missing_delay(self):
         """
@@ -209,7 +208,6 @@ class TestManagerServer(TestCase):
         self.assertEqual(len(options), 0)
 
         sock.close()
-        self._destroy_server(server, global_data)
 
     def test_send_invalid_message(self):
         """
@@ -237,4 +235,3 @@ class TestManagerServer(TestCase):
         self.assertEqual(len(options), 0)
 
         sock.close()
-        self._destroy_server(server, global_data)
