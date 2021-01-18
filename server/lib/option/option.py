@@ -152,7 +152,7 @@ class OptionExecuter(threading.Thread):
                                   % (self._log_tag, option.type, option.value))
 
                 # Change option in database.
-                if not self._storage.changeOption(option.type, option.value):
+                if not self._storage.update_option(option.type, option.value):
                     self._logger.error("[%s]: Not able to change option '%s' to %.3f."
                                        % (self._log_tag, option.type, option.value))
 

@@ -409,20 +409,6 @@ class _Storage:
         """
         raise NotImplementedError("Function not implemented yet.")
 
-    def changeOption(self,
-                     optionType: str,
-                     optionValue: float,
-                     logger: logging.Logger = None) -> bool:
-        """
-        Ghange a option in the database.
-
-        :param optionType:
-        :param optionValue:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Function not implemented yet.")
-
     def markNodeAsNotConnected(self,
                                nodeId: int,
                                logger: logging.Logger = None) -> bool:

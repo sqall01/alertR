@@ -2876,45 +2876,6 @@ class Sqlite(_Storage):
         # list[4] = list(alert objects)
         return alertSystemInformation
 
-    def changeOption(self,
-                     optionType: str,
-                     optionValue: float,
-                     logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        try:
-            # check if option does exist
-            self.cursor.execute("SELECT id "
-                                + "FROM options "
-                                + "WHERE type = ?",
-                                (optionType, ))
-            result = self.cursor.fetchall()
-            if len(result) != 1:
-                logger.error("[%s]: Option was not found." % self.log_tag)
-                self._releaseLock(logger)
-                return False
-
-            # update option in database
-            self.cursor.execute("UPDATE options SET "
-                                + "value = ? "
-                                + "WHERE type = ?",
-                                (optionValue, optionType))
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to update option in database." % self.log_tag)
-            self._releaseLock(logger)
-            return False
-
-        # commit all changes
-        self.conn.commit()
-        self._releaseLock(logger)
-        return True
-
     def getSensorState(self,
                        sensorId: int,
                        logger: logging.Logger = None) -> Optional[int]:

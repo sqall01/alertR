@@ -43,21 +43,21 @@ class MockStorage(_Storage):
     def options(self):
         return list(self._options)
 
-    def changeOption(self,
-                     optionType: str,
-                     optionValue: float,
-                     logger: logging.Logger = None) -> bool:
+    def update_option(self,
+                      option_type: str,
+                      option_value: float,
+                      logger: logging.Logger = None) -> bool:
         if not self.is_working:
             return False
 
         option = Option()
-        option.type = optionType
-        option.value = optionValue
+        option.type = option_type
+        option.value = option_value
         self._options.append(option)
         return True
 
 
-class TestAlert(TestCase):
+class TestOption(TestCase):
 
     def _create_option_executer(self) -> Tuple[OptionExecuter, GlobalData]:
 
