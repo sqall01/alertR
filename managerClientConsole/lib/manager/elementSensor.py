@@ -266,6 +266,10 @@ class SensorDetailedUrwid:
             temp.append(urwid.Text("Undefined"))
         temp.append(urwid.Divider())
 
+        temp.append(urwid.Text("Profiles:"))
+        temp.append(urwid.Text(", ".join([str(x) for x in alertLevel.profiles])))
+        temp.append(urwid.Divider())
+
         temp.append(urwid.Text("Instrumentation Activated:"))
         if alertLevel.instrumentation_active is None:
             temp.append(urwid.Text("Undefined"))
