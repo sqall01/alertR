@@ -346,7 +346,66 @@ class TestAlert(TestCase):
         """
         Tests update of suitable alert levels when the alert level has multiple system profiles.
         """
-        raise NotImplementedError("TODO")
+        num = 9
+
+        global_data = GlobalData()
+        global_data.logger = logging.getLogger("Alert Test Case")
+        global_data.storage = MockStorage()
+        global_data.storage.profile = 3
+
+        sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
+
+        ctr = 0
+        sensor_alert_states = list()
+        sensor_alert_states_that_trigger = list()
+        for sensor_alert in sensor_alerts:
+            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
+            sensor_alert_state._init_sensor_alert.state = 1
+            sensor_alert_states.append(sensor_alert_state)
+
+            if ctr % 2:
+                sensor_alert_states_that_trigger.append(sensor_alert_state)
+            ctr += 1
+
+        ctr = 0
+        alert_levels_that_trigger = list()
+        for alert_level in alert_levels:
+            alert_level.triggerAlways = False
+            alert_level.triggerAlertTriggered = True
+
+            if ctr % 2:
+                alert_level.profiles = [1, 2, 3, 4]
+                alert_levels_that_trigger.append(alert_level.level)
+
+            else:
+                alert_level.profiles = [1, 2, 4]
+            ctr += 1
+
+        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
+
+        for sensor_alert_state in sensor_alert_states:
+
+            # Distinguish checks between sensor alerts we know will trigger and the ones that will not.
+            if sensor_alert_state in sensor_alert_states_that_trigger:
+                self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
+
+                # Check if the only suitable alert level is actually the alert level of the sensor alert.
+                self.assertEqual(sensor_alert_state._init_sensor_alert.alertLevels[0],
+                                 sensor_alert_state.suitable_alert_levels[0].level)
+
+                # Check if the suitable alert level belongs to the alert levels that have the correct profile.
+                self.assertTrue(sensor_alert_state.suitable_alert_levels[0].level in alert_levels_that_trigger)
+
+            else:
+                self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
+
+                # Check if the alert level of the sensor alert belongs _NOT_ to the alert levels that have
+                # the correct profile.
+                self.assertFalse(sensor_alert_state._init_sensor_alert.alertLevels[0] in alert_levels_that_trigger)
+
+            self.assertTrue(sensor_alert_state.instrumentation_processed)
 
     def test_update_suitable_alert_levels_trigger_always_wrong_trigger_state(self):
         """
