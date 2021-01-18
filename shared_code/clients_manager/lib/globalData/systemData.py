@@ -726,7 +726,6 @@ class SystemData:
         """
         Updates the given option data.
         :param option:
-        :return: success of failure
         """
         with self._data_lock:
 
@@ -743,7 +742,6 @@ class SystemData:
         """
         Updates the given profile data.
         :param profile:
-        :return: success of failure
         """
         with self._data_lock:
 
