@@ -61,25 +61,45 @@ class MsgChecker:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "alertLevels" not in message["payload"].keys():
+                logging.error("[%s]: alertLevels missing." % MsgChecker._log_tag)
+                return "alertLevels expected"
+
             error_msg = MsgChecker.check_alert_levels(message["payload"]["alertLevels"])
             if error_msg is not None:
                 logging.error("[%s]: Received alertLevels invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "description" not in message["payload"].keys():
+                logging.error("[%s]: description missing." % MsgChecker._log_tag)
+                return "description expected"
 
             error_msg = MsgChecker.check_description(message["payload"]["description"])
             if error_msg is not None:
                 logging.error("[%s]: Received description invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "sensorId" not in message["payload"].keys():
+                logging.error("[%s]: sensorId missing." % MsgChecker._log_tag)
+                return "sensorId expected"
+
             error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "state" not in message["payload"].keys():
+                logging.error("[%s]: state missing." % MsgChecker._log_tag)
+                return "state expected"
+
             error_msg = MsgChecker.check_state(message["payload"]["state"])
             if error_msg is not None:
                 logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "hasOptionalData" not in message["payload"].keys():
+                logging.error("[%s]: hasOptionalData missing." % MsgChecker._log_tag)
+                return "hasOptionalData expected"
 
             error_msg = MsgChecker.check_has_optional_data(message["payload"]["hasOptionalData"])
             if error_msg is not None:
@@ -92,30 +112,46 @@ class MsgChecker:
                     logging.error("[%s]: Received optionalData invalid." % MsgChecker._log_tag)
                     return error_msg
 
+            if "dataType" not in message["payload"].keys():
+                logging.error("[%s]: dataType missing." % MsgChecker._log_tag)
+                return "dataType expected"
+
             error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
             if error_msg is not None:
                 logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
                 return error_msg
 
             if message["payload"]["dataType"] != SensorDataType.NONE:
+                if "data" not in message["payload"].keys():
+                    logging.error("[%s]: data missing." % MsgChecker._log_tag)
+                    return "data expected"
+
                 error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
                                                          message["payload"]["dataType"])
                 if error_msg is not None:
                     logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
                     return error_msg
 
+            if "hasLatestData" not in message["payload"].keys():
+                logging.error("[%s]: hasLatestData missing." % MsgChecker._log_tag)
+                return "hasLatestData expected"
+
             error_msg = MsgChecker.check_has_latest_data(message["payload"]["hasLatestData"])
             if error_msg is not None:
                 logging.error("[%s]: Received hasLatestData invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "changeState" not in message["payload"].keys():
+                logging.error("[%s]: changeState missing." % MsgChecker._log_tag)
+                return "changeState expected"
 
             error_msg = MsgChecker.check_change_state(message["payload"]["changeState"])
             if error_msg is not None:
                 logging.error("[%s]: Received changeState invalid." % MsgChecker._log_tag)
                 return error_msg
 
-        # Check "SENSORALERTSOFF" message.
-        elif request == "sensoralertsoff":
+        # Check "PROFILECHANGE" message.
+        elif request == "profilechange":
             if "msgTime" not in message.keys():
                 logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
                 return "msgTime expected"
@@ -123,6 +159,15 @@ class MsgChecker:
             error_msg = MsgChecker.check_msg_time(message["msgTime"])
             if error_msg is not None:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "profileId" not in message["payload"].keys():
+                logging.error("[%s]: profileId missing." % MsgChecker._log_tag)
+                return "profileId expected"
+
+            error_msg = MsgChecker.check_profile_id(message["payload"]["profileId"])
+            if error_msg is not None:
+                logging.error("[%s]: Received profile id invalid." % MsgChecker._log_tag)
                 return error_msg
 
         # Check "STATECHANGE" message.
@@ -136,15 +181,27 @@ class MsgChecker:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "sensorId" not in message["payload"].keys():
+                logging.error("[%s]: sensorId missing." % MsgChecker._log_tag)
+                return "sensorId expected"
+
             error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "state" not in message["payload"].keys():
+                logging.error("[%s]: state missing." % MsgChecker._log_tag)
+                return "state expected"
+
             error_msg = MsgChecker.check_state(message["payload"]["state"])
             if error_msg is not None:
                 logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "dataType" not in message["payload"].keys():
+                logging.error("[%s]: dataType missing." % MsgChecker._log_tag)
+                return "dataType expected"
 
             error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
             if error_msg is not None:
@@ -152,6 +209,10 @@ class MsgChecker:
                 return error_msg
 
             if message["payload"]["dataType"] != SensorDataType.NONE:
+                if "data" not in message["payload"].keys():
+                    logging.error("[%s]: data missing." % MsgChecker._log_tag)
+                    return "data expected"
+
                 error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
                                                          message["payload"]["dataType"])
                 if error_msg is not None:
@@ -169,35 +230,63 @@ class MsgChecker:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "options" not in message["payload"].keys():
+                logging.error("[%s]: options missing." % MsgChecker._log_tag)
+                return "options expected"
+
             error_msg = MsgChecker.check_status_options_list(message["payload"]["options"])
             if error_msg is not None:
                 logging.error("[%s]: Received options invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "profiles" not in message["payload"].keys():
+                logging.error("[%s]: profiles missing." % MsgChecker._log_tag)
+                return "profiles expected"
 
             error_msg = MsgChecker.check_status_profiles_list(message["payload"]["profiles"])
             if error_msg is not None:
                 logging.error("[%s]: Received profiles invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "nodes" not in message["payload"].keys():
+                logging.error("[%s]: nodes missing." % MsgChecker._log_tag)
+                return "nodes expected"
+
             error_msg = MsgChecker.check_status_nodes_list(message["payload"]["nodes"])
             if error_msg is not None:
                 logging.error("[%s]: Received nodes invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "sensors" not in message["payload"].keys():
+                logging.error("[%s]: sensors missing." % MsgChecker._log_tag)
+                return "sensors expected"
 
             error_msg = MsgChecker.check_status_sensors_list(message["payload"]["sensors"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensors invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "managers" not in message["payload"].keys():
+                logging.error("[%s]: managers missing." % MsgChecker._log_tag)
+                return "managers expected"
+
             error_msg = MsgChecker.check_status_managers_list(message["payload"]["managers"])
             if error_msg is not None:
                 logging.error("[%s]: Received managers invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "alerts" not in message["payload"].keys():
+                logging.error("[%s]: alerts missing." % MsgChecker._log_tag)
+                return "alerts expected"
+
             error_msg = MsgChecker.check_status_alerts_list(message["payload"]["alerts"])
             if error_msg is not None:
                 logging.error("[%s]: Received alerts invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "alertLevels" not in message["payload"].keys():
+                logging.error("[%s]: alertLevels missing." % MsgChecker._log_tag)
+                return "alertLevels expected"
 
             error_msg = MsgChecker.check_status_alert_levels_list(message["payload"]["alertLevels"])
             if error_msg is not None:
