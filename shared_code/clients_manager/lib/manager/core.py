@@ -10,7 +10,7 @@
 import os
 import logging
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType, AlertObjProfileChange
 from ..client import EventHandler
 from ..globalData import GlobalData
 from typing import List, Any
@@ -162,9 +162,10 @@ class BaseManagerEventHandler(EventHandler):
         return True
 
     # noinspection PyTypeChecker
-    def sensor_alerts_off(self,
-                          msg_time: int) -> bool:
-        logging.critical("[%s]: status_update() not supported by node of type 'manager'." % self._log_tag)
+    def profile_change(self,
+                       msg_time: int,
+                       profile_change: AlertObjProfileChange) -> bool:
+        logging.critical("[%s]: profile_change() not supported by node of type 'manager'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'manager'.")
 
     def state_change(self,

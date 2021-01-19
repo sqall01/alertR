@@ -12,7 +12,7 @@ import os
 from typing import List, Any
 from ..client import EventHandler
 from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
-    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor
+    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor, ManagerObjProfile, AlertObjProfileChange
 from ..globalData import SensorDataType
 
 
@@ -28,6 +28,7 @@ class SensorEventHandler(EventHandler):
     def status_update(self,
                       msg_time: int,
                       options: List[ManagerObjOption],
+                      profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
                       managers: List[ManagerObjManager],
@@ -40,13 +41,14 @@ class SensorEventHandler(EventHandler):
     def sensor_alert(self,
                      msg_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
-        logging.critical("[%s]: status_update() not supported by node of type 'sensor'." % self._log_tag)
+        logging.critical("[%s]: sensor_alert() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     # noinspection PyTypeChecker
-    def sensor_alerts_off(self,
-                          msg_time: int) -> bool:
-        logging.critical("[%s]: status_update() not supported by node of type 'sensor'." % self._log_tag)
+    def profile_change(self,
+                       msg_time: int,
+                       profile_change: AlertObjProfileChange) -> bool:
+        logging.critical("[%s]: profile_change() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     # noinspection PyTypeChecker
@@ -56,7 +58,7 @@ class SensorEventHandler(EventHandler):
                      state: int,
                      data_type: SensorDataType,
                      sensor_data: Any) -> bool:
-        logging.critical("[%s]: status_update() not supported by node of type 'sensor'." % self._log_tag)
+        logging.critical("[%s]: state_change() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 
     def close_connection(self):
