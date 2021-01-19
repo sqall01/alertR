@@ -15,7 +15,8 @@ from ..client import EventHandler
 from ..alert.core import _Alert
 from ..globalData import SensorDataType
 from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
-    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor
+    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor, ManagerObjProfile
+from ..globalData import AlertObjProfileChange
 from ..globalData import GlobalData
 
 
@@ -32,8 +33,8 @@ class AlertEventHandler(EventHandler):
         self._global_data = global_data
         self._local_alerts = self._global_data.alerts
 
-    def _thread_alert_off(self, alert: _Alert):
-        alert.alert_off()
+    def _thread_profile_change(self, alert: _Alert, profile_change: AlertObjProfileChange):
+        alert.alert_profile_change(profile_change)
 
     def _thread_sensor_alert(self, alert: _Alert, sensor_alert: ManagerObjSensorAlert):
         if sensor_alert.state == 1:
@@ -46,6 +47,7 @@ class AlertEventHandler(EventHandler):
     def status_update(self,
                       msg_time: int,
                       options: List[ManagerObjOption],
+                      profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
                       managers: List[ManagerObjManager],
@@ -65,8 +67,8 @@ class AlertEventHandler(EventHandler):
                 if alert_level in alert.alertLevels:
                     at_least_once_triggered = True
 
-                    logging.info("[%s]: Trigger Alert '%d' with state '%s' for Alert Levels '%s'."
-                                 % (self._log_tag, alert.id, str(sensor_alert.state), alert_level_str))
+                    logging.debug("[%s]: Trigger Alert '%d' with state '%s' for Alert Levels '%s'."
+                                  % (self._log_tag, alert.id, str(sensor_alert.state), alert_level_str))
 
                     thread = threading.Thread(target=self._thread_sensor_alert,
                                               args=(alert, sensor_alert))
@@ -79,15 +81,17 @@ class AlertEventHandler(EventHandler):
 
         return True
 
-    def sensor_alerts_off(self,
-                          msg_time: int) -> bool:
+    def profile_change(self,
+                       msg_time: int,
+                       profile_change: AlertObjProfileChange) -> bool:
 
-        # Stop all alerts.
+        # Tell system profile change to all alerts.
         for alert in self._local_alerts:
-            logging.info("[%s]: Switching Alert '%d' off." % (self._log_tag, alert.id))
+            logging.debug("[%s]: Notifying Alert '%d' about system profile change to '%d'."
+                          % (self._log_tag, alert.id, profile_change.profileId))
 
-            thread = threading.Thread(target=self._thread_alert_off,
-                                      args=(alert, ))
+            thread = threading.Thread(target=self._thread_profile_change,
+                                      args=(alert, profile_change))
             thread.daemon = True
             thread.start()
 

@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from typing import Optional
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
 
 
 # internal class that holds the important attributes
@@ -37,10 +37,10 @@ class _Alert(object):
         """
         raise NotImplementedError("Function not implemented yet.")
 
-    def alert_off(self):
+    def alert_profile_change(self, profile_change: AlertObjProfileChange):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
         """
         raise NotImplementedError("Function not implemented yet.")
 

@@ -9,7 +9,7 @@
 
 from typing import List, Any
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType, AlertObjProfileChange
 
 
 class EventHandler:
@@ -37,15 +37,19 @@ class EventHandler:
 
         :param msg_time:
         :param sensor_alert:
+        :return Success or Failure
         """
         raise NotImplementedError("Abstract class.")
 
-    def sensor_alerts_off(self,
-                          msg_time: int) -> bool:
+    def profile_change(self,
+                       msg_time: int,
+                       profile_change: AlertObjProfileChange) -> bool:
         """
-        Is called when a sensor alerts off message was received.
+        Is called when a profile change message was received.
 
         :param msg_time:
+        :param profile_change:
+        :return Success or Failure
         """
         raise NotImplementedError("Abstract class.")
 
@@ -63,6 +67,7 @@ class EventHandler:
         :param state:
         :param data_type:
         :param sensor_data:
+        :return Success or Failure
         """
         raise NotImplementedError("Abstract class.")
 
@@ -86,5 +91,6 @@ class EventHandler:
         :param managers:
         :param alerts:
         :param alert_levels:
+        :return Success or Failure
         """
         raise NotImplementedError("Abstract class.")

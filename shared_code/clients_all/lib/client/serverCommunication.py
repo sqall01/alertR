@@ -20,6 +20,7 @@ from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
     ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from ..globalData import AlertObjProfileChange
 from ..globalData import GlobalData
 
 
@@ -152,13 +153,16 @@ class ServerCommunication(Communication):
 
             profile_id = incomingMessage["payload"]["profileId"]
 
+            profile_change = AlertObjProfileChange()
+            profile_change.profileId = profile_id
+
         except Exception:
             logging.exception("[%s]: Received profile change invalid." % self._log_tag)
 
             return False
 
         # handle received state change
-        if self._event_handler.profile_change(msg_time):
+        if self._event_handler.profile_change(msg_time, profile_change):
             return True
 
         return False

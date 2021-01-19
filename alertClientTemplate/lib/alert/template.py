@@ -9,7 +9,7 @@
 
 from typing import Optional
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
 
 
 # This class represents an example alert
@@ -55,18 +55,8 @@ class TemplateAlert(_Alert):
 
         # PLACE YOUR CODE HERE
 
-    def alert_off(self):
+    def alert_profile_change(self, profile_change: AlertObjProfileChange):
 
-        # Only execute if the alert was triggered
-        if self.state == 1:
-            # set state of alert to "normal"
-            self.state = 0
+        print("Profile Change to '%d'" % profile_change.profileId)
 
-            print("Alert Off: stopped 'triggered' alert")
-
-            # PLACE YOUR CODE HERE
-
-        else:
-            print("Alert Off: alert was in 'normal' state")
-
-            # PLACE YOUR CODE HERE
+        # PLACE YOUR CODE HERE

@@ -16,11 +16,11 @@ class AlertObjProfileChange(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.profile_id = None  # type: Optional[int]
+        self.profileId = None  # type: Optional[int]
 
     def __str__(self) -> str:
         tmp = "ProfileChange (Id: %s)" \
-              % (str(self.profile_id) if self.profile_id is not None else "None")
+              % (str(self.profileId) if self.profileId is not None else "None")
         return tmp
 
     def deepcopy(self, profile_change):
@@ -29,5 +29,5 @@ class AlertObjProfileChange(LocalObject):
         :param profile_change:
         :return:
         """
-        self.profile_id = profile_change
+        self.profileId = profile_change.profileId
         return self
