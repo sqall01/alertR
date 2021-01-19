@@ -137,26 +137,28 @@ class ServerCommunication(Communication):
 
         return False
 
-    def _handler_sensor_alerts_off(self,
-                                   incomingMessage: Dict[str, Any]) -> bool:
+    def _handler_profile_change(self,
+                                incomingMessage: Dict[str, Any]) -> bool:
         """
-        Internal function that handles received sensor alerts off messages (for nodes of type alert).
+        Internal function that handles received profile change messages (for nodes of type alert).
 
         :param incomingMessage:
         :return:
         """
-        logging.debug("[%s]: Received sensor alerts off." % self._log_tag)
+        logging.debug("[%s]: Received profile change." % self._log_tag)
 
         try:
             msg_time = incomingMessage["msgTime"]
 
+            profile_id = incomingMessage["payload"]["profileId"]
+
         except Exception:
-            logging.exception("[%s]: Received sensor alerts off invalid." % self._log_tag)
+            logging.exception("[%s]: Received profile change invalid." % self._log_tag)
 
             return False
 
         # handle received state change
-        if self._event_handler.sensor_alerts_off(msg_time):
+        if self._event_handler.profile_change(msg_time):
             return True
 
         return False
@@ -683,20 +685,20 @@ class ServerCommunication(Communication):
 
             request = msg_request.msg_dict["message"]
 
-            # Handle SENSORALERT request.
-            if request.lower() == "sensoralert":
-                if not self._handler_sensor_alert(msg_request.msg_dict):
-                    logging.error("[%s]: Receiving sensor alert failed."
+            # Handle PROFILECHANGE request.
+            if request.lower() == "profilechange":
+                if not self._handler_profile_change(msg_request.msg_dict):
+                    logging.error("[%s]: Receiving profile change failed."
                                   % self._log_tag)
 
                     # clean up session before exiting
                     self.close()
                     return
 
-            # Handle SENSORALERTSOFF request.
-            elif request.lower() == "sensoralertsoff":
-                if not self._handler_sensor_alerts_off(msg_request.msg_dict):
-                    logging.error("[%s]: Receiving sensor alerts off failed."
+            # Handle SENSORALERT request.
+            elif request.lower() == "sensoralert":
+                if not self._handler_sensor_alert(msg_request.msg_dict):
+                    logging.error("[%s]: Receiving sensor alert failed."
                                   % self._log_tag)
 
                     # clean up session before exiting
