@@ -23,6 +23,15 @@ class AlertObjProfileChange(LocalObject):
               % (str(self.profileId) if self.profileId is not None else "None")
         return tmp
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Profile Change object into a dictionary.
+        :return:
+        """
+        profile_change_dict = {"profileId": self.profileId}
+
+        return profile_change_dict
+
     def deepcopy(self, profile_change):
         """
         This function copies all attributes of the given profile change to this object.
