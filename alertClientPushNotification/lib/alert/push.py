@@ -68,9 +68,9 @@ class PushAlert(_Alert):
 
         # Create a received message text.
         if sensor_alert.hasOptionalData and "message" in sensor_alert.optionalData.keys():
-            receivedMessage = sensor_alert.optionalData["message"]
+            received_message = sensor_alert.optionalData["message"]
         else:
-            receivedMessage = "None"
+            received_message = "None"
 
         sensor_description = sensor_alert.description
 
@@ -91,7 +91,7 @@ class PushAlert(_Alert):
             data_message = "Unknown"
 
         # Replace wildcards in the message with the actual values.
-        temp_msg = message.replace("$MESSAGE$", receivedMessage)
+        temp_msg = message.replace("$MESSAGE$", received_message)
         temp_msg = temp_msg.replace("$STATE$", state_message)
         temp_msg = temp_msg.replace("$SENSORDESC$", sensor_description)
         temp_msg = temp_msg.replace("$TIMERECEIVED$", time.strftime("%d %b %Y %H:%M:%S",
