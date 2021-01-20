@@ -148,7 +148,7 @@ if __name__ == '__main__':
             temp_execute = makePath(str(item.find("executer").attrib["execute"]))
             alert.cmd_triggered_list.append(temp_execute)
             alert.cmd_normal_list.append(temp_execute)
-            alert.cmd_off_list.append(temp_execute)
+            alert.cmd_profile_change_list.append(temp_execute)
 
             # Parse all arguments that are used for the command when
             # a sensor alert with state "triggered" is received.
@@ -167,12 +167,13 @@ if __name__ == '__main__':
                     alert.cmd_normal_list.append(str(argument.text))
 
             # Parse all arguments that are used for the command when
-            # a alert off message is received.
-            cmd_off_activated = str(item.find("executer").find("off").attrib["activated"]).upper() == "TRUE"
-            alert.cmd_off_activated = cmd_off_activated
-            if cmd_off_activated:
-                for argument in item.find("executer").find("off").iterfind("argument"):
-                    alert.cmd_off_list.append(str(argument.text))
+            # a profile change message is received.
+            cmd_profile_change_activated = str(
+                item.find("executer").find("profilechange").attrib["activated"]).upper() == "TRUE"
+            alert.cmd_profile_change_activated = cmd_profile_change_activated
+            if cmd_profile_change_activated:
+                for argument in item.find("executer").find("profilechange").iterfind("argument"):
+                    alert.cmd_profile_change_list.append(str(argument.text))
 
             # these options are needed by the server to
             # differentiate between the registered alerts
