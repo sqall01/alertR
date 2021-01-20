@@ -82,18 +82,18 @@ class DbusAlert(_Alert):
                 # a sensor going back in normal state or in alert state
                 if sensor_alert.state == 1:
                     temp_message = ("\""
-                                   + sensor_alert.description
-                                   + "\" triggered.\n"
-                                   + "Received message: \""
-                                   + received_message
-                                   + "\"")
+                                    + sensor_alert.description
+                                    + "\" triggered.\n"
+                                    + "Received message: \""
+                                    + received_message
+                                    + "\"")
                 else:
                     temp_message = ("\""
-                                   + sensor_alert.description
-                                   + "\" back to normal.\n"
-                                   + "Received message: \""
-                                   + received_message
-                                   + "\"")
+                                    + sensor_alert.description
+                                    + "\" back to normal.\n"
+                                    + "Received message: \""
+                                    + received_message
+                                    + "\"")
 
             # send notification via dbus to notification system
             try:
