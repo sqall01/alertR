@@ -63,17 +63,19 @@ class AlertEventHandler(EventHandler):
         at_least_once_triggered = False
         alert_level_str = ", ".join(map(str, sensor_alert.alertLevels))
         for alert in self._local_alerts:
-            for alert_level in sensor_alert.alertLevels:
-                if alert_level in alert.alertLevels:
-                    at_least_once_triggered = True
 
-                    logging.debug("[%s]: Trigger Alert '%d' with state '%s' for Alert Levels '%s'."
-                                  % (self._log_tag, alert.id, str(sensor_alert.state), alert_level_str))
+            # Check Alert Levels of Sensor Alert and Alert have common levels.
+            intersect_alert_levels = set(sensor_alert.alertLevels).intersection(alert.alertLevels)
+            if intersect_alert_levels:
+                at_least_once_triggered = True
 
-                    thread = threading.Thread(target=self._thread_sensor_alert,
-                                              args=(alert, sensor_alert))
-                    thread.daemon = True
-                    thread.start()
+                logging.debug("[%s]: Trigger Alert '%d' with state '%s' for Alert Levels '%s'."
+                              % (self._log_tag, alert.id, str(sensor_alert.state), alert_level_str))
+
+                thread = threading.Thread(target=self._thread_sensor_alert,
+                                          args=(alert, sensor_alert))
+                thread.daemon = True
+                thread.start()
 
         if not at_least_once_triggered:
             logging.info("[%s]: No Alert triggered for Alert Levels '%s'."
