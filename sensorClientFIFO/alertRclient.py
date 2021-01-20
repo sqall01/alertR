@@ -22,15 +22,23 @@ import xml.etree.ElementTree
 
 
 # Function creates a path location for the given user input.
-def makePath(inputLocation):
+def make_path(input_location: str) -> str:
     # Do nothing if the given location is an absolute path.
-    if inputLocation[0] == "/":
-        return inputLocation
+    if input_location[0] == "/":
+        return input_location
     # Replace ~ with the home directory.
-    elif inputLocation[0] == "~":
-        return os.environ["HOME"] + inputLocation[1:]
+    elif input_location[0] == "~":
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
-    return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), input_location)
 
 
 if __name__ == '__main__':
@@ -45,7 +53,7 @@ if __name__ == '__main__':
     try:
         configRoot = xml.etree.ElementTree.parse(globalData.configFile).getroot()
 
-        logfile = makePath(str(configRoot.find("general").find("log").attrib["file"]))
+        logfile = make_path(str(configRoot.find("general").find("log").attrib["file"]))
 
         # parse chosen log level
         tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
@@ -97,7 +105,7 @@ if __name__ == '__main__':
         serverPort = int(configRoot.find("general").find("server").attrib["port"])
 
         # get server certificate file and check if it does exist
-        serverCAFile = os.path.abspath(makePath(str(configRoot.find("general").find("server").attrib["caFile"])))
+        serverCAFile = os.path.abspath(make_path(str(configRoot.find("general").find("server").attrib["caFile"])))
         if os.path.exists(serverCAFile) is False:
             raise ValueError("Server CA does not exist.")
 
@@ -107,9 +115,9 @@ if __name__ == '__main__':
 
         if certificateRequired is True:
             clientCertFile = os.path.abspath(
-                             makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
+                             make_path(str(configRoot.find("general").find("client").attrib["certFile"])))
             clientKeyFile = os.path.abspath(
-                            makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
+                            make_path(str(configRoot.find("general").find("client").attrib["keyFile"])))
             if (os.path.exists(clientCertFile) is False
                or os.path.exists(clientKeyFile) is False):
                 raise ValueError("Client certificate or key does not exist.")
@@ -156,7 +164,7 @@ if __name__ == '__main__':
 
             # fifo specific options
             sensor.umask = int(item.find("fifo").attrib["umask"], 8)
-            sensor.fifoFile = makePath(str(item.find("fifo").attrib["fifoFile"]))
+            sensor.fifoFile = make_path(str(item.find("fifo").attrib["fifoFile"]))
             sensor.sensorDataType = int(item.find("fifo").attrib["dataType"])
 
             # Check sanity of sensor data type.

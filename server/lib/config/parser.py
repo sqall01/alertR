@@ -24,21 +24,29 @@ from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileCha
 log_tag = os.path.basename(__file__)
 
 
-def make_path(inputLocation: str) -> str:
+def make_path(input_location: str) -> str:
     """
     Normalizes the path.
 
-    :param inputLocation:
+    :param input_location:
     :return: Normalized path.
     """
     # Do nothing if the given location is an absolute path.
-    if inputLocation[0] == "/":
-        return inputLocation
+    if input_location[0] == "/":
+        return input_location
     # Replace ~ with the home directory.
-    elif inputLocation[0] == "~":
-        return os.environ["HOME"] + inputLocation[1:]
+    elif input_location[0] == "~":
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
-    return os.path.abspath(os.path.dirname(__file__) + "/../../" + inputLocation)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", input_location)
 
 
 def parse_config(global_data: GlobalData) -> bool:

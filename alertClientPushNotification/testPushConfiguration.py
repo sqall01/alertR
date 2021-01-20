@@ -19,13 +19,21 @@ from lightweightpush import ErrorCodes
 
 
 # Function creates a path location for the given user input.
-def make_path(input_location):
+def make_path(input_location: str) -> str:
     # Do nothing if the given location is an absolute path.
     if input_location[0] == "/":
         return input_location
     # Replace ~ with the home directory.
     elif input_location[0] == "~":
-        return os.path.join(os.environ["HOME"], input_location[1:])
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), input_location)
 
