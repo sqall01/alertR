@@ -10,11 +10,10 @@
 import time
 import os
 import logging
-import threading
 import re
 from lightweightpush import LightweightPush, ErrorCodes
 from .core import _Alert
-from ..globalData import SensorDataType, ManagerObjSensorAlert
+from ..globalData import SensorDataType, ManagerObjSensorAlert, AlertObjProfileChange
 
 
 # This class represents an alert that sends a notification to the push service
@@ -113,11 +112,13 @@ class PushAlert(_Alert):
         # Send message to push server.
         ctr = 0
         error_code = ErrorCodes.NO_ERROR
+        intersect_alert_levels = [str(x) for x in set(sensor_alert.alertLevels).intersection(self.alertLevels)]
         while True:
 
             ctr += 1
 
-            logging.info("[%s] Sending message for sensorAlert to server." % self.fileName)
+            logging.info("[%s] Alert '%d' sending message for triggered alert levels %s."
+                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
 
             error_code = self.push_service.send_msg(subject,
                                                     msg,
@@ -127,52 +128,50 @@ class PushAlert(_Alert):
                                                     max_retries=1)
 
             if error_code == ErrorCodes.NO_ERROR:
-                logging.info("[%s] Sending message successful." % self.fileName)
+                logging.info("[%s] Alert '%d' sending message successful."
+                             % (self.fileName, self.id))
                 break
 
             else:
                 if error_code == ErrorCodes.AUTH_ERROR:
-                    logging.error("[%s] Unable to authenticate at server. Please check your credentials."
-                                  % self.fileName)
+                    logging.error("[%s] Alert '%d' unable to authenticate at server. Please check your credentials."
+                                  % (self.fileName, self.id))
 
                 elif error_code == ErrorCodes.ILLEGAL_MSG_ERROR:
-                    logging.error("[%s] Server replies that message is malformed." % self.fileName)
+                    logging.error("[%s] Alert '%d' server replies that message is malformed."
+                                  % (self.fileName, self.id))
 
                 elif error_code == ErrorCodes.VERSION_MISSMATCH:
-                    logging.error("[%s] Used version is no longer used. Please update your AlertR instance."
-                                  % self.fileName)
+                    logging.error("[%s] Alert '%d' used version is no longer used. Please update your AlertR instance."
+                                  % (self.fileName, self.id))
 
                 else:
-                    logging.error("[%s] Server responded with error '%d'."
-                                  % (self.fileName, error_code))
+                    logging.error("[%s] Alert '%d' server responded with error '%d'."
+                                  % (self.fileName, self.id, error_code))
 
             # Only retry sending message if we can recover from error.
             if error_code not in self.retryCodes:
-                logging.error("[%s]: Do not retry to send message." % self.fileName)
+                logging.error("[%s]: Alert '%d' do not retry to send message." % (self.fileName, self.id))
                 break
 
             if ctr > self.pushRetries:
-                logging.error("[%s]: Tried to send message for %d times. Giving up."
-                              % (self.fileName, ctr))
+                logging.error("[%s]: Alert '%d' tried to send message for %d times. Giving up."
+                              % (self.fileName, self.id, ctr))
                 break
             
-            logging.info("[%s] Retrying to send notification to channel '%s' in %d seconds."
-                         % (self.fileName, self.channel, self.pushRetryTimeout))
+            logging.info("[%s] Alert '%d' retrying to send notification to channel '%s' in %d seconds."
+                         % (self.fileName, self.id, self.channel, self.pushRetryTimeout))
 
             time.sleep(self.pushRetryTimeout)
 
         # Return last error code (used by the testPushConfiguration.py script).
         return error_code
 
-    def _process_alert(self, sensor_alert: ManagerObjSensorAlert):
+    def _process_alert(self, sensor_alert: ManagerObjSensorAlert) -> int:
         temp_msg = self._replace_wildcards(sensor_alert, self.msgText)
         temp_sbj = self._replace_wildcards(sensor_alert, self.subject)
 
-        thread = threading.Thread(target=self._send_message,
-                                  args=(temp_sbj,
-                                        temp_msg,
-                                        sensor_alert))
-        thread.start()
+        return self._send_message(temp_sbj, temp_msg, sensor_alert)
 
     def initialize(self):
         """
@@ -201,9 +200,9 @@ class PushAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_off(self):
+    def alert_profile_change(self, profile_change: AlertObjProfileChange):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
         """
         pass

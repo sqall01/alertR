@@ -130,13 +130,14 @@ if __name__ == '__main__':
         alertObj.channel = alert["channel"]
         alertObj.encSecret = alert["encSecret"]
         alertObj.templateFile = alert["templateFile"]
-        alertObj.alertLevels = list()
+        alertObj.alertLevels = [1]
         alertObj.subject = subject
         alertObj.initialize()
 
         sensorAlert = ManagerObjSensorAlert()
         sensorAlert.state = 1
         sensorAlert.timeReceived = int(time.time())
+        sensorAlert.alertLevels = [1]
 
         errorCode = alertObj._send_message(subject, message, sensorAlert)
 

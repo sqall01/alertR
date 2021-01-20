@@ -13,7 +13,7 @@ import logging
 import dbus
 from typing import Optional
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
 
 
 # this class represents an alert that sends notifications via dbus
@@ -48,6 +48,10 @@ class DbusAlert(_Alert):
 
             # set the time the alert was triggered
             self.triggered = utc_timestamp
+
+            intersect_alert_levels = [str(x) for x in set(sensor_alert.alertLevels).intersection(self.alertLevels)]
+            logging.info("[%s] Alert '%d' triggered for alert levels %s."
+                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
 
             # extract the received message if it was received and should be
             # displayed
@@ -107,7 +111,7 @@ class DbusAlert(_Alert):
                                  [],
                                  self.displayTime)
             except Exception as e:
-                logging.exception("[%s]: Could not send notification via dbus." % self.fileName)
+                logging.exception("[%s]: Alert '%d' could not send notification via dbus." % (self.fileName, self.id))
                 return
 
     def initialize(self):
@@ -135,9 +139,9 @@ class DbusAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_off(self):
+    def alert_profile_change(self, profile_change: AlertObjProfileChange):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
         """
         pass
