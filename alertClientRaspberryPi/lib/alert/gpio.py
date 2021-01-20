@@ -14,7 +14,7 @@ import threading
 import RPi.GPIO as GPIO
 from typing import Optional
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
 
 
 # this function represents an alert that sets the Raspberry Pi GPIO to high
@@ -44,7 +44,7 @@ class RaspberryPiGPIOAlert(_Alert):
         # If handling of the received messages are activated.
         self.recv_triggered_activated = False
         self.recv_normal_activated = False
-        self.recv_off_activated = False
+        self.recv_profile_change_activated = False
 
         # States the Alert object should be set to when sensor alert message with corresponding state is received.
         self.recv_triggered_state = None  # type: Optional[int]
@@ -101,15 +101,15 @@ class RaspberryPiGPIOAlert(_Alert):
         # Only execute if we are not in the state already.
         if curr_state != target_state:
 
-            logging.debug("[%s]: Setting Alert '%d' into state %d."
-                          % (self.log_tag, self.id, target_state))
+            logging.info("[%s]: Alert '%d' sets pin for state %d."
+                         % (self.log_tag, self.id, target_state))
 
             self.set_state(target_state)
 
             # Start reset watchdog if reset is activated and target state of Alert object was "triggered".
             if self.gpio_reset_activated and target_state == 1:
 
-                logging.debug("[%s]: Starting reset watchdog for Alert '%d' with %d seconds."
+                logging.debug("[%s]: Alert '%d' starting reset watchdog with %d seconds."
                               % (self.log_tag, self.id, self.gpio_reset_state_time))
 
                 # Ask already running thread to stop (if exists).
@@ -147,12 +147,12 @@ class RaspberryPiGPIOAlert(_Alert):
 
         self._process_state_change(self.recv_normal_state)
 
-    def alert_off(self):
+    def alert_profile_change(self, profile_change: AlertObjProfileChange):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
         """
-        if not self.recv_off_activated:
+        if not self.recv_profile_change_activated:
             return
 
         self._process_state_change(0)
@@ -212,7 +212,7 @@ class RaspberryPiGPIOReset(threading.Thread):
                 self.set_exit()
                 return
 
-        logging.info("[%s]: Resetting alert with id %d to normal state after %d seconds."
+        logging.info("[%s]: Alert '%d' resetting to normal state after %d seconds have passed."
                      % (self.alert.log_tag, self.alert.id, self.reset_time))
 
         self.alert.set_state(0)
