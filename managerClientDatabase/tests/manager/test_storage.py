@@ -91,7 +91,6 @@ class TestManagerStorage(TestManagerStorageCore):
         for alert_level in system_data.get_alert_levels_list():
             temp_alert_level = ManagerObjAlertLevel().deepcopy(alert_level)
             temp_alert_level.name = "new_alert_level_" + str(ctr + 1)
-            temp_alert_level.triggerAlways = (ctr % 2)
             temp_alert_level.instrumentation_active = (ctr % 2) == 0
 
             if temp_alert_level.instrumentation_active:

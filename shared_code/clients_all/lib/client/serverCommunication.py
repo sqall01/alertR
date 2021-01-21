@@ -412,7 +412,6 @@ class ServerCommunication(Communication):
             try:
                 level = alert_levels_raw[i]["alertLevel"]
                 name = alert_levels_raw[i]["name"]
-                triggerAlways = alert_levels_raw[i]["triggerAlways"]
                 alert_level_profiles = alert_levels_raw[i]["profiles"]
                 instrumentation_active = alert_levels_raw[i]["instrumentation_active"]
 
@@ -428,13 +427,12 @@ class ServerCommunication(Communication):
                 logging.exception("[%s]: Received alertLevel invalid." % self._log_tag)
                 return False
 
-            logging.debug("[%s]: Received alertLevel information: %d:'%s':%d."
-                          % (self._log_tag, level, name, triggerAlways))
+            logging.debug("[%s]: Received alertLevel information: %d:'%s'."
+                          % (self._log_tag, level, name))
 
             alertLevel = ManagerObjAlertLevel()
             alertLevel.level = level
             alertLevel.name = name
-            alertLevel.triggerAlways = triggerAlways
             alertLevel.profiles = alert_level_profiles
             alertLevel.instrumentation_active = instrumentation_active
             alertLevel.instrumentation_cmd = instrumentation_cmd

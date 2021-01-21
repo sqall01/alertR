@@ -161,15 +161,6 @@ class AlertLevelDetailedUrwid:
         temp.append(urwid.Text(alertLevel.name))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Trigger Always:"))
-        if alertLevel.triggerAlways == 0:
-            temp.append(urwid.Text("No"))
-        elif alertLevel.triggerAlways == 1:
-            temp.append(urwid.Text("Yes"))
-        else:
-            temp.append(urwid.Text("Undefined"))
-        temp.append(urwid.Divider())
-
         temp.append(urwid.Text("Profiles:"))
         profile_str = ", ".join(map(lambda x: str(x), alertLevel.profiles))
         temp.append(urwid.Text(profile_str))

@@ -325,7 +325,6 @@ class ManagerObjAlertLevel(LocalObject):
         super().__init__()
         self.level = None  # type: Optional[int]
         self.name = None  # type: Optional[str]
-        self.triggerAlways = None  # type: Optional[int]
         self.profiles = list()  # type: List[int]
         self.instrumentation_active = None  # type: Optional[bool]
         self.instrumentation_cmd = None  # type: Optional[str]
@@ -350,7 +349,6 @@ class ManagerObjAlertLevel(LocalObject):
         """
         self.level = alert_level.level
         self.name = alert_level.name
-        self.triggerAlways = alert_level.triggerAlways
         self.profiles = list(alert_level.profiles)
         self.instrumentation_active = alert_level.instrumentation_active
         if self.instrumentation_active:

@@ -745,13 +745,11 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("UPDATE alertLevels SET "
                                      + "name = %s, "
-                                     + "triggerAlways = %s, "
                                      + "instrumentation_active = %s, "
                                      + "instrumentation_cmd = %s, "
                                      + "instrumentation_timeout = %s "
                                      + "WHERE alertLevel = %s",
                                      (alert_level.name,
-                                      alert_level.triggerAlways,
                                       1 if alert_level.instrumentation_active else 0,
                                       alert_level.instrumentation_cmd if alert_level.instrumentation_active else "",
                                       alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0,
@@ -779,14 +777,12 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO alertLevels ("
                                      + "alertLevel, "
                                      + "name, "
-                                     + "triggerAlways, "
                                      + "instrumentation_active, "
                                      + "instrumentation_cmd, "
                                      + "instrumentation_timeout) "
-                                     + "VALUES (%s, %s, %s, %s, %s, %s)",
+                                     + "VALUES (%s, %s, %s, %s, %s)",
                                      (alert_level.level,
                                       alert_level.name,
-                                      alert_level.triggerAlways,
                                       1 if alert_level.instrumentation_active else 0,
                                       alert_level.instrumentation_cmd if alert_level.instrumentation_active else "",
                                       alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0))
@@ -1201,7 +1197,6 @@ class Mysql(_Storage):
         self._cursor.execute("SELECT "
                              + "alertLevel, "
                              + "name, "
-                             + "triggerAlways, "
                              + "instrumentation_active, "
                              + "instrumentation_cmd, "
                              + "instrumentation_timeout "
@@ -1212,8 +1207,7 @@ class Mysql(_Storage):
             alert_level = ManagerObjAlertLevel()
             alert_level.level = alert_level_tuple[0]
             alert_level.name = alert_level_tuple[1]
-            alert_level.triggerAlways = alert_level_tuple[2]
-            alert_level.instrumentation_active = (alert_level_tuple[3] == 1)
+            alert_level.instrumentation_active = (alert_level_tuple[2] == 1)
 
             self._cursor.execute("SELECT "
                                  + "profileId "
@@ -1224,8 +1218,8 @@ class Mysql(_Storage):
                 alert_level.profiles.append(profile_tuple[0])
 
             if alert_level.instrumentation_active:
-                alert_level.instrumentation_cmd = alert_level_tuple[4]
-                alert_level.instrumentation_timeout = alert_level_tuple[5]
+                alert_level.instrumentation_cmd = alert_level_tuple[3]
+                alert_level.instrumentation_timeout = alert_level_tuple[4]
 
             else:
                 alert_level.instrumentation_cmd = None
@@ -1550,7 +1544,6 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE alertLevels ("
                                      + "alertLevel INTEGER PRIMARY KEY, "
                                      + "name VARCHAR(255) NOT NULL, "
-                                     + "triggerAlways INTEGER NOT NULL, "
                                      + "instrumentation_active INTEGER NOT NULL, "
                                      + "instrumentation_cmd VARCHAR(255) NOT NULL, "
                                      + "instrumentation_timeout INTEGER NOT NULL)")

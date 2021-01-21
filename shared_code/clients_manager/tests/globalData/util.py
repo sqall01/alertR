@@ -32,7 +32,6 @@ def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[Manage
                     context.fail("Changed ground truth object, not content of existing object.")
 
                 if (stored_alert_level.name != gt_alert_level.name
-                        or stored_alert_level.triggerAlways != gt_alert_level.triggerAlways
                         or any(map(lambda x: x not in gt_alert_level.profiles, stored_alert_level.profiles))
                         or any(map(lambda x: x not in stored_alert_level.profiles, gt_alert_level.profiles))
                         or stored_alert_level.instrumentation_active != gt_alert_level.instrumentation_active

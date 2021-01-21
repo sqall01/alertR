@@ -821,14 +821,6 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "triggerAlways" not in alertLevel.keys():
-                is_correct = False
-                break
-
-            elif MsgChecker.check_trigger_always(alertLevel["triggerAlways"]) is not None:
-                is_correct = False
-                break
-
             if "profiles" not in alertLevel.keys():
                 is_correct = False
                 break
@@ -1269,21 +1261,6 @@ class MsgChecker:
 
         if not is_correct:
             return "sensors list not valid"
-
-        return None
-
-    # Internal function to check sanity of the triggerAlways.
-    @staticmethod
-    def check_trigger_always(triggerAlways: int) -> Optional[str]:
-
-        is_correct = True
-        if not isinstance(triggerAlways, int):
-            is_correct = False
-        elif triggerAlways != 0 and triggerAlways != 1:
-            is_correct = False
-
-        if not is_correct:
-            return "triggerAlways not valid"
 
         return None
 
