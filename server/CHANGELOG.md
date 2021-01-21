@@ -1,3 +1,11 @@
+## 0.800-0
+
+* Removed system status "activated" and "deactivated" to have a more generic system
+* Introduced system profiles to replace system status to have a more generic system
+* Removed sensor alerts off message
+* Added system profile change message
+* Refactored option message handling
+
 ## 0.700-0
 
 * Removed rules from Alert Levels and replaced it with instrumentation (more flexible form to achieve the same).

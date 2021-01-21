@@ -1,3 +1,11 @@
+## 0.800-0
+
+* Only execute Sensor Alert once if it is for multiple Alert Levels that intersect with the Alert Levels of the configured Alert
+* Removed sensor alerts off message
+* Added system profile change message
+* Removed sensor alerts off handling in configuration
+* Added system profile change handling in configuration
+
 ## 0.700-0
 
 * Refactored client code to get a more resilient connection.
