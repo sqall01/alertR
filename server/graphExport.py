@@ -58,7 +58,6 @@ class GraphAlertLevel:
         # noinspection PyPep8
         temp = "\"AlertLevel: " + self.alert_level.name + "\l" \
                + "Level: " + str(self.alert_level.level) + "\l" \
-               + "Trigger Always: " + str(self.alert_level.triggerAlways) + "\l" \
                + "Alert for Triggered: " + str(self.alert_level.triggerAlertTriggered) + "\l" \
                + "Alert for Normal: " + str(self.alert_level.triggerAlertNormal) + "\l" \
                + "Instrumented: " + str(self.alert_level.instrumentation_active) + "\l\""

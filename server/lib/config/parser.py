@@ -316,11 +316,11 @@ def configure_profiles(configRoot: xml.etree.ElementTree.Element, global_data: G
 
     has_id_zero = False
     for profile in global_data.profiles:
-        if profile.id == 1:
+        if profile.id == 0:
             has_id_zero = True
             break
     if not has_id_zero:
-        global_data.logger.error("[%s]: Profile with id '1' has to exist." % log_tag)
+        global_data.logger.error("[%s]: Profile with id '0' has to exist." % log_tag)
         return False
 
     return True
@@ -337,7 +337,6 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
 
             alertLevel.level = int(item.find("general").attrib["level"])
             alertLevel.name = str(item.find("general").attrib["name"])
-            alertLevel.triggerAlways = (str(item.find("general").attrib["triggerAlways"]).upper() == "TRUE")
             alertLevel.triggerAlertTriggered = (str(item.find("general").attrib[
                                                         "triggerAlertTriggered"]).upper() == "TRUE")
             alertLevel.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")

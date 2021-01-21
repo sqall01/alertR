@@ -537,10 +537,10 @@ class Sqlite(_Storage):
                             + "value REAL NOT NULL)")  # TODO primary key type
 
         # Insert option which profile is currently used by the system.
-        # NOTE: at least one profile with id 1 is enforced during configuration parsing.
+        # NOTE: at least one profile with id 0 is enforced during configuration parsing.
         self.cursor.execute("INSERT INTO options ("
                             + "type, "
-                            + "value) VALUES (?, ?)", ("profile", 1))
+                            + "value) VALUES (?, ?)", ("profile", 0))
 
         # create nodes table
         self.cursor.execute("CREATE TABLE nodes ("

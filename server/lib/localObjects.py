@@ -88,10 +88,6 @@ class AlertLevel:
         # gives the name of this alert level
         self.name = None  # type: Optional[str]
 
-        # this flag indicates if a sensor alert with this alert level
-        # should trigger regardless of if the alert system is active or not
-        self.triggerAlways = None  # type: Optional[bool]
-
         # this flag tells if the alert level should trigger a sensor alert
         # if the sensor goes to state "triggered"
         self.triggerAlertTriggered = None  # type: Optional[bool]

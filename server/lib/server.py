@@ -1270,7 +1270,6 @@ class ClientCommunication:
         for i in range(len(self.alertLevels)):
             tempDict = {"alertLevel": self.alertLevels[i].level,
                         "name": self.alertLevels[i].name,
-                        "triggerAlways": (1 if self.alertLevels[i].triggerAlways else 0),
                         "profiles": self.alertLevels[i].profiles,
                         "instrumentation_active": self.alertLevels[i].instrumentation_active,
                         "instrumentation_cmd": self.alertLevels[i].instrumentation_cmd,

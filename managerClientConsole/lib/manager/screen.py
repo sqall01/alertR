@@ -1456,11 +1456,11 @@ class Console:
             ('timedout', 'black', 'dark magenta'),
             ('timedout_focus', 'black', 'light magenta'),
             ('neutral', '', ''),
-            ('profile_0', 'black', 'yellow'),
-            ('profile_1', 'black', 'dark green'),
-            ('profile_2', 'black', 'dark red'),
-            ('profile_3', 'black', 'dark cyan'),
-            ('profile_4', 'black', 'dark magenta'),
+            ('profile_0', 'black', 'dark green'),
+            ('profile_1', 'black', 'dark red'),
+            ('profile_2', 'black', 'dark cyan'),
+            ('profile_3', 'black', 'dark magenta'),
+            ('profile_4', 'black', 'yellow'),
         ]
 
         # set focus on sensor
