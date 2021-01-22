@@ -96,7 +96,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -133,7 +133,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -171,7 +171,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -208,7 +208,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -245,7 +245,7 @@ class TestAlertLevelInstrumentationError(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
