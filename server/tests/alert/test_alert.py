@@ -25,7 +25,7 @@ def _callback_trigger_sensor_alert(_, sensor_alert_state: SensorAlertState):
 class MockStorage(_Storage):
 
     def __init__(self):
-        self._profile = 1
+        self._profile = 0
         self._sensor_alerts = dict()  # type: Dict[int, SensorAlert]
         self._sensor_data = dict()  # type: Dict[int, SensorData]
         self._sensor_states = dict()  # type: Dict[int, int]
@@ -146,7 +146,7 @@ class TestAlert(TestCase):
             alert_level.triggerAlertTriggered = False
             alert_level.triggerAlertNormal = False
             alert_level.instrumentation_active = False
-            alert_level.profiles = [1]
+            alert_level.profiles = [0]
             alert_levels.append(alert_level)
 
         utc_now = int(time.time())
@@ -284,7 +284,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -315,7 +315,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -376,11 +376,11 @@ class TestAlert(TestCase):
             alert_level.triggerAlertTriggered = True
 
             if ctr % 2:
-                alert_level.profiles = [1, 2, 3, 4]
+                alert_level.profiles = [0, 1, 2, 3, 4]
                 alert_levels_that_trigger.append(alert_level.level)
 
             else:
-                alert_level.profiles = [1, 2, 4]
+                alert_level.profiles = [0, 1, 2, 4]
             ctr += 1
 
         sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
@@ -417,7 +417,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -449,7 +449,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -486,7 +486,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -518,7 +518,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -556,7 +556,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -601,7 +601,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -645,7 +645,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -692,7 +692,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -734,7 +734,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -779,7 +779,7 @@ class TestAlert(TestCase):
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Test Case")
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1264,7 +1264,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = manager_update_executer
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
@@ -1505,7 +1505,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1580,7 +1580,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1662,7 +1662,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1768,7 +1768,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1873,7 +1873,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -1951,7 +1951,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -2027,7 +2027,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -2108,7 +2108,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         global_data.storage = MockStorage()
-        global_data.storage.profile = 1
+        global_data.storage.profile = 0
 
         manager_update_executer = MockManagerUpdateExecuter()
         global_data.managerUpdateExecuter = manager_update_executer
@@ -2160,7 +2160,7 @@ class TestAlert(TestCase):
             self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
         # Change system profile to change trigger condition.
-        global_data.storage.profile = 2
+        global_data.storage.profile = 99
 
         for i in range(int(delay/2) + 1):
             self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
@@ -2190,7 +2190,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         storage = MockStorage()
-        storage.profile = 2
+        storage.profile = 99
         global_data.storage = storage
 
         internal_sensor = MockInternalSensor(global_data)
@@ -2259,7 +2259,7 @@ class TestAlert(TestCase):
         global_data.managerUpdateExecuter = None
 
         storage = MockStorage()
-        storage.profile = 2
+        storage.profile = 99
         global_data.storage = storage
 
         internal_sensor = MockInternalSensor(global_data)
