@@ -385,7 +385,7 @@ class SensorAlertExecuter(threading.Thread):
                         suitable_alert_levels.append(alert_level)
                         continue
 
-                    if alert_level.triggerAlways or curr_profile_id in alert_level.profiles:
+                    if curr_profile_id in alert_level.profiles:
 
                         # If the alert level does trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state.
@@ -401,7 +401,7 @@ class SensorAlertExecuter(threading.Thread):
 
                 else:
 
-                    if alert_level.triggerAlways or curr_profile_id in alert_level.profiles:
+                    if curr_profile_id in alert_level.profiles:
 
                         # If the alert level does trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state.
