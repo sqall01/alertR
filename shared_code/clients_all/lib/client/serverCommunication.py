@@ -261,7 +261,7 @@ class ServerCommunication(Communication):
         for i in range(len(profiles_raw)):
 
             try:
-                profile_id = profiles_raw[i]["id"]
+                profile_id = profiles_raw[i]["profileId"]
                 profile_name = profiles_raw[i]["name"]
 
             except Exception:
