@@ -12,7 +12,7 @@ import os
 from typing import List, Any
 from ..client import EventHandler
 from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
-    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor, ManagerObjProfile, AlertObjProfileChange
+    ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor, ManagerObjProfile
 from ..globalData import SensorDataType
 
 
@@ -47,7 +47,7 @@ class SensorEventHandler(EventHandler):
     # noinspection PyTypeChecker
     def profile_change(self,
                        msg_time: int,
-                       profile_change: AlertObjProfileChange) -> bool:
+                       profile: ManagerObjProfile) -> bool:
         logging.critical("[%s]: profile_change() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 

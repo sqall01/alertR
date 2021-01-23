@@ -11,4 +11,3 @@ from .globalData import GlobalData
 from .sensorObjects import SensorDataType, SensorOrdering, SensorObjSensorAlert, SensorObjStateChange
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
     ManagerObjOption, ManagerObjSensor, ManagerObjSensorAlert, ManagerObjProfile
-from .alertObjects import AlertObjProfileChange
