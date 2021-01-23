@@ -15,7 +15,7 @@ from typing import Tuple, List, Dict, Optional
 from lib import Sqlite
 from lib import GlobalData
 from lib.localObjects import Alert, Sensor, AlertLevel, SensorDataType, Node
-from lib.config.parser import configure_alert_levels
+from lib.config.parser import configure_alert_levels, configure_profiles
 
 try:
     import networkx as nx
@@ -60,6 +60,7 @@ class GraphAlertLevel:
                + "Level: " + str(self.alert_level.level) + "\l" \
                + "Alert for Triggered: " + str(self.alert_level.triggerAlertTriggered) + "\l" \
                + "Alert for Normal: " + str(self.alert_level.triggerAlertNormal) + "\l" \
+               + "Profiles: " + ", ".join([str(x) for x in self.alert_level.profiles]) + "\l" \
                + "Instrumented: " + str(self.alert_level.instrumentation_active) + "\l\""
         return temp
 
@@ -532,6 +533,7 @@ if __name__ == '__main__':
 
     # Read necessary configurations.
     configRoot = xml.etree.ElementTree.parse(global_data.configFile).getroot()
+    configure_profiles(configRoot, global_data)
     configure_alert_levels(configRoot, global_data)
 
     # Get Alert, Alert Level, ans Sensor objects.
