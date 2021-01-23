@@ -1,5 +1,6 @@
 ## 0.800-0
 
+* Updater can show changelog
 * Only execute Sensor Alert once if it is for multiple Alert Levels that intersect with the Alert Levels of the configured Alert
 * Removed sensor alerts off message
 * Added system profile change message

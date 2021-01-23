@@ -1,3 +1,7 @@
+## 0.800-0
+
+* Updater can show changelog
+
 ## 0.700-0
 
 * Refactored client code to get a more resilient connection.

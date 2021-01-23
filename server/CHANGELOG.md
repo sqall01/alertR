@@ -1,10 +1,12 @@
 ## 0.800-0
 
+* Updater can show changelog
 * Removed system status "activated" and "deactivated" to have a more generic system
 * Introduced system profiles to replace system status to have a more generic system
 * Removed sensor alerts off message
 * Added system profile change message
 * Refactored option message handling
+* Removed `triggerAlways` flag for Alert Levels (same behavior can now be achieved by being part of all profiles)
 
 ## 0.700-0
 
