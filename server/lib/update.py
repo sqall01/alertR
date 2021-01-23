@@ -7,6 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
 import requests
 import threading
 import os
@@ -54,6 +55,9 @@ class Updater:
         self.version = self.globalData.version
         self.rev = self.globalData.rev
         self.instance = self.globalData.instance
+
+        if self.logger is None:
+            self.logger = logging.getLogger("updater")
 
         # location of this instance
         self.instanceLocation = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
