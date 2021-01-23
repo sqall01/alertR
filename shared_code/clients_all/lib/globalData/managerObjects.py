@@ -28,6 +28,17 @@ class ManagerObjOption(LocalObject):
               % (str(self.value) if self.value is not None else "None")
         return tmp
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Option object into a dictionary.
+        :return:
+        """
+        option_dict = {"type": self.type,
+                       "value": self.value,
+                       }
+
+        return option_dict
+
     def deepcopy(self, option):
         """
         This function copies all attributes of the given option to this object.
@@ -105,6 +116,24 @@ class ManagerObjNode(LocalObject):
               % (str(self.username) if self.username is not None else "None")
         return tmp
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Node object into a dictionary.
+        :return:
+        """
+        node_dict = {"nodeId": self.nodeId,
+                     "hostname": self.hostname,
+                     "nodeType": self.nodeType,
+                     "instance": self.instance,
+                     "connected": self.connected,
+                     "version": self.version,
+                     "rev": self.rev,
+                     "username": self.username,
+                     "persistent": self.persistent,
+                     }
+
+        return node_dict
+
     def deepcopy(self, node):
         """
         This function copies all attributes of the given node to this object.
@@ -154,6 +183,25 @@ class ManagerObjSensor(LocalObject):
               % (str(self.data) if self.data is not None else "None")
         return tmp
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Sensor object into a dictionary.
+        :return:
+        """
+        sensor_dict = {"nodeId": self.nodeId,
+                       "sensorId": self.sensorId,
+                       "remoteSensorId": self.remoteSensorId,
+                       "alertDelay": self.alertDelay,
+                       "alertLevels": self.alertLevels,
+                       "description": self.description,
+                       "lastStateUpdated": self.lastStateUpdated,
+                       "state": self.state,
+                       "dataType": self.dataType,
+                       "data": self.data
+                       }
+
+        return sensor_dict
+
     def deepcopy(self, sensor):
         """
         This function copies all attributes of the given sensor to this object.
@@ -191,6 +239,18 @@ class ManagerObjManager(LocalObject):
               % (str(self.description) if self.description is not None else "None")
         return tmp
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Manager object into a dictionary.
+        :return:
+        """
+        manager_dict = {"nodeId": self.nodeId,
+                        "managerId": self.managerId,
+                        "description": self.description,
+                        }
+
+        return manager_dict
+
     # This function copies all attributes of the given manager to this object.
     def deepcopy(self, manager):
         self.nodeId = manager.nodeId
@@ -220,6 +280,20 @@ class ManagerObjAlert(LocalObject):
               + "description: '%s'; " \
               % (str(self.description) if self.description is not None else "None")
         return tmp
+
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Alert object into a dictionary.
+        :return:
+        """
+        alert_dict = {"nodeId": self.nodeId,
+                      "alertId": self.alertId,
+                      "remoteAlertId": self.remoteAlertId,
+                      "alertLevels": self.alertLevels,
+                      "description": self.description,
+                      }
+
+        return alert_dict
 
     def deepcopy(self, alert):
         """
@@ -285,7 +359,7 @@ class ManagerObjSensorAlert(LocalObject):
 
     def convert_to_dict(self) -> Dict[str, Any]:
         """
-        Converts the SensorAlert object into a dictionary.
+        Converts the Sensor Alert object into a dictionary.
         :return:
         """
         sensor_alert_dict = {"alertLevels": self.alertLevels,
@@ -293,7 +367,7 @@ class ManagerObjSensorAlert(LocalObject):
                              "sensorId": self.sensorId,
                              "state": self.state,
                              "hasOptionalData": self.hasOptionalData,
-                             "optionalData": self.optionalData,
+                             "optionalData": copy.deepcopy(self.optionalData) if self.hasLatestData else None,
                              "dataType": self.dataType,
                              "data": self.sensorData,
                              "hasLatestData": self.hasLatestData,
@@ -351,6 +425,21 @@ class ManagerObjAlertLevel(LocalObject):
               + "Instrumentation: %s)" \
               % (str(self.instrumentation_active) if self.instrumentation_active is not None else "None")
         return tmp
+
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Alert Level object into a dictionary.
+        :return:
+        """
+        alert_level_dict = {"level": self.level,
+                            "name": self.name,
+                            "profiles": self.profiles,
+                            "instrumentation_active": self.instrumentation_active,
+                            "instrumentation_cmd": self.instrumentation_cmd,
+                            "instrumentation_timeout": self.instrumentation_timeout,
+                           }
+
+        return alert_level_dict
 
     def deepcopy(self, alert_level):
         """

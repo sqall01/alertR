@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import copy
-from typing import Optional
+from typing import Optional, Dict, Any
 from .baseObjects import LocalObject
 
 
@@ -53,6 +53,23 @@ class SensorObjSensorAlert(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[int, float]
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Sensor Alert object into a dictionary.
+        :return:
+        """
+        sensor_alert_dict = {"clientSensorId": self.clientSensorId,
+                             "state": self.state,
+                             "hasOptionalData": self.hasOptionalData,
+                             "optionalData": copy.deepcopy(self.optionalData) if self.hasLatestData else None,
+                             "changeState": self.changeState,
+                             "hasLatestData": self.hasLatestData,
+                             "dataType": self.dataType,
+                             "sensorData": self.sensorData,
+                             }
+
+        return sensor_alert_dict
+
     def deepcopy(self, sensor_alert):
         """
         This function copies all attributes of the given state change to this object.
@@ -91,6 +108,19 @@ class SensorObjStateChange(LocalObject):
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[int, float]
+
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Sensor object into a dictionary.
+        :return:
+        """
+        sensor_dict = {"clientSensorId": self.clientSensorId,
+                       "state": self.state,
+                       "dataType": self.dataType,
+                       "sensorData": self.sensorData,
+                       }
+
+        return sensor_dict
 
     def deepcopy(self, state_change):
         """
