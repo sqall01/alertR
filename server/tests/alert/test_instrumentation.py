@@ -32,7 +32,6 @@ class TestInstrumentation(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "Instrumentation Alert Level"
-        alert_level.triggerAlways = True
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_cmd = "dummy.py"

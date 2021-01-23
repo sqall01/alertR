@@ -142,7 +142,6 @@ class TestAlert(TestCase):
             alert_level = AlertLevel()
             alert_level.level = i
             alert_level.name = "AlertLevel_" + str(i)
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = False
             alert_level.triggerAlertNormal = False
             alert_level.instrumentation_active = False
@@ -297,7 +296,6 @@ class TestAlert(TestCase):
             sensor_alert_states.append(sensor_alert_state)
 
         for alert_level in alert_levels:
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = True
 
         sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
@@ -328,7 +326,6 @@ class TestAlert(TestCase):
             sensor_alert_states.append(sensor_alert_state)
 
         for alert_level in alert_levels:
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = True
 
         sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
@@ -372,7 +369,6 @@ class TestAlert(TestCase):
         ctr = 0
         alert_levels_that_trigger = list()
         for alert_level in alert_levels:
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = True
 
             if ctr % 2:
@@ -407,70 +403,6 @@ class TestAlert(TestCase):
 
             self.assertTrue(sensor_alert_state.instrumentation_processed)
 
-    def test_update_suitable_alert_levels_trigger_always_wrong_trigger_state(self):
-        """
-        Tests update of suitable alert levels when the system profile does not match,
-        trigger always is set in alert level and the state is wrong.
-        """
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        global_data.storage = MockStorage()
-        global_data.storage.profile = 99
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        sensor_alert_states = list()
-        for sensor_alert in sensor_alerts:
-            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
-            sensor_alert_state._init_sensor_alert.state = 1
-            sensor_alert_states.append(sensor_alert_state)
-
-        for alert_level in alert_levels:
-            alert_level.triggerAlways = True
-            alert_level.triggerAlertTriggered = False
-
-        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
-
-        for sensor_alert_state in sensor_alert_states:
-            self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
-            self.assertTrue(sensor_alert_state.instrumentation_processed)
-
-    def test_update_suitable_alert_levels_trigger_always_wrong_normal_state(self):
-        """
-        Tests update of suitable alert levels when the system profile does not match,
-        trigger always is set in alert level and the state is wrong.
-        """
-        num = 5
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        global_data.storage = MockStorage()
-        global_data.storage.profile = 99
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        sensor_alert_states = list()
-        for sensor_alert in sensor_alerts:
-            sensor_alert_state = SensorAlertState(sensor_alert, alert_levels)
-            sensor_alert_state._init_sensor_alert.state = 0
-            sensor_alert_states.append(sensor_alert_state)
-
-        for alert_level in alert_levels:
-            alert_level.triggerAlways = True
-            alert_level.triggerAlertNormal = False
-
-        sensor_alert_executer._update_suitable_alert_levels(sensor_alert_states)
-
-        for sensor_alert_state in sensor_alert_states:
-            self.assertEqual(0, len(sensor_alert_state.suitable_alert_levels))
-            self.assertTrue(sensor_alert_state.instrumentation_processed)
-
     def test_update_suitable_alert_levels_multiple_alert_levels(self):
         """
         Tests update of multiple suitable alert levels when the system profile does match.
@@ -494,7 +426,6 @@ class TestAlert(TestCase):
         num_suitable = 0
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = (i % 2 == 0)
             sensor_alert.alertLevels.append(alert_level.level)
             if alert_level.triggerAlertTriggered:
@@ -547,7 +478,6 @@ class TestAlert(TestCase):
             sensor_alert_states.append(sensor_alert_state)
 
         for alert_level in alert_levels:
-            alert_level.triggerAlways = True
             alert_level.triggerAlertTriggered = True
             alert_level.instrumentation_active = True
 
@@ -639,7 +569,6 @@ class TestAlert(TestCase):
             sensor_alert_states.append(sensor_alert_state)
 
         for alert_level in alert_levels:
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = True
             alert_level.instrumentation_active = True
 
@@ -683,7 +612,6 @@ class TestAlert(TestCase):
             sensor_alert_states.append(sensor_alert_state)
 
         for alert_level in alert_levels:
-            alert_level.triggerAlways = True
             alert_level.triggerAlertTriggered = True
             alert_level.triggerAlertNormal = False
             alert_level.instrumentation_active = True
@@ -728,7 +656,6 @@ class TestAlert(TestCase):
             sensor_alert_states.append(sensor_alert_state)
 
         for alert_level in alert_levels:
-            alert_level.triggerAlways = True
             alert_level.triggerAlertTriggered = False
             alert_level.triggerAlertNormal = True
             alert_level.instrumentation_active = True
@@ -1643,7 +1570,6 @@ class TestAlert(TestCase):
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
             base_sensor_alert.alertLevels.append(alert_level.level)
-            alert_level.triggerAlways = True
             if (i % 2) == 0:
                 alert_level.triggerAlertTriggered = False
                 alert_level.triggerAlertNormal = True
@@ -1746,7 +1672,6 @@ class TestAlert(TestCase):
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
             base_sensor_alert.alertLevels.append(alert_level.level)
-            alert_level.triggerAlways = True
             alert_level.triggerAlertTriggered = True
             alert_level.triggerAlertNormal = False
             alert_level.instrumentation_active = True
@@ -1824,7 +1749,6 @@ class TestAlert(TestCase):
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
             base_sensor_alert.alertLevels.append(alert_level.level)
-            alert_level.triggerAlways = True
             alert_level.triggerAlertTriggered = True
             alert_level.triggerAlertNormal = False
             alert_level.instrumentation_active = True
@@ -1967,7 +1891,6 @@ class TestAlert(TestCase):
         gt_set = set()
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
-            alert_level.triggerAlways = False
             alert_level.triggerAlertTriggered = True
             gt_set.add(alert_level.level)
 
