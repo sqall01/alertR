@@ -16,7 +16,6 @@ from ..alert.core import _Alert
 from ..globalData import SensorDataType
 from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
     ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor, ManagerObjProfile
-from ..globalData import AlertObjProfileChange
 from ..globalData import GlobalData
 
 
@@ -33,8 +32,8 @@ class AlertEventHandler(EventHandler):
         self._global_data = global_data
         self._local_alerts = self._global_data.alerts
 
-    def _thread_profile_change(self, alert: _Alert, profile_change: AlertObjProfileChange):
-        alert.alert_profile_change(profile_change)
+    def _thread_profile_change(self, alert: _Alert, profile: ManagerObjProfile):
+        alert.alert_profile_change(profile)
 
     def _thread_sensor_alert(self, alert: _Alert, sensor_alert: ManagerObjSensorAlert):
         if sensor_alert.state == 1:
@@ -85,15 +84,15 @@ class AlertEventHandler(EventHandler):
 
     def profile_change(self,
                        msg_time: int,
-                       profile_change: AlertObjProfileChange) -> bool:
+                       profile: ManagerObjProfile) -> bool:
 
         # Tell system profile change to all alerts.
         for alert in self._local_alerts:
             logging.debug("[%s]: Notifying Alert '%d' about system profile change to '%d'."
-                          % (self._log_tag, alert.id, profile_change.profileId))
+                          % (self._log_tag, alert.id, profile.id))
 
             thread = threading.Thread(target=self._thread_profile_change,
-                                      args=(alert, profile_change))
+                                      args=(alert, profile))
             thread.daemon = True
             thread.start()
 

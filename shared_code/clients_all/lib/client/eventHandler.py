@@ -9,7 +9,7 @@
 
 from typing import List, Any
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType, AlertObjProfileChange
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
 
 
 class EventHandler:
@@ -43,12 +43,12 @@ class EventHandler:
 
     def profile_change(self,
                        msg_time: int,
-                       profile_change: AlertObjProfileChange) -> bool:
+                       profile: ManagerObjProfile) -> bool:
         """
         Is called when a profile change message was received.
 
         :param msg_time:
-        :param profile_change:
+        :param profile:
         :return Success or Failure
         """
         raise NotImplementedError("Abstract class.")

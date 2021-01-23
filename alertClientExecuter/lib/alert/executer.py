@@ -13,7 +13,7 @@ import subprocess
 import json
 from typing import List
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # class that executes an command when an alert is triggered or all alerts
@@ -131,10 +131,12 @@ class ExecuterAlert(_Alert):
 
         self._execute_cmd(temp_execute)
 
-    def alert_profile_change(self, profile_change: AlertObjProfileChange):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
         Is called when Alert Client receives a "profilechange" message which is
         sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
         if not self.cmd_profile_change_activated:
             return
@@ -148,6 +150,6 @@ class ExecuterAlert(_Alert):
                 temp_execute[i] = "None"
 
             elif temp_execute[i].upper() == "$PROFILECHANGE$":
-                temp_execute[i] = json.dumps(profile_change.convert_to_dict())
+                temp_execute[i] = json.dumps(profile.convert_to_dict())
 
         self._execute_cmd(temp_execute)

@@ -54,6 +54,17 @@ class ManagerObjProfile(LocalObject):
               % (str(self.name) if self.name is not None else "None")
         return tmp
 
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the Profile object into a dictionary.
+        :return:
+        """
+        profile_dict = {"profileId": self.id,
+                        "name": self.name,
+                        }
+
+        return profile_dict
+
     def deepcopy(self, profile):
         """
         This function copies all attributes of the given profile to this object.

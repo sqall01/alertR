@@ -11,7 +11,7 @@ import time
 import os
 import logging
 import smtplib
-from ..globalData import SensorDataType, ManagerObjSensorAlert, AlertObjProfileChange
+from ..globalData import SensorDataType, ManagerObjSensorAlert, ManagerObjProfile
 from .core import _Alert
 
 
@@ -120,9 +120,11 @@ class MailAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_profile_change(self, profile_change: AlertObjProfileChange):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
         Is called when Alert Client receives a "profilechange" message which is
         sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
         pass

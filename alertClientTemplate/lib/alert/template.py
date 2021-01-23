@@ -11,7 +11,7 @@ import logging
 import os
 from typing import Optional
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # This class represents an example alert
@@ -63,10 +63,10 @@ class TemplateAlert(_Alert):
 
         # PLACE YOUR CODE HERE
 
-    def alert_profile_change(self, profile_change: AlertObjProfileChange):
+    def alert_profile_change(self, profile: ManagerObjProfile):
 
         logging.info("[%s]: Alert '%d' process system profile change." % (self._log_tag, self.id))
 
-        print("Profile Change to '%d'" % profile_change.profileId)
+        print("Profile Change to '%d'" % profile.id)
 
         # PLACE YOUR CODE HERE

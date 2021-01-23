@@ -167,7 +167,16 @@ class MsgChecker:
 
             error_msg = MsgChecker.check_profile_id(message["payload"]["profileId"])
             if error_msg is not None:
-                logging.error("[%s]: Received profile id invalid." % MsgChecker._log_tag)
+                logging.error("[%s]: Received profileId invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "name" not in message["payload"].keys():
+                logging.error("[%s]: name missing." % MsgChecker._log_tag)
+                return "profileId expected"
+
+            error_msg = MsgChecker.check_profile_name(message["payload"]["name"])
+            if error_msg is not None:
+                logging.error("[%s]: Received name invalid." % MsgChecker._log_tag)
                 return error_msg
 
         # Check "STATECHANGE" message.
@@ -621,7 +630,7 @@ class MsgChecker:
             is_correct = False
 
         if not is_correct:
-            return "profile id not valid"
+            return "profileId not valid"
 
         return None
 
@@ -1135,11 +1144,11 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "id" not in profile.keys():
+            if "profileId" not in profile.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_profile_id(profile["id"]) is not None:
+            elif MsgChecker.check_profile_id(profile["profileId"]) is not None:
                 is_correct = False
                 break
 

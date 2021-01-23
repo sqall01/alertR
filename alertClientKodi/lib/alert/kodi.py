@@ -12,7 +12,7 @@ import os
 import logging
 import kodijson
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # this function class an alert that controls a kodi instance
@@ -161,9 +161,11 @@ class KodiAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_profile_change(self, profile_change: AlertObjProfileChange):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
         Is called when Alert Client receives a "profilechange" message which is
         sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
         pass

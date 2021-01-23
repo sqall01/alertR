@@ -14,7 +14,7 @@ import threading
 import RPi.GPIO as GPIO
 from typing import Optional
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert, AlertObjProfileChange
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # this function represents an alert that sets the Raspberry Pi GPIO to high
@@ -147,10 +147,12 @@ class RaspberryPiGPIOAlert(_Alert):
 
         self._process_state_change(self.recv_normal_state)
 
-    def alert_profile_change(self, profile_change: AlertObjProfileChange):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
         Is called when Alert Client receives a "profilechange" message which is
         sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
         if not self.recv_profile_change_activated:
             return

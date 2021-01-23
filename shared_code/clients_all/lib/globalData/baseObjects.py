@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
+from typing import Any, Dict
 
 
 class InternalState:
@@ -31,6 +32,9 @@ class LocalObject:
 
     def is_stored(self):
         return self.internal_state == InternalState.STORED
+
+    def convert_to_dict(self) -> Dict[str, Any]:
+        raise NotImplementedError("Abstract class.")
 
     def deepcopy(self, obj):
         raise NotImplementedError("Abstract class.")
