@@ -321,5 +321,5 @@ class Option:
 class Profile:
 
     def __init__(self):
-        self.id = None  # type: Optional[id]
+        self.profileId = None  # type: Optional[id]
         self.name = None  # type: Optional[str]

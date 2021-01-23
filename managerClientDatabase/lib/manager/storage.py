@@ -1003,11 +1003,11 @@ class Mysql(_Storage):
         """
         try:
             self._cursor.execute("SELECT * FROM profiles WHERE id = %s",
-                                 (profile.id,))
+                                 (profile.profileId,))
 
         except Exception:
             logging.exception("[%s]: Not able to get Profile with id %d."
-                              % (self._log_tag, profile.id))
+                              % (self._log_tag, profile.profileId))
             raise
 
         result = self._cursor.fetchall()
@@ -1017,11 +1017,11 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("UPDATE profiles SET "
                                      + "name = %s WHERE id = %s",
-                                     (profile.name, profile.id))
+                                     (profile.name, profile.profileId))
 
             except Exception:
                 logging.exception("[%s]: Not able to update Profile with id %d."
-                                  % (self._log_tag, profile.id))
+                                  % (self._log_tag, profile.profileId))
                 raise
 
         # Add not existing new object.
@@ -1030,11 +1030,11 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO profiles ("
                                      + "id, "
                                      + "name) VALUES (%s, %s)",
-                                     (profile.id, profile.name))
+                                     (profile.profileId, profile.name))
 
             except Exception:
                 logging.exception("[%s]: Not able to add Profile with id %d."
-                                  % (self._log_tag, profile.id))
+                                  % (self._log_tag, profile.profileId))
                 raise
 
     def _update_sensor(self, sensor: ManagerObjSensor):
@@ -1188,7 +1188,7 @@ class Mysql(_Storage):
 
         for profile_tuple in result:
             profile = ManagerObjProfile()
-            profile.id = profile_tuple[0]
+            profile.profileId = profile_tuple[0]
             profile.name = profile_tuple[1]
 
             self._system_data.update_profile(profile)
@@ -1626,7 +1626,7 @@ class Mysql(_Storage):
                 # Check if object does not exist anymore in received data.
                 if profile.is_deleted():
                     try:
-                        self._delete_profile(profile.id)
+                        self._delete_profile(profile.profileId)
 
                     except Exception:
                         self._close_connection()

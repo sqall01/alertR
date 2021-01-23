@@ -66,7 +66,7 @@ class TestManagerCoreStatusUpdate(TestSystemDataCore):
         for stored_profile in global_data.system_data.get_profiles_list():
             found = False
             for local_profile in self.profiles:
-                if local_profile.id == stored_profile.id:
+                if local_profile.profileId == stored_profile.profileId:
                     found = True
                     if local_profile == stored_profile:
                         self.fail("Local and stored object have not the same object.")
@@ -436,12 +436,12 @@ class TestManagerCoreStatusUpdate(TestSystemDataCore):
 
         # Check changes are stored.
         for stored_profile in global_data.system_data.get_profiles_list():
-            if stored_profile.id == profile_to_remove.id:
+            if stored_profile.profileId == profile_to_remove.profileId:
                 self.fail("Object not removed from store.")
 
             found = False
             for local_profile in self.profiles:
-                if local_profile.id == stored_profile.id:
+                if local_profile.profileId == stored_profile.profileId:
                     found = True
                     if local_profile == stored_profile:
                         self.fail("Local and stored object are the same object.")

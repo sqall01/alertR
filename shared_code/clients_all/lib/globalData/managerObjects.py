@@ -55,12 +55,12 @@ class ManagerObjProfile(LocalObject):
 
     def __init__(self):
         super().__init__()
-        self.id = None  # type: Optional[id]
+        self.profileId = None  # type: Optional[id]
         self.name = None  # type: Optional[str]
 
     def __str__(self) -> str:
         tmp = "Profile (Id: %s; " \
-              % (str(self.id) if self.id is not None else "None") \
+              % (str(self.profileId) if self.profileId is not None else "None") \
               + "Name: '%s')" \
               % (str(self.name) if self.name is not None else "None")
         return tmp
@@ -70,7 +70,7 @@ class ManagerObjProfile(LocalObject):
         Converts the Profile object into a dictionary.
         :return:
         """
-        profile_dict = {"profileId": self.id,
+        profile_dict = {"profileId": self.profileId,
                         "name": self.name,
                         }
 
@@ -82,7 +82,7 @@ class ManagerObjProfile(LocalObject):
         :param profile:
         :return:
         """
-        self.id = profile.id
+        self.profileId = profile.profileId
         self.name = profile.name
         return self
 

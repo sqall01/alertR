@@ -59,10 +59,10 @@ class BaseManagerEventHandler(EventHandler):
         for profile in profiles:
             try:
                 self._system_data.update_profile(profile)
-                profile_ids.append(profile.id)
+                profile_ids.append(profile.profileId)
 
             except ValueError:
-                logging.exception("[%s]: Updating Profile %d failed." % (self._log_tag, profile.id))
+                logging.exception("[%s]: Updating Profile %d failed." % (self._log_tag, profile.profileId))
                 return False
 
         alert_levels_int = set()
@@ -121,8 +121,8 @@ class BaseManagerEventHandler(EventHandler):
                 self._system_data.delete_option_by_type(option.type)
 
         for profile in self._system_data.get_profiles_list():
-            if profile.id not in profile_ids:
-                self._system_data.delete_profile_by_id(profile.id)
+            if profile.profileId not in profile_ids:
+                self._system_data.delete_profile_by_id(profile.profileId)
 
         for alert_level in self._system_data.get_alert_levels_list():
             if alert_level.level not in alert_levels_int:

@@ -302,7 +302,7 @@ class TestManagerStorage(TestManagerStorageCore):
 
         # Delete profile objects and check correct deletion.
         for profile in system_data.get_profiles_list():
-            system_data.delete_profile_by_id(profile.id)
+            system_data.delete_profile_by_id(profile.profileId)
 
             storage.update_server_information(0,
                                               system_data.get_options_list(),

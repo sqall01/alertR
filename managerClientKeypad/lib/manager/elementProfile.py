@@ -67,8 +67,8 @@ class ProfileChoiceUrwid:
         content = list()
         content.append(urwid.Divider())
         for profile in self._profiles:
-            text = urwid.Text(str(profile.id) + ". " + profile.name)
-            content.append(urwid.AttrMap(text, profile_colors[profile.id % len(profile_colors)]))
+            text = urwid.Text(str(profile.profileId) + ". " + profile.name)
+            content.append(urwid.AttrMap(text, profile_colors[profile.profileId % len(profile_colors)]))
             content.append(urwid.Divider())
 
         edit = _ProfileEditUrwid("Choose target system profile:\n",

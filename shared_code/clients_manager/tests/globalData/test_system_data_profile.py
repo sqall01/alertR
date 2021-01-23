@@ -44,13 +44,13 @@ class TestSystemDataProfile(TestSystemDataCore):
         profile_alert_level_map = defaultdict(set)
         for profile in system_data.get_profiles_list():
             for alert_level in system_data.get_alert_levels_list():
-                if profile.id in alert_level.profiles:
-                    profile_alert_level_map[profile.id].add(alert_level.level)
+                if profile.profileId in alert_level.profiles:
+                    profile_alert_level_map[profile.profileId].add(alert_level.level)
         self.assertNotEqual(len(profile_alert_level_map.keys()), 0)
 
         for profile in system_data.get_profiles_list():
 
-            system_data.delete_profile_by_id(profile.id)
+            system_data.delete_profile_by_id(profile.profileId)
 
             if not profile.is_deleted():
                 self.fail("Profile object not marked as deleted.")
@@ -59,11 +59,11 @@ class TestSystemDataProfile(TestSystemDataCore):
                 if stored_profile.is_deleted():
                     self.fail("Stored Option object marked as deleted.")
 
-                if profile.id == stored_profile.id:
+                if profile.profileId == stored_profile.profileId:
                     self.fail("Store still contains Option with type that was deleted.")
 
             # Make sure that either the Profile was removed from the Alert Level or the Alert Level was deleted.
-            for alert_level in profile_alert_level_map[profile.id]:
+            for alert_level in profile_alert_level_map[profile.profileId]:
                 alert_level_obj = system_data.get_alert_level_by_level(alert_level)
                 if alert_level_obj is not None:
-                    self.assertFalse(profile.id in alert_level_obj.profiles)
+                    self.assertFalse(profile.profileId in alert_level_obj.profiles)

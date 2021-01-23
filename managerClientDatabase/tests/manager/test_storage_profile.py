@@ -80,10 +80,10 @@ class TestManagerStorageAlertLevel(TestManagerStorageCore):
         # Delete object and check correct deletion.
         for profile in system_data.get_profiles_list():
             storage._open_connection()
-            storage._delete_profile(profile.id)
+            storage._delete_profile(profile.profileId)
             storage._conn.commit()
 
-            system_data.delete_profile_by_id(profile.id)
+            system_data.delete_profile_by_id(profile.profileId)
 
             storage.synchronize_database_to_system_data()
             compare_profiles_content(self,

@@ -60,7 +60,7 @@ class OptionExecuter(threading.Thread):
 
         curr_profile = None
         for profile in self._profiles:
-            if profile.id == int(option.value):
+            if profile.profileId == int(option.value):
                 curr_profile = profile
                 break
         if curr_profile is None:

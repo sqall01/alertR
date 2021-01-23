@@ -151,7 +151,7 @@ class ServerCommunication(Communication):
             msg_time = incomingMessage["msgTime"]
 
             profile = ManagerObjProfile()
-            profile.id = incomingMessage["payload"]["profileId"]
+            profile.profileId = incomingMessage["payload"]["profileId"]
             profile.name = incomingMessage["payload"]["name"]
 
         except Exception:
@@ -271,7 +271,7 @@ class ServerCommunication(Communication):
             logging.debug("[%s]: Received profile information: %d:'%s'." % (self._log_tag, profile_id, profile_name))
 
             profile = ManagerObjProfile()
-            profile.id = profile_id
+            profile.profileId = profile_id
             profile.name = profile_name
             profiles.append(profile)
 

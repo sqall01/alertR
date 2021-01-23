@@ -1133,7 +1133,7 @@ class ClientCommunication:
         :return:
         """
         payload = {"type": "request",
-                   "profileId": profile.id,
+                   "profileId": profile.profileId,
                    "name": profile.name}
         utc_time = int(time.time())
         message = {"msgTime": utc_time,
@@ -1262,7 +1262,7 @@ class ClientCommunication:
         # Generating profiles list
         profiles = list()
         for profile_obj in self.profiles:
-            temp_dict = {"profileId": profile_obj.id,
+            temp_dict = {"profileId": profile_obj.profileId,
                          "name": profile_obj.name}
             profiles.append(temp_dict)
 

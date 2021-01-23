@@ -27,7 +27,7 @@ class ProfileChoiceUrwid:
         for profile in self._profiles:
             button = urwid.Button(profile.name)
             urwid.connect_signal(button, 'click', callback_fct, profile)
-            content.append(urwid.AttrMap(button, profile_colors[profile.id % len(profile_colors)]))
+            content.append(urwid.AttrMap(button, profile_colors[profile.profileId % len(profile_colors)]))
             content.append(urwid.Divider())
 
         # Use ListBox here because it handles all the scrolling part automatically.

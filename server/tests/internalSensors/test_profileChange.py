@@ -88,12 +88,12 @@ class TestProfileChange(TestCase):
         global_data.storage = MockStorage()
 
         profile = Profile()
-        profile.id = 1
+        profile.profileId = 1
         profile.name = "profile_1"
         global_data.profiles.append(profile)
 
         profile = Profile()
-        profile.id = 2
+        profile.profileId = 2
         profile.name = "profile_2"
         global_data.profiles.append(profile)
 

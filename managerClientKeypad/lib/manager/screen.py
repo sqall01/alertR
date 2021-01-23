@@ -166,7 +166,7 @@ class Console:
             else:
                 self._audio_output.audio_profile_change_delayed()
 
-        self.serverComm.send_option("profile", float(profile.id), delay)
+        self.serverComm.send_option("profile", float(profile.profileId), delay)
 
         self.showPinView()
 
@@ -326,7 +326,7 @@ class Console:
 
                 else:
                     self._profile_urwid.update_value(profile.name)
-                    self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
+                    self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
         # check if the connection to the server failed
         elif received_str == "connectionfail":
@@ -448,7 +448,7 @@ class Console:
             return
 
         self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
-        self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
+        self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
         # generate widget to show the status of the connection
         self._connection_status = StatusUrwid("Connection Status", "Status", "Online")

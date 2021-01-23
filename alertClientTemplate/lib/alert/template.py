@@ -67,6 +67,6 @@ class TemplateAlert(_Alert):
 
         logging.info("[%s]: Alert '%d' process system profile change." % (self._log_tag, self.id))
 
-        print("Profile Change to '%d'" % profile.id)
+        print("Profile Change to '%d'" % profile.profileId)
 
         # PLACE YOUR CODE HERE

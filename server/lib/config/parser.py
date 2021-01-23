@@ -299,12 +299,12 @@ def configure_profiles(configRoot: xml.etree.ElementTree.Element, global_data: G
 
             profile = Profile()
 
-            profile.id = int(item.find("general").attrib["id"])
+            profile.profileId = int(item.find("general").attrib["id"])
             profile.name = str(item.find("general").attrib["name"])
 
             # Check if the profile only exists once.
             for temp_profile in global_data.profiles:
-                if temp_profile.id == profile.id:
+                if temp_profile.profileId == profile.profileId:
                     global_data.logger.error("[%s]: Profile must be unique." % log_tag)
                     return False
 
@@ -316,7 +316,7 @@ def configure_profiles(configRoot: xml.etree.ElementTree.Element, global_data: G
 
     has_id_zero = False
     for profile in global_data.profiles:
-        if profile.id == 0:
+        if profile.profileId == 0:
             has_id_zero = True
             break
     if not has_id_zero:
@@ -382,7 +382,7 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
                 return False
 
             for profile in alertLevel.profiles:
-                if not any(map(lambda x: x.id == profile, global_data.profiles)):
+                if not any(map(lambda x: x.profileId == profile, global_data.profiles)):
                     global_data.logger.error("[%s]: Profile '%d' configured in Alert Level '%d' does not exist."
                                              % (log_tag, profile, alertLevel.level))
                     return False

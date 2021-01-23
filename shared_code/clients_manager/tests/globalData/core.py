@@ -396,19 +396,19 @@ class TestSystemDataCore(TestCase):
             self.sensors = []
 
         profile = ManagerObjProfile()
-        profile.id = 0
+        profile.profileId = 0
         profile.name = "profile_0"
         self.profiles.append(profile)
         system_data.update_profile(ManagerObjProfile().deepcopy(profile))
 
         profile = ManagerObjProfile()
-        profile.id = 1
+        profile.profileId = 1
         profile.name = "profile_1"
         self.profiles.append(profile)
         system_data.update_profile(ManagerObjProfile().deepcopy(profile))
 
         profile = ManagerObjProfile()
-        profile.id = 2
+        profile.profileId = 2
         profile.name = "profile_2"
         self.profiles.append(profile)
         system_data.update_profile(ManagerObjProfile().deepcopy(profile))

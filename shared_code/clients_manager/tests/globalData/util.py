@@ -215,7 +215,7 @@ def compare_profiles_content(context: TestCase, gt_profiles: List[ManagerObjProf
     for stored_profile in new_profiles:
         found = False
         for gt_profile in gt_profiles:
-            if stored_profile.id == gt_profile.id:
+            if stored_profile.profileId == gt_profile.profileId:
                 found = True
 
                 # Check which objects we already processed to see if we hold an object with

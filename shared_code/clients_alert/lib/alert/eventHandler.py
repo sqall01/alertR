@@ -89,7 +89,7 @@ class AlertEventHandler(EventHandler):
         # Tell system profile change to all alerts.
         for alert in self._local_alerts:
             logging.debug("[%s]: Notifying Alert '%d' about system profile change to '%d'."
-                          % (self._log_tag, alert.id, profile.id))
+                          % (self._log_tag, alert.id, profile.profileId))
 
             thread = threading.Thread(target=self._thread_profile_change,
                                       args=(alert, profile))

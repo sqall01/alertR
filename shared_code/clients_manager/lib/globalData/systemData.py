@@ -298,7 +298,7 @@ class SystemData:
                 self._delete_alert_level_by_level(alert_level.level)
 
             for profile in list(self._profiles.values()):
-                self._delete_profile_by_id(profile.id)
+                self._delete_profile_by_id(profile.profileId)
 
     def delete_alert_by_id(self, alert_id: int):
         """
@@ -539,7 +539,7 @@ class SystemData:
         with self._data_lock:
             temp = list(self._profiles.values())
             if order_by_id:
-                temp.sort(key=lambda x: x.id)
+                temp.sort(key=lambda x: x.profileId)
             return temp
 
     def get_profile_by_id(self, profile_id: int) -> Optional[ManagerObjProfile]:
@@ -746,13 +746,13 @@ class SystemData:
         with self._data_lock:
 
             # Add option object if it does not exist yet.
-            if profile.id not in self._profiles.keys():
-                self._profiles[profile.id] = profile
+            if profile.profileId not in self._profiles.keys():
+                self._profiles[profile.profileId] = profile
                 profile.internal_state = InternalState.STORED
 
             # Update option object data.
             else:
-                self._profiles[profile.id].deepcopy(profile)
+                self._profiles[profile.profileId].deepcopy(profile)
 
     def update_sensor(self, sensor: ManagerObjSensor):
         """

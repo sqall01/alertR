@@ -512,7 +512,7 @@ class Console:
         :param profile:
         """
         logging.info("[%s]: Changing system profile to '%s'." % (self.fileName, profile.name))
-        self.serverComm.send_option("profile", float(profile.id))
+        self.serverComm.send_option("profile", float(profile.profileId))
 
         self._close_profile_choice_view()
 
@@ -811,7 +811,7 @@ class Console:
             # get all alerts that belong to the focused alert level
             currentAlerts = self._getAlertsOfAlertLevel(currentElement.alertLevel)
 
-            curr_profiles = list(filter(lambda x: x.id in currentElement.alertLevel.profiles,
+            curr_profiles = list(filter(lambda x: x.profileId in currentElement.alertLevel.profiles,
                                         self.system_data.get_profiles_list(order_by_id=True)))
             self.detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel,
                                                         currentSensors,
@@ -1409,7 +1409,7 @@ class Console:
             return
 
         self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
-        self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
+        self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
         # generate widget to show the status of the connection
         self.connectionStatus = StatusUrwid("Connection Status", "Status", "Online")
@@ -1506,7 +1506,7 @@ class Console:
 
                 else:
                     self._profile_urwid.update_value(profile.name)
-                    self._profile_urwid.set_color(self._profile_colors[profile.id % len(self._profile_colors)])
+                    self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
             # remove sensor alerts if they are too old
             for sensorAlertUrwid in self.sensorAlertUrwidObjects:
@@ -1797,7 +1797,7 @@ class Console:
                         # get all alerts that belong to the focused alert level
                         currentAlerts = self._getAlertsOfAlertLevel(alertLevelUrwidObject.alertLevel)
 
-                        curr_profiles = list(filter(lambda x: x.id in alertLevelUrwidObject.alertLevel.profiles,
+                        curr_profiles = list(filter(lambda x: x.profileId in alertLevelUrwidObject.alertLevel.profiles,
                                                     self.system_data.get_profiles_list(order_by_id=True)))
 
                         self.detailedView.updateCompleteWidget(currentSensors, currentAlerts, curr_profiles)
