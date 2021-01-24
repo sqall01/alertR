@@ -242,7 +242,7 @@ class AlertLevelDetailedUrwid:
         temp = list()
 
         temp.append(urwid.Text("Profile ID:"))
-        temp.append(urwid.Text(str(profile.id)))
+        temp.append(urwid.Text(str(profile.profileId)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Name:"))
