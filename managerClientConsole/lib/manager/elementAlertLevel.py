@@ -110,11 +110,7 @@ class AlertLevelDetailedUrwid:
         content.append(urwid.Text("Profiles"))
         content.append(urwid.Divider("="))
         temp = self._create_profiles_widget_list(profiles)
-        self._profiles_pile_widget = None
-        if temp:
-            self._profiles_pile_widget = urwid.Pile(temp)
-        else:
-            self._profiles_pile_widget = urwid.Pile([urwid.Text("None")])
+        self._profiles_pile_widget = urwid.Pile(temp)
         content.append(self._profiles_pile_widget)
 
         content.append(urwid.Divider())
@@ -122,11 +118,7 @@ class AlertLevelDetailedUrwid:
         content.append(urwid.Text("Alerts"))
         content.append(urwid.Divider("="))
         temp = self._createAlertsWidgetList(alerts)
-        self.alertsPileWidget = None
-        if temp:
-            self.alertsPileWidget = urwid.Pile(temp)
-        else:
-            self.alertsPileWidget = urwid.Pile([urwid.Text("None")])
+        self.alertsPileWidget = urwid.Pile(temp)
         content.append(self.alertsPileWidget)
 
         content.append(urwid.Divider())
@@ -134,11 +126,7 @@ class AlertLevelDetailedUrwid:
         content.append(urwid.Text("Sensors"))
         content.append(urwid.Divider("="))
         temp = self._createSensorsWidgetList(sensors)
-        self.sensorsPileWidget = None
-        if temp:
-            self.sensorsPileWidget = urwid.Pile(temp)
-        else:
-            self.sensorsPileWidget = urwid.Pile([urwid.Text("None")])
+        self.sensorsPileWidget = urwid.Pile(temp)
         content.append(self.sensorsPileWidget)
 
         # use ListBox here because it handles all the
@@ -198,6 +186,9 @@ class AlertLevelDetailedUrwid:
 
             temp.extend(self._createAlertWidgetList(alert))
 
+        if not temp:
+            temp.append(urwid.Text("None"))
+
         return temp
 
     # this function creates the detailed output of a alert object
@@ -234,6 +225,9 @@ class AlertLevelDetailedUrwid:
 
             temp.extend(self._create_profile_widget_list(profile))
 
+        if not temp:
+            temp.append(urwid.Text("None"))
+
         return temp
 
     # this function creates the detailed output of a profile object in a list
@@ -265,6 +259,9 @@ class AlertLevelDetailedUrwid:
                 temp.append(urwid.Divider("-"))
 
             temp.extend(self._createSensorWidgetList(sensor))
+
+        if not temp:
+            temp.append(urwid.Text("None"))
 
         return temp
 

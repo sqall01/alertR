@@ -212,11 +212,7 @@ class SensorDetailedUrwid:
         content.append(urwid.Text("Alert Levels"))
         content.append(urwid.Divider("="))
         temp = self._createAlertLevelsWidgetList(alertLevels)
-        self.alertLevelsPileWidget = None
-        if temp:
-            self.alertLevelsPileWidget = urwid.Pile(temp)
-        else:
-            self.alertLevelsPileWidget = urwid.Pile([urwid.Text("None")])
+        self.alertLevelsPileWidget = urwid.Pile(temp)
         content.append(self.alertLevelsPileWidget)
 
         # use ListBox here because it handles all the
@@ -240,6 +236,9 @@ class SensorDetailedUrwid:
                 temp.append(urwid.Divider("-"))
 
             temp.extend(self._createAlertLevelWidgetList(alertLevel))
+
+        if not temp:
+            temp.append(urwid.Text("None"))
 
         return temp
 
