@@ -1,5 +1,6 @@
 ## 0.800-0
 
+* Fixed bug for detailed view if no "Alert Level/Alert/Sensor" existed
 * Updater can show changelog
 * Removed system status "activated" and "deactivated" to have a more generic system
 * Introduced system profiles to replace system status to have a more generic system
