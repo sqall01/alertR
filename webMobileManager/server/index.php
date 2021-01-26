@@ -26,12 +26,11 @@ if($configWebAuth) {
 	}
 }
 
-// check if the GET parameter for activate/deactivate the alert system
-// is set
-if(isset($_GET["activate"]) && $configUnixSocketActive) {
+// check if the GET parameter for changing the system profile is set
+if(isset($_GET["profilechange"]) && $configUnixSocketActive) {
 
 	// validate integer
-	$activate = intval($_GET["activate"]);
+	$profileId = intval($_GET["profilechange"]);
 
 	// open connection to local manager client
 	@$fd = stream_socket_client(
@@ -44,23 +43,15 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 		exit(1);
 	}
 
-	// send activate/deactivate according to the given parameter
+	// send profile option according to the given parameter
 	$message = array();
 	$message["message"] = "option";
-	if($activate === 0) {
-		$payload = array();
-		$payload["optionType"] = "alertSystemActive";
-		$payload["value"] = 0;
-		$payload["timeDelay"] = 0;
-		$message["payload"] = $payload;
-	}
-	else {
-		$payload = array();
-		$payload["optionType"] = "alertSystemActive";
-		$payload["value"] = 1;
-		$payload["timeDelay"] = 0;
-		$message["payload"] = $payload;	
-	}
+	$payload = array();
+	$payload["optionType"] = "profile";
+	$payload["value"] = $profileId;
+	$payload["timeDelay"] = 0;
+	$message["payload"] = $payload;
+
 	fwrite($fd, json_encode($message));
 
 	// get response
@@ -92,7 +83,7 @@ if(isset($_GET["activate"]) && $configUnixSocketActive) {
 
 		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 
-		<title>alertR Mobile Web Manager</title>
+		<title>AlertR Mobile Manager</title>
 
 		<link rel="stylesheet" href="css/style.css" />
 

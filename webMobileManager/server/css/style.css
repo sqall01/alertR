@@ -55,13 +55,24 @@ a:active {
 }
 
 
-.deactivatedTd {
+.profile0Td {
+	background-color: #00ff00;
+}
+
+.profile1Td {
 	background-color: #ff0000;
 }
 
+.profile2Td {
+	background-color: #1a92aa;
+}
 
-.activatedTd {
-	background-color: #00ff00;
+.profile3Td {
+	background-color: #aa22aa;
+}
+
+.profile4Td {
+	background-color: #ded82c;
 }
 
 

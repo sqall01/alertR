@@ -70,6 +70,18 @@ if(isset($_GET["data"])
                 $alertSystemInformation["internals"] = $internalsArray;
                 break;
 
+            // generate profiles array
+            case "PROFILES":
+                $stmt = $mysqli->query('SELECT * FROM profiles');
+                $profilesArray = array();
+                while($row = $stmt->fetch_assoc()) {
+                    $profileEntry = array("profileId" => $row["id"],
+                        "name" => $row["name"]);
+                    array_push($profilesArray, $profileEntry);
+                }
+                $alertSystemInformation["profiles"] = $profilesArray;
+                break;
+
             // generate options array
             case "OPTIONS":
                 $stmt = $mysqli->query('SELECT * FROM options');
@@ -314,13 +326,23 @@ if(isset($_GET["data"])
                 $stmt = $mysqli->query("SELECT * FROM alertLevels");
                 $alertLevelsArray = array();
                 while($row = $stmt->fetch_assoc()) {
+
+                    // get profiles of alert level
+                    $subStmt = $mysqli->prepare("SELECT profileId FROM alertLevelsProfiles WHERE alertLevel=?");
+                    $subStmt->bind_param("i", $row["alertLevel"]);
+                    $subStmt->execute();
+                    $subResult = $subStmt->get_result();
+
+                    $profilesArray = array();
+                    while($subRow = $subResult->fetch_assoc()) {
+                        array_push($profilesArray, $subRow["profileId"]);
+                    }
+
                     $alertLevelEntry = array(
                         "alertLevel" => $row["alertLevel"],
                         "name" => $row["name"],
-                        "triggerAlways" => $row["triggerAlways"],
                         "instrumentation_active" => $row["instrumentation_active"],
-                        "instrumentation_cmd" => $row["instrumentation_cmd"],
-                        "instrumentation_timeout" => $row["instrumentation_timeout"]);
+                        "profiles" => $profilesArray,);
                     array_push($alertLevelsArray, $alertLevelEntry);
                 }
                 $alertSystemInformation["alertLevels"] = $alertLevelsArray;

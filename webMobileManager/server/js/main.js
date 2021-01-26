@@ -21,6 +21,7 @@ var internals = null;
 var managers = null;
 var nodes = null;
 var options = null;
+var profiles = null;
 var sensorAlerts = null;
 var sensors = null;
 
@@ -37,6 +38,9 @@ var onlineTd = null;
 var currentOutput = null;
 
 var lastResponse = null;
+
+// needed to decide the correct color of the used system profile.
+var profilesColor = ["profile0Td", "profile1Td", "profile2Td", "profile3Td", "profile4Td"];
 
 
 // adds a menu for the navigation to the given table body
@@ -120,13 +124,13 @@ function addMenu(newBody, current) {
 	for(var i = 0; i < options.length; i++) {
 
 		// only evaluate "alertSystemActive"
-		if(options[i]["type"].toUpperCase() == "ALERTSYSTEMACTIVE") {
+		if(options[i]["type"].toUpperCase() == "PROFILE") {
 
-			// add status of alert system
+			// add system profile of AlertR system
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
 			var newB = document.createElement("b");
-			newB.textContent = "Status:";
+			newB.textContent = "Profile:";
 			newTd.appendChild(newB);
 			newTd.className = "boxEntryTd";
 			newTr.appendChild(newTd);
@@ -134,13 +138,13 @@ function addMenu(newBody, current) {
 
 			var newTr = document.createElement("tr");
 			var newTd = document.createElement("td");
-			if(options[i]["value"] == 0) {
-				newTd.className = "deactivatedTd";
-				newTd.textContent = "deactivated";
-			}
-			if(options[i]["value"] == 1) {
-				newTd.className = "activatedTd";
-				newTd.textContent = "activated";
+
+			for(var j = 0; j < profiles.length; j++) {
+				if(profiles[j]["profileId"] == Math.trunc(options[i]["value"])) {
+					newTd.className = profilesColor[profiles[j]["profileId"] % profilesColor.length];
+					newTd.textContent = profiles[j]["name"];
+					break;
+				}
 			}
 			newTr.appendChild(newTd);
 			menuTable.appendChild(newTr);
@@ -160,30 +164,24 @@ function addMenu(newBody, current) {
 				tempTable.setAttribute("border", "0");
 				newTd.appendChild(tempTable);
 
-				var newTr = document.createElement("tr");
-				tempTable.appendChild(newTr)
+				for(var j = 0; j < profiles.length; j++) {
+					var newTr = document.createElement("tr");
+					tempTable.appendChild(newTr)
 
-				var newTd = document.createElement("td");
-				newTd.style.width = "50%";
-				newTd.className = "buttonTd";
-				var newA = document.createElement("a");
-				newA.className = "buttonA";
-				newA.textContent = "activate";
-				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(1, current); };
-				newTd.appendChild(newA);
-				newTr.appendChild(newTd);
+					var newTd = document.createElement("td");
+					newTd.className = "buttonTd";
 
-				var newTd = document.createElement("td");
-				newTd.style.width = "50%";
-				newTd.className = "buttonTd";
-				var newA = document.createElement("a");
-				newA.className = "buttonA";
-				newA.textContent = "deactivate";
-				newA.href = "javascript:void(0)";
-				newA.onclick = function(){ confirmation(0, current); };
-				newTd.appendChild(newA);
-				newTr.appendChild(newTd);
+					var newA = document.createElement("a");
+					newA.className = "buttonA";
+					newA.textContent = profiles[j]["name"];
+					newA.href = "javascript:void(0)";
+
+					let profileId = profiles[j]["profileId"];
+					let profileName = profiles[j]["name"];
+					newA.onclick = function(){ confirmation(profileId, profileName, current); };
+					newTd.appendChild(newA);
+					newTr.appendChild(newTd);
+				}
 			}
 
 			break;
@@ -346,6 +344,7 @@ function changeOutput(content) {
 			currentOutput = "alertLevels";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| alertLevels == null
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("alertLevels");
@@ -366,6 +365,7 @@ function changeOutput(content) {
 			currentOutput = "alerts";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| alertLevels == null
 				|| alerts == null
 				|| nodes == null
@@ -388,6 +388,7 @@ function changeOutput(content) {
 			currentOutput = "managers";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| nodes == null
 				|| managers == null
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
@@ -409,6 +410,7 @@ function changeOutput(content) {
 			currentOutput = "nodes";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| nodes == null
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
 				requestData("nodes");
@@ -429,6 +431,7 @@ function changeOutput(content) {
 			currentOutput = "sensorAlerts";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| sensorAlerts == null
 				|| sensorAlerts.length < sensorAlertsNumber
 				|| (lastResponse.getTime() + 10000) < currentTime.getTime()) {
@@ -450,6 +453,7 @@ function changeOutput(content) {
 			currentOutput = "sensors";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| nodes == null
 				|| sensors == null
 				|| alertLevels == null
@@ -473,6 +477,7 @@ function changeOutput(content) {
 			currentOutput = "overview";
 			if(internals == null
 				|| options == null
+				|| profiles == null
 				|| nodes == null
 				|| sensors == null
 				|| sensorAlerts == null
@@ -703,12 +708,12 @@ function compareSensorsAsc(a, b) {
 }
 
 
-// simple function to ask for confirmation if the alert system
-// should be activated
-function confirmation(activate, current) {
+// simple function to ask for confirmation if the AlertR system
+// should change the system profile
+function confirmation(profileId, profileName, current) {
 
-	if(activate == 1 && configUnixSocketActive) {
-		result = confirm("Do you really want to activate the alert system?");
+	if(configUnixSocketActive) {
+		result = confirm("Do you really want to change the system profile to '" + profileName + "'?");
 		if(result) {
 
 			// show loader and hide content
@@ -717,21 +722,7 @@ function confirmation(activate, current) {
 			var contentObj = document.getElementById("content");
 			contentObj.className = "elementHidden";
 
-			window.location = "index.php?activate=1#content=" + current;
-		}
-	}
-	else if(activate == 0 && configUnixSocketActive) {
-		result = confirm("Do you really want to deactivate " + 
-			"the alert system?");
-		if(result) {
-
-			// show loader and hide content
-			var loaderObj = document.getElementById("loader");
-			loaderObj.className = "elementShown";
-			var contentObj = document.getElementById("content");
-			contentObj.className = "elementHidden";
-
-			window.location = "index.php?activate=0#content=" + current;
+			window.location = "index.php?profilechange=" + profileId + "#content=" + current;
 		}
 	}
 }
@@ -751,6 +742,7 @@ function processResponseAlertLevels() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		alertLevels = alertSystemInformation["alertLevels"];
 
 		// only output received data if it is the current output
@@ -776,6 +768,7 @@ function processResponseAlerts() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		nodes = alertSystemInformation["nodes"];
 		alerts = alertSystemInformation["alerts"];
 		alertLevels = alertSystemInformation["alertLevels"];
@@ -804,6 +797,7 @@ function processResponseManagers() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		nodes = alertSystemInformation["nodes"];
 		managers = alertSystemInformation["managers"];
 
@@ -831,6 +825,7 @@ function processResponseNodes() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		nodes = alertSystemInformation["nodes"];
 
 		// only output received data if it is the current output
@@ -857,6 +852,7 @@ function processResponseOverview() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		nodes = alertSystemInformation["nodes"];
 		sensors = alertSystemInformation["sensors"];
 		sensorAlerts = alertSystemInformation["sensorAlerts"];
@@ -885,6 +881,7 @@ function processResponseSensorAlerts() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		sensorAlerts = alertSystemInformation["sensorAlerts"];
 
 		// only output received data if it is the current output
@@ -911,6 +908,7 @@ function processResponseSensors() {
 		var alertSystemInformation = JSON.parse(response);
 		internals = alertSystemInformation["internals"];
 		options = alertSystemInformation["options"];
+		profiles = alertSystemInformation["profiles"];
 		nodes = alertSystemInformation["nodes"];
 		sensors = alertSystemInformation["sensors"];
 		alertLevels = alertSystemInformation["alertLevels"];
@@ -939,6 +937,7 @@ function requestData(content) {
 			var url = "./getJson.php"
 				+ "?data[]=internals"
 				+ "&data[]=options"
+				+ "&data[]=profiles"
 				+ "&data[]=alertlevels";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseAlertLevels;
@@ -948,6 +947,7 @@ function requestData(content) {
 			var url = "./getJson.php"
 				+ "?data[]=internals"
 				+ "&data[]=options"
+				+ "&data[]=profiles"
 				+ "&data[]=nodes"
 				+ "&data[]=alerts"
 				+ "&data[]=alertlevels";
@@ -959,6 +959,7 @@ function requestData(content) {
 			var url = "./getJson.php"
 				+ "?data[]=internals"
 				+ "&data[]=options"
+				+ "&data[]=profiles"
 				+ "&data[]=nodes"
 				+ "&data[]=managers";
 			request.open("GET", url, true);
@@ -969,6 +970,7 @@ function requestData(content) {
 			var url = "./getJson.php"
 				+ "?data[]=internals"
 				+ "&data[]=options"
+				+ "&data[]=profiles"
 				+ "&data[]=nodes";
 			request.open("GET", url, true);
 			request.onreadystatechange = processResponseNodes;
@@ -979,12 +981,14 @@ function requestData(content) {
 				var url = "./getJson.php"
 					+ "?data[]=internals"
 					+ "&data[]=options"
+					+ "&data[]=profiles"
 					+ "&data[]=sensorAlerts";
 			}
 			else {
 				var url = "./getJson.php"
 					+ "?data[]=internals"
 					+ "&data[]=options"
+					+ "&data[]=profiles"
 					+ "&data[]=sensorAlerts"
 					+ "&sensorAlertsRangeStart=" + sensorAlertsRangeStart
 					+ "&sensorAlertsNumber=" + sensorAlertsNumber;
@@ -997,6 +1001,7 @@ function requestData(content) {
 			var url = "./getJson.php"
 				+ "?data[]=internals"
 				+ "&data[]=options"
+				+ "&data[]=profiles"
 				+ "&data[]=nodes"
 				+ "&data[]=sensors"
 				+ "&data[]=alertLevels";
@@ -1009,6 +1014,7 @@ function requestData(content) {
 			var url = "./getJson.php"
 				+ "?data[]=internals"
 				+ "&data[]=options"
+				+ "&data[]=profiles"
 				+ "&data[]=nodes"
 				+ "&data[]=sensorAlerts"
 				+ "&sensorAlertsRangeStart=0"
@@ -1072,7 +1078,8 @@ function outputAlertLevels() {
 
 		var alertLevel = alertLevels[i]["alertLevel"];
 		var name = alertLevels[i]["name"];
-		var triggerAlways = alertLevels[i]["triggerAlways"];
+		var instrumentation_active = alertLevels[i]["instrumentation_active"];
+		var alertLevelProfiles = alertLevels[i]["profiles"];
 
 
 		var boxDiv = document.createElement("div");
@@ -1111,11 +1118,11 @@ function outputAlertLevels() {
 		alertLevelTable.appendChild(newTr);
 
 
-		// add triggerAlways to the alertLevel
+		// add instrumentation_active to the alertLevel
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
 		var newB = document.createElement("b");
-		newB.textContent = "Trigger Always:";
+		newB.textContent = "Instrumentation Active:";
 		newTd.appendChild(newB);
 		newTd.className = "boxEntryTd";
 		newTr.appendChild(newTd);
@@ -1123,12 +1130,30 @@ function outputAlertLevels() {
 
 		var newTr = document.createElement("tr");
 		var newTd = document.createElement("td");
-		if(triggerAlways == 0) {
+		if(instrumentation_active == 0) {
 			newTd.textContent = "false";
 		}
 		else {
 			newTd.textContent = "true";
 		}
+		newTd.className = "neutralTd";
+		newTr.appendChild(newTd);
+		alertLevelTable.appendChild(newTr);
+
+
+		// add profiles to the alertLevel
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		var newB = document.createElement("b");
+		newB.textContent = "Profiles:";
+		newTd.appendChild(newB);
+		newTd.className = "boxEntryTd";
+		newTr.appendChild(newTd);
+		alertLevelTable.appendChild(newTr);
+
+		var newTr = document.createElement("tr");
+		var newTd = document.createElement("td");
+		newTd.textContent = alertLevelProfiles;
 		newTd.className = "neutralTd";
 		newTr.appendChild(newTd);
 		alertLevelTable.appendChild(newTr);
