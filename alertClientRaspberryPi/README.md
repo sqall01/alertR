@@ -1,6 +1,6 @@
 # AlertR Alert Client Raspberry Pi
 
-This client handles triggered alerts and is written to set/unset GPIO pins of a Raspberry Pi. This means it gets notified by the server if a sensor was triggered and can set/unset configured GPIO pins, for example, to activate a siren or something else.
+This client handles triggered alerts and is written to set/unset GPIO pins of a Raspberry Pi. This means it gets notified by the server if a sensor was triggered and can set/unset configured GPIO pins, for example, to activate a siren. However, the sensor can also just be used as a switch and the configured alert can switch on and off the configured GPIO pins.
 
 
 ## How to use it?
