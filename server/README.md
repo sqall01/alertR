@@ -1,6 +1,6 @@
 # AlertR Server
 
-The server handles the logic of the AlertR system. It is mandatory in order to use AlertR. It uses either SQLite as storage backend and a CSV file as user backend.
+The server handles the logic of the AlertR system. It is mandatory in order to use AlertR. It uses SQLite as storage backend and a CSV file as user backend.
 
 
 ## How to use it?
