@@ -1,6 +1,6 @@
 # AlertR Manager Client Template
 
-This client stores the state of the alert system in local objects to provide a template for developers to build a manager client.
+This client stores the state of the AlertR system in local objects to provide a template for developers to build a manager client.
 
 
 ## How to use it?

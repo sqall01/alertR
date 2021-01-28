@@ -1,6 +1,6 @@
 # AlertR Alert Client Dbus
 
-This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example you can start it on your PC and you get notified as soon as the door bell rings or the front door was opened.
+This client handles triggered alerts and is written to show a message notification via D-Bus. It works with all window managers that support D-Bus and implement the freedesktop.org specification. For example, you can run it as a service on your workstation and as soon as an event happens (front door opens, door bell rings, service goes down, incoming phone call, and so on) it shows a notification on the display.
 
 
 ## How to use it?

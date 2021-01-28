@@ -72,6 +72,9 @@ class GlobalData:
         # the instance of this server
         self.instance = "server"  # type: str
 
+        # type of this node
+        self.nodeType = "server"  # type: str
+
         # instance of the storage backend
         self.storage = None
 

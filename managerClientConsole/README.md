@@ -1,6 +1,6 @@
 # AlertR Manager Client Console
 
-This client is a manager client for the alert system. It shows the current state of all sensors, the sensor and alert clients and if the active system profile.
+This client is a manager client for the AlertR system. It shows the current state of all sensors, the connected clients and if the currently active system profile.
 
 
 ## How to use it?

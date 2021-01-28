@@ -1,6 +1,6 @@
 # AlertR Alert Client Executer
 
-This client handles triggered alerts and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when all alerts are stopped. For example you can start a init script on a Linux system when a sensor alert was triggered and when all alerts are stopped the init script is stopped.
+This client handles triggered sensors and is written to execute a configured script or command with arguments. The arguments are configured and the command is executed on a triggered sensor alert event or when the system profile has changed. This allows you to interact with non-AlertR components or integrate your own code into the AlertR system.
 
 
 ## How to use it?

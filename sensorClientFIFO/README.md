@@ -1,6 +1,6 @@
 # AlertR Sensor Client FIFO
 
-This client is build for the integration of already developed scripts or other software into the AlertR infrastructure as a sensor. For each sensor it creates a FIFO file on the file system and monitors it. Other scripts/programs can write into the FIFO file to change the state of the associated sensor. For example you can use a cronjob to write into the FIFO file at specific times to trigger a sensor event or the ISC DHCP server to write into the FIFO file each time a client in a specific subnet requests an IP address.
+This client is build for the integration of already developed scripts or other software into the AlertR system as a sensor. For each sensor it creates a FIFO file on the file system and monitors it. Other scripts/programs can write into the FIFO file to change the state of the associated sensor. For example, you can use a cronjob to write into the FIFO file at specific times to trigger a sensor event, or the ISC DHCP server can write into the FIFO file each time a client in a specific subnet requests an IP address, or a script can read the temperature of your thermostat periodically and can write it into the FIFO file. The possibilities to use this client to integrate other components into the AlertR system are endless.
 
 
 ## How to use it?

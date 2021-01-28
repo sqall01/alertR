@@ -1,6 +1,6 @@
 # AlertR Alert Client Kodi
 
-This client handles triggered alerts and is written to communicate with Kodi (former XBMC). It can show a message notification on the display and can pause video/audio playback (for now). For example you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.
+This client handles triggered sensors and is written to communicate with Kodi (former XBMC). It can show a message notification on the display and can pause video/audio playback. For example, you can use this client to pause the video/audio playback and show a message notification if someone is ringing the bell at your front door.
 
 
 ## How to use it?
