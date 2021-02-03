@@ -97,7 +97,8 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
-        logging.info("[%s]: Received sensor alert." % self._log_tag)
+        logging.debug("[%s]: Received sensor alert '%s' with state %d."
+                     % (self._log_tag, incomingMessage["payload"]["description"], incomingMessage["payload"]["state"]))
 
         # extract sensor alert values
         sensorAlert = ManagerObjSensorAlert()
@@ -145,7 +146,7 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return:
         """
-        logging.debug("[%s]: Received profile change." % self._log_tag)
+        logging.debug("[%s]: Received profile change to '%s'." % (self._log_tag, incomingMessage["payload"]["name"]))
 
         try:
             msg_time = incomingMessage["msgTime"]
@@ -173,7 +174,8 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
-        logging.debug("[%s]: Received state change." % self._log_tag)
+        logging.debug("[%s]: Received state change for sensor %d with state %d."
+                      % (self._log_tag, incomingMessage["payload"]["sensorId"], incomingMessage["payload"]["state"]))
 
         # extract state change values
         try:
@@ -211,6 +213,8 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
+        logging.debug("[%s]: Received status update."% self._log_tag)
+
         options = list()
         profiles = list()
         nodes = list()
