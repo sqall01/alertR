@@ -180,6 +180,9 @@ if __name__ == '__main__':
                 item.find("executer").find("profilechange").attrib["activated"]).upper() == "TRUE"
             alert.cmd_profile_change_activated = cmd_profile_change_activated
             if cmd_profile_change_activated:
+                for profile in item.find("executer").find("profilechange").iterfind("profile"):
+                    alert.cmd_profile_change_target_profiles.add(int(profile.text))
+
                 for argument in item.find("executer").find("profilechange").iterfind("argument"):
                     alert.cmd_profile_change_list.append(str(argument.text))
 
@@ -202,6 +205,10 @@ if __name__ == '__main__':
                 if registeredAlert.id == alert.id:
                     raise ValueError("Id of alert %d is already taken."
                                      % alert.id)
+
+            if cmd_profile_change_activated and not alert.cmd_profile_change_target_profiles:
+                raise ValueError("No profiles set for profilechange of alert %d."
+                                 % alert.id)
 
             globalData.alerts.append(alert)
 

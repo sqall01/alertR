@@ -217,6 +217,15 @@
                     activated="True">
 
                     <!--
+                        These are the target system profiles given as id for which the command is executed.
+                        If the AlertR system changes the used system profile to one of these profiles,
+                        the command will be executed.
+                        (at least one profile has to be set but also multiple profiles are possible)
+                    -->
+                    <profile>0</profile>
+                    <profile>1</profile>
+
+                    <!--
                         The arguments that are used for the command that
                         is executed when the message was received.
                         (the amount of arguments are variable).

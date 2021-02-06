@@ -51,6 +51,9 @@ class ExecuterAlert(_Alert):
         # an profile change message is received.
         self.cmd_profile_change_list = list()
 
+        # The target system profile ids that the profile change message has to contain before the command is executed.
+        self.cmd_profile_change_target_profiles = set()
+
         # A list of indexes that have to be replaced with new data in the
         # "profilechange" command list before executing.
         self.cmd_profile_change_replace_list = list()
@@ -139,6 +142,9 @@ class ExecuterAlert(_Alert):
         :param profile: object that contains the received "profilechange" message.
         """
         if not self.cmd_profile_change_activated:
+            return
+
+        if profile.profileId not in self.cmd_profile_change_target_profiles:
             return
 
         logging.info("[%s]: Alert '%d' executes for profile change message." % (self.fileName, self.id))
