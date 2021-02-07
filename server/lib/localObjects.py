@@ -174,7 +174,6 @@ class SensorAlert:
         :return: Sensor Alert object
         """
         sensor_alert = SensorAlert()
-        sensor_alert.sensorAlertId = sensor_alert_dict["sensorAlertId"]
         sensor_alert.nodeId  = sensor_alert_dict["nodeId"]
         sensor_alert.sensorId = sensor_alert_dict["sensorId"]
         sensor_alert.description = sensor_alert_dict["description"]
@@ -200,8 +199,7 @@ class SensorAlert:
         Converts the Sensor Alert object into a dictionary.
         :return: dictionary representation of the Sensor Alert object.
         """
-        sensor_alert_dict = {"sensorAlertId": self.sensorAlertId,
-                             "nodeId": self.nodeId,
+        sensor_alert_dict = {"nodeId": self.nodeId,
                              "sensorId": self.sensorId,
                              "description": self.description,
                              "timeReceived": self.timeReceived,
@@ -225,7 +223,6 @@ class SensorAlert:
         :param sensor_alert: object to copy values from.
         :return: pointer to this object
         """
-        self.sensorAlertId = sensor_alert.sensorAlertId
         self.nodeId = sensor_alert.nodeId
         self.sensorId = sensor_alert.sensorId
         self.description = sensor_alert.description
@@ -252,9 +249,6 @@ class SensorAlert:
         """
         Verifies data types of attributes (raises ValueError if attribute is wrong).
         """
-        if type(self.sensorAlertId) != int:
-            raise ValueError("sensorAlertId not valid")
-
         if type(self.nodeId) != int:
             raise ValueError("nodeId not valid")
 
