@@ -209,7 +209,18 @@
                         gpioPinStateNormal setting.
                 -->
                 <profilechange
-                    activated="True" />
+                    activated="True">
+
+                    <!--
+                        These are the target system profiles given as id for which the GPIO pin should be reset.
+                        If the AlertR system changes the used system profile to one of these profiles,
+                        the voltage of the GPIO pin will be changed.
+                        (at least one profile has to be set but also multiple profiles are possible)
+                    -->
+                    <profile>0</profile>
+                    <profile>1</profile>
+
+                </profilechange>
 
                 <!--
                     Reset of the GPIO pin after it was set to "triggered" state.
@@ -300,7 +311,7 @@
                     state="0" />
 
                 <!--
-                    Settings how the GPIO pin should be set if the system profile changes. This message is sent
+                    Settings how the GPIO pin should be reset if the system profile changes. This message is sent
                     to all Alert Clients as soon as the AlertR system profile changes. For example, if AlertR is used
                     in an alarm system context this could mean that the alarm system changed from the
                     system profile "activated" to the system profile "deactivated" and thus this message could be used
@@ -311,7 +322,17 @@
                         gpioPinStateNormal setting.
                 -->
                 <profilechange
-                    activated="False" />
+                    activated="False">
+
+                    <!--
+                        These are the target system profiles given as id for which the GPIO pin should be reset.
+                        If the AlertR system changes the used system profile to one of these profiles,
+                        the voltage of the GPIO pin will be changed.
+                        (at least one profile has to be set but also multiple profiles are possible)
+                    -->
+                    <profile>0</profile>
+
+                </profilechange>
 
                 <!--
                     Reset of the GPIO pin after it was set to "triggered" state.

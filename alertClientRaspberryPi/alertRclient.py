@@ -190,6 +190,9 @@ if __name__ == '__main__':
             recv_profile_change_activated = str(
                 item.find("gpio").find("profilechange").attrib["activated"]).upper() == "TRUE"
             alert.recv_profile_change_activated = recv_profile_change_activated
+            if recv_profile_change_activated:
+                for profile in item.find("gpio").find("profilechange").iterfind("profile"):
+                    alert.recv_profile_change_target_profiles.add(int(profile.text))
 
             gpio_reset_activated = str(item.find("gpio").find("reset").attrib["activated"]).upper() == "TRUE"
             alert.gpio_reset_activated = gpio_reset_activated
@@ -209,6 +212,10 @@ if __name__ == '__main__':
 
             if recv_normal_activated and alert.recv_normal_state != 0 and alert.recv_normal_state != 1:
                 raise ValueError("state for 'normal' sensor alert of Alert %d has to be 0 or 1." % alert.id)
+
+            if recv_profile_change_activated and not alert.recv_profile_change_target_profiles:
+                raise ValueError("No profiles set for profilechange of alert %d."
+                                 % alert.id)
 
             alert.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):

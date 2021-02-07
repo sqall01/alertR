@@ -50,6 +50,9 @@ class RaspberryPiGPIOAlert(_Alert):
         self.recv_triggered_state = None  # type: Optional[int]
         self.recv_normal_state = None  # type: Optional[int]
 
+        # The target system profile ids that the profile change message has to contain before the GPIO pin is reset.
+        self.recv_profile_change_target_profiles = set()
+
         # If the reset of the gpio pin is activated.
         self.gpio_reset_activated = False
 
@@ -155,6 +158,9 @@ class RaspberryPiGPIOAlert(_Alert):
         :param profile: object that contains the received "profilechange" message.
         """
         if not self.recv_profile_change_activated:
+            return
+
+        if profile.profileId not in self.recv_profile_change_target_profiles:
             return
 
         self._process_state_change(0)
