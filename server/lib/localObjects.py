@@ -67,6 +67,25 @@ class Sensor:
         self.dataType = None  # type: Optional[int]
         self.data = None
 
+    def deepcopy(self, sensor):
+        """
+        Copies the values of the object given as parameter into this object.
+        :param sensor: object to copy values from.
+        :return: pointer to this object
+        """
+        self.sensorId = sensor.sensorId
+        self.nodeId = sensor.nodeId
+        self.remoteSensorId = sensor.remoteSensorId
+        self.description = sensor.description
+        self.state = sensor.state
+        self.alertLevels = list(sensor.alertLevels)
+        self.lastStateUpdated = sensor.lastStateUpdated
+        self.alertDelay = sensor.alertDelay
+        self.dataType = sensor.dataType
+        self.data = sensor.data
+
+        return self
+
 
 # This class represents a single manager of a node.
 class Manager:
@@ -110,7 +129,7 @@ class AlertLevel:
 class SensorAlert:
 
     def __init__(self):
-        self.sensorAlertId = None  # type: Optional[int]
+        self.sensorAlertId = None  # type: Optional[int]  # TODO remove
         self.nodeId = None  # type: Optional[int]
 
         self.sensorId = None  # type: Optional[int]

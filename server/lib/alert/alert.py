@@ -11,6 +11,7 @@ import logging
 import threading
 import os
 import time
+import json
 from typing import List, Tuple, Optional, Any
 from .instrumentation import Instrumentation, InstrumentationPromise
 from ..server import AsynchronousSender
@@ -160,6 +161,9 @@ class SensorAlertExecuter(threading.Thread):
         # Create an event that is used to wake this thread up and react on sensor alerts.
         self._sensor_alert_event = threading.Event()
         self._sensor_alert_event.clear()
+
+        self._sensor_alert_queue = []
+        self._sensor_alert_queue_lock = threading.Lock()
 
         self._exit_flag = False
 
@@ -465,7 +469,8 @@ class SensorAlertExecuter(threading.Thread):
                          sensor_data: Any,
                          logger: logging.Logger = None) -> bool:
         """
-        Adds sensor alert to queue for processing.
+        Adds Sensor Alert to processing queue.
+
         :param node_id:
         :param sensor_id:
         :param state:
@@ -475,22 +480,42 @@ class SensorAlertExecuter(threading.Thread):
         :param data_type:
         :param sensor_data:
         :param logger:
-        :return: Success or failure of adding sensor alert to queue
+        :return: Success or Failure
         """
-        if self._storage.addSensorAlert(node_id,
-                                        sensor_id,
-                                        state,
-                                        data_json,
-                                        change_state,
-                                        has_latest_data,
-                                        data_type,
-                                        sensor_data,
-                                        logger):
+        # TODO data_json does not have to be json string, since we work internally and can just get the dict
 
-            self._sensor_alert_event.set()
-            return True
+        if logger is None:
+            logger = self._logger
 
-        return False
+        sensor_alert = SensorAlert()
+        sensor_alert.sensorId = sensor_id
+        sensor_alert.nodeId = node_id
+        sensor_alert.timeReceived = int(time.time())
+        sensor_alert.state = state
+        sensor_alert.changeState = change_state
+        sensor_alert.hasLatestData = has_latest_data
+        sensor_alert.dataType = data_type
+        sensor_alert.sensorData = sensor_data
+
+        sensor_alert.hasOptionalData = False
+        if data_json != "":
+            sensor_alert.hasOptionalData = True
+            sensor_alert.optionalData = json.loads(data_json)
+
+        sensor = self._storage.getSensorById(sensor_id, logger)
+        if sensor is None:
+            logger.error("[%s]: Not able to get sensor %d from database." % (self._log_tag, sensor_id))
+            return False
+
+        sensor_alert.description = sensor.description
+        sensor_alert.alertDelay = sensor.alertDelay
+        sensor_alert.alertLevels = sensor.alertLevels
+
+        with self._sensor_alert_queue_lock:
+            self._sensor_alert_queue.append(sensor_alert)
+
+        self._sensor_alert_event.set()
+        return True
 
     def run(self):
         """
@@ -509,15 +534,10 @@ class SensorAlertExecuter(threading.Thread):
             if self._manager_update_executer is None:
                 self._manager_update_executer = self._global_data.managerUpdateExecuter
 
-            # Apply a processing state to each sensor alert from the database.
-            sensor_alert_list = self._storage.getSensorAlerts()
-            for sensor_alert in sensor_alert_list:
-
-                # Delete sensor alert from the database.
-                if not self._storage.deleteSensorAlert(sensor_alert.sensorAlertId):
-                    self._logger.error("[%s]: Not able to delete Sensor Alert with id '%d' from database."
-                                       % (self._log_tag, sensor_alert.sensorAlertId))
-                    continue
+            # Apply a processing state to each sensor alert from the queue.
+            while self._sensor_alert_queue:
+                with self._sensor_alert_queue_lock:
+                    sensor_alert = self._sensor_alert_queue.pop(0)
 
                 sensor_alert_state = SensorAlertState(sensor_alert, self._alert_levels)
                 curr_sensor_alert_states.append(sensor_alert_state)

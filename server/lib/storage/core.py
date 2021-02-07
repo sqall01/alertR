@@ -9,7 +9,7 @@
 
 import logging
 from typing import Any, Optional, List, Union, Tuple, Dict
-from ..localObjects import Node, Alert, Manager, Sensor, SensorAlert, Option, SensorData
+from ..localObjects import Node, Alert, Manager, Sensor, Option, SensorData
 
 
 # Internal abstract class for new storage backends.
@@ -86,33 +86,6 @@ class _Storage:
 
         :param username:
         :param manager:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def addSensorAlert(self,
-                       nodeId: int,
-                       sensorId: int,
-                       state: int,
-                       dataJson: str,
-                       changeState: bool,
-                       hasLatestData: bool,
-                       dataType: int,
-                       sensorData: Any,
-                       logger: logging.Logger = None) -> bool:
-        """
-        Adds a sensor alert to the database when the id of a node is given, the id of the sensor that is used
-        internally by the node and the state.
-
-        :param nodeId:
-        :param sensorId:
-        :param state:
-        :param dataJson:
-        :param changeState:
-        :param hasLatestData:
-        :param dataType:
-        :param sensorData:
         :param logger:
         :return Success or Failure
         """
@@ -223,16 +196,6 @@ class _Storage:
         :param alertId:
         :param logger:
         :return list of alertLevels or None
-        """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def getSensorAlerts(self,
-                        logger: logging.Logger = None) -> Optional[List[SensorAlert]]:
-        """
-        Gets all sensor alerts in the database.
-
-        :param logger:
-        :return a list of sensorAlert objects or None
         """
         raise NotImplementedError("Function not implemented yet.")
 
@@ -428,18 +391,6 @@ class _Storage:
         Marks a node given by its id as connected.
 
         :param nodeId:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def deleteSensorAlert(self,
-                          sensorAlertId: int,
-                          logger: logging.Logger = None) -> bool:
-        """
-        Deletes a sensor alert given by its sensor alert id.
-
-        :param sensorAlertId:
         :param logger:
         :return Success or Failure
         """

@@ -3,9 +3,10 @@ import time
 import os
 import collections
 import threading
+import json
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option
+from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
@@ -26,10 +27,7 @@ class MockStorage(_Storage):
 
     def __init__(self):
         self._profile = 0
-        self._sensor_alerts = dict()  # type: Dict[int, SensorAlert]
-        self._sensor_data = dict()  # type: Dict[int, SensorData]
-        self._sensor_states = dict()  # type: Dict[int, int]
-        self._sensor_state_updates = dict()  # type: Dict[int, List[Tuple[int, int]]]
+        self._sensors = dict()  # type: Dict[int, Sensor]
 
     @property
     def profile(self):
@@ -41,24 +39,32 @@ class MockStorage(_Storage):
 
     @property
     def sensor_state_updates(self) -> Dict[int, List[Tuple[int, int]]]:
-        return self._sensor_state_updates
+        raise NotImplementedError("TODO")
 
-    def add_sensor_alert(self, sensor_alert: SensorAlert):
-        self._sensor_alerts[sensor_alert.sensorAlertId] = sensor_alert
+    def add_sensor(self, sensor: Sensor):
+        self._sensors[sensor.sensorId] = Sensor().deepcopy(sensor)
 
-    def add_sensor_data(self, sensor_data: SensorData):
-        self._sensor_data[sensor_data.sensorId] = sensor_data
+    def getSensorById(self,
+                      sensorId: int,
+                      logger: logging.Logger = None) -> Optional[Sensor]:
+        if sensorId in self._sensors.keys():
+            return self._sensors[sensorId]
+        return None
 
-    def add_sensor_state(self, sensor_id: int, state: int):
-        self._sensor_states[sensor_id] = state
+    def update_sensor_data(self, sensor_data: SensorData):  # TODO is this function still needed?
+        if (sensor_data.sensorId in self._sensors.keys()
+                and sensor_data.dataType == self._sensors[sensor_data.sensorId].dataType):
+            self._sensors[sensor_data.sensorId].data = sensor_data.data
 
-    def deleteSensorAlert(self,
-                          sensorAlertId: int,
-                          logger: logging.Logger = None) -> bool:
-        if sensorAlertId in self._sensor_alerts.keys():
-            del self._sensor_alerts[sensorAlertId]
-            return True
-        return False
+        else:
+            raise ValueError("Sensor %d does not exist." % sensor_data.sensorId)
+
+    def update_sensor_state(self, sensor_id: int, state: int):  # TODO is this function still needed?
+        if sensor_id in self._sensors.keys():
+            self._sensors[sensor_id].state = state
+
+        else:
+            raise ValueError("Sensor %d does not exist." % sensor_id)
 
     def get_option_by_type(self,
                            option_type: str,
@@ -73,25 +79,30 @@ class MockStorage(_Storage):
     def getSensorData(self,
                       sensorId: int,
                       _: logging.Logger = None) -> Optional[SensorData]:
-        if sensorId not in self._sensor_data.keys():
+        if sensorId not in self._sensors.keys():
             return None
-        return self._sensor_data[sensorId]
+
+        sensor = self._sensors[sensorId]
+        sensor_data = SensorData()
+        sensor_data.sensorId = sensor.sensorId
+        sensor_data.data = sensor.data
+        sensor_data.dataType = sensor.dataType
+
+        return sensor_data
 
     def getSensorState(self,
                        sensorId: int,
                        _: logging.Logger = None) -> Optional[int]:
-        if sensorId not in self._sensor_states.keys():
+        if sensorId not in self._sensors.keys():
             return None
-        return self._sensor_states[sensorId]
-
-    def getSensorAlerts(self,
-                        _: logging.Logger = None) -> Optional[List[SensorAlert]]:
-        return list(self._sensor_alerts.values())
+        return self._sensors[sensorId].state
 
     def updateSensorState(self,
                           nodeId: int,
                           stateList: List[Tuple[int, int]],
                           logger: logging.Logger = None) -> bool:
+        raise NotImplementedError("TODO")
+
         self._sensor_state_updates[nodeId] = stateList
         return True
 
@@ -1342,7 +1353,7 @@ class TestAlert(TestCase):
 
         self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
-    def test_run_trigger_correct_profile(self):
+    def test_run_trigger_correct_profile(self):  # TODO
         """
         Integration test that checks if sensor alerts that trigger when the system profile does match
         are processed correctly.
@@ -1373,19 +1384,29 @@ class TestAlert(TestCase):
             if alert_level.triggerAlertNormal:
                 gt_set.add(alert_level.level)
 
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         global_data.alertLevels = alert_levels
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 0
             sensor_alert.changeState = True
-            global_data.storage.add_sensor_alert(sensor_alert)
 
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
-            sensor_data.dataType = SensorDataType.NONE
-            global_data.storage.add_sensor_data(sensor_data)
-            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.description = sensor_alert.description
+            sensor.alertDelay  = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            global_data.storage.add_sensor(sensor)
 
-        sensor_alert_executer = SensorAlertExecuter(global_data)
+            json_data = "" if sensor_alert.optionalData else json.dumps(sensor_alert.optionalData)
+            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
+                                                   sensor_alert.sensorId,
+                                                   sensor_alert.state,
+                                                   json_data,
+                                                   sensor_alert.changeState,
+                                                   sensor_alert.hasLatestData,
+                                                   sensor_alert.dataType,
+                                                   sensor_alert.sensorData)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
