@@ -1565,7 +1565,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_toggle_state(self):
+    def test_run_instrumentation_toggle_state(self):  # TODO DONE
         """
         Integration test that checks if sensor alerts with instrumentation that
         change the state are correctly processed (no longer satisfies trigger condition after instrumentation
@@ -1597,13 +1597,6 @@ class TestAlert(TestCase):
         base_sensor_alert.state = 1
         base_sensor_alert.alertLevels.clear()
         base_sensor_alert.changeState = True
-        global_data.storage.add_sensor_alert(base_sensor_alert)
-
-        base_sensor_data = SensorData()
-        base_sensor_data.sensorId = base_sensor_alert.sensorId
-        base_sensor_data.dataType = SensorDataType.NONE
-        global_data.storage.add_sensor_data(base_sensor_data)
-        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
 
         gt_alert_level_set = set()
         alert_levels_no_longer_triggered = list()
@@ -1625,7 +1618,32 @@ class TestAlert(TestCase):
 
         global_data.alertLevels = alert_levels
 
+        # Add corresponding sensor for sensor alert.
+        sensor = Sensor()
+        sensor.sensorId = base_sensor_alert.sensorId
+        sensor.nodeId = base_sensor_alert.nodeId
+        sensor.remoteSensorId = 0
+        sensor.lastStateUpdated = 1337
+        sensor.description = base_sensor_alert.description
+        sensor.alertDelay = base_sensor_alert.alertDelay
+        sensor.alertLevels = list(base_sensor_alert.alertLevels)
+        sensor.state = base_sensor_alert.state
+        sensor.dataType = base_sensor_alert.dataType
+        sensor.data = base_sensor_alert.sensorData
+        global_data.storage.add_sensor(sensor)
+
         sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Add sensor alert for processing.
+        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
+        sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
+                                               base_sensor_alert.sensorId,
+                                               base_sensor_alert.state,
+                                               json_data,
+                                               base_sensor_alert.changeState,
+                                               base_sensor_alert.hasLatestData,
+                                               base_sensor_alert.dataType,
+                                               base_sensor_alert.sensorData)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1652,8 +1670,6 @@ class TestAlert(TestCase):
             self.assertIsNotNone(sensor_alert_state.sensor_alert)
             self.assertEqual(0, sensor_alert_state.sensor_alert.state)
             self.assertTrue(sensor_alert_state.uses_instrumentation)
-            self.assertEqual(base_sensor_alert, sensor_alert_state.init_sensor_alert)
-            self.assertNotEqual(base_sensor_alert, sensor_alert_state.sensor_alert)
             self.assertEqual(1, len(sensor_alert_state.sensor_alert.triggeredAlertLevels))
             test_alert_level_set.add(sensor_alert_state.sensor_alert.triggeredAlertLevels[0])
             self.assertEqual(num, len(sensor_alert_state.sensor_alert.alertLevels))
@@ -1665,14 +1681,11 @@ class TestAlert(TestCase):
         for alert_level in alert_levels_no_longer_triggered:
             self.assertFalse(alert_level.level in test_alert_level_set)
 
-        # Check sensor alerts in database were removed after processing.
-        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
-
         # Sensor alerts that did not trigger should lead to an manager state update.
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(len(alert_levels_no_longer_triggered), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_timeout(self):
+    def test_run_instrumentation_timeout(self):  # TODO DONE
         """
         Integration test that checks if sensor alerts with instrumentation that times out is processed correctly
         """
@@ -1701,13 +1714,6 @@ class TestAlert(TestCase):
         base_sensor_alert.state = 1
         base_sensor_alert.changeState = True
         base_sensor_alert.alertLevels.clear()
-        global_data.storage.add_sensor_alert(base_sensor_alert)
-
-        base_sensor_data = SensorData()
-        base_sensor_data.sensorId = base_sensor_alert.sensorId
-        base_sensor_data.dataType = SensorDataType.NONE
-        global_data.storage.add_sensor_data(base_sensor_data)
-        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
 
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
@@ -1720,7 +1726,32 @@ class TestAlert(TestCase):
 
         global_data.alertLevels = alert_levels
 
+        # Add corresponding sensor for sensor alert.
+        sensor = Sensor()
+        sensor.sensorId = base_sensor_alert.sensorId
+        sensor.nodeId = base_sensor_alert.nodeId
+        sensor.remoteSensorId = 0
+        sensor.lastStateUpdated = 1337
+        sensor.description = base_sensor_alert.description
+        sensor.alertDelay = base_sensor_alert.alertDelay
+        sensor.alertLevels = list(base_sensor_alert.alertLevels)
+        sensor.state = base_sensor_alert.state
+        sensor.dataType = base_sensor_alert.dataType
+        sensor.data = base_sensor_alert.sensorData
+        global_data.storage.add_sensor(sensor)
+
         sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Add sensor alert for processing.
+        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
+        sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
+                                               base_sensor_alert.sensorId,
+                                               base_sensor_alert.state,
+                                               json_data,
+                                               base_sensor_alert.changeState,
+                                               base_sensor_alert.hasLatestData,
+                                               base_sensor_alert.dataType,
+                                               base_sensor_alert.sensorData)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1742,14 +1773,11 @@ class TestAlert(TestCase):
 
         self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
 
-        # Check sensor alerts in database were removed after processing.
-        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
-
         # Sensor alerts that did not trigger should lead to an manager state update.
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_failed(self):
+    def test_run_instrumentation_failed(self):  # TODO DONE
         """
         Integration test that checks if sensor alerts with instrumentation that fails is processed correctly
         """
@@ -1778,13 +1806,6 @@ class TestAlert(TestCase):
         base_sensor_alert.state = 1
         base_sensor_alert.alertLevels.clear()
         base_sensor_alert.changeState = True
-        global_data.storage.add_sensor_alert(base_sensor_alert)
-
-        base_sensor_data = SensorData()
-        base_sensor_data.sensorId = base_sensor_alert.sensorId
-        base_sensor_data.dataType = SensorDataType.NONE
-        global_data.storage.add_sensor_data(base_sensor_data)
-        global_data.storage.add_sensor_state(base_sensor_alert.sensorId, base_sensor_alert.state)
 
         for i in range(len(alert_levels)):
             alert_level = alert_levels[i]
@@ -1797,7 +1818,32 @@ class TestAlert(TestCase):
 
         global_data.alertLevels = alert_levels
 
+        # Add corresponding sensor for sensor alert.
+        sensor = Sensor()
+        sensor.sensorId = base_sensor_alert.sensorId
+        sensor.nodeId = base_sensor_alert.nodeId
+        sensor.remoteSensorId = 0
+        sensor.lastStateUpdated = 1337
+        sensor.description = base_sensor_alert.description
+        sensor.alertDelay = base_sensor_alert.alertDelay
+        sensor.alertLevels = list(base_sensor_alert.alertLevels)
+        sensor.state = base_sensor_alert.state
+        sensor.dataType = base_sensor_alert.dataType
+        sensor.data = base_sensor_alert.sensorData
+        global_data.storage.add_sensor(sensor)
+
         sensor_alert_executer = SensorAlertExecuter(global_data)
+
+        # Add sensor alert for processing.
+        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
+        sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
+                                               base_sensor_alert.sensorId,
+                                               base_sensor_alert.state,
+                                               json_data,
+                                               base_sensor_alert.changeState,
+                                               base_sensor_alert.hasLatestData,
+                                               base_sensor_alert.dataType,
+                                               base_sensor_alert.sensorData)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1818,9 +1864,6 @@ class TestAlert(TestCase):
         time.sleep(2)
 
         self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        # Check sensor alerts in database were removed after processing.
-        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
