@@ -1353,7 +1353,7 @@ class TestAlert(TestCase):
 
         self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
-    def test_run_trigger_correct_profile(self):  # TODO
+    def test_run_trigger_correct_profile(self):  # TODO FIRST WORKING TEST CASE
         """
         Integration test that checks if sensor alerts that trigger when the system profile does match
         are processed correctly.
@@ -1384,21 +1384,27 @@ class TestAlert(TestCase):
             if alert_level.triggerAlertNormal:
                 gt_set.add(alert_level.level)
 
-        sensor_alert_executer = SensorAlertExecuter(global_data)
         global_data.alertLevels = alert_levels
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 0
             sensor_alert.changeState = True
 
+            # Add corresponding sensor for sensor alert.
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
-            sensor.alertDelay  = sensor_alert.alertDelay
+            sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
+            sensor.dataType = sensor_alert.dataType
+            sensor.data = sensor_alert.sensorData
             global_data.storage.add_sensor(sensor)
 
-            json_data = "" if sensor_alert.optionalData else json.dumps(sensor_alert.optionalData)
+            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
             sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
                                                    sensor_alert.sensorId,
                                                    sensor_alert.state,
@@ -1428,11 +1434,10 @@ class TestAlert(TestCase):
 
         self.assertEqual(len(gt_set), len(TestAlert._callback_trigger_sensor_alert_arg))
 
-        test_set = set([sas.sensor_alert.sensorAlertId for sas in TestAlert._callback_trigger_sensor_alert_arg])
-        self.assertEqual(gt_set, test_set)
-
-        # Check sensor alerts in database were removed after processing.
-        self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
+        test_list = []
+        for sas in TestAlert._callback_trigger_sensor_alert_arg:
+            test_list.extend(sas.sensor_alert.alertLevels)
+        self.assertEqual(gt_set, set(test_list))
 
         # Sensor alerts that did not trigger should lead to an manager state update.
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
