@@ -8,7 +8,6 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-import json
 from typing import List
 from ..globalData import GlobalData
 from ..localObjects import SensorDataType, Option, Profile
@@ -83,7 +82,7 @@ class ProfileChangeSensor(_InternalSensor):
         if not self._sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                             self.sensorId,
                                                             1,
-                                                            json.dumps(optional_data),
+                                                            optional_data,
                                                             False,
                                                             True,
                                                             self.dataType,

@@ -8,7 +8,6 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-import json
 import time
 from typing import Set
 from .core import _InternalSensor
@@ -88,17 +87,17 @@ class SensorTimeoutSensor(_InternalSensor):
 
         # Create message for sensor alert.
         message = "Sensor '%s' on host '%s' timed out." % (sensor_obj.description, node_obj.hostname)
-        data_json = json.dumps({"message": message,
-                                "description": sensor_obj.description,
-                                "hostname": node_obj.hostname,
-                                "username": node_obj.username,
-                                "instance": node_obj.instance,
-                                "nodeType": node_obj.nodeType})
+        optional_data = {"message": message,
+                         "description": sensor_obj.description,
+                         "hostname": node_obj.hostname,
+                         "username": node_obj.username,
+                         "instance": node_obj.instance,
+                         "nodeType": node_obj.nodeType}
 
         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                            self.sensorId,
                                                            1,
-                                                           data_json,
+                                                           optional_data,
                                                            change_state,
                                                            False,
                                                            SensorDataType.NONE,
@@ -134,17 +133,17 @@ class SensorTimeoutSensor(_InternalSensor):
 
         # Create message for sensor alert.
         message = "Sensor '%s' on host '%s' reconnected." % (sensor_obj.description, node_obj.hostname)
-        data_json = json.dumps({"message": message,
-                                "description": sensor_obj.description,
-                                "hostname": node_obj.hostname,
-                                "username": node_obj.username,
-                                "instance": node_obj.instance,
-                                "nodeType": node_obj.nodeType})
+        optional_data = {"message": message,
+                         "description": sensor_obj.description,
+                         "hostname": node_obj.hostname,
+                         "username": node_obj.username,
+                         "instance": node_obj.instance,
+                         "nodeType": node_obj.nodeType}
 
         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                            self.sensorId,
                                                            0,
-                                                           data_json,
+                                                           optional_data,
                                                            change_state,
                                                            False,
                                                            SensorDataType.NONE,
@@ -206,13 +205,13 @@ class SensorTimeoutSensor(_InternalSensor):
 
             sensors_field.append(sensor_field)
 
-        data_json = json.dumps({"message": message,
-                                "sensors": sensors_field})
+        optional_data = {"message": message,
+                         "sensors": sensors_field}
 
         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                            self.sensorId,
                                                            1,
-                                                           data_json,
+                                                           optional_data,
                                                            False,
                                                            False,
                                                            SensorDataType.NONE,

@@ -7,7 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import json
 import os
 from typing import Set
 from .core import _InternalSensor
@@ -86,16 +85,16 @@ class NodeTimeoutSensor(_InternalSensor):
         # Create message for sensor alert.
         message = "Node '%s' with username '%s' on host '%s' timed out." \
                   % (str(node_obj.instance), str(node_obj.username), str(node_obj.hostname))
-        data_json = json.dumps({"message": message,
-                                "hostname": node_obj.hostname,
-                                "username": node_obj.username,
-                                "instance": node_obj.instance,
-                                "nodeType": node_obj.nodeType})
+        optional_data = {"message": message,
+                         "hostname": node_obj.hostname,
+                         "username": node_obj.username,
+                         "instance": node_obj.instance,
+                         "nodeType": node_obj.nodeType}
 
         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                            self.sensorId,
                                                            1,
-                                                           data_json,
+                                                           optional_data,
                                                            change_state,
                                                            False,
                                                            SensorDataType.NONE,
@@ -129,16 +128,16 @@ class NodeTimeoutSensor(_InternalSensor):
         # Create message for sensor alert.
         message = "Node '%s' with username '%s' on host '%s' reconnected." \
                   % (str(node_obj.instance), str(node_obj.username), str(node_obj.hostname))
-        data_json = json.dumps({"message": message,
-                                "hostname": node_obj.hostname,
-                                "username": node_obj.username,
-                                "instance": node_obj.instance,
-                                "nodeType": node_obj.nodeType})
+        optional_data = {"message": message,
+                         "hostname": node_obj.hostname,
+                         "username": node_obj.username,
+                         "instance": node_obj.instance,
+                         "nodeType": node_obj.nodeType}
 
         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                            self.sensorId,
                                                            0,
-                                                           data_json,
+                                                           optional_data,
                                                            change_state,
                                                            False,
                                                            SensorDataType.NONE,
@@ -177,13 +176,13 @@ class NodeTimeoutSensor(_InternalSensor):
 
             nodes_field.append(node_field)
 
-        data_json = json.dumps({"message": message,
-                                "nodes": nodes_field})
+        optional_data = {"message": message,
+                         "nodes": nodes_field}
 
         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                            self.sensorId,
                                                            1,
-                                                           data_json,
+                                                           optional_data,
                                                            False,
                                                            False,
                                                            SensorDataType.NONE,

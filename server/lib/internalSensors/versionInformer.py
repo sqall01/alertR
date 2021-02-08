@@ -10,7 +10,6 @@
 import threading
 import os
 import time
-import json
 from typing import Optional
 from ..update import Updater
 from .core import _InternalSensor
@@ -144,11 +143,11 @@ class VersionInformerSensor(_InternalSensor):
 
                 # Add sensor alert to database for processing.
                 message = "Update checking failed %d times in a row." % update_fail_count
-                data_json = json.dumps({"message": message})
+                optional_data = {"message": message}
                 if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                                    self.sensorId,
                                                                    self.state,
-                                                                   data_json,
+                                                                   optional_data,
                                                                    change_state,
                                                                    False,
                                                                    SensorDataType.NONE,
@@ -260,20 +259,20 @@ class VersionInformerSensor(_InternalSensor):
                                   % (instance, username, hostname)  \
                                   + "(current: %.3f-%d; new: %.3f-%d)." \
                                   % (curr_version, curr_rev, new_version, new_rev)
-                        data_json = json.dumps({"message": message,
-                                                "hostname": hostname,
-                                                "username": username,
-                                                "instance": instance,
-                                                "nodeType": nodeType,
-                                                "version": curr_version,
-                                                "rev": curr_rev,
-                                                "newVersion": new_version,
-                                                "newRev": new_rev})
+                        optional_data = {"message": message,
+                                         "hostname": hostname,
+                                         "username": username,
+                                         "instance": instance,
+                                         "nodeType": nodeType,
+                                         "version": curr_version,
+                                         "rev": curr_rev,
+                                         "newVersion": new_version,
+                                         "newRev": new_rev}
 
                         if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                                            self.sensorId,
                                                                            self.state,
-                                                                           data_json,
+                                                                           optional_data,
                                                                            change_state,
                                                                            False,
                                                                            SensorDataType.NONE,
@@ -294,7 +293,7 @@ class VersionInformerSensor(_InternalSensor):
 
                 self.state = 0
                 message = "All nodes have the newest version."
-                data_json = json.dumps({"message": message})
+                optional_data = {"message": message}
 
                 # Change sensor state in database.
                 if not self.storage.updateSensorState(self.nodeId,  # nodeId
@@ -306,7 +305,7 @@ class VersionInformerSensor(_InternalSensor):
                 if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                                    self.sensorId,
                                                                    self.state,
-                                                                   data_json,
+                                                                   optional_data,
                                                                    True,
                                                                    False,
                                                                    SensorDataType.NONE,

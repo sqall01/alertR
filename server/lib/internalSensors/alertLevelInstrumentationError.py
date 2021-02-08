@@ -7,7 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import json
 import os
 from typing import Optional, Dict, Any
 from .core import _InternalSensor
@@ -49,12 +48,10 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
         self._logger.debug("[%s]: Triggering sensor alert for an instrumentation error of Alert Level '%d'."
                            % (self._log_tag, optional_data["alert_level"]))
 
-        data_json = json.dumps(optional_data)
-
         if not self._sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                             self.sensorId,
                                                             1,
-                                                            data_json,
+                                                            optional_data,
                                                             False,
                                                             False,
                                                             self.dataType,

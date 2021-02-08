@@ -1,6 +1,5 @@
 import logging
-import json
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional, Dict
 from collections import defaultdict
 from unittest import TestCase
 from lib.localObjects import SensorAlert, Option, Profile
@@ -23,7 +22,7 @@ class MockSensorAlertExecuter:
                          node_id: int,
                          sensor_id: int,
                          state: int,
-                         data_json: str,
+                         optional_data: Optional[Dict[str, Any]],
                          change_state: bool,
                          has_latest_data: bool,
                          data_type: int,
@@ -33,7 +32,6 @@ class MockSensorAlertExecuter:
         if not self.is_working:
             return False
 
-
         sensor_alert = SensorAlert()
         sensor_alert.nodeId = node_id
         sensor_alert.sensorId = sensor_id
@@ -42,11 +40,10 @@ class MockSensorAlertExecuter:
         sensor_alert.hasLatestData = has_latest_data
         sensor_alert.dataType = data_type
         sensor_alert.sensorData = sensor_data
-        if data_json == "":
-            sensor_alert.hasOptionalData = False
-        else:
+
+        sensor_alert.optionalData = optional_data
+        if optional_data:
             sensor_alert.hasOptionalData = True
-            sensor_alert.optionalData = json.loads(data_json)
 
         self._sensor_alerts.append(sensor_alert)
         return True

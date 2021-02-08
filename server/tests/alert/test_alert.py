@@ -3,7 +3,6 @@ import time
 import os
 import collections
 import threading
-import json
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor
@@ -106,6 +105,7 @@ class MockStorage(_Storage):
     def set_fail_getSensorState(self, value: bool):
         self._fail_getSensorState = value
 
+
 class MockInstrumentationNotCallable(Instrumentation):
 
     def __init__(self, alert_level: AlertLevel, sensor_alert: SensorAlert, logger: logging.Logger):
@@ -169,6 +169,7 @@ class TestAlert(TestCase):
             sensor_alert.alertDelay = 0
             sensor_alert.state = 1
             sensor_alert.hasOptionalData = False
+            sensor_alert.optionalData = None
             sensor_alert.changeState = False
             sensor_alert.alertLevels.append(i)
             sensor_alert.hasLatestData = False
@@ -783,7 +784,6 @@ class TestAlert(TestCase):
 
         self.assertEqual(1, len(sensor_alert_state.suitable_alert_levels))
 
-        suitable_alert_level = sensor_alert_state.suitable_alert_levels[0]
         self.assertTrue(sensor_alert_state.suitable_alert_levels[0].instrumentation_active)
         self.assertTrue(sensor_alert_state.uses_instrumentation)
 
@@ -1442,11 +1442,10 @@ class TestAlert(TestCase):
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
-            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
             sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
                                                    sensor_alert.sensorId,
                                                    sensor_alert.state,
-                                                   json_data,
+                                                   sensor_alert.optionalData,
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
@@ -1551,11 +1550,10 @@ class TestAlert(TestCase):
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
         # Add sensor alert for processing.
-        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
         sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
                                                base_sensor_alert.sensorId,
                                                base_sensor_alert.state,
-                                               json_data,
+                                               base_sensor_alert.optionalData,
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
@@ -1602,7 +1600,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_toggle_state(self):
+    def test_run_instrumentation_toggle_state(self):  # TODO fix issue with optional data type change
         """
         Integration test that checks if sensor alerts with instrumentation that
         change the state are correctly processed (no longer satisfies trigger condition after instrumentation
@@ -1672,11 +1670,10 @@ class TestAlert(TestCase):
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
         # Add sensor alert for processing.
-        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
         sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
                                                base_sensor_alert.sensorId,
                                                base_sensor_alert.state,
-                                               json_data,
+                                               base_sensor_alert.optionalData,
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
@@ -1780,11 +1777,10 @@ class TestAlert(TestCase):
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
         # Add sensor alert for processing.
-        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
         sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
                                                base_sensor_alert.sensorId,
                                                base_sensor_alert.state,
-                                               json_data,
+                                               base_sensor_alert.optionalData,
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
@@ -1872,11 +1868,10 @@ class TestAlert(TestCase):
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
         # Add sensor alert for processing.
-        json_data = "" if not base_sensor_alert.hasOptionalData else json.dumps(base_sensor_alert.optionalData)
         sensor_alert_executer.add_sensor_alert(base_sensor_alert.nodeId,
                                                base_sensor_alert.sensorId,
                                                base_sensor_alert.state,
-                                               json_data,
+                                               base_sensor_alert.optionalData,
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
@@ -1956,11 +1951,10 @@ class TestAlert(TestCase):
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
-            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
             sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
                                                    sensor_alert.sensorId,
                                                    sensor_alert.state,
-                                                   json_data,
+                                                   sensor_alert.optionalData,
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
@@ -2052,11 +2046,10 @@ class TestAlert(TestCase):
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
-            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
             sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
                                                    sensor_alert.sensorId,
                                                    sensor_alert.state,
-                                                   json_data,
+                                                   sensor_alert.optionalData,
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
@@ -2151,11 +2144,10 @@ class TestAlert(TestCase):
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
-            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
             sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
                                                    sensor_alert.sensorId,
                                                    sensor_alert.state,
-                                                   json_data,
+                                                   sensor_alert.optionalData,
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
@@ -2240,11 +2232,10 @@ class TestAlert(TestCase):
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
-            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
             sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
                                                    sensor_alert.sensorId,
                                                    sensor_alert.state,
-                                                   json_data,
+                                                   sensor_alert.optionalData,
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,

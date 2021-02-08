@@ -11,8 +11,7 @@ import logging
 import threading
 import os
 import time
-import json
-from typing import List, Tuple, Optional, Any
+from typing import List, Tuple, Optional, Any, Dict
 from .instrumentation import Instrumentation, InstrumentationPromise
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
@@ -462,7 +461,7 @@ class SensorAlertExecuter(threading.Thread):
                          node_id: int,
                          sensor_id: int,
                          state: int,
-                         data_json: str,
+                         optional_data: Optional[Dict[str, Any]],
                          change_state: bool,
                          has_latest_data: bool,
                          data_type: int,
@@ -474,7 +473,7 @@ class SensorAlertExecuter(threading.Thread):
         :param node_id:
         :param sensor_id:
         :param state:
-        :param data_json:
+        :param optional_data:
         :param change_state:
         :param has_latest_data:
         :param data_type:
@@ -482,7 +481,6 @@ class SensorAlertExecuter(threading.Thread):
         :param logger:
         :return: Success or Failure
         """
-        # TODO data_json does not have to be json string, since we work internally and can just get the dict
 
         if logger is None:
             logger = self._logger
@@ -497,10 +495,9 @@ class SensorAlertExecuter(threading.Thread):
         sensor_alert.dataType = data_type
         sensor_alert.sensorData = sensor_data
 
-        sensor_alert.hasOptionalData = False
-        if data_json != "":
+        sensor_alert.optionalData = optional_data
+        if optional_data:
             sensor_alert.hasOptionalData = True
-            sensor_alert.optionalData = json.loads(data_json)
 
         sensor = self._storage.getSensorById(sensor_id, logger)
         if sensor is None:

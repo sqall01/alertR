@@ -2516,12 +2516,6 @@ class ClientCommunication:
 
                     return False
 
-            # convert received data to a json string
-            if optionalData is None:
-                dataJson = ""
-            else:
-                dataJson = json.dumps(optionalData)
-
         except Exception as e:
             self.logger.exception("[%s]: Received sensor alert invalid (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
@@ -2603,7 +2597,7 @@ class ClientCommunication:
         if not self.sensorAlertExecuter.add_sensor_alert(self.nodeId,
                                                          sensor.sensorId,
                                                          state,
-                                                         dataJson,
+                                                         optionalData,
                                                          changeState,
                                                          hasLatestData,
                                                          sensorDataType,
