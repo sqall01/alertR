@@ -28,6 +28,7 @@ class MockStorage(_Storage):
     def __init__(self):
         self._profile = 0
         self._sensors = dict()  # type: Dict[int, Sensor]
+        self._sensor_state_updates = {}  # type: Dict[int, List[Tuple[int, int]]]
 
     @property
     def profile(self):
@@ -39,7 +40,7 @@ class MockStorage(_Storage):
 
     @property
     def sensor_state_updates(self) -> Dict[int, List[Tuple[int, int]]]:
-        raise NotImplementedError("TODO")
+        return self._sensor_state_updates
 
     def add_sensor(self, sensor: Sensor):
         self._sensors[sensor.sensorId] = Sensor().deepcopy(sensor)
@@ -101,8 +102,6 @@ class MockStorage(_Storage):
                           nodeId: int,
                           stateList: List[Tuple[int, int]],
                           logger: logging.Logger = None) -> bool:
-        raise NotImplementedError("TODO")
-
         self._sensor_state_updates[nodeId] = stateList
         return True
 
@@ -1869,7 +1868,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-    def test_run_alert_delay(self):
+    def test_run_alert_delay(self):  # TODO DONE
         """
         Integration test that checks if alert delay sensor alerts are processed correctly.
         """
@@ -1898,19 +1897,36 @@ class TestAlert(TestCase):
             gt_set.add(alert_level.level)
 
         global_data.alertLevels = alert_levels
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 1
             sensor_alert.alertDelay = delay
             sensor_alert.changeState = True
-            global_data.storage.add_sensor_alert(sensor_alert)
 
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
-            sensor_data.dataType = SensorDataType.NONE
-            global_data.storage.add_sensor_data(sensor_data)
-            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
+            sensor.dataType = sensor_alert.dataType
+            sensor.data = sensor_alert.sensorData
+            global_data.storage.add_sensor(sensor)
 
-        sensor_alert_executer = SensorAlertExecuter(global_data)
+            # Add sensor alert for processing.
+            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
+            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
+                                                   sensor_alert.sensorId,
+                                                   sensor_alert.state,
+                                                   json_data,
+                                                   sensor_alert.changeState,
+                                                   sensor_alert.hasLatestData,
+                                                   sensor_alert.dataType,
+                                                   sensor_alert.sensorData)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1928,9 +1944,6 @@ class TestAlert(TestCase):
             self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
             time.sleep(1)
 
-            # Check sensor alerts in database were removed while processing.
-            self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
-
             self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
         time.sleep(2)
@@ -1941,14 +1954,16 @@ class TestAlert(TestCase):
 
         self.assertEqual(len(gt_set), len(TestAlert._callback_trigger_sensor_alert_arg))
 
-        test_set = set([sas.sensor_alert.sensorAlertId for sas in TestAlert._callback_trigger_sensor_alert_arg])
-        self.assertEqual(gt_set, test_set)
+        test_list = []
+        for sas in TestAlert._callback_trigger_sensor_alert_arg:
+            test_list.extend(sas.sensor_alert.alertLevels)
+        self.assertEqual(gt_set, set(test_list))
 
         # No sensor alert should was dropped that should trigger a state update.
         self.assertFalse(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
-    def test_run_alert_delay_canceled(self):
+    def test_run_alert_delay_canceled(self):  # TODO DONE
         """
         Integration test that checks if alert delay sensor alerts that satisfy all conditions in the beginning
         but this changes during the delay are processed correctly.
@@ -1978,19 +1993,36 @@ class TestAlert(TestCase):
             gt_set.add(alert_level.level)
 
         global_data.alertLevels = alert_levels
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 1
             sensor_alert.alertDelay = delay
             sensor_alert.changeState = True
-            global_data.storage.add_sensor_alert(sensor_alert)
 
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
-            sensor_data.dataType = SensorDataType.NONE
-            global_data.storage.add_sensor_data(sensor_data)
-            global_data.storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
+            sensor.dataType = sensor_alert.dataType
+            sensor.data = sensor_alert.sensorData
+            global_data.storage.add_sensor(sensor)
 
-        sensor_alert_executer = SensorAlertExecuter(global_data)
+            # Add sensor alert for processing.
+            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
+            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
+                                                   sensor_alert.sensorId,
+                                                   sensor_alert.state,
+                                                   json_data,
+                                                   sensor_alert.changeState,
+                                                   sensor_alert.hasLatestData,
+                                                   sensor_alert.dataType,
+                                                   sensor_alert.sensorData)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -2007,9 +2039,6 @@ class TestAlert(TestCase):
         for i in range(int(delay/2)):
             self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
             time.sleep(1)
-
-            # Check sensor alerts in database were removed while processing.
-            self.assertEqual(0, len(global_data.storage.getSensorAlerts()))
 
             self.assertFalse(manager_update_executer._manager_update_event.is_set())
             self.assertEqual(0, len(manager_update_executer._queue_state_change))
@@ -2031,7 +2060,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-    def test_run_internal_sensor_update_last_state_time_unnecessary(self):
+    def test_run_internal_sensor_update_last_state_time_unnecessary(self):  # TODO DONE
         """
         Integration test that checks if the state of the internal sensor is not unnecessarily updated.
         """
@@ -2064,15 +2093,38 @@ class TestAlert(TestCase):
             alert_level.triggerAlertTriggered = True
 
         global_data.alertLevels = alert_levels
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 1
             sensor_alert.changeState = True
-            global_data.storage.add_sensor_alert(sensor_alert)
+
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
+            sensor.dataType = sensor_alert.dataType
+            sensor.data = sensor_alert.sensorData
+            global_data.storage.add_sensor(sensor)
+
+            # Add sensor alert for processing.
+            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
+            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
+                                                   sensor_alert.sensorId,
+                                                   sensor_alert.state,
+                                                   json_data,
+                                                   sensor_alert.changeState,
+                                                   sensor_alert.hasLatestData,
+                                                   sensor_alert.dataType,
+                                                   sensor_alert.sensorData)
 
         gt_last_state_updated = int(time.time()) - 10
         internal_sensor.lastStateUpdated = gt_last_state_updated
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -2097,9 +2149,7 @@ class TestAlert(TestCase):
 
         self.assertEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
 
-        self.assertEqual(0, len(storage.sensor_state_updates.keys()))
-
-    def test_run_internal_sensor_update_last_state_time_necessary(self):
+    def test_run_internal_sensor_update_last_state_time_necessary(self):  # TODO DONE
         """
         Integration test that checks if the state of the internal sensor is updated.
         """
@@ -2132,15 +2182,38 @@ class TestAlert(TestCase):
             alert_level.triggerAlertTriggered = True
 
         global_data.alertLevels = alert_levels
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         for sensor_alert in sensor_alerts:
             sensor_alert.state = 1
             sensor_alert.changeState = True
-            global_data.storage.add_sensor_alert(sensor_alert)
+
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
+            sensor.dataType = sensor_alert.dataType
+            sensor.data = sensor_alert.sensorData
+            global_data.storage.add_sensor(sensor)
+
+            # Add sensor alert for processing.
+            json_data = "" if not sensor_alert.hasOptionalData else json.dumps(sensor_alert.optionalData)
+            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
+                                                   sensor_alert.sensorId,
+                                                   sensor_alert.state,
+                                                   json_data,
+                                                   sensor_alert.changeState,
+                                                   sensor_alert.hasLatestData,
+                                                   sensor_alert.dataType,
+                                                   sensor_alert.sensorData)
 
         gt_last_state_updated = int(time.time()) - 31
         internal_sensor.lastStateUpdated = gt_last_state_updated
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
