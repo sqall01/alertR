@@ -280,9 +280,6 @@ class Instrumentation:
             new_sensor_alert = SensorAlert.convert_from_dict(sensor_alert_dict)
 
             # Check that certain sensor alert values have not changed.
-            if self._sensor_alert.sensorAlertId != new_sensor_alert.sensorAlertId:
-                raise ValueError("sensorAlertId not allowed to change")
-
             if self._sensor_alert.nodeId != new_sensor_alert.nodeId:
                 raise ValueError("nodeId not allowed to change")
 

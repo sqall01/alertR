@@ -129,7 +129,6 @@ class AlertLevel:
 class SensorAlert:
 
     def __init__(self):
-        self.sensorAlertId = None  # type: Optional[int]  # TODO remove
         self.nodeId = None  # type: Optional[int]
 
         self.sensorId = None  # type: Optional[int]

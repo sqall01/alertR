@@ -29,6 +29,8 @@ class MockStorage(_Storage):
         self._profile = 0
         self._sensors = dict()  # type: Dict[int, Sensor]
         self._sensor_state_updates = {}  # type: Dict[int, List[Tuple[int, int]]]
+        self._fail_getSensorState = False
+        self._fail_getSensorData = False
 
     @property
     def profile(self):
@@ -52,21 +54,6 @@ class MockStorage(_Storage):
             return self._sensors[sensorId]
         return None
 
-    def update_sensor_data(self, sensor_data: SensorData):  # TODO is this function still needed?
-        if (sensor_data.sensorId in self._sensors.keys()
-                and sensor_data.dataType == self._sensors[sensor_data.sensorId].dataType):
-            self._sensors[sensor_data.sensorId].data = sensor_data.data
-
-        else:
-            raise ValueError("Sensor %d does not exist." % sensor_data.sensorId)
-
-    def update_sensor_state(self, sensor_id: int, state: int):  # TODO is this function still needed?
-        if sensor_id in self._sensors.keys():
-            self._sensors[sensor_id].state = state
-
-        else:
-            raise ValueError("Sensor %d does not exist." % sensor_id)
-
     def get_option_by_type(self,
                            option_type: str,
                            logger: logging.Logger = None) -> Optional[Option]:
@@ -80,6 +67,10 @@ class MockStorage(_Storage):
     def getSensorData(self,
                       sensorId: int,
                       _: logging.Logger = None) -> Optional[SensorData]:
+
+        if self._fail_getSensorData:
+            return None
+
         if sensorId not in self._sensors.keys():
             return None
 
@@ -94,6 +85,10 @@ class MockStorage(_Storage):
     def getSensorState(self,
                        sensorId: int,
                        _: logging.Logger = None) -> Optional[int]:
+
+        if self._fail_getSensorState:
+            return None
+
         if sensorId not in self._sensors.keys():
             return None
         return self._sensors[sensorId].state
@@ -105,6 +100,11 @@ class MockStorage(_Storage):
         self._sensor_state_updates[nodeId] = stateList
         return True
 
+    def set_fail_getSensorData(self, value: bool):
+        self._fail_getSensorData = value
+
+    def set_fail_getSensorState(self, value: bool):
+        self._fail_getSensorState = value
 
 class MockInstrumentationNotCallable(Instrumentation):
 
@@ -162,7 +162,6 @@ class TestAlert(TestCase):
         sensor_alerts = list()
         for i in range(num):
             sensor_alert = SensorAlert()
-            sensor_alert.sensorAlertId = i
             sensor_alert.nodeId = i
             sensor_alert.sensorId = i
             sensor_alert.description = "SensorAlert_" + str(i)
@@ -206,9 +205,9 @@ class TestAlert(TestCase):
             self.assertEqual(i, len(dropped_states))
             self.assertEqual(len(sensor_alert_states) - i, len(new_states))
             for j in range(i):
-                self.assertEqual(j, dropped_states[j].sensorAlertId)
+                self.assertEqual(j, dropped_states[j].sensorId)
             for j in range(len(new_states)):
-                self.assertEqual(j+i, new_states[j].sensor_alert.sensorAlertId)
+                self.assertEqual(j+i, new_states[j].sensor_alert.sensorId)
 
     def test_filter_sensor_alerts_instrumentation_suppress(self):
         """
@@ -243,9 +242,9 @@ class TestAlert(TestCase):
             self.assertEqual(i, len(dropped_states))
             self.assertEqual(len(sensor_alert_states) - i, len(new_states))
             for j in range(i):
-                self.assertEqual(j, dropped_states[j].sensorAlertId)
+                self.assertEqual(j, dropped_states[j].sensorId)
             for j in range(len(new_states)):
-                self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorAlertId)
+                self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorId)
 
     def test_filter_sensor_alerts_instrumentation_fail(self):
         """
@@ -280,9 +279,9 @@ class TestAlert(TestCase):
             self.assertEqual(i, len(dropped_states))
             self.assertEqual(len(sensor_alert_states) - i, len(new_states))
             for j in range(i):
-                self.assertEqual(j, dropped_states[j].sensorAlertId)
+                self.assertEqual(j, dropped_states[j].sensorId)
             for j in range(len(new_states)):
-                self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorAlertId)
+                self.assertEqual(j+i, new_states[j].init_sensor_alert.sensorId)
 
     def test_update_suitable_alert_levels_wrong_profile(self):
         """
@@ -1162,27 +1161,32 @@ class TestAlert(TestCase):
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
+        sensor_alert_executer = SensorAlertExecuter(global_data)
         for i in range(len(sensor_alerts)):
             sensor_alert = sensor_alerts[i]
             sensor_alert.hasLatestData = False
             sensor_alert.changeState = True
             sensor_alert.state = i % 2
 
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
             if (i % 3) == 0:
-                sensor_data.dataType = SensorDataType.NONE
+                sensor.dataType = SensorDataType.NONE
             elif (i % 3) == 1:
-                sensor_data.dataType = SensorDataType.INT
-                sensor_data.data = i
+                sensor.dataType = SensorDataType.INT
+                sensor.data = i
             else:
-                sensor_data.dataType = SensorDataType.FLOAT
-                sensor_data.data = float(i)
-            storage.add_sensor_data(sensor_data)
-
-            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
-
-        sensor_alert_executer = SensorAlertExecuter(global_data)
+                sensor.dataType = SensorDataType.FLOAT
+                sensor.data = float(i)
+            global_data.storage.add_sensor(sensor)
 
         self.assertFalse(manager_update_executer._manager_update_event.is_set())
 
@@ -1230,19 +1234,25 @@ class TestAlert(TestCase):
             sensor_alert.changeState = False
             sensor_alert.state = i % 2
 
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
             if (i % 3) == 0:
-                sensor_data.dataType = SensorDataType.NONE
+                sensor.dataType = SensorDataType.NONE
             elif (i % 3) == 1:
-                sensor_data.dataType = SensorDataType.INT
-                sensor_data.data = i
+                sensor.dataType = SensorDataType.INT
+                sensor.data = i
             else:
-                sensor_data.dataType = SensorDataType.FLOAT
-                sensor_data.data = float(i)
-            storage.add_sensor_data(sensor_data)
-
-            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+                sensor.dataType = SensorDataType.FLOAT
+                sensor.data = float(i)
+            global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1270,7 +1280,7 @@ class TestAlert(TestCase):
 
     def test_queue_manager_update_state_change_db_fail(self):
         """
-        Tests that sensor alerts with a state change which a faulty database entry are
+        Tests that sensor alerts with a state change with a faulty database entry are
         not queued for state change processing.
         """
 
@@ -1284,6 +1294,7 @@ class TestAlert(TestCase):
 
         storage = MockStorage()
         global_data.storage = storage
+        global_data.storage.set_fail_getSensorState(True)
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
@@ -1293,17 +1304,25 @@ class TestAlert(TestCase):
             sensor_alert.changeState = True
             sensor_alert.state = i % 2
 
-            sensor_data = SensorData()
-            sensor_data.sensorId = sensor_alert.sensorId
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
             if (i % 3) == 0:
-                sensor_data.dataType = SensorDataType.NONE
+                sensor.dataType = SensorDataType.NONE
             elif (i % 3) == 1:
-                sensor_data.dataType = SensorDataType.INT
-                sensor_data.data = i
+                sensor.dataType = SensorDataType.INT
+                sensor.data = i
             else:
-                sensor_data.dataType = SensorDataType.FLOAT
-                sensor_data.data = float(i)
-            storage.add_sensor_data(sensor_data)
+                sensor.dataType = SensorDataType.FLOAT
+                sensor.data = float(i)
+            global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1331,6 +1350,7 @@ class TestAlert(TestCase):
 
         storage = MockStorage()
         global_data.storage = storage
+        global_data.storage.set_fail_getSensorData(True)
 
         alert_levels, sensor_alerts = self._create_sensor_alerts(num)
 
@@ -1340,7 +1360,25 @@ class TestAlert(TestCase):
             sensor_alert.changeState = False
             sensor_alert.state = i % 2
 
-            storage.add_sensor_state(sensor_alert.sensorId, sensor_alert.state)
+            # Add corresponding sensor for sensor alert.
+            sensor = Sensor()
+            sensor.sensorId = sensor_alert.sensorId
+            sensor.nodeId = sensor_alert.nodeId
+            sensor.remoteSensorId = 0
+            sensor.lastStateUpdated = 1337
+            sensor.description = sensor_alert.description
+            sensor.alertDelay = sensor_alert.alertDelay
+            sensor.alertLevels = list(sensor_alert.alertLevels)
+            sensor.state = sensor_alert.state
+            if (i % 3) == 0:
+                sensor.dataType = SensorDataType.NONE
+            elif (i % 3) == 1:
+                sensor.dataType = SensorDataType.INT
+                sensor.data = i
+            else:
+                sensor.dataType = SensorDataType.FLOAT
+                sensor.data = float(i)
+            global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
 
@@ -1352,7 +1390,7 @@ class TestAlert(TestCase):
 
         self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
-    def test_run_trigger_correct_profile(self):  # TODO DONE
+    def test_run_trigger_correct_profile(self):
         """
         Integration test that checks if sensor alerts that trigger when the system profile does match
         are processed correctly.
@@ -1443,7 +1481,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num - len(gt_set), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation(self):  # TODO DONE
+    def test_run_instrumentation(self):
         """
         Integration test that checks if sensor alerts with instrumentation (mirroring and suppression)
         are processed correctly.
@@ -1564,7 +1602,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_toggle_state(self):  # TODO DONE
+    def test_run_instrumentation_toggle_state(self):
         """
         Integration test that checks if sensor alerts with instrumentation that
         change the state are correctly processed (no longer satisfies trigger condition after instrumentation
@@ -1684,7 +1722,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(len(alert_levels_no_longer_triggered), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_timeout(self):  # TODO DONE
+    def test_run_instrumentation_timeout(self):
         """
         Integration test that checks if sensor alerts with instrumentation that times out is processed correctly
         """
@@ -1776,7 +1814,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_failed(self):  # TODO DONE
+    def test_run_instrumentation_failed(self):
         """
         Integration test that checks if sensor alerts with instrumentation that fails is processed correctly
         """
@@ -1868,7 +1906,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-    def test_run_alert_delay(self):  # TODO DONE
+    def test_run_alert_delay(self):
         """
         Integration test that checks if alert delay sensor alerts are processed correctly.
         """
@@ -1963,7 +2001,7 @@ class TestAlert(TestCase):
         self.assertFalse(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(0, len(manager_update_executer._queue_state_change))
 
-    def test_run_alert_delay_canceled(self):  # TODO DONE
+    def test_run_alert_delay_canceled(self):
         """
         Integration test that checks if alert delay sensor alerts that satisfy all conditions in the beginning
         but this changes during the delay are processed correctly.
@@ -2060,7 +2098,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
 
-    def test_run_internal_sensor_update_last_state_time_unnecessary(self):  # TODO DONE
+    def test_run_internal_sensor_update_last_state_time_unnecessary(self):
         """
         Integration test that checks if the state of the internal sensor is not unnecessarily updated.
         """
@@ -2149,7 +2187,7 @@ class TestAlert(TestCase):
 
         self.assertEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
 
-    def test_run_internal_sensor_update_last_state_time_necessary(self):  # TODO DONE
+    def test_run_internal_sensor_update_last_state_time_necessary(self):
         """
         Integration test that checks if the state of the internal sensor is updated.
         """
