@@ -483,7 +483,6 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        logger.debug("[%s]: Acquire lock." % self.log_tag)
         self.dbLock.acquire()
 
     def _releaseLock(self,
@@ -497,7 +496,6 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        logger.debug("[%s]: Release lock." % self.log_tag)
         self.dbLock.release()
 
     def _createStorage(self,
