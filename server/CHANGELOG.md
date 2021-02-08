@@ -7,6 +7,7 @@
 * Added system profile change message
 * Refactored option message handling
 * Removed `triggerAlways` flag for Alert Levels (same behavior can now be achieved by being part of all profiles)
+* Removed Sensor Alerts from database (use internal in-memory queue for Sensor Alert processing instead)
 
 ## 0.700-0
 
