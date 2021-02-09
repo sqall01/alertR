@@ -4,6 +4,7 @@
 * Updater can show changelog
 * Removed system status "activated" and "deactivated" to have a more generic system
 * Introduced system profiles to replace system status to have a more generic system
+* Check permissions of client key file
 
 ## 0.700-0
 

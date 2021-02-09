@@ -4,6 +4,7 @@
 * Only execute Sensor Alert once if it is for multiple Alert Levels that intersect with the Alert Levels of the configured Alert
 * Removed sensor alerts off message
 * Added system profile change message
+* Check permissions of client key file
 
 ## 0.700-0
 

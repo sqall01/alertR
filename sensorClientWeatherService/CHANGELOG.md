@@ -1,6 +1,7 @@
 ## 0.800-0
 
 * Updater can show changelog
+* Check permissions of client key file
 
 ## 0.700-0
 

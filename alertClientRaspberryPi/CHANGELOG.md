@@ -6,6 +6,7 @@
 * Added system profile change message
 * Removed sensor alerts off handling in configuration
 * Added system profile change handling in configuration
+* Check permissions of client key file
 
 ## 0.700-0
 
