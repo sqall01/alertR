@@ -322,7 +322,7 @@ class ServerCommunication(Communication):
             try:
                 nodeId = sensors_raw[i]["nodeId"]
                 sensorId = sensors_raw[i]["sensorId"]
-                remoteSensorId = sensors_raw[i]["remoteSensorId"]
+                clientSensorId = sensors_raw[i]["clientSensorId"]
                 alertDelay = sensors_raw[i]["alertDelay"]
                 dataType = sensors_raw[i]["dataType"]
 
@@ -345,7 +345,7 @@ class ServerCommunication(Communication):
             sensor = ManagerObjSensor()
             sensor.nodeId = nodeId
             sensor.sensorId = sensorId
-            sensor.remoteSensorId = remoteSensorId
+            sensor.clientSensorId = clientSensorId
             sensor.alertDelay = alertDelay
             sensor.alertLevels = sensorAlertLevels
             sensor.description = description
@@ -387,7 +387,7 @@ class ServerCommunication(Communication):
             try:
                 nodeId = alerts_raw[i]["nodeId"]
                 alertId = alerts_raw[i]["alertId"]
-                remoteAlertId = alerts_raw[i]["remoteAlertId"]
+                clientAlertId = alerts_raw[i]["clientAlertId"]
                 description = alerts_raw[i]["description"]
                 alertAlertLevels = alerts_raw[i]["alertLevels"]
 
@@ -401,7 +401,7 @@ class ServerCommunication(Communication):
             alert = ManagerObjAlert()
             alert.nodeId = nodeId
             alert.alertId = alertId
-            alert.remoteAlertId = remoteAlertId
+            alert.clientAlertId = clientAlertId
             alert.alertLevels = alertAlertLevels
             alert.description = description
             alerts.append(alert)

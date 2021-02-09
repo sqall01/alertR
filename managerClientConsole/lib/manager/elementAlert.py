@@ -188,8 +188,8 @@ class AlertDetailedUrwid:
         temp.append(urwid.Text(str(alert.alertId)))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Remote Alert ID:"))
-        temp.append(urwid.Text(str(alert.remoteAlertId)))
+        temp.append(urwid.Text("Client Alert ID:"))
+        temp.append(urwid.Text(str(alert.clientAlertId)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Description:"))

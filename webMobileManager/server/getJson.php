@@ -169,7 +169,7 @@ if(isset($_GET["data"])
                     }
 
                     $sensorEntry = array("id" => $row["id"],
-                        "remoteSensorId" => $row["remoteSensorId"],
+                        "clientSensorId" => $row["clientSensorId"],
                         "nodeId" => $row["nodeId"],
                         "description" => $row["description"],
                         "lastStateUpdated" => $row["lastStateUpdated"],
@@ -210,7 +210,7 @@ if(isset($_GET["data"])
                     }
 
                     $alertEntry = array("id" => $row["id"],
-                        "remoteAlertId" => $row["remoteAlertId"],
+                        "clientAlertId" => $row["clientAlertId"],
                         "nodeId" => $row["nodeId"],
                         "description" => $row["description"],
                         "alertLevels" => $alertLevelArray);

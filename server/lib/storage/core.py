@@ -127,14 +127,14 @@ class _Storage:
 
     def getSensorId(self,
                     nodeId: int,
-                    remoteSensorId: int,
+                    clientSensorId: int,
                     logger: logging.Logger = None) -> Optional[int]:
         """
-        Gets the sensor id of a sensor when the id of a node is given and the remote sensor id that
+        Gets the sensor id of a sensor when the id of a node is given and the client sensor id that
         is used by the node internally.
 
         :param nodeId:
-        :param remoteSensorId:
+        :param clientSensorId:
         :param logger:
         :return sensorId or None
         """
@@ -162,14 +162,14 @@ class _Storage:
 
     def getAlertId(self,
                    nodeId: int,
-                   remoteAlertId: int,
+                   clientAlertId: int,
                    logger: logging.Logger = None) -> Optional[int]:
         """
-        Gets the alert id of an alert when the id of a node is given and the remote alert id that is
+        Gets the alert id of an alert when the id of a node is given and the client alert id that is
         used by the node internally.
 
         :param nodeId:
-        :param remoteAlertId:
+        :param clientAlertId:
         :param logger:
         :return alertId or None
         """
@@ -425,7 +425,7 @@ class _Storage:
                           stateList: List[Tuple[int, int]],
                           logger: logging.Logger = None) -> bool:
         """
-        Updates the states of the sensors of a node in the database (given in a tuple of (remoteSensorId, state)).
+        Updates the states of the sensors of a node in the database (given in a tuple of (clientSensorId, state)).
 
         :param nodeId:
         :param stateList:
@@ -439,7 +439,7 @@ class _Storage:
                          dataList: List[Tuple[int, Any]],
                          logger: logging.Logger = None) -> bool:
         """
-        Updates the data of the sensors of a node in the database (given in a tuple of (remoteSensorId, data)).
+        Updates the data of the sensors of a node in the database (given in a tuple of (clientSensorId, data)).
 
         :param nodeId:
         :param dataList:

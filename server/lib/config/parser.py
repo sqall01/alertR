@@ -476,9 +476,8 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Sensor timeout sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 0
+            # Sensor timeout sensor has always this fix internal id.
+            sensor.clientSensorId = 0
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -501,7 +500,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -511,7 +510,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
         # Parse node timeout sensor (if activated).
         item = internalSensorsCfg.find("nodeTimeout")
@@ -525,9 +524,8 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Node timeout sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 1
+            # Node timeout sensor has always this fix internal id.
+            sensor.clientSensorId = 1
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -550,7 +548,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -560,7 +558,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
         # Parse alert system active sensor (if activated).
         item = internalSensorsCfg.find("profileChange")
@@ -574,9 +572,8 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Profile change sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 2
+            # Profile change sensor has always this fix internal id.
+            sensor.clientSensorId = 2
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -608,7 +605,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -619,7 +616,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, sensor.state))
+            dbInitialStateList.append((sensor.clientSensorId, sensor.state))
 
         # Parse version informer sensor (if activated).
         item = internalSensorsCfg.find("versionInformer")
@@ -634,9 +631,8 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.repo_url = global_data.update_url
             sensor.check_interval = int(item.attrib["interval"])
 
-            # Version informer sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 3
+            # Version informer sensor has always this fix internal id.
+            sensor.clientSensorId = 3
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -659,7 +655,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -669,7 +665,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
         # Parse alert level instrumentation error sensor (if activated).
         item = internalSensorsCfg.find("alertLevelInstrumentationError")
@@ -681,9 +677,8 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Alert level instrumentation error sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 4
+            # Alert level instrumentation error sensor has always this fix internal id.
+            sensor.clientSensorId = 4
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -706,7 +701,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -716,7 +711,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
     except Exception:
         global_data.logger.exception("[%s]: Configuring internal sensors failed." % log_tag)
@@ -732,7 +727,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
     for sensor in global_data.internalSensors:
 
         sensor.sensorId = global_data.storage.getSensorId(sensor.nodeId,
-                                                          sensor.remoteSensorId)
+                                                          sensor.clientSensorId)
         if sensor.sensorId is None:
             global_data.logger.error("[%s]: Not able to get sensor id for internal sensor from database." % log_tag)
             return False

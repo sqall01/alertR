@@ -72,7 +72,7 @@ def compare_alerts_content(context: TestCase, gt_alerts: List[ManagerObjAlert], 
                 if stored_alert == gt_alert:
                     context.fail("Changed ground truth object, not content of existing object.")
 
-                if (stored_alert.remoteAlertId != gt_alert.remoteAlertId
+                if (stored_alert.clientAlertId != gt_alert.clientAlertId
                         or stored_alert.description != gt_alert.description
                         or any(map(lambda x: x not in gt_alert.alertLevels, stored_alert.alertLevels))
                         or any(map(lambda x: x not in stored_alert.alertLevels, gt_alert.alertLevels))):
@@ -299,7 +299,7 @@ def compare_sensors_content(context: TestCase, gt_sensors: List[ManagerObjSensor
                 if stored_sensor == gt_sensor:
                     context.fail("Changed ground truth object, not content of existing object.")
 
-                if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
+                if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                         or stored_sensor.description != gt_sensor.description
                         or stored_sensor.alertDelay != gt_sensor.alertDelay
                         or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated

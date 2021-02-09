@@ -547,7 +547,7 @@ class SensorAlertExecuter(threading.Thread):
 
                 self._internal_sensor.lastStateUpdated = utc_timestamp
                 if not self._storage.updateSensorState(self._internal_sensor.nodeId,  # nodeId
-                                                       [(self._internal_sensor.remoteSensorId,
+                                                       [(self._internal_sensor.clientSensorId,
                                                          self._internal_sensor.state)],  # stateList
                                                        self._logger):  # logger
                     self._logger.error("[%s]: Not able to change sensor state for internal alert level "

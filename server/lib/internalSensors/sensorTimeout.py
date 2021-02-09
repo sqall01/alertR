@@ -79,7 +79,7 @@ class SensorTimeoutSensor(_InternalSensor):
 
             # Change sensor state in database.
             if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                  [(self.remoteSensorId, self.state)],  # stateList
+                                                  [(self.clientSensorId, self.state)],  # stateList
                                                   self.logger):  # logger
                 self.logger.error("[%s]: Not able to change sensor state for internal sensor "
                                   % self.log_tag
@@ -126,7 +126,7 @@ class SensorTimeoutSensor(_InternalSensor):
 
             # Change sensor state in database.
             if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                  [(self.remoteSensorId, self.state)],  # stateList
+                                                  [(self.clientSensorId, self.state)],  # stateList
                                                   self.logger):  # logger
                 self.logger.error("[%s]: Not able to change sensor state for internal sensor timeout sensor."
                                   % self.log_tag)

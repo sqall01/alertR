@@ -339,8 +339,8 @@ class SensorDetailedUrwid:
         temp.append(urwid.Text(str(sensor.sensorId)))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Remote Sensor ID:"))
-        temp.append(urwid.Text(str(sensor.remoteSensorId)))
+        temp.append(urwid.Text("Client Sensor ID:"))
+        temp.append(urwid.Text(str(sensor.clientSensorId)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Alert Delay:"))

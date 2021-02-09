@@ -1172,7 +1172,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -1238,7 +1238,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -1308,7 +1308,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -1364,7 +1364,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -1431,7 +1431,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -1537,7 +1537,7 @@ class TestAlert(TestCase):
         sensor = Sensor()
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
-        sensor.remoteSensorId = 0
+        sensor.clientSensorId = 0
         sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
@@ -1657,7 +1657,7 @@ class TestAlert(TestCase):
         sensor = Sensor()
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
-        sensor.remoteSensorId = 0
+        sensor.clientSensorId = 0
         sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
@@ -1764,7 +1764,7 @@ class TestAlert(TestCase):
         sensor = Sensor()
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
-        sensor.remoteSensorId = 0
+        sensor.clientSensorId = 0
         sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
@@ -1855,7 +1855,7 @@ class TestAlert(TestCase):
         sensor = Sensor()
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
-        sensor.remoteSensorId = 0
+        sensor.clientSensorId = 0
         sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
@@ -1940,7 +1940,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -2035,7 +2035,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -2110,7 +2110,7 @@ class TestAlert(TestCase):
 
         internal_sensor = MockInternalSensor(global_data)
         internal_sensor.nodeId = 1
-        internal_sensor.remoteSensorId = 2
+        internal_sensor.clientSensorId = 2
         internal_sensor.state = 0
         global_data.internalSensors.append(internal_sensor)
 
@@ -2133,7 +2133,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -2198,7 +2198,7 @@ class TestAlert(TestCase):
 
         internal_sensor = MockInternalSensor(global_data)
         internal_sensor.nodeId = 1
-        internal_sensor.remoteSensorId = 2
+        internal_sensor.clientSensorId = 2
         internal_sensor.state = 0
         global_data.internalSensors.append(internal_sensor)
 
@@ -2221,7 +2221,7 @@ class TestAlert(TestCase):
             sensor = Sensor()
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
-            sensor.remoteSensorId = 0
+            sensor.clientSensorId = 0
             sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
@@ -2268,5 +2268,5 @@ class TestAlert(TestCase):
         self.assertNotEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
 
         self.assertEqual(1, len(storage.sensor_state_updates.keys()))
-        self.assertEqual(internal_sensor.remoteSensorId, storage.sensor_state_updates[internal_sensor.nodeId][0][0])
+        self.assertEqual(internal_sensor.clientSensorId, storage.sensor_state_updates[internal_sensor.nodeId][0][0])
         self.assertEqual(internal_sensor.state, storage.sensor_state_updates[internal_sensor.nodeId][0][1])

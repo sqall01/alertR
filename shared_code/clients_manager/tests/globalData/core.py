@@ -62,7 +62,7 @@ class TestSystemDataCore(TestCase):
         alert = ManagerObjAlert()
         alert.nodeId = 1
         alert.alertId = 2
-        alert.remoteAlertId = 0
+        alert.clientAlertId = 0
         alert.alertLevels = [1]
         alert.description = "alert_1"
         self.alerts.append(alert)
@@ -84,7 +84,7 @@ class TestSystemDataCore(TestCase):
         alert = ManagerObjAlert()
         alert.nodeId = 2
         alert.alertId = 1
-        alert.remoteAlertId = 3
+        alert.clientAlertId = 3
         alert.alertLevels = [2]
         alert.description = "alert_2"
         self.alerts.append(alert)
@@ -106,7 +106,7 @@ class TestSystemDataCore(TestCase):
         alert = ManagerObjAlert()
         alert.nodeId = 3
         alert.alertId = 3
-        alert.remoteAlertId = 1
+        alert.clientAlertId = 1
         alert.alertLevels = [1, 2]
         alert.description = "alert_3"
         self.alerts.append(alert)
@@ -209,7 +209,7 @@ class TestSystemDataCore(TestCase):
         sensor = ManagerObjSensor()
         sensor.nodeId = 7
         sensor.sensorId = 1
-        sensor.remoteSensorId = 2
+        sensor.clientSensorId = 2
         sensor.alertDelay = 0
         sensor.alertLevels = [2]
         sensor.description = "sensor_1"
@@ -235,7 +235,7 @@ class TestSystemDataCore(TestCase):
         sensor = ManagerObjSensor()
         sensor.nodeId = 8
         sensor.sensorId = 2
-        sensor.remoteSensorId = 3
+        sensor.clientSensorId = 3
         sensor.alertDelay = 0
         sensor.alertLevels = [1, 2]
         sensor.description = "sensor_2"
@@ -261,7 +261,7 @@ class TestSystemDataCore(TestCase):
         sensor = ManagerObjSensor()
         sensor.nodeId = 9
         sensor.sensorId = 3
-        sensor.remoteSensorId = 1
+        sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [1]
         sensor.description = "sensor_3"
@@ -287,7 +287,7 @@ class TestSystemDataCore(TestCase):
         sensor = ManagerObjSensor()
         sensor.nodeId = 10
         sensor.sensorId = 4
-        sensor.remoteSensorId = 1
+        sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [3]
         sensor.description = "server_sensor_1"
@@ -313,7 +313,7 @@ class TestSystemDataCore(TestCase):
         sensor = ManagerObjSensor()
         sensor.nodeId = 11
         sensor.sensorId = 5
-        sensor.remoteSensorId = 4
+        sensor.clientSensorId = 4
         sensor.alertDelay = 0
         sensor.alertLevels = [1, 2]
         sensor.description = "server_sensor_2"
@@ -339,7 +339,7 @@ class TestSystemDataCore(TestCase):
         sensor = ManagerObjSensor()
         sensor.nodeId = 12
         sensor.sensorId = 6
-        sensor.remoteSensorId = 1
+        sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [2]
         sensor.description = "server_sensor_3"

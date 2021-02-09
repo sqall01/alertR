@@ -201,8 +201,8 @@ class AlertLevelDetailedUrwid:
         temp.append(urwid.Text(str(alert.alertId)))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Remote Alert ID:"))
-        temp.append(urwid.Text(str(alert.remoteAlertId)))
+        temp.append(urwid.Text("Client Alert ID:"))
+        temp.append(urwid.Text(str(alert.clientAlertId)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Description:"))
@@ -275,8 +275,8 @@ class AlertLevelDetailedUrwid:
         temp.append(urwid.Text(str(sensor.sensorId)))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Remote Sensor ID:"))
-        temp.append(urwid.Text(str(sensor.remoteSensorId)))
+        temp.append(urwid.Text("Client Sensor ID:"))
+        temp.append(urwid.Text(str(sensor.clientSensorId)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Alert Delay:"))

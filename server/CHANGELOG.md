@@ -9,6 +9,8 @@
 * Removed `triggerAlways` flag for Alert Levels (same behavior can now be achieved by being part of all profiles)
 * Removed Sensor Alerts from database (use internal in-memory queue for Sensor Alert processing instead)
 * Check permissions of server key file
+* Renamed remoteSensorId to clientSensorId to have a more sane naming convention
+* Renamed remoteAlertId to clientAlertId to have a more sane naming convention
 
 ## 0.700-0
 

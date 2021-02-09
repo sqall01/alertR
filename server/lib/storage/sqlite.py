@@ -169,7 +169,7 @@ class Sqlite(_Storage):
                 alert = Alert()
                 alert.alertId = result[0][0]
                 alert.nodeId = result[0][1]
-                alert.remoteAlertId = result[0][2]
+                alert.clientAlertId = result[0][2]
                 alert.description = result[0][3]
 
                 # Set alert levels for alert.
@@ -334,7 +334,7 @@ class Sqlite(_Storage):
                 sensor = Sensor()
                 sensor.sensorId = result[0][0]
                 sensor.nodeId = result[0][1]
-                sensor.remoteSensorId = result[0][2]
+                sensor.clientSensorId = result[0][2]
                 sensor.description = result[0][3]
                 sensor.state = result[0][4]
                 sensor.lastStateUpdated = result[0][5]
@@ -389,17 +389,17 @@ class Sqlite(_Storage):
 
     def _getSensorId(self,
                      nodeId: int,
-                     remoteSensorId: int) -> int:
+                     clientSensorId: int) -> int:
         """
         Internal function that gets the sensor id of a sensor when the id
-        of a node is given and the remote sensor id that is used by the node internally.
+        of a node is given and the client sensor id that is used by the node internally.
 
         :param nodeId:
-        :param remoteSensorId:
+        :param clientSensorId:
         :return: sensorId or raised Exception
         """
         # get sensorId from database
-        self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND remoteSensorId = ?", (nodeId, remoteSensorId))
+        self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND clientSensorId = ?", (nodeId, clientSensorId))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
@@ -410,17 +410,17 @@ class Sqlite(_Storage):
 
     def _getAlertId(self,
                     nodeId: int,
-                    remoteAlertId: int) -> int:
+                    clientAlertId: int) -> int:
         """
         internal function that gets the alert id of an alert when the id
-        of a node is given and the remote alert id that is used by the node internally.
+        of a node is given and the client alert id that is used by the node internally.
 
         :param nodeId:
-        :param remoteAlertId:
+        :param clientAlertId:
         :return: alertId or raised Exception
         """
         # get alertId from database
-        self.cursor.execute("SELECT id FROM alerts WHERE nodeId = ? AND remoteAlertId = ?", (nodeId, remoteAlertId))
+        self.cursor.execute("SELECT id FROM alerts WHERE nodeId = ? AND clientAlertId = ?", (nodeId, clientAlertId))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
@@ -555,7 +555,7 @@ class Sqlite(_Storage):
         self.cursor.execute("CREATE TABLE sensors ("
                             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                             + "nodeId INTEGER NOT NULL, "
-                            + "remoteSensorId INTEGER NOT NULL, "
+                            + "clientSensorId INTEGER NOT NULL, "
                             + "description TEXT NOT NULL, "
                             + "state INTEGER NOT NULL, "
                             + "lastStateUpdated INTEGER NOT NULL, "
@@ -586,7 +586,7 @@ class Sqlite(_Storage):
         self.cursor.execute("CREATE TABLE alerts ("
                             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                             + "nodeId INTEGER NOT NULL, "
-                            + "remoteAlertId INTEGER NOT NULL, "
+                            + "clientAlertId INTEGER NOT NULL, "
                             + "description TEXT NOT NULL, "
                             + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
@@ -1184,9 +1184,9 @@ class Sqlite(_Storage):
             else:
                 sensorData = sensor["data"]
 
-            # check if a sensor with the same remote id for this node
+            # check if a sensor with the same client id for this node
             # already exists in the database
-            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND remoteSensorId = ?",
+            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND clientSensorId = ?",
                                 (nodeId, sensor["clientSensorId"]))
             result = self.cursor.fetchall()
 
@@ -1202,7 +1202,7 @@ class Sqlite(_Storage):
                     utcTimestamp = int(time.time())
                     self.cursor.execute("INSERT INTO sensors ("
                                         + "nodeId, "
-                                        + "remoteSensorId, "
+                                        + "clientSensorId, "
                                         + "description, "
                                         + "state, "
                                         + "lastStateUpdated, "
@@ -1412,7 +1412,7 @@ class Sqlite(_Storage):
         # get updated sensors from database
         try:
             self.cursor.execute("SELECT id, "
-                                + "remoteSensorId "
+                                + "clientSensorId "
                                 + "FROM sensors "
                                 + "WHERE nodeId = ? ", (nodeId, ))
             result = self.cursor.fetchall()
@@ -1489,10 +1489,10 @@ class Sqlite(_Storage):
         # add/update all alerts
         for alert in alerts:
 
-            # check if an alert with the same remote id for this node
+            # check if an alert with the same client id for this node
             # already exists in the database
             self.cursor.execute("SELECT id FROM alerts "
-                                + "WHERE nodeId = ? AND remoteAlertId = ?",
+                                + "WHERE nodeId = ? AND clientAlertId = ?",
                                 (nodeId, int(alert["clientAlertId"])))
             result = self.cursor.fetchall()
 
@@ -1506,7 +1506,7 @@ class Sqlite(_Storage):
                 try:
                     self.cursor.execute("INSERT INTO alerts ("
                                         + "nodeId, "
-                                        + "remoteAlertId, "
+                                        + "clientAlertId, "
                                         + "description) VALUES (?, ?, ?)",
                                         (nodeId,
                                          int(alert["clientAlertId"]),
@@ -1645,7 +1645,7 @@ class Sqlite(_Storage):
         # get updated alerts from database
         try:
             self.cursor.execute("SELECT id, "
-                                + "remoteAlertId "
+                                + "clientAlertId "
                                 + "FROM alerts "
                                 + "WHERE nodeId = ? ", (nodeId, ))
             result = self.cursor.fetchall()
@@ -1890,7 +1890,7 @@ class Sqlite(_Storage):
 
         self._acquireLock(logger)
 
-        # stateList is a list of tuples of (remoteSensorId, state)
+        # stateList is a list of tuples of (clientSensorId, state)
         for stateTuple in stateList:
 
             try:
@@ -1898,7 +1898,7 @@ class Sqlite(_Storage):
                 # check if the sensor does exist in the database
                 self.cursor.execute("SELECT id FROM sensors "
                                     + "WHERE nodeId = ? "
-                                    + "AND remoteSensorId = ?", (nodeId, stateTuple[0]))
+                                    + "AND clientSensorId = ?", (nodeId, stateTuple[0]))
                 result = self.cursor.fetchall()
                 if len(result) != 1:
                     logger.error("[%s]: Sensor does not exist in database." % self.log_tag)
@@ -1910,7 +1910,7 @@ class Sqlite(_Storage):
                                     + "state = ?, "
                                     + "lastStateUpdated = ? "
                                     + "WHERE nodeId = ? "
-                                    + "AND remoteSensorId = ?",
+                                    + "AND clientSensorId = ?",
                                     (stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
 
             except Exception as e:
@@ -1934,7 +1934,7 @@ class Sqlite(_Storage):
 
         self._acquireLock(logger)
 
-        # dataList is a list of tuples of (remoteSensorId, data)
+        # dataList is a list of tuples of (clientSensorId, data)
         for dataTuple in dataList:
 
             try:
@@ -1942,7 +1942,7 @@ class Sqlite(_Storage):
                 # data type.
                 self.cursor.execute("SELECT id, dataType FROM sensors "
                                     + "WHERE nodeId = ? "
-                                    + "AND remoteSensorId = ?", (nodeId, dataTuple[0]))
+                                    + "AND clientSensorId = ?", (nodeId, dataTuple[0]))
                 result = self.cursor.fetchall()
 
                 if len(result) != 1:
@@ -1954,7 +1954,7 @@ class Sqlite(_Storage):
                 dataType = result[0][1]
 
                 if dataType == SensorDataType.NONE:
-                    logger.error("[%s]: Sensor with remote id %d holds no data. Ignoring it."
+                    logger.error("[%s]: Sensor with client id %d holds no data. Ignoring it."
                                  % (self.log_tag, dataTuple[0]))
 
                 elif dataType == SensorDataType.INT:
@@ -2011,7 +2011,7 @@ class Sqlite(_Storage):
 
     def getSensorId(self,
                     nodeId: int,
-                    remoteSensorId: int,
+                    clientSensorId: int,
                     logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
@@ -2021,7 +2021,7 @@ class Sqlite(_Storage):
         self._acquireLock(logger)
 
         try:
-            sensorId = self._getSensorId(nodeId, remoteSensorId)
+            sensorId = self._getSensorId(nodeId, clientSensorId)
 
         except Exception as e:
             logger.exception("[%s]: Not able to get sensorId from database." % self.log_tag)
@@ -2033,7 +2033,7 @@ class Sqlite(_Storage):
 
     def getAlertId(self,
                    nodeId: int,
-                   remoteAlertId: int,
+                   clientAlertId: int,
                    logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
@@ -2043,7 +2043,7 @@ class Sqlite(_Storage):
         self._acquireLock(logger)
 
         try:
-            alertId = self._getAlertId(nodeId, remoteAlertId)
+            alertId = self._getAlertId(nodeId, clientAlertId)
 
         except Exception as e:
             logger.exception("[%s]: Not able to get alertId from database." % self.log_tag)

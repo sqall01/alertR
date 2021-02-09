@@ -676,11 +676,11 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("UPDATE alerts SET "
                                      + "nodeId = %s, "
-                                     + "remoteAlertId = %s, "
+                                     + "clientAlertId = %s, "
                                      + "description = %s "
                                      + "WHERE id = %s",
                                      (alert.nodeId,
-                                      alert.remoteAlertId,
+                                      alert.clientAlertId,
                                       alert.description,
                                       alert.alertId))
 
@@ -706,10 +706,10 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO alerts ("
                                      + "id, "
                                      + "nodeId, "
-                                     + "remoteAlertId, "
+                                     + "clientAlertId, "
                                      + "description) "
                                      + "VALUES (%s, %s, %s, %s)",
-                                     (alert.alertId, alert.nodeId, alert.remoteAlertId, alert.description))
+                                     (alert.alertId, alert.nodeId, alert.clientAlertId, alert.description))
 
                 for alertAlertLevel in alert.alertLevels:
                     self._cursor.execute("INSERT INTO alertsAlertLevels ("
@@ -1062,7 +1062,7 @@ class Mysql(_Storage):
 
                 self._cursor.execute("UPDATE sensors SET "
                                      + "nodeId = %s, "
-                                     + "remoteSensorId = %s, "
+                                     + "clientSensorId = %s, "
                                      + "description = %s, "
                                      + "state = %s ,"
                                      + "lastStateUpdated = %s, "
@@ -1070,7 +1070,7 @@ class Mysql(_Storage):
                                      + "dataType = %s "
                                      + "WHERE id = %s",
                                      (sensor.nodeId,
-                                      sensor.remoteSensorId,
+                                      sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
                                       sensor.lastStateUpdated,
@@ -1103,7 +1103,7 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO sensors ("
                                      + "id, "
                                      + "nodeId, "
-                                     + "remoteSensorId, "
+                                     + "clientSensorId, "
                                      + "description, "
                                      + "state, "
                                      + "lastStateUpdated, "
@@ -1112,7 +1112,7 @@ class Mysql(_Storage):
                                      + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                                      (sensor.sensorId,
                                       sensor.nodeId,
-                                      sensor.remoteSensorId,
+                                      sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
                                       sensor.lastStateUpdated,
@@ -1249,7 +1249,7 @@ class Mysql(_Storage):
         self._cursor.execute("SELECT "
                              + "id, "
                              + "nodeId, "
-                             + "remoteSensorId, "
+                             + "clientSensorId, "
                              + "description, "
                              + "state, "
                              + "lastStateUpdated, "
@@ -1262,7 +1262,7 @@ class Mysql(_Storage):
             sensor = ManagerObjSensor()
             sensor.sensorId = sensor_tuple[0]
             sensor.nodeId = sensor_tuple[1]
-            sensor.remoteSensorId = sensor_tuple[2]
+            sensor.clientSensorId = sensor_tuple[2]
             sensor.description = sensor_tuple[3]
             sensor.state = sensor_tuple[4]
             sensor.lastStateUpdated = sensor_tuple[5]
@@ -1303,7 +1303,7 @@ class Mysql(_Storage):
         self._cursor.execute("SELECT "
                              + "id, "
                              + "nodeId, "
-                             + "remoteAlertId, "
+                             + "clientAlertId, "
                              + "description "
                              + "FROM alerts")
         result = self._cursor.fetchall()
@@ -1312,7 +1312,7 @@ class Mysql(_Storage):
             alert = ManagerObjAlert()
             alert.alertId = alert_tuple[0]
             alert.nodeId = alert_tuple[1]
-            alert.remoteAlertId = alert_tuple[2]
+            alert.clientAlertId = alert_tuple[2]
             alert.description = alert_tuple[3]
 
             self._cursor.execute("SELECT "
@@ -1427,7 +1427,7 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE sensors ("
                                      + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
                                      + "nodeId INTEGER NOT NULL, "
-                                     + "remoteSensorId INTEGER NOT NULL, "
+                                     + "clientSensorId INTEGER NOT NULL, "
                                      + "description VARCHAR(255) NOT NULL, "
                                      + "state INTEGER NOT NULL, "
                                      + "lastStateUpdated INTEGER NOT NULL, "
@@ -1513,7 +1513,7 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE alerts ("
                                      + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
                                      + "nodeId INTEGER NOT NULL, "
-                                     + "remoteAlertId INTEGER NOT NULL, "
+                                     + "clientAlertId INTEGER NOT NULL, "
                                      + "description VARCHAR(255) NOT NULL, "
                                      + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 

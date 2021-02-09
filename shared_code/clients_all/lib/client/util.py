@@ -683,29 +683,29 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the remoteAlertId.
+    # Internal function to check sanity of the clientAlertId.
     @staticmethod
-    def check_remote_alert_id(remoteAlertId: int) -> Optional[str]:
+    def check_client_alert_id(clientAlertId: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(remoteAlertId, int):
+        if not isinstance(clientAlertId, int):
             is_correct = False
 
         if not is_correct:
-            return "remoteAlertId not valid"
+            return "clientAlertId not valid"
 
         return None
 
-    # Internal function to check sanity of the remoteSensorId.
+    # Internal function to check sanity of the clientSensorId.
     @staticmethod
-    def check_remote_sensor_id(remoteSensorId: int) -> Optional[str]:
+    def check_client_sensor_id(clientSensorId: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(remoteSensorId, int):
+        if not isinstance(clientSensorId, int):
             is_correct = False
 
         if not is_correct:
-            return "remoteSensorId not valid"
+            return "clientSensorId not valid"
 
         return None
 
@@ -922,11 +922,11 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "remoteAlertId" not in alert.keys():
+            if "clientAlertId" not in alert.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_remote_alert_id(alert["remoteAlertId"]) is not None:
+            elif MsgChecker.check_client_alert_id(alert["clientAlertId"]) is not None:
                 is_correct = False
                 break
 
@@ -1238,11 +1238,11 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "remoteSensorId" not in sensor.keys():
+            if "clientSensorId" not in sensor.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_remote_sensor_id(sensor["remoteSensorId"]) is not None:
+            elif MsgChecker.check_client_sensor_id(sensor["clientSensorId"]) is not None:
                 is_correct = False
                 break
 

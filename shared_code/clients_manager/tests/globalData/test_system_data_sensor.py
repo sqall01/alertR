@@ -24,7 +24,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor = ManagerObjSensor()
         sensor.nodeId = 1
         sensor.sensorId = 1
-        sensor.remoteSensorId = 1
+        sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = []
         sensor.description = "sensor_1"
@@ -46,7 +46,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor = ManagerObjSensor()
         sensor.nodeId = 99
         sensor.sensorId = 1
-        sensor.remoteSensorId = 1
+        sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = []
         sensor.description = "sensor_1"
@@ -78,7 +78,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor = ManagerObjSensor()
         sensor.nodeId = 1
         sensor.sensorId = 1
-        sensor.remoteSensorId = 1
+        sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [99]
         sensor.description = "sensor_1"
@@ -130,7 +130,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         for i in range(len(self.sensors)):
             temp_sensor = ManagerObjSensor().deepcopy(self.sensors[i])
             temp_sensor.description = "new_sensor_" + str(i + 1)
-            temp_sensor.remoteSensorId = i
+            temp_sensor.clientSensorId = i
             temp_sensor.alertDelay = i + 10
             temp_sensor.lastStateUpdated = i + 10
             temp_sensor.state = i % 2
@@ -210,7 +210,7 @@ class TestSystemDataSensor(TestSystemDataCore):
             curr_sensor = self.sensors[i]
             stored_sensor = system_data.get_sensor_by_id(curr_sensor.sensorId)
 
-            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+            if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
                     or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
@@ -233,7 +233,7 @@ class TestSystemDataSensor(TestSystemDataCore):
             sensor_alert.timeReceived = 0
             system_data.add_sensor_alert(sensor_alert)
 
-            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+            if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
                     or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
@@ -254,7 +254,7 @@ class TestSystemDataSensor(TestSystemDataCore):
                 for stored_sensor in system_data.get_sensors_list():
                     if stored_sensor.sensorId == gt_sensor.sensorId:
                         found = True
-                        if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
+                        if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                                 or stored_sensor.description != gt_sensor.description
                                 or stored_sensor.alertDelay != gt_sensor.alertDelay
                                 or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
@@ -283,7 +283,7 @@ class TestSystemDataSensor(TestSystemDataCore):
             curr_sensor = self.sensors[i]
             stored_sensor = system_data.get_sensor_by_id(curr_sensor.sensorId)
 
-            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+            if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
                     or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
@@ -299,7 +299,7 @@ class TestSystemDataSensor(TestSystemDataCore):
                                             stored_sensor.dataType,
                                             stored_sensor.data)
 
-            if (stored_sensor.remoteSensorId != curr_sensor.remoteSensorId
+            if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
                     or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
@@ -320,7 +320,7 @@ class TestSystemDataSensor(TestSystemDataCore):
                 for stored_sensor in system_data.get_sensors_list():
                     if stored_sensor.sensorId == gt_sensor.sensorId:
                         found = True
-                        if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
+                        if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                                 or stored_sensor.description != gt_sensor.description
                                 or stored_sensor.alertDelay != gt_sensor.alertDelay
                                 or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated

@@ -47,7 +47,7 @@ class Alert:
     def __init__(self):
         self.nodeId = None  # type: Optional[int]
         self.alertId = None  # type: Optional[int]
-        self.remoteAlertId = None  # type: Optional[int]
+        self.clientAlertId = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
 
@@ -58,7 +58,7 @@ class Sensor:
     def __init__(self):
         self.sensorId = None  # type: Optional[int]
         self.nodeId = None  # type: Optional[int]
-        self.remoteSensorId = None  # type: Optional[int]
+        self.clientSensorId = None  # type: Optional[int]
         self.description = None  # type: Optional[str]
         self.state = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
@@ -75,7 +75,7 @@ class Sensor:
         """
         self.sensorId = sensor.sensorId
         self.nodeId = sensor.nodeId
-        self.remoteSensorId = sensor.remoteSensorId
+        self.clientSensorId = sensor.clientSensorId
         self.description = sensor.description
         self.state = sensor.state
         self.alertLevels = list(sensor.alertLevels)

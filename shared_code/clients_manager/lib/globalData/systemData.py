@@ -375,11 +375,11 @@ class SystemData:
                 return None
             return self._alerts[alert_id]
 
-    def get_alert_by_remote_id(self, username: str, remote_id: int) -> Optional[ManagerObjAlert]:
+    def get_alert_by_client_id(self, username: str, client_id: int) -> Optional[ManagerObjAlert]:
         """
-        Gets Alert object corresponding to given username and remote id.
+        Gets Alert object corresponding to given username and client id.
         :param username:
-        :param remote_id:
+        :param client_id:
         :return:
         """
         with self._data_lock:
@@ -387,7 +387,7 @@ class SystemData:
             if node is None:
                 return None
             for _, alert in self._alerts.items():
-                if alert.nodeId == node.nodeId and alert.remoteAlertId == remote_id:
+                if alert.nodeId == node.nodeId and alert.clientAlertId == client_id:
                     return alert
             return None
 
@@ -572,11 +572,11 @@ class SystemData:
                 return None
             return self._sensors[sensor_id]
 
-    def get_sensor_by_remote_id(self, username: str, remote_id: int) -> Optional[ManagerObjSensor]:
+    def get_sensor_by_client_id(self, username: str, client_id: int) -> Optional[ManagerObjSensor]:
         """
-        Gets Sensor object corresponding to given username and remote id.
+        Gets Sensor object corresponding to given username and client id.
         :param username:
-        :param remote_id:
+        :param client_id:
         :return:
         """
         with self._data_lock:
@@ -584,7 +584,7 @@ class SystemData:
             if node is None:
                 return None
             for _, sensor in self._sensors.items():
-                if sensor.nodeId == node.nodeId and sensor.remoteSensorId == remote_id:
+                if sensor.nodeId == node.nodeId and sensor.clientSensorId == client_id:
                     return sensor
             return None
 

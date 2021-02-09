@@ -116,7 +116,7 @@ class TestManagerStorage(TestManagerStorageCore):
         for alert in system_data.get_alerts_list():
             temp_alert = ManagerObjAlert().deepcopy(alert)
             temp_alert.description = "new_alert_" + str(ctr + 1)
-            temp_alert.remoteAlertId = ctr
+            temp_alert.clientAlertId = ctr
             # We started the alert levels in our test data with level 1.
             temp_alert.alertLevels = [(ctr % len(system_data.get_alert_levels_list())) + 1]
             system_data.update_alert(temp_alert)
@@ -131,7 +131,7 @@ class TestManagerStorage(TestManagerStorageCore):
         for sensor in system_data.get_sensors_list():
             temp_sensor = ManagerObjSensor().deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
-            temp_sensor.remoteSensorId = ctr
+            temp_sensor.clientSensorId = ctr
             temp_sensor.alertDelay = ctr + 10
             temp_sensor.lastStateUpdated = ctr + 10
             temp_sensor.state = ctr % 2

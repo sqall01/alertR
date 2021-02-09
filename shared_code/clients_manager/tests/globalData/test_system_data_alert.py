@@ -23,7 +23,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         alert = ManagerObjAlert()
         alert.nodeId = 1
         alert.alertId = 1
-        alert.remoteAlertId = 1
+        alert.clientAlertId = 1
         alert.alertLevels = [99]
         alert.description = "alert_1"
         is_exception = False
@@ -39,7 +39,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         alert = ManagerObjAlert()
         alert.nodeId = 99
         alert.alertId = 1
-        alert.remoteAlertId = 1
+        alert.clientAlertId = 1
         alert.alertLevels = []
         alert.description = "alert_1"
         is_exception = False
@@ -67,7 +67,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         alert = ManagerObjAlert()
         alert.nodeId = 1
         alert.alertId = 1
-        alert.remoteAlertId = 1
+        alert.clientAlertId = 1
         alert.alertLevels = []
         alert.description = "alert_1"
         is_exception = False
@@ -115,7 +115,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         for i in range(len(self.alerts)):
             temp_alert = ManagerObjAlert().deepcopy(self.alerts[i])
             temp_alert.description = "new_alert_" + str(i + 1)
-            temp_alert.remoteAlertId = i
+            temp_alert.clientAlertId = i
             # We started the alert levels in our test data with level 1.
             temp_alert.alertLevels = [(i % len(self.alert_levels)) + 1]
             new_alerts.append(temp_alert)

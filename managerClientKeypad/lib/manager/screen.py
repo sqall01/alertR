@@ -128,13 +128,13 @@ class Console:
             states_not_satisfied = list()
             for sensor_warning_state in self._sensor_warning_states:
 
-                current_sensor = self.system_data.get_sensor_by_remote_id(sensor_warning_state.username,
-                                                                          sensor_warning_state.remoteSensorId)
+                current_sensor = self.system_data.get_sensor_by_client_id(sensor_warning_state.username,
+                                                                          sensor_warning_state.clientSensorId)
 
                 # Skip warning state if sensor is not found.
                 if current_sensor is None:
-                    logging.warning("[%s]: Not able to find sensor with remote id '%d' for username '%s'."
-                                    % (self.fileName, sensor_warning_state.remoteSensorId, sensor_warning_state.username))
+                    logging.warning("[%s]: Not able to find sensor with client id '%d' for username '%s'."
+                                    % (self.fileName, sensor_warning_state.clientSensorId, sensor_warning_state.username))
                     continue
 
                 # Check if the sensor is in the warning state
@@ -142,8 +142,8 @@ class Console:
                         and profile_id in sensor_warning_state.profiles):
                     states_not_satisfied.append(current_sensor)
 
-                    logging.debug("[%s]: Sensor with remote id '%d' "
-                                  % (self.fileName, sensor_warning_state.remoteSensorId)
+                    logging.debug("[%s]: Sensor with client id '%d' "
+                                  % (self.fileName, sensor_warning_state.clientSensorId)
                                   + "for username '%s' and description '%s' in warning state."
                                   % (sensor_warning_state.username, current_sensor.description))
 
@@ -199,21 +199,21 @@ class Console:
         statesNotSatisfied = list()
         for sensorWarningState in self._sensor_warning_states:
 
-            currentSensor = self.system_data.get_sensor_by_remote_id(sensorWarningState.username,
-                                                                     sensorWarningState.remoteSensorId)
+            currentSensor = self.system_data.get_sensor_by_client_id(sensorWarningState.username,
+                                                                     sensorWarningState.clientSensorId)
 
             # skip warning state if sensor is not found
             if currentSensor is None:
-                logging.warning("[%s]: Not able to find sensor with remote id '%d' for username '%s'."
-                                % (self.fileName, sensorWarningState.remoteSensorId, sensorWarningState.username))
+                logging.warning("[%s]: Not able to find sensor with client id '%d' for username '%s'."
+                                % (self.fileName, sensorWarningState.clientSensorId, sensorWarningState.username))
                 continue
 
             # check if the sensor is in the warning state
             if currentSensor.state == sensorWarningState.warningState:
                 statesNotSatisfied.append(currentSensor)
 
-                logging.debug("[%s]: Sensor with remote id '%d' "
-                              % (self.fileName, sensorWarningState.remoteSensorId)
+                logging.debug("[%s]: Sensor with client id '%d' "
+                              % (self.fileName, sensorWarningState.clientSensorId)
                               + "for username '%s' and description '%s' in warning state."
                               % (sensorWarningState.username, currentSensor.description))
 

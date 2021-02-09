@@ -12,6 +12,6 @@ class SensorWarningState:
 
     def __init__(self):
         self.username = None
-        self.remoteSensorId = None
+        self.clientSensorId = None
         self.warningState = None
         self.profiles = list()

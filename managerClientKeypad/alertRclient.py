@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
             temp = SensorWarningState()
             temp.username = str(item.attrib["username"])
-            temp.remoteSensorId = int(item.attrib["remoteSensorId"])
+            temp.clientSensorId = int(item.attrib["clientSensorId"])
             if str(item.attrib["warningState"]).upper() == "TRUE":
                 temp.warningState = 1
 

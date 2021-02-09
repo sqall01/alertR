@@ -2,6 +2,8 @@
 
 * Updater can show changelog
 * Check permissions of client key file
+* Renamed remoteSensorId to clientSensorId to have a more sane naming convention
+* Renamed remoteAlertId to clientAlertId to have a more sane naming convention
 
 ## 0.700-0
 

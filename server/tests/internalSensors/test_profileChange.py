@@ -99,7 +99,7 @@ class TestProfileChange(TestCase):
         sensor.initialize()
         sensor.data = 1
         sensor.nodeId = 1
-        sensor.remoteSensorId = 2
+        sensor.clientSensorId = 2
         return sensor, global_data
 
     def test_base_process_option(self):
@@ -124,7 +124,7 @@ class TestProfileChange(TestCase):
 
         data_list = sensor_data[sensor.nodeId]
         self.assertEqual(len(data_list), 1)
-        self.assertEqual(data_list[0][0], sensor.remoteSensorId)
+        self.assertEqual(data_list[0][0], sensor.clientSensorId)
         self.assertEqual(data_list[0][1], sensor.data)
 
         sensor_alert_executer = global_data.sensorAlertExecuter

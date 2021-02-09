@@ -159,7 +159,7 @@ class ManagerObjSensor(LocalObject):
         super().__init__()
         self.nodeId = None  # type: Optional[int]
         self.sensorId = None  # type: Optional[int]
-        self.remoteSensorId = None  # type: Optional[int]
+        self.clientSensorId = None  # type: Optional[int]
         self.alertDelay = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
@@ -173,8 +173,8 @@ class ManagerObjSensor(LocalObject):
               % (str(self.nodeId) if self.nodeId is not None else "None") \
               + "Sensor Id: %s; " \
               % (str(self.sensorId) if self.sensorId is not None else "None") \
-              + "Remote Sensor Id: %s; " \
-              % (str(self.remoteSensorId) if self.remoteSensorId is not None else "None") \
+              + "Client Sensor Id: %s; " \
+              % (str(self.clientSensorId) if self.clientSensorId is not None else "None") \
               + "description: '%s'; " \
               % (str(self.description) if self.description is not None else "None") \
               + "State: %s; " \
@@ -190,7 +190,7 @@ class ManagerObjSensor(LocalObject):
         """
         sensor_dict = {"nodeId": self.nodeId,
                        "sensorId": self.sensorId,
-                       "remoteSensorId": self.remoteSensorId,
+                       "clientSensorId": self.clientSensorId,
                        "alertDelay": self.alertDelay,
                        "alertLevels": self.alertLevels,
                        "description": self.description,
@@ -210,7 +210,7 @@ class ManagerObjSensor(LocalObject):
         """
         self.nodeId = sensor.nodeId
         self.sensorId = sensor.sensorId
-        self.remoteSensorId = sensor.remoteSensorId
+        self.clientSensorId = sensor.clientSensorId
         self.alertDelay = sensor.alertDelay
         self.alertLevels = list(sensor.alertLevels)
         self.description = sensor.description
@@ -266,7 +266,7 @@ class ManagerObjAlert(LocalObject):
         super().__init__()
         self.nodeId = None  # type: Optional[int]
         self.alertId = None  # type: Optional[int]
-        self.remoteAlertId = None  # type: Optional[int]
+        self.clientAlertId = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
 
@@ -275,8 +275,8 @@ class ManagerObjAlert(LocalObject):
               % (str(self.nodeId) if self.nodeId is not None else "None") \
               + "Alert Id: %s; " \
               % (str(self.alertId) if self.alertId is not None else "None") \
-              + "Remote Alert Id: %s; " \
-              % (str(self.remoteAlertId) if self.remoteAlertId is not None else "None") \
+              + "Client Alert Id: %s; " \
+              % (str(self.clientAlertId) if self.clientAlertId is not None else "None") \
               + "description: '%s'; " \
               % (str(self.description) if self.description is not None else "None")
         return tmp
@@ -288,7 +288,7 @@ class ManagerObjAlert(LocalObject):
         """
         alert_dict = {"nodeId": self.nodeId,
                       "alertId": self.alertId,
-                      "remoteAlertId": self.remoteAlertId,
+                      "clientAlertId": self.clientAlertId,
                       "alertLevels": self.alertLevels,
                       "description": self.description,
                       }
@@ -303,7 +303,7 @@ class ManagerObjAlert(LocalObject):
         """
         self.nodeId = alert.nodeId
         self.alertId = alert.alertId
-        self.remoteAlertId = alert.remoteAlertId
+        self.clientAlertId = alert.clientAlertId
         self.alertLevels = list(alert.alertLevels)
         self.description = alert.description
         return self

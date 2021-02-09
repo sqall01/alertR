@@ -136,7 +136,7 @@ class VersionInformerSensor(_InternalSensor):
 
                     # Change sensor state in database.
                     if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                          [(self.remoteSensorId, self.state)],  # stateList
+                                                          [(self.clientSensorId, self.state)],  # stateList
                                                           self.logger):  # logger
                         self.logger.error("[%s]: Not able to change sensor state for internal version informer sensor."
                                           % self.fileName)
@@ -248,7 +248,7 @@ class VersionInformerSensor(_InternalSensor):
 
                             # Change sensor state in database.
                             if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                                  [(self.remoteSensorId, self.state)],  # stateList
+                                                                  [(self.clientSensorId, self.state)],  # stateList
                                                                   self.logger):  # logger
                                 self.logger.error("[%s]: Not able to change sensor state for internal "
                                                   % self.fileName
@@ -297,7 +297,7 @@ class VersionInformerSensor(_InternalSensor):
 
                 # Change sensor state in database.
                 if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                      [(self.remoteSensorId, self.state)],  # stateList
+                                                      [(self.clientSensorId, self.state)],  # stateList
                                                       self.logger):  # logger
                     self.logger.error("[%s]: Not able to change sensor state for internal version informer sensor."
                                       % self.fileName)

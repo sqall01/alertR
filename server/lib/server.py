@@ -1230,7 +1230,7 @@ class ClientCommunication:
         for sensorObj in sensorList:
             tempDict = {"sensorId": sensorObj.sensorId,
                         "nodeId": sensorObj.nodeId,
-                        "remoteSensorId": sensorObj.remoteSensorId,
+                        "clientSensorId": sensorObj.clientSensorId,
                         "description": sensorObj.description,
                         "state": sensorObj.state,
                         "lastStateUpdated": sensorObj.lastStateUpdated,
@@ -1254,7 +1254,7 @@ class ClientCommunication:
         for alertObj in alertList:
             tempDict = {"alertId": alertObj.alertId,
                         "nodeId": alertObj.nodeId,
-                        "remoteAlertId": alertObj.remoteAlertId,
+                        "clientAlertId": alertObj.clientAlertId,
                         "description": alertObj.description,
                         "alertLevels": alertObj.alertLevels}
             alerts.append(tempDict)
@@ -1848,7 +1848,7 @@ class ClientCommunication:
                 utcTimestamp = int(time.time())
                 tempSensor = Sensor()
                 tempSensor.nodeId = self.nodeId
-                tempSensor.remoteSensorId = sensorId
+                tempSensor.clientSensorId = sensorId
                 tempSensor.description = description
                 tempSensor.state = state
                 tempSensor.alertLevels = alertLevels
@@ -1885,12 +1885,12 @@ class ClientCommunication:
             # Get sensor id for each registered sensor object.
             for sensor in self.sensors:
                 sensor.sensorId = self.storage.getSensorId(self.nodeId,
-                                                           sensor.remoteSensorId,
+                                                           sensor.clientSensorId,
                                                            logger=self.logger)
 
                 if sensor.sensorId is None:
-                    self.logger.error("[%s]: Unable to get sensor id for remote sensor %d (%s:%d)."
-                                      % (self.fileName, sensor.remoteSensorId, self.clientAddress, self.clientPort))
+                    self.logger.error("[%s]: Unable to get sensor id for client sensor %d (%s:%d)."
+                                      % (self.fileName, sensor.clientSensorId, self.clientAddress, self.clientPort))
 
                     # send error message back
                     try:
@@ -2231,23 +2231,23 @@ class ClientCommunication:
             return False
 
         # Extract sensor states.
-        # Generate a list of tuples with (remoteSensorId, state).
+        # Generate a list of tuples with (clientSensorId, state).
         stateList = list()
         try:
             for i in range(self.sensorCount):
-                remoteSensorId = sensors[i]["clientSensorId"]
+                clientSensorId = sensors[i]["clientSensorId"]
 
                 # Check if client sensor is known.
                 sensor = None
                 for currentSensor in self.sensors:
-                    if currentSensor.remoteSensorId == remoteSensorId:
+                    if currentSensor.clientSensorId == clientSensorId:
                         sensor = currentSensor
                         break
 
                 if sensor is None:
 
                     self.logger.error("[%s]: Unknown client sensor id %d (%s:%d)."
-                                      % (self.fileName, remoteSensorId, self.clientAddress, self.clientPort))
+                                      % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
 
                     # send error message back
                     try:
@@ -2264,7 +2264,7 @@ class ClientCommunication:
                 sensor.state = sensors[i]["state"]
                 sensor.lastStateUpdated = int(time.time())
 
-                stateList.append((remoteSensorId, sensor.state))
+                stateList.append((clientSensorId, sensor.state))
 
         except Exception as e:
             self.logger.exception("[%s]: Received sensor state invalid (%s:%d)."
@@ -2303,18 +2303,18 @@ class ClientCommunication:
             return False
 
         # Extract sensor data.
-        # Generate a list of tuples with (remoteSensorId, sensorData).
+        # Generate a list of tuples with (clientSensorId, sensorData).
         dataList = list()
         try:
             for i in range(self.sensorCount):
-                remoteSensorId = sensors[i]["clientSensorId"]
+                clientSensorId = sensors[i]["clientSensorId"]
 
                 # Check if client sensor is known.
-                # NOTE: omit check if remote sensor id is valid because we
+                # NOTE: omit check if client sensor id is valid because we
                 # know it is, we checked it earlier.
                 sensor = None
                 for currentSensor in self.sensors:
-                    if currentSensor.remoteSensorId == remoteSensorId:
+                    if currentSensor.clientSensorId == clientSensorId:
                         sensor = currentSensor
                         break
 
@@ -2323,8 +2323,8 @@ class ClientCommunication:
                 # Check if received message contains the correct data type.
                 if sensor.dataType != sensorDataType:
 
-                    self.logger.error("[%s]: Received sensor data type for remote sensor %d invalid (%s:%d)."
-                                      % (self.fileName, remoteSensorId, self.clientAddress, self.clientPort))
+                    self.logger.error("[%s]: Received sensor data type for client sensor %d invalid (%s:%d)."
+                                      % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
 
                     # send error message back
                     try:
@@ -2347,7 +2347,7 @@ class ClientCommunication:
                 elif sensorDataType == SensorDataType.FLOAT:
                     sensor.data = sensors[i]["data"]
 
-                dataList.append((remoteSensorId, sensor.data))
+                dataList.append((clientSensorId, sensor.data))
 
         except Exception as e:
             self.logger.exception("[%s]: Received sensor data invalid (%s:%d)."
@@ -2451,7 +2451,7 @@ class ClientCommunication:
                                       % (self.fileName, self.clientAddress, self.clientPort))
                     return False
 
-            remoteSensorId = incomingMessage["payload"]["clientSensorId"]
+            clientSensorId = incomingMessage["payload"]["clientSensorId"]
             state = incomingMessage["payload"]["state"]
             changeState = incomingMessage["payload"]["changeState"]
             hasLatestData = incomingMessage["payload"]["hasLatestData"]
@@ -2463,12 +2463,12 @@ class ClientCommunication:
 
             # Check if client sensor is known.
             for currentSensor in self.sensors:
-                if currentSensor.remoteSensorId == remoteSensorId:
+                if currentSensor.clientSensorId == clientSensorId:
                     sensor = currentSensor
                     break
             if sensor is None:
                 self.logger.error("[%s]: Unknown client sensor id %d (%s:%d)."
-                                  % (self.fileName, remoteSensorId, self.clientAddress, self.clientPort))
+                                  % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
 
                 # send error message back
                 try:
@@ -2483,8 +2483,8 @@ class ClientCommunication:
 
             # Check if received message contains the correct data type.
             if sensorDataType != sensor.dataType:
-                self.logger.error("[%s]: Received sensor data type for remote sensor %d invalid (%s:%d)."
-                                  % (self.fileName, remoteSensorId, self.clientAddress, self.clientPort))
+                self.logger.error("[%s]: Received sensor data type for client sensor %d invalid (%s:%d)."
+                                  % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
 
                 # send error message back
                 try:
@@ -2531,15 +2531,15 @@ class ClientCommunication:
 
             return False
 
-        self.logger.info("[%s]: Sensor alert for remote sensor id %d and state %d."
-                         % (self.fileName, remoteSensorId, state))
+        self.logger.info("[%s]: Sensor alert for client sensor id %d and state %d."
+                         % (self.fileName, clientSensorId, state))
 
         # Update state of the sensor if sensor alert updates the state.
         if changeState:
             sensor.state = state
 
             if not self.storage.updateSensorState(self.nodeId,
-                                                  [(remoteSensorId, state)],
+                                                  [(clientSensorId, state)],
                                                   logger=self.logger):
 
                 self.logger.error("[%s]: Not able to update sensor state (%s:%d)."
@@ -2562,7 +2562,7 @@ class ClientCommunication:
             sensor.data = sensorData
 
             if not self.storage.updateSensorData(self.nodeId,
-                                                 [(remoteSensorId, sensorData)],
+                                                 [(clientSensorId, sensorData)],
                                                  logger=self.logger):
                 self.logger.error("[%s]: Not able to update sensor data (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
@@ -2668,7 +2668,7 @@ class ClientCommunication:
                                       % (self.fileName, self.clientAddress, self.clientPort))
                     return False
 
-            remoteSensorId = incomingMessage["payload"]["clientSensorId"]
+            clientSensorId = incomingMessage["payload"]["clientSensorId"]
             state = incomingMessage["payload"]["state"]
             sensorDataType = incomingMessage["payload"]["dataType"]
             sensorData = None
@@ -2677,12 +2677,12 @@ class ClientCommunication:
 
             # Check if client sensor is known.
             for currentSensor in self.sensors:
-                if currentSensor.remoteSensorId == remoteSensorId:
+                if currentSensor.clientSensorId == clientSensorId:
                     sensor = currentSensor
                     break
             if sensor is None:
                 self.logger.error("[%s]: Unknown client sensor id %d (%s:%d)."
-                                  % (self.fileName, remoteSensorId, self.clientAddress, self.clientPort))
+                                  % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
 
                 # send error message back
                 try:
@@ -2697,8 +2697,8 @@ class ClientCommunication:
 
             # Check if received message contains the correct data type.
             if sensorDataType != sensor.dataType:
-                self.logger.error("[%s]: Received sensor data type for remote sensor %d invalid (%s:%d)."
-                                  % (self.fileName, remoteSensorId, self.clientAddress, self.clientPort))
+                self.logger.error("[%s]: Received sensor data type for client sensor %d invalid (%s:%d)."
+                                  % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
 
                 # send error message back
                 try:
@@ -2732,19 +2732,19 @@ class ClientCommunication:
             return False
 
         if sensorDataType == SensorDataType.NONE:
-            self.logger.debug("[%s]: State change for remote sensor id %d and state %d (%s:%d)."
-                              % (self.fileName, remoteSensorId, state, self.clientAddress, self.clientPort))
+            self.logger.debug("[%s]: State change for client sensor id %d and state %d (%s:%d)."
+                              % (self.fileName, clientSensorId, state, self.clientAddress, self.clientPort))
 
         elif sensorDataType == SensorDataType.INT:
-            self.logger.debug("[%s]: State change for remote sensor id %d and state %d and data %d (%s:%d)."
-                              % (self.fileName, remoteSensorId, state, sensorData, self.clientAddress, self.clientPort))
+            self.logger.debug("[%s]: State change for client sensor id %d and state %d and data %d (%s:%d)."
+                              % (self.fileName, clientSensorId, state, sensorData, self.clientAddress, self.clientPort))
 
         elif sensorDataType == SensorDataType.FLOAT:
-            self.logger.debug("[%s]: State change for remote sensor id %d and state %d and data %.3f (%s:%d)."
-                              % (self.fileName, remoteSensorId, state, sensorData, self.clientAddress, self.clientPort))
+            self.logger.debug("[%s]: State change for client sensor id %d and state %d and data %.3f (%s:%d)."
+                              % (self.fileName, clientSensorId, state, sensorData, self.clientAddress, self.clientPort))
 
         # update sensor state
-        stateTuple = (remoteSensorId, state)
+        stateTuple = (clientSensorId, state)
         stateList = [stateTuple]
         if not self.storage.updateSensorState(self.nodeId,
                                               stateList,
@@ -2765,7 +2765,7 @@ class ClientCommunication:
 
         # Update sensor data if it holds data.
         if sensorDataType != SensorDataType.NONE:
-            dataTuple = (remoteSensorId, sensorData)
+            dataTuple = (clientSensorId, sensorData)
             dataList = [dataTuple]
 
             if not self.storage.updateSensorData(self.nodeId,
@@ -2788,7 +2788,7 @@ class ClientCommunication:
         # get sensorId from database => append to state change queue
         # => wake up manager update executer
         sensorId = self.storage.getSensorId(self.nodeId,
-                                            remoteSensorId,
+                                            clientSensorId,
                                             logger=self.logger)
         if sensorId is None:
             self.logger.error("[%s]: Not able to get sensorId (%s:%d)."

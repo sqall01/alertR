@@ -183,14 +183,14 @@
                 (the number of sensors is variable, add or remove as many as you need).
 
                 username - the username of the sensor client that handles this sensor
-                remoteSensorId - the sensor id of the sensor that is configured on the client side
+                clientSensorId - the sensor id of the sensor that is configured on the client side
                 warningState - the state the sensor has to have in order to get a warning
                     ("True" or "False")
                     (True means "triggered" state; False means "normal" state)
             -->
             <sensor
                 username="windowsensor"
-                remoteSensorId="0"
+                clientSensorId="0"
                 warningState="True">
 
                 <!--
@@ -211,14 +211,14 @@
                 (the number of sensors is variable, add or remove as many as you need).
 
                 username - the username of the sensor client that handles this sensor
-                remoteSensorId - the sensor id of the sensor that is configured on the client side
+                clientSensorId - the sensor id of the sensor that is configured on the client side
                 warningState - the state the sensor has to have in order to get a warning
                     ("True" or "False")
                     (True means "triggered" state; False means "normal" state)
             -->
             <sensor
                 username="windowsensor"
-                remoteSensorId="1"
+                clientSensorId="1"
                 warningState="True">
 
                 <!--
