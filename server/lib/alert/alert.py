@@ -495,6 +495,7 @@ class SensorAlertExecuter(threading.Thread):
         sensor_alert.dataType = data_type
         sensor_alert.sensorData = sensor_data
 
+        sensor_alert.hasOptionalData = False
         sensor_alert.optionalData = optional_data
         if optional_data:
             sensor_alert.hasOptionalData = True

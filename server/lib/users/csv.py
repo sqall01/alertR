@@ -74,7 +74,7 @@ class CSVBackend(_userBackend):
                 self.logger.error("[%s]: Username '%s' already exists in CSV file." % (self.fileName, username))
                 continue
 
-            pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt())
+            pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt()).decode("ascii")
             userData = UserData(username, pwhash, nodeType, instance)
             self.userCredentials.append(userData)
 

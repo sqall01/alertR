@@ -1600,7 +1600,7 @@ class TestAlert(TestCase):
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(len(alert_levels_suppressed), len(manager_update_executer._queue_state_change))
 
-    def test_run_instrumentation_toggle_state(self):  # TODO fix issue with optional data type change
+    def test_run_instrumentation_toggle_state(self):
         """
         Integration test that checks if sensor alerts with instrumentation that
         change the state are correctly processed (no longer satisfies trigger condition after instrumentation
