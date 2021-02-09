@@ -139,8 +139,8 @@ def check_config_file(configRoot: xml.etree.ElementTree.Element, global_data: Gl
     # Check file permission of config file (do not allow it to be accessible by others).
     config_stat = os.stat(global_data.configFile)
     if (config_stat.st_mode & stat.S_IROTH
-       or config_stat.st_mode & stat.S_IWOTH
-       or config_stat.st_mode & stat.S_IXOTH):
+            or config_stat.st_mode & stat.S_IWOTH
+            or config_stat.st_mode & stat.S_IXOTH):
         global_data.logger.error("[%s]: Config file is accessible by others. " % log_tag
                                  + "Please remove file permissions for others.")
         return False
@@ -246,6 +246,14 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
 
     if os.path.exists(global_data.serverCertFile) is False or os.path.exists(global_data.serverKeyFile) is False:
         global_data.logger.error("[%s]: Server certificate or key does not exist." % log_tag)
+        return False
+
+    key_stat = os.stat(global_data.serverKeyFile)
+    if (key_stat.st_mode & stat.S_IROTH
+            or key_stat.st_mode & stat.S_IWOTH
+            or key_stat.st_mode & stat.S_IXOTH):
+        global_data.logger.error("[%s]: Server key is accessible by others. " % log_tag
+                                 + "Please remove file permissions for others.")
         return False
 
     # get client configurations
