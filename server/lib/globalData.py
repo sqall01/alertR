@@ -64,7 +64,7 @@ class GlobalData:
         self.rev = 0  # type: int
 
         # Used database layout version.
-        self.dbVersion = 1  # type: int  # TODO increase version
+        self.dbVersion = 2  # type: int  # TODO increase version
 
         # name of this server
         self.name = "AlertR Server"  # type: str
