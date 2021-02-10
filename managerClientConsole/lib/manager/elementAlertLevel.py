@@ -197,6 +197,10 @@ class AlertLevelDetailedUrwid:
 
         temp = list()
 
+        temp.append(urwid.Text("Node ID:"))
+        temp.append(urwid.Text(str(alert.nodeId)))
+        temp.append(urwid.Divider())
+
         temp.append(urwid.Text("Alert ID:"))
         temp.append(urwid.Text(str(alert.alertId)))
         temp.append(urwid.Divider())
@@ -270,6 +274,10 @@ class AlertLevelDetailedUrwid:
     def _createSensorWidgetList(self, sensor: ManagerObjSensor) -> List[urwid.Widget]:
 
         temp = list()
+
+        temp.append(urwid.Text("Node ID:"))
+        temp.append(urwid.Text(str(sensor.nodeId)))
+        temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Sensor ID:"))
         temp.append(urwid.Text(str(sensor.sensorId)))
