@@ -116,14 +116,12 @@ class ClientCommunication:
         """
         internal function that acquires the lock
         """
-        self.logger.debug("[%s]: Acquire lock (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
         self.connectionLock.acquire()
 
     def _releaseLock(self):
         """
         internal function that releases the lock
         """
-        self.logger.debug("[%s]: Release lock (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
         self.connectionLock.release()
 
     def _send(self, data: str):

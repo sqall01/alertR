@@ -41,14 +41,12 @@ class CSVBackend(_userBackend):
         """
         Internal function that acquires the lock.
         """
-        self.logger.debug("[%s]: Acquire lock." % self.fileName)
         self.userDataLock.acquire()
 
     def _releaseLock(self):
         """
         Internal function that releases the lock.
         """
-        self.logger.debug("[%s]: Release lock." % self.fileName)
         self.userDataLock.release()
 
     def _parseVersion0(self, csvData):

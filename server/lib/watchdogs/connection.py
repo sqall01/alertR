@@ -77,14 +77,12 @@ class ConnectionWatchdog(threading.Thread):
         """
         Internal function that acquires the node timeout sensor lock.
         """
-        self.logger.debug("[%s]: Acquire node timeout sensor lock." % self.fileName)
         self._nodeTimeoutLock.acquire()
 
     def _releaseNodeTimeoutLock(self):
         """
         Internal function that releases the node timeout sensor lock.
         """
-        self.logger.debug("[%s]: Release node timeout sensor lock." % self.fileName)
         self._nodeTimeoutLock.release()
 
     def _processNewNodeTimeouts(self):
