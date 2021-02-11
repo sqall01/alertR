@@ -512,7 +512,7 @@ class Console:
         :param profile:
         """
         logging.info("[%s]: Changing system profile to '%s'." % (self.fileName, profile.name))
-        self.serverComm.send_option("profile", float(profile.profileId))
+        self.serverComm.send_option("profile", profile.profileId)
 
         self._close_profile_choice_view()
 
