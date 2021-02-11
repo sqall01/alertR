@@ -508,8 +508,7 @@ class Sqlite(_Storage):
         """
         # create internals table
         self.cursor.execute("CREATE TABLE internals ("
-                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            + "type TEXT NOT NULL UNIQUE, "
+                            + "type TEXT NOT NULL PRIMARY KEY, "
                             + "value TEXT NOT NULL)")
 
         # insert version of server
@@ -529,9 +528,8 @@ class Sqlite(_Storage):
 
         # create options table
         self.cursor.execute("CREATE TABLE options ("
-                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            + "type TEXT NOT NULL UNIQUE, "
-                            + "value REAL NOT NULL)")  # TODO primary key type
+                            + "type TEXT NOT NULL PRIMARY KEY, "
+                            + "value REAL NOT NULL)")
 
         # Insert option which profile is currently used by the system.
         # NOTE: at least one profile with id 0 is enforced during configuration parsing.
