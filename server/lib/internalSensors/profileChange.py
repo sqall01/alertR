@@ -57,12 +57,12 @@ class ProfileChangeSensor(_InternalSensor):
 
         curr_profile = None
         for profile in self._profiles:
-            if profile.profileId == int(option.value):
+            if profile.profileId == option.value:
                 curr_profile = profile
                 break
         if curr_profile is None:
             self._logger.error("[%s]: Not able to find profile with id %d for internal profile change sensor."
-                               % (self._log_tag, int(option.value)))
+                               % (self._log_tag, option.value))
             return
 
         if not self.storage.updateSensorData(self.nodeId,  # nodeId

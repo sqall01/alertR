@@ -471,7 +471,7 @@ class _Storage:
 
     def update_option(self,
                       option_type: str,
-                      option_value: float,
+                      option_value: int,
                       logger: logging.Logger = None) -> bool:
         """
         Updates the given option data.

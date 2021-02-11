@@ -78,7 +78,7 @@ class TestManagerStorage(TestManagerStorageCore):
         ctr = 0
         for option in system_data.get_options_list():
             temp_option = ManagerObjOption().deepcopy(option)
-            temp_option.value = float(ctr)
+            temp_option.value = ctr
             system_data.update_option(temp_option)
             ctr += 1
 

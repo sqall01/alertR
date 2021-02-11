@@ -60,12 +60,12 @@ class OptionExecuter(threading.Thread):
 
         curr_profile = None
         for profile in self._profiles:
-            if profile.profileId == int(option.value):
+            if profile.profileId == option.value:
                 curr_profile = profile
                 break
         if curr_profile is None:
             self._logger.error("[%s]: Not able to find profile with id %d for profile change message."
-                               % (self._log_tag, int(option.value)))
+                               % (self._log_tag, option.value))
             return
 
         for server_session in self._server_sessions:
@@ -100,7 +100,7 @@ class OptionExecuter(threading.Thread):
 
     def add_option(self,
                    option_type: str,
-                   option_value: float,
+                   option_value: int,
                    option_delay: int):
         """
         Adds received option for processing.
@@ -148,12 +148,12 @@ class OptionExecuter(threading.Thread):
                 if current_time < time_to_change:
                     continue
 
-                self._logger.info("[%s]: Changing option '%s' to %.3f."
+                self._logger.info("[%s]: Changing option '%s' to %d."
                                   % (self._log_tag, option.type, option.value))
 
                 # Change option in database.
                 if not self._storage.update_option(option.type, option.value):
-                    self._logger.error("[%s]: Not able to change option '%s' to %.3f."
+                    self._logger.error("[%s]: Not able to change option '%s' to %d."
                                        % (self._log_tag, option.type, option.value))
 
                     # Remove option from queue.

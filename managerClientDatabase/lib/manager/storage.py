@@ -1366,8 +1366,7 @@ class Mysql(_Storage):
             result = self._cursor.fetchall()
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE internals ("
-                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                     + "type VARCHAR(255) NOT NULL UNIQUE, "
+                                     + "type VARCHAR(255) NOT NULL PRIMARY KEY, "
                                      + "value DOUBLE NOT NULL)")
 
                 # insert msg time field
@@ -1393,9 +1392,8 @@ class Mysql(_Storage):
             result = self._cursor.fetchall()
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE options ("
-                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                     + "type VARCHAR(255) NOT NULL UNIQUE, "
-                                     + "value DOUBLE NOT NULL)")
+                                     + "type VARCHAR(255) NOT NULL PRIMARY KEY, "
+                                     + "value INTEGER NOT NULL)")
 
             # create profiles table if it does not exist
             self._cursor.execute("SHOW TABLES LIKE 'profiles'")

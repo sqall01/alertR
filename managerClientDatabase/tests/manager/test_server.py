@@ -20,12 +20,12 @@ class MockServerCommunication:
 
     def send_option(self,
                     option_type: str,
-                    option_value: float,
+                    option_value: int,
                     option_delay: int = 0) -> Promise:
         self._options.append((option_type, option_value, option_delay))
         return Promise("option", "mock_msg")
 
-    def get_options(self) -> List[Tuple[str, float, int]]:
+    def get_options(self) -> List[Tuple[str, int, int]]:
         return self._options
 
 
@@ -72,7 +72,7 @@ class TestManagerServer(TestCase):
 
         for i in range(num):
 
-            value = float(i)
+            value = i
             delay = i
 
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -112,7 +112,7 @@ class TestManagerServer(TestCase):
 
         server, global_data = self._create_server()
 
-        value = 1.0
+        value = 1
         delay = 2
 
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -182,7 +182,7 @@ class TestManagerServer(TestCase):
 
         server, global_data = self._create_server()
 
-        value = 1.0
+        value = 1
 
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:

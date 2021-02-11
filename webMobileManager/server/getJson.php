@@ -62,8 +62,7 @@ if(isset($_GET["data"])
                 $stmt = $mysqli->query('SELECT * FROM internals');
                 $internalsArray = array();
                 while($row = $stmt->fetch_assoc()) {
-                    $internalEntry = array("id" => $row["id"],
-                        "type" => $row["type"],
+                    $internalEntry = array("type" => $row["type"],
                         "value" => $row["value"]);
                     array_push($internalsArray, $internalEntry);
                 }
@@ -87,8 +86,7 @@ if(isset($_GET["data"])
                 $stmt = $mysqli->query('SELECT * FROM options');
                 $optionsArray = array();
                 while($row = $stmt->fetch_assoc()) {
-                    $optionEntry = array("id" => $row["id"],
-                        "type" => $row["type"],
+                    $optionEntry = array("type" => $row["type"],
                         "value" => $row["value"]);
                     array_push($optionsArray, $optionEntry);
                 }

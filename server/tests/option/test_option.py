@@ -6,8 +6,9 @@ from tests.util import config_logging
 from lib.localObjects import Option
 from lib.option.option import OptionExecuter
 from lib.globalData import GlobalData
-from lib.storage.core import _Storage
 from lib.internalSensors import ProfileChangeSensor
+# noinspection PyProtectedMember
+from lib.storage.core import _Storage
 
 
 class MockManagerUpdateExecuter:
@@ -33,6 +34,7 @@ class MockProfileChangeSensorSensor(ProfileChangeSensor):
         self._options.append(option)
 
 
+# noinspection PyAbstractClass
 class MockStorage(_Storage):
 
     def __init__(self):
@@ -45,7 +47,7 @@ class MockStorage(_Storage):
 
     def update_option(self,
                       option_type: str,
-                      option_value: float,
+                      option_value: int,
                       logger: logging.Logger = None) -> bool:
         if not self.is_working:
             return False
@@ -87,7 +89,7 @@ class TestOption(TestCase):
 
         for i in range(num):
             option_executer.add_option("option_" + str(i),
-                                       float(i),
+                                       i,
                                        0)
 
         time.sleep(2)
@@ -101,7 +103,7 @@ class TestOption(TestCase):
         for i in range(num):
             option = global_data.storage.options[i]
             self.assertEqual(option.type, "option_" + str(i))
-            self.assertEqual(option.value, float(i))
+            self.assertEqual(option.value, i)
 
     def test_option_handling_delay(self):
         """
@@ -114,7 +116,7 @@ class TestOption(TestCase):
 
         for i in range(num):
             option_executer.add_option("option_" + str(i),
-                                       float(i),
+                                       i,
                                        delay)
 
         time.sleep(1)
@@ -132,7 +134,7 @@ class TestOption(TestCase):
         for i in range(num):
             option = global_data.storage.options[i]
             self.assertEqual(option.type, "option_" + str(i))
-            self.assertEqual(option.value, float(i))
+            self.assertEqual(option.value, i)
 
     def test_option_handling_delay_abort(self):
         """
@@ -143,7 +145,7 @@ class TestOption(TestCase):
         option_executer, global_data = self._create_option_executer()
 
         option_executer.add_option("option",
-                                   float(delay),
+                                   delay,
                                    delay)
 
         time.sleep(1)
@@ -153,7 +155,7 @@ class TestOption(TestCase):
         self.assertEqual(len(global_data.storage.options), 0)
 
         option_executer.add_option("option",
-                                   float(0),
+                                   0,
                                    0)
 
         time.sleep(1)
@@ -165,7 +167,7 @@ class TestOption(TestCase):
         self.assertEqual(len(global_data.storage.options), 1)
         option = global_data.storage.options[0]
         self.assertEqual(option.type, "option")
-        self.assertEqual(option.value, float(0))
+        self.assertEqual(option.value, 0)
 
         time.sleep(delay)
 
@@ -173,7 +175,7 @@ class TestOption(TestCase):
         self.assertEqual(len(global_data.storage.options), 1)
         option = global_data.storage.options[0]
         self.assertEqual(option.type, "option")
-        self.assertEqual(option.value, float(0))
+        self.assertEqual(option.value, 0)
 
     def test_option_handling_storage_failure(self):
         """
@@ -188,7 +190,7 @@ class TestOption(TestCase):
 
         for i in range(num):
             option_executer.add_option("option_" + str(i),
-                                       float(i),
+                                       i,
                                        0)
 
         time.sleep(1)
@@ -206,7 +208,7 @@ class TestOption(TestCase):
 
         option = Option()
         option.type = "profile"
-        option.value = 2.0
+        option.value = 2
 
         options = global_data.internalSensors[0].options
         self.assertEqual(len(options), 0)
@@ -216,7 +218,7 @@ class TestOption(TestCase):
         options = global_data.internalSensors[0].options
         self.assertEqual(len(options), 1)
         self.assertEqual(options[0].type, "profile")
-        self.assertEqual(options[0].value, 2.0)
+        self.assertEqual(options[0].value, 2)
 
     def test_send_profile_change(self):
         """

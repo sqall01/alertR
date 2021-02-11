@@ -484,7 +484,7 @@ class ClientCommunication:
         return True
 
     def _checkMsgOptionValue(self,
-                             value: float,
+                             value: int,
                              messageType: str) -> bool:
         """
         Internal function to check sanity of the option value.
@@ -494,7 +494,7 @@ class ClientCommunication:
         :return:
         """
         isCorrect = True
-        if not isinstance(value, float):
+        if not isinstance(value, int):
             isCorrect = False
 
         if not isCorrect:
@@ -2158,7 +2158,7 @@ class ClientCommunication:
 
             return False
 
-        self.logger.debug("[%s]: Option change for type '%s' to value %.3f in %d seconds."
+        self.logger.debug("[%s]: Option change for type '%s' to value %d in %d seconds."
                           % (self.fileName, optionType, optionValue, optionDelay))
 
         self._option_executer.add_option(optionType,

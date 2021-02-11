@@ -75,7 +75,7 @@ def parse_config(global_data: GlobalData) -> bool:
             global_data.loglevel = logging.CRITICAL
 
         else:
-            print("[%s]: No valid log level in config file."  % log_tag)
+            print("[%s]: No valid log level in config file." % log_tag)
             return False
 
         # initialize logging
@@ -601,7 +601,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
                 global_data.logger.error("[%s]: Unable to get 'profile' option from database." % log_tag)
                 return False
 
-            sensor.data = int(option.value)
+            sensor.data = option.value
 
             # Create sensor dictionary element for database interaction.
             temp = dict()

@@ -18,7 +18,7 @@ class TestManagerCoreStatusUpdate(TestSystemDataCore):
         # Update local objects.
         ctr = 1
         for option in self.options:
-            option.value += float(ctr)
+            option.value += ctr
             ctr += 1
 
         for profile in self.profiles:

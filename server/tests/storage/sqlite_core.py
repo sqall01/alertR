@@ -38,19 +38,19 @@ class TestStorageCore(TestCase):
 
         option = Option()
         option.type = "type_1"
-        option.value = 1.0
+        option.value = 1
         self.options.append(option)
         storage.update_option_by_obj(option)
 
         option = Option()
         option.type = "type_2"
-        option.value = 2.0
+        option.value = 2
         self.options.append(option)
         storage.update_option_by_obj(option)
 
         option = Option()
         option.type = "type_3"
-        option.value = 3.0
+        option.value = 3
         self.options.append(option)
         storage.update_option_by_obj(option)
 

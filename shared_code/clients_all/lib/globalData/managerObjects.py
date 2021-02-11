@@ -19,7 +19,7 @@ class ManagerObjOption(LocalObject):
     def __init__(self):
         super().__init__()
         self.type = None  # type: Optional[str]
-        self.value = None  # type: Optional[float]
+        self.value = None  # type: Optional[int]
 
     def __str__(self) -> str:
         tmp = "Option (Type: '%s'; " \

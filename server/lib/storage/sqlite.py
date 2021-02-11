@@ -529,7 +529,7 @@ class Sqlite(_Storage):
         # create options table
         self.cursor.execute("CREATE TABLE options ("
                             + "type TEXT NOT NULL PRIMARY KEY, "
-                            + "value REAL NOT NULL)")
+                            + "value INTEGER NOT NULL)")
 
         # Insert option which profile is currently used by the system.
         # NOTE: at least one profile with id 0 is enforced during configuration parsing.
@@ -695,8 +695,8 @@ class Sqlite(_Storage):
         return True
 
     def _delete_option_by_type(self,
-                              option_type: str,
-                              logger: logging.Logger = None) -> bool:
+                               option_type: str,
+                               logger: logging.Logger = None) -> bool:
         """
         Internal function that deletes option given by type.
 
@@ -2693,7 +2693,7 @@ class Sqlite(_Storage):
 
     def update_option(self,
                       option_type: str,
-                      option_value: float,
+                      option_value: int,
                       logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.

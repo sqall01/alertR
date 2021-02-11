@@ -94,7 +94,7 @@ class LocalServerSession(socketserver.BaseRequestHandler):
         # Extract option type and value from message.
         try:
             option_type = str(incomingMessage["payload"]["optionType"]).lower()
-            option_value = float(incomingMessage["payload"]["value"])
+            option_value = incomingMessage["payload"]["value"]
             option_delay = int(incomingMessage["payload"]["timeDelay"])
 
         except Exception:

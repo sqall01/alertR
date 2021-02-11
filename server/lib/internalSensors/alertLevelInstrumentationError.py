@@ -12,6 +12,7 @@ from typing import Optional, Dict, Any
 from .core import _InternalSensor
 from ..localObjects import SensorDataType, AlertLevel
 from ..globalData import GlobalData
+# noinspection PyProtectedMember
 from ..storage.core import _Storage
 
 

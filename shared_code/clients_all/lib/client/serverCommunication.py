@@ -850,7 +850,7 @@ class ServerCommunication(Communication):
 
     def send_option(self,
                     optionType: str,
-                    optionValue: float,
+                    optionValue: int,
                     optionDelay: int = 0) -> Promise:
         """
         This function sends an option change to the server for example to change the active system profile.

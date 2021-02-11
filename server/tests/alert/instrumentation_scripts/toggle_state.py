@@ -5,7 +5,6 @@ Test instrumentation script which simply outputs the received argument with an t
 """
 
 import sys
-import time
 import json
 
 data = json.loads(sys.argv[1])

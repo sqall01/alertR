@@ -173,7 +173,7 @@ class SensorAlert:
         :return: Sensor Alert object
         """
         sensor_alert = SensorAlert()
-        sensor_alert.nodeId  = sensor_alert_dict["nodeId"]
+        sensor_alert.nodeId = sensor_alert_dict["nodeId"]
         sensor_alert.sensorId = sensor_alert_dict["sensorId"]
         sensor_alert.description = sensor_alert_dict["description"]
         sensor_alert.timeReceived = sensor_alert_dict["timeReceived"]
@@ -212,7 +212,7 @@ class SensorAlert:
                              "hasLatestData": self.hasLatestData,
                              "dataType": self.dataType,
                              "data": self.sensorData,
-        }
+                             }
 
         return sensor_alert_dict
 
@@ -317,7 +317,7 @@ class Option:
 
     def __init__(self):
         self.type = None  # type: Optional[str]
-        self.value = None  # type: Optional[float]
+        self.value = None  # type: Optional[int]
 
     def deepcopy(self, option):
         """

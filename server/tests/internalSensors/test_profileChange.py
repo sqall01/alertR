@@ -5,6 +5,7 @@ from unittest import TestCase
 from lib.localObjects import SensorAlert, Option, Profile
 from lib.internalSensors import ProfileChangeSensor
 from lib.globalData import GlobalData
+# noinspection PyProtectedMember
 from lib.storage.core import _Storage
 
 
@@ -50,6 +51,7 @@ class MockSensorAlertExecuter:
         return True
 
 
+# noinspection PyAbstractClass
 class MockStorage(_Storage):
 
     def __init__(self):
@@ -110,7 +112,7 @@ class TestProfileChange(TestCase):
 
         option = Option()
         option.type = "profile"
-        option.value = 2.0
+        option.value = 2
 
         self.assertEqual(sensor.data, 1)
 
@@ -139,7 +141,7 @@ class TestProfileChange(TestCase):
 
         option = Option()
         option.type = "does_not_exist"
-        option.value = 2.0
+        option.value = 2
 
         self.assertEqual(sensor.data, 1)
 
@@ -161,7 +163,7 @@ class TestProfileChange(TestCase):
 
         option = Option()
         option.type = "profile"
-        option.value = 1337.0
+        option.value = 1337
 
         self.assertEqual(sensor.data, 1)
 
@@ -184,7 +186,7 @@ class TestProfileChange(TestCase):
 
         option = Option()
         option.type = "profile"
-        option.value = 2.0
+        option.value = 2
 
         self.assertEqual(sensor.data, 1)
 
@@ -207,7 +209,7 @@ class TestProfileChange(TestCase):
 
         option = Option()
         option.type = "profile"
-        option.value = 2.0
+        option.value = 2
 
         self.assertEqual(sensor.data, 1)
 

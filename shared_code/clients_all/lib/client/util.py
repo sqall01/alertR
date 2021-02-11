@@ -607,10 +607,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the option value.
     @staticmethod
-    def check_option_value(value: float) -> Optional[str]:
+    def check_option_value(value: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(value, float):
+        if not isinstance(value, int):
             is_correct = False
 
         if not is_correct:
@@ -1332,7 +1332,7 @@ class MsgBuilder:
 
     @staticmethod
     def build_option_msg_manager(optionType: str,
-                                 optionValue: float,
+                                 optionValue: int,
                                  optionDelay: int) -> str:
         """
         Internal function that builds the option message for manager nodes.
@@ -1344,7 +1344,7 @@ class MsgBuilder:
         """
         payload = {"type": "request",
                    "optionType": optionType,
-                   "value": float(optionValue),
+                   "value": optionValue,
                    "timeDelay": optionDelay}
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,

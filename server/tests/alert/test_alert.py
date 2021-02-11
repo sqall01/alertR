@@ -9,6 +9,7 @@ from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
+# noinspection PyProtectedMember
 from lib.storage.core import _Storage
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
 
@@ -19,9 +20,11 @@ def _callback_trigger_sensor_alert(_, sensor_alert_state: SensorAlertState):
     :param _: self of SensorAlertExecuter object
     :param sensor_alert_state:
     """
+    # noinspection PyProtectedMember
     TestAlert._callback_trigger_sensor_alert_arg.append(sensor_alert_state)
 
 
+# noinspection PyAbstractClass
 class MockStorage(_Storage):
 
     def __init__(self):

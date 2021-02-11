@@ -357,7 +357,7 @@ class SensorAlertExecuter(threading.Thread):
         if option is None:
             self._logger.error("[%s]: Unable to get 'profile' option from database." % self._log_tag)
             return
-        curr_profile_id = int(option.value)
+        curr_profile_id = option.value
 
         for sensor_alert_state in sensor_alert_states:
 
