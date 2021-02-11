@@ -624,6 +624,11 @@ class Sqlite(_Storage):
         self.cursor.execute("DROP TABLE IF EXISTS managers")
         self.cursor.execute("DROP TABLE IF EXISTS nodes")
 
+        # Remove tables of former versions.
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+
         # commit all changes
         self.conn.commit()
 
