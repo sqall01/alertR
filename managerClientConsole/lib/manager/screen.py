@@ -1403,9 +1403,9 @@ class Console:
             logging.error("[%s]: No profile option." % self.fileName)
             return
 
-        profile = self.system_data.get_profile_by_id(int(option.value))
+        profile = self.system_data.get_profile_by_id(option.value)
         if profile is None:
-            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
             return
 
         self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
@@ -1500,9 +1500,9 @@ class Console:
                 logging.error("[%s]: No profile option." % self.fileName)
 
             else:
-                profile = self.system_data.get_profile_by_id(int(option.value))
+                profile = self.system_data.get_profile_by_id(option.value)
                 if profile is None:
-                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
 
                 else:
                     self._profile_urwid.update_value(profile.name)

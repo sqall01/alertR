@@ -166,7 +166,7 @@ class Console:
             else:
                 self._audio_output.audio_profile_change_delayed()
 
-        self.serverComm.send_option("profile", float(profile.profileId), delay)
+        self.serverComm.send_option("profile", profile.profileId, delay)
 
         self.showPinView()
 
@@ -320,9 +320,9 @@ class Console:
                 logging.error("[%s]: No profile option." % self.fileName)
 
             else:
-                profile = self.system_data.get_profile_by_id(int(option.value))
+                profile = self.system_data.get_profile_by_id(option.value)
                 if profile is None:
-                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
 
                 else:
                     self._profile_urwid.update_value(profile.name)
@@ -442,9 +442,9 @@ class Console:
             logging.error("[%s]: No profile option." % self.fileName)
             return
 
-        profile = self.system_data.get_profile_by_id(int(option.value))
+        profile = self.system_data.get_profile_by_id(option.value)
         if profile is None:
-            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, int(option.value)))
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
             return
 
         self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
