@@ -15,14 +15,15 @@ from typing import Tuple, List, Dict, Optional
 from lib import Sqlite
 from lib import GlobalData
 from lib.localObjects import Alert, Sensor, AlertLevel, SensorDataType, Node
-from lib.config.parser import configure_alert_levels
+from lib.config.parser import configure_alert_levels, configure_profiles
 
 try:
     import networkx as nx
     from networkx.drawing.nx_pydot import to_pydot
 except Exception:
     print("Requires pip packages 'networkx' and 'pydot'. "
-          + "Please install them by executing 'pip3 install networkx pydot'.")
+          + "Please install them by executing 'pip3 install networkx pydot' "
+          + "as well as the system package for 'graphviz'.")
     sys.exit(1)
 
 
@@ -36,7 +37,7 @@ class GraphAlert:
         # noinspection PyPep8
         temp = "\"Alert: " + self.alert.description + "\l" \
                + "Alert Id: " + str(self.alert.alertId) + "\l" \
-               + "Remote Alert Id: " + str(self.alert.remoteAlertId) + "\l" \
+               + "Client Alert Id: " + str(self.alert.clientAlertId) + "\l" \
                + "Node Username: " + str(self.node.username) + "\l\""
         return temp
 
@@ -58,9 +59,9 @@ class GraphAlertLevel:
         # noinspection PyPep8
         temp = "\"AlertLevel: " + self.alert_level.name + "\l" \
                + "Level: " + str(self.alert_level.level) + "\l" \
-               + "Trigger Always: " + str(self.alert_level.triggerAlways) + "\l" \
                + "Alert for Triggered: " + str(self.alert_level.triggerAlertTriggered) + "\l" \
                + "Alert for Normal: " + str(self.alert_level.triggerAlertNormal) + "\l" \
+               + "Profiles: " + ", ".join([str(x) for x in self.alert_level.profiles]) + "\l" \
                + "Instrumented: " + str(self.alert_level.instrumentation_active) + "\l\""
         return temp
 
@@ -90,7 +91,7 @@ class GraphSensor:
         # noinspection PyPep8
         temp = "\"Sensor: " + self.sensor.description + "\l" \
                + "Sensor Id: " + str(self.sensor.sensorId) + "\l" \
-               + "Remote Sensor Id: " + str(self.sensor.remoteSensorId) + "\l" \
+               + "Client Sensor Id: " + str(self.sensor.clientSensorId) + "\l" \
                + "Node Username: " + str(self.node.username) + "\l" \
                + "Alert Delay: " + str(self.sensor.alertDelay) + " sec\l" \
                + "Data Type: " + data_type + "\l\""
@@ -109,36 +110,36 @@ class Filter:
     def __init__(self,
                  alert_level: Optional[int],
                  alert_username: Optional[str],
-                 remote_alert_id: Optional[int],
+                 client_alert_id: Optional[int],
                  sensor_username: Optional[str],
-                 remote_sensor_id: Optional[int]):
+                 client_sensor_id: Optional[int]):
 
         self.alert_level = alert_level
         self.alert_username = alert_username
-        self.remote_alert_id = remote_alert_id
+        self.client_alert_id = client_alert_id
         self.sensor_username = sensor_username
-        self.remote_sensor_id = remote_sensor_id
+        self.client_sensor_id = client_sensor_id
 
         self.cached_node = None
 
-        if ((self.alert_username is None and self.remote_alert_id is not None)
-           or (self.alert_username is not None and self.remote_alert_id is None)):
-            raise ValueError("Bot '--alertusername' and '--remotealertid' have to be set or none.")
+        if ((self.alert_username is None and self.client_alert_id is not None)
+           or (self.alert_username is not None and self.client_alert_id is None)):
+            raise ValueError("Bot '--alertusername' and '--clientalertid' have to be set or none.")
 
-        if ((self.sensor_username is None and self.remote_sensor_id is not None)
-           or (self.sensor_username is not None and self.remote_sensor_id is None)):
-            raise ValueError("Bot '--sensorusername' and '--remotesensorid' have to be set or none.")
+        if ((self.sensor_username is None and self.client_sensor_id is not None)
+           or (self.sensor_username is not None and self.client_sensor_id is None)):
+            raise ValueError("Bot '--sensorusername' and '--clientsensorid' have to be set or none.")
 
         filter_set = False
         if self.alert_level is not None:
             filter_set = True
 
-        if self.alert_username is not None and self.remote_alert_id is not None:
+        if self.alert_username is not None and self.client_alert_id is not None:
             if filter_set:
                 raise ValueError("Only one filter option can be set (Alert Level, Alert, or Sensor)")
             filter_set = True
 
-        if self.sensor_username is not None and self.remote_sensor_id is not None:
+        if self.sensor_username is not None and self.client_sensor_id is not None:
             if filter_set:
                 raise ValueError("Only one filter option can be set (Alert Level, Alert, or Sensor)")
 
@@ -187,13 +188,13 @@ class Filter:
             target_node = self._get_node(self.alert_username, nodes)
             target_alert = None
             for alert in alerts:
-                if alert.nodeId == target_node.id and alert.remoteAlertId == self.remote_alert_id:
+                if alert.nodeId == target_node.id and alert.clientAlertId == self.client_alert_id:
                     target_alert = alert
                     break
 
             if target_alert is None:
-                raise ValueError("Alert with username '%s' and remote Alert id '%d' does not exist."
-                                 % (self.alert_username, self.remote_alert_id))
+                raise ValueError("Alert with username '%s' and client Alert id '%d' does not exist."
+                                 % (self.alert_username, self.client_alert_id))
 
             for _, alert_level in alert_levels.items():
                 if alert_level.level in target_alert.alertLevels:
@@ -204,13 +205,13 @@ class Filter:
             target_node = self._get_node(self.sensor_username, nodes)
             target_sensor = None
             for sensor in sensors:
-                if sensor.nodeId == target_node.id and sensor.remoteSensorId == self.remote_sensor_id:
+                if sensor.nodeId == target_node.id and sensor.clientSensorId == self.client_sensor_id:
                     target_sensor = sensor
                     break
 
             if target_sensor is None:
-                raise ValueError("Sensor with username '%s' and remote Sensor id '%d' does not exist."
-                                 % (self.sensor_username, self.remote_sensor_id))
+                raise ValueError("Sensor with username '%s' and client Sensor id '%d' does not exist."
+                                 % (self.sensor_username, self.client_sensor_id))
 
             for _, alert_level in alert_levels.items():
                 if alert_level.level in target_sensor.alertLevels:
@@ -247,7 +248,7 @@ class Filter:
         elif self.alert_username is not None:
             target_node = self._get_node(self.alert_username, nodes)
             for alert in alerts:
-                if alert.nodeId == target_node.id and alert.remoteAlertId == self.remote_alert_id:
+                if alert.nodeId == target_node.id and alert.clientAlertId == self.client_alert_id:
                     filtered_alerts.append(alert)
                     break
 
@@ -256,13 +257,13 @@ class Filter:
             target_node = self._get_node(self.sensor_username, nodes)
             target_sensor = None
             for sensor in sensors:
-                if sensor.nodeId == target_node.id and sensor.remoteSensorId == self.remote_sensor_id:
+                if sensor.nodeId == target_node.id and sensor.clientSensorId == self.client_sensor_id:
                     target_sensor = sensor
                     break
 
             if target_sensor is None:
-                raise ValueError("Sensor with username '%s' and remote Sensor id '%d' does not exist."
-                                 % (self.sensor_username, self.remote_alert_id))
+                raise ValueError("Sensor with username '%s' and client Sensor id '%d' does not exist."
+                                 % (self.sensor_username, self.client_alert_id))
 
             for alert in alerts:
                 for alert_level in alert.alertLevels:
@@ -308,13 +309,13 @@ class Filter:
             target_node = self._get_node(self.alert_username, nodes)
             target_alert = None
             for alert in alerts:
-                if alert.nodeId == target_node.id and alert.remoteAlertId == self.remote_alert_id:
+                if alert.nodeId == target_node.id and alert.clientAlertId == self.client_alert_id:
                     target_alert = alert
                     break
 
             if target_alert is None:
-                raise ValueError("Alert with username '%s' and remote Alert id '%d' does not exist."
-                                 % (self.alert_username, self.remote_sensor_id))
+                raise ValueError("Alert with username '%s' and client Alert id '%d' does not exist."
+                                 % (self.alert_username, self.client_sensor_id))
 
             for sensor in sensors:
                 for alert_level in sensor.alertLevels:
@@ -333,7 +334,7 @@ class Filter:
         elif self.sensor_username is not None:
             target_node = self._get_node(self.sensor_username, nodes)
             for sensor in sensors:
-                if sensor.nodeId == target_node.id and sensor.remoteSensorId == self.remote_sensor_id:
+                if sensor.nodeId == target_node.id and sensor.clientSensorId == self.client_sensor_id:
                     filtered_sensors.append(sensor)
                     break
 
@@ -427,11 +428,11 @@ if __name__ == '__main__':
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "Example command to create graph for a specific Alert:" \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python3 %s -g /home/alertr/graph.dot' --remotealertid 1 --alertusername user1" % sys.argv[0] \
+                    + "'python3 %s -g /home/alertr/graph.dot' --clientalertid 1 --alertusername user1" % sys.argv[0] \
                     + "\t\t\t\t\t\t\t\t\t\t" \
                     + "Example command to create graph for a specific Sensor:" \
                     + "\t\t\t\t\t\t\t\t\t\t" \
-                    + "'python3 %s -g /home/alertr/graph.dot' --remotesensorid 2 --sensorusername user33" % sys.argv[0]
+                    + "'python3 %s -g /home/alertr/graph.dot' --clientsensorid 2 --sensorusername user33" % sys.argv[0]
     parser.add_option("-g",
                       "--graph",
                       dest="graph_path",
@@ -452,11 +453,11 @@ if __name__ == '__main__':
                       help="Specific Alert Level to export. If not set, all Alert Levels are exported. (Optional)",
                       default=None)
     parser.add_option("",
-                      "--remotealertid",
-                      dest="remote_alert_id",
+                      "--clientalertid",
+                      dest="client_alert_id",
                       action="store",
                       type="int",
-                      help="Specific Remote Alert Id to export. If not set, all Alerts are exported. "
+                      help="Specific Client Alert Id to export. If not set, all Alerts are exported. "
                            + "If set, requires also to set --alertusername (Optional)",
                       default=None)
     parser.add_option("",
@@ -465,14 +466,14 @@ if __name__ == '__main__':
                       action="store",
                       help="Specific username of the AlertR instance running the Alert to export. "
                            + "If not set, all Alerts are exported. "
-                           + "If set, requires also to set --remotealertid (Optional)",
+                           + "If set, requires also to set --clientalertid (Optional)",
                       default=None)
     parser.add_option("",
-                      "--remotesensorid",
-                      dest="remote_sensor_id",
+                      "--clientsensorid",
+                      dest="client_sensor_id",
                       action="store",
                       type="int",
-                      help="Specific Remote Sensor Id to export. If not set, all Sensors are exported. "
+                      help="Specific Client Sensor Id to export. If not set, all Sensors are exported. "
                            + "If set, requires also to set --sensorusername (Optional)",
                       default=None)
     parser.add_option("",
@@ -481,7 +482,7 @@ if __name__ == '__main__':
                       action="store",
                       help="Specific username of the AlertR instance running the Sensor to export. "
                            + "If not set, all Sensors are exported. "
-                           + "If set, requires also to set --remotesensorid (Optional)",
+                           + "If set, requires also to set --clientsensorid (Optional)",
                       default=None)
 
     (options, args) = parser.parse_args()
@@ -494,9 +495,9 @@ if __name__ == '__main__':
     try:
         filter_obj = Filter(options.alert_level,
                             options.alert_username,
-                            options.remote_alert_id,
+                            options.client_alert_id,
                             options.sensor_username,
-                            options.remote_sensor_id)
+                            options.client_sensor_id)
     except ValueError as e:
         print(e)
         sys.exit(1)
@@ -533,6 +534,7 @@ if __name__ == '__main__':
 
     # Read necessary configurations.
     configRoot = xml.etree.ElementTree.parse(global_data.configFile).getroot()
+    configure_profiles(configRoot, global_data)
     configure_alert_levels(configRoot, global_data)
 
     # Get Alert, Alert Level, ans Sensor objects.

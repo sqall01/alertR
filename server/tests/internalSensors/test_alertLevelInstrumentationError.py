@@ -1,22 +1,12 @@
 import logging
-import json
-import threading
-from typing import Any, List
+from typing import Any, List, Dict, Optional
 from unittest import TestCase
 from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
-from lib.storage.core import _Storage
 from lib.globalData import GlobalData
 
 
 class MockSensorAlertExecuter:
-
-    def __init__(self):
-        self.sensorAlertEvent = threading.Event()
-        self.sensorAlertEvent.clear()
-
-
-class MockStorage(_Storage):
 
     def __init__(self):
         self._sensor_alerts = list()  # type: List[SensorAlert]
@@ -25,30 +15,30 @@ class MockStorage(_Storage):
     def sensor_alerts(self) -> List[SensorAlert]:
         return self._sensor_alerts
 
-    def addSensorAlert(self,
-                       nodeId: int,
-                       sensorId: int,
-                       state: int,
-                       dataJson: str,
-                       changeState: bool,
-                       hasLatestData: bool,
-                       dataType: int,
-                       sensorData: Any,
-                       logger: logging.Logger = None) -> bool:
+    def add_sensor_alert(self,
+                         node_id: int,
+                         sensor_id: int,
+                         state: int,
+                         optional_data: Optional[Dict[str, Any]],
+                         change_state: bool,
+                         has_latest_data: bool,
+                         data_type: int,
+                         sensor_data: Any,
+                         logger: logging.Logger = None) -> bool:
 
         sensor_alert = SensorAlert()
-        sensor_alert.nodeId = nodeId
-        sensor_alert.sensorId = sensorId
+        sensor_alert.nodeId = node_id
+        sensor_alert.sensorId = sensor_id
         sensor_alert.state = state
-        sensor_alert.changeState = changeState
-        sensor_alert.hasLatestData = hasLatestData
-        sensor_alert.dataType = dataType
-        sensor_alert.sensorData = sensorData
-        if dataJson == "":
-            sensor_alert.hasOptionalData = False
-        else:
+        sensor_alert.changeState = change_state
+        sensor_alert.hasLatestData = has_latest_data
+        sensor_alert.dataType = data_type
+        sensor_alert.sensorData = sensor_data
+
+        sensor_alert.hasOptionalData = False
+        sensor_alert.optionalData = optional_data
+        if optional_data:
             sensor_alert.hasOptionalData = True
-            sensor_alert.optionalData = json.loads(dataJson)
 
         self._sensor_alerts.append(sensor_alert)
         return True
@@ -59,7 +49,6 @@ class TestAlertLevelInstrumentationError(TestCase):
     def _create_internal_sensor(self) -> AlertLevelInstrumentationErrorSensor:
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Alert Level Instrumentation Error Test Case")
-        global_data.storage = MockStorage()
         global_data.sensorAlertExecuter = MockSensorAlertExecuter()
 
         sensor = AlertLevelInstrumentationErrorSensor(global_data)
@@ -71,21 +60,18 @@ class TestAlertLevelInstrumentationError(TestCase):
         Tests if the created sensor alert is correctly added for processing.
         """
         internal_sensor = self._create_internal_sensor()
-        storage = internal_sensor._storage
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
-        self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(0, len(sensor_alert_executer.sensor_alerts))
 
         optional_data = dict()
         optional_data["alert_level"] = 1337
 
         internal_sensor._add_sensor_alert(optional_data)
 
-        self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(1, len(sensor_alert_executer.sensor_alerts))
 
-        sensor_alert = storage.sensor_alerts[0]
+        sensor_alert = sensor_alert_executer.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
         self.assertEqual(internal_sensor.nodeId, sensor_alert.nodeId)
         self.assertEqual(internal_sensor.sensorId, sensor_alert.sensorId)
@@ -102,16 +88,14 @@ class TestAlertLevelInstrumentationError(TestCase):
         Tests if a sensor alert for execution error is added for processing.
         """
         internal_sensor = self._create_internal_sensor()
-        storage = internal_sensor._storage
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
-        self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(0, len(sensor_alert_executer.sensor_alerts))
 
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -120,10 +104,9 @@ class TestAlertLevelInstrumentationError(TestCase):
 
         internal_sensor.raise_sensor_alert_execution_error(alert_level)
 
-        self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(1, len(sensor_alert_executer.sensor_alerts))
 
-        sensor_alert = storage.sensor_alerts[0]
+        sensor_alert = sensor_alert_executer.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
         self.assertEqual(internal_sensor.nodeId, sensor_alert.nodeId)
         self.assertEqual(internal_sensor.sensorId, sensor_alert.sensorId)
@@ -142,16 +125,14 @@ class TestAlertLevelInstrumentationError(TestCase):
         Tests if a sensor alert for an invalid exit code is added for processing.
         """
         internal_sensor = self._create_internal_sensor()
-        storage = internal_sensor._storage
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
-        self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(0, len(sensor_alert_executer.sensor_alerts))
 
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -160,10 +141,9 @@ class TestAlertLevelInstrumentationError(TestCase):
 
         internal_sensor.raise_sensor_alert_exit_code(alert_level, 1337)
 
-        self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(1, len(sensor_alert_executer.sensor_alerts))
 
-        sensor_alert = storage.sensor_alerts[0]
+        sensor_alert = sensor_alert_executer.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
         self.assertEqual(internal_sensor.nodeId, sensor_alert.nodeId)
         self.assertEqual(internal_sensor.sensorId, sensor_alert.sensorId)
@@ -183,16 +163,14 @@ class TestAlertLevelInstrumentationError(TestCase):
         Tests if a sensor alert for invalid output is added for processing.
         """
         internal_sensor = self._create_internal_sensor()
-        storage = internal_sensor._storage
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
-        self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(0, len(sensor_alert_executer.sensor_alerts))
 
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -201,10 +179,9 @@ class TestAlertLevelInstrumentationError(TestCase):
 
         internal_sensor.raise_sensor_alert_invalid_output(alert_level)
 
-        self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(1, len(sensor_alert_executer.sensor_alerts))
 
-        sensor_alert = storage.sensor_alerts[0]
+        sensor_alert = sensor_alert_executer.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
         self.assertEqual(internal_sensor.nodeId, sensor_alert.nodeId)
         self.assertEqual(internal_sensor.sensorId, sensor_alert.sensorId)
@@ -223,16 +200,14 @@ class TestAlertLevelInstrumentationError(TestCase):
         Tests if a sensor alert for empty output is added for processing.
         """
         internal_sensor = self._create_internal_sensor()
-        storage = internal_sensor._storage
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
-        self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(0, len(sensor_alert_executer.sensor_alerts))
 
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -241,10 +216,9 @@ class TestAlertLevelInstrumentationError(TestCase):
 
         internal_sensor.raise_sensor_alert_output_empty(alert_level)
 
-        self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(1, len(sensor_alert_executer.sensor_alerts))
 
-        sensor_alert = storage.sensor_alerts[0]
+        sensor_alert = sensor_alert_executer.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
         self.assertEqual(internal_sensor.nodeId, sensor_alert.nodeId)
         self.assertEqual(internal_sensor.sensorId, sensor_alert.sensorId)
@@ -263,16 +237,14 @@ class TestAlertLevelInstrumentationError(TestCase):
         Tests if a sensor alert for instrumentation timeout is added for processing.
         """
         internal_sensor = self._create_internal_sensor()
-        storage = internal_sensor._storage
         sensor_alert_executer = internal_sensor._sensor_alert_executer
 
-        self.assertEqual(0, len(storage.sensor_alerts))
-        self.assertFalse(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(0, len(sensor_alert_executer.sensor_alerts))
 
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "alert_level_1"
-        alert_level.triggerAlways = True
+        alert_level.profiles = [0]
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_active = True
@@ -281,10 +253,9 @@ class TestAlertLevelInstrumentationError(TestCase):
 
         internal_sensor.raise_sensor_alert_timeout(alert_level)
 
-        self.assertEqual(1, len(storage.sensor_alerts))
-        self.assertTrue(sensor_alert_executer.sensorAlertEvent.is_set())
+        self.assertEqual(1, len(sensor_alert_executer.sensor_alerts))
 
-        sensor_alert = storage.sensor_alerts[0]
+        sensor_alert = sensor_alert_executer.sensor_alerts[0]
         self.assertEqual(0, internal_sensor.state)
         self.assertEqual(internal_sensor.nodeId, sensor_alert.nodeId)
         self.assertEqual(internal_sensor.sensorId, sensor_alert.sensorId)

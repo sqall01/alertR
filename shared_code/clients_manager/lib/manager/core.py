@@ -10,7 +10,7 @@
 import os
 import logging
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
 from ..client import EventHandler
 from ..globalData import GlobalData
 from typing import List, Any
@@ -35,6 +35,7 @@ class BaseManagerEventHandler(EventHandler):
     def status_update(self,
                       msg_time: int,
                       options: List[ManagerObjOption],
+                      profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
                       sensors: List[ManagerObjSensor],
                       managers: List[ManagerObjManager],
@@ -52,6 +53,16 @@ class BaseManagerEventHandler(EventHandler):
 
             except ValueError:
                 logging.exception("[%s]: Updating Option '%s' failed." % (self._log_tag, option.type))
+                return False
+
+        profile_ids = []
+        for profile in profiles:
+            try:
+                self._system_data.update_profile(profile)
+                profile_ids.append(profile.profileId)
+
+            except ValueError:
+                logging.exception("[%s]: Updating Profile %d failed." % (self._log_tag, profile.profileId))
                 return False
 
         alert_levels_int = set()
@@ -109,6 +120,10 @@ class BaseManagerEventHandler(EventHandler):
             if option.type not in options_type:
                 self._system_data.delete_option_by_type(option.type)
 
+        for profile in self._system_data.get_profiles_list():
+            if profile.profileId not in profile_ids:
+                self._system_data.delete_profile_by_id(profile.profileId)
+
         for alert_level in self._system_data.get_alert_levels_list():
             if alert_level.level not in alert_levels_int:
                 self._system_data.delete_alert_level_by_level(alert_level.level)
@@ -147,9 +162,10 @@ class BaseManagerEventHandler(EventHandler):
         return True
 
     # noinspection PyTypeChecker
-    def sensor_alerts_off(self,
-                          msg_time: int) -> bool:
-        logging.critical("[%s]: status_update() not supported by node of type 'manager'." % self._log_tag)
+    def profile_change(self,
+                       msg_time: int,
+                       profile: ManagerObjProfile) -> bool:
+        logging.critical("[%s]: profile_change() not supported by node of type 'manager'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'manager'.")
 
     def state_change(self,

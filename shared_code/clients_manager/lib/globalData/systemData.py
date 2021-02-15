@@ -10,7 +10,7 @@
 import threading
 from typing import Any, Dict, List, Optional
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
-    ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption
+    ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption, ManagerObjProfile
 from .baseObjects import InternalState
 from .sensorObjects import SensorDataType
 
@@ -21,6 +21,9 @@ class SystemData:
 
         # key: type
         self._options = dict()  # type: Dict[str, ManagerObjOption]
+
+        # key: id
+        self._profiles = dict()  # type: Dict[int, ManagerObjProfile]
 
         # key: nodeId
         self._nodes = dict()  # type: Dict[int, ManagerObjNode]
@@ -58,6 +61,19 @@ class SystemData:
                 raise ValueError("Alert Level %d does not exist for alert %d."
                                  % (alert_level, alert.alertId))
 
+    def _alert_level_sanity_check(self, alert_level: ManagerObjAlertLevel):
+
+        # Do we have a profile?
+        if not alert_level.profiles:
+            raise ValueError("Alert Level %d does not have a profile."
+                             % alert_level.level)
+
+        # Does corresponding profile exist?
+        for profile in alert_level.profiles:
+            if profile not in self._profiles.keys():
+                raise ValueError("Profile %d of corresponding Alert Level %d does not exist."
+                                 % (profile, alert_level.level))
+
     def _delete_alert_by_id(self, alert_id: int):
         if alert_id in self._alerts.keys():
             self._alerts[alert_id].internal_state = InternalState.DELETED
@@ -66,14 +82,31 @@ class SystemData:
     def _delete_alert_level_by_level(self, level: int):
         if level in self._alert_levels.keys():
 
-            # Remove alert level from Alert and Sensor objects.
+            # Remove alert level from Alert objects.
+            to_delete = set()
             for _, alert in self._alerts.items():
                 if level in alert.alertLevels:
                     alert.alertLevels.remove(level)
 
+                # If Alert object does not have an Alert Level anymore, delete it.
+                if not alert.alertLevels:
+                    to_delete.add(alert.alertId)
+
+            for alert_id in to_delete:
+                self._delete_alert_by_id(alert_id)
+
+            # Remove alert level from Sensor objects.
+            to_delete = set()
             for _, sensor in self._sensors.items():
                 if level in sensor.alertLevels:
                     sensor.alertLevels.remove(level)
+
+                # If Sensor object does not have an Alert Level anymore, delete it.
+                if not sensor.alertLevels:
+                    to_delete.add(sensor.sensorId)
+
+            for sensor_id in to_delete:
+                self._delete_sensor_by_id(sensor_id)
 
             self._alert_levels[level].internal_state = InternalState.DELETED
             del self._alert_levels[level]
@@ -114,6 +147,25 @@ class SystemData:
             self._delete_linked_objects_to_node_id(node_id)
             self._nodes[node_id].internal_state = InternalState.DELETED
             del self._nodes[node_id]
+
+    def _delete_profile_by_id(self, id: int):
+        if id in self._profiles.keys():
+
+            # Remove profile from Alert Level objects.
+            to_delete = set()
+            for _, alert_level in self._alert_levels.items():
+                if id in alert_level.profiles:
+                    alert_level.profiles.remove(id)
+
+                # Delete Alert Level if it does not have a profile anymore.
+                if not alert_level.profiles:
+                    to_delete.add(alert_level.level)
+
+            for level in to_delete:
+                self._delete_alert_level_by_level(level)
+
+            self._profiles[id].internal_state = InternalState.DELETED
+            del self._profiles[id]
 
     def _delete_option_by_type(self, option_type: str):
         if option_type in self._options.keys():
@@ -245,6 +297,9 @@ class SystemData:
             for alert_level in list(self._alert_levels.values()):
                 self._delete_alert_level_by_level(alert_level.level)
 
+            for profile in list(self._profiles.values()):
+                self._delete_profile_by_id(profile.profileId)
+
     def delete_alert_by_id(self, alert_id: int):
         """
         Deletes Alert object given by id.
@@ -285,6 +340,14 @@ class SystemData:
         with self._data_lock:
             self._delete_option_by_type(option_type)
 
+    def delete_profile_by_id(self, profile_id: int):
+        """
+        Deletes Profile object given by id and all linked objects to this node.
+        :param profile_id:
+        """
+        with self._data_lock:
+            self._delete_profile_by_id(profile_id)
+
     def delete_sensor_alerts_received_before(self, timestamp: int):
         """
         Deletes all Sensor Alert objects that are older are received before the given time.
@@ -312,11 +375,11 @@ class SystemData:
                 return None
             return self._alerts[alert_id]
 
-    def get_alert_by_remote_id(self, username: str, remote_id: int) -> Optional[ManagerObjAlert]:
+    def get_alert_by_client_id(self, username: str, client_id: int) -> Optional[ManagerObjAlert]:
         """
-        Gets Alert object corresponding to given username and remote id.
+        Gets Alert object corresponding to given username and client id.
         :param username:
-        :param remote_id:
+        :param client_id:
         :return:
         """
         with self._data_lock:
@@ -324,7 +387,7 @@ class SystemData:
             if node is None:
                 return None
             for _, alert in self._alerts.items():
-                if alert.nodeId == node.nodeId and alert.remoteAlertId == remote_id:
+                if alert.nodeId == node.nodeId and alert.clientAlertId == client_id:
                     return alert
             return None
 
@@ -467,6 +530,29 @@ class SystemData:
                 return None
             return self._options[option_type]
 
+    def get_profiles_list(self,
+                          order_by_id: bool = False) -> List[ManagerObjProfile]:
+        """
+        Gets list of all profile objects.
+        :return: List of objects.
+        """
+        with self._data_lock:
+            temp = list(self._profiles.values())
+            if order_by_id:
+                temp.sort(key=lambda x: x.profileId)
+            return temp
+
+    def get_profile_by_id(self, profile_id: int) -> Optional[ManagerObjProfile]:
+        """
+        Gets Profile object corresponding to given id.
+        :param profile_id:
+        :return:
+        """
+        with self._data_lock:
+            if profile_id not in self._profiles.keys():
+                return None
+            return self._profiles[profile_id]
+
     def get_sensor_alerts_list(self) -> List[ManagerObjSensorAlert]:
         """
         Gets list of all Sensor Alert objects.
@@ -486,11 +572,11 @@ class SystemData:
                 return None
             return self._sensors[sensor_id]
 
-    def get_sensor_by_remote_id(self, username: str, remote_id: int) -> Optional[ManagerObjSensor]:
+    def get_sensor_by_client_id(self, username: str, client_id: int) -> Optional[ManagerObjSensor]:
         """
-        Gets Sensor object corresponding to given username and remote id.
+        Gets Sensor object corresponding to given username and client id.
         :param username:
-        :param remote_id:
+        :param client_id:
         :return:
         """
         with self._data_lock:
@@ -498,7 +584,7 @@ class SystemData:
             if node is None:
                 return None
             for _, sensor in self._sensors.items():
-                if sensor.nodeId == node.nodeId and sensor.remoteSensorId == remote_id:
+                if sensor.nodeId == node.nodeId and sensor.clientSensorId == client_id:
                     return sensor
             return None
 
@@ -577,6 +663,8 @@ class SystemData:
         Updates the given alert level data.
         :param alert_level:
         """
+        self._alert_level_sanity_check(alert_level)
+
         with self._data_lock:
 
             # Add alert level object if it does not exist yet.
@@ -638,7 +726,6 @@ class SystemData:
         """
         Updates the given option data.
         :param option:
-        :return: success of failure
         """
         with self._data_lock:
 
@@ -650,6 +737,22 @@ class SystemData:
             # Update option object data.
             else:
                 self._options[option.type].deepcopy(option)
+
+    def update_profile(self, profile: ManagerObjProfile):
+        """
+        Updates the given profile data.
+        :param profile:
+        """
+        with self._data_lock:
+
+            # Add option object if it does not exist yet.
+            if profile.profileId not in self._profiles.keys():
+                self._profiles[profile.profileId] = profile
+                profile.internal_state = InternalState.STORED
+
+            # Update option object data.
+            else:
+                self._profiles[profile.profileId].deepcopy(profile)
 
     def update_sensor(self, sensor: ManagerObjSensor):
         """

@@ -26,6 +26,7 @@ class TestCommunicationBasic(TestCase):
             if not comm.has_channel:
                 self.fail("Communication does not have connected channel.")
 
+        # noinspection PyUnresolvedReferences
         recv_msgs = comm._connection.msg_list
 
         if len(recv_msgs) != len(test_msgs):

@@ -19,15 +19,23 @@ from lightweightpush import ErrorCodes
 
 
 # Function creates a path location for the given user input.
-def makePath(inputLocation):
+def make_path(input_location: str) -> str:
     # Do nothing if the given location is an absolute path.
-    if inputLocation[0] == "/":
-        return inputLocation
+    if input_location[0] == "/":
+        return input_location
     # Replace ~ with the home directory.
-    elif inputLocation[0] == "~":
-        return os.environ["HOME"] + inputLocation[1:]
+    elif input_location[0] == "~":
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
-    return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), input_location)
 
 
 if __name__ == '__main__':
@@ -88,7 +96,7 @@ if __name__ == '__main__':
             alert["channel"] = str(item.find("push").attrib["channel"])
             alert["encSecret"] = str(item.find("push").attrib["secret"])
             alert["subject"] = str(item.find("push").attrib["subject"])
-            alert["templateFile"] = makePath(str(item.find("push").attrib["templateFile"]))
+            alert["templateFile"] = make_path(str(item.find("push").attrib["templateFile"]))
 
             # check if the template file exists
             if not os.path.isfile(alert["templateFile"]):
@@ -118,8 +126,8 @@ if __name__ == '__main__':
 
         subject = "Test message for alert with id %d" % alert["id"]
         message = "This is a test message for the alert:\n\n" \
-                   + "Id: %d\nDescription: %s\n\nCheers,\nalertR" \
-                   % (alert["id"], alert["description"])
+                  + "Id: %d\nDescription: %s\n\nCheers,\nalertR" \
+                  % (alert["id"], alert["description"])
 
         # Initialize alert object.
         alertObj = PushAlert(globalData)
@@ -130,13 +138,14 @@ if __name__ == '__main__':
         alertObj.channel = alert["channel"]
         alertObj.encSecret = alert["encSecret"]
         alertObj.templateFile = alert["templateFile"]
-        alertObj.alertLevels = list()
+        alertObj.alertLevels = [1]
         alertObj.subject = subject
         alertObj.initialize()
 
         sensorAlert = ManagerObjSensorAlert()
         sensorAlert.state = 1
         sensorAlert.timeReceived = int(time.time())
+        sensorAlert.alertLevels = [1]
 
         errorCode = alertObj._send_message(subject, message, sensorAlert)
 

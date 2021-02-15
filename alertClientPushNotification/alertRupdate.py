@@ -1,1 +1,1 @@
-../shared_code/clients_all/alertRupdate.py
+../shared_code/all/alertRupdate.py

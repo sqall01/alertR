@@ -23,24 +23,32 @@ import xml.etree.ElementTree
 
 
 # Signal handler to cleaning up the client.
-def signalHandler(signum, frame):
-    fileName = os.path.basename(__file__)
-    logging.info("[%s]: Resetting GPIOs." % fileName)
+def signal_handler(signum, frame):
+    log_tag = os.path.basename(__file__)
+    logging.info("[%s]: Resetting GPIOs." % log_tag)
     GPIO.cleanup()
-    logging.info("[%s]: Exiting client." % fileName)
+    logging.info("[%s]: Exiting client." % log_tag)
     sys.exit(0)
 
 
 # Function creates a path location for the given user input.
-def makePath(inputLocation):
+def make_path(input_location: str) -> str:
     # Do nothing if the given location is an absolute path.
-    if inputLocation[0] == "/":
-        return inputLocation
+    if input_location[0] == "/":
+        return input_location
     # Replace ~ with the home directory.
-    elif inputLocation[0] == "~":
-        return os.environ["HOME"] + inputLocation[1:]
+    elif input_location[0] == "~":
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
-    return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), input_location)
 
 
 if __name__ == '__main__':
@@ -55,7 +63,7 @@ if __name__ == '__main__':
     try:
         configRoot = xml.etree.ElementTree.parse(globalData.configFile).getroot()
 
-        logfile = makePath(str(configRoot.find("general").find("log").attrib["file"]))
+        logfile = make_path(str(configRoot.find("general").find("log").attrib["file"]))
 
         # parse chosen log level
         tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
@@ -90,8 +98,8 @@ if __name__ == '__main__':
         # Check file permission of config file (do not allow it to be accessible by others).
         config_stat = os.stat(globalData.configFile)
         if (config_stat.st_mode & stat.S_IROTH
-           or config_stat.st_mode & stat.S_IWOTH
-           or config_stat.st_mode & stat.S_IXOTH):
+                or config_stat.st_mode & stat.S_IWOTH
+                or config_stat.st_mode & stat.S_IXOTH):
             raise ValueError("Config file is accessible by others. Please remove file permissions for others.")
 
         # check if config and client version are compatible
@@ -107,7 +115,7 @@ if __name__ == '__main__':
         serverPort = int(configRoot.find("general").find("server").attrib["port"])
 
         # get server certificate file and check if it does exist
-        serverCAFile = os.path.abspath(makePath(str(configRoot.find("general").find("server").attrib["caFile"])))
+        serverCAFile = os.path.abspath(make_path(str(configRoot.find("general").find("server").attrib["caFile"])))
         if os.path.exists(serverCAFile) is False:
             raise ValueError("Server CA does not exist.")
 
@@ -117,12 +125,19 @@ if __name__ == '__main__':
 
         if certificateRequired is True:
             clientCertFile = os.path.abspath(
-                             makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
+                             make_path(str(configRoot.find("general").find("client").attrib["certFile"])))
             clientKeyFile = os.path.abspath(
-                            makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
+                            make_path(str(configRoot.find("general").find("client").attrib["keyFile"])))
             if (os.path.exists(clientCertFile) is False
-               or os.path.exists(clientKeyFile) is False):
+                    or os.path.exists(clientKeyFile) is False):
                 raise ValueError("Client certificate or key does not exist.")
+
+            key_stat = os.stat(clientKeyFile)
+            if (key_stat.st_mode & stat.S_IROTH
+                    or key_stat.st_mode & stat.S_IWOTH
+                    or key_stat.st_mode & stat.S_IXOTH):
+                raise ValueError("Client key is accessible by others. Please remove file permissions for others.")
+
         else:
             clientCertFile = None
             clientKeyFile = None
@@ -179,8 +194,12 @@ if __name__ == '__main__':
             if recv_normal_activated:
                 alert.recv_normal_state = int(item.find("gpio").find("normal").attrib["state"])
 
-            recv_off_activated = str(item.find("gpio").find("off").attrib["activated"]).upper() == "TRUE"
-            alert.recv_off_activated = recv_off_activated
+            recv_profile_change_activated = str(
+                item.find("gpio").find("profilechange").attrib["activated"]).upper() == "TRUE"
+            alert.recv_profile_change_activated = recv_profile_change_activated
+            if recv_profile_change_activated:
+                for profile in item.find("gpio").find("profilechange").iterfind("profile"):
+                    alert.recv_profile_change_target_profiles.add(int(profile.text))
 
             gpio_reset_activated = str(item.find("gpio").find("reset").attrib["activated"]).upper() == "TRUE"
             alert.gpio_reset_activated = gpio_reset_activated
@@ -200,6 +219,10 @@ if __name__ == '__main__':
 
             if recv_normal_activated and alert.recv_normal_state != 0 and alert.recv_normal_state != 1:
                 raise ValueError("state for 'normal' sensor alert of Alert %d has to be 0 or 1." % alert.id)
+
+            if recv_profile_change_activated and not alert.recv_profile_change_target_profiles:
+                raise ValueError("No profiles set for profilechange of alert %d."
+                                 % alert.id)
 
             alert.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
@@ -223,8 +246,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Register sigterm handler to gracefully shutdown the client.
-    signal.signal(signal.SIGTERM, signalHandler)
-    signal.signal(signal.SIGINT, signalHandler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
     random.seed()
 

@@ -7,9 +7,11 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
+import os
 from typing import Optional
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # This class represents an example alert
@@ -22,6 +24,8 @@ class TemplateAlert(_Alert):
 
         # State of the alert (0 = "normal"; 1 = "triggered").
         self.state = None  # type: Optional[int]
+
+        self._log_tag = os.path.basename(__file__)
 
     # this function is called once when the alert client has connected itself
     # to the server (should be use to initialize everything that is needed
@@ -41,6 +45,8 @@ class TemplateAlert(_Alert):
             # Set state of alert to "triggered"
             self.state = sensor_alert.state
 
+            logging.info("[%s]: Alert '%d' change to state %d." % (self._log_tag, self.id, self.state))
+
         print("Sensor Alert 'Triggered': trigger alert")
 
         # PLACE YOUR CODE HERE
@@ -51,22 +57,16 @@ class TemplateAlert(_Alert):
             # Set state of alert to "normal"
             self.state = sensor_alert.state
 
+            logging.info("[%s]: Alert '%d' change to state %d." % (self._log_tag, self.id, self.state))
+
         print("Sensor Alert 'Normal': trigger alert")
 
         # PLACE YOUR CODE HERE
 
-    def alert_off(self):
+    def alert_profile_change(self, profile: ManagerObjProfile):
 
-        # Only execute if the alert was triggered
-        if self.state == 1:
-            # set state of alert to "normal"
-            self.state = 0
+        logging.info("[%s]: Alert '%d' process system profile change." % (self._log_tag, self.id))
 
-            print("Alert Off: stopped 'triggered' alert")
+        print("Profile Change to '%d'" % profile.profileId)
 
-            # PLACE YOUR CODE HERE
-
-        else:
-            print("Alert Off: alert was in 'normal' state")
-
-            # PLACE YOUR CODE HERE
+        # PLACE YOUR CODE HERE

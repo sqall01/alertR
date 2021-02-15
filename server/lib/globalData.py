@@ -58,19 +58,22 @@ class GlobalData:
     def __init__(self):
 
         # version of the used server (and protocol)
-        self.version = 0.700  # type: float
+        self.version = 0.800  # type: float
 
         # revision of the used server
         self.rev = 0  # type: int
 
         # Used database layout version.
-        self.dbVersion = 1  # type: int
+        self.dbVersion = 3  # type: int
 
         # name of this server
         self.name = "AlertR Server"  # type: str
 
         # the instance of this server
         self.instance = "server"  # type: str
+
+        # type of this node
+        self.nodeType = "server"  # type: str
 
         # instance of the storage backend
         self.storage = None
@@ -83,6 +86,9 @@ class GlobalData:
 
         # instance of the thread that handles manager updates
         self.managerUpdateExecuter = None
+
+        # Object that handles option message processing.
+        self.option_executer = None
 
         # this is the time in seconds when the client times out
         self.connectionTimeout = 90
@@ -104,17 +110,22 @@ class GlobalData:
         self.configCheckInterval = 60.0
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "config",
+                                       "config.xml")
 
         # path to the csv user credentials file (if csv is used as backend)
-        self.userBackendCsvFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/users.csv"
+        self.userBackendCsvFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                               "..",
+                                               "config",
+                                               "users.csv")
 
         # path to the sqlite database file (if sqlite is used as backend)
-        self.storageBackendSqliteFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/database.db"
-
-        # How often the alertR server should try to connect to the
-        # MySQL server when the connection establishment fails.
-        self.storageBackendMysqlRetries = 5
+        self.storageBackendSqliteFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                     "..",
+                                                     "config",
+                                                     "database.db")
 
         # location of the certifiacte file
         self.serverCertFile = None  # type: Optional[str]
@@ -142,12 +153,11 @@ class GlobalData:
         # a list of all alert levels that are configured on this server
         self.alertLevels = list()
 
+        # A list of all profiles that are configured on this server.
+        self.profiles = list()
+
         # time the server is waiting on receives until a time out occurs
         self.serverReceiveTimeout = 50.0
-
-        # list and lock of/for the asynchronous option executer
-        self.asyncOptionExecutersLock = threading.BoundedSemaphore(1)
-        self.asyncOptionExecuters = list()
 
         # List of the server's internal sensors.
         self.internalSensors = list()

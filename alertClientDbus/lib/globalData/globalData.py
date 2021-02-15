@@ -18,7 +18,7 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.700  # type: float
+        self.version = 0.800  # type: float
 
         # revision of the used client
         self.rev = 0  # type: int
@@ -37,7 +37,11 @@ class GlobalData:
         self.nodeType = "alert"  # type: str
 
         # path to the configuration file of the client
-        self.configFile = os.path.dirname(os.path.abspath(__file__)) + "/../config/config.xml"  # type: str
+        self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..",
+                                       "..",
+                                       "config",
+                                       "config.xml")
 
         # instance of the email alerting object
         self.smtpAlert = None

@@ -13,13 +13,12 @@ import time
 import socket
 import struct
 import hashlib
-import json
 import logging
 import sqlite3
 from typing import Any, Optional, List, Union, Tuple, Dict
 from .core import _Storage
 from ..globalData import GlobalData
-from ..localObjects import Node, Alert, Manager, Sensor, SensorAlert, SensorData, SensorDataType, Option
+from ..localObjects import Node, Alert, Manager, Sensor, SensorData, SensorDataType, Option
 
 
 # class for using sqlite as storage backend
@@ -28,7 +27,7 @@ class Sqlite(_Storage):
     def __init__(self,
                  storagePath: str,
                  globalData: GlobalData,
-                 read_only: bool=False):
+                 read_only: bool = False):
 
         self.globalData = globalData
         self.logger = self.globalData.logger
@@ -45,7 +44,7 @@ class Sqlite(_Storage):
         self.storagePath = storagePath
 
         # sqlite is not thread safe => use lock
-        self.dbLock = threading.Semaphore(1)
+        self.dbLock = threading.Lock()
 
         mode = ""
         if read_only:
@@ -170,7 +169,7 @@ class Sqlite(_Storage):
                 alert = Alert()
                 alert.alertId = result[0][0]
                 alert.nodeId = result[0][1]
-                alert.remoteAlertId = result[0][2]
+                alert.clientAlertId = result[0][2]
                 alert.description = result[0][3]
 
                 # Set alert levels for alert.
@@ -251,6 +250,66 @@ class Sqlite(_Storage):
 
         return None
 
+    def _get_option_by_type(self,
+                            option_type: str,
+                            logger: logging.Logger = None) -> Optional[Option]:
+        """
+        Internal function that gets the option from the database given by its type.
+
+        :param option_type:
+        :param logger:
+        :return: an option object or None
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        option = None
+        try:
+            self.cursor.execute("SELECT type, value FROM options WHERE type = ?", (option_type, ))
+
+            result = self.cursor.fetchall()
+
+            if len(result) == 1:
+                option = Option()
+                option.type = result[0][0]
+                option.value = result[0][1]
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to get option with type %s." % (self.log_tag, option_type))
+            return None
+
+        return option
+
+    def _get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+        """
+        Internal function that gets the options from the database.
+
+        :param logger:
+        :return: list of option objects or None
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        options = list()
+        try:
+            self.cursor.execute("SELECT type, value FROM options")
+
+            result = self.cursor.fetchall()
+
+            for option_tuple in result:
+                option = Option()
+                option.type = option_tuple[0]
+                option.value = option_tuple[1]
+                options.append(option)
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to get options ." % self.log_tag)
+            return None
+
+        return options
+
     def _getSensorById(self,
                        sensorId: int,
                        logger: logging.Logger = None) -> Optional[Sensor]:
@@ -275,7 +334,7 @@ class Sqlite(_Storage):
                 sensor = Sensor()
                 sensor.sensorId = result[0][0]
                 sensor.nodeId = result[0][1]
-                sensor.remoteSensorId = result[0][2]
+                sensor.clientSensorId = result[0][2]
                 sensor.description = result[0][3]
                 sensor.state = result[0][4]
                 sensor.lastStateUpdated = result[0][5]
@@ -330,17 +389,17 @@ class Sqlite(_Storage):
 
     def _getSensorId(self,
                      nodeId: int,
-                     remoteSensorId: int) -> int:
+                     clientSensorId: int) -> int:
         """
         Internal function that gets the sensor id of a sensor when the id
-        of a node is given and the remote sensor id that is used by the node internally.
+        of a node is given and the client sensor id that is used by the node internally.
 
         :param nodeId:
-        :param remoteSensorId:
+        :param clientSensorId:
         :return: sensorId or raised Exception
         """
         # get sensorId from database
-        self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND remoteSensorId = ?", (nodeId, remoteSensorId))
+        self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND clientSensorId = ?", (nodeId, clientSensorId))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
@@ -351,17 +410,17 @@ class Sqlite(_Storage):
 
     def _getAlertId(self,
                     nodeId: int,
-                    remoteAlertId: int) -> int:
+                    clientAlertId: int) -> int:
         """
         internal function that gets the alert id of an alert when the id
-        of a node is given and the remote alert id that is used by the node internally.
+        of a node is given and the client alert id that is used by the node internally.
 
         :param nodeId:
-        :param remoteAlertId:
+        :param clientAlertId:
         :return: alertId or raised Exception
         """
         # get alertId from database
-        self.cursor.execute("SELECT id FROM alerts WHERE nodeId = ? AND remoteAlertId = ?", (nodeId, remoteAlertId))
+        self.cursor.execute("SELECT id FROM alerts WHERE nodeId = ? AND clientAlertId = ?", (nodeId, clientAlertId))
         result = self.cursor.fetchall()
 
         if len(result) != 1:
@@ -424,7 +483,6 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        logger.debug("[%s]: Acquire lock." % self.log_tag)
         self.dbLock.acquire()
 
     def _releaseLock(self,
@@ -438,7 +496,6 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        logger.debug("[%s]: Release lock." % self.log_tag)
         self.dbLock.release()
 
     def _createStorage(self,
@@ -451,8 +508,7 @@ class Sqlite(_Storage):
         """
         # create internals table
         self.cursor.execute("CREATE TABLE internals ("
-                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            + "type TEXT NOT NULL UNIQUE, "
+                            + "type TEXT NOT NULL PRIMARY KEY, "
                             + "value TEXT NOT NULL)")
 
         # insert version of server
@@ -472,15 +528,14 @@ class Sqlite(_Storage):
 
         # create options table
         self.cursor.execute("CREATE TABLE options ("
-                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            + "type TEXT NOT NULL UNIQUE, "
-                            + "value REAL NOT NULL)")
+                            + "type TEXT NOT NULL PRIMARY KEY, "
+                            + "value INTEGER NOT NULL)")
 
-        # insert option to activate/deactivate alert system
-        # (0 = deactivated, 1 = activated)
+        # Insert option which profile is currently used by the system.
+        # NOTE: at least one profile with id 0 is enforced during configuration parsing.
         self.cursor.execute("INSERT INTO options ("
                             + "type, "
-                            + "value) VALUES (?, ?)", ("alertSystemActive", 0))
+                            + "value) VALUES (?, ?)", ("profile", 0))
 
         # create nodes table
         self.cursor.execute("CREATE TABLE nodes ("
@@ -498,7 +553,7 @@ class Sqlite(_Storage):
         self.cursor.execute("CREATE TABLE sensors ("
                             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                             + "nodeId INTEGER NOT NULL, "
-                            + "remoteSensorId INTEGER NOT NULL, "
+                            + "clientSensorId INTEGER NOT NULL, "
                             + "description TEXT NOT NULL, "
                             + "state INTEGER NOT NULL, "
                             + "lastStateUpdated INTEGER NOT NULL, "
@@ -525,37 +580,11 @@ class Sqlite(_Storage):
                             + "data REAL NOT NULL, "
                             + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
-        # create sensorAlerts table
-        self.cursor.execute("CREATE TABLE sensorAlerts ("
-                            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            + "nodeId INTEGER NOT NULL, "
-                            + "sensorId INTEGER NOT NULL, "
-                            + "state INTEGER NOT NULL, "
-                            + "timeReceived INTEGER NOT NULL, "
-                            + "dataJson TEXT NOT NULL,"
-                            + "changeState INTEGER NOT NULL, "
-                            + "hasLatestData INTEGER NOT NULL, "
-                            + "dataType INTEGER NOT NULL, "
-                            + "FOREIGN KEY(nodeId) REFERENCES nodes(id), "
-                            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
-
-        # Create sensorAlertsDataInt table.
-        self.cursor.execute("CREATE TABLE sensorAlertsDataInt ("
-                            + "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
-                            + "data INTEGER NOT NULL, "
-                            + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
-
-        # Create sensorAlertsDataFloat table.
-        self.cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
-                            + "sensorAlertId INTEGER NOT NULL PRIMARY KEY, "
-                            + "data REAL NOT NULL, "
-                            + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
-
         # create alerts table
         self.cursor.execute("CREATE TABLE alerts ("
                             + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                             + "nodeId INTEGER NOT NULL, "
-                            + "remoteAlertId INTEGER NOT NULL, "
+                            + "clientAlertId INTEGER NOT NULL, "
                             + "description TEXT NOT NULL, "
                             + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
@@ -584,9 +613,6 @@ class Sqlite(_Storage):
         # Delete all tables from the database to clear the old version.
         self.cursor.execute("DROP TABLE IF EXISTS internals")
         self.cursor.execute("DROP TABLE IF EXISTS options")
-        self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
-        self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
-        self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
         self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
         self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
         self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
@@ -595,6 +621,11 @@ class Sqlite(_Storage):
         self.cursor.execute("DROP TABLE IF EXISTS alerts")
         self.cursor.execute("DROP TABLE IF EXISTS managers")
         self.cursor.execute("DROP TABLE IF EXISTS nodes")
+
+        # Remove tables of former versions.
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
 
         # commit all changes
         self.conn.commit()
@@ -663,6 +694,29 @@ class Sqlite(_Storage):
 
         return True
 
+    def _delete_option_by_type(self,
+                               option_type: str,
+                               logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes option given by type.
+
+        :param option_type:
+        :param logger:
+        :return: Success or Failure
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("DELETE FROM options WHERE type = ?", (option_type, ))
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to delete option with type '%s'." % (self.log_tag, option_type))
+            return False
+
+        return True
+
     def _deleteSensorsForNodeId(self,
                                 nodeId: int,
                                 logger: logging.Logger = None) -> bool:
@@ -683,23 +737,8 @@ class Sqlite(_Storage):
             self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? ", (nodeId, ))
             result = self.cursor.fetchall()
 
-            # Delete all sensor alert levels, data and sensors of
-            # this node.
+            # Delete all data and sensors of this node.
             for sensorIdResult in result:
-
-                # Get all sensor alert ids that are connected to
-                # the this sensor.
-                self.cursor.execute("SELECT id FROM sensorAlerts WHERE sensorId = ? ", (sensorIdResult[0], ))
-                sensorAlertIdsresult = self.cursor.fetchall()
-
-                # Delete all sensor alert data connected to the corresponding
-                # sensor alert.
-                for sensorAlertIdResult in sensorAlertIdsresult:
-                    sensorAlertId = sensorAlertIdResult[0]
-                    if not self._deleteSensorAlert(sensorAlertId, logger):
-                        return False
-
-                self.cursor.execute("DELETE FROM sensorsAlertLevels WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensorsDataInt WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensorsDataFloat WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensors WHERE id = ?", (sensorIdResult[0], ))
@@ -710,34 +749,6 @@ class Sqlite(_Storage):
         except Exception as e:
             logger.exception("[%s]: Not able to delete sensors for node with id %d." % (self.log_tag, nodeId))
             return False
-
-        return True
-
-    def _deleteSensorAlert(self,
-                           sensorAlertId: int,
-                           logger: logging.Logger = None) -> bool:
-        """
-        Internal function thatdeletes a sensor alert given by its sensor alert id.
-
-        :param sensorAlertId:
-        :param logger:
-        :return: Returns true if everything worked fine.
-        """
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        try:
-            self.cursor.execute("DELETE FROM sensorAlertsDataInt WHERE sensorAlertId = ?", (sensorAlertId, ))
-            self.cursor.execute("DELETE FROM sensorAlertsDataFloat WHERE sensorAlertId = ?", (sensorAlertId, ))
-            self.cursor.execute("DELETE FROM sensorAlerts WHERE id = ?", (sensorAlertId, ))
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to delete sensor alert with id %d." % (self.log_tag, sensorAlertId))
-            return False
-
-        # commit all changes
-        self.conn.commit()
 
         return True
 
@@ -834,45 +845,50 @@ class Sqlite(_Storage):
 
         return True
 
-    def _insertSensorAlertData(self,
-                               sensorAlertId: int,
-                               dataType: int,
-                               data: Any,
-                               logger: logging.Logger = None) -> bool:
+    def _update_option(self,
+                       option: Option,
+                       logger: logging.Logger = None) -> bool:
         """
-        Internal function that inserts sensor alert data according to its type.
+        Internal function that updates option data.
 
-        :param sensorAlertId:
-        :param dataType:
-        :param data:
+        :param option:
         :param logger:
-        :return: true if everything worked fine.
+        :return: success of failure
         """
-        # Depending on the data type of the sensor alert add it to the
-        # corresponding table.
-        if dataType == SensorDataType.NONE:
-            return True
 
-        elif dataType == SensorDataType.INT:
-            try:
-                self.cursor.execute("INSERT INTO sensorAlertsDataInt (sensorAlertId, data) VALUES (?, ?)",
-                                    (sensorAlertId, data))
-            except Exception as e:
-                logger.exception("[%s]: Not able to add sensorAlert's integer data." % self.log_tag)
-                return False
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
 
-        elif dataType == SensorDataType.FLOAT:
-            try:
-                self.cursor.execute("INSERT INTO sensorAlertsDataFloat (sensorAlertId, data) VALUES (?, ?)",
-                                    (sensorAlertId, data))
+        try:
+            # check if option does exist
+            self.cursor.execute("SELECT type "
+                                + "FROM options "
+                                + "WHERE type = ?",
+                                (option.type, ))
+            result = self.cursor.fetchall()
 
-            except Exception as e:
-                logger.exception("[%s]: Not able to add sensorAlert's floating point data." % self.log_tag)
-                return False
+            # Insert option data.
+            if len(result) == 0:
+                self.cursor.execute("INSERT INTO options ("
+                                    + "type, "
+                                    + "value) "
+                                    + "VALUES (?, ?)",
+                                    (option.type, option.value))
 
-        else:
-            logger.error("[%s]: Data type not known. Not able to add sensorAlert." % self.log_tag)
+            # Update option data.
+            elif len(result) == 1:
+                self.cursor.execute("UPDATE options SET "
+                                    + "value = ? "
+                                    + "WHERE type = ?",
+                                    (option.value, option.type))
 
+            else:
+                raise ValueError("Option type not unique.")
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to update option with type '%s' in database."
+                             % (self.log_tag, option.type))
             return False
 
         return True
@@ -1171,9 +1187,9 @@ class Sqlite(_Storage):
             else:
                 sensorData = sensor["data"]
 
-            # check if a sensor with the same remote id for this node
+            # check if a sensor with the same client id for this node
             # already exists in the database
-            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND remoteSensorId = ?",
+            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND clientSensorId = ?",
                                 (nodeId, sensor["clientSensorId"]))
             result = self.cursor.fetchall()
 
@@ -1189,7 +1205,7 @@ class Sqlite(_Storage):
                     utcTimestamp = int(time.time())
                     self.cursor.execute("INSERT INTO sensors ("
                                         + "nodeId, "
-                                        + "remoteSensorId, "
+                                        + "clientSensorId, "
                                         + "description, "
                                         + "state, "
                                         + "lastStateUpdated, "
@@ -1399,7 +1415,7 @@ class Sqlite(_Storage):
         # get updated sensors from database
         try:
             self.cursor.execute("SELECT id, "
-                                + "remoteSensorId "
+                                + "clientSensorId "
                                 + "FROM sensors "
                                 + "WHERE nodeId = ? ", (nodeId, ))
             result = self.cursor.fetchall()
@@ -1476,10 +1492,10 @@ class Sqlite(_Storage):
         # add/update all alerts
         for alert in alerts:
 
-            # check if an alert with the same remote id for this node
+            # check if an alert with the same client id for this node
             # already exists in the database
             self.cursor.execute("SELECT id FROM alerts "
-                                + "WHERE nodeId = ? AND remoteAlertId = ?",
+                                + "WHERE nodeId = ? AND clientAlertId = ?",
                                 (nodeId, int(alert["clientAlertId"])))
             result = self.cursor.fetchall()
 
@@ -1493,7 +1509,7 @@ class Sqlite(_Storage):
                 try:
                     self.cursor.execute("INSERT INTO alerts ("
                                         + "nodeId, "
-                                        + "remoteAlertId, "
+                                        + "clientAlertId, "
                                         + "description) VALUES (?, ?, ?)",
                                         (nodeId,
                                          int(alert["clientAlertId"]),
@@ -1632,7 +1648,7 @@ class Sqlite(_Storage):
         # get updated alerts from database
         try:
             self.cursor.execute("SELECT id, "
-                                + "remoteAlertId "
+                                + "clientAlertId "
                                 + "FROM alerts "
                                 + "WHERE nodeId = ? ", (nodeId, ))
             result = self.cursor.fetchall()
@@ -1877,7 +1893,7 @@ class Sqlite(_Storage):
 
         self._acquireLock(logger)
 
-        # stateList is a list of tuples of (remoteSensorId, state)
+        # stateList is a list of tuples of (clientSensorId, state)
         for stateTuple in stateList:
 
             try:
@@ -1885,7 +1901,7 @@ class Sqlite(_Storage):
                 # check if the sensor does exist in the database
                 self.cursor.execute("SELECT id FROM sensors "
                                     + "WHERE nodeId = ? "
-                                    + "AND remoteSensorId = ?", (nodeId, stateTuple[0]))
+                                    + "AND clientSensorId = ?", (nodeId, stateTuple[0]))
                 result = self.cursor.fetchall()
                 if len(result) != 1:
                     logger.error("[%s]: Sensor does not exist in database." % self.log_tag)
@@ -1897,7 +1913,7 @@ class Sqlite(_Storage):
                                     + "state = ?, "
                                     + "lastStateUpdated = ? "
                                     + "WHERE nodeId = ? "
-                                    + "AND remoteSensorId = ?",
+                                    + "AND clientSensorId = ?",
                                     (stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
 
             except Exception as e:
@@ -1921,7 +1937,7 @@ class Sqlite(_Storage):
 
         self._acquireLock(logger)
 
-        # dataList is a list of tuples of (remoteSensorId, data)
+        # dataList is a list of tuples of (clientSensorId, data)
         for dataTuple in dataList:
 
             try:
@@ -1929,7 +1945,7 @@ class Sqlite(_Storage):
                 # data type.
                 self.cursor.execute("SELECT id, dataType FROM sensors "
                                     + "WHERE nodeId = ? "
-                                    + "AND remoteSensorId = ?", (nodeId, dataTuple[0]))
+                                    + "AND clientSensorId = ?", (nodeId, dataTuple[0]))
                 result = self.cursor.fetchall()
 
                 if len(result) != 1:
@@ -1941,7 +1957,7 @@ class Sqlite(_Storage):
                 dataType = result[0][1]
 
                 if dataType == SensorDataType.NONE:
-                    logger.error("[%s]: Sensor with remote id %d holds no data. Ignoring it."
+                    logger.error("[%s]: Sensor with client id %d holds no data. Ignoring it."
                                  % (self.log_tag, dataTuple[0]))
 
                 elif dataType == SensorDataType.INT:
@@ -1998,7 +2014,7 @@ class Sqlite(_Storage):
 
     def getSensorId(self,
                     nodeId: int,
-                    remoteSensorId: int,
+                    clientSensorId: int,
                     logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
@@ -2008,7 +2024,7 @@ class Sqlite(_Storage):
         self._acquireLock(logger)
 
         try:
-            sensorId = self._getSensorId(nodeId, remoteSensorId)
+            sensorId = self._getSensorId(nodeId, clientSensorId)
 
         except Exception as e:
             logger.exception("[%s]: Not able to get sensorId from database." % self.log_tag)
@@ -2020,7 +2036,7 @@ class Sqlite(_Storage):
 
     def getAlertId(self,
                    nodeId: int,
-                   remoteAlertId: int,
+                   clientAlertId: int,
                    logger: logging.Logger = None) -> Optional[int]:
 
         # Set logger instance to use.
@@ -2030,7 +2046,7 @@ class Sqlite(_Storage):
         self._acquireLock(logger)
 
         try:
-            alertId = self._getAlertId(nodeId, remoteAlertId)
+            alertId = self._getAlertId(nodeId, clientAlertId)
 
         except Exception as e:
             logger.exception("[%s]: Not able to get alertId from database." % self.log_tag)
@@ -2072,202 +2088,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
 
         # return list of alertLevels
-        return result
-
-    def addSensorAlert(self,
-                       nodeId: int,
-                       sensorId: int,
-                       state: int,
-                       dataJson: str,
-                       changeState: bool,
-                       hasLatestData: bool,
-                       dataType: int,
-                       sensorData: Any,
-                       logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        # add sensor alert to database
-        try:
-            if changeState:
-                dbChangeState = 1
-            else:
-                dbChangeState = 0
-            if hasLatestData:
-                dbHasLatestData = 1
-            else:
-                dbHasLatestData = 0
-            utcTimestamp = int(time.time())
-            self.cursor.execute("INSERT INTO sensorAlerts ("
-                                + "nodeId, "
-                                + "sensorId, "
-                                + "state, "
-                                + "timeReceived, "
-                                + "dataJson, "
-                                + "changeState, "
-                                + "hasLatestData, "
-                                + "dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                                (nodeId,
-                                 sensorId,
-                                 state,
-                                 utcTimestamp,
-                                 dataJson,
-                                 dbChangeState,
-                                 dbHasLatestData,
-                                 dataType))
-
-            # Get sensorAlertId of current added sensor alert.
-            sensorAlertId = self.cursor.lastrowid
-
-            if not self._insertSensorAlertData(sensorAlertId, dataType, sensorData, logger):
-                logger.error("[%s]: Not able to add data for newly added sensor alert." % self.log_tag)
-                self._releaseLock(logger)
-                return False
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to add sensor alert." % self.log_tag)
-            self._releaseLock(logger)
-            return False
-
-        # commit all changes
-        self.conn.commit()
-        self._releaseLock(logger)
-        return True
-
-    def getSensorAlerts(self,
-                        logger: logging.Logger = None) -> Optional[List[SensorAlert]]:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        returnList = list()
-        try:
-            self.cursor.execute("SELECT "
-                                + "sensorAlerts.id, "
-                                + "sensors.id, "
-                                + "sensors.nodeId, "
-                                + "sensorAlerts.timeReceived, "
-                                + "sensors.alertDelay, "
-                                + "sensorAlerts.state, "
-                                + "sensors.description, "
-                                + "sensorAlerts.dataJson, "
-                                + "sensorAlerts.changeState, "
-                                + "sensorAlerts.hasLatestData, "
-                                + "sensorAlerts.dataType "
-                                + "FROM sensorAlerts "
-                                + "INNER JOIN sensors "
-                                + "ON sensorAlerts.nodeId == sensors.nodeId "
-                                + "AND sensorAlerts.sensorId == sensors.id")
-            result = self.cursor.fetchall()
-
-            # Extract for each sensor alert the corresponding data.
-            for resultTuple in result:
-                sensorAlert = SensorAlert()
-                sensorAlert.sensorAlertId = resultTuple[0]
-                sensorAlert.sensorId = resultTuple[1]
-                sensorAlert.nodeId = resultTuple[2]
-                sensorAlert.timeReceived = resultTuple[3]
-                sensorAlert.alertDelay = resultTuple[4]
-                sensorAlert.state = resultTuple[5]
-                sensorAlert.description = resultTuple[6]
-                sensorAlert.changeState = (resultTuple[8] == 1)
-                sensorAlert.hasLatestData = (resultTuple[9] == 1)
-                sensorAlert.dataType = resultTuple[10]
-
-                # Set optional data for sensor alert.
-                sensorAlert.hasOptionalData = False
-                sensorAlert.optionalData = None
-                dataJson = resultTuple[7]
-                if dataJson != "":
-                    try:
-                        sensorAlert.optionalData = json.loads(dataJson)
-                        sensorAlert.hasOptionalData = True
-
-                    except Exception as e:
-                        self.logger.exception("[%s]: Optional data from database not a valid json string. "
-                                              % self.log_tag
-                                              + "Ignoring data.")
-
-                # Set alert levels for sensor alert.
-                alertLevels = self._getSensorAlertLevels(sensorAlert.sensorId, logger)
-                if alertLevels is None:
-                    logger.error("[%s]: Not able to get alert levels for sensor alert with id %d."
-                                 % (self.log_tag, sensorAlert.sensorAlertId))
-                    self._releaseLock(logger)
-                    return None
-
-                sensorAlert.alertLevels = alertLevels
-
-                # Extract sensor alert data.
-                if sensorAlert.dataType == SensorDataType.NONE:
-                    sensorAlert.sensorData = None
-
-                elif sensorAlert.dataType == SensorDataType.INT:
-                    self.cursor.execute("SELECT data "
-                                        + "FROM sensorAlertsDataInt "
-                                        + "WHERE sensorAlertId = ?",
-                                        (sensorAlert.sensorAlertId, ))
-                    subResult = self.cursor.fetchall()
-
-                    if len(subResult) != 1:
-                        logger.error("[%s]: Sensor alert data was not found." % self.log_tag)
-                        self._releaseLock(logger)
-                        return None
-
-                    sensorAlert.sensorData = subResult[0][0]
-
-                elif sensorAlert.dataType == SensorDataType.FLOAT:
-                    self.cursor.execute("SELECT data "
-                                        + "FROM sensorAlertsDataFloat "
-                                        + "WHERE sensorAlertId = ?",
-                                        (sensorAlert.sensorAlertId, ))
-                    subResult = self.cursor.fetchall()
-
-                    if len(subResult) != 1:
-                        logger.error("[%s]: Sensor alert data was not found." % self.log_tag)
-                        self._releaseLock(logger)
-                        return None
-
-                    sensorAlert.sensorData = subResult[0][0]
-
-                else:
-                    logger.error("[%s]: Not able to get sensor alerts. Data type in database unknown." % self.log_tag)
-                    self._releaseLock(logger)
-                    return None
-
-                returnList.append(sensorAlert)
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to get sensor alerts." % self.log_tag)
-            self._releaseLock(logger)
-            return None
-
-        self._releaseLock(logger)
-
-        # return a list of sensorAlert objects
-        return returnList
-
-    def deleteSensorAlert(self,
-                          sensorAlertId: int,
-                          logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        result = self._deleteSensorAlert(sensorAlertId, logger)
-
-        self._releaseLock(logger)
-
         return result
 
     def deleteNode(self,
@@ -2332,33 +2152,19 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
         return True
 
-    def isAlertSystemActive(self,
-                            logger: logging.Logger = None) -> bool:
-
+    def delete_option_by_type(self,
+                              option_type: str,
+                              logger: logging.Logger = None) -> bool:
         # Set logger instance to use.
         if not logger:
             logger = self.logger
 
-        self._acquireLock(logger)
+        with self.dbLock:
+            if self._delete_option_by_type(option_type, logger):
+                self.conn.commit()
+                return True
 
-        try:
-            self.cursor.execute("SELECT value FROM options WHERE type = ?",
-                                ("alertSystemActive", ))
-            result = self.cursor.fetchall()
-            alertSystemActive = result[0][0]
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to check if alert system is active." % self.log_tag)
-            self._releaseLock(logger)
-            return False
-
-        self._releaseLock(logger)
-
-        if alertSystemActive == 1:
-            return True
-
-        elif alertSystemActive == 0:
-            return False
+        return False
 
     def getAllAlertsAlertLevels(self,
                                 logger: logging.Logger = None) -> Optional[List[int]]:
@@ -2618,6 +2424,27 @@ class Sqlite(_Storage):
         # return a sensor object or None
         return result
 
+    def get_option_by_type(self,
+                           option_type: str,
+                           logger: logging.Logger = None) -> Optional[Option]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            return self._get_option_by_type(option_type,
+                                            logger)
+
+    def get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            return self._get_options_list(logger)
+
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:
 
@@ -2737,45 +2564,6 @@ class Sqlite(_Storage):
         # list[3] = list(manager objects)
         # list[4] = list(alert objects)
         return alertSystemInformation
-
-    def changeOption(self,
-                     optionType: str,
-                     optionValue: float,
-                     logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        try:
-            # check if option does exist
-            self.cursor.execute("SELECT id "
-                                + "FROM options "
-                                + "WHERE type = ?",
-                                (optionType, ))
-            result = self.cursor.fetchall()
-            if len(result) != 1:
-                logger.error("[%s]: Option was not found." % self.log_tag)
-                self._releaseLock(logger)
-                return False
-
-            # update option in database
-            self.cursor.execute("UPDATE options SET "
-                                + "value = ? "
-                                + "WHERE type = ?",
-                                (optionValue, optionType))
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to update option in database." % self.log_tag)
-            self._releaseLock(logger)
-            return False
-
-        # commit all changes
-        self.conn.commit()
-        self._releaseLock(logger)
-        return True
 
     def getSensorState(self,
                        sensorId: int,
@@ -2902,3 +2690,38 @@ class Sqlite(_Storage):
         self.conn.close()
 
         self._releaseLock(logger)
+
+    def update_option(self,
+                      option_type: str,
+                      option_value: int,
+                      logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        option = Option()
+        option.type = option_type
+        option.value = option_value
+
+        with self.dbLock:
+            if self._update_option(option, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
+    def update_option_by_obj(self,
+                             option: Option,
+                             logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            if self._update_option(option, logger):
+                self.conn.commit()
+                return True
+
+        return False

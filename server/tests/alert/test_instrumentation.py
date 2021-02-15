@@ -32,14 +32,12 @@ class TestInstrumentation(TestCase):
         alert_level = AlertLevel()
         alert_level.level = 1
         alert_level.name = "Instrumentation Alert Level"
-        alert_level.triggerAlways = True
         alert_level.triggerAlertTriggered = True
         alert_level.triggerAlertNormal = True
         alert_level.instrumentation_cmd = "dummy.py"
         alert_level.instrumentation_timeout = 10
 
         sensor_alert = SensorAlert()
-        sensor_alert.sensorAlertId = 1
         sensor_alert.nodeId = 2
         sensor_alert.sensorId = 3
         sensor_alert.description = "Instrumentation Sensor Alert"
@@ -69,7 +67,6 @@ class TestInstrumentation(TestCase):
         was_success, new_sensor_alert = instrumentation._process_output(json.dumps(sensor_alert.convert_to_dict()))
 
         self.assertTrue(was_success)
-        self.assertEqual(sensor_alert.sensorAlertId, new_sensor_alert.sensorAlertId)
         self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
         self.assertEqual(sensor_alert.sensorId, new_sensor_alert.sensorId)
         self.assertEqual(sensor_alert.description, new_sensor_alert.description)
@@ -90,22 +87,6 @@ class TestInstrumentation(TestCase):
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
         self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
-
-    def test_process_output_invalid_sensor_alert_id(self):
-        """
-        Tests an invalid sensor alert id output processing of an instrumentation script.
-        """
-        instrumentation = self._create_instrumentation_dummy()
-        sensor_alert = instrumentation._sensor_alert
-
-        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorAlertId = sensor_alert.sensorAlertId + 1
-
-        # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
-        self.assertFalse(was_success)
-        self.assertIsNone(new_sensor_alert)
 
     def test_process_output_invalid_node_id(self):
         """
@@ -255,7 +236,6 @@ class TestInstrumentation(TestCase):
 
         sensor_alert = promise.orig_sensor_alert
         new_sensor_alert = promise.new_sensor_alert
-        self.assertEqual(sensor_alert.sensorAlertId, new_sensor_alert.sensorAlertId)
         self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
         self.assertEqual(sensor_alert.sensorId, new_sensor_alert.sensorId)
         self.assertEqual(sensor_alert.description, new_sensor_alert.description)
@@ -301,7 +281,6 @@ class TestInstrumentation(TestCase):
 
         sensor_alert = promise.orig_sensor_alert
         new_sensor_alert = promise.new_sensor_alert
-        self.assertEqual(sensor_alert.sensorAlertId, new_sensor_alert.sensorAlertId)
         self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
         self.assertEqual(sensor_alert.sensorId, new_sensor_alert.sensorId)
         self.assertEqual(sensor_alert.description, new_sensor_alert.description)

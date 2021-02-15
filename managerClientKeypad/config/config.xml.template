@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="0.700">
+<config version="0.800">
 
     <!--
         in this section general options are configured
@@ -150,12 +150,13 @@
 
         <!--
             keypad specific settings
-            timeDelayedActivation - this value gives the seconds of the 3rd
-                option (delayed activation of the alert system) which are used
-                to activate the alert system after the given time
+            timeDelayedChange - this value gives the delay in seconds of the delayed
+                profile change option (if AlertR is used in an alarm system context, this can be used
+                to change to the "alarm system active" profile after given seconds for example to leave
+                the building before the alarm system is activated).
         -->
         <keypad
-            timeDelayedActivation="30">
+            timeDelayedChange="30">
 
             <!--
                 a single pin that is configured to login to the manager
@@ -169,51 +170,67 @@
         <!--
             sensor warning states settings
 
-            Configure sensor states which result in a warning that the
-            user has to confirm before the alarm system can be activated
-            by this manager client. For example, if a window sensor indicates
-            that the window is open and this manager client should warn the
-            user that the window is open before it activates the system.
+            Configure sensor states which result in a warning that the user has to confirm before the AlertR system
+            changes the system profile. For example, if a window sensor indicates that the window is open then this
+            manager client warns the user that the window is open before it changes the system profile.
         -->
         <sensorwarningstates>
 
             <!--
-                A sensor state that results in a warning by this client
-                if it is used to activate the alarm system (the number of
-                sensors is variable, add or remove as many as you need). 
+                A sensor state that is checked before changing the system profile. If the sensor is in the state
+                as configured here, the client issues a warning which has to be confirmed before changing
+                the system profile.
+                (the number of sensors is variable, add or remove as many as you need).
 
-                username - the username of the sensor client that
-                    handles this sensor
-                remoteSensorId - the sensor id of the sensor that is
-                    configured on the client side
-                warningState - the state the sensor has to have in order
-                    to get a warning
+                username - the username of the sensor client that handles this sensor
+                clientSensorId - the sensor id of the sensor that is configured on the client side
+                warningState - the state the sensor has to have in order to get a warning
                     ("True" or "False")
                     (True means "triggered" state; False means "normal" state)
             -->
             <sensor
                 username="windowsensor"
-                remoteSensorId="0"
-                warningState="True" />
+                clientSensorId="0"
+                warningState="True">
+
+                <!--
+                    The system profile for which the sensor state is checked before executing the system profile
+                    change command. In this example the sensor state is checked if changing the system profile
+                    to profile with ID 0 or ID 2.
+                    (a sensor warning state must have one but can have multiple target profiles set)
+                -->
+                <profile>0</profile>
+                <profile>2</profile>
+
+            </sensor>
 
             <!--
-                A sensor state that results in a warning by this client
-                if it is used to activate the alarm system (the number of
-                sensors is variable, add or remove as many as you need). 
+                A sensor state that is checked before changing the system profile. If the sensor is in the state
+                as configured here, the client issues a warning which has to be confirmed before changing
+                the system profile.
+                (the number of sensors is variable, add or remove as many as you need).
 
-                username - the username of the sensor client that
-                    handles this sensor
-                remoteSensorId - the sensor id of the sensor that is
-                    configured on the client side
-                warningState - the state the sensor has to have in order
-                    to get a warning
+                username - the username of the sensor client that handles this sensor
+                clientSensorId - the sensor id of the sensor that is configured on the client side
+                warningState - the state the sensor has to have in order to get a warning
                     ("True" or "False")
                     (True means "triggered" state; False means "normal" state)
             -->
             <sensor
                 username="windowsensor"
-                remoteSensorId="1"
-                warningState="True" />
+                clientSensorId="1"
+                warningState="True">
+
+                <!--
+                    The system profile for which the sensor state is checked before executing the system profile
+                    change command. In this example the sensor state is checked if changing the system profile
+                    to profile with ID 0 or ID 2.
+                    (a sensor warning state must have one but can have multiple target profiles set)
+                -->
+                <profile>0</profile>
+                <profile>2</profile>
+
+            </sensor>
 
         </sensorwarningstates>
 

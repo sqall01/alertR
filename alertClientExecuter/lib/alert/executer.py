@@ -13,7 +13,7 @@ import subprocess
 import json
 from typing import List
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # class that executes an command when an alert is triggered or all alerts
@@ -29,7 +29,7 @@ class ExecuterAlert(_Alert):
         # Flag that indicates if command execution for corresponding received message is activated.
         self.cmd_triggered_activated = False
         self.cmd_normal_activated = False
-        self.cmd_off_activated = False
+        self.cmd_profile_change_activated = False
 
         # The command to execute and the arguments to pass when
         # a sensor alert with state "triggered" is received.
@@ -48,23 +48,26 @@ class ExecuterAlert(_Alert):
         self.cmd_normal_replace_list = list()
 
         # The command to execute and the arguments to pass when
-        # an alert off message is received.
-        self.cmd_off_list = list()
+        # an profile change message is received.
+        self.cmd_profile_change_list = list()
+
+        # The target system profile ids that the profile change message has to contain before the command is executed.
+        self.cmd_profile_change_target_profiles = set()
 
         # A list of indexes that have to be replaced with new data in the
-        # "off" command list before executing.
-        self.cmd_off_replace_list = list()
+        # "profilechange" command list before executing.
+        self.cmd_profile_change_replace_list = list()
 
     def _execute_cmd(self, execute_cmd_list: List[str]):
 
-        logging.debug("[%s]: Executing command '%s'." % (self.fileName, " ".join(execute_cmd_list)))
+        logging.debug("[%s]: Alert '%d' executing command '%s'." % (self.fileName, self.id, " ".join(execute_cmd_list)))
 
         try:
             subprocess.Popen(execute_cmd_list, close_fds=True)
         except Exception as e:
-            logging.exception("[%s]: Executing process for Alert '%d' failed."
+            logging.exception("[%s]: Alert '%d' executing process failed."
                               % (self.fileName, self.id))
-            logging.error("[%s]: Command was: %s" % (self.fileName, " ".join(execute_cmd_list)))
+            logging.error("[%s]: Alert '%d' command was: %s" % (self.fileName, self.id, " ".join(execute_cmd_list)))
 
     def initialize(self):
         """
@@ -74,18 +77,18 @@ class ExecuterAlert(_Alert):
         # Find all elements that have to be replaced before executing them.
         for i in range(1, len(self.cmd_triggered_list)):
             element = self.cmd_triggered_list[i]
-            if element.upper() == "$SENSORALERT$":
+            if element.upper() in ["$SENSORALERT$", "$PROFILECHANGE$"]:
                 self.cmd_triggered_replace_list.append(i)
 
         for i in range(1, len(self.cmd_normal_list)):
             element = self.cmd_normal_list[i]
-            if element.upper() == "$SENSORALERT$":
+            if element.upper() in ["$SENSORALERT$", "$PROFILECHANGE$"]:
                 self.cmd_normal_replace_list.append(i)
 
-        for i in range(1, len(self.cmd_off_list)):
-            element = self.cmd_off_list[i]
-            if element.upper() == "$SENSORALERT$":
-                self.cmd_off_replace_list.append(i)
+        for i in range(1, len(self.cmd_profile_change_list)):
+            element = self.cmd_profile_change_list[i]
+            if element.upper() in ["$SENSORALERT$", "$PROFILECHANGE$"]:
+                self.cmd_profile_change_replace_list.append(i)
 
     def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
@@ -96,13 +99,16 @@ class ExecuterAlert(_Alert):
         if not self.cmd_triggered_activated:
             return
 
-        logging.info("[%s]: Process Alert '%d' for state '%d'." % (self.fileName, self.id, sensor_alert.state))
+        logging.info("[%s]: Alert '%d' executes for state '%d'." % (self.fileName, self.id, sensor_alert.state))
 
         # Prepare command execution by replacing all placeholders.
         temp_execute = list(self.cmd_triggered_list)
         for i in self.cmd_triggered_replace_list:
             if temp_execute[i].upper() == "$SENSORALERT$":
                 temp_execute[i] = json.dumps(sensor_alert.convert_to_dict())
+
+            elif temp_execute[i].upper() == "$PROFILECHANGE$":
+                temp_execute[i] = "None"
 
         self._execute_cmd(temp_execute)
 
@@ -115,7 +121,7 @@ class ExecuterAlert(_Alert):
         if not self.cmd_normal_activated:
             return
 
-        logging.info("[%s]: Process Alert '%d' for state '%d'." % (self.fileName, self.id, sensor_alert.state))
+        logging.info("[%s]: Alert '%d' executes for state '%d'." % (self.fileName, self.id, sensor_alert.state))
 
         # Prepare command execution by replacing all placeholders.
         temp_execute = list(self.cmd_normal_list)
@@ -123,22 +129,33 @@ class ExecuterAlert(_Alert):
             if temp_execute[i].upper() == "$SENSORALERT$":
                 temp_execute[i] = json.dumps(sensor_alert.convert_to_dict())
 
+            elif temp_execute[i].upper() == "$PROFILECHANGE$":
+                temp_execute[i] = "None"
+
         self._execute_cmd(temp_execute)
 
-    def alert_off(self):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
-        if not self.cmd_off_activated:
+        if not self.cmd_profile_change_activated:
             return
 
-        logging.info("[%s]: Process Alert '%d' for off message." % (self.fileName, self.id))
+        if profile.profileId not in self.cmd_profile_change_target_profiles:
+            return
+
+        logging.info("[%s]: Alert '%d' executes for profile change message." % (self.fileName, self.id))
 
         # Prepare command execution by replacing all placeholders.
-        temp_execute = list(self.cmd_off_list)
-        for i in self.cmd_off_replace_list:
+        temp_execute = list(self.cmd_profile_change_list)
+        for i in self.cmd_profile_change_replace_list:
             if temp_execute[i].upper() == "$SENSORALERT$":
                 temp_execute[i] = "None"
+
+            elif temp_execute[i].upper() == "$PROFILECHANGE$":
+                temp_execute[i] = json.dumps(profile.convert_to_dict())
 
         self._execute_cmd(temp_execute)

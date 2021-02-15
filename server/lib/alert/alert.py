@@ -7,10 +7,11 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
 import threading
 import os
 import time
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any, Dict
 from .instrumentation import Instrumentation, InstrumentationPromise
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
@@ -156,10 +157,12 @@ class SensorAlertExecuter(threading.Thread):
         # file nme of this file (used for logging)
         self._log_tag = os.path.basename(__file__)
 
-        # create an event that is used to wake this thread up
-        # and reacte on sensor alert
-        self.sensorAlertEvent = threading.Event()
-        self.sensorAlertEvent.clear()
+        # Create an event that is used to wake this thread up and react on sensor alerts.
+        self._sensor_alert_event = threading.Event()
+        self._sensor_alert_event.clear()
+
+        self._sensor_alert_queue = []
+        self._sensor_alert_queue_lock = threading.Lock()
 
         self._exit_flag = False
 
@@ -256,14 +259,9 @@ class SensorAlertExecuter(threading.Thread):
                                        + "Skipping state change notification.")
                     continue
 
-                manager_state_tuple = (sensor_alert.sensorId,
-                                       state,
-                                       sensor_data_obj)
-                self._manager_update_executer.queueStateChange.append(manager_state_tuple)
-
-        # Wake up manager update executer to transmit the state/data change.
-        if sensor_alerts and self._manager_update_executer is not None:
-            self._manager_update_executer.managerUpdateEvent.set()
+                self._manager_update_executer.queue_state_change(sensor_alert.sensorId,
+                                                                 state,
+                                                                 sensor_data_obj)
 
     def _separate_instrumentation_alert_levels(self,
                                                sensor_alert_states: List[SensorAlertState]) -> List[SensorAlertState]:
@@ -354,7 +352,12 @@ class SensorAlertExecuter(threading.Thread):
         the sensor alert object.
         :param sensor_alert_states:
         """
-        is_alert_system_active = self._storage.isAlertSystemActive()
+
+        option = self._storage.get_option_by_type("profile")
+        if option is None:
+            self._logger.error("[%s]: Unable to get 'profile' option from database." % self._log_tag)
+            return
+        curr_profile_id = option.value
 
         for sensor_alert_state in sensor_alert_states:
 
@@ -385,7 +388,7 @@ class SensorAlertExecuter(threading.Thread):
                         suitable_alert_levels.append(alert_level)
                         continue
 
-                    if alert_level.triggerAlways or is_alert_system_active:
+                    if curr_profile_id in alert_level.profiles:
 
                         # If the alert level does trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state.
@@ -401,7 +404,7 @@ class SensorAlertExecuter(threading.Thread):
 
                 else:
 
-                    if alert_level.triggerAlways or is_alert_system_active:
+                    if curr_profile_id in alert_level.profiles:
 
                         # If the alert level does trigger a sensor alert message for a "triggered" state
                         # while the sensor alert is for the "triggered" state.
@@ -454,6 +457,64 @@ class SensorAlertExecuter(threading.Thread):
                                                                  self._internal_sensor)
             sensor_alert_state.instrumentation_promise = sensor_alert_state.instrumentation.execute()
 
+    def add_sensor_alert(self,
+                         node_id: int,
+                         sensor_id: int,
+                         state: int,
+                         optional_data: Optional[Dict[str, Any]],
+                         change_state: bool,
+                         has_latest_data: bool,
+                         data_type: int,
+                         sensor_data: Any,
+                         logger: logging.Logger = None) -> bool:
+        """
+        Adds Sensor Alert to processing queue.
+
+        :param node_id:
+        :param sensor_id:
+        :param state:
+        :param optional_data:
+        :param change_state:
+        :param has_latest_data:
+        :param data_type:
+        :param sensor_data:
+        :param logger:
+        :return: Success or Failure
+        """
+
+        if logger is None:
+            logger = self._logger
+
+        sensor_alert = SensorAlert()
+        sensor_alert.sensorId = sensor_id
+        sensor_alert.nodeId = node_id
+        sensor_alert.timeReceived = int(time.time())
+        sensor_alert.state = state
+        sensor_alert.changeState = change_state
+        sensor_alert.hasLatestData = has_latest_data
+        sensor_alert.dataType = data_type
+        sensor_alert.sensorData = sensor_data
+
+        sensor_alert.hasOptionalData = False
+        sensor_alert.optionalData = optional_data
+        if optional_data:
+            sensor_alert.hasOptionalData = True
+
+        sensor = self._storage.getSensorById(sensor_id, logger)
+        if sensor is None:
+            logger.error("[%s]: Not able to get sensor %d from database." % (self._log_tag, sensor_id))
+            return False
+
+        sensor_alert.description = sensor.description
+        sensor_alert.alertDelay = sensor.alertDelay
+        sensor_alert.alertLevels = sensor.alertLevels
+
+        with self._sensor_alert_queue_lock:
+            self._sensor_alert_queue.append(sensor_alert)
+
+        self._sensor_alert_event.set()
+        return True
+
     def run(self):
         """
         This function starts the endless loop of the alert executer thread.
@@ -471,15 +532,10 @@ class SensorAlertExecuter(threading.Thread):
             if self._manager_update_executer is None:
                 self._manager_update_executer = self._global_data.managerUpdateExecuter
 
-            # Apply a processing state to each sensor alert from the database.
-            sensor_alert_list = self._storage.getSensorAlerts()
-            for sensor_alert in sensor_alert_list:
-
-                # Delete sensor alert from the database.
-                if not self._storage.deleteSensorAlert(sensor_alert.sensorAlertId):
-                    self._logger.error("[%s]: Not able to delete Sensor Alert with id '%d' from database."
-                                       % (self._log_tag, sensor_alert.sensorAlertId))
-                    continue
+            # Apply a processing state to each sensor alert from the queue.
+            while self._sensor_alert_queue:
+                with self._sensor_alert_queue_lock:
+                    sensor_alert = self._sensor_alert_queue.pop(0)
 
                 sensor_alert_state = SensorAlertState(sensor_alert, self._alert_levels)
                 curr_sensor_alert_states.append(sensor_alert_state)
@@ -491,7 +547,7 @@ class SensorAlertExecuter(threading.Thread):
 
                 self._internal_sensor.lastStateUpdated = utc_timestamp
                 if not self._storage.updateSensorState(self._internal_sensor.nodeId,  # nodeId
-                                                       [(self._internal_sensor.remoteSensorId,
+                                                       [(self._internal_sensor.clientSensorId,
                                                          self._internal_sensor.state)],  # stateList
                                                        self._logger):  # logger
                     self._logger.error("[%s]: Not able to change sensor state for internal alert level "
@@ -501,8 +557,8 @@ class SensorAlertExecuter(threading.Thread):
             # Wait if we do not have any sensor alerts to process.
             if not curr_sensor_alert_states:
                 # Timeout after 10 seconds to make sure we see an exit flag change.
-                self.sensorAlertEvent.wait(10)
-                self.sensorAlertEvent.clear()
+                self._sensor_alert_event.wait(10)
+                self._sensor_alert_event.clear()
                 continue
 
             # Split sensor alert states into separated states for instrumented alert levels

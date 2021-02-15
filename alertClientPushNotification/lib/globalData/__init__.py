@@ -1,1 +1,1 @@
-../../../shared_code/clients_sensor/lib/globalData/__init__.py
+../../../shared_code/clients_alert/lib/globalData/__init__.py

@@ -11,7 +11,7 @@ import time
 import os
 import logging
 import smtplib
-from ..globalData import SensorDataType, ManagerObjSensorAlert
+from ..globalData import SensorDataType, ManagerObjSensorAlert, ManagerObjProfile
 from .core import _Alert
 
 
@@ -85,14 +85,17 @@ class MailAlert(_Alert):
 
         email_header = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" % (self.fromAddr, self.toAddr, temp_sbj)
 
+        intersect_alert_levels = [str(x) for x in set(sensor_alert.alertLevels).intersection(self.alertLevels)]
         try:
-            logging.info("[%s] Sending eMail for triggered alert." % self.fileName)
+            logging.info("[%s] Alert '%d' sending eMail for triggered alert levels %s."
+                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
             smtp_server = smtplib.SMTP(self.host, self.port)
             smtp_server.sendmail(self.fromAddr, self.toAddr, email_header + temp_msg)
             smtp_server.quit()
 
         except Exception as e:
-            logging.exception("[%s]: Unable to send eMail for triggered alert." % self.fileName)
+            logging.exception("[%s]: Alert '%d' unable to send eMail for triggered alert."
+                              % (self.fileName, self.id))
 
     def initialize(self):
         """
@@ -117,9 +120,11 @@ class MailAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_off(self):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
         pass

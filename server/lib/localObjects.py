@@ -47,7 +47,7 @@ class Alert:
     def __init__(self):
         self.nodeId = None  # type: Optional[int]
         self.alertId = None  # type: Optional[int]
-        self.remoteAlertId = None  # type: Optional[int]
+        self.clientAlertId = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
 
@@ -58,7 +58,7 @@ class Sensor:
     def __init__(self):
         self.sensorId = None  # type: Optional[int]
         self.nodeId = None  # type: Optional[int]
-        self.remoteSensorId = None  # type: Optional[int]
+        self.clientSensorId = None  # type: Optional[int]
         self.description = None  # type: Optional[str]
         self.state = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
@@ -66,6 +66,25 @@ class Sensor:
         self.alertDelay = None  # type: Optional[int]
         self.dataType = None  # type: Optional[int]
         self.data = None
+
+    def deepcopy(self, sensor):
+        """
+        Copies the values of the object given as parameter into this object.
+        :param sensor: object to copy values from.
+        :return: pointer to this object
+        """
+        self.sensorId = sensor.sensorId
+        self.nodeId = sensor.nodeId
+        self.clientSensorId = sensor.clientSensorId
+        self.description = sensor.description
+        self.state = sensor.state
+        self.alertLevels = list(sensor.alertLevels)
+        self.lastStateUpdated = sensor.lastStateUpdated
+        self.alertDelay = sensor.alertDelay
+        self.dataType = sensor.dataType
+        self.data = sensor.data
+
+        return self
 
 
 # This class represents a single manager of a node.
@@ -88,10 +107,6 @@ class AlertLevel:
         # gives the name of this alert level
         self.name = None  # type: Optional[str]
 
-        # this flag indicates if a sensor alert with this alert level
-        # should trigger regardless of if the alert system is active or not
-        self.triggerAlways = None  # type: Optional[bool]
-
         # this flag tells if the alert level should trigger a sensor alert
         # if the sensor goes to state "triggered"
         self.triggerAlertTriggered = None  # type: Optional[bool]
@@ -105,12 +120,15 @@ class AlertLevel:
         self.instrumentation_cmd = None  # type: Optional[str]
         self.instrumentation_timeout = None  # type: Optional[int]
 
+        # List of profile ids for which this alert level triggers a sensor alert.
+        # Meaning the system has to use one of the profiles in this list before the alert level triggers a sensor alert.
+        self.profiles = list()  # type: List[int]
+
 
 # This class represents a single sensor alert that was triggered.
 class SensorAlert:
 
     def __init__(self):
-        self.sensorAlertId = None  # type: Optional[int]
         self.nodeId = None  # type: Optional[int]
 
         self.sensorId = None  # type: Optional[int]
@@ -155,8 +173,7 @@ class SensorAlert:
         :return: Sensor Alert object
         """
         sensor_alert = SensorAlert()
-        sensor_alert.sensorAlertId = sensor_alert_dict["sensorAlertId"]
-        sensor_alert.nodeId  = sensor_alert_dict["nodeId"]
+        sensor_alert.nodeId = sensor_alert_dict["nodeId"]
         sensor_alert.sensorId = sensor_alert_dict["sensorId"]
         sensor_alert.description = sensor_alert_dict["description"]
         sensor_alert.timeReceived = sensor_alert_dict["timeReceived"]
@@ -181,8 +198,7 @@ class SensorAlert:
         Converts the Sensor Alert object into a dictionary.
         :return: dictionary representation of the Sensor Alert object.
         """
-        sensor_alert_dict = {"sensorAlertId": self.sensorAlertId,
-                             "nodeId": self.nodeId,
+        sensor_alert_dict = {"nodeId": self.nodeId,
                              "sensorId": self.sensorId,
                              "description": self.description,
                              "timeReceived": self.timeReceived,
@@ -196,7 +212,7 @@ class SensorAlert:
                              "hasLatestData": self.hasLatestData,
                              "dataType": self.dataType,
                              "data": self.sensorData,
-        }
+                             }
 
         return sensor_alert_dict
 
@@ -206,7 +222,6 @@ class SensorAlert:
         :param sensor_alert: object to copy values from.
         :return: pointer to this object
         """
-        self.sensorAlertId = sensor_alert.sensorAlertId
         self.nodeId = sensor_alert.nodeId
         self.sensorId = sensor_alert.sensorId
         self.description = sensor_alert.description
@@ -233,9 +248,6 @@ class SensorAlert:
         """
         Verifies data types of attributes (raises ValueError if attribute is wrong).
         """
-        if type(self.sensorAlertId) != int:
-            raise ValueError("sensorAlertId not valid")
-
         if type(self.nodeId) != int:
             raise ValueError("nodeId not valid")
 
@@ -305,4 +317,21 @@ class Option:
 
     def __init__(self):
         self.type = None  # type: Optional[str]
-        self.value = None  # type: Optional[float]
+        self.value = None  # type: Optional[int]
+
+    def deepcopy(self, option):
+        """
+        This function copies all attributes of the given option to this object.
+        :param option:
+        :return:
+        """
+        self.type = option.type
+        self.value = option.value
+        return self
+
+
+class Profile:
+
+    def __init__(self):
+        self.profileId = None  # type: Optional[id]
+        self.name = None  # type: Optional[str]

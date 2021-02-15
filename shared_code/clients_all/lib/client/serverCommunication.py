@@ -18,7 +18,7 @@ from .util import MsgBuilder
 from .communication import Communication, Promise, MsgState
 from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 from ..globalData import GlobalData
 
@@ -97,7 +97,8 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
-        logging.info("[%s]: Received sensor alert." % self._log_tag)
+        logging.debug("[%s]: Received sensor alert '%s' with state %d."
+                     % (self._log_tag, incomingMessage["payload"]["description"], incomingMessage["payload"]["state"]))
 
         # extract sensor alert values
         sensorAlert = ManagerObjSensorAlert()
@@ -137,26 +138,30 @@ class ServerCommunication(Communication):
 
         return False
 
-    def _handler_sensor_alerts_off(self,
-                                   incomingMessage: Dict[str, Any]) -> bool:
+    def _handler_profile_change(self,
+                                incomingMessage: Dict[str, Any]) -> bool:
         """
-        Internal function that handles received sensor alerts off messages (for nodes of type alert).
+        Internal function that handles received profile change messages (for nodes of type alert).
 
         :param incomingMessage:
         :return:
         """
-        logging.debug("[%s]: Received sensor alerts off." % self._log_tag)
+        logging.debug("[%s]: Received profile change to '%s'." % (self._log_tag, incomingMessage["payload"]["name"]))
 
         try:
             msg_time = incomingMessage["msgTime"]
 
+            profile = ManagerObjProfile()
+            profile.profileId = incomingMessage["payload"]["profileId"]
+            profile.name = incomingMessage["payload"]["name"]
+
         except Exception:
-            logging.exception("[%s]: Received sensor alerts off invalid." % self._log_tag)
+            logging.exception("[%s]: Received profile change invalid." % self._log_tag)
 
             return False
 
         # handle received state change
-        if self._event_handler.sensor_alerts_off(msg_time):
+        if self._event_handler.profile_change(msg_time, profile):
             return True
 
         return False
@@ -169,7 +174,8 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
-        logging.debug("[%s]: Received state change." % self._log_tag)
+        logging.debug("[%s]: Received state change for sensor %d with state %d."
+                      % (self._log_tag, incomingMessage["payload"]["sensorId"], incomingMessage["payload"]["state"]))
 
         # extract state change values
         try:
@@ -207,7 +213,10 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
+        logging.debug("[%s]: Received status update."% self._log_tag)
+
         options = list()
+        profiles = list()
         nodes = list()
         sensors = list()
         managers = list()
@@ -218,25 +227,26 @@ class ServerCommunication(Communication):
         try:
             msg_time = incomingMessage["msgTime"]
 
-            optionsRaw = incomingMessage["payload"]["options"]
-            nodesRaw = incomingMessage["payload"]["nodes"]
-            sensorsRaw = incomingMessage["payload"]["sensors"]
-            managersRaw = incomingMessage["payload"]["managers"]
-            alertsRaw = incomingMessage["payload"]["alerts"]
-            alertLevelsRaw = incomingMessage["payload"]["alertLevels"]
+            options_raw = incomingMessage["payload"]["options"]
+            profiles_raw = incomingMessage["payload"]["profiles"]
+            nodes_raw = incomingMessage["payload"]["nodes"]
+            sensors_raw = incomingMessage["payload"]["sensors"]
+            managers_raw = incomingMessage["payload"]["managers"]
+            alerts_raw = incomingMessage["payload"]["alerts"]
+            alert_levels_raw = incomingMessage["payload"]["alertLevels"]
 
         except Exception:
             logging.exception("[%s]: Received status invalid." % self._log_tag)
             return False
 
-        logging.debug("[%s]: Received option count: %d." % (self._log_tag, len(optionsRaw)))
+        logging.debug("[%s]: Received option count: %d." % (self._log_tag, len(options_raw)))
 
         # process received options
-        for i in range(len(optionsRaw)):
+        for i in range(len(options_raw)):
 
             try:
-                optionType = optionsRaw[i]["type"]
-                optionValue = optionsRaw[i]["value"]
+                optionType = options_raw[i]["type"]
+                optionValue = options_raw[i]["value"]
 
             except Exception:
                 logging.exception("[%s]: Received option invalid." % self._log_tag)
@@ -249,21 +259,41 @@ class ServerCommunication(Communication):
             option.value = optionValue
             options.append(option)
 
-        logging.debug("[%s]: Received node count: %d." % (self._log_tag, len(nodesRaw)))
+        logging.debug("[%s]: Received profile count: %d." % (self._log_tag, len(profiles_raw)))
 
-        # process received nodes
-        for i in range(len(nodesRaw)):
+        # process received profiles
+        for i in range(len(profiles_raw)):
 
             try:
-                nodeId = nodesRaw[i]["nodeId"]
-                hostname = nodesRaw[i]["hostname"]
-                nodeType = nodesRaw[i]["nodeType"]
-                instance = nodesRaw[i]["instance"]
-                connected = nodesRaw[i]["connected"]
-                version = nodesRaw[i]["version"]
-                rev = nodesRaw[i]["rev"]
-                username = nodesRaw[i]["username"]
-                persistent = nodesRaw[i]["persistent"]
+                profile_id = profiles_raw[i]["profileId"]
+                profile_name = profiles_raw[i]["name"]
+
+            except Exception:
+                logging.exception("[%s]: Received profile invalid." % self._log_tag)
+                return False
+
+            logging.debug("[%s]: Received profile information: %d:'%s'." % (self._log_tag, profile_id, profile_name))
+
+            profile = ManagerObjProfile()
+            profile.profileId = profile_id
+            profile.name = profile_name
+            profiles.append(profile)
+
+        logging.debug("[%s]: Received node count: %d." % (self._log_tag, len(nodes_raw)))
+
+        # process received nodes
+        for i in range(len(nodes_raw)):
+
+            try:
+                nodeId = nodes_raw[i]["nodeId"]
+                hostname = nodes_raw[i]["hostname"]
+                nodeType = nodes_raw[i]["nodeType"]
+                instance = nodes_raw[i]["instance"]
+                connected = nodes_raw[i]["connected"]
+                version = nodes_raw[i]["version"]
+                rev = nodes_raw[i]["rev"]
+                username = nodes_raw[i]["username"]
+                persistent = nodes_raw[i]["persistent"]
 
             except Exception:
                 logging.exception("[%s]: Received node invalid." % self._log_tag)
@@ -284,26 +314,26 @@ class ServerCommunication(Communication):
             node.persistent = persistent
             nodes.append(node)
 
-        logging.debug("[%s]: Received sensor count: %d." % (self._log_tag, len(sensorsRaw)))
+        logging.debug("[%s]: Received sensor count: %d." % (self._log_tag, len(sensors_raw)))
 
         # process received sensors
-        for i in range(len(sensorsRaw)):
+        for i in range(len(sensors_raw)):
 
             try:
-                nodeId = sensorsRaw[i]["nodeId"]
-                sensorId = sensorsRaw[i]["sensorId"]
-                remoteSensorId = sensorsRaw[i]["remoteSensorId"]
-                alertDelay = sensorsRaw[i]["alertDelay"]
-                dataType = sensorsRaw[i]["dataType"]
+                nodeId = sensors_raw[i]["nodeId"]
+                sensorId = sensors_raw[i]["sensorId"]
+                clientSensorId = sensors_raw[i]["clientSensorId"]
+                alertDelay = sensors_raw[i]["alertDelay"]
+                dataType = sensors_raw[i]["dataType"]
 
                 sensorData = None
                 if dataType != SensorDataType.NONE:
-                    sensorData = sensorsRaw[i]["data"]
+                    sensorData = sensors_raw[i]["data"]
 
-                sensorAlertLevels = sensorsRaw[i]["alertLevels"]
-                description = sensorsRaw[i]["description"]
-                lastStateUpdated = sensorsRaw[i]["lastStateUpdated"]
-                state = sensorsRaw[i]["state"]
+                sensorAlertLevels = sensors_raw[i]["alertLevels"]
+                description = sensors_raw[i]["description"]
+                lastStateUpdated = sensors_raw[i]["lastStateUpdated"]
+                state = sensors_raw[i]["state"]
 
             except Exception:
                 logging.exception("[%s]: Received sensor invalid." % self._log_tag)
@@ -315,7 +345,7 @@ class ServerCommunication(Communication):
             sensor = ManagerObjSensor()
             sensor.nodeId = nodeId
             sensor.sensorId = sensorId
-            sensor.remoteSensorId = remoteSensorId
+            sensor.clientSensorId = clientSensorId
             sensor.alertDelay = alertDelay
             sensor.alertLevels = sensorAlertLevels
             sensor.description = description
@@ -326,15 +356,15 @@ class ServerCommunication(Communication):
 
             sensors.append(sensor)
 
-        logging.debug("[%s]: Received manager count: %d." % (self._log_tag, len(managersRaw)))
+        logging.debug("[%s]: Received manager count: %d." % (self._log_tag, len(managers_raw)))
 
         # process received managers
-        for i in range(len(managersRaw)):
+        for i in range(len(managers_raw)):
 
             try:
-                nodeId = managersRaw[i]["nodeId"]
-                managerId = managersRaw[i]["managerId"]
-                description = managersRaw[i]["description"]
+                nodeId = managers_raw[i]["nodeId"]
+                managerId = managers_raw[i]["managerId"]
+                description = managers_raw[i]["description"]
 
             except Exception:
                 logging.exception("[%s]: Received manager invalid." % self._log_tag)
@@ -349,17 +379,17 @@ class ServerCommunication(Communication):
             manager.description = description
             managers.append(manager)
 
-        logging.debug("[%s]: Received alert count: %d." % (self._log_tag, len(alertsRaw)))
+        logging.debug("[%s]: Received alert count: %d." % (self._log_tag, len(alerts_raw)))
 
         # process received alerts
-        for i in range(len(alertsRaw)):
+        for i in range(len(alerts_raw)):
 
             try:
-                nodeId = alertsRaw[i]["nodeId"]
-                alertId = alertsRaw[i]["alertId"]
-                remoteAlertId = alertsRaw[i]["remoteAlertId"]
-                description = alertsRaw[i]["description"]
-                alertAlertLevels = alertsRaw[i]["alertLevels"]
+                nodeId = alerts_raw[i]["nodeId"]
+                alertId = alerts_raw[i]["alertId"]
+                clientAlertId = alerts_raw[i]["clientAlertId"]
+                description = alerts_raw[i]["description"]
+                alertAlertLevels = alerts_raw[i]["alertLevels"]
 
             except Exception:
                 logging.exception("[%s]: Received alert invalid." % self._log_tag)
@@ -371,25 +401,25 @@ class ServerCommunication(Communication):
             alert = ManagerObjAlert()
             alert.nodeId = nodeId
             alert.alertId = alertId
-            alert.remoteAlertId = remoteAlertId
+            alert.clientAlertId = clientAlertId
             alert.alertLevels = alertAlertLevels
             alert.description = description
             alerts.append(alert)
 
-        logging.debug("[%s]: Received alertLevel count: %d." % (self._log_tag, len(alertLevelsRaw)))
+        logging.debug("[%s]: Received alertLevel count: %d." % (self._log_tag, len(alert_levels_raw)))
 
         # process received alertLevels
-        for i in range(len(alertLevelsRaw)):
+        for i in range(len(alert_levels_raw)):
 
             try:
-                level = alertLevelsRaw[i]["alertLevel"]
-                name = alertLevelsRaw[i]["name"]
-                triggerAlways = alertLevelsRaw[i]["triggerAlways"]
-                instrumentation_active = alertLevelsRaw[i]["instrumentation_active"]
+                level = alert_levels_raw[i]["alertLevel"]
+                name = alert_levels_raw[i]["name"]
+                alert_level_profiles = alert_levels_raw[i]["profiles"]
+                instrumentation_active = alert_levels_raw[i]["instrumentation_active"]
 
                 if instrumentation_active:
-                    instrumentation_cmd = alertLevelsRaw[i]["instrumentation_cmd"]
-                    instrumentation_timeout = alertLevelsRaw[i]["instrumentation_timeout"]
+                    instrumentation_cmd = alert_levels_raw[i]["instrumentation_cmd"]
+                    instrumentation_timeout = alert_levels_raw[i]["instrumentation_timeout"]
 
                 else:
                     instrumentation_cmd = None
@@ -399,13 +429,13 @@ class ServerCommunication(Communication):
                 logging.exception("[%s]: Received alertLevel invalid." % self._log_tag)
                 return False
 
-            logging.debug("[%s]: Received alertLevel information: %d:'%s':%d."
-                          % (self._log_tag, level, name, triggerAlways))
+            logging.debug("[%s]: Received alertLevel information: %d:'%s'."
+                          % (self._log_tag, level, name))
 
             alertLevel = ManagerObjAlertLevel()
             alertLevel.level = level
             alertLevel.name = name
-            alertLevel.triggerAlways = triggerAlways
+            alertLevel.profiles = alert_level_profiles
             alertLevel.instrumentation_active = instrumentation_active
             alertLevel.instrumentation_cmd = instrumentation_cmd
             alertLevel.instrumentation_timeout = instrumentation_timeout
@@ -414,6 +444,7 @@ class ServerCommunication(Communication):
         # handle received status update
         if not self._event_handler.status_update(msg_time,
                                                  options,
+                                                 profiles,
                                                  nodes,
                                                  sensors,
                                                  managers,
@@ -658,20 +689,20 @@ class ServerCommunication(Communication):
 
             request = msg_request.msg_dict["message"]
 
-            # Handle SENSORALERT request.
-            if request.lower() == "sensoralert":
-                if not self._handler_sensor_alert(msg_request.msg_dict):
-                    logging.error("[%s]: Receiving sensor alert failed."
+            # Handle PROFILECHANGE request.
+            if request.lower() == "profilechange":
+                if not self._handler_profile_change(msg_request.msg_dict):
+                    logging.error("[%s]: Receiving profile change failed."
                                   % self._log_tag)
 
                     # clean up session before exiting
                     self.close()
                     return
 
-            # Handle SENSORALERTSOFF request.
-            elif request.lower() == "sensoralertsoff":
-                if not self._handler_sensor_alerts_off(msg_request.msg_dict):
-                    logging.error("[%s]: Receiving sensor alerts off failed."
+            # Handle SENSORALERT request.
+            elif request.lower() == "sensoralert":
+                if not self._handler_sensor_alert(msg_request.msg_dict):
+                    logging.error("[%s]: Receiving sensor alert failed."
                                   % self._log_tag)
 
                     # clean up session before exiting
@@ -819,11 +850,10 @@ class ServerCommunication(Communication):
 
     def send_option(self,
                     optionType: str,
-                    optionValue: float,
+                    optionValue: int,
                     optionDelay: int = 0) -> Promise:
         """
-        This function sends an option change to the server for example
-        to activate the alert system or deactivate it.
+        This function sends an option change to the server for example to change the active system profile.
 
         :param optionType:
         :param optionValue:

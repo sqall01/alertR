@@ -12,7 +12,7 @@ import os
 import logging
 import kodijson
 from .core import _Alert
-from ..globalData import ManagerObjSensorAlert
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # this function class an alert that controls a kodi instance
@@ -56,6 +56,10 @@ class KodiAlert(_Alert):
             # set the time the alert was triggered
             self.triggered = utc_timestamp
 
+            intersect_alert_levels = [str(x) for x in set(sensor_alert.alertLevels).intersection(self.alertLevels)]
+            logging.info("[%s] Alert '%d' triggered for alert levels %s."
+                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
+
             # extract the received message if it was received and should be
             # displayed
             received_message = None
@@ -69,7 +73,7 @@ class KodiAlert(_Alert):
                 kodi_obj = kodijson.Kodi("http://" + self.host + ":" + str(self.port) + "/jsonrpc")
 
             except Exception as e:
-                logging.exception("[%s]: Not able to connect to Kodi instance." % self.fileName)
+                logging.exception("[%s]: Alert '%d' not able to connect to Kodi instance." % (self.fileName, self.id))
                 return
 
             # ping the kodi instance
@@ -77,7 +81,7 @@ class KodiAlert(_Alert):
                 response = kodi_obj.JSONRPC.Ping()
 
             except Exception as e:
-                logging.exception("[%s]: Not able to ping Kodi instance." % self.fileName)
+                logging.exception("[%s]: Alert '%d' not able to ping Kodi instance." % (self.fileName, self.id))
                 return
 
             # check if kodi instance respond
@@ -131,7 +135,7 @@ class KodiAlert(_Alert):
                                                   displaytime=self.displayTime)
 
             else:
-                logging.error("[%s]: Kodi does not respond." % self.fileName)
+                logging.error("[%s]: Alert '%d' Kodi does not respond." % (self.fileName, self.id))
 
     def initialize(self):
         """
@@ -157,9 +161,11 @@ class KodiAlert(_Alert):
         """
         self._process_alert(sensor_alert)
 
-    def alert_off(self):
+    def alert_profile_change(self, profile: ManagerObjProfile):
         """
-        Is called when Alert Client receives a "sensoralertsoff" message which is
-        sent as soon as AlertR alarm status is deactivated.
+        Is called when Alert Client receives a "profilechange" message which is
+        sent as soon as AlertR system profile changes.
+
+        :param profile: object that contains the received "profilechange" message.
         """
         pass

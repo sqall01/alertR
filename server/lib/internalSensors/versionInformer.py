@@ -10,7 +10,6 @@
 import threading
 import os
 import time
-import json
 from typing import Optional
 from ..update import Updater
 from .core import _InternalSensor
@@ -137,32 +136,25 @@ class VersionInformerSensor(_InternalSensor):
 
                     # Change sensor state in database.
                     if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                          [(self.remoteSensorId, self.state)],  # stateList
+                                                          [(self.clientSensorId, self.state)],  # stateList
                                                           self.logger):  # logger
                         self.logger.error("[%s]: Not able to change sensor state for internal version informer sensor."
                                           % self.fileName)
 
                 # Add sensor alert to database for processing.
                 message = "Update checking failed %d times in a row." % update_fail_count
-                data_json = json.dumps({"message": message})
-                if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                               self.sensorId,  # sensorId
-                                               self.state,  # state
-                                               data_json,  # dataJson
-                                               change_state,  # changeState
-                                               False,  # hasLatestData
-                                               SensorDataType.NONE,  # sensorData
-                                               self.logger):  # logger
-
-                    # Manually wake up sensor alert executer to process
-                    # sensor alerts immediately.
-                    self.sensor_alert_executer.sensorAlertEvent.set()
-
-                else:
+                optional_data = {"message": message}
+                if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                                   self.sensorId,
+                                                                   self.state,
+                                                                   optional_data,
+                                                                   change_state,
+                                                                   False,
+                                                                   SensorDataType.NONE,
+                                                                   None,
+                                                                   self.logger):
                     self.logger.error("[%s]: Not able to add sensor alert for internal version informer sensor."
                                       % self.fileName)
-
-            process_sensor_alerts = False
 
             self.logger.debug("[%s]: Fetching version information from '%s'." % (self.fileName, self.repo_url))
 
@@ -256,7 +248,7 @@ class VersionInformerSensor(_InternalSensor):
 
                             # Change sensor state in database.
                             if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                                  [(self.remoteSensorId, self.state)],  # stateList
+                                                                  [(self.clientSensorId, self.state)],  # stateList
                                                                   self.logger):  # logger
                                 self.logger.error("[%s]: Not able to change sensor state for internal "
                                                   % self.fileName
@@ -267,28 +259,25 @@ class VersionInformerSensor(_InternalSensor):
                                   % (instance, username, hostname)  \
                                   + "(current: %.3f-%d; new: %.3f-%d)." \
                                   % (curr_version, curr_rev, new_version, new_rev)
-                        data_json = json.dumps({"message": message,
-                                                "hostname": hostname,
-                                                "username": username,
-                                                "instance": instance,
-                                                "nodeType": nodeType,
-                                                "version": curr_version,
-                                                "rev": curr_rev,
-                                                "newVersion": new_version,
-                                                "newRev": new_rev})
+                        optional_data = {"message": message,
+                                         "hostname": hostname,
+                                         "username": username,
+                                         "instance": instance,
+                                         "nodeType": nodeType,
+                                         "version": curr_version,
+                                         "rev": curr_rev,
+                                         "newVersion": new_version,
+                                         "newRev": new_rev}
 
-                        # Add sensor alert to database for processing.
-                        if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                                       self.sensorId,  # sensorId
-                                                       self.state,  # state
-                                                       data_json,  # dataJson
-                                                       change_state,  # changeState
-                                                       False,  # hasLatestData
-                                                       SensorDataType.NONE,  # sensorData
-                                                       self.logger):  # logger
-                            process_sensor_alerts = True
-
-                        else:
+                        if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                                           self.sensorId,
+                                                                           self.state,
+                                                                           optional_data,
+                                                                           change_state,
+                                                                           False,
+                                                                           SensorDataType.NONE,
+                                                                           None,
+                                                                           self.logger):
                             self.logger.error("[%s]: Not able to add sensor alert for internal version informer sensor."
                                               % self.fileName)
 
@@ -304,33 +293,26 @@ class VersionInformerSensor(_InternalSensor):
 
                 self.state = 0
                 message = "All nodes have the newest version."
-                data_json = json.dumps({"message": message})
+                optional_data = {"message": message}
 
                 # Change sensor state in database.
                 if not self.storage.updateSensorState(self.nodeId,  # nodeId
-                                                      [(self.remoteSensorId, self.state)],  # stateList
+                                                      [(self.clientSensorId, self.state)],  # stateList
                                                       self.logger):  # logger
                     self.logger.error("[%s]: Not able to change sensor state for internal version informer sensor."
                                       % self.fileName)
 
-                # Add sensor alert to database for processing.
-                if self.storage.addSensorAlert(self.nodeId,  # nodeId
-                                               self.sensorId,  # sensorId
-                                               self.state,  # state
-                                               data_json,  # dataJson
-                                               True,  # changeState
-                                               False,  # hasLatestData
-                                               SensorDataType.NONE,  # sensorData
-                                               self.logger):  # logger
-                    process_sensor_alerts = True
-
-                else:
+                if not self.sensor_alert_executer.add_sensor_alert(self.nodeId,
+                                                                   self.sensorId,
+                                                                   self.state,
+                                                                   optional_data,
+                                                                   True,
+                                                                   False,
+                                                                   SensorDataType.NONE,
+                                                                   None,
+                                                                   self.logger):
                     self.logger.error("[%s]: Not able to add sensor alert for internal version informer sensor."
                                       % self.fileName)
-
-            # Wake up sensor alert executer to process sensor alerts.
-            if process_sensor_alerts:
-                self.sensor_alert_executer.sensorAlertEvent.set()
 
     def initialize(self):
 

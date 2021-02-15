@@ -21,15 +21,23 @@ import xml.etree.ElementTree
 
 
 # Function creates a path location for the given user input.
-def makePath(inputLocation):
+def make_path(input_location: str) -> str:
     # Do nothing if the given location is an absolute path.
-    if inputLocation[0] == "/":
-        return inputLocation
+    if input_location[0] == "/":
+        return input_location
     # Replace ~ with the home directory.
-    elif inputLocation[0] == "~":
-        return os.environ["HOME"] + inputLocation[1:]
+    elif input_location[0] == "~":
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
-    return os.path.dirname(os.path.abspath(__file__)) + "/" + inputLocation
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), input_location)
 
 
 if __name__ == '__main__':
@@ -44,7 +52,7 @@ if __name__ == '__main__':
     try:
         configRoot = xml.etree.ElementTree.parse(globalData.configFile).getroot()
 
-        logfile = makePath(str(configRoot.find("general").find("log").attrib["file"]))
+        logfile = make_path(str(configRoot.find("general").find("log").attrib["file"]))
 
         # parse chosen log level
         tempLoglevel = str(configRoot.find("general").find("log").attrib["level"])
@@ -79,8 +87,8 @@ if __name__ == '__main__':
         # Check file permission of config file (do not allow it to be accessible by others).
         config_stat = os.stat(globalData.configFile)
         if (config_stat.st_mode & stat.S_IROTH
-           or config_stat.st_mode & stat.S_IWOTH
-           or config_stat.st_mode & stat.S_IXOTH):
+                or config_stat.st_mode & stat.S_IWOTH
+                or config_stat.st_mode & stat.S_IXOTH):
             raise ValueError("Config file is accessible by others. Please remove file permissions for others.")
 
         # check if config and client version are compatible
@@ -96,7 +104,7 @@ if __name__ == '__main__':
         serverPort = int(configRoot.find("general").find("server").attrib["port"])
 
         # get server certificate file and check if it does exist
-        serverCAFile = os.path.abspath(makePath(str(configRoot.find("general").find("server").attrib["caFile"])))
+        serverCAFile = os.path.abspath(make_path(str(configRoot.find("general").find("server").attrib["caFile"])))
         if os.path.exists(serverCAFile) is False:
             raise ValueError("Server CA does not exist.")
 
@@ -106,12 +114,19 @@ if __name__ == '__main__':
 
         if certificateRequired is True:
             clientCertFile = os.path.abspath(
-                             makePath(str(configRoot.find("general").find("client").attrib["certFile"])))
+                             make_path(str(configRoot.find("general").find("client").attrib["certFile"])))
             clientKeyFile = os.path.abspath(
-                            makePath(str(configRoot.find("general").find("client").attrib["keyFile"])))
+                            make_path(str(configRoot.find("general").find("client").attrib["keyFile"])))
             if (os.path.exists(clientCertFile) is False
-               or os.path.exists(clientKeyFile) is False):
+                    or os.path.exists(clientKeyFile) is False):
                 raise ValueError("Client certificate or key does not exist.")
+
+            key_stat = os.stat(clientKeyFile)
+            if (key_stat.st_mode & stat.S_IROTH
+                    or key_stat.st_mode & stat.S_IWOTH
+                    or key_stat.st_mode & stat.S_IXOTH):
+                raise ValueError("Client key is accessible by others. Please remove file permissions for others.")
+
         else:
             clientCertFile = None
             clientKeyFile = None
@@ -145,10 +160,10 @@ if __name__ == '__main__':
             alert = ExecuterAlert()
 
             # Get executer specific values.
-            temp_execute = makePath(str(item.find("executer").attrib["execute"]))
+            temp_execute = make_path(str(item.find("executer").attrib["execute"]))
             alert.cmd_triggered_list.append(temp_execute)
             alert.cmd_normal_list.append(temp_execute)
-            alert.cmd_off_list.append(temp_execute)
+            alert.cmd_profile_change_list.append(temp_execute)
 
             # Parse all arguments that are used for the command when
             # a sensor alert with state "triggered" is received.
@@ -167,12 +182,16 @@ if __name__ == '__main__':
                     alert.cmd_normal_list.append(str(argument.text))
 
             # Parse all arguments that are used for the command when
-            # a alert off message is received.
-            cmd_off_activated = str(item.find("executer").find("off").attrib["activated"]).upper() == "TRUE"
-            alert.cmd_off_activated = cmd_off_activated
-            if cmd_off_activated:
-                for argument in item.find("executer").find("off").iterfind("argument"):
-                    alert.cmd_off_list.append(str(argument.text))
+            # a profile change message is received.
+            cmd_profile_change_activated = str(
+                item.find("executer").find("profilechange").attrib["activated"]).upper() == "TRUE"
+            alert.cmd_profile_change_activated = cmd_profile_change_activated
+            if cmd_profile_change_activated:
+                for profile in item.find("executer").find("profilechange").iterfind("profile"):
+                    alert.cmd_profile_change_target_profiles.add(int(profile.text))
+
+                for argument in item.find("executer").find("profilechange").iterfind("argument"):
+                    alert.cmd_profile_change_list.append(str(argument.text))
 
             # these options are needed by the server to
             # differentiate between the registered alerts
@@ -193,6 +212,10 @@ if __name__ == '__main__':
                 if registeredAlert.id == alert.id:
                     raise ValueError("Id of alert %d is already taken."
                                      % alert.id)
+
+            if cmd_profile_change_activated and not alert.cmd_profile_change_target_profiles:
+                raise ValueError("No profiles set for profilechange of alert %d."
+                                 % alert.id)
 
             globalData.alerts.append(alert)
 

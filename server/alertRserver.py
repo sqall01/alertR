@@ -14,6 +14,7 @@ from lib import ServerSession, ThreadedTCPServer
 from lib import VersionInformerSensor
 from lib import SensorAlertExecuter
 from lib import ManagerUpdateExecuter
+from lib import OptionExecuter
 from lib import GlobalData
 from lib import SurveyExecuter
 from lib import parse_config
@@ -52,6 +53,14 @@ if __name__ == '__main__':
     # => threads terminates when main thread terminates
     globalData.managerUpdateExecuter.daemon = True
     globalData.managerUpdateExecuter.start()
+
+    globalData.logger.info("[%s] Starting option manage thread." % fileName)
+    # start the thread that handles the option messages
+    globalData.option_executer = OptionExecuter(globalData)
+    # set thread to daemon
+    # => threads terminates when main thread terminates
+    globalData.option_executer.daemon = True
+    globalData.option_executer.start()
 
     # start server process
     while True:

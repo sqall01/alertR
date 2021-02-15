@@ -15,7 +15,7 @@ import json
 import MySQLdb
 from typing import List, Optional
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjAlert, ManagerObjManager, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import SensorDataType
 from ..globalData import GlobalData
 
@@ -43,6 +43,7 @@ class _Storage:
     def update_server_information(self,
                                   msg_time: int,
                                   options: List[ManagerObjOption],
+                                  profiles: List[ManagerObjProfile],
                                   nodes: List[ManagerObjNode],
                                   sensors: List[ManagerObjSensor],
                                   alerts: List[ManagerObjAlert],
@@ -54,6 +55,7 @@ class _Storage:
 
         :param msg_time:
         :param options:
+        :param profiles:
         :param nodes:
         :param sensors:
         :param alerts:
@@ -96,6 +98,7 @@ class Mysql(_Storage):
 
         # Hold a copy of the alert system objects locally to know which data we have stored in the database.
         self._db_copy_options = list()  # type: List[ManagerObjOption]
+        self._db_copy_profiles = list()  # type: List[ManagerObjProfile]
         self._db_copy_nodes = list()  # type: List[ManagerObjNode]
         self._db_copy_alerts = list()  # type: List[ManagerObjAlert]
         self._db_copy_managers = list()  # type: List[ManagerObjManager]
@@ -301,6 +304,10 @@ class Mysql(_Storage):
         :param level:
         """
         try:
+            self._cursor.execute("DELETE FROM alertLevelsProfiles "
+                                 + "WHERE alertLevel = %s",
+                                 (level, ))
+
             self._cursor.execute("DELETE FROM alertsAlertLevels "
                                  + "WHERE alertLevel = %s",
                                  (level, ))
@@ -389,6 +396,26 @@ class Mysql(_Storage):
         except Exception:
             logging.exception("[%s]: Not able to delete Option of type '%s'."
                               % (self._log_tag, option_type))
+            raise
+
+    def _delete_profile(self, profile_id: int):
+        """
+        Internal function that deletes a Profile from the database. Does not catch exceptions.
+
+        :param profile_id:
+        """
+        try:
+            self._cursor.execute("DELETE FROM alertLevelsProfiles "
+                                 + "WHERE profileId = %s",
+                                 (profile_id, ))
+
+            self._cursor.execute("DELETE FROM profiles "
+                                 + "WHERE id = %s",
+                                 (profile_id, ))
+
+        except Exception:
+            logging.exception("[%s]: Not able to delete Profile with id %d."
+                              % (self._log_tag, profile_id))
             raise
 
     def _delete_sensor(self, sensor_id: int):
@@ -533,7 +560,9 @@ class Mysql(_Storage):
         self._cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
         self._cursor.execute("DROP TABLE IF EXISTS alerts")
         self._cursor.execute("DROP TABLE IF EXISTS managers")
+        self._cursor.execute("DROP TABLE IF EXISTS alertLevelsProfiles")
         self._cursor.execute("DROP TABLE IF EXISTS alertLevels")
+        self._cursor.execute("DROP TABLE IF EXISTS profiles")
         self._cursor.execute("DROP TABLE IF EXISTS nodes")
 
     def _get_sensor_alerts(self) -> List[ManagerObjSensorAlert]:
@@ -647,11 +676,11 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("UPDATE alerts SET "
                                      + "nodeId = %s, "
-                                     + "remoteAlertId = %s, "
+                                     + "clientAlertId = %s, "
                                      + "description = %s "
                                      + "WHERE id = %s",
                                      (alert.nodeId,
-                                      alert.remoteAlertId,
+                                      alert.clientAlertId,
                                       alert.description,
                                       alert.alertId))
 
@@ -677,10 +706,10 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO alerts ("
                                      + "id, "
                                      + "nodeId, "
-                                     + "remoteAlertId, "
+                                     + "clientAlertId, "
                                      + "description) "
                                      + "VALUES (%s, %s, %s, %s)",
-                                     (alert.alertId, alert.nodeId, alert.remoteAlertId, alert.description))
+                                     (alert.alertId, alert.nodeId, alert.clientAlertId, alert.description))
 
                 for alertAlertLevel in alert.alertLevels:
                     self._cursor.execute("INSERT INTO alertsAlertLevels ("
@@ -716,17 +745,26 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("UPDATE alertLevels SET "
                                      + "name = %s, "
-                                     + "triggerAlways = %s, "
                                      + "instrumentation_active = %s, "
                                      + "instrumentation_cmd = %s, "
                                      + "instrumentation_timeout = %s "
                                      + "WHERE alertLevel = %s",
                                      (alert_level.name,
-                                      alert_level.triggerAlways,
                                       1 if alert_level.instrumentation_active else 0,
                                       alert_level.instrumentation_cmd if alert_level.instrumentation_active else "",
                                       alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0,
                                       alert_level.level))
+
+                self._cursor.execute("DELETE FROM alertLevelsProfiles "
+                                     + "WHERE alertLevel = %s",
+                                     (alert_level.level, ))
+
+                for profile in alert_level.profiles:
+                    self._cursor.execute("INSERT INTO alertLevelsProfiles ("
+                                         + "alertLevel, "
+                                         + "profileId) "
+                                         + "VALUES (%s, %s)",
+                                         (alert_level.level, profile))
 
             except Exception:
                 logging.exception("[%s]: Not able to update Alert Level %d."
@@ -739,17 +777,22 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO alertLevels ("
                                      + "alertLevel, "
                                      + "name, "
-                                     + "triggerAlways, "
                                      + "instrumentation_active, "
                                      + "instrumentation_cmd, "
                                      + "instrumentation_timeout) "
-                                     + "VALUES (%s, %s, %s, %s, %s, %s)",
+                                     + "VALUES (%s, %s, %s, %s, %s)",
                                      (alert_level.level,
                                       alert_level.name,
-                                      alert_level.triggerAlways,
                                       1 if alert_level.instrumentation_active else 0,
                                       alert_level.instrumentation_cmd if alert_level.instrumentation_active else "",
                                       alert_level.instrumentation_timeout if alert_level.instrumentation_active else 0))
+
+                for profile in alert_level.profiles:
+                    self._cursor.execute("INSERT INTO alertLevelsProfiles ("
+                                         + "alertLevel, "
+                                         + "profileId) "
+                                         + "VALUES (%s, %s)",
+                                         (alert_level.level, profile))
 
             except Exception:
                 logging.exception("[%s]: Not able to add Alert Level %d."
@@ -952,6 +995,48 @@ class Mysql(_Storage):
                                   % (self._log_tag, option.type))
                 raise
 
+    def _update_profile(self, profile: ManagerObjProfile):
+        """
+        Internal function that updates an Profile in the database. Does not catch exceptions.
+
+        :param profile:
+        """
+        try:
+            self._cursor.execute("SELECT * FROM profiles WHERE id = %s",
+                                 (profile.profileId,))
+
+        except Exception:
+            logging.exception("[%s]: Not able to get Profile with id %d."
+                              % (self._log_tag, profile.profileId))
+            raise
+
+        result = self._cursor.fetchall()
+
+        # Update existing object.
+        if len(result) != 0:
+            try:
+                self._cursor.execute("UPDATE profiles SET "
+                                     + "name = %s WHERE id = %s",
+                                     (profile.name, profile.profileId))
+
+            except Exception:
+                logging.exception("[%s]: Not able to update Profile with id %d."
+                                  % (self._log_tag, profile.profileId))
+                raise
+
+        # Add not existing new object.
+        else:
+            try:
+                self._cursor.execute("INSERT INTO profiles ("
+                                     + "id, "
+                                     + "name) VALUES (%s, %s)",
+                                     (profile.profileId, profile.name))
+
+            except Exception:
+                logging.exception("[%s]: Not able to add Profile with id %d."
+                                  % (self._log_tag, profile.profileId))
+                raise
+
     def _update_sensor(self, sensor: ManagerObjSensor):
         """
         Internal function that updates a Sensor in the database. Does not catch exceptions.
@@ -977,7 +1062,7 @@ class Mysql(_Storage):
 
                 self._cursor.execute("UPDATE sensors SET "
                                      + "nodeId = %s, "
-                                     + "remoteSensorId = %s, "
+                                     + "clientSensorId = %s, "
                                      + "description = %s, "
                                      + "state = %s ,"
                                      + "lastStateUpdated = %s, "
@@ -985,7 +1070,7 @@ class Mysql(_Storage):
                                      + "dataType = %s "
                                      + "WHERE id = %s",
                                      (sensor.nodeId,
-                                      sensor.remoteSensorId,
+                                      sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
                                       sensor.lastStateUpdated,
@@ -1018,7 +1103,7 @@ class Mysql(_Storage):
                 self._cursor.execute("INSERT INTO sensors ("
                                      + "id, "
                                      + "nodeId, "
-                                     + "remoteSensorId, "
+                                     + "clientSensorId, "
                                      + "description, "
                                      + "state, "
                                      + "lastStateUpdated, "
@@ -1027,7 +1112,7 @@ class Mysql(_Storage):
                                      + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                                      (sensor.sensorId,
                                       sensor.nodeId,
-                                      sensor.remoteSensorId,
+                                      sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
                                       sensor.lastStateUpdated,
@@ -1094,11 +1179,24 @@ class Mysql(_Storage):
 
             self._system_data.update_option(option)
 
+        # create profile objects from db
+        self._cursor.execute("SELECT "
+                             + "id, "
+                             + "name "
+                             + "FROM profiles")
+        result = self._cursor.fetchall()
+
+        for profile_tuple in result:
+            profile = ManagerObjProfile()
+            profile.profileId = profile_tuple[0]
+            profile.name = profile_tuple[1]
+
+            self._system_data.update_profile(profile)
+
         # create alert levels objects from db
         self._cursor.execute("SELECT "
                              + "alertLevel, "
                              + "name, "
-                             + "triggerAlways, "
                              + "instrumentation_active, "
                              + "instrumentation_cmd, "
                              + "instrumentation_timeout "
@@ -1109,12 +1207,19 @@ class Mysql(_Storage):
             alert_level = ManagerObjAlertLevel()
             alert_level.level = alert_level_tuple[0]
             alert_level.name = alert_level_tuple[1]
-            alert_level.triggerAlways = alert_level_tuple[2]
-            alert_level.instrumentation_active = (alert_level_tuple[3] == 1)
+            alert_level.instrumentation_active = (alert_level_tuple[2] == 1)
+
+            self._cursor.execute("SELECT "
+                                 + "profileId "
+                                 + "FROM alertLevelsProfiles "
+                                 + "WHERE alertLevel = %s", (alert_level.level, ))
+            profile_result = self._cursor.fetchall()
+            for profile_tuple in profile_result:
+                alert_level.profiles.append(profile_tuple[0])
 
             if alert_level.instrumentation_active:
-                alert_level.instrumentation_cmd = alert_level_tuple[4]
-                alert_level.instrumentation_timeout = alert_level_tuple[5]
+                alert_level.instrumentation_cmd = alert_level_tuple[3]
+                alert_level.instrumentation_timeout = alert_level_tuple[4]
 
             else:
                 alert_level.instrumentation_cmd = None
@@ -1144,7 +1249,7 @@ class Mysql(_Storage):
         self._cursor.execute("SELECT "
                              + "id, "
                              + "nodeId, "
-                             + "remoteSensorId, "
+                             + "clientSensorId, "
                              + "description, "
                              + "state, "
                              + "lastStateUpdated, "
@@ -1157,7 +1262,7 @@ class Mysql(_Storage):
             sensor = ManagerObjSensor()
             sensor.sensorId = sensor_tuple[0]
             sensor.nodeId = sensor_tuple[1]
-            sensor.remoteSensorId = sensor_tuple[2]
+            sensor.clientSensorId = sensor_tuple[2]
             sensor.description = sensor_tuple[3]
             sensor.state = sensor_tuple[4]
             sensor.lastStateUpdated = sensor_tuple[5]
@@ -1198,7 +1303,7 @@ class Mysql(_Storage):
         self._cursor.execute("SELECT "
                              + "id, "
                              + "nodeId, "
-                             + "remoteAlertId, "
+                             + "clientAlertId, "
                              + "description "
                              + "FROM alerts")
         result = self._cursor.fetchall()
@@ -1207,7 +1312,7 @@ class Mysql(_Storage):
             alert = ManagerObjAlert()
             alert.alertId = alert_tuple[0]
             alert.nodeId = alert_tuple[1]
-            alert.remoteAlertId = alert_tuple[2]
+            alert.clientAlertId = alert_tuple[2]
             alert.description = alert_tuple[3]
 
             self._cursor.execute("SELECT "
@@ -1261,8 +1366,7 @@ class Mysql(_Storage):
             result = self._cursor.fetchall()
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE internals ("
-                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                     + "type VARCHAR(255) NOT NULL UNIQUE, "
+                                     + "type VARCHAR(255) NOT NULL PRIMARY KEY, "
                                      + "value DOUBLE NOT NULL)")
 
                 # insert msg time field
@@ -1288,9 +1392,16 @@ class Mysql(_Storage):
             result = self._cursor.fetchall()
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE options ("
-                                     + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
-                                     + "type VARCHAR(255) NOT NULL UNIQUE, "
-                                     + "value DOUBLE NOT NULL)")
+                                     + "type VARCHAR(255) NOT NULL PRIMARY KEY, "
+                                     + "value INTEGER NOT NULL)")
+
+            # create profiles table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'profiles'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE profiles ("
+                                     + "id INTEGER PRIMARY KEY, "
+                                     + "name VARCHAR(255) NOT NULL)")
 
             # create nodes table if it does not exist
             self._cursor.execute("SHOW TABLES LIKE 'nodes'")
@@ -1314,7 +1425,7 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE sensors ("
                                      + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
                                      + "nodeId INTEGER NOT NULL, "
-                                     + "remoteSensorId INTEGER NOT NULL, "
+                                     + "clientSensorId INTEGER NOT NULL, "
                                      + "description VARCHAR(255) NOT NULL, "
                                      + "state INTEGER NOT NULL, "
                                      + "lastStateUpdated INTEGER NOT NULL, "
@@ -1400,7 +1511,7 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE alerts ("
                                      + "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
                                      + "nodeId INTEGER NOT NULL, "
-                                     + "remoteAlertId INTEGER NOT NULL, "
+                                     + "clientAlertId INTEGER NOT NULL, "
                                      + "description VARCHAR(255) NOT NULL, "
                                      + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
@@ -1431,10 +1542,20 @@ class Mysql(_Storage):
                 self._cursor.execute("CREATE TABLE alertLevels ("
                                      + "alertLevel INTEGER PRIMARY KEY, "
                                      + "name VARCHAR(255) NOT NULL, "
-                                     + "triggerAlways INTEGER NOT NULL, "
                                      + "instrumentation_active INTEGER NOT NULL, "
                                      + "instrumentation_cmd VARCHAR(255) NOT NULL, "
                                      + "instrumentation_timeout INTEGER NOT NULL)")
+
+            # create alert levels profiles table if it does not exist
+            self._cursor.execute("SHOW TABLES LIKE 'alertLevelsProfiles'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE alertLevelsProfiles ("
+                                     + "alertLevel INTEGER NOT NULL, "
+                                     + "profileId INTEGER NOT NULL, "
+                                     + "PRIMARY KEY(alertLevel, profileId), "
+                                     + "FOREIGN KEY(alertLevel) REFERENCES alertLevels(alertLevel),"
+                                     + "FOREIGN KEY(profileId) REFERENCES profiles(id))")
 
             # commit all changes
             self._conn.commit()
@@ -1445,6 +1566,7 @@ class Mysql(_Storage):
     def update_server_information(self,
                                   msg_time: int,
                                   options: List[ManagerObjOption],
+                                  profiles: List[ManagerObjProfile],
                                   nodes: List[ManagerObjNode],
                                   sensors: List[ManagerObjSensor],
                                   alerts: List[ManagerObjAlert],
@@ -1456,6 +1578,7 @@ class Mysql(_Storage):
 
         :param msg_time:
         :param options:
+        :param profiles:
         :param nodes:
         :param sensors:
         :param alerts:
@@ -1491,6 +1614,17 @@ class Mysql(_Storage):
                 if option.is_deleted():
                     try:
                         self._delete_option(option.type)
+
+                    except Exception:
+                        self._close_connection()
+                        return False
+
+            for profile in self._db_copy_profiles:
+
+                # Check if object does not exist anymore in received data.
+                if profile.is_deleted():
+                    try:
+                        self._delete_profile(profile.profileId)
 
                     except Exception:
                         self._close_connection()
@@ -1561,10 +1695,19 @@ class Mysql(_Storage):
 
             # STEP TWO: update all existing objects and add new ones
             # (NOTE: first add nodes before alerts, sensors and managers
-            # because of the foreign key dependency)
+            # and first add profiles before alert levels
+            # because of their foreign key dependency)
             for option in options:
                 try:
                     self._update_option(option)
+
+                except Exception:
+                    self._close_connection()
+                    return False
+
+            for profile in profiles:
+                try:
+                    self._update_profile(profile)
 
                 except Exception:
                     self._close_connection()
@@ -1637,6 +1780,7 @@ class Mysql(_Storage):
             self._close_connection()
 
             self._db_copy_options = options
+            self._db_copy_profiles = profiles
             self._db_copy_nodes = nodes
             self._db_copy_alerts = alerts
             self._db_copy_managers = managers

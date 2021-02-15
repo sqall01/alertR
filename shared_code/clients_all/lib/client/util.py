@@ -61,25 +61,45 @@ class MsgChecker:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "alertLevels" not in message["payload"].keys():
+                logging.error("[%s]: alertLevels missing." % MsgChecker._log_tag)
+                return "alertLevels expected"
+
             error_msg = MsgChecker.check_alert_levels(message["payload"]["alertLevels"])
             if error_msg is not None:
                 logging.error("[%s]: Received alertLevels invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "description" not in message["payload"].keys():
+                logging.error("[%s]: description missing." % MsgChecker._log_tag)
+                return "description expected"
 
             error_msg = MsgChecker.check_description(message["payload"]["description"])
             if error_msg is not None:
                 logging.error("[%s]: Received description invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "sensorId" not in message["payload"].keys():
+                logging.error("[%s]: sensorId missing." % MsgChecker._log_tag)
+                return "sensorId expected"
+
             error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "state" not in message["payload"].keys():
+                logging.error("[%s]: state missing." % MsgChecker._log_tag)
+                return "state expected"
+
             error_msg = MsgChecker.check_state(message["payload"]["state"])
             if error_msg is not None:
                 logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "hasOptionalData" not in message["payload"].keys():
+                logging.error("[%s]: hasOptionalData missing." % MsgChecker._log_tag)
+                return "hasOptionalData expected"
 
             error_msg = MsgChecker.check_has_optional_data(message["payload"]["hasOptionalData"])
             if error_msg is not None:
@@ -92,30 +112,46 @@ class MsgChecker:
                     logging.error("[%s]: Received optionalData invalid." % MsgChecker._log_tag)
                     return error_msg
 
+            if "dataType" not in message["payload"].keys():
+                logging.error("[%s]: dataType missing." % MsgChecker._log_tag)
+                return "dataType expected"
+
             error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
             if error_msg is not None:
                 logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
                 return error_msg
 
             if message["payload"]["dataType"] != SensorDataType.NONE:
+                if "data" not in message["payload"].keys():
+                    logging.error("[%s]: data missing." % MsgChecker._log_tag)
+                    return "data expected"
+
                 error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
                                                          message["payload"]["dataType"])
                 if error_msg is not None:
                     logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
                     return error_msg
 
+            if "hasLatestData" not in message["payload"].keys():
+                logging.error("[%s]: hasLatestData missing." % MsgChecker._log_tag)
+                return "hasLatestData expected"
+
             error_msg = MsgChecker.check_has_latest_data(message["payload"]["hasLatestData"])
             if error_msg is not None:
                 logging.error("[%s]: Received hasLatestData invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "changeState" not in message["payload"].keys():
+                logging.error("[%s]: changeState missing." % MsgChecker._log_tag)
+                return "changeState expected"
 
             error_msg = MsgChecker.check_change_state(message["payload"]["changeState"])
             if error_msg is not None:
                 logging.error("[%s]: Received changeState invalid." % MsgChecker._log_tag)
                 return error_msg
 
-        # Check "SENSORALERTSOFF" message.
-        elif request == "sensoralertsoff":
+        # Check "PROFILECHANGE" message.
+        elif request == "profilechange":
             if "msgTime" not in message.keys():
                 logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
                 return "msgTime expected"
@@ -123,6 +159,24 @@ class MsgChecker:
             error_msg = MsgChecker.check_msg_time(message["msgTime"])
             if error_msg is not None:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "profileId" not in message["payload"].keys():
+                logging.error("[%s]: profileId missing." % MsgChecker._log_tag)
+                return "profileId expected"
+
+            error_msg = MsgChecker.check_profile_id(message["payload"]["profileId"])
+            if error_msg is not None:
+                logging.error("[%s]: Received profileId invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "name" not in message["payload"].keys():
+                logging.error("[%s]: name missing." % MsgChecker._log_tag)
+                return "profileId expected"
+
+            error_msg = MsgChecker.check_profile_name(message["payload"]["name"])
+            if error_msg is not None:
+                logging.error("[%s]: Received name invalid." % MsgChecker._log_tag)
                 return error_msg
 
         # Check "STATECHANGE" message.
@@ -136,15 +190,27 @@ class MsgChecker:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "sensorId" not in message["payload"].keys():
+                logging.error("[%s]: sensorId missing." % MsgChecker._log_tag)
+                return "sensorId expected"
+
             error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "state" not in message["payload"].keys():
+                logging.error("[%s]: state missing." % MsgChecker._log_tag)
+                return "state expected"
+
             error_msg = MsgChecker.check_state(message["payload"]["state"])
             if error_msg is not None:
                 logging.error("[%s]: Received state invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "dataType" not in message["payload"].keys():
+                logging.error("[%s]: dataType missing." % MsgChecker._log_tag)
+                return "dataType expected"
 
             error_msg = MsgChecker.check_sensor_data_type(message["payload"]["dataType"])
             if error_msg is not None:
@@ -152,6 +218,10 @@ class MsgChecker:
                 return error_msg
 
             if message["payload"]["dataType"] != SensorDataType.NONE:
+                if "data" not in message["payload"].keys():
+                    logging.error("[%s]: data missing." % MsgChecker._log_tag)
+                    return "data expected"
+
                 error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
                                                          message["payload"]["dataType"])
                 if error_msg is not None:
@@ -169,30 +239,63 @@ class MsgChecker:
                 logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "options" not in message["payload"].keys():
+                logging.error("[%s]: options missing." % MsgChecker._log_tag)
+                return "options expected"
+
             error_msg = MsgChecker.check_status_options_list(message["payload"]["options"])
             if error_msg is not None:
                 logging.error("[%s]: Received options invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "profiles" not in message["payload"].keys():
+                logging.error("[%s]: profiles missing." % MsgChecker._log_tag)
+                return "profiles expected"
+
+            error_msg = MsgChecker.check_status_profiles_list(message["payload"]["profiles"])
+            if error_msg is not None:
+                logging.error("[%s]: Received profiles invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "nodes" not in message["payload"].keys():
+                logging.error("[%s]: nodes missing." % MsgChecker._log_tag)
+                return "nodes expected"
 
             error_msg = MsgChecker.check_status_nodes_list(message["payload"]["nodes"])
             if error_msg is not None:
                 logging.error("[%s]: Received nodes invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "sensors" not in message["payload"].keys():
+                logging.error("[%s]: sensors missing." % MsgChecker._log_tag)
+                return "sensors expected"
+
             error_msg = MsgChecker.check_status_sensors_list(message["payload"]["sensors"])
             if error_msg is not None:
                 logging.error("[%s]: Received sensors invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "managers" not in message["payload"].keys():
+                logging.error("[%s]: managers missing." % MsgChecker._log_tag)
+                return "managers expected"
 
             error_msg = MsgChecker.check_status_managers_list(message["payload"]["managers"])
             if error_msg is not None:
                 logging.error("[%s]: Received managers invalid." % MsgChecker._log_tag)
                 return error_msg
 
+            if "alerts" not in message["payload"].keys():
+                logging.error("[%s]: alerts missing." % MsgChecker._log_tag)
+                return "alerts expected"
+
             error_msg = MsgChecker.check_status_alerts_list(message["payload"]["alerts"])
             if error_msg is not None:
                 logging.error("[%s]: Received alerts invalid." % MsgChecker._log_tag)
                 return error_msg
+
+            if "alertLevels" not in message["payload"].keys():
+                logging.error("[%s]: alertLevels missing." % MsgChecker._log_tag)
+                return "alertLevels expected"
 
             error_msg = MsgChecker.check_status_alert_levels_list(message["payload"]["alertLevels"])
             if error_msg is not None:
@@ -497,9 +600,6 @@ class MsgChecker:
         if not isinstance(optionType, str):
             is_correct = False
 
-        if optionType != "alertSystemActive":
-            is_correct = False
-
         if not is_correct:
             return "optionType not valid"
 
@@ -507,17 +607,64 @@ class MsgChecker:
 
     # Internal function to check sanity of the option value.
     @staticmethod
-    def check_option_value(value: float) -> Optional[str]:
+    def check_option_value(value: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(value, float):
-            is_correct = False
-
-        if not 0.0 <= value <= 1.0:
+        if not isinstance(value, int):
             is_correct = False
 
         if not is_correct:
             return "value not valid"
+
+        return None
+
+    @staticmethod
+    def check_profile_id(profile_id: int) -> Optional[str]:
+        """
+        Internal function to check sanity of the profile id.
+        :param profile_id:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profile_id, int):
+            is_correct = False
+
+        if not is_correct:
+            return "profileId not valid"
+
+        return None
+
+    @staticmethod
+    def check_profile_name(profile_name: str) -> Optional[str]:
+        """
+        Internal function to check sanity of the profile name.
+        :param profile_name:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profile_name, str):
+            is_correct = False
+
+        if not is_correct:
+            return "profile name not valid"
+
+        return None
+
+    @staticmethod
+    def check_profiles(profiles: List[int]) -> Optional[str]:
+        """
+        Internal function to check sanity of the profiles integer list.
+        :param profiles:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profiles, list):
+            is_correct = False
+        elif not all(isinstance(item, int) for item in profiles):
+            is_correct = False
+
+        if not is_correct:
+            return "profiles not valid"
 
         return None
 
@@ -536,29 +683,29 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the remoteAlertId.
+    # Internal function to check sanity of the clientAlertId.
     @staticmethod
-    def check_remote_alert_id(remoteAlertId: int) -> Optional[str]:
+    def check_client_alert_id(clientAlertId: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(remoteAlertId, int):
+        if not isinstance(clientAlertId, int):
             is_correct = False
 
         if not is_correct:
-            return "remoteAlertId not valid"
+            return "clientAlertId not valid"
 
         return None
 
-    # Internal function to check sanity of the remoteSensorId.
+    # Internal function to check sanity of the clientSensorId.
     @staticmethod
-    def check_remote_sensor_id(remoteSensorId: int) -> Optional[str]:
+    def check_client_sensor_id(clientSensorId: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(remoteSensorId, int):
+        if not isinstance(clientSensorId, int):
             is_correct = False
 
         if not is_correct:
-            return "remoteSensorId not valid"
+            return "clientSensorId not valid"
 
         return None
 
@@ -683,11 +830,11 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "triggerAlways" not in alertLevel.keys():
+            if "profiles" not in alertLevel.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_trigger_always(alertLevel["triggerAlways"]) is not None:
+            elif MsgChecker.check_profiles(alertLevel["profiles"]) is not None:
                 is_correct = False
                 break
 
@@ -775,11 +922,11 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "remoteAlertId" not in alert.keys():
+            if "clientAlertId" not in alert.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_remote_alert_id(alert["remoteAlertId"]) is not None:
+            elif MsgChecker.check_client_alert_id(alert["clientAlertId"]) is not None:
                 is_correct = False
                 break
 
@@ -979,6 +1126,45 @@ class MsgChecker:
 
         return None
 
+    @staticmethod
+    def check_status_profiles_list(profiles: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        # Internal function to check sanity of the status profiles list.
+        :param profiles:
+        :return:
+        """
+        is_correct = True
+        if not isinstance(profiles, list):
+            is_correct = False
+
+        # Check each profile if correct.
+        for profile in profiles:
+
+            if not isinstance(profile, dict):
+                is_correct = False
+                break
+
+            if "profileId" not in profile.keys():
+                is_correct = False
+                break
+
+            elif MsgChecker.check_profile_id(profile["profileId"]) is not None:
+                is_correct = False
+                break
+
+            if "name" not in profile.keys():
+                is_correct = False
+                break
+
+            elif MsgChecker.check_profile_name(profile["name"]) is not None:
+                is_correct = False
+                break
+
+        if not is_correct:
+            return "profiles list not valid"
+
+        return None
+
     # Internal function to check sanity of the status sensors list.
     @staticmethod
     def check_status_sensors_list(sensors: List[Dict[str, Any]]) -> Optional[str]:
@@ -1052,11 +1238,11 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "remoteSensorId" not in sensor.keys():
+            if "clientSensorId" not in sensor.keys():
                 is_correct = False
                 break
 
-            elif MsgChecker.check_remote_sensor_id(sensor["remoteSensorId"]) is not None:
+            elif MsgChecker.check_client_sensor_id(sensor["clientSensorId"]) is not None:
                 is_correct = False
                 break
 
@@ -1084,21 +1270,6 @@ class MsgChecker:
 
         if not is_correct:
             return "sensors list not valid"
-
-        return None
-
-    # Internal function to check sanity of the triggerAlways.
-    @staticmethod
-    def check_trigger_always(triggerAlways: int) -> Optional[str]:
-
-        is_correct = True
-        if not isinstance(triggerAlways, int):
-            is_correct = False
-        elif triggerAlways != 0 and triggerAlways != 1:
-            is_correct = False
-
-        if not is_correct:
-            return "triggerAlways not valid"
 
         return None
 
@@ -1161,7 +1332,7 @@ class MsgBuilder:
 
     @staticmethod
     def build_option_msg_manager(optionType: str,
-                                 optionValue: float,
+                                 optionValue: int,
                                  optionDelay: int) -> str:
         """
         Internal function that builds the option message for manager nodes.
@@ -1173,7 +1344,7 @@ class MsgBuilder:
         """
         payload = {"type": "request",
                    "optionType": optionType,
-                   "value": float(optionValue),
+                   "value": optionValue,
                    "timeDelay": optionDelay}
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,

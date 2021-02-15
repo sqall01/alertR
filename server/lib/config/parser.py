@@ -17,28 +17,36 @@ import logging
 from ..users import CSVBackend
 from ..storage import Sqlite
 from ..globalData import GlobalData
-from ..localObjects import AlertLevel
-from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, AlertSystemActiveSensor, VersionInformerSensor, \
+from ..localObjects import AlertLevel, Profile
+from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChangeSensor, VersionInformerSensor, \
     AlertLevelInstrumentationErrorSensor
 
-log_tag = fileName = os.path.basename(__file__)
+log_tag = os.path.basename(__file__)
 
 
-def make_path(inputLocation: str) -> str:
+def make_path(input_location: str) -> str:
     """
     Normalizes the path.
 
-    :param inputLocation:
+    :param input_location:
     :return: Normalized path.
     """
     # Do nothing if the given location is an absolute path.
-    if inputLocation[0] == "/":
-        return inputLocation
+    if input_location[0] == "/":
+        return input_location
     # Replace ~ with the home directory.
-    elif inputLocation[0] == "~":
-        return os.environ["HOME"] + inputLocation[1:]
+    elif input_location[0] == "~":
+        pos = -1
+        for i in range(1, len(input_location)):
+            if input_location[i] == "/":
+                continue
+            pos = i
+            break
+        if pos == -1:
+            return os.environ["HOME"]
+        return os.path.join(os.environ["HOME"], input_location[pos:])
     # Assume we have a given relative path.
-    return os.path.abspath(os.path.dirname(__file__) + "/../../" + inputLocation)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", input_location)
 
 
 def parse_config(global_data: GlobalData) -> bool:
@@ -67,7 +75,7 @@ def parse_config(global_data: GlobalData) -> bool:
             global_data.loglevel = logging.CRITICAL
 
         else:
-            print("[%s]: No valid log level in config file."  % log_tag)
+            print("[%s]: No valid log level in config file." % log_tag)
             return False
 
         # initialize logging
@@ -89,7 +97,7 @@ def parse_config(global_data: GlobalData) -> bool:
         return False
 
     if not parse_main_config(configRoot, global_data):
-        global_data.logger.error("[%s]: Could not parse config." % fileName)
+        global_data.logger.error("[%s]: Could not parse config." % log_tag)
         return False
 
     return True
@@ -114,6 +122,9 @@ def parse_main_config(configRoot: xml.etree.ElementTree.Element, global_data: Gl
     if not configure_server(configRoot, global_data):
         return False
 
+    if not configure_profiles(configRoot, global_data):
+        return False
+
     if not configure_alert_levels(configRoot, global_data):
         return False
 
@@ -128,8 +139,8 @@ def check_config_file(configRoot: xml.etree.ElementTree.Element, global_data: Gl
     # Check file permission of config file (do not allow it to be accessible by others).
     config_stat = os.stat(global_data.configFile)
     if (config_stat.st_mode & stat.S_IROTH
-       or config_stat.st_mode & stat.S_IWOTH
-       or config_stat.st_mode & stat.S_IXOTH):
+            or config_stat.st_mode & stat.S_IWOTH
+            or config_stat.st_mode & stat.S_IXOTH):
         global_data.logger.error("[%s]: Config file is accessible by others. " % log_tag
                                  + "Please remove file permissions for others.")
         return False
@@ -148,7 +159,7 @@ def configure_update(configRoot: xml.etree.ElementTree.Element, global_data: Glo
 
     # parse update options
     try:
-        global_data.logger.debug("[%s]: Parsing update configuration." % fileName)
+        global_data.logger.debug("[%s]: Parsing update configuration." % log_tag)
         global_data.update_url = str(configRoot.find("update").find("server").attrib["url"])
 
     except Exception:
@@ -162,7 +173,7 @@ def configure_user_backend(configRoot: xml.etree.ElementTree.Element, global_dat
 
     # Configure user credentials backend.
     try:
-        global_data.logger.debug("[%s]: Initializing user backend." % fileName)
+        global_data.logger.debug("[%s]: Initializing user backend." % log_tag)
         global_data.userBackend = CSVBackend(global_data, global_data.userBackendCsvFile)
 
     except Exception:
@@ -176,7 +187,7 @@ def configure_storage(configRoot: xml.etree.ElementTree.Element, global_data: Gl
 
     # Configure storage backend.
     try:
-        global_data.logger.debug("[%s]: Initializing storage backend." % fileName)
+        global_data.logger.debug("[%s]: Initializing storage backend." % log_tag)
         global_data.storage = Sqlite(global_data.storageBackendSqliteFile, global_data)
 
     except Exception:
@@ -209,7 +220,7 @@ def configure_survey(configRoot: xml.etree.ElementTree.Element, global_data: Glo
 
     # Get survey configurations
     try:
-        global_data.logger.debug("[%s]: Parsing survey configuration." % fileName)
+        global_data.logger.debug("[%s]: Parsing survey configuration." % log_tag)
         global_data.survey_activated = (str(configRoot.find("general").find(
             "survey").attrib["participate"]).upper() == "TRUE")
 
@@ -224,7 +235,7 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
 
     # Get server configurations
     try:
-        global_data.logger.debug("[%s]: Parsing server configuration." % fileName)
+        global_data.logger.debug("[%s]: Parsing server configuration." % log_tag)
         global_data.serverCertFile = make_path(str(configRoot.find("general").find("server").attrib["certFile"]))
         global_data.serverKeyFile = make_path(str(configRoot.find("general").find("server").attrib["keyFile"]))
         global_data.server_port = int(configRoot.find("general").find("server").attrib["port"])
@@ -235,6 +246,14 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
 
     if os.path.exists(global_data.serverCertFile) is False or os.path.exists(global_data.serverKeyFile) is False:
         global_data.logger.error("[%s]: Server certificate or key does not exist." % log_tag)
+        return False
+
+    key_stat = os.stat(global_data.serverKeyFile)
+    if (key_stat.st_mode & stat.S_IROTH
+            or key_stat.st_mode & stat.S_IWOTH
+            or key_stat.st_mode & stat.S_IXOTH):
+        global_data.logger.error("[%s]: Server key is accessible by others. " % log_tag
+                                 + "Please remove file permissions for others.")
         return False
 
     # get client configurations
@@ -279,18 +298,53 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
     return True
 
 
+def configure_profiles(configRoot: xml.etree.ElementTree.Element, global_data: GlobalData) -> bool:
+
+    # parse all profiles
+    try:
+        global_data.logger.debug("[%s]: Parsing profiles configuration." % log_tag)
+        for item in configRoot.find("profiles").iterfind("profile"):
+
+            profile = Profile()
+
+            profile.profileId = int(item.find("general").attrib["id"])
+            profile.name = str(item.find("general").attrib["name"])
+
+            # Check if the profile only exists once.
+            for temp_profile in global_data.profiles:
+                if temp_profile.profileId == profile.profileId:
+                    global_data.logger.error("[%s]: Profile must be unique." % log_tag)
+                    return False
+
+            global_data.profiles.append(profile)
+
+    except Exception:
+        global_data.logger.exception("[%s]: Configuring Profiles failed." % log_tag)
+        return False
+
+    has_id_zero = False
+    for profile in global_data.profiles:
+        if profile.profileId == 0:
+            has_id_zero = True
+            break
+    if not has_id_zero:
+        global_data.logger.error("[%s]: Profile with id '0' has to exist." % log_tag)
+        return False
+
+    return True
+
+
 def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_data: GlobalData) -> bool:
 
     # parse all alert levels
     try:
-        global_data.logger.debug("[%s]: Parsing alert levels configuration." % fileName)
+        global_data.logger.debug("[%s]: Parsing alert levels configuration." % log_tag)
         for item in configRoot.find("alertLevels").iterfind("alertLevel"):
 
             alertLevel = AlertLevel()
 
             alertLevel.level = int(item.find("general").attrib["level"])
             alertLevel.name = str(item.find("general").attrib["name"])
-            alertLevel.triggerAlways = (str(item.find("general").attrib["triggerAlways"]).upper() == "TRUE")
             alertLevel.triggerAlertTriggered = (str(item.find("general").attrib[
                                                         "triggerAlertTriggered"]).upper() == "TRUE")
             alertLevel.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
@@ -303,27 +357,43 @@ def configure_alert_levels(configRoot: xml.etree.ElementTree.Element, global_dat
                 alertLevel.instrumentation_cmd = str(item.find("instrumentation").attrib["cmd"])
                 alertLevel.instrumentation_timeout = int(item.find("instrumentation").attrib["timeout"])
 
+            alertLevel.profiles = list()
+            for profile_xml in item.iterfind("profile"):
+                alertLevel.profiles.append(int(profile_xml.text))
+
             # Check if the alert level only exists once.
             for tempAlertLevel in global_data.alertLevels:
                 if tempAlertLevel.level == alertLevel.level:
-                    global_data.logger.error("[%s]: Alert Level must be unique." % log_tag)
+                    global_data.logger.error("[%s]: Alert Level '%d' must be unique." % (log_tag, tempAlertLevel.level))
                     return False
 
             # Check instrumentation settings for sanity.
             if alertLevel.instrumentation_active is True and os.path.exists(alertLevel.instrumentation_cmd) is False:
-                global_data.logger.error("[%s]: Alert Level instrumentation command '%s' does not exist."
-                                         % (log_tag, alertLevel.instrumentation_cmd))
+                global_data.logger.error("[%s]: Alert Level '%d' instrumentation command '%s' does not exist."
+                                         % (log_tag, alertLevel.level, alertLevel.instrumentation_cmd))
                 return False
 
             if alertLevel.instrumentation_active is True and not os.access(alertLevel.instrumentation_cmd, os.X_OK):
-                global_data.logger.error("[%s]: Alert Level instrumentation command '%s' not executable."
-                                         % (log_tag, alertLevel.instrumentation_cmd))
+                global_data.logger.error("[%s]: Alert Level '%d' instrumentation command '%s' not executable."
+                                         % (log_tag, alertLevel.level, alertLevel.instrumentation_cmd))
                 return False
 
             if alertLevel.instrumentation_active is True and alertLevel.instrumentation_timeout <= 0:
-                global_data.logger.error("[%s]: Alert Level instrumentation timeout has to be greater than 0."
-                                         % log_tag)
+                global_data.logger.error("[%s]: Alert Level '%d' instrumentation timeout has to be greater than 0."
+                                         % (log_tag, alertLevel.level))
                 return False
+
+            # Check profile settings.
+            if not alertLevel.profiles:
+                global_data.logger.error("[%s]: Alert Level '%d' needs at least one profile configured."
+                                         % (log_tag, alertLevel.level))
+                return False
+
+            for profile in alertLevel.profiles:
+                if not any(map(lambda x: x.profileId == profile, global_data.profiles)):
+                    global_data.logger.error("[%s]: Profile '%d' configured in Alert Level '%d' does not exist."
+                                             % (log_tag, profile, alertLevel.level))
+                    return False
 
             global_data.alertLevels.append(alertLevel)
 
@@ -389,7 +459,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
     # Parse internal server sensors
     try:
-        global_data.logger.debug("[%s]: Parsing internal sensors configuration." % fileName)
+        global_data.logger.debug("[%s]: Parsing internal sensors configuration." % log_tag)
         internalSensorsCfg = configRoot.find("internalSensors")
         dbSensors = list()
         dbInitialStateList = list()
@@ -406,19 +476,31 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Sensor timeout sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 0
+            # Sensor timeout sensor has always this fix internal id.
+            sensor.clientSensorId = 0
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
                 sensor.alertLevels.append(int(alertLevelXml.text))
 
+            # Check alert level setting.
+            if len(set(sensor.alertLevels)) != len(sensor.alertLevels):
+                global_data.logger.error("[%s]: The same Alert Level is set multiple times for the same "
+                                         % log_tag
+                                         + "internal Sensor.")
+                return False
+
+            for alert_level in sensor.alertLevels:
+                if not any(map(lambda x: x.level == alert_level, global_data.alertLevels)):
+                    global_data.logger.error("[%s]: At least one Alert Level for an internal Sensor does not exist."
+                                             % log_tag)
+                    return False
+
             global_data.internalSensors.append(sensor)
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -428,7 +510,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
         # Parse node timeout sensor (if activated).
         item = internalSensorsCfg.find("nodeTimeout")
@@ -442,19 +524,31 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Node timeout sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 1
+            # Node timeout sensor has always this fix internal id.
+            sensor.clientSensorId = 1
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
                 sensor.alertLevels.append(int(alertLevelXml.text))
 
+            # Check alert level setting.
+            if len(set(sensor.alertLevels)) != len(sensor.alertLevels):
+                global_data.logger.error("[%s]: The same Alert Level is set multiple times for the same "
+                                         % log_tag
+                                         + "internal Sensor.")
+                return False
+
+            for alert_level in sensor.alertLevels:
+                if not any(map(lambda x: x.level == alert_level, global_data.alertLevels)):
+                    global_data.logger.error("[%s]: At least one Alert Level for an internal Sensor does not exist."
+                                             % log_tag)
+                    return False
+
             global_data.internalSensors.append(sensor)
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -464,49 +558,65 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
         # Parse alert system active sensor (if activated).
-        item = internalSensorsCfg.find("alertSystemActive")
+        item = internalSensorsCfg.find("profileChange")
         if str(item.attrib["activated"]).upper() == "TRUE":
 
-            sensor = AlertSystemActiveSensor(global_data)
+            sensor = ProfileChangeSensor(global_data)
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0
+            sensor.state = 0
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Alert system active sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 2
+            # Profile change sensor has always this fix internal id.
+            sensor.clientSensorId = 2
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
                 sensor.alertLevels.append(int(alertLevelXml.text))
 
+            # Check alert level setting.
+            if len(set(sensor.alertLevels)) != len(sensor.alertLevels):
+                global_data.logger.error("[%s]: The same Alert Level is set multiple times for the same "
+                                         % log_tag
+                                         + "internal Sensor.")
+                return False
+
+            for alert_level in sensor.alertLevels:
+                if not any(map(lambda x: x.level == alert_level, global_data.alertLevels)):
+                    global_data.logger.error("[%s]: At least one Alert Level for an internal Sensor does not exist."
+                                             % log_tag)
+                    return False
+
             global_data.internalSensors.append(sensor)
+
+            # Set initial state of the internal sensor to the state
+            # of the alert system.
+            option = global_data.storage.get_option_by_type("profile")
+            if option is None:
+                global_data.logger.error("[%s]: Unable to get 'profile' option from database." % log_tag)
+                return False
+
+            sensor.data = option.value
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
+            temp["data"] = sensor.data
             dbSensors.append(temp)
-
-            # Set initial state of the internal sensor to the state
-            # of the alert system.
-            if global_data.storage.isAlertSystemActive():
-                sensor.state = 1
-            else:
-                sensor.state = 0
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, sensor.state))
+            dbInitialStateList.append((sensor.clientSensorId, sensor.state))
 
         # Parse version informer sensor (if activated).
         item = internalSensorsCfg.find("versionInformer")
@@ -516,25 +626,36 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0
-            sensor.state = 0
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
             sensor.repo_url = global_data.update_url
             sensor.check_interval = int(item.attrib["interval"])
 
-            # Version informer sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 3
+            # Version informer sensor has always this fix internal id.
+            sensor.clientSensorId = 3
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
                 sensor.alertLevels.append(int(alertLevelXml.text))
 
+            # Check alert level setting.
+            if len(set(sensor.alertLevels)) != len(sensor.alertLevels):
+                global_data.logger.error("[%s]: The same Alert Level is set multiple times for the same "
+                                         % log_tag
+                                         + "internal Sensor.")
+                return False
+
+            for alert_level in sensor.alertLevels:
+                if not any(map(lambda x: x.level == alert_level, global_data.alertLevels)):
+                    global_data.logger.error("[%s]: At least one Alert Level for an internal Sensor does not exist."
+                                             % log_tag)
+                    return False
+
             global_data.internalSensors.append(sensor)
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -544,7 +665,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
         # Parse alert level instrumentation error sensor (if activated).
         item = internalSensorsCfg.find("alertLevelInstrumentationError")
@@ -556,19 +677,31 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
-            # Alert level instrumentation error sensor has always this fix internal id
-            # (stored as remoteSensorId).
-            sensor.remoteSensorId = 4
+            # Alert level instrumentation error sensor has always this fix internal id.
+            sensor.clientSensorId = 4
 
             sensor.alertLevels = list()
             for alertLevelXml in item.iterfind("alertLevel"):
                 sensor.alertLevels.append(int(alertLevelXml.text))
 
+            # Check alert level setting.
+            if len(set(sensor.alertLevels)) != len(sensor.alertLevels):
+                global_data.logger.error("[%s]: The same Alert Level is set multiple times for the same "
+                                         % log_tag
+                                         + "internal Sensor.")
+                return False
+
+            for alert_level in sensor.alertLevels:
+                if not any(map(lambda x: x.level == alert_level, global_data.alertLevels)):
+                    global_data.logger.error("[%s]: At least one Alert Level for an internal Sensor does not exist."
+                                             % log_tag)
+                    return False
+
             global_data.internalSensors.append(sensor)
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
-            temp["clientSensorId"] = sensor.remoteSensorId
+            temp["clientSensorId"] = sensor.clientSensorId
             temp["alertDelay"] = sensor.alertDelay
             temp["alertLevels"] = sensor.alertLevels
             temp["description"] = sensor.description
@@ -578,7 +711,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             # Add tuple to db state list to set initial states of the
             # internal sensors.
-            dbInitialStateList.append((sensor.remoteSensorId, 0))
+            dbInitialStateList.append((sensor.clientSensorId, 0))
 
     except Exception:
         global_data.logger.exception("[%s]: Configuring internal sensors failed." % log_tag)
@@ -594,7 +727,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
     for sensor in global_data.internalSensors:
 
         sensor.sensorId = global_data.storage.getSensorId(sensor.nodeId,
-                                                          sensor.remoteSensorId)
+                                                          sensor.clientSensorId)
         if sensor.sensorId is None:
             global_data.logger.error("[%s]: Not able to get sensor id for internal sensor from database." % log_tag)
             return False

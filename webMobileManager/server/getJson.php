@@ -62,12 +62,23 @@ if(isset($_GET["data"])
                 $stmt = $mysqli->query('SELECT * FROM internals');
                 $internalsArray = array();
                 while($row = $stmt->fetch_assoc()) {
-                    $internalEntry = array("id" => $row["id"],
-                        "type" => $row["type"],
+                    $internalEntry = array("type" => $row["type"],
                         "value" => $row["value"]);
                     array_push($internalsArray, $internalEntry);
                 }
                 $alertSystemInformation["internals"] = $internalsArray;
+                break;
+
+            // generate profiles array
+            case "PROFILES":
+                $stmt = $mysqli->query('SELECT * FROM profiles');
+                $profilesArray = array();
+                while($row = $stmt->fetch_assoc()) {
+                    $profileEntry = array("profileId" => $row["id"],
+                        "name" => $row["name"]);
+                    array_push($profilesArray, $profileEntry);
+                }
+                $alertSystemInformation["profiles"] = $profilesArray;
                 break;
 
             // generate options array
@@ -75,8 +86,7 @@ if(isset($_GET["data"])
                 $stmt = $mysqli->query('SELECT * FROM options');
                 $optionsArray = array();
                 while($row = $stmt->fetch_assoc()) {
-                    $optionEntry = array("id" => $row["id"],
-                        "type" => $row["type"],
+                    $optionEntry = array("type" => $row["type"],
                         "value" => $row["value"]);
                     array_push($optionsArray, $optionEntry);
                 }
@@ -157,7 +167,7 @@ if(isset($_GET["data"])
                     }
 
                     $sensorEntry = array("id" => $row["id"],
-                        "remoteSensorId" => $row["remoteSensorId"],
+                        "clientSensorId" => $row["clientSensorId"],
                         "nodeId" => $row["nodeId"],
                         "description" => $row["description"],
                         "lastStateUpdated" => $row["lastStateUpdated"],
@@ -198,7 +208,7 @@ if(isset($_GET["data"])
                     }
 
                     $alertEntry = array("id" => $row["id"],
-                        "remoteAlertId" => $row["remoteAlertId"],
+                        "clientAlertId" => $row["clientAlertId"],
                         "nodeId" => $row["nodeId"],
                         "description" => $row["description"],
                         "alertLevels" => $alertLevelArray);
@@ -314,13 +324,23 @@ if(isset($_GET["data"])
                 $stmt = $mysqli->query("SELECT * FROM alertLevels");
                 $alertLevelsArray = array();
                 while($row = $stmt->fetch_assoc()) {
+
+                    // get profiles of alert level
+                    $subStmt = $mysqli->prepare("SELECT profileId FROM alertLevelsProfiles WHERE alertLevel=?");
+                    $subStmt->bind_param("i", $row["alertLevel"]);
+                    $subStmt->execute();
+                    $subResult = $subStmt->get_result();
+
+                    $profilesArray = array();
+                    while($subRow = $subResult->fetch_assoc()) {
+                        array_push($profilesArray, $subRow["profileId"]);
+                    }
+
                     $alertLevelEntry = array(
                         "alertLevel" => $row["alertLevel"],
                         "name" => $row["name"],
-                        "triggerAlways" => $row["triggerAlways"],
                         "instrumentation_active" => $row["instrumentation_active"],
-                        "instrumentation_cmd" => $row["instrumentation_cmd"],
-                        "instrumentation_timeout" => $row["instrumentation_timeout"]);
+                        "profiles" => $profilesArray,);
                     array_push($alertLevelsArray, $alertLevelEntry);
                 }
                 $alertSystemInformation["alertLevels"] = $alertLevelsArray;

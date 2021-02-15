@@ -11,14 +11,19 @@ import threading
 import logging
 import os
 import urwid
-from .screenElements import StatusUrwid, SensorUrwid, SensorDetailedUrwid, AlertUrwid, AlertDetailedUrwid, \
-                            ManagerUrwid, ManagerDetailedUrwid, AlertLevelUrwid, AlertLevelDetailedUrwid, \
-                            SensorAlertUrwid, SearchViewUrwid
+from .elementAlert import AlertDetailedUrwid, AlertUrwid
+from .elementAlertLevel import AlertLevelDetailedUrwid, AlertLevelUrwid
+from .elementCore import SearchViewUrwid
+from .elementManager import ManagerDetailedUrwid, ManagerUrwid
+from .elementProfile import ProfileChoiceUrwid
+from .elementStatus import StatusUrwid
+from .elementSensor import SensorDetailedUrwid, SensorUrwid
+from .elementSensorAlert import SensorAlertUrwid
 from .eventHandler import ManagerEventHandler
-from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel
+from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile
 from ..globalData import GlobalData
 from ..client import ServerCommunication
-from typing import Any, List
+from typing import Any, List, Optional
 
 
 class FocusedElement:
@@ -60,8 +65,8 @@ class Console:
         # urwid object that shows the connection status
         self.connectionStatus = None
 
-        # urwid object that shows if the alert system is active
-        self.alertSystemActive = None
+        # urwid object that shows the currently used system profile
+        self._profile_urwid = None  # type: Optional[StatusUrwid]
 
         # A list of all urwid sensor objects.
         self.sensorUrwidObjects = list()
@@ -177,6 +182,9 @@ class Console:
         # Flag that signalizes if the search view is shown or not
         self.inSearchView = False
 
+        # Flag that indicates if the profile choice view is shown or not.
+        self._in_profile_choice_view = False
+
         # the urwid object of the detailed view
         self.detailedView = None
 
@@ -185,6 +193,13 @@ class Console:
 
         # The keyword that is currently searched for.
         self.searchKeyword = ""
+
+        # The urwid object of the profile choice view.
+        self._profile_choice_view = None
+
+        # Color palettes for profiles.
+        # Depending on the id of the profile, a color is chosen.
+        self._profile_colors = ["profile_0", "profile_1", "profile_2", "profile_3", "profile_4"]
 
     # set the focus to the sensors
     def _focusSensors(self):
@@ -313,6 +328,11 @@ class Console:
         self.mainLoop.widget = self.mainFrame
         self.inSearchView = False
         self.searchView = None
+
+    def _close_profile_choice_view(self):
+        self.mainLoop.widget = self.mainFrame
+        self._in_profile_choice_view = False
+        self._profile_choice_view = None
 
     # Shows the results of the search.
     def _showSearchResult(self):
@@ -472,13 +492,29 @@ class Console:
         logging.debug("[%s]: Release lock." % self.fileName)
         self.consoleLock.release()
 
-    # Callback function for the search field that is called whenever
-    # the state of the field changes (a user presses a new key).
-    # This function searches instantly for the entered keyword and
-    # shows the result.
+
     def _callbackSearchFieldChange(self, editElement, state: str, userData):
+        """
+        Callback function for the search field that is called whenever
+        the state of the field changes (a user presses a new key).
+        This function searches instantly for the entered keyword and shows the result.
+        :param editElement:
+        :param state:
+        :param userData:
+        """
         self.searchKeyword = state.lower()
         self._showSearchResult()
+
+    def _callback_profile_choice(self, button: urwid.Button, profile: ManagerObjProfile):
+        """
+        Callback function for the profile choice overlay that is called if a button is pressed.
+        :param button:
+        :param profile:
+        """
+        logging.info("[%s]: Changing system profile to '%s'." % (self.fileName, profile.name))
+        self.serverComm.send_option("profile", profile.profileId)
+
+        self._close_profile_choice_view()
 
     # get a list of alert level objects that belong to the given
     # object (object has to have attribute alertLevels)
@@ -775,7 +811,12 @@ class Console:
             # get all alerts that belong to the focused alert level
             currentAlerts = self._getAlertsOfAlertLevel(currentElement.alertLevel)
 
-            self.detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel, currentSensors, currentAlerts)
+            curr_profiles = list(filter(lambda x: x.profileId in currentElement.alertLevel.profiles,
+                                        self.system_data.get_profiles_list(order_by_id=True)))
+            self.detailedView = AlertLevelDetailedUrwid(currentElement.alertLevel,
+                                                        currentSensors,
+                                                        currentAlerts,
+                                                        curr_profiles)
 
         # show detailed view as an overlay
         overlayView = urwid.Overlay(self.detailedView.get(),
@@ -866,6 +907,26 @@ class Console:
 
         # update shown managers
         self._showManagersAtPageIndex(self.currentManagerPage)
+
+    def _show_profile_choice_view(self):
+        """
+        Creates an overlayed view with all profiles to choose from.
+        """
+        self._profile_choice_view = ProfileChoiceUrwid(self.system_data.get_profiles_list(order_by_id=True),
+                                                       self._profile_colors,
+                                                       self._callback_profile_choice)
+
+        # show search view as an overlay
+        overlayView = urwid.Overlay(self._profile_choice_view.get(),
+                                    self.mainFrame,
+                                    align="center",
+                                    width=("relative", 40),
+                                    min_width=80,
+                                    valign="middle",
+                                    height=("relative", 20),
+                                    min_height=5)
+        self.mainLoop.widget = overlayView
+        self._in_profile_choice_view = True
 
     # Creates an overlayed view with the search field.
     def _showSearchView(self):
@@ -1001,21 +1062,9 @@ class Console:
     # this function is called if a key/mouse input was made
     def handleKeypress(self, key: str) -> bool:
 
-        # check if key 1 is pressed => send alert system activation to server 
-        if key in ["1"]:
-            if not self.inDetailView:
-                logging.info("[%s]: Activating alert system." % self.fileName)
-                self.serverComm.send_option("alertSystemActive", 1.0)
-
-        # check if key 2 is pressed => send alert system deactivation to server
-        elif key in ["2"]:
-            if not self.inDetailView:
-                logging.info("[%s]: Deactivating alert system." % self.fileName)
-                self.serverComm.send_option("alertSystemActive", 0.0)
-
         # check if key b/B is pressed => show previous page of focused elements
-        elif key in ["b", "B"]:
-            if not self.inDetailView:
+        if key in ["b", "B"]:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 if self.currentFocused == FocusedElement.sensors:
                     self._showSensorsPreviousPage()
 
@@ -1030,7 +1079,7 @@ class Console:
 
         # check if key n/N is pressed => show next page of focused elements
         elif key in ["n", "N"]:
-            if not self.inDetailView:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 if self.currentFocused == FocusedElement.sensors:
                     self._showSensorsNextPage()
 
@@ -1046,14 +1095,14 @@ class Console:
         # change focus to next element group
         # order: (sensors, alerts, managers, alert levels)
         elif key in ["tab"]:
-            if not self.inDetailView and not self.inSearchView:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 if self.searchKeyword != "":
                     self._resetSearchResult()
                 self._switchFocusedElementGroup()
 
         # move focus to next element in the element group
         elif key in ["up", "down", "left", "right"]:
-            if not self.inDetailView:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
                 self._moveFocus(key)
 
         # when an overlayed view is shown
@@ -1071,6 +1120,9 @@ class Console:
             elif self.searchKeyword != "":
                 self._resetSearchResult()
 
+            elif self._in_profile_choice_view:
+                self._close_profile_choice_view()
+
             else:
                 raise urwid.ExitMainLoop()
 
@@ -1086,12 +1138,17 @@ class Console:
 
                 self._closeSearchView()
 
-            else:
+            elif not self.inDetailView and not self._in_profile_choice_view:
                 self._showDetailedView()
 
         # Open overlayed view with search field.
         elif key in ["s", "S"]:
-            self._showSearchView()
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
+                self._showSearchView()
+
+        elif key in ["p", "P"]:
+            if not self.inDetailView and not self.inSearchView and not self._in_profile_choice_view:
+                self._show_profile_choice_view()
 
         return True
 
@@ -1340,24 +1397,26 @@ class Console:
         # build box around the sensor alerts grid with title
         sensorAlertsBox = urwid.LineBox(self.sensorAlertsPile, title="List of Triggered Sensor Alerts")
 
-        # generate widget to show the status of the alert system
-        option = self.system_data.get_option_by_type("alertSystemActive")
+        # Generate widget to show the profile which is currently used by the system.
+        option = self.system_data.get_option_by_type("profile")
         if option is None:
-            logging.error("[%s]: No alert system status option." % self.fileName)
+            logging.error("[%s]: No profile option." % self.fileName)
             return
-        if option.value == 0:
-            self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-            self.alertSystemActive.turnRed()
-        else:
-            self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-            self.alertSystemActive.turnGreen()
+
+        profile = self.system_data.get_profile_by_id(option.value)
+        if profile is None:
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
+            return
+
+        self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+        self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
         # generate widget to show the status of the connection
-        self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
-        self.connectionStatus.turnNeutral()
+        self.connectionStatus = StatusUrwid("Connection Status", "Status", "Online")
+        self.connectionStatus.set_color("neutral")
 
         # generate a column for the status widgets
-        statusColumn = urwid.Columns([self.alertSystemActive.get(), self.connectionStatus.get()])
+        statusColumn = urwid.Columns([self._profile_urwid.get(), self.connectionStatus.get()])
 
         # generate right part of the display
         self.rightDisplayPart = urwid.Pile([statusColumn, sensorAlertsBox, self.alertsBox, self.alertLevelsBox])
@@ -1369,8 +1428,7 @@ class Console:
         # generate header and footer
         header = urwid.Text("AlertR Console Manager", align="center")
         footer = urwid.Text("Keys: "
-                            + "1 - Activate, "
-                            + "2 - Deactivate, "
+                            + "p - Change Profile, "
                             + "ESC - Back/Quit, "
                             + "TAB - Next Elements, "
                             + "Up/Down/Left/Right - Move Cursor, "
@@ -1398,6 +1456,11 @@ class Console:
             ('timedout', 'black', 'dark magenta'),
             ('timedout_focus', 'black', 'light magenta'),
             ('neutral', '', ''),
+            ('profile_0', 'black', 'dark green'),
+            ('profile_1', 'black', 'dark red'),
+            ('profile_2', 'black', 'dark cyan'),
+            ('profile_3', 'black', 'dark magenta'),
+            ('profile_4', 'black', 'yellow'),
         ]
 
         # set focus on sensor
@@ -1428,19 +1491,22 @@ class Console:
             logging.debug("[%s]: Status update received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Online")
-            self.connectionStatus.turnNeutral()
+            self.connectionStatus.update_value("Online")
+            self.connectionStatus.set_color("neutral")
 
-            # change alert system active widget according
-            # to received status
-            option = self.system_data.get_option_by_type("alertSystemActive")
-            if option.type == "alertSystemActive":
-                if option.value == 0:
-                    self.alertSystemActive.updateStatusValue("Deactivated")
-                    self.alertSystemActive.turnRed()
+            # Change active system profile widget according to received data.
+            option = self.system_data.get_option_by_type("profile")
+            if option is None:
+                logging.error("[%s]: No profile option." % self.fileName)
+
+            else:
+                profile = self.system_data.get_profile_by_id(option.value)
+                if profile is None:
+                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
+
                 else:
-                    self.alertSystemActive.updateStatusValue("Activated")
-                    self.alertSystemActive.turnGreen()
+                    self._profile_urwid.update_value(profile.name)
+                    self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
             # remove sensor alerts if they are too old
             for sensorAlertUrwid in self.sensorAlertUrwidObjects:
@@ -1731,7 +1797,10 @@ class Console:
                         # get all alerts that belong to the focused alert level
                         currentAlerts = self._getAlertsOfAlertLevel(alertLevelUrwidObject.alertLevel)
 
-                        self.detailedView.updateCompleteWidget(currentSensors, currentAlerts)
+                        curr_profiles = list(filter(lambda x: x.profileId in alertLevelUrwidObject.alertLevel.profiles,
+                                                    self.system_data.get_profiles_list(order_by_id=True)))
+
+                        self.detailedView.updateCompleteWidget(currentSensors, currentAlerts, curr_profiles)
 
             # add all alert levels that were newly added
             for alertLevel in self.system_data.get_alert_levels_list(order_by_level=True):
@@ -1762,15 +1831,15 @@ class Console:
                     self._showAlertLevelsAtPageIndex(self.currentAlertLevelPage)
 
         # check if the connection to the server failed
-        if received_str == "connectionfail":
+        elif received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Offline")
-            self.connectionStatus.turnRed()
+            self.connectionStatus.update_value("Offline")
+            self.connectionStatus.set_color("redColor")
 
             # update alert system active widget
-            self.alertSystemActive.turnGray()
+            self._profile_urwid.set_color("grayColor")
 
             # update all sensor urwid widgets
             for sensorUrwidObject in self.sensorUrwidObjects:

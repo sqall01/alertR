@@ -12,9 +12,14 @@ import logging
 import os
 import urwid
 import time
+from typing import Optional, List
 from .audio import AudioOutput
-from .screenElements import PinUrwid, StatusUrwid, WarningUrwid
+from .elementPin import PinUrwid
+from .elementProfile import ProfileChoiceUrwid
+from .elementStatus import StatusUrwid
+from .elementWarning import WarningUrwid
 from ..globalData import GlobalData
+from .localObjects import SensorWarningState
 from ..client import ServerCommunication
 
 
@@ -27,22 +32,21 @@ class Console:
         # get global configured data
         self.globalData = global_data
         self.serverComm = self.globalData.serverComm  # type: ServerCommunication
-        self.audioOutput = self.globalData.audioOutput  # type: AudioOutput
+        self._audio_output = self.globalData.audioOutput  # type: Optional[AudioOutput]
         self.pins = self.globalData.pins
-        self.timeDelayedActivation = self.globalData.timeDelayedActivation
-        self.audioOutput = self.globalData.audioOutput
-        self.sensorWarningStates = self.globalData.sensorWarningStates
+        self._time_delayed_profile_change = self.globalData.time_delayed_change
+        self._sensor_warning_states = self.globalData.sensorWarningStates  # type: List[SensorWarningState]
         self.unlockedScreenTimeout = self.globalData.unlockedScreenTimeout
         self.system_data = self.globalData.system_data
 
         # lock that is being used so only one thread can update the screen
-        self.consoleLock = threading.BoundedSemaphore(1)
+        self.consoleLock = threading.Lock()
 
         # urwid object that shows the connection status
-        self.connectionStatus = None
+        self._connection_status = None  # type: Optional[StatusUrwid]
 
-        # urwid object that shows if the alert system is active
-        self.alertSystemActive = None
+        # urwid object that shows the currently used system profile
+        self._profile_urwid = None  # type: Optional[StatusUrwid]
 
         # the file descriptor for the urwid callback to update the screen
         self.screenFd = None
@@ -70,7 +74,10 @@ class Console:
         self.mainFrame = None
 
         # the urwid object of the warning view
-        self.warningView = None
+        self._warning_view = None  # type: Optional[WarningUrwid]
+
+        # this is the urwid object of the profile choice field
+        self._profile_choice_view = None  # type: Optional[ProfileChoiceUrwid]
 
         # flag that signalizes if the pin view is shown or not
         self.inPinView = True
@@ -79,7 +86,10 @@ class Console:
         self.inMenuView = False
 
         # flag that signalizes if the warning view is shown or not
-        self.inWarningView = False
+        self._in_warning_view = False
+
+        # Flag that indicates if the profile choice view is shown or not.
+        self._in_profile_choice_view = False
 
         # callback function of the action that is chosen during the menu view
         # (is used to show warnings if some sensors are not in
@@ -90,10 +100,75 @@ class Console:
         # confirmation
         self.sensorsToWarn = list()
 
+        # Color palettes for profiles.
+        # Depending on the id of the profile, a color is chosen.
+        self._profile_colors = ["profile_0", "profile_1", "profile_2", "profile_3", "profile_4"]
+
     # internal function that acquires the lock
     def _acquireLock(self):
         logging.debug("[%s]: Acquire lock." % self.fileName)
         self.consoleLock.acquire()
+
+    def _callback_profile_choice(self, profile_id: int, delay: int, force: bool = False):
+        """
+        Internal callback function used by the profile choice view.
+        :param profile_id: profile id to change to
+        :param delay: delay in seconds send in the option message
+        :param force: ignore sensor state checks
+        :return:
+        """
+        profile = self.system_data.get_profile_by_id(profile_id)
+        if profile is None:
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, profile_id))
+            self.showPinView()
+            return
+
+        if not force:
+            # Get a list of sensors that do not satisfy the warning states.
+            states_not_satisfied = list()
+            for sensor_warning_state in self._sensor_warning_states:
+
+                current_sensor = self.system_data.get_sensor_by_client_id(sensor_warning_state.username,
+                                                                          sensor_warning_state.clientSensorId)
+
+                # Skip warning state if sensor is not found.
+                if current_sensor is None:
+                    logging.warning("[%s]: Not able to find sensor with client id '%d' for username '%s'."
+                                    % (self.fileName, sensor_warning_state.clientSensorId, sensor_warning_state.username))
+                    continue
+
+                # Check if the sensor is in the warning state
+                if (current_sensor.state == sensor_warning_state.warningState
+                        and profile_id in sensor_warning_state.profiles):
+                    states_not_satisfied.append(current_sensor)
+
+                    logging.debug("[%s]: Sensor with client id '%d' "
+                                  % (self.fileName, sensor_warning_state.clientSensorId)
+                                  + "for username '%s' and description '%s' in warning state."
+                                  % (sensor_warning_state.username, current_sensor.description))
+
+            # Let the user confirm all warning states if any exists.
+            if states_not_satisfied:
+                self._warning_view.set_sensor_warning_states(states_not_satisfied)
+                self._warning_view.prepare_next_warning_state()
+                self._warning_view.set_callback_fct(self._callback_profile_choice, (profile_id, delay, True))
+                self.showWarningView()
+                return
+
+        logging.info("[%s]: Changing system profile to '%s' in %d seconds."
+                     % (self.fileName, profile.name, delay))
+
+        # check if output is activated
+        if self._audio_output is not None:
+            if delay == 0:
+                self._audio_output.audio_profile_change()
+
+            else:
+                self._audio_output.audio_profile_change_delayed()
+
+        self.serverComm.send_option("profile", profile.profileId, delay)
+
+        self.showPinView()
 
     # internal function that clears the edit/menu part of the screen
     def _clearEditPartScreen(self):
@@ -108,7 +183,11 @@ class Console:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
-            elif self.warningView.get() == pileTuple[0]:
+            elif self._warning_view.get() == pileTuple[0]:
+                self.editPartScreen.contents.remove(pileTuple)
+                continue
+
+            elif self._profile_choice_view.get() == pileTuple[0]:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
@@ -118,133 +197,38 @@ class Console:
 
         # get a list of sensors that do not satisfy the warning states
         statesNotSatisfied = list()
-        for sensorWarningState in self.sensorWarningStates:
+        for sensorWarningState in self._sensor_warning_states:
 
-            currentSensor = self.system_data.get_sensor_by_remote_id(sensorWarningState.username,
-                                                                     sensorWarningState.remoteSensorId)
+            currentSensor = self.system_data.get_sensor_by_client_id(sensorWarningState.username,
+                                                                     sensorWarningState.clientSensorId)
 
             # skip warning state if sensor is not found
             if currentSensor is None:
-                logging.warning("[%s]: Not able to find sensor with remote id '%d' for username '%s'."
-                                % (self.fileName, sensorWarningState.remoteSensorId, sensorWarningState.username))
+                logging.warning("[%s]: Not able to find sensor with client id '%d' for username '%s'."
+                                % (self.fileName, sensorWarningState.clientSensorId, sensorWarningState.username))
                 continue
 
             # check if the sensor is in the warning state
             if currentSensor.state == sensorWarningState.warningState:
                 statesNotSatisfied.append(currentSensor)
 
-                logging.debug("[%s]: Sensor with remote id '%d' "
-                              % (self.fileName, sensorWarningState.remoteSensorId)
+                logging.debug("[%s]: Sensor with client id '%d' "
+                              % (self.fileName, sensorWarningState.clientSensorId)
                               + "for username '%s' and description '%s' in warning state."
                               % (sensorWarningState.username, currentSensor.description))
 
         return statesNotSatisfied
 
-    # internal function that executes option 1 of the menu
-    def _executeOption1(self):
-
-        logging.info("[%s]: Activating alert system." % self.fileName)
-
-        # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioActivating()
-
-        self.serverComm.send_option("alertSystemActive", 1.0)
-
-    # internal function that executes option 2 of the menu
-    def _executeOption2(self):
-
-        logging.info("[%s]: Deactivating alert system." % self.fileName)
-
-        # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioDeactivating()
-
-        self.serverComm.send_option("alertSystemActive", 0.0)
-
-    # internal function that executes option 3 of the menu
-    def _executeOption3(self):
-
-        logging.info("[%s]: Activating alert system in %d seconds." % (self.fileName, self.timeDelayedActivation))
-
-        # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioActivatingDelayed()
-
-        self.serverComm.send_option("alertSystemActive", 1.0, self.timeDelayedActivation)
-
     # internal function that handles the keypress for the menu view
     def _handleMenuKeypress(self, key: str):
 
-        # check if option 1 was chosen => activate alert system
+        # Check if option 1 was chosen => change system profile
         if key == '1':
+            self._show_profile_choice_view(0)
 
-            # get all sensors that do not satisfy the
-            # configured warning states 
-            self.sensorsToWarn = self._checkSensorStatesSatisfied()
-
-            # check if no sensor is in the warning state
-            # => execute chosen action
-            if not self.sensorsToWarn:
-                self._executeOption1()
-                self.showPinView()
-
-            # at least one sensor is in the warning state
-            # => ask for user confirmation
-            else:
-
-                # set the function to execute when all warnings are confirmed
-                self.callbackOptionToExecute = self._executeOption1
-
-                # let the user confirm all warning states
-                self._handleWarningStates()
-
-        # check if option 2 was chosen => deactivate alert system
+        # Check if option 2 was chosen => change system profile in x seconds
         elif key == '2':
-
-            self._executeOption2()
-            self.showPinView()
-
-        # check if option 3 was chosen
-        elif key == '3':
-
-            # get all sensors that do not satisfy the
-            # configured warning states 
-            self.sensorsToWarn = self._checkSensorStatesSatisfied()
-
-            # check if no sensor is in the warning state
-            # => execute chosen action
-            if not self.sensorsToWarn:
-                self._executeOption3()
-                self.showPinView()
-
-            # at least one sensor is in the warning state
-            # => ask for user confirmation
-            else:
-
-                # set the function to execute when all warnings are confirmed
-                self.callbackOptionToExecute = self._executeOption3
-
-                # let the user confirm all warning states
-                self._handleWarningStates()
-
-    # internal function that handles all sensors in warning states
-    def _handleWarningStates(self):
-
-        # check if a sensor that is in the warning state still exists
-        # => warn about sensor
-        if self.sensorsToWarn:
-
-            sensorToWarn = self.sensorsToWarn.pop()
-            self.warningView.setSensorData(sensorToWarn.description, sensorToWarn.state)
-            self.showWarningView()
-
-        # if no sensor in a warning state remains
-        # => execute chosen action
-        else:
-
-            self.callbackOptionToExecute()
-            self.showPinView()
+            self._show_profile_choice_view(self._time_delayed_profile_change)
 
     # internal function that releases the lock
     def _releaseLock(self):
@@ -296,10 +280,14 @@ class Console:
             self._handleMenuKeypress(key)
 
         # check if we are in the warning view
-        elif self.inWarningView:
+        elif self._in_warning_view:
             # option 1 continues the chosen action
             if key == "1":
-                self._handleWarningStates()
+                if self._warning_view.prepare_next_warning_state():
+                    self.showWarningView()
+
+                else:
+                    self._warning_view.execute_callback_fct()
 
             # option 2 aborts the chosen action
             elif key == "2":
@@ -323,32 +311,33 @@ class Console:
             logging.debug("[%s]: Status update received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Online")
-            self.connectionStatus.turnNeutral()
+            self._connection_status.update_value("Online")
+            self._connection_status.set_color("neutral")
 
-            option = self.system_data.get_option_by_type("alertSystemActive")
+            # Change active system profile widget according to received data.
+            option = self.system_data.get_option_by_type("profile")
             if option is None:
-                logging.error("[%s]: No alert system status option." % self.fileName)
+                logging.error("[%s]: No profile option." % self.fileName)
 
             else:
-                if option.value == 0:
-                    self.alertSystemActive.updateStatusValue("Deactivated")
-                    self.alertSystemActive.turnRed()
+                profile = self.system_data.get_profile_by_id(option.value)
+                if profile is None:
+                    logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
 
                 else:
-                    self.alertSystemActive.updateStatusValue("Activated")
-                    self.alertSystemActive.turnGreen()
+                    self._profile_urwid.update_value(profile.name)
+                    self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
         # check if the connection to the server failed
         elif received_str == "connectionfail":
             logging.debug("[%s]: Status connection failed received. Updating screen elements." % self.fileName)
 
             # update connection status urwid widget
-            self.connectionStatus.updateStatusValue("Offline")
-            self.connectionStatus.turnRed()
+            self._connection_status.update_value("Offline")
+            self._connection_status.set_color("redColor")
 
             # update alert system active widget
-            self.alertSystemActive.turnGray()
+            self._profile_urwid.set_color("grayColor")
 
         # check if a sensor alert was received from the server
         elif received_str == "sensoralert":
@@ -372,7 +361,8 @@ class Console:
 
         self.inMenuView = True
         self.inPinView = False
-        self.inWarningView = False
+        self._in_warning_view = False
+        self._in_profile_choice_view = False
 
         # remove views from the screen
         self._clearEditPartScreen()
@@ -387,7 +377,8 @@ class Console:
 
         self.inMenuView = False
         self.inPinView = True
-        self.inWarningView = False
+        self._in_warning_view = False
+        self._in_profile_choice_view = False
 
         # reset unlock time
         self.screenUnlockedTime = 0
@@ -402,46 +393,66 @@ class Console:
         # show pin view
         self.editPartScreen.contents.append((self.pinEdit, self.editPartScreen.options()))
 
+    def _show_profile_choice_view(self, delay: int):
+        """
+        Internal function that shows the profile choice view.
+        :param delay: delay in seconds that is used for the option message send for the profile change
+        """
+        self.inMenuView = False
+        self.inPinView = False
+        self._in_warning_view = False
+        self._in_profile_choice_view = True
+
+        # remove views from the screen
+        self._clearEditPartScreen()
+
+        # Show profile choice view.
+        self._profile_choice_view = ProfileChoiceUrwid(self.system_data.get_profiles_list(order_by_id=True),
+                                                       self._profile_colors,
+                                                       self._callback_profile_choice,
+                                                       delay)
+        self.editPartScreen.contents.append((self._profile_choice_view.get(), self.editPartScreen.options()))
+
     # show the warning view
     def showWarningView(self):
 
         self.inMenuView = False
         self.inPinView = False
-        self.inWarningView = True
+        self._in_warning_view = True
+        self._in_profile_choice_view = False
 
         # check if output is activated
-        if self.audioOutput is not None:
-            self.audioOutput.audioWarning()
+        if self._audio_output is not None:
+            self._audio_output.audio_warning()
 
         # remove views from the screen
         self._clearEditPartScreen()
 
         # show pin view
-        self.editPartScreen.contents.append((self.warningView.get(), self.editPartScreen.options()))
+        self.editPartScreen.contents.append((self._warning_view.get(), self.editPartScreen.options()))
 
     # this function initializes the urwid objects and displays
     # them (it starts also the urwid main loop and will not
     # return unless the client is terminated)
     def startConsole(self):
 
-        # generate widget to show the status of the alert system
-        option = self.system_data.get_option_by_type("alertSystemActive")
+        # Generate widget to show the profile which is currently used by the system.
+        option = self.system_data.get_option_by_type("profile")
         if option is None:
-            logging.error("[%s]: No alert system status option." % self.fileName)
+            logging.error("[%s]: No profile option." % self.fileName)
             return
 
-        if option.type == "alertSystemActive":
-            if option.value == 0:
-                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Deactivated")
-                self.alertSystemActive.turnRed()
+        profile = self.system_data.get_profile_by_id(option.value)
+        if profile is None:
+            logging.error("[%s]: Profile with id %d does not exist." % (self.fileName, option.value))
+            return
 
-            else:
-                self.alertSystemActive = StatusUrwid("alert system status", "Status", "Activated")
-                self.alertSystemActive.turnGreen()
+        self._profile_urwid = StatusUrwid("Active System Profile", "Profile", profile.name)
+        self._profile_urwid.set_color(self._profile_colors[profile.profileId % len(self._profile_colors)])
 
         # generate widget to show the status of the connection
-        self.connectionStatus = StatusUrwid("connection status", "Status", "Online")
-        self.connectionStatus.turnNeutral()
+        self._connection_status = StatusUrwid("Connection Status", "Status", "Online")
+        self._connection_status.set_color("neutral")
 
         # generate pin field
         self.pinEdit = PinUrwid("Enter PIN:\n",
@@ -449,23 +460,22 @@ class Console:
                                 "*",
                                 self)
 
-        # generate menu
-        option1 = urwid.Text("1. Activate alert system")
-        option2 = urwid.Text("2. Deactivate alert system")
-        option3 = urwid.Text("3. Activate alert system in %d seconds" % self.timeDelayedActivation)
+        # Generate menu.
+        option1 = urwid.Text("1. Change system profile")
+        option2 = urwid.Text("2. Change system profile in %d seconds" % self._time_delayed_profile_change)
         separator = urwid.Text("")
         instruction = urwid.Text("Please, choose an option.")
-        self.menuPile = urwid.Pile([option1, option2, option3, separator, instruction])
+        self.menuPile = urwid.Pile([option1, option2, separator, instruction])
 
         # generate edit/menu part of the screen
         self.editPartScreen = urwid.Pile([self.pinEdit])
-        boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="menu")
+        boxedEditPartScreen = urwid.LineBox(self.editPartScreen, title="Menu")
 
         # initialize warning view urwid
-        self.warningView = WarningUrwid()
+        self._warning_view = WarningUrwid()
 
         # generate final body object
-        self.finalBody = urwid.Pile([self.alertSystemActive.get(), self.connectionStatus.get(), boxedEditPartScreen])
+        self.finalBody = urwid.Pile([self._profile_urwid.get(), self._connection_status.get(), boxedEditPartScreen])
         fillerBody = urwid.Filler(self.finalBody, "top")
 
         # generate header
@@ -485,6 +495,11 @@ class Console:
             ('connectionfail', 'black', 'light gray'),
             ('timedout', 'black', 'dark red'),
             ('neutral', '', ''),
+            ('profile_0', 'black', 'dark green'),
+            ('profile_1', 'black', 'dark red'),
+            ('profile_2', 'black', 'dark cyan'),
+            ('profile_3', 'black', 'dark magenta'),
+            ('profile_4', 'black', 'yellow'),
         ]
 
         # create urwid main loop for the rendering
@@ -497,7 +512,8 @@ class Console:
         # set the correct view in which we are
         self.inPinView = True
         self.inMenuView = False
-        self.inWarningView = False
+        self._in_warning_view = False
+        self._in_profile_choice_view = False
 
         # Start unlock checker thread.
         thread = threading.Thread(target=self._thread_screen_unlock_checker)

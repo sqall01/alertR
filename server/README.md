@@ -1,11 +1,9 @@
-AlertR Server
-======
+# AlertR Server
 
-This is the server that handles the logic of the alert system. It is mandatory in order to use AlertR. It uses either SQLite as storage backend and a CSV file as user backend.
+The server handles the logic of the AlertR system. It is mandatory in order to use AlertR. It uses SQLite as storage backend and a CSV file as user backend.
 
 
-How to use it?
-======
+## How to use it?
 
 To use the server you have to configure it first. A commented configuration template file is located inside the "config" folder. Also you have to add username and password for each client that connects to the server in the "users.csv" (also located inside the "config" folder). A username has to be unique for each client that will connect to the server.
 

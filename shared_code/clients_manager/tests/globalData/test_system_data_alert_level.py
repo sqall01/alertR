@@ -16,7 +16,7 @@ class TestSystemDataAlertLevel(TestSystemDataCore):
         for i in range(len(self.alert_levels)):
             temp_alert_level = ManagerObjAlertLevel().deepcopy(self.alert_levels[i])
             temp_alert_level.name = "new_alert_level" + str(i + 1)
-            temp_alert_level.triggerAlways = (i % 2)
+            temp_alert_level.profiles = [(i % len(self.profiles))]
             temp_alert_level.instrumentation_active = (((i+1) % 2) == 0)
 
             if temp_alert_level.instrumentation_active:

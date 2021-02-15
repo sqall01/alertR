@@ -19,7 +19,7 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.700
+        self.version = 0.800
 
         # revision of the used client
         self.rev = 0
@@ -31,7 +31,7 @@ class GlobalData:
         self.instance = "managerClientDatabase"
 
         # interval in which a ping should be send when 
-        # no data was received/send     
+        # no data was received/send
         self.pingInterval = 30
 
         # type of this node/client

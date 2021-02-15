@@ -12,6 +12,9 @@ class TestManagerStorageSensor(TestManagerStorageCore):
 
     def _create_objects(self, storage: Mysql, system_data: SystemData):
         storage._open_connection()
+        for profile in system_data.get_profiles_list():
+            storage._update_profile(profile)
+
         for alert_level in system_data.get_alert_levels_list():
             storage._update_alert_level(alert_level)
 
@@ -55,7 +58,7 @@ class TestManagerStorageSensor(TestManagerStorageCore):
         for sensor in system_data.get_sensors_list():
             temp_sensor = ManagerObjSensor().deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
-            temp_sensor.remoteSensorId = ctr
+            temp_sensor.clientSensorId = ctr
             temp_sensor.alertDelay = ctr + 10
             temp_sensor.lastStateUpdated = ctr + 10
             temp_sensor.state = ctr % 2

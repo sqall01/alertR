@@ -18,9 +18,8 @@ import tempfile
 import shutil
 import stat
 import math
-import io
 from .globalData import GlobalData
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Any, Optional, List, IO
 
 
 # internal class that is used as an enum to represent the type of file update
@@ -70,9 +69,9 @@ class Updater:
         self.newestFiles = None  # type: Optional[Dict[str, str]]
         self.newestSymlinks = None  # type: Optional[List[str]]
         self.lastChecked = 0
-        self.repoInfo = None  # type: Dict[str, Any]
+        self.repoInfo = None  # type: Optional[Dict[str, Any]]
         self.repoInstanceLocation = None  # type: Optional[str]
-        self.instanceInfo = None  # type: Dict[str, Any]
+        self.instanceInfo = None  # type: Optional[Dict[str, Any]]
         self.repo_version = 1
         self.max_redirections = 10
 
@@ -330,7 +329,7 @@ class Updater:
 
         return True
 
-    def _downloadFile(self, file_location: str, file_hash: str) -> Optional[io.BufferedRandom]:
+    def _downloadFile(self, file_location: str, file_hash: str) -> Optional[IO[bytes]]:
         """
         Internal function that downloads the given file into a temporary file and checks if the given hash is correct
 
@@ -446,7 +445,7 @@ class Updater:
         logging.info("[%s]: Successfully downloaded file: '%s'" % (self.fileName, file_location))
         return fileHandle
 
-    def _sha256File(self, fileHandle: Union[io.TextIOBase, io.BufferedIOBase]) -> str:
+    def _sha256File(self, fileHandle: IO[bytes]) -> str:
         """
         Internal function that calculates the sha256 hash of the file.
 

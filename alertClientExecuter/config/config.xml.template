@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="0.700">
+<config version="0.800">
 
     <!--
         in this section general options are configured
@@ -206,22 +206,37 @@
                 </normal>
 
                 <!--
-                    Settings how the executer should handle a received alert off message. This message is sent
-                    to all Alert Clients as soon as the AlertR alarm status is deactivated.
+                    Settings how the executer should handle a system profile change. This message is sent
+                    to all Alert Clients as soon as the AlertR system profile changes. For example, if AlertR is used
+                    in an alarm system context this could mean that the alarm system changed from the
+                    system profile "activated" to the system profile "deactivated" and thus this message could be used
+                    to turn something like a siren off.
                     activated - should the command be executed for the received message? ("True" or "False")
                 -->
-                <off
+                <profilechange
                     activated="True">
+
+                    <!--
+                        These are the target system profiles given as id for which the command is executed.
+                        If the AlertR system changes the used system profile to one of these profiles,
+                        the command will be executed.
+                        (at least one profile has to be set but also multiple profiles are possible)
+                    -->
+                    <profile>0</profile>
+                    <profile>1</profile>
 
                     <!--
                         The arguments that are used for the command that
                         is executed when the message was received.
                         (the amount of arguments are variable).
-                        IMPORTANT: No placeholder available for these arguments.
+                        You can use the placeholder "$PROFILECHANGE$"
+                        in order to pass the received profile change data as
+                        json string to the command.
                     -->
                     <argument>arg1</argument>
                     <argument>arg2</argument>
-                </off>
+                    <argument>$PROFILECHANGE$</argument>
+                </profilechange>
 
             </executer>
 
@@ -275,13 +290,16 @@
                 </normal>
 
                 <!--
-                    Settings how the executer should handle a received alert off message. This message is sent
-                    to all Alert Clients as soon as the AlertR alarm status is deactivated.
+                    Settings how the executer should handle a system profile change. This message is sent
+                    to all Alert Clients as soon as the AlertR system profile changes. For example, if AlertR is used
+                    in an alarm system context this could mean that the alarm system changed from the
+                    system profile "activated" to the system profile "deactivated" and thus this message could be used
+                    to turn something like a siren off.
                     activated - should the command be executed for the received message? ("True" or "False")
                 -->
-                <off
+                <profilechange
                     activated="False">
-                </off>
+                </profilechange>
 
             </executer>
 

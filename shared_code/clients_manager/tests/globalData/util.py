@@ -1,7 +1,7 @@
 from unittest import TestCase
 from typing import List
 from lib.globalData.managerObjects import ManagerObjOption, ManagerObjAlert, ManagerObjManager, ManagerObjSensor, \
-    ManagerObjNode, ManagerObjAlertLevel, ManagerObjSensorAlert
+    ManagerObjNode, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 
 
 def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[ManagerObjAlertLevel], new_alert_levels: List[ManagerObjAlertLevel]):
@@ -32,7 +32,8 @@ def compare_alert_levels_content(context: TestCase, gt_alert_levels: List[Manage
                     context.fail("Changed ground truth object, not content of existing object.")
 
                 if (stored_alert_level.name != gt_alert_level.name
-                        or stored_alert_level.triggerAlways != gt_alert_level.triggerAlways
+                        or any(map(lambda x: x not in gt_alert_level.profiles, stored_alert_level.profiles))
+                        or any(map(lambda x: x not in stored_alert_level.profiles, gt_alert_level.profiles))
                         or stored_alert_level.instrumentation_active != gt_alert_level.instrumentation_active
                         or stored_alert_level.instrumentation_cmd != gt_alert_level.instrumentation_cmd
                         or stored_alert_level.instrumentation_timeout != gt_alert_level.instrumentation_timeout):
@@ -71,7 +72,7 @@ def compare_alerts_content(context: TestCase, gt_alerts: List[ManagerObjAlert], 
                 if stored_alert == gt_alert:
                     context.fail("Changed ground truth object, not content of existing object.")
 
-                if (stored_alert.remoteAlertId != gt_alert.remoteAlertId
+                if (stored_alert.clientAlertId != gt_alert.clientAlertId
                         or stored_alert.description != gt_alert.description
                         or any(map(lambda x: x not in gt_alert.alertLevels, stored_alert.alertLevels))
                         or any(map(lambda x: x not in stored_alert.alertLevels, gt_alert.alertLevels))):
@@ -200,6 +201,42 @@ def compare_options_content(context: TestCase, gt_options: List[ManagerObjOption
             context.fail("Not able to find modified Option object.")
 
 
+def compare_profiles_content(context: TestCase, gt_profiles: List[ManagerObjProfile], new_profiles: List[ManagerObjProfile]):
+    """
+    Compares two lists of Profile objects.
+    :param context:
+    :param gt_profiles:
+    :param new_profiles:
+    """
+    if len(new_profiles) != len(gt_profiles):
+        context.fail("Wrong number of objects.")
+
+    already_processed = []
+    for stored_profile in new_profiles:
+        found = False
+        for gt_profile in gt_profiles:
+            if stored_profile.profileId == gt_profile.profileId:
+                found = True
+
+                # Check which objects we already processed to see if we hold an object with
+                # duplicated values.
+                if gt_profile in already_processed:
+                    context.fail("Duplicated object.")
+                already_processed.append(gt_profile)
+
+                # Only the content of the object should have changed, not the object itself.
+                if stored_profile == gt_profile:
+                    context.fail("Changed ground truth object, not content of existing object.")
+
+                if stored_profile.name != gt_profile.name:
+                    context.fail("New object does not have correct content.")
+
+                break
+
+        if not found:
+            context.fail("Not able to find modified Profile object.")
+
+
 def compare_sensor_alerts_content(context: TestCase,
                                   gt_sensor_alerts: List[ManagerObjSensorAlert],
                                   new_sensor_alerts: List[ManagerObjSensorAlert]):
@@ -262,7 +299,7 @@ def compare_sensors_content(context: TestCase, gt_sensors: List[ManagerObjSensor
                 if stored_sensor == gt_sensor:
                     context.fail("Changed ground truth object, not content of existing object.")
 
-                if (stored_sensor.remoteSensorId != gt_sensor.remoteSensorId
+                if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                         or stored_sensor.description != gt_sensor.description
                         or stored_sensor.alertDelay != gt_sensor.alertDelay
                         or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated

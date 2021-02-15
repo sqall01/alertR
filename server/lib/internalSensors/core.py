@@ -16,7 +16,7 @@ class _InternalSensor:
     def __init__(self):
         self.nodeId = None  # type: Optional[int]
         self.sensorId = None  # type: Optional[int]
-        self.remoteSensorId = None  # type: Optional[int]
+        self.clientSensorId = None  # type: Optional[int]
         self.alertDelay = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]

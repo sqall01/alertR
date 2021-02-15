@@ -41,14 +41,12 @@ class CSVBackend(_userBackend):
         """
         Internal function that acquires the lock.
         """
-        self.logger.debug("[%s]: Acquire lock." % self.fileName)
         self.userDataLock.acquire()
 
     def _releaseLock(self):
         """
         Internal function that releases the lock.
         """
-        self.logger.debug("[%s]: Release lock." % self.fileName)
         self.userDataLock.release()
 
     def _parseVersion0(self, csvData):
@@ -74,7 +72,7 @@ class CSVBackend(_userBackend):
                 self.logger.error("[%s]: Username '%s' already exists in CSV file." % (self.fileName, username))
                 continue
 
-            pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt())
+            pwhash = bcrypt.hashpw(password.encode("ascii"), bcrypt.gensalt()).decode("ascii")
             userData = UserData(username, pwhash, nodeType, instance)
             self.userCredentials.append(userData)
 

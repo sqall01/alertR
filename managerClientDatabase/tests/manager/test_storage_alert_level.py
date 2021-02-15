@@ -11,6 +11,9 @@ class TestManagerStorageAlertLevel(TestManagerStorageCore):
 
     def _create_objects(self, storage: Mysql, system_data: SystemData):
         storage._open_connection()
+        for profile in system_data.get_profiles_list():
+            storage._update_profile(profile)
+
         for alert_level in system_data.get_alert_levels_list():
             storage._update_alert_level(alert_level)
         storage._conn.commit()
@@ -49,7 +52,6 @@ class TestManagerStorageAlertLevel(TestManagerStorageCore):
         for alert_level in system_data.get_alert_levels_list():
             temp_alert_level = ManagerObjAlertLevel().deepcopy(alert_level)
             temp_alert_level.name = "new_alert_level" + str(ctr + 1)
-            temp_alert_level.triggerAlways = (ctr % 2)
             temp_alert_level.instrumentation_active = (((ctr+1) % 2) == 0)
 
             if temp_alert_level.instrumentation_active:

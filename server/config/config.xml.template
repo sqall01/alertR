@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the server
 -->
-<config version="0.700">
+<config version="0.800">
 
     <!--
         in this section general options are configured
@@ -108,6 +108,67 @@
 
 
     <!--
+        In this section the system profiles are configured.
+    -->
+    <profiles>
+
+        <!--
+            A single system profile is configured in an "profile" element.
+            If you need additional profiles just add a new one.
+        -->
+        <profile>
+
+            <!--
+                General settings of the system profile.
+                id - id of the system profile
+                    IMPORTANT: AlertR enforces that at least one profile exists and that the id 0 is used.
+                name - name of the system profile. You can name it like you see fit, for example for what it is used.
+                    In this example they are named for a alarm system context.
+            -->
+            <general
+                id="0"
+                name="Activated" />
+        </profile>
+
+        <!--
+            A single system profile is configured in an "profile" element.
+            If you need additional profiles just add a new one.
+        -->
+        <profile>
+
+            <!--
+                General settings of the system profile.
+                id - id of the system profile
+                    IMPORTANT: AlertR enforces that at least one profile exists and that the id 0 is used.
+                name - name of the system profile. You can name it like you see fit, for example for what it is used.
+                    In this example they are named for a alarm system context.
+            -->
+            <general
+                id="1"
+                name="Deactivated" />
+        </profile>
+
+        <!--
+            A single system profile is configured in an "profile" element.
+            If you need additional profiles just add a new one.
+        -->
+        <profile>
+
+            <!--
+                General settings of the system profile.
+                id - id of the system profile
+                    IMPORTANT: AlertR enforces that at least one profile exists and that the id 0 is used.
+                name - name of the system profile. You can name it like you see fit, for example for what it is used.
+                    In this example they are named for a alarm system context.
+            -->
+            <general
+                id="2"
+                name="Home Secured" />
+        </profile>
+    </profiles>
+
+
+    <!--
         section of all alert levels that are configured
     -->
     <alertLevels>
@@ -123,10 +184,6 @@
                 level - level of this alert (has to be unique)
                 name - name of the alert level
                     (for example for what it is used)
-                triggerAlways - this flag indicates if this alert level should
-                    trigger always an alert on all alert clients even if the
-                    alerting system is not activated
-                    ("True" or "False")
                 triggerAlertTriggered - this flag indicates if this alert level
                     should issue a sensor alert message to all connected alert
                     clients when a sensor alert was received for a sensor
@@ -157,7 +214,6 @@
             <general
                 level="0"
                 name="display notification"
-                triggerAlways="False"
                 triggerAlertTriggered="True"
                 triggerAlertNormal="True" />
 
@@ -179,6 +235,18 @@
                 cmd="/path/to/script.py"
                 timeout="10" />
 
+            <!--
+                The system profile for which this Alert Level triggers.
+                For example, if the Alert Level is set to trigger only when the system profile with id 0 is used,
+                then Sensor Alerts using this Alert Level are only processed if the system uses profile with id 0.
+                If you want that an Alert Level triggers always regardless of which system profile is used, then
+                add all profiles here.
+                (an Alert Level must have one set but can have multiple profiles configured).
+            -->
+            <profile>0</profile>
+            <profile>1</profile>
+            <profile>2</profile>
+
         </alertLevel>
 
         <!--
@@ -192,10 +260,6 @@
                 level - level of this alert (has to be unique)
                 name - name of the alert level
                     (for example for what it is used)
-                triggerAlways - this flag indicates if this alert level should
-                    trigger always an alert on all alert clients even if the
-                    alerting system is not activated
-                    ("True" or "False")
                 triggerAlertTriggered - this flag indicates if this alert level
                     should issue a sensor alert message to all connected alert
                     clients when a sensor alert was received for a sensor
@@ -226,7 +290,6 @@
             <general
                 level="1"
                 name="alarm sirens"
-                triggerAlways="False"
                 triggerAlertTriggered="True"
                 triggerAlertNormal="False"  />
 
@@ -248,6 +311,17 @@
                 cmd="/path/to/script.py"
                 timeout="10" />
 
+            <!--
+                The system profile for which this Alert Level triggers.
+                For example, if the Alert Level is set to trigger only when the system profile with id 0 is used,
+                then Sensor Alerts using this Alert Level are only processed if the system uses profile with id 0.
+                If you want that an Alert Level triggers always regardless of which system profile is used, then
+                add all profiles here.
+                (an Alert Level must have one set but can have multiple profiles configured).
+            -->
+            <profile>0</profile>
+            <profile>2</profile>
+
         </alertLevel>
 
         <!--
@@ -261,10 +335,6 @@
                 level - level of this alert (has to be unique)
                 name - name of the alert level
                     (for example for what it is used)
-                triggerAlways - this flag indicates if this alert level should
-                    trigger always an alert on all alert clients even if the
-                    alerting system is not activated
-                    ("True" or "False")
                 triggerAlertTriggered - this flag indicates if this alert level
                     should issue a sensor alert message to all connected alert
                     clients when a sensor alert was received for a sensor
@@ -295,7 +365,6 @@
             <general
                 level="10"
                 name="pausing xbmc"
-                triggerAlways="True"
                 triggerAlertTriggered="True"
                 triggerAlertNormal="False"  />
 
@@ -317,6 +386,18 @@
                 cmd="/path/to/script.py"
                 timeout="10" />
 
+            <!--
+                The system profile for which this Alert Level triggers.
+                For example, if the Alert Level is set to trigger only when the system profile with id 0 is used,
+                then Sensor Alerts using this Alert Level are only processed if the system uses profile with id 0.
+                If you want that an Alert Level triggers always regardless of which system profile is used, then
+                add all profiles here.
+                (an Alert Level must have one set but can have multiple profiles configured).
+            -->
+            <profile>0</profile>
+            <profile>1</profile>
+            <profile>2</profile>
+
         </alertLevel>
 
 
@@ -331,10 +412,6 @@
                 level - level of this alert (has to be unique)
                 name - name of the alert level
                     (for example for what it is used)
-                triggerAlways - this flag indicates if this alert level should
-                    trigger always an alert on all alert clients even if the
-                    alerting system is not activated
-                    ("True" or "False")
                 triggerAlertTriggered - this flag indicates if this alert level
                     should issue a sensor alert message to all connected alert
                     clients when a sensor alert was received for a sensor
@@ -365,7 +442,6 @@
             <general
                 level="20"
                 name="motion detection"
-                triggerAlways="True"
                 triggerAlertTriggered="True"
                 triggerAlertNormal="False"  />
 
@@ -386,6 +462,16 @@
                 activated="False"
                 cmd="/path/to/script.py"
                 timeout="10" />
+
+            <!--
+                The system profile for which this Alert Level triggers.
+                For example, if the Alert Level is set to trigger only when the system profile with id 0 is used,
+                then Sensor Alerts using this Alert Level are only processed if the system uses profile with id 0.
+                If you want that an Alert Level triggers always regardless of which system profile is used, then
+                add all profiles here.
+                (an Alert Level must have one set but can have multiple profiles configured).
+            -->
+            <profile>0</profile>
 
         </alertLevel>
 
@@ -448,17 +534,18 @@
         </nodeTimeout>
 
         <!--
-            The alertSystemActive sensor is an internal sensor that triggers
-            when the alarm system changes its state (activated/deactivated).
-            It allows you to utilize the global alarm system state changes.
+            The profileChange sensor is an internal sensor that triggers
+            when the system profile changes.
+            It allows you to utilize AlertR system profile changes.
+            The currently used profile ID is stored as data in this sensor.
             activated - This flags indicates if the internal sensor is
                 activated or not.
                 ("True" or "False")
             description - Description of this sensor.
         -->
-        <alertSystemActive
+        <profileChange
             activated="True"
-            description="Internal: Alert System Active">
+            description="Internal: Profile Change">
 
             <!--
                 The alertLevel that is triggered by the sensor
@@ -466,7 +553,7 @@
             -->
             <alertLevel>0</alertLevel>
 
-        </alertSystemActive>
+        </profileChange>
 
         <!--
             The versionInformer sensor is an internal sensor that triggers

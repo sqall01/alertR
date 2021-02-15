@@ -1,8 +1,8 @@
 ![AlertR Logo](docs/alertr_logo_black.png)
 
-AlertR is a client/server based multi-purpose alarm system and monitoring system which targets developers, tinkers, privacy advocates, and all people that are interested in DIY solutions. Despite the obvious use as a home alarm system, it can also be used to help server administrators to monitor their services (or used in any other cases in which sensors are required). Because of the way it is designed, AlertR can be used in any scenario a sensor with the state `triggered` and `normal` has to be monitored. This can be a sensor for a home security or home automation system, but also computer services like a failing HDD drive in a RAID or the availability of a web server.
+AlertR is a client/server based multi-purpose alarm system, monitoring system and signaling system which targets developers, tinkers, privacy advocates, and all people that are interested in DIY solutions. Despite the obvious use as a home alarm system, it can also be used to help server administrators to monitor their services (or used in any other cases in which sensors are required). Because of the way it is designed, AlertR can be used in any scenario a sensor with the state `triggered` and `normal` has to be monitored. This can be a sensor for a home security or home automation system, but also computer services like a failing HDD drive in a RAID or the availability of a web server.
 
-The vision for AlertR is to have a single service running that           gathers all the information someone wants (like temperature data, service states, or bank account transfers) and provides the ability to react on them automatically. In addition, it should serve as single point to let the user look up aggregated information of his/her services. All this should be done in such a way that the user is always in control of his/her data and no one besides him/her is able to access them.
+The vision for AlertR is to have a single service running that gathers all the information someone wants (like temperature data, service states, or bank account transfers) and provides the ability to react on them automatically. In addition, it should serve as single point to let the user look up aggregated information of his/her services. All this should be done in such a way that the user is always in control of his/her data and no one besides him/her is able to access them.
 
 The project is well documented in the [Github Wiki](https://github.com/sqall01/alertR/wiki/) and a community page can be found on [reddit](https://www.reddit.com/r/AlertR/).
 
@@ -23,7 +23,7 @@ The project is well documented in the [Github Wiki](https://github.com/sqall01/a
 # Version
 <a name="version"/>
 
-The current stable version of AlertR is 0.5. The development of AlertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch. If you want to see what has changed during the releases, you can check the [Changelog File](CHANGELOG.md).
+The current stable version of AlertR is 0.800. The development of AlertR is done in the dev-branch. So if you want to see the next features or just check if the project is still alive, please see the commits in the dev-branch. If you want to see what has changed during the releases in each component, you can check the `CHANGELOG.md` file in the directory of the corresponding component.
 
 
 # Media
@@ -81,7 +81,7 @@ Number of messages sent by the AlertR push service in the last 12 weeks.
 ## Videos
 <a name="media_videos"/>
 
-A short preview of the AlertR alarm and monitoring system in version 0.5. It shows the new AlertR Android app that is able to receive push notifications. Please activate the subtitles to see the description of what I am doing and what is happening.
+A short preview of the AlertR alarm and monitoring system in version 0.500. It shows the new AlertR Android app that is able to receive push notifications. Please activate the subtitles to see the description of what I am doing and what is happening.
 
 <div align="center">
 <a href="https://www.youtube.com/watch?feature=player_embedded&v=gafnnETwNYA&yt:cc=on" target="_blank">
@@ -90,7 +90,7 @@ A short preview of the AlertR alarm and monitoring system in version 0.5. It sho
 </div>
 <br />
 
-Part of one release was a rule engine, which allows you to set up rules that must be satisfied before an alarm is triggered. Again, the subtitles have to be activated in order to understand what is happening.
+Part of one release was a rule engine, which allows you to set up rules that must be satisfied before an alarm is triggered. Since version 0.700 this rule engine was replaced with the ability to add instrumentation scripts which gives the user even more possibilities to customize alarm processing. Again, the subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
 <a href="https://www.youtube.com/watch?feature=player_embedded&v=iP3uPX41QEg&yt:cc=on" target="_blank">
@@ -99,7 +99,7 @@ Part of one release was a rule engine, which allows you to set up rules that mus
 </div>
 <br />
 
-The next video was published in December 2014 and shows version 0.2 of AlertR. It demonstrates the D-Bus and Kodi (aka XBMC) notification capabilities. Again, the subtitles have to be activated in order to understand what is happening.
+The next video was published in December 2014 and shows version 0.200 of AlertR. It demonstrates the D-Bus and Kodi (aka XBMC) notification capabilities. Again, the subtitles have to be activated in order to understand what is happening.
 
 <div align="center">
 <a href="https://www.youtube.com/watch?feature=player_embedded&v=r7caH_UzKms&yt:cc=on" target="_blank">
@@ -121,7 +121,7 @@ The following video is a short introduction video of AlertR as a home alarm syst
 # Installation
 <a name="installation"/>
 
-To install an AlertR client or the AlertR server, please use the installation script. A detailed description of how to install an AlertR instance is given in the [Installation](https://github.com/sqall01/alertR/wiki/Installation) section of the wiki.
+To install an AlertR system, please use the installation script. A detailed description of how to install an AlertR instance is given in the [Installation](https://github.com/sqall01/alertR/wiki/Installation) section of the wiki.
 
 
 # Update
@@ -133,7 +133,7 @@ If you have already a working AlertR system installed and a newer version is ava
 # Further Notes
 <a name="further_notes"/>
 
-If you are interested in AlertR and its development, you can also read AlertR related articles in my [Blog](http://h4des.org/blog/index.php?/categories/22-alertR). To post your awesome projects or ask a community for help you can use [reddit](https://www.reddit.com/r/AlertR/).
+If you are interested in AlertR and its development, you can also read AlertR related articles in my personal [Blog](http://h4des.org/blog/index.php?/categories/22-alertR). To post your awesome projects, see recent news about AlertR, or ask a community for help you can use [reddit](https://www.reddit.com/r/AlertR/).
 
 
 # Supporting AlertR
@@ -153,7 +153,7 @@ If you do not know how to do any of it or do not have the time, you can support 
 # Licensing and Commercial Use
 <a name="licensing"/>
 
-AlertR is open source and everyone can use it freely. It is licensed under the _GNU Affero General Public License v3.0_ which allows you to also commercially use it. However, if you do, you have to disclose all changes to the Software also as open source. This is also the case if you provide network services with AlertR.
+AlertR is free and open source Software and always will be. This means everyone can use it freely. It is licensed under the _GNU Affero General Public License v3.0_ which allows you to also commercially use it. However, if you do, you have to disclose all changes to the Software also as open source. This is also the case if you provide network services with AlertR.
             
 If you do not wish to open source your changes I can offer this Software under a different license (__Dual Licensing__). Please contact me to talk about the conditions.
 

@@ -23,8 +23,7 @@ class _PollingSensor:
 
     def __init__(self):
 
-        # Id of this sensor on this client. Will be handled as
-        # "remoteSensorId" by the server.
+        # Id of this sensor on this client.
         self.id = None  # type: Optional[int]
 
         # Description of this sensor.

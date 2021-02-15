@@ -15,7 +15,7 @@ class TestSystemDataOption(TestSystemDataCore):
         new_options = []
         for i in range(len(self.options)):
             temp_option = ManagerObjOption().deepcopy(self.options[i])
-            temp_option.value = float(i+5)
+            temp_option.value = i+5
             new_options.append(temp_option)
 
         for i in range(len(new_options)):
