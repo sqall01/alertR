@@ -1,3 +1,7 @@
+## 0.800-1
+
+* Removed `triggeredAlertLevels` from instrumentation script argument since they do not hold any information value at this point
+
 ## 0.800-0
 
 * Updater can show changelog
