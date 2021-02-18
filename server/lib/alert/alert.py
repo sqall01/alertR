@@ -284,7 +284,12 @@ class SensorAlertExecuter(threading.Thread):
             not_instrumented_alert_levels = list()
             for alert_level in list(base_sensor_alert_state.suitable_alert_levels):
                 if alert_level.instrumentation_active:
-                    new_sensor_alert_state = SensorAlertState(base_sensor_alert_state.sensor_alert, [alert_level])
+
+                    # Copy sensor alert for instrumentation and empty triggered alert levels list.
+                    new_sensor_alert = SensorAlert().deepcopy(base_sensor_alert_state.sensor_alert)
+                    del new_sensor_alert.triggeredAlertLevels[:]
+
+                    new_sensor_alert_state = SensorAlertState(new_sensor_alert, [alert_level])
                     new_sensor_alert_state.uses_instrumentation = True
                     new_sensor_alert_states.append(new_sensor_alert_state)
                 else:
@@ -420,6 +425,8 @@ class SensorAlertExecuter(threading.Thread):
 
             sensor_alert_state.suitable_alert_levels = suitable_alert_levels
 
+            # NOTE: triggered alert levels does not contain the alert level of the instrumentation before it is finished
+            # since the instrumentation script decides if it is actually triggers.
             if sensor_alert_state.uses_instrumentation:
                 if (sensor_alert_state.instrumentation_finished
                         and sensor_alert_state.instrumentation_promise.was_success()

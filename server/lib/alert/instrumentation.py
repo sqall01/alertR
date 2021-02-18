@@ -112,8 +112,9 @@ class Instrumentation:
         """
         arg = self._sensor_alert.convert_to_dict()
 
-        # Add the Alert Level that executes the instrumentation script to the arguments.
+        # Modify arguments for instrumentation script
         arg["instrumentationAlertLevel"] = self._alert_level.level
+        del arg["triggeredAlertLevels"]
 
         temp_execute = [self._alert_level.instrumentation_cmd, json.dumps(arg)]
         self._logger.debug("[%s]: Executing command '%s'." % (self._log_tag, " ".join(temp_execute)))
@@ -282,6 +283,9 @@ class Instrumentation:
             if not sensor_alert_dict:
                 return True, None
 
+            # Manually update Sensor Alert dictionary
+            sensor_alert_dict["triggeredAlertLevels"] = []
+
             new_sensor_alert = SensorAlert.convert_from_dict(sensor_alert_dict)
 
             # Check that certain sensor alert values have not changed.
@@ -303,12 +307,6 @@ class Instrumentation:
             if (any(map(lambda x: x not in self._sensor_alert.alertLevels, new_sensor_alert.alertLevels))
                     or any(map(lambda x: x not in new_sensor_alert.alertLevels, self._sensor_alert.alertLevels))):
                 raise ValueError("alertLevels not allowed to change")
-
-            if (any(map(lambda x: x not in self._sensor_alert.triggeredAlertLevels,
-                        new_sensor_alert.triggeredAlertLevels))
-                    or any(map(lambda x: x not in new_sensor_alert.triggeredAlertLevels,
-                               self._sensor_alert.triggeredAlertLevels))):
-                raise ValueError("triggeredAlertLevels not allowed to change")
 
             if self._sensor_alert.dataType != new_sensor_alert.dataType:
                 raise ValueError("dataType not allowed to change")
