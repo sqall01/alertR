@@ -234,6 +234,84 @@ class TestInstrumentation(TestCase):
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
+    def test_process_output_invalid_state(self):
+        """
+        Tests an invalid state output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.state = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_integer(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (integer expected, float received).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.INT
+        sensor_alert.sensorData = 1337
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData = 1337.0
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_float(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (float expected, integer received).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.FLOAT
+        sensor_alert.sensorData = 1337.0
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_none(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (None expected, integer received).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.sensorData = None
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
     def test_execute_valid_blocking(self):
         """
         Tests a valid execution of an instrumentation script.
