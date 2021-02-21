@@ -1,3 +1,7 @@
+## 0.800-1
+
+* Fixed missing optional data in json argument
+
 ## 0.800-0
 
 * Updater can show changelog

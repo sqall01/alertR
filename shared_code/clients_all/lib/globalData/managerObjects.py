@@ -367,7 +367,7 @@ class ManagerObjSensorAlert(LocalObject):
                              "sensorId": self.sensorId,
                              "state": self.state,
                              "hasOptionalData": self.hasOptionalData,
-                             "optionalData": copy.deepcopy(self.optionalData) if self.hasLatestData else None,
+                             "optionalData": copy.deepcopy(self.optionalData) if self.hasOptionalData else None,
                              "dataType": self.dataType,
                              "data": self.sensorData,
                              "hasLatestData": self.hasLatestData,

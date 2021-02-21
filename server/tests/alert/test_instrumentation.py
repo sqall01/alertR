@@ -44,7 +44,9 @@ class TestInstrumentation(TestCase):
         sensor_alert.timeReceived = 1337
         sensor_alert.alertDelay = 20
         sensor_alert.state = 1
-        sensor_alert.hasOptionalData = False
+        sensor_alert.hasOptionalData = True
+        sensor_alert.optionalData = {"key1": "value1",
+                                     "key2": "value2"}
         sensor_alert.changeState = False
         sensor_alert.alertLevels = [1]
         sensor_alert.triggeredAlertLevels = [1]
