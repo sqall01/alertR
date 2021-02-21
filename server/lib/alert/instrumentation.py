@@ -110,7 +110,13 @@ class Instrumentation:
         process output of instrumentation script.
         :return: promise which contains the results after instrumentation finished execution.
         """
-        temp_execute = [self._alert_level.instrumentation_cmd, json.dumps(self._sensor_alert.convert_to_dict())]
+        arg = self._sensor_alert.convert_to_dict()
+
+        # Modify arguments for instrumentation script
+        arg["instrumentationAlertLevel"] = self._alert_level.level
+        del arg["triggeredAlertLevels"]
+
+        temp_execute = [self._alert_level.instrumentation_cmd, json.dumps(arg)]
         self._logger.debug("[%s]: Executing command '%s'." % (self._log_tag, " ".join(temp_execute)))
 
         process = None
@@ -277,6 +283,9 @@ class Instrumentation:
             if not sensor_alert_dict:
                 return True, None
 
+            # Manually update Sensor Alert dictionary
+            sensor_alert_dict["triggeredAlertLevels"] = []
+
             new_sensor_alert = SensorAlert.convert_from_dict(sensor_alert_dict)
 
             # Check that certain sensor alert values have not changed.
@@ -299,14 +308,14 @@ class Instrumentation:
                     or any(map(lambda x: x not in new_sensor_alert.alertLevels, self._sensor_alert.alertLevels))):
                 raise ValueError("alertLevels not allowed to change")
 
-            if (any(map(lambda x: x not in self._sensor_alert.triggeredAlertLevels,
-                        new_sensor_alert.triggeredAlertLevels))
-                    or any(map(lambda x: x not in new_sensor_alert.triggeredAlertLevels,
-                               self._sensor_alert.triggeredAlertLevels))):
-                raise ValueError("triggeredAlertLevels not allowed to change")
-
             if self._sensor_alert.dataType != new_sensor_alert.dataType:
                 raise ValueError("dataType not allowed to change")
+
+            if "instrumentationAlertLevel" not in sensor_alert_dict.keys():
+                raise ValueError("instrumentationAlertLevel missing")
+
+            if sensor_alert_dict["instrumentationAlertLevel"] != self._alert_level.level:
+                raise ValueError("instrumentationAlertLevel not allowed to change")
 
         except Exception:
             self._logger.exception("[%s]: Could not parse received output from from instrumentation "

@@ -63,9 +63,14 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
 
-        # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(sensor_alert.convert_to_dict()))
+        arg = sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
 
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+
+        # NOTE: triggeredAlertLevels are not passed to the instrumentation script (since they do not have
+        # any significant information value) and hence get lost.
         self.assertTrue(was_success)
         self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
         self.assertEqual(sensor_alert.sensorId, new_sensor_alert.sensorId)
@@ -80,13 +85,10 @@ class TestInstrumentation(TestCase):
                                 new_sensor_alert.alertLevels)))
         self.assertTrue(all(map(lambda x: x in new_sensor_alert.alertLevels,
                                 sensor_alert.alertLevels)))
-        self.assertTrue(all(map(lambda x: x in sensor_alert.triggeredAlertLevels,
-                                new_sensor_alert.triggeredAlertLevels)))
-        self.assertTrue(all(map(lambda x: x in new_sensor_alert.triggeredAlertLevels,
-                                sensor_alert.triggeredAlertLevels)))
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
         self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
+        self.assertEqual(0, len(new_sensor_alert.triggeredAlertLevels))
 
     def test_process_output_invalid_node_id(self):
         """
@@ -98,9 +100,11 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.nodeId = sensor_alert.nodeId + 1
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -114,9 +118,11 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.sensorId = sensor_alert.sensorId + 1
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -130,9 +136,11 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.description = sensor_alert.description + "_invalid"
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -146,9 +154,11 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.timeReceived = sensor_alert.timeReceived + 1
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -162,9 +172,11 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.alertDelay = sensor_alert.alertDelay + 1
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -178,25 +190,28 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.alertLevels.append(22)
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
-    def test_process_output_invalid_triggered_alert_levels(self):
+    def test_process_output_invalid_instrumentation_alert_level(self):
         """
-        Tests an invalid triggered alert levels output processing of an instrumentation script.
+        Tests an invalid instrumentation alert level output processing of an instrumentation script.
         """
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.triggeredAlertLevels.append(22)
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = 22
 
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -211,9 +226,89 @@ class TestInstrumentation(TestCase):
         invalid_sensor_alert.dataType = SensorDataType.INT
         invalid_sensor_alert.sensorData = 1
 
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
         # Test instrumentation script output processing.
-        was_success, new_sensor_alert = instrumentation._process_output(
-            json.dumps(invalid_sensor_alert.convert_to_dict()))
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_state(self):
+        """
+        Tests an invalid state output processing of an instrumentation script.
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.state = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_integer(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (integer expected, float received).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.INT
+        sensor_alert.sensorData = 1337
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData = 1337.0
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_float(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (float expected, integer received).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.FLOAT
+        sensor_alert.sensorData = 1337.0
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_none(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (None expected, integer received).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.sensorData = None
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
         self.assertFalse(was_success)
         self.assertIsNone(new_sensor_alert)
 
@@ -234,6 +329,8 @@ class TestInstrumentation(TestCase):
         self.assertTrue(promise.is_finished())
         self.assertTrue(promise.was_success())
 
+        # NOTE: triggeredAlertLevels are not passed to the instrumentation script (since they do not have
+        # any significant information value) and hence get lost.
         sensor_alert = promise.orig_sensor_alert
         new_sensor_alert = promise.new_sensor_alert
         self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
@@ -249,10 +346,6 @@ class TestInstrumentation(TestCase):
                                 new_sensor_alert.alertLevels)))
         self.assertTrue(all(map(lambda x: x in new_sensor_alert.alertLevels,
                                 sensor_alert.alertLevels)))
-        self.assertTrue(all(map(lambda x: x in sensor_alert.triggeredAlertLevels,
-                                new_sensor_alert.triggeredAlertLevels)))
-        self.assertTrue(all(map(lambda x: x in new_sensor_alert.triggeredAlertLevels,
-                                sensor_alert.triggeredAlertLevels)))
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
         self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
@@ -279,6 +372,8 @@ class TestInstrumentation(TestCase):
         self.assertTrue(promise.is_finished())
         self.assertTrue(promise.was_success())
 
+        # NOTE: triggeredAlertLevels are not passed to the instrumentation script (since they do not have
+        # any significant information value) and hence get lost.
         sensor_alert = promise.orig_sensor_alert
         new_sensor_alert = promise.new_sensor_alert
         self.assertEqual(sensor_alert.nodeId, new_sensor_alert.nodeId)
@@ -294,10 +389,6 @@ class TestInstrumentation(TestCase):
                                 new_sensor_alert.alertLevels)))
         self.assertTrue(all(map(lambda x: x in new_sensor_alert.alertLevels,
                                 sensor_alert.alertLevels)))
-        self.assertTrue(all(map(lambda x: x in sensor_alert.triggeredAlertLevels,
-                                new_sensor_alert.triggeredAlertLevels)))
-        self.assertTrue(all(map(lambda x: x in new_sensor_alert.triggeredAlertLevels,
-                                sensor_alert.triggeredAlertLevels)))
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
         self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
