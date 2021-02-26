@@ -626,6 +626,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
 
             sensor.nodeId = serverNodeId
             sensor.alertDelay = 0
+            sensor.state = 0
             sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
             sensor.repo_url = global_data.update_url

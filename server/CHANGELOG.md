@@ -1,3 +1,7 @@
+## 0.800-2
+
+* Fixed error in initial state handling of version informer internal sensor
+
 ## 0.800-1
 
 * Removed `triggeredAlertLevels` from instrumentation script argument since they do not hold any information value at this point
