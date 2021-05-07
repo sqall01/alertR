@@ -9,6 +9,7 @@
 
 import socket
 import ssl
+from typing import Optional
 
 BUFSIZE = 4096
 
@@ -35,7 +36,7 @@ class Connection:
 
     def recv(self,
              buffsize: int,
-             timeout: float = 20.0) -> str:
+             timeout: Optional[float] = 20.0) -> str:
         """
         Receives data on the connection.
         :param buffsize: how much data at max is received
@@ -89,7 +90,7 @@ class Client(Connection):
 
     def recv(self,
              buffsize: int,
-             timeout: float = 20.0) -> str:
+             timeout: Optional[float] = 20.0) -> str:
         self.sslSocket.settimeout(timeout)
 
         try:

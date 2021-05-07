@@ -543,7 +543,7 @@ class Communication:
                         data = ""
                         last_size = 0
                         while len(data) < message_size:
-                            data += self._connection.recv(BUFSIZE)
+                            data += self._connection.recv(message_size - len(data))
 
                             # Check if the size of the received data has changed.
                             # If not we detected a possible dead lock.

@@ -132,13 +132,13 @@ class ClientCommunication:
         """
         self.sslSocket.send(data.encode("ascii"))
 
-    def _recv(self) -> str:
+    def _recv(self, bufsize: int = BUFSIZE) -> str:
         """
         Wrapper around socket recv to handle bytes/string encoding.
 
         :return:
         """
-        return self.sslSocket.recv(BUFSIZE).decode("ascii")
+        return self.sslSocket.recv(bufsize).decode("ascii")
 
     def _checkMsgAlertDelay(self,
                             alertDelay: int,
@@ -3392,7 +3392,7 @@ class ClientCommunication:
                     data = ""
                     lastSize = 0
                     while len(data) < messageSize:
-                        data += self._recv()
+                        data += self._recv(messageSize - len(data))
 
                         # Check if the size of the received data has changed.
                         # If not we detected a possible dead lock.
