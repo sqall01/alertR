@@ -1,3 +1,7 @@
+## 0.800-1
+
+* Improved receiving data
+
 ## 0.800-0
 
 * Fixed bug for detailed view if no "Alert Level/Alert/Sensor" existed

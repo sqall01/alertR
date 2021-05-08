@@ -1,3 +1,7 @@
+## 0.800-2
+
+* Improved receiving data
+
 ## 0.800-1
 
 * Fixed missing optional data in json argument

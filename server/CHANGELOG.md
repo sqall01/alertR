@@ -1,3 +1,7 @@
+## 0.800-3
+
+* Improved receiving data
+
 ## 0.800-2
 
 * Fixed error in initial state handling of version informer internal sensor

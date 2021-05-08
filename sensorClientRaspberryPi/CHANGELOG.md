@@ -1,3 +1,7 @@
+## 0.800-1
+
+* Improved receiving data
+
 ## 0.800-0
 
 * Updater can show changelog
