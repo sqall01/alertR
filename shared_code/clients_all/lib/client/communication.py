@@ -472,7 +472,7 @@ class Communication:
                 return None
 
         self._last_communication = int(time.time())
-        return data
+        return data.decode("ascii")
 
     # noinspection PyBroadException
     def recv_request(self) -> Optional[MsgRequest]:
