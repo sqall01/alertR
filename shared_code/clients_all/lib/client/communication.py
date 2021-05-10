@@ -205,7 +205,7 @@ class Communication:
         received_message_type = ""
         received_payload_type = ""
         try:
-            data = self._connection.recv(BUFSIZE)
+            data = self._connection.recv(BUFSIZE).decode("ascii")
             message = json.loads(data)
 
             # Check if an error was received
@@ -326,7 +326,7 @@ class Communication:
 
                     # Receive response.
                     try:
-                        data = self._connection.recv(BUFSIZE)
+                        data = self._connection.recv(BUFSIZE).decode("ascii")
                         message = json.loads(data)
 
                         # check if an error was received
@@ -506,7 +506,7 @@ class Communication:
 
                 received_transaction_id = None
                 try:
-                    data = self._connection.recv(BUFSIZE, timeout=0.5)
+                    data = self._connection.recv(BUFSIZE, timeout=0.5).decode("ascii")
                     if not data:
                         self._has_channel = False
                         return None
