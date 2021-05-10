@@ -1568,6 +1568,7 @@ class ClientCommunication:
             data = ""
             lastSize = 0
             while len(data) < messageSize:
+                # NOTE: Receiving should use bytearray as in client implementation. Change during refactor.
                 data += self._recv()
 
                 # Check if the size of the received data has changed.
@@ -3392,6 +3393,7 @@ class ClientCommunication:
                     data = ""
                     lastSize = 0
                     while len(data) < messageSize:
+                        # NOTE: Receiving should use bytearray as in client implementation. Change during refactor.
                         data += self._recv(messageSize - len(data))
 
                         # Check if the size of the received data has changed.
