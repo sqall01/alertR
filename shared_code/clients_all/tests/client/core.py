@@ -26,7 +26,7 @@ class BasicConnection(Connection):
 
     def recv(self,
              buffsize: int,
-             timeout: float = 20.0) -> str:
+             timeout: float = 20.0) -> bytes:
         raise NotImplementedError("Abstract class.")
 
     def close(self):
@@ -60,7 +60,7 @@ class SimulatedConnection(Connection):
 
     def recv(self,
              buffsize: int,
-             timeout: float = 20.0) -> str:
+             timeout: float = 20.0) -> bytes:
 
         logging.debug("[%s]: Start receiving." % self._tag)
         start_time = time.time()
@@ -74,7 +74,7 @@ class SimulatedConnection(Connection):
                 if self._recv_msg_queue:
                     data = self._recv_msg_queue.pop(0)
                     logging.debug("[%s]: Received: %s" % (self._tag, data))
-                    return data
+                    return data.encode("ascii")
             time.sleep(0.2)
 
     def close(self):
@@ -140,10 +140,10 @@ class SimulatedErrorConnection(SimulatedConnection):
 
     def recv(self,
              buffsize: int,
-             timeout: float = 20.0) -> str:
+             timeout: float = 20.0) -> bytes:
 
         data = super().recv(buffsize, timeout=timeout)
-        if data == "SIM_EXCEPTION":
+        if data == b"SIM_EXCEPTION":
             raise OSError("Simulated connection error")
         return data
 

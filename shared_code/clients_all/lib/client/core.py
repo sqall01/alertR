@@ -36,7 +36,7 @@ class Connection:
 
     def recv(self,
              buffsize: int,
-             timeout: Optional[float] = 20.0) -> str:
+             timeout: Optional[float] = 20.0) -> bytes:
         """
         Receives data on the connection.
         :param buffsize: how much data at max is received
@@ -56,14 +56,14 @@ class Client(Connection):
     def __init__(self,
                  host: str,
                  port: int,
-                 serverCAFile: str,
-                 clientCertFile: str,
-                 clientKeyFile: str):
+                 server_ca_file: str,
+                 client_cert_file: str,
+                 client_key_file: str):
         self.host = host
         self.port = port
-        self.serverCAFile = serverCAFile
-        self.clientCertFile = clientCertFile
-        self.clientKeyFile = clientKeyFile
+        self.server_ca_file = server_ca_file
+        self.client_cert_file = client_cert_file
+        self.client_key_file = client_key_file
         self.socket = None
         self.sslSocket = None
 
@@ -71,16 +71,16 @@ class Client(Connection):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # check if a client certificate is required
-        if self.clientCertFile is None or self.clientKeyFile is None:
+        if self.client_cert_file is None or self.client_key_file is None:
             self.sslSocket = ssl.wrap_socket(self.socket,
-                                             ca_certs=self.serverCAFile,
+                                             ca_certs=self.server_ca_file,
                                              cert_reqs=ssl.CERT_REQUIRED)
         else:
             self.sslSocket = ssl.wrap_socket(self.socket,
-                                             ca_certs=self.serverCAFile,
+                                             ca_certs=self.server_ca_file,
                                              cert_reqs=ssl.CERT_REQUIRED,
-                                             certfile=self.clientCertFile,
-                                             keyfile=self.clientKeyFile)
+                                             certfile=self.client_cert_file,
+                                             keyfile=self.client_key_file)
 
         self.sslSocket.connect((self.host, self.port))
 
@@ -90,7 +90,7 @@ class Client(Connection):
 
     def recv(self,
              buffsize: int,
-             timeout: Optional[float] = 20.0) -> str:
+             timeout: Optional[float] = 20.0) -> bytes:
         self.sslSocket.settimeout(timeout)
 
         try:
@@ -100,7 +100,7 @@ class Client(Connection):
             raise RecvTimeout
 
         self.sslSocket.settimeout(None)
-        return data.decode("ascii")
+        return data
 
     def close(self):
         if self.sslSocket is not None:
