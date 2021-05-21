@@ -1,0 +1,1 @@
+../../../shared_code/clients_sensor/tests/sensor/__init__.py

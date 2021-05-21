@@ -14,7 +14,6 @@ import logging
 import json
 from .core import _PollingSensor
 from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
-from typing import Optional
 
 
 # Class that controls one executed command.
@@ -29,7 +28,7 @@ class ExecuterSensor(_PollingSensor):
         self.sensorDataType = SensorDataType.NONE
 
         # used for logging
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # gives the time that the process has to execute
         self.timeout = None
@@ -46,55 +45,264 @@ class ExecuterSensor(_PollingSensor):
         self.parseOutput = None
 
         # time when the process was executed
-        self.timeExecute = None
+        self._time_execute = 0
 
         # the process itself
-        self.process = None
+        self._process = None
 
-        # Used to force a state change to be sent to the server.
-        self.shouldForceSendState = False
-        self.stateChange = None
-
-        # Used to force a sensor alert to be sent to the server.
-        self.shouldForceSendAlert = False
-        self.sensorAlert = None
-
-    def _checkDataType(self, dataType: int) -> bool:
-        if not isinstance(dataType, int):
+    def _check_data_type(self, data_type: int) -> bool:
+        if not isinstance(data_type, int):
             return False
-        if dataType != self.sensorDataType:
+        if data_type != self.sensorDataType:
             return False
         return True
 
-    def _checkChangeState(self, changeState: bool) -> bool:
-        if not isinstance(changeState, bool):
+    def _check_change_state(self, change_state: bool) -> bool:
+        if not isinstance(change_state, bool):
             return False
         return True
 
-    def _checkHasLatestData(self, hasLatestData: bool) -> bool:
-        if not isinstance(hasLatestData, bool):
+    def _check_has_latest_data(self, has_latest_data: bool) -> bool:
+        if not isinstance(has_latest_data, bool):
             return False
         return True
 
-    def _checkHasOptionalData(self, hasOptionalData: bool) -> bool:
-        if not isinstance(hasOptionalData, bool):
+    def _check_has_optional_data(self, has_optional_data: bool) -> bool:
+        if not isinstance(has_optional_data, bool):
             return False
         return True
 
-    def _checkState(self, state) -> bool:
+    def _check_state(self, state) -> bool:
         if not isinstance(state, int):
             return False
         if state != 0 and state != 1:
             return False
         return True
 
-    def _parseOutput(self, data: str) -> bool:
+    def _execute(self):
 
-        # Parse output data
+        while True:
+
+            if self._process is None:
+
+                # Check if the interval in which the service should be checked is exceeded.
+                utc_timestamp = int(time.time())
+                if (utc_timestamp - self._time_execute) > self.intervalToCheck:
+
+                    logging.debug("[%s]: Executing process for '%s'." % (self._log_tag, self.description))
+
+                    try:
+                        # Set time before executing process in order to not hammer process creation
+                        # if the process execution throws an exception.
+                        self._time_execute = utc_timestamp
+
+                        self._process = subprocess.Popen(self.execute,
+                                                         stdout=subprocess.PIPE,
+                                                         stderr=subprocess.PIPE)
+
+                    except Exception as e:
+                        logging.exception("[%s]: Unable to execute process for '%s'."
+                                          % (self._log_tag, self.description))
+
+                        sensor_alert = SensorObjSensorAlert()
+                        sensor_alert.clientSensorId = self.id
+                        sensor_alert.state = 1
+                        sensor_alert.hasOptionalData = True
+                        sensor_alert.optionalData = {"message": "Unable to execute process"}
+                        sensor_alert.changeState = False
+                        sensor_alert.hasLatestData = False
+                        sensor_alert.dataType = self.sensorDataType
+
+                        if self.sensorDataType == SensorDataType.NONE:
+                            sensor_alert.sensorData = None
+                        elif self.sensorDataType == SensorDataType.INT:
+                            sensor_alert.sensorData = 0
+                        elif self.sensorDataType == SensorDataType.FLOAT:
+                            sensor_alert.sensorData = 0.0
+
+                        self._add_event(sensor_alert)
+
+            # Process is still running.
+            else:
+
+                # Check if process is not finished yet.
+                if self._process.poll() is None:
+
+                    # Check if process has timed out
+                    utc_timestamp = int(time.time())
+                    if (utc_timestamp - self._time_execute) > self.timeout:
+                        logging.error("[%s]: Process '%s' has timed out."
+                                      % (self._log_tag, self.description))
+
+                        # terminate process
+                        self._process.terminate()
+
+                        # give the process one second to terminate
+                        time.sleep(1)
+
+                        # check if the process has terminated
+                        # => if not kill it
+                        exit_code = self._process.poll()
+                        if exit_code != -15:
+                            try:
+                                logging.error("[%s]: Could not terminate '%s'. Killing it."
+                                              % (self._log_tag, self.description))
+
+                                self._process.kill()
+
+                            except Exception as e:
+                                pass
+
+                        sensor_alert = SensorObjSensorAlert()
+                        sensor_alert.clientSensorId = self.id
+                        sensor_alert.state = 1
+                        sensor_alert.hasOptionalData = True
+                        sensor_alert.optionalData = {"message": "Timeout",
+                                                     "exitCode": exit_code}
+                        sensor_alert.changeState = False
+                        sensor_alert.hasLatestData = False
+                        sensor_alert.dataType = self.sensorDataType
+
+                        if self.sensorDataType == SensorDataType.NONE:
+                            sensor_alert.sensorData = None
+                        elif self.sensorDataType == SensorDataType.INT:
+                            sensor_alert.sensorData = 0
+                        elif self.sensorDataType == SensorDataType.FLOAT:
+                            sensor_alert.sensorData = 0.0
+
+                        self._add_event(sensor_alert)
+
+                        # Set process to None so it can be newly started in the next iteration.
+                        self._process.stdout.close()
+                        self._process.stderr.close()
+                        self._process = None
+
+                # Process has finished.
+                else:
+
+                    # Distinguish if we should parse the output or not.
+                    if self.parseOutput:
+
+                        # Parse output.
+                        output, err = self._process.communicate()
+                        output = output.decode("ascii")
+                        err = err.decode("ascii")
+                        if not self._handle_output(output):
+
+                            logging.error("[%s] Not able to parse output of sensor with id '%d'."
+                                          % (self._log_tag, self.id))
+                            logging.error("[%s] Sensor with id '%d' stdout: %s"
+                                          % (self._log_tag, self.id, output))
+                            logging.error("[%s] Sensor with id '%d' stderr: %s"
+                                          % (self._log_tag, self.id, err))
+
+                            sensor_alert = SensorObjSensorAlert()
+                            sensor_alert.clientSensorId = self.id
+                            sensor_alert.state = 1
+                            sensor_alert.hasOptionalData = True
+                            sensor_alert.optionalData = {"message": "Illegal output"}
+                            sensor_alert.changeState = False
+                            sensor_alert.hasLatestData = False
+                            sensor_alert.dataType = self.sensorDataType
+
+                            if self.sensorDataType == SensorDataType.NONE:
+                                sensor_alert.sensorData = None
+                            elif self.sensorDataType == SensorDataType.INT:
+                                sensor_alert.sensorData = 0
+                            elif self.sensorDataType == SensorDataType.FLOAT:
+                                sensor_alert.sensorData = 0.0
+
+                            self._add_event(sensor_alert)
+
+                    else:
+                        old_state = self.state
+
+                        # Check if the process has exited with code 0 => everything works fine
+                        exit_code = self._process.poll()
+                        if exit_code == 0:
+                            self.state = 1 - self.triggerState
+
+                        # process did not exited correctly => something is wrong with the service
+                        else:
+                            output, err = self._process.communicate()
+                            output = output.decode("ascii")
+                            err = err.decode("ascii")
+                            logging.error("[%s] Sensor with id '%d' stdout: %s"
+                                          % (self._log_tag, self.id, output))
+                            logging.error("[%s] Sensor with id '%d' stderr: %s"
+                                          % (self._log_tag, self.id, err))
+
+                            self.state = self.triggerState
+
+                        # Process state change.
+                        if old_state != self.state:
+
+                            # Check if the current state is a sensor alert triggering state.
+                            if self.state == self.triggerState:
+
+                                # Check if the sensor triggers a sensor alert => send sensor alert to server.
+                                if self.triggerAlert:
+                                    sensor_alert = SensorObjSensorAlert()
+                                    sensor_alert.clientSensorId = self.id
+                                    sensor_alert.state = 1
+                                    sensor_alert.hasOptionalData = True
+                                    sensor_alert.optionalData = {"exitCode": exit_code}
+                                    sensor_alert.changeState = True
+                                    sensor_alert.hasLatestData = False
+                                    sensor_alert.dataType = self.sensorDataType
+                                    sensor_alert.sensorData = self.sensorData
+                                    self._add_event(sensor_alert)
+
+                                # If sensor does not trigger sensor alert => just send changed state to server.
+                                else:
+                                    state_change = SensorObjStateChange()
+                                    state_change.clientSensorId = self.id
+                                    state_change.state = 1
+                                    state_change.dataType = self.sensorDataType
+                                    state_change.sensorData = self.sensorData
+                                    self._add_event(state_change)
+
+                            # Only possible situation left => sensor changed back from triggering state to normal state.
+                            else:
+
+                                # Check if the sensor triggers a Sensor Alert when state is back to normal
+                                # => send sensor alert to server
+                                if self.triggerAlertNormal:
+                                    sensor_alert = SensorObjSensorAlert()
+                                    sensor_alert.clientSensorId = self.id
+                                    sensor_alert.state = 0
+                                    sensor_alert.hasOptionalData = True
+                                    sensor_alert.optionalData = {"exitCode": exit_code}
+                                    sensor_alert.changeState = True
+                                    sensor_alert.hasLatestData = False
+                                    sensor_alert.dataType = self.sensorDataType
+                                    sensor_alert.sensorData = self.sensorData
+                                    self._add_event(sensor_alert)
+
+                                # If sensor does not trigger Sensor Alert when state is back to normal
+                                # => just send changed state to server.
+                                else:
+                                    state_change = SensorObjStateChange()
+                                    state_change.clientSensorId = self.id
+                                    state_change.state = 0
+                                    state_change.dataType = self.sensorDataType
+                                    state_change.sensorData = self.sensorData
+                                    self._add_event(state_change)
+
+                    # Set process to none so it can be newly started in the next iteration.
+                    self._process.stdout.close()
+                    self._process.stderr.close()
+                    self._process = None
+
+            time.sleep(0.5)
+
+    def _handle_output(self, data: str) -> bool:
+
+        # Parse output data.
         try:
 
             logging.debug("[%s] Received output from sensor with id '%d': %s"
-                          % (self.fileName, self.id, data))
+                          % (self._log_tag, self.id, data))
 
             message = json.loads(data)
 
@@ -103,334 +311,147 @@ class ExecuterSensor(_PollingSensor):
             if str(message["message"]).upper() == "STATECHANGE":
 
                 # Check if state is valid.
-                tempInputState = message["payload"]["state"]
-                if not self._checkState(tempInputState):
-                    logging.error("[%s]: Received state "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
-                                  + "invalid. Ignoring output.")
+                temp_input_state = message["payload"]["state"]
+                if not self._check_state(temp_input_state):
+                    logging.error("[%s]: Received state from output of sensor with id '%d' invalid. Ignoring output."
+                                  % (self._log_tag, self.id))
                     return False
 
                 # Check if data type is valid.
-                tempDataType = message["payload"]["dataType"]
-                if not self._checkDataType(tempDataType):
-                    logging.error("[%s]: Received data type "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
+                temp_data_type = message["payload"]["dataType"]
+                if not self._check_data_type(temp_data_type):
+                    logging.error("[%s]: Received data type from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
 
-                # Set new data.
-                if self.sensorDataType == SensorDataType.NONE:
-                    self.sensorData = None
-                elif self.sensorDataType == SensorDataType.INT:
-                    self.sensorData = int(message["payload"]["data"])
+                # Get new data.
+                temp_input_data = None
+                if self.sensorDataType == SensorDataType.INT:
+                    temp_input_data = int(message["payload"]["data"])
                 elif self.sensorDataType == SensorDataType.FLOAT:
-                    self.sensorData = float(message["payload"]["data"])
+                    temp_input_data = float(message["payload"]["data"])
 
-                # Force state change sending if the data could be changed
+                # Create state change object that is send to the server if the data could be changed
                 # or the state has changed.
-                if (self.sensorDataType != SensorDataType.NONE
-                    or self.state != tempInputState):
+                if self.sensorData != temp_input_data or self.state != temp_input_state:
 
-                    # Create state change object that is
-                    # send to the server.
-                    self.stateChange = SensorObjStateChange()
-                    self.stateChange.clientSensorId = self.id
-                    if tempInputState == self.triggerState:
-                        self.stateChange.state = 1
+                    state_change = SensorObjStateChange()
+                    state_change.clientSensorId = self.id
+                    if temp_input_state == self.triggerState:
+                        state_change.state = 1
                     else:
-                        self.stateChange.state = 0
-                    self.stateChange.dataType = tempDataType
-                    self.stateChange.sensorData = self.sensorData
-                    self.shouldForceSendState = True
+                        state_change.state = 0
+                    state_change.dataType = self.sensorDataType
+                    state_change.sensorData = temp_input_data
+                    self._add_event(state_change)
 
-                # Set state.
-                self.state = tempInputState
+                self.state = temp_input_state
+                self.sensorData = temp_input_data
 
             # Type: sensoralert
             elif str(message["message"]).upper() == "SENSORALERT":
 
                 # Check if state is valid.
-                tempInputState = message["payload"]["state"]
-                if not self._checkState(tempInputState):
-                    logging.error("[%s]: Received state "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
-                                  + "invalid. Ignoring output.")
+                temp_input_state = message["payload"]["state"]
+                if not self._check_state(temp_input_state):
+                    logging.error("[%s]: Received state from output of sensor with id '%d' invalid. Ignoring output."
+                                  % (self._log_tag, self.id))
                     return False
 
                 # Check if hasOptionalData field is valid.
-                tempHasOptionalData = message["payload"]["hasOptionalData"]
-                if not self._checkHasOptionalData(tempHasOptionalData):
-                    logging.error("[%s]: Received hasOptionalData field "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
+                temp_has_optional_data = message["payload"]["hasOptionalData"]
+                if not self._check_has_optional_data(temp_has_optional_data):
+                    logging.error("[%s]: Received hasOptionalData field from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
 
                 # Check if data type is valid.
-                tempDataType = message["payload"]["dataType"]
-                if not self._checkDataType(tempDataType):
-                    logging.error("[%s]: Received data type "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
+                temp_data_type = message["payload"]["dataType"]
+                if not self._check_data_type(temp_data_type):
+                    logging.error("[%s]: Received data type from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
 
-                tempSensorData = None
+                temp_input_data = None
                 if self.sensorDataType == SensorDataType.INT:
-                    tempSensorData = int(message["payload"]["data"])
+                    temp_input_data = int(message["payload"]["data"])
                 elif self.sensorDataType == SensorDataType.FLOAT:
-                    tempSensorData = float(message["payload"]["data"])
+                    temp_input_data = float(message["payload"]["data"])
 
                 # Check if hasLatestData field is valid.
-                tempHasLatestData = message["payload"]["hasLatestData"]
-                if not self._checkHasLatestData(tempHasLatestData):
-                    logging.error("[%s]: Received hasLatestData field "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
+                temp_has_latest_data = message["payload"]["hasLatestData"]
+                if not self._check_has_latest_data(temp_has_latest_data):
+                    logging.error("[%s]: Received hasLatestData field from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
 
                 # Check if changeState field is valid.
-                tempChangeState = message["payload"]["changeState"]
-                if not self._checkChangeState(tempChangeState):
-                    logging.error("[%s]: Received changeState field "
-                                  % self.fileName
-                                  + "from output of sensor with id '%d' "
-                                  % self.id
+                temp_change_state = message["payload"]["changeState"]
+                if not self._check_change_state(temp_change_state):
+                    logging.error("[%s]: Received changeState field from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
 
                 # Check if data should be transfered with the sensor alert
                 # => if it should parse it
-                tempOptionalData = None
-                if tempHasOptionalData:
+                temp_optional_data = None
+                if temp_has_optional_data:
 
-                    tempOptionalData = message["payload"]["optionalData"]
+                    temp_optional_data = message["payload"]["optionalData"]
 
                     # check if data is of type dict
-                    if not isinstance(tempOptionalData, dict):
-                        logging.warning("[%s]: Received optional data "
-                                        % self.fileName
-                                        + "from output of sensor with id '%d' "
-                                        % self.id
+                    if not isinstance(temp_optional_data, dict):
+                        logging.warning("[%s]: Received optional data from output of sensor with id '%d' "
+                                        % (self._log_tag, self.id)
                                         + "invalid. Ignoring output.")
                         return False
 
-                # Set optional data.
-                self.hasOptionalData = tempHasOptionalData
-                self.optionalData = tempOptionalData
+                # Set new state.
+                if temp_change_state:
+                    self.state = temp_input_state
 
                 # Set new data.
-                if tempHasLatestData:
-                    self.sensorData = tempSensorData
+                if temp_has_latest_data and self.sensorDataType != SensorDataType.NONE:
+                    self.sensorData = temp_input_data
 
-                # Set state.
-                if tempChangeState:
-                    self.state = tempInputState
-
-                # Create sensor alert object that is send to the server.
-                self.sensorAlert = SensorObjSensorAlert()
-                self.sensorAlert.clientSensorId = self.id
-                if tempInputState == self.triggerState:
-                    self.sensorAlert.state = 1
+                sensor_alert = SensorObjSensorAlert()
+                sensor_alert.clientSensorId = self.id
+                if temp_input_state == self.triggerState:
+                    sensor_alert.state = 1
                 else:
-                    self.sensorAlert.state = 0
-                self.sensorAlert.hasOptionalData = tempHasOptionalData
-                self.sensorAlert.optionalData = tempOptionalData
-                self.sensorAlert.changeState = tempChangeState
-                self.sensorAlert.hasLatestData = tempHasLatestData
-                self.sensorAlert.dataType = tempDataType
-                self.sensorAlert.sensorData = tempSensorData
-                self.shouldForceSendAlert = True
+                    sensor_alert.state = 0
+                sensor_alert.hasOptionalData = temp_has_optional_data
+                sensor_alert.optionalData = temp_optional_data
+                sensor_alert.changeState = temp_change_state
+                sensor_alert.hasLatestData = temp_has_latest_data
+                sensor_alert.dataType = self.sensorDataType
+                sensor_alert.sensorData = temp_input_data
+                self._add_event(sensor_alert)
 
             # Type: invalid
             else:
                 raise ValueError("Received invalid message type.")
 
         except Exception as e:
-            logging.exception("[%s]: Could not parse received data from "
-                              % self.fileName
-                              + "output of sensor with id '%d'."
-                              % self.id)
+            logging.exception("[%s]: Could not parse received data from output of sensor with id '%d'."
+                              % (self._log_tag, self.id))
             return False
 
         return True
 
-    def initializeSensor(self):
-        self.changeState = True
-        self.hasLatestData = False
-        self.timeExecute = 0.0
+    def initialize(self):
+        self._time_execute = 0
         self.state = 1 - self.triggerState
-
-        # If the sensor parses the output it handles the state changes itself.
-        if self.parseOutput:
-            self.handlesStateMsgs = True
 
         if self.sensorDataType == SensorDataType.INT:
             self.sensorData = 0
+
         elif self.sensorDataType == SensorDataType.FLOAT:
             self.sensorData = 0.0
 
         return True
-
-    def getState(self) -> int:
-        return self.state
-
-    def updateState(self):
-
-        self.hasOptionalData = False
-        self.optionalData = None
-
-        # check if a process is executed
-        # => if none no process is executed
-        if self.process is None:
-
-            # check if the interval in which the service should be checked
-            # is exceeded
-            utcTimestamp = int(time.time())
-            if (utcTimestamp - self.timeExecute) > self.intervalToCheck:
-
-                logging.debug("[%s]: Executing process '%s'."
-                              % (self.fileName, self.description))
-
-                self.process = subprocess.Popen(self.execute,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE)
-
-                self.timeExecute = utcTimestamp
-
-        # => process is still running
-        else:
-
-            # check if process is not finished yet
-            if self.process.poll() is None:
-
-                # check if process has timed out
-                utcTimestamp = int(time.time())
-                if (utcTimestamp - self.timeExecute) > self.timeout:
-
-                    self.state = self.triggerState
-                    self.hasOptionalData = True
-                    self.optionalData = {"message": "Timeout"}
-
-                    logging.error("[%s]: Process "
-                                  % self.fileName
-                                  + "'%s' has timed out."
-                                  % self.description)
-
-                    # terminate process
-                    self.process.terminate()
-
-                    # give the process one second to terminate
-                    time.sleep(1)
-
-                    # check if the process has terminated
-                    # => if not kill it
-                    exitCode = self.process.poll()
-                    if exitCode != -15:
-                        try:
-                            logging.error("[%s]: Could not "
-                                          % self.fileName
-                                          + "terminate '%s'. Killing it."
-                                          % self.description)
-
-                            self.process.kill()
-                        except:
-                            pass
-                    self.optionalData["exitCode"] = exitCode
-
-                    # set process to none so it can be newly started
-                    # in the next state update
-                    self.process = None
-
-            # process has finished
-            else:
-
-                # Distinguish if we should parse the output or not.
-                if self.parseOutput:
-
-                    # Parse output.
-                    output, err = self.process.communicate()
-                    output = output.decode("ascii")
-                    err = err.decode("ascii")
-                    if not self._parseOutput(output):
-
-                        logging.error("[%s] Not able to parse output "
-                                      % self.fileName
-                                      + "of sensor with id '%d'."
-                                      % self.id)
-                        logging.error("[%s] Sensor with id '%d' stdout: %s"
-                                      % (self.fileName, self.id, output))
-                        logging.error("[%s] Sensor with id '%d' stderr: %s"
-                                      % (self.fileName, self.id, err))
-
-                        self.state = self.triggerState
-
-                        # Generate sensor alert object.
-                        self.sensorAlert = SensorObjSensorAlert()
-                        self.sensorAlert.clientSensorId = self.id
-                        self.sensorAlert.state = 1
-                        self.sensorAlert.hasOptionalData = True
-                        self.sensorAlert.optionalData = {"message": "Illegal output"}
-                        self.sensorAlert.changeState = True
-                        self.sensorAlert.hasLatestData = False
-                        self.sensorAlert.dataType = self.sensorDataType
-                        if self.sensorDataType == SensorDataType.NONE:
-                            self.sensorAlert.sensorData = None
-                        elif self.sensorDataType == SensorDataType.INT:
-                            self.sensorAlert.sensorData = 0
-                        elif self.sensorDataType == SensorDataType.FLOAT:
-                            self.sensorAlert.sensorData = 0.0
-                        self.shouldForceSendAlert = True
-
-                else:
-                    self.hasOptionalData = True
-                    self.optionalData = dict()
-
-                    # check if the process has exited with code 0
-                    # => everything works fine
-                    exitCode = self.process.poll()
-                    if exitCode == 0:
-                        self.state = 1 - self.triggerState
-                    # process did not exited correctly
-                    # => something is wrong with the service
-                    else:
-                        output, err = self.process.communicate()
-                        output = output.decode("ascii")
-                        err = err.decode("ascii")
-                        logging.error("[%s] Sensor with id '%d' stdout: %s"
-                                      % (self.fileName, self.id, output))
-                        logging.error("[%s] Sensor with id '%d' stderr: %s"
-                                      % (self.fileName, self.id, err))
-
-                        self.state = self.triggerState
-                    self.optionalData["exitCode"] = exitCode
-
-                # set process to none so it can be newly started
-                # in the next state update
-                self.process = None
-
-    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
-        returnValue = None
-        if self.shouldForceSendAlert:
-            returnValue = self.sensorAlert
-            self.sensorAlert = None
-            self.shouldForceSendAlert = False
-        return returnValue
-
-    def forceSendState(self) -> Optional[SensorObjStateChange]:
-        returnValue = None
-        if self.shouldForceSendState:
-            returnValue = self.stateChange
-            self.stateChange = None
-            self.shouldForceSendState = False
-        return returnValue
