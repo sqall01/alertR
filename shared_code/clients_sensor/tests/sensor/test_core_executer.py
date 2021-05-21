@@ -1,6 +1,6 @@
 import time
 from unittest import TestCase
-from .core import MockServerCommunication, MockSensors
+from tests.sensor.core import MockServerCommunication, MockSensors
 from lib.globalData.globalData import GlobalData
 from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 from lib.sensor.core import SensorExecuter
