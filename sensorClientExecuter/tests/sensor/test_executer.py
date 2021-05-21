@@ -452,6 +452,413 @@ class TestExecuterSensor(TestCase):
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
 
-    def test_output_handling_illegal_something(self):
-        # TODO
-        raise NotImplementedError("TODO: error handling in output parsing")
+    def test_output_handling_wrong_type(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (wrong message type).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "doesnotexist",
+            "payload": {
+                "state": 1,
+                "dataType": SensorDataType.INT,
+                "data": 1337,
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_state_change_illegal_state(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal state).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "statechange",
+            "payload": {
+                "state": 1337,
+                "dataType": SensorDataType.NONE,
+                "data": None,
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_state_change_illegal_data_type(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal data type).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "statechange",
+            "payload": {
+                "state": 1,
+                "dataType": SensorDataType.INT,
+                "data": 1338,
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_sensor_alert_illegal_state(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal state).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1337,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": None,
+                "hasLatestData": True,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_sensor_alert_illegal_data_type(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal data type).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.INT,
+                "data": 1337,
+                "hasLatestData": True,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_sensor_alert_illegal_has_optional_data(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal has optional data).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": 1,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": None,
+                "hasLatestData": True,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_sensor_alert_illegal_has_latest_data(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal has latest data).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": None,
+                "hasLatestData": 1,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_sensor_alert_illegal_change_state(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal change state).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": None,
+                "hasLatestData": False,
+                "changeState": 1
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_output_handling_sensor_alert_illegal_optional_data(self):
+        """
+        Tests if output handling processing triggers a Sensor Alert for illegal data (illegal optional data).
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "mirror.py")
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": True,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": None,
+                "hasLatestData": False,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = True
+        sensor.execute.append(target_cmd)
+        sensor.execute.append(json.dumps(payload))
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(1, events[0].state)
+        self.assertTrue(events[0].hasOptionalData)
+        self.assertEqual("Illegal output", events[0].optionalData["message"])
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)

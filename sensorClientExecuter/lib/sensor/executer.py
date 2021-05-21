@@ -89,7 +89,7 @@ class ExecuterSensor(_PollingSensor):
                 utc_timestamp = int(time.time())
                 if (utc_timestamp - self._time_execute) > self.intervalToCheck:
 
-                    logging.debug("[%s]: Executing process for '%s'." % (self._log_tag, self.description))
+                    logging.debug("[%s] Executing process for '%s'." % (self._log_tag, self.description))
 
                     try:
                         # Set time before executing process in order to not hammer process creation
@@ -101,7 +101,7 @@ class ExecuterSensor(_PollingSensor):
                                                          stderr=subprocess.PIPE)
 
                     except Exception as e:
-                        logging.exception("[%s]: Unable to execute process for '%s'."
+                        logging.exception("[%s] Unable to execute process for '%s'."
                                           % (self._log_tag, self.description))
 
                         sensor_alert = SensorObjSensorAlert()
@@ -131,7 +131,7 @@ class ExecuterSensor(_PollingSensor):
                     # Check if process has timed out
                     utc_timestamp = int(time.time())
                     if (utc_timestamp - self._time_execute) > self.timeout:
-                        logging.error("[%s]: Process '%s' has timed out."
+                        logging.error("[%s] Process '%s' has timed out."
                                       % (self._log_tag, self.description))
 
                         # terminate process
@@ -145,7 +145,7 @@ class ExecuterSensor(_PollingSensor):
                         exit_code = self._process.poll()
                         if exit_code != -15:
                             try:
-                                logging.error("[%s]: Could not terminate '%s'. Killing it."
+                                logging.error("[%s] Could not terminate '%s'. Killing it."
                                               % (self._log_tag, self.description))
 
                                 self._process.kill()
@@ -313,14 +313,14 @@ class ExecuterSensor(_PollingSensor):
                 # Check if state is valid.
                 temp_input_state = message["payload"]["state"]
                 if not self._check_state(temp_input_state):
-                    logging.error("[%s]: Received state from output of sensor with id '%d' invalid. Ignoring output."
+                    logging.error("[%s] Received state from output of sensor with id '%d' invalid. Ignoring output."
                                   % (self._log_tag, self.id))
                     return False
 
                 # Check if data type is valid.
                 temp_data_type = message["payload"]["dataType"]
                 if not self._check_data_type(temp_data_type):
-                    logging.error("[%s]: Received data type from output of sensor with id '%d' "
+                    logging.error("[%s] Received data type from output of sensor with id '%d' "
                                   % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
@@ -355,14 +355,14 @@ class ExecuterSensor(_PollingSensor):
                 # Check if state is valid.
                 temp_input_state = message["payload"]["state"]
                 if not self._check_state(temp_input_state):
-                    logging.error("[%s]: Received state from output of sensor with id '%d' invalid. Ignoring output."
+                    logging.error("[%s] Received state from output of sensor with id '%d' invalid. Ignoring output."
                                   % (self._log_tag, self.id))
                     return False
 
                 # Check if hasOptionalData field is valid.
                 temp_has_optional_data = message["payload"]["hasOptionalData"]
                 if not self._check_has_optional_data(temp_has_optional_data):
-                    logging.error("[%s]: Received hasOptionalData field from output of sensor with id '%d' "
+                    logging.error("[%s] Received hasOptionalData field from output of sensor with id '%d' "
                                   % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
@@ -370,7 +370,7 @@ class ExecuterSensor(_PollingSensor):
                 # Check if data type is valid.
                 temp_data_type = message["payload"]["dataType"]
                 if not self._check_data_type(temp_data_type):
-                    logging.error("[%s]: Received data type from output of sensor with id '%d' "
+                    logging.error("[%s] Received data type from output of sensor with id '%d' "
                                   % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
@@ -384,7 +384,7 @@ class ExecuterSensor(_PollingSensor):
                 # Check if hasLatestData field is valid.
                 temp_has_latest_data = message["payload"]["hasLatestData"]
                 if not self._check_has_latest_data(temp_has_latest_data):
-                    logging.error("[%s]: Received hasLatestData field from output of sensor with id '%d' "
+                    logging.error("[%s] Received hasLatestData field from output of sensor with id '%d' "
                                   % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
@@ -392,7 +392,7 @@ class ExecuterSensor(_PollingSensor):
                 # Check if changeState field is valid.
                 temp_change_state = message["payload"]["changeState"]
                 if not self._check_change_state(temp_change_state):
-                    logging.error("[%s]: Received changeState field from output of sensor with id '%d' "
+                    logging.error("[%s] Received changeState field from output of sensor with id '%d' "
                                   % (self._log_tag, self.id)
                                   + "invalid. Ignoring output.")
                     return False
@@ -406,7 +406,7 @@ class ExecuterSensor(_PollingSensor):
 
                     # check if data is of type dict
                     if not isinstance(temp_optional_data, dict):
-                        logging.warning("[%s]: Received optional data from output of sensor with id '%d' "
+                        logging.warning("[%s] Received optional data from output of sensor with id '%d' "
                                         % (self._log_tag, self.id)
                                         + "invalid. Ignoring output.")
                         return False
@@ -438,7 +438,7 @@ class ExecuterSensor(_PollingSensor):
                 raise ValueError("Received invalid message type.")
 
         except Exception as e:
-            logging.exception("[%s]: Could not parse received data from output of sensor with id '%d'."
+            logging.exception("[%s] Could not parse received data from output of sensor with id '%d'."
                               % (self._log_tag, self.id))
             return False
 
