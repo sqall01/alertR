@@ -16,10 +16,11 @@ from ..globalData import GlobalData
 from ..globalData import SensorObjSensorAlert, SensorObjStateChange
 
 
-# Internal class that holds the important attributes
-# for a sensor to work (this class must be inherited from the
-# used sensor class).
 class _PollingSensor:
+    """
+    Internal class that holds the important attributes for a sensor to work
+    (this class must be inherited from the used sensor class).
+    """
 
     def __init__(self):
 
@@ -67,6 +68,8 @@ class _PollingSensor:
 
         self._thread = None  # type: Optional[threading.Thread]
 
+        self._exit_flag = False
+
     def _add_event(self, event: Union[SensorObjSensorAlert, SensorObjStateChange]):
         """
         Internal function to add an event (e.g., Sensor Alert or state change) for processing.
@@ -80,6 +83,12 @@ class _PollingSensor:
         Internal function that implements the actual sensor logic.
         """
         raise NotImplementedError("Function not implemented yet.")
+
+    def exit(self):
+        """
+        Exits sensor thread.
+        """
+        self._exit_flag = True
 
     def get_events(self) -> List[Union[SensorObjSensorAlert, SensorObjStateChange]]:
         """
@@ -109,8 +118,10 @@ class _PollingSensor:
         return True
 
 
-# this class polls the sensor states and triggers alerts and state changes
 class SensorExecuter(threading.Thread):
+    """
+    This class polls the sensor events and sends messages to the server.
+    """
 
     def __init__(self, global_data: GlobalData):
         threading.Thread.__init__(self)
@@ -172,6 +183,8 @@ class SensorExecuter(threading.Thread):
 
     def exit(self):
         self._exit_flag = True
+        for sensor in self._sensors:
+            sensor.exit()
 
     def run(self):
         self.execute()

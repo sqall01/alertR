@@ -26,7 +26,7 @@ class PingSensor(_PollingSensor):
         self.sensorDataType = SensorDataType.NONE
 
         # used for logging
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # gives the time that the process has to execute
         self.timeout = None
@@ -41,106 +41,182 @@ class PingSensor(_PollingSensor):
         # gives the host of the service
         self.host = None
 
-        # time when the process was executed
-        self.timeExecute = None
+        # Time when the process was executed.
+        self._time_executed = None
 
         # the process itself
-        self.process = None
+        self._process = None  # type: Optional[subprocess.Popen]
 
-    def initializeSensor(self):
-        self.changeState = True
-        self.hasLatestData = False
-        self.hasOptionalData = True
-        self.timeExecute = 0.0
+    def initialize(self) -> bool:
+        self._time_executed = 0
         self.state = 1 - self.triggerState
-        self.optionalData = {"host": self.host}
+        self.optionalData = {"host": self.host}  # TODO
         return True
 
-    def getState(self) -> int:
-        return self.state
+    def _execute(self):
 
-    def updateState(self):
+        while True:
 
-        # check if a process is executed
-        # => if none no process is executed
-        if self.process is None:
+            if self._exit_flag:
+                return
 
-            # check if the interval in which the service should be checked
-            # is exceeded
-            utcTimestamp = int(time.time())
-            if (utcTimestamp - self.timeExecute) > self.intervalToCheck:
+            # Check if the interval in which the service should be checked is exceeded.
+            if self._process is None:
 
-                logging.debug("[%s]: Executing process '%s'." % (self.fileName, self.description))
-                self.process = subprocess.Popen([self.execute, "-c3", str(self.host)])
-                self.timeExecute = utcTimestamp
+                # check if the interval in which the service should be checked
+                # is exceeded
+                utc_timestamp = int(time.time())
+                if (utc_timestamp - self._time_executed) > self.intervalToCheck:
 
-        # => process is still running
-        else:
+                    logging.debug("[%s] Executing process for '%s'." % (self._log_tag, self.description))
 
-            # check if process is not finished yet
-            if self.process.poll() is None:
+                    try:
+                        # Set time before executing process in order to not hammer process creation
+                        # if the process execution throws an exception.
+                        self._time_executed = utc_timestamp
+                        self._process = subprocess.Popen([self.execute, "-c3", str(self.host)])
 
-                # check if process has timed out
-                utcTimestamp = int(time.time())
-                if (utcTimestamp - self.timeExecute) > self.timeout:
+                    except Exception as e:
+                        logging.exception("[%s] Unable to execute process for '%s'."
+                                          % (self._log_tag, self.description))
 
-                    self.state = self.triggerState
+                        sensor_alert = SensorObjSensorAlert()
+                        sensor_alert.clientSensorId = self.id
+                        sensor_alert.state = 1
+                        sensor_alert.hasOptionalData = True
+                        sensor_alert.optionalData = {"host": self.host,
+                                                     "reason": "processerror",
+                                                     "message": "Unable to execute process"}
+                        sensor_alert.changeState = False
+                        sensor_alert.hasLatestData = False
+                        sensor_alert.dataType = self.sensorDataType
+                        sensor_alert.sensorData = self.sensorData
 
-                    logging.error("[%s]: Process "
-                                  % self.fileName
-                                  + "'%s' has timed out."
-                                  % self.description)
+                        self._add_event(sensor_alert)
 
-                    # terminate process
-                    self.process.terminate()
-
-                    # give the process one second to terminate
-                    time.sleep(1)
-
-                    # check if the process has terminated
-                    # => if not kill it
-                    exitCode = self.process.poll()
-                    if exitCode != -15:
-                        try:
-                            logging.error("[%s]: Could not "
-                                          % self.fileName
-                                          + "terminate '%s'. Killing it."
-                                          % self.description)
-
-                            self.process.kill()
-                            exitCode = self.process.poll()
-                        except:
-                            pass
-                    self.optionalData["exitCode"] = exitCode
-
-                    # set process to None so it can be newly started
-                    # in the next state update
-                    self.process = None
-
-                    self.optionalData["reason"] = "processtimeout"
-
-            # process has finished
+            # Process is still running.
             else:
 
-                # check if the process has exited with code 0
-                # => everything works fine
-                exitCode = self.process.poll()
-                if exitCode == 0:
-                    self.state = 1 - self.triggerState
-                    self.optionalData["reason"] = "reachable"
-                # process did not exited correctly
-                # => something is wrong with the ctf service
+                # Check if process is not finished yet.
+                if self._process.poll() is None:
+
+                    # Check if process has timed out
+                    utc_timestamp = int(time.time())
+                    if (utc_timestamp - self._time_executed) > self.timeout:
+                        logging.error("[%s] Process '%s' has timed out."
+                                      % (self._log_tag, self.description))
+
+                        # terminate process
+                        self._process.terminate()
+
+                        # give the process one second to terminate
+                        time.sleep(1)
+
+                        # check if the process has terminated
+                        # => if not kill it
+                        exit_code = self._process.poll()
+                        if exit_code != -15:
+                            try:
+                                logging.error("[%s] Could not terminate process for '%s'. Killing it."
+                                              % (self._log_tag, self.description))
+
+                                self._process.kill()
+                                exit_code = self._process.poll()
+                            except Exception as e:
+                                pass
+
+                        sensor_alert = SensorObjSensorAlert()
+                        sensor_alert.clientSensorId = self.id
+                        sensor_alert.state = 1
+                        sensor_alert.hasOptionalData = True
+                        sensor_alert.optionalData = {"message": "Timeout",
+                                                     "host": self.host,
+                                                     "reason": "processtimeout",
+                                                     "exitCode": exit_code}
+                        sensor_alert.changeState = False
+                        sensor_alert.hasLatestData = False
+                        sensor_alert.dataType = self.sensorDataType
+                        sensor_alert.sensorData = self.sensorData
+
+                        self._add_event(sensor_alert)
+
+                        # Set process to None so it can be newly started in the next iteration.
+                        self._process = None
+
+                # Process has finished.
                 else:
-                    self.state = self.triggerState
-                    self.optionalData["reason"] = "notreachable"
-                self.optionalData["exitCode"] = exitCode
+                    old_state = self.state
+                    optional_data = {"host": self.host}
 
-                # set process to none so it can be newly started
-                # in the next state update
-                self.process = None
+                    # Check if the process has exited with code 0 = host reachable.
+                    exit_code = self._process.poll()
+                    if exit_code == 0:
+                        self.state = 1 - self.triggerState
+                        optional_data["reason"] = "reachable"
 
-    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
-        return None
+                    # Process did not exited correctly => host not reachable.
+                    else:
+                        self.state = self.triggerState
+                        optional_data["reason"] = "notreachable"
 
-    def forceSendState(self) -> Optional[SensorObjStateChange]:
-        return None
+                    optional_data["exitCode"] = exit_code
+
+                    # Process state change.
+                    if old_state != self.state:
+
+                        # Check if the current state is a sensor alert triggering state.
+                        if self.state == self.triggerState:
+
+                            # Check if the sensor triggers a sensor alert => send sensor alert to server.
+                            if self.triggerAlert:
+                                sensor_alert = SensorObjSensorAlert()
+                                sensor_alert.clientSensorId = self.id
+                                sensor_alert.state = 1
+                                sensor_alert.hasOptionalData = True
+                                sensor_alert.optionalData = optional_data
+                                sensor_alert.changeState = True
+                                sensor_alert.hasLatestData = False
+                                sensor_alert.dataType = self.sensorDataType
+                                sensor_alert.sensorData = self.sensorData
+                                self._add_event(sensor_alert)
+
+                            # If sensor does not trigger sensor alert => just send changed state to server.
+                            else:
+                                state_change = SensorObjStateChange()
+                                state_change.clientSensorId = self.id
+                                state_change.state = 1
+                                state_change.dataType = self.sensorDataType
+                                state_change.sensorData = self.sensorData
+                                self._add_event(state_change)
+
+                        # Only possible situation left => sensor changed back from triggering state to normal state.
+                        else:
+
+                            # Check if the sensor triggers a Sensor Alert when state is back to normal
+                            # => send sensor alert to server
+                            if self.triggerAlertNormal:
+                                sensor_alert = SensorObjSensorAlert()
+                                sensor_alert.clientSensorId = self.id
+                                sensor_alert.state = 0
+                                sensor_alert.hasOptionalData = True
+                                sensor_alert.optionalData = optional_data
+                                sensor_alert.changeState = True
+                                sensor_alert.hasLatestData = False
+                                sensor_alert.dataType = self.sensorDataType
+                                sensor_alert.sensorData = self.sensorData
+                                self._add_event(sensor_alert)
+
+                            # If sensor does not trigger Sensor Alert when state is back to normal
+                            # => just send changed state to server.
+                            else:
+                                state_change = SensorObjStateChange()
+                                state_change.clientSensorId = self.id
+                                state_change.state = 0
+                                state_change.dataType = self.sensorDataType
+                                state_change.sensorData = self.sensorData
+                                self._add_event(state_change)
+
+                    # Set process to none so it can be newly started in the next iteration.
+                    self._process = None
+
+            time.sleep(0.5)

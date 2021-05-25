@@ -12,6 +12,7 @@ import subprocess
 import time
 import logging
 import json
+from typing import Optional
 from .core import _PollingSensor
 from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 
@@ -48,7 +49,7 @@ class ExecuterSensor(_PollingSensor):
         self._time_execute = 0
 
         # the process itself
-        self._process = None
+        self._process = None  # type: Optional[subprocess.Popen]
 
     def _check_data_type(self, data_type: int) -> bool:
         if not isinstance(data_type, int):
@@ -82,6 +83,9 @@ class ExecuterSensor(_PollingSensor):
     def _execute(self):
 
         while True:
+
+            if self._exit_flag:
+                return
 
             if self._process is None:
 
@@ -145,7 +149,7 @@ class ExecuterSensor(_PollingSensor):
                         exit_code = self._process.poll()
                         if exit_code != -15:
                             try:
-                                logging.error("[%s] Could not terminate '%s'. Killing it."
+                                logging.error("[%s] Could not terminate process for '%s'. Killing it."
                                               % (self._log_tag, self.description))
 
                                 self._process.kill()
