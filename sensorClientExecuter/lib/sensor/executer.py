@@ -45,8 +45,8 @@ class ExecuterSensor(_PollingSensor):
         # determine the state of the sensor or if we should parse the output.
         self.parseOutput = None
 
-        # time when the process was executed
-        self._time_execute = 0
+        # Time when the process was executed.
+        self._time_executed = 0
 
         # the process itself
         self._process = None  # type: Optional[subprocess.Popen]
@@ -91,14 +91,14 @@ class ExecuterSensor(_PollingSensor):
 
                 # Check if the interval in which the service should be checked is exceeded.
                 utc_timestamp = int(time.time())
-                if (utc_timestamp - self._time_execute) > self.intervalToCheck:
+                if (utc_timestamp - self._time_executed) > self.intervalToCheck:
 
                     logging.debug("[%s] Executing process for '%s'." % (self._log_tag, self.description))
 
                     try:
                         # Set time before executing process in order to not hammer process creation
                         # if the process execution throws an exception.
-                        self._time_execute = utc_timestamp
+                        self._time_executed = utc_timestamp
 
                         self._process = subprocess.Popen(self.execute,
                                                          stdout=subprocess.PIPE,
@@ -134,8 +134,8 @@ class ExecuterSensor(_PollingSensor):
 
                     # Check if process has timed out
                     utc_timestamp = int(time.time())
-                    if (utc_timestamp - self._time_execute) > self.timeout:
-                        logging.error("[%s] Process '%s' has timed out."
+                    if (utc_timestamp - self._time_executed) > self.timeout:
+                        logging.error("[%s] Process for '%s' has timed out."
                                       % (self._log_tag, self.description))
 
                         # terminate process
@@ -449,7 +449,7 @@ class ExecuterSensor(_PollingSensor):
         return True
 
     def initialize(self):
-        self._time_execute = 0
+        self._time_executed = 0
         self.state = 1 - self.triggerState
 
         if self.sensorDataType == SensorDataType.INT:

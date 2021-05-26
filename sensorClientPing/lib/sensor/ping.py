@@ -11,12 +11,12 @@ import os
 import subprocess
 import time
 import logging
+from typing import Optional
 from .core import _PollingSensor
 from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
-from typing import Optional
 
 
-# class that controls one watchdog of a challenge
+# Class that controls one ping checked host.
 class PingSensor(_PollingSensor):
 
     def __init__(self):
@@ -42,7 +42,7 @@ class PingSensor(_PollingSensor):
         self.host = None
 
         # Time when the process was executed.
-        self._time_executed = None
+        self._time_executed = 0
 
         # the process itself
         self._process = None  # type: Optional[subprocess.Popen]
@@ -50,7 +50,6 @@ class PingSensor(_PollingSensor):
     def initialize(self) -> bool:
         self._time_executed = 0
         self.state = 1 - self.triggerState
-        self.optionalData = {"host": self.host}  # TODO
         return True
 
     def _execute(self):
@@ -60,11 +59,9 @@ class PingSensor(_PollingSensor):
             if self._exit_flag:
                 return
 
-            # Check if the interval in which the service should be checked is exceeded.
             if self._process is None:
 
-                # check if the interval in which the service should be checked
-                # is exceeded
+                # Check if the interval in which the service should be checked is exceeded.
                 utc_timestamp = int(time.time())
                 if (utc_timestamp - self._time_executed) > self.intervalToCheck:
 
@@ -121,7 +118,7 @@ class PingSensor(_PollingSensor):
                                               % (self._log_tag, self.description))
 
                                 self._process.kill()
-                                exit_code = self._process.poll()
+
                             except Exception as e:
                                 pass
 
