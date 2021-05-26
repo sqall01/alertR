@@ -103,7 +103,7 @@ class PingSensor(_PollingSensor):
                     # Check if process has timed out
                     utc_timestamp = int(time.time())
                     if (utc_timestamp - self._time_executed) > self.timeout:
-                        logging.error("[%s] Process '%s' has timed out."
+                        logging.error("[%s] Process for '%s' has timed out."
                                       % (self._log_tag, self.description))
 
                         # terminate process
