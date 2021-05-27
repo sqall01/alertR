@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import copy
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from .baseObjects import LocalObject
 
 
@@ -51,7 +51,7 @@ class SensorObjSensorAlert(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[int, float]
+        self.sensorData = None  # type: Optional[Union[int, float]]
 
     def convert_to_dict(self) -> Dict[str, Any]:
         """
@@ -107,7 +107,7 @@ class SensorObjStateChange(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[int, float]
+        self.sensorData = None  # type: Optional[Union[int, float]]
 
     def convert_to_dict(self) -> Dict[str, Any]:
         """

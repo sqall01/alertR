@@ -11,9 +11,9 @@ import time
 import os
 import logging
 import threading
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from ..globalData import GlobalData
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 
 
 class _PollingSensor:
@@ -58,7 +58,7 @@ class _PollingSensor:
         self.sensorDataType = None  # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None  # type: Optional[int, float]
+        self.sensorData = None  # type: Optional[Union[int, float]]
 
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
@@ -77,6 +77,80 @@ class _PollingSensor:
         """
         with self._events_lock:
             self._events.append(event)
+
+    def _add_sensor_alert(self,
+                          state: int,
+                          change_state: bool,
+                          optional_data: Optional[Dict[str, Any]] = None,
+                          has_latest_data: bool = False,
+                          sensor_data: Optional[Union[int, float]] = None):
+        """
+        Internal function that adds a Sensor Alert for processing.
+        :param state:
+        :param change_state:
+        :param optional_data:
+        :param has_latest_data:
+        :param sensor_data:
+        """
+        sensor_alert = SensorObjSensorAlert()
+        sensor_alert.clientSensorId = self.id
+        sensor_alert.changeState = change_state
+
+        # Translate local trigger state to the AlertR state.
+        if state == self.triggerState:
+            sensor_alert.state = 1
+
+        else:
+            sensor_alert.state = 0
+
+        if optional_data is not None:
+            sensor_alert.hasOptionalData = True
+            sensor_alert.optionalData = optional_data
+
+        else:
+            sensor_alert.hasOptionalData = False
+            sensor_alert.optionalData = None
+
+        sensor_alert.hasLatestData = has_latest_data
+        sensor_alert.dataType = self.sensorDataType
+        sensor_alert.sensorData = sensor_data
+
+        if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
+            if self.sensorDataType == SensorDataType.INT:
+                sensor_alert.sensorData = 0
+            elif self.sensorDataType == SensorDataType.FLOAT:
+                sensor_alert.sensorData = 0.0
+
+        self._add_event(sensor_alert)
+
+    def _add_state_change(self,
+                          state: int,
+                          sensor_data: Optional[Union[int, float]] = None):
+        """
+        Internal function that adds a state change for processing.
+        :param state:
+        :param sensor_data:
+        """
+        state_change = SensorObjStateChange()
+        state_change.clientSensorId = self.id
+
+        # Translate local trigger state to the AlertR state.
+        if state == self.triggerState:
+            state_change.state = 1
+
+        else:
+            state_change.state = 0
+
+        state_change.dataType = self.sensorDataType
+        state_change.sensorData = sensor_data
+
+        if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
+            if self.sensorDataType == SensorDataType.INT:
+                state_change.sensorData = 0
+            elif self.sensorDataType == SensorDataType.FLOAT:
+                state_change.sensorData = 0.0
+
+        self._add_event(state_change)
 
     def _execute(self):
         """

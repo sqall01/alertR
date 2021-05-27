@@ -13,7 +13,7 @@ import time
 import logging
 from typing import Optional
 from .core import _PollingSensor
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from ..globalData import SensorDataType
 
 
 # Class that controls one ping checked host.
@@ -87,19 +87,12 @@ class PingSensor(_PollingSensor):
                         logging.exception("[%s] Unable to execute process for '%s'."
                                           % (self._log_tag, self.description))
 
-                        sensor_alert = SensorObjSensorAlert()
-                        sensor_alert.clientSensorId = self.id
-                        sensor_alert.state = 1
-                        sensor_alert.hasOptionalData = True
-                        sensor_alert.optionalData = {"host": self.host,
-                                                     "reason": "processerror",
-                                                     "message": "Unable to execute process"}
-                        sensor_alert.changeState = False
-                        sensor_alert.hasLatestData = False
-                        sensor_alert.dataType = self.sensorDataType
-                        sensor_alert.sensorData = self.sensorData
-
-                        self._add_event(sensor_alert)
+                        optional_data = {"host": self.host,
+                                         "reason": "processerror",
+                                         "message": "Unable to execute process"}
+                        self._add_sensor_alert(self.triggerState,
+                                               False,
+                                               optional_data)
 
             # Process is still running.
             else:
@@ -136,28 +129,17 @@ class PingSensor(_PollingSensor):
 
                             # Check if the sensor triggers a sensor alert => send sensor alert to server.
                             if self.triggerAlert:
-                                sensor_alert = SensorObjSensorAlert()
-                                sensor_alert.clientSensorId = self.id
-                                sensor_alert.state = 1
-                                sensor_alert.hasOptionalData = True
-                                sensor_alert.optionalData = {"message": "Timeout",
-                                                             "host": self.host,
-                                                             "reason": "processtimeout",
-                                                             "exitCode": exit_code}
-                                sensor_alert.changeState = True
-                                sensor_alert.hasLatestData = False
-                                sensor_alert.dataType = self.sensorDataType
-                                sensor_alert.sensorData = self.sensorData
-                                self._add_event(sensor_alert)
+                                optional_data = {"message": "Timeout",
+                                                 "host": self.host,
+                                                 "reason": "processtimeout",
+                                                 "exitCode": exit_code}
+                                self._add_sensor_alert(self.triggerState,
+                                                       True,
+                                                       optional_data)
 
                             # If sensor does not trigger sensor alert => just send changed state to server.
                             else:
-                                state_change = SensorObjStateChange()
-                                state_change.clientSensorId = self.id
-                                state_change.state = 1
-                                state_change.dataType = self.sensorDataType
-                                state_change.sensorData = self.sensorData
-                                self._add_event(state_change)
+                                self._add_state_change(self.triggerState)
 
                         # Set process to None so it can be newly started in the next iteration.
                         self._process = None
@@ -188,25 +170,13 @@ class PingSensor(_PollingSensor):
 
                             # Check if the sensor triggers a sensor alert => send sensor alert to server.
                             if self.triggerAlert:
-                                sensor_alert = SensorObjSensorAlert()
-                                sensor_alert.clientSensorId = self.id
-                                sensor_alert.state = 1
-                                sensor_alert.hasOptionalData = True
-                                sensor_alert.optionalData = optional_data
-                                sensor_alert.changeState = True
-                                sensor_alert.hasLatestData = False
-                                sensor_alert.dataType = self.sensorDataType
-                                sensor_alert.sensorData = self.sensorData
-                                self._add_event(sensor_alert)
+                                self._add_sensor_alert(self.triggerState,
+                                                       True,
+                                                       optional_data)
 
                             # If sensor does not trigger sensor alert => just send changed state to server.
                             else:
-                                state_change = SensorObjStateChange()
-                                state_change.clientSensorId = self.id
-                                state_change.state = 1
-                                state_change.dataType = self.sensorDataType
-                                state_change.sensorData = self.sensorData
-                                self._add_event(state_change)
+                                self._add_state_change(self.triggerState)
 
                         # Only possible situation left => sensor changed back from triggering state to normal state.
                         else:
@@ -214,26 +184,14 @@ class PingSensor(_PollingSensor):
                             # Check if the sensor triggers a Sensor Alert when state is back to normal
                             # => send sensor alert to server
                             if self.triggerAlertNormal:
-                                sensor_alert = SensorObjSensorAlert()
-                                sensor_alert.clientSensorId = self.id
-                                sensor_alert.state = 0
-                                sensor_alert.hasOptionalData = True
-                                sensor_alert.optionalData = optional_data
-                                sensor_alert.changeState = True
-                                sensor_alert.hasLatestData = False
-                                sensor_alert.dataType = self.sensorDataType
-                                sensor_alert.sensorData = self.sensorData
-                                self._add_event(sensor_alert)
+                                self._add_sensor_alert(1 - self.triggerState,
+                                                       True,
+                                                       optional_data)
 
                             # If sensor does not trigger Sensor Alert when state is back to normal
                             # => just send changed state to server.
                             else:
-                                state_change = SensorObjStateChange()
-                                state_change.clientSensorId = self.id
-                                state_change.state = 0
-                                state_change.dataType = self.sensorDataType
-                                state_change.sensorData = self.sensorData
-                                self._add_event(state_change)
+                                self._add_state_change(1 - self.triggerState)
 
                     # Set process to none so it can be newly started in the next iteration.
                     self._process = None
