@@ -17,7 +17,15 @@ class TestExecuterSensor(TestCase):
         sensor.triggerAlertNormal = True
         sensor.triggerState = 1
         sensor.alertLevels = [1]
+        self._sensors.append(sensor)
         return sensor
+
+    def setUp(self):
+        self._sensors = []
+
+    def tearDown(self):
+        for sensor in self._sensors:
+            sensor.exit()
 
     def test_basic_sensor_alert_normal(self):
         """

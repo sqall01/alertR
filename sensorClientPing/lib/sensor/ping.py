@@ -57,6 +57,16 @@ class PingSensor(_PollingSensor):
         while True:
 
             if self._exit_flag:
+                if self._process is not None:
+                    self._process.terminate()
+
+                    # Give process 5 seconds to terminate before killing it.
+                    try:
+                        self._process.wait(5.0)
+
+                    except subprocess.TimeoutExpired:
+                        self._process.kill()
+
                 return
 
             if self._process is None:
@@ -106,21 +116,17 @@ class PingSensor(_PollingSensor):
                         # terminate process
                         self._process.terminate()
 
-                        # give the process one second to terminate
-                        time.sleep(1)
+                        # Give the process time to terminate.
+                        try:
+                            self._process.wait(5.0)
 
-                        # check if the process has terminated
-                        # => if not kill it
+                        except subprocess.TimeoutExpired:
+                            logging.error("[%s] Could not terminate process for '%s'. Killing it."
+                                          % (self._log_tag, self.description))
+
+                            self._process.kill()
+
                         exit_code = self._process.poll()
-                        if exit_code != -15:
-                            try:
-                                logging.error("[%s] Could not terminate process for '%s'. Killing it."
-                                              % (self._log_tag, self.description))
-
-                                self._process.kill()
-
-                            except Exception as e:
-                                pass
 
                         old_state = self.state
                         self.state = self.triggerState
