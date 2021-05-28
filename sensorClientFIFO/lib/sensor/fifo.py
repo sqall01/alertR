@@ -17,20 +17,20 @@ from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataT
 from typing import Optional
 
 
-# class that represents one FIFO sensor
 class SensorFIFO(_PollingSensor):
+    """
+    Class that represents one FIFO file as a sensor.
+    """
 
     def __init__(self):
         _PollingSensor.__init__(self)
 
         # used for logging
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         self.fifoFile = None
 
         self.umask = None
-
-        self.temporaryState = None
 
         # Used to force a state change to be sent to the server.
         self._state_changes_lock = threading.Lock()
@@ -45,6 +45,8 @@ class SensorFIFO(_PollingSensor):
         self._data_queue = list()
         self._data_event = threading.Event()
         self._data_event.clear()
+
+        self._thread_read = None  # type: Optional[threading.Thread]
 
     def _checkDataType(self, dataType: int) -> int:
         if not isinstance(dataType, int):
@@ -80,46 +82,53 @@ class SensorFIFO(_PollingSensor):
         # Create FIFO file.
         while True:
 
-            # check if FIFO file exists
-            # => remove it if it does
+            # Check if FIFO file exists => remove it if it does.
             if os.path.exists(self.fifoFile):
                 try:
                     os.remove(self.fifoFile)
+
                 except Exception as e:
-                    logging.exception("[%s]: Could not delete "
-                                      % self.fileName
-                                      + "FIFO file of sensor with id '%d'."
-                                      % self.id)
+                    logging.exception("[%s] Could not delete FIFO file of sensor with id '%d'."
+                                      % (self._log_tag, self.id))
                     time.sleep(5)
                     continue
 
-            # create a new FIFO file
+            # Create a new FIFO file.
             try:
-                oldUmask = os.umask(self.umask)
+                old_umask = os.umask(self.umask)
                 os.mkfifo(self.fifoFile)
-                os.umask(oldUmask)
+                os.umask(old_umask)
+
             except Exception as e:
-                logging.exception("[%s]: Could not create "
-                                  % self.fileName
-                                  + "FIFO file of sensor with id '%d'."
-                                  % self.id)
+                logging.exception("[%s] Could not create FIFO file of sensor with id '%d'."
+                                  % (self._log_tag, self.id))
                 time.sleep(5)
                 continue
             break
 
-    def _thread_process_data(self):
+    def _execute(self):
         """
-        This function runs in a thread and processed data read by the FIFO reader thread.
+        This function runs in a thread and processes data read by the FIFO reader thread.
         """
+
+        # Start FIFO reading thread.
+        self._thread_read = threading.Thread(target=self._thread_read_fifo)
+        self._thread_read.daemon = True
+        self._thread_read.start()
+
         while True:
 
             # If we still have data in the queue, wait a short time before starting a new processing round.
+            # This is done to not lock up data queue for the fifo reading thread if it gets a lot of messages to read.
             if self._data_queue:
                 time.sleep(0.5)
 
             # Wait until new data has to be processed if we do not have anything in the queue.
             else:
-                self._data_event.wait(5)
+                self._data_event.wait(5.0)
+
+            if self._exit_flag:
+                return
 
             while self._data_queue:
 
@@ -131,10 +140,10 @@ class SensorFIFO(_PollingSensor):
                 if data.strip() == "":
                     continue
 
-                logging.debug("[%s]: Received data '%s' from FIFO file of sensor with id '%d'."
-                              % (self.fileName, data, self.id))
+                logging.debug("[%s] Received data '%s' from FIFO file of sensor with id '%d'."
+                              % (self._log_tag, data, self.id))
 
-                # parse received data
+                # Parse received data.
                 try:
 
                     message = json.loads(data)
@@ -146,20 +155,16 @@ class SensorFIFO(_PollingSensor):
                         # Check if state is valid.
                         tempInputState = message["payload"]["state"]
                         if not self._checkState(tempInputState):
-                            logging.error("[%s]: Received state "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received state from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
                         # Check if data type is valid.
                         tempDataType = message["payload"]["dataType"]
                         if not self._checkDataType(tempDataType):
-                            logging.error("[%s]: Received data type "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received data type from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
@@ -171,12 +176,9 @@ class SensorFIFO(_PollingSensor):
                         elif self.sensorDataType == SensorDataType.FLOAT:
                             self.sensorData = float(message["payload"]["data"])
 
-                        # Set state.
-                        self.temporaryState = tempInputState
-
                         # Force state change sending if the data could be changed
                         # or the state has changed.
-                        if self.sensorDataType != SensorDataType.NONE or self.state != self.temporaryState:
+                        if self.sensorDataType != SensorDataType.NONE or self.state != tempInputState:
 
                             # Create state change object that is
                             # send to the server.
@@ -191,16 +193,17 @@ class SensorFIFO(_PollingSensor):
                             with self._state_changes_lock:
                                 self._state_changes.append(temp_state_change)
 
+                        # Set state.
+                        self.state = tempInputState
+
                     # Type: sensoralert
                     elif str(message["message"]).upper() == "SENSORALERT":
 
                         # Check if state is valid.
                         tempInputState = message["payload"]["state"]
                         if not self._checkState(tempInputState):
-                            logging.error("[%s]: Received state "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received state from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
@@ -208,20 +211,16 @@ class SensorFIFO(_PollingSensor):
                         tempHasOptionalData = message[
                             "payload"]["hasOptionalData"]
                         if not self._checkHasOptionalData(tempHasOptionalData):
-                            logging.error("[%s]: Received hasOptionalData field "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received hasOptionalData field from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
                         # Check if data type is valid.
                         tempDataType = message["payload"]["dataType"]
                         if not self._checkDataType(tempDataType):
-                            logging.error("[%s]: Received data type "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received data type from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
@@ -235,10 +234,8 @@ class SensorFIFO(_PollingSensor):
                         tempHasLatestData = message[
                             "payload"]["hasLatestData"]
                         if not self._checkHasLatestData(tempHasLatestData):
-                            logging.error("[%s]: Received hasLatestData field "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received hasLatestData field from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
@@ -246,10 +243,8 @@ class SensorFIFO(_PollingSensor):
                         tempChangeState = message[
                             "payload"]["changeState"]
                         if not self._checkChangeState(tempChangeState):
-                            logging.error("[%s]: Received changeState field "
-                                          % self.fileName
-                                          + "from FIFO file of sensor with id '%d' "
-                                          % self.id
+                            logging.error("[%s] Received changeState field from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
                                           + "invalid. Ignoring message.")
                             continue
 
@@ -262,10 +257,8 @@ class SensorFIFO(_PollingSensor):
 
                             # check if data is of type dict
                             if not isinstance(tempOptionalData, dict):
-                                logging.warning("[%s]: Received optional data "
-                                                % self.fileName
-                                                + "from FIFO file of sensor with id '%d' "
-                                                % self.id
+                                logging.warning("[%s] Received optional data from FIFO file of sensor with id '%d' "
+                                                % (self._log_tag, self.id)
                                                 + "invalid. Ignoring message.")
                                 continue
 
@@ -279,7 +272,7 @@ class SensorFIFO(_PollingSensor):
 
                         # Set state.
                         if tempChangeState:
-                            self.temporaryState = tempInputState
+                            self.state = tempInputState
 
                         # Create sensor alert object that is send to the server.
                         temp_sensor_alert = SensorObjSensorAlert()
@@ -303,11 +296,9 @@ class SensorFIFO(_PollingSensor):
                         raise ValueError("Received invalid message type.")
 
                 except Exception as e:
-                    logging.exception("[%s]: Could not parse received data from "
-                                      % self.fileName
-                                      + "FIFO file of sensor with id '%d'."
-                                      % self.id)
-                    logging.error("[%s]: Received data: %s" % (self.fileName, data))
+                    logging.exception("[%s] Could not parse received data from FIFO file of sensor with id '%d'."
+                                      % (self._log_tag, self.id))
+                    logging.error("[%s] Received data: %s" % (self._log_tag, data))
                     continue
 
             self._data_event.clear()
@@ -321,6 +312,9 @@ class SensorFIFO(_PollingSensor):
 
         while True:
 
+            if self._exit_flag:
+                return
+
             # Read FIFO for data.
             data = ""
             try:
@@ -329,8 +323,8 @@ class SensorFIFO(_PollingSensor):
                 fifo.close()
 
             except Exception as e:
-                logging.exception("[%s]: Could not read data from FIFO file of sensor with id '%d'."
-                                  % (self.fileName, self.id))
+                logging.exception("[%s] Could not read data from FIFO file of sensor with id '%d'."
+                                  % (self._log_tag, self.id))
 
                 # Create a new FIFO file.
                 self._create_fifo_file()
@@ -343,14 +337,18 @@ class SensorFIFO(_PollingSensor):
             # Wake up processing thread.
             self._data_event.set()
 
-    def initializeSensor(self):
+    def exit(self):
+        super().exit()
+
+        # Wake up processing thread to speed up exit.
+        self._data_event.set()
+
+    def initialize(self) -> bool:
+
+        # TODO
         self.changeState = True
         self.hasLatestData = False
         self.state = 1 - self.triggerState
-        self.temporaryState = 1 - self.triggerState
-
-        # Sensor handles state changes itself by receiving messages.
-        self.handlesStateMsgs = True
 
         # Set initial sensor data
         if self.sensorDataType == SensorDataType.INT:
@@ -358,34 +356,4 @@ class SensorFIFO(_PollingSensor):
         elif self.sensorDataType == SensorDataType.FLOAT:
             self.sensorData = 0.0
 
-        # Start FIFO reading thread.
-        thread = threading.Thread(target=self._thread_read_fifo)
-        thread.daemon = True
-        thread.start()
-
-        # Start data processing thread.
-        thread = threading.Thread(target=self._thread_process_data)
-        thread.daemon = True
-        thread.start()
-
         return True
-
-    def getState(self) -> int:
-        return self.state
-
-    def updateState(self):
-        self.state = self.temporaryState
-
-    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
-        with self._sensor_alerts_lock:
-            ret_value = None
-            if self._sensor_alerts:
-                ret_value = self._sensor_alerts.pop(0)
-        return ret_value
-
-    def forceSendState(self) -> Optional[SensorObjStateChange]:
-        with self._state_changes_lock:
-            ret_value = None
-            if self._state_changes:
-                ret_value = self._state_changes.pop(0)
-        return ret_value
