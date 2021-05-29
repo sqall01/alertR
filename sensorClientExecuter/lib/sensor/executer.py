@@ -17,8 +17,10 @@ from .core import _PollingSensor
 from ..globalData import SensorDataType
 
 
-# Class that controls one executed command.
 class ExecuterSensor(_PollingSensor):
+    """
+    Class that represents one executed command as a sensor.
+    """
 
     def __init__(self):
         _PollingSensor.__init__(self)
@@ -246,7 +248,7 @@ class ExecuterSensor(_PollingSensor):
         # Parse output data.
         try:
 
-            logging.debug("[%s] Received output from sensor with id '%d': %s"
+            logging.debug("[%s] Received data from output of sensor with id '%d': %s"
                           % (self._log_tag, self.id, data))
 
             message = json.loads(data)
@@ -373,7 +375,7 @@ class ExecuterSensor(_PollingSensor):
 
         return True
 
-    def initialize(self):
+    def initialize(self) -> bool:
         self._time_executed = 0
         self.state = 1 - self.triggerState
 
