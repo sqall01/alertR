@@ -9,4 +9,4 @@
 
 from .core import SensorExecuter
 from .eventHandler import SensorEventHandler
-from .fifo import SensorFIFO
+from .fifo import FIFOSensor

@@ -12,7 +12,7 @@ import os
 import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import SensorFIFO, SensorExecuter, SensorEventHandler
+from lib import FIFOSensor, SensorExecuter, SensorEventHandler
 from lib import GlobalData
 from lib import SensorDataType
 import logging
@@ -154,7 +154,7 @@ if __name__ == '__main__':
         # parse all sensors
         for item in configRoot.find("sensors").iterfind("sensor"):
 
-            sensor = SensorFIFO()
+            sensor = FIFOSensor()
 
             # these options are needed by the server to
             # differentiate between the registered sensors

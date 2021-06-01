@@ -17,7 +17,7 @@ from .core import _PollingSensor
 from ..globalData import SensorDataType
 
 
-class SensorFIFO(_PollingSensor):
+class FIFOSensor(_PollingSensor):
     """
     Class that represents one FIFO file as a sensor.
     """
