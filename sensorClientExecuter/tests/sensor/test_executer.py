@@ -334,7 +334,7 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has changed.
-        self.assertEqual(1337, sensor.sensorData)
+        self.assertEqual(payload["payload"]["data"], sensor.sensorData)
 
     def test_output_handling_state_change_triggered(self):
         """
@@ -589,6 +589,9 @@ class TestExecuterSensor(TestCase):
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
 
+        # Make sure data has not changed.
+        self.assertIsNone(sensor.sensorData)
+
     def test_output_handling_sensor_alert_illegal_state(self):
         """
         Tests if output handling processing triggers a Sensor Alert for illegal data (illegal state).
@@ -682,6 +685,9 @@ class TestExecuterSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure data has not changed.
+        self.assertIsNone(sensor.sensorData)
 
     def test_output_handling_sensor_alert_illegal_has_optional_data(self):
         """

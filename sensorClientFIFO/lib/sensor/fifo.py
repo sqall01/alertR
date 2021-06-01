@@ -117,10 +117,12 @@ class FIFOSensor(_PollingSensor):
 
             # Wait until new data has to be processed if we do not have anything in the queue.
             else:
-                self._data_event.wait(5.0)
+                self._data_event.wait()
 
             if self._exit_flag:
                 return
+
+            self._data_event.clear()
 
             while self._data_queue:
 
@@ -264,8 +266,6 @@ class FIFOSensor(_PollingSensor):
                     logging.error("[%s] Received data: %s" % (self._log_tag, data))
                     continue
 
-            self._data_event.clear()
-
     def _thread_read_fifo(self):
         """
         This function runs in a thread and simply reads the data from the FIFO file
@@ -303,7 +303,7 @@ class FIFOSensor(_PollingSensor):
     def exit(self):
         super().exit()
 
-        # Wake up processing thread to speed up exit.
+        # Wake up processing thread to exit.
         self._data_event.set()
 
     def initialize(self) -> bool:
