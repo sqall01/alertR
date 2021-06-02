@@ -1,6 +1,8 @@
 import json
 import os
+import shutil
 import tempfile
+import threading
 import time
 from unittest import TestCase
 from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
@@ -961,6 +963,42 @@ class TestFifoSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertIsNone(sensor.sensorData)
+
+    def test_create_fifo(self):
+        """
+        Tests if creating a FIFO file retries if an error occurs.
+        """
+        fifo_file = os.path.join(self._temp_dir.name,
+                                 "sensor1.fifo")
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = None
+        sensor.umask = int("0000", 8)
+        sensor.fifoFile = fifo_file
+
+        # Shorten wait time for retrying to create FIFO file to shorten the time the test needs.
+        sensor._fifo_retry_time = 0.5
+
+        # Delete directory to prevent creation of FIFO file.
+        shutil.rmtree(self._temp_dir.name)
+
+        thread = threading.Thread(target=sensor._create_fifo_file, daemon=True)
+        thread.start()
+
+        time.sleep(0.5)
+
+        self.assertFalse(os.path.exists(fifo_file))
+
+        # Create directory to enable FIFO file creation.
+        os.mkdir(self._temp_dir.name)
+
+        time.sleep(1.0)
+
+        self.assertTrue(os.path.exists(fifo_file))
+        self.assertFalse(thread.is_alive())
+
 
 # TODO
 # - multiple writes into FIFO file to check \n split

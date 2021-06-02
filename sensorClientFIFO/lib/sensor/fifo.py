@@ -40,6 +40,9 @@ class FIFOSensor(_PollingSensor):
 
         self._thread_read = None  # type: Optional[threading.Thread]
 
+        # Time to wait before retrying to create a new FIFO file on failure.
+        self._fifo_retry_time = 5.0
+
     def _check_data_type(self, data_type: int) -> int:
         if not isinstance(data_type, int):
             return False
@@ -82,7 +85,7 @@ class FIFOSensor(_PollingSensor):
                 except Exception as e:
                     logging.exception("[%s] Could not delete FIFO file of sensor with id '%d'."
                                       % (self._log_tag, self.id))
-                    time.sleep(5)
+                    time.sleep(self._fifo_retry_time)
                     continue
 
             # Create a new FIFO file.
@@ -94,7 +97,7 @@ class FIFOSensor(_PollingSensor):
             except Exception as e:
                 logging.exception("[%s] Could not create FIFO file of sensor with id '%d'."
                                   % (self._log_tag, self.id))
-                time.sleep(5)
+                time.sleep(self._fifo_retry_time)
                 continue
             break
 
