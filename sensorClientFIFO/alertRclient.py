@@ -174,10 +174,14 @@ if __name__ == '__main__':
             sensor.fifoFile = make_path(str(item.find("fifo").attrib["fifoFile"]))
             sensor.sensorDataType = int(item.find("fifo").attrib["dataType"])
 
+            # Check directory for FIFO file exists.
+            if not os.path.exists(os.path.dirname(sensor.fifoFile)):
+                raise ValueError("FIFO file directory for sensor %d does not exist." % sensor.id)
+
             # Check sanity of sensor data type.
             if (sensor.sensorDataType != SensorDataType.NONE
-                and sensor.sensorDataType != SensorDataType.INT
-                and sensor.sensorDataType != SensorDataType.FLOAT):
+                    and sensor.sensorDataType != SensorDataType.INT
+                    and sensor.sensorDataType != SensorDataType.FLOAT):
                 raise ValueError("Illegal data type for sensor %d." % sensor.id)
 
             # check if description is empty
@@ -190,10 +194,10 @@ if __name__ == '__main__':
                     raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
             if not sensor.triggerAlert and sensor.triggerAlertNormal:
-                    raise ValueError("'triggerAlert' for sensor %d "
-                                     % sensor.id
-                                     + "has to be activated when "
-                                     + "'triggerAlertNormal' is activated.")
+                raise ValueError("'triggerAlert' for sensor %d "
+                                 % sensor.id
+                                 + "has to be activated when "
+                                 + "'triggerAlertNormal' is activated.")
 
             globalData.sensors.append(sensor)
 
