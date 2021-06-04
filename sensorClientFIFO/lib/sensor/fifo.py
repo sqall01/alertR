@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
+import select
 import time
 import logging
 import json
@@ -274,34 +275,48 @@ class FIFOSensor(_PollingSensor):
         This function runs in a thread and simply reads the data from the FIFO file
         and places them in a queue for processing.
         """
+
         self._create_fifo_file()
 
+        fifo = None
         while True:
-
             if self._exit_flag:
                 return
 
-            # Read FIFO for data.
-            data = ""
-            try:
-                fifo = open(self.fifoFile, "r")
-                data = fifo.read()
-                fifo.close()
+            # Try to close FIFO file before re-opening it.
+            if fifo:
+                try:
+                    fifo.close()
+                except Exception as e:
+                    pass
 
-            except Exception as e:
-                logging.exception("[%s] Could not read data from FIFO file of sensor with id '%d'."
-                                  % (self._log_tag, self.id))
+            fifo = open(self.fifoFile, "r")
 
-                # Create a new FIFO file.
-                self._create_fifo_file()
-                continue
+            while True:
+                if self._exit_flag:
+                    return
 
-            with self._data_queue_lock:
-                for line in data.strip().split("\n"):
-                    self._data_queue.append(line)
+                # Read FIFO for data.
+                data = ""
+                try:
+                    # Wait for fifo to be readable or has an exception.
+                    select.select([fifo], [], [fifo])
 
-            # Wake up processing thread.
-            self._data_event.set()
+                    data = fifo.read()
+                    if not data:  # If no data is coming back, writer has closed FIFO and we have to create a new one.
+                        break
+
+                except Exception as e:
+                    logging.exception("[%s] Could not read data from FIFO file of sensor with id '%d'."
+                                      % (self._log_tag, self.id))
+                    break
+
+                with self._data_queue_lock:
+                    for line in data.strip().split("\n"):
+                        self._data_queue.append(line)
+
+                # Wake up processing thread.
+                self._data_event.set()
 
     def exit(self):
         super().exit()

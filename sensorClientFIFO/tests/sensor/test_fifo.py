@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import threading
 import time
@@ -999,6 +1000,122 @@ class TestFifoSensor(TestCase):
         self.assertTrue(os.path.exists(fifo_file))
         self.assertFalse(thread.is_alive())
 
+    def test_read_fifo(self):
+        """
+        Tests if data written into FIFO is stored correctly in queue.
+        """
+        fifo_file = os.path.join(self._temp_dir.name,
+                                 "sensor1.fifo")
 
-# TODO
-# - multiple writes into FIFO file to check \n split
+        num_writes = 11
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = None
+        sensor.umask = int("0000", 8)
+        sensor.fifoFile = fifo_file
+
+        thread = threading.Thread(target=sensor._thread_read_fifo, daemon=True)
+        thread.start()
+
+        time.sleep(0.5)
+
+        self.assertTrue(os.path.exists(fifo_file))
+
+        for i in range(num_writes):
+            with open(fifo_file, 'w') as fp:
+                fp.write(str(i))
+
+            # NOTE: the FIFO read would fail to distinguish the messages if too fast writes occur.
+            # The reason for this is because we do not use a protocol which contains the length of
+            # the message and thus we cannot differentiate messages if they are returned together while calling
+            # read ones. We do not want to introduce a length into the protocol because it would destroy the easy
+            # way to use "echo 'JSON_STUFF' > sensor.fifo" for the sensor. We distinguish messages by a newline.
+            # Thus we need a short sleep period before we can continue writing to it without using newlines.
+            time.sleep(0.5)
+
+        time.sleep(0.5)
+
+        self.assertEqual(num_writes, len(sensor._data_queue))
+        for i in range(num_writes):
+            self.assertEqual(str(i), sensor._data_queue[i])
+
+    def test_read_fifo_newline(self):
+        """
+        Tests if data written into FIFO separated by a newline is correctly split.
+        """
+        fifo_file = os.path.join(self._temp_dir.name,
+                                 "sensor1.fifo")
+
+        num_writes = 11
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = None
+        sensor.umask = int("0000", 8)
+        sensor.fifoFile = fifo_file
+
+        thread = threading.Thread(target=sensor._thread_read_fifo, daemon=True)
+        thread.start()
+
+        time.sleep(0.5)
+
+        self.assertTrue(os.path.exists(fifo_file))
+
+        for i in range(num_writes):
+            with open(fifo_file, 'w') as fp:
+                fp.write(str(i) + "\n")
+
+        time.sleep(0.5)
+
+        self.assertEqual(num_writes, len(sensor._data_queue))
+        for i in range(num_writes):
+            self.assertEqual(str(i), sensor._data_queue[i])
+
+    def test_read_fifo_newline_multi_write(self):
+        """
+        Tests if data written into FIFO concurrently separated by a newline is correctly split.
+        """
+        fifo_file = os.path.join(self._temp_dir.name,
+                                 "sensor1.fifo")
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "fifo_scripts",
+                                  "write_fifo.py")
+
+        num_writes_per_process = 21
+        num_processes = 4
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = None
+        sensor.umask = int("0000", 8)
+        sensor.fifoFile = fifo_file
+
+        thread = threading.Thread(target=sensor._thread_read_fifo, daemon=True)
+        thread.start()
+
+        time.sleep(0.5)
+
+        self.assertTrue(os.path.exists(fifo_file))
+
+        processes = []
+        for i in range(num_processes):
+            processes.append(subprocess.Popen([target_cmd, fifo_file,
+                                               str(i*num_writes_per_process),
+                                               str((i+1)*num_writes_per_process)]))
+
+        for i in range(num_processes):
+            processes[i].wait()
+
+        self.assertEqual(num_processes * num_writes_per_process, len(sensor._data_queue))
+
+        # Check if every value is unique.
+        data_queue_set = set(map(lambda x: int(x), sensor._data_queue))
+        self.assertEqual(num_processes * num_writes_per_process, len(data_queue_set))
+
+        # Check if each written element is in data queue.
+        for i in range(num_processes * num_writes_per_process):
+            self.assertTrue(i in data_queue_set)
