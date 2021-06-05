@@ -9,4 +9,4 @@
 
 from .core import SensorExecuter
 from .eventHandler import SensorEventHandler
-from .dev import SensorDev
+from .dev import DevSensor

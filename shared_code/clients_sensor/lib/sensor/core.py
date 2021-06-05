@@ -209,6 +209,12 @@ class SensorExecuter(threading.Thread):
 
         self._exit_flag = False
 
+        self._is_initialized = False
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._is_initialized
+
     def execute(self):
 
         # Time on which the last full sensor states were sent to the server.
@@ -218,6 +224,8 @@ class SensorExecuter(threading.Thread):
         while self._connection is None:
             time.sleep(0.5)
             self._connection = self._global_data.serverComm
+
+        self._is_initialized = True
 
         while True:
 
