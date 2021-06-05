@@ -86,6 +86,11 @@ class _PollingSensor:
                           sensor_data: Optional[Union[int, float]] = None):
         """
         Internal function that adds a Sensor Alert for processing.
+
+        IMPORTANT: If Sensor configuration disables Sensor Alert events for triggered or normal states the Sensor Alert
+        event will be transformed into a state change event if the state_change flag is True
+        (which will lose optional data). If state_change is False, the event will be dropped.
+
         :param state:
         :param change_state:
         :param optional_data:
@@ -121,7 +126,24 @@ class _PollingSensor:
             elif self.sensorDataType == SensorDataType.FLOAT:
                 sensor_alert.sensorData = 0.0
 
-        self._add_event(sensor_alert)
+        # Only submit Sensor Alert event for processing if Sensor configuration allows it.
+        # Else, transform Sensor Alert event to state change event if it changed the state of the Sensor.
+        # Otherwise, drop event.
+        if state == self.triggerState:
+            if self.triggerAlert:
+                self._add_event(sensor_alert)
+
+            elif change_state:
+                self._add_state_change(state,
+                                       sensor_data)
+
+        else:
+            if self.triggerAlertNormal:
+                self._add_event(sensor_alert)
+
+            elif change_state:
+                self._add_state_change(state,
+                                       sensor_data)
 
     def _add_state_change(self,
                           state: int,

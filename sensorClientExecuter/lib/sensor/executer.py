@@ -210,31 +210,15 @@ class ExecuterSensor(_PollingSensor):
 
                             # Check if the current state is a sensor alert triggering state.
                             if self.state == self.triggerState:
-
-                                # Check if the sensor triggers a sensor alert => send sensor alert to server.
-                                if self.triggerAlert:
-                                    self._add_sensor_alert(self.triggerState,
-                                                           True,
-                                                           {"exitCode": exit_code})
-
-                                # If sensor does not trigger sensor alert => just send changed state to server.
-                                else:
-                                    self._add_state_change(self.triggerState)
+                                self._add_sensor_alert(self.triggerState,
+                                                       True,
+                                                       {"exitCode": exit_code})
 
                             # Only possible situation left => sensor changed back from triggering state to normal state.
                             else:
-
-                                # Check if the sensor triggers a Sensor Alert when state is back to normal
-                                # => send sensor alert to server
-                                if self.triggerAlertNormal:
-                                    self._add_sensor_alert(1 - self.triggerState,
-                                                           True,
-                                                           {"exitCode": exit_code})
-
-                                # If sensor does not trigger Sensor Alert when state is back to normal
-                                # => just send changed state to server.
-                                else:
-                                    self._add_state_change(1 - self.triggerState)
+                                self._add_sensor_alert(1 - self.triggerState,
+                                                       True,
+                                                       {"exitCode": exit_code})
 
                     # Set process to none so it can be newly started in the next iteration.
                     self._process.stdout.close()
