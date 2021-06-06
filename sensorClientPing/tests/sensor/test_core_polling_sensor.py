@@ -1,0 +1,1 @@
+../../../shared_code/clients_sensor/tests/sensor/test_core_polling_sensor.py

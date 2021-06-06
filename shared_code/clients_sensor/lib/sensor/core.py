@@ -87,9 +87,19 @@ class _PollingSensor:
         """
         Internal function that adds a Sensor Alert for processing.
 
-        IMPORTANT: If Sensor configuration disables Sensor Alert events for triggered or normal states the Sensor Alert
-        event will be transformed into a state change event if the state_change flag is True
-        (which will lose optional data). If state_change is False, the event will be dropped.
+        Updates Sensor state if change_state flag is set to True.
+
+        Updates Sensor data if has_latest_data flag is set to True.
+
+        If the Sensor configuration disables Sensor Alert events for triggered or normal states the Sensor Alert
+        event with this state will be transformed into a state change event (which will lose optional data).
+        State change events will be sent if state_change flag is True or has_latest_data flag is True.
+        If state_change flag is set to True, the send state change event contains the state given to the function,
+        otherwise the current state of the Sensor is used.
+        If has_latest_data flag is set to True, the send state change event contains the data given to the function,
+        otherwise the current data of the Sensor is used.
+        If state_change and has_latest_data are False and the corresponding triggered or normal state is disabled
+        in the Sensor configuration, the event will be dropped.
 
         :param state:
         :param change_state:
@@ -101,7 +111,7 @@ class _PollingSensor:
         sensor_alert.clientSensorId = self.id
         sensor_alert.changeState = change_state
 
-        # Translate local trigger state to the AlertR state.
+        # Translate local trigger state to the AlertR sensor state.
         if state == self.triggerState:
             sensor_alert.state = 1
 
@@ -120,21 +130,40 @@ class _PollingSensor:
         sensor_alert.dataType = self.sensorDataType
         sensor_alert.sensorData = sensor_data
 
+        # Throw exception if we did not get Sensor data but we expected it.
         if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
-            if self.sensorDataType == SensorDataType.INT:
-                sensor_alert.sensorData = 0
-            elif self.sensorDataType == SensorDataType.FLOAT:
-                sensor_alert.sensorData = 0.0
+            raise ValueError("Expected data since data type is not NONE")
+
+        # Change sensor state if it is set.
+        if change_state:
+            self.state = state
+
+        # Update sensor data if it has latest data.
+        if has_latest_data:
+            self.sensorData = sensor_alert.sensorData
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
-        # Else, transform Sensor Alert event to state change event if it changed the state of the Sensor.
+        # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
         # Otherwise, drop event.
         if state == self.triggerState:
             if self.triggerAlert:
                 self._add_event(sensor_alert)
 
             elif change_state:
-                self._add_state_change(state,
+                # Only send state change event with event data if the Sensor Alert held the latest data.
+                if has_latest_data:
+                    self._add_state_change(state,
+                                           sensor_data)
+
+                # Send state change event with old data from sensor.
+                else:
+                    self._add_state_change(state,
+                                           self.sensorData)
+
+            # If Sensor Alert event did not change the state of the Sensor, but contained the latest data
+            # send a state change event with the old state from the sensor.
+            elif has_latest_data:
+                self._add_state_change(self.state,
                                        sensor_data)
 
         else:
@@ -142,7 +171,20 @@ class _PollingSensor:
                 self._add_event(sensor_alert)
 
             elif change_state:
-                self._add_state_change(state,
+                # Only send state change event with event data if the Sensor Alert held the latest data.
+                if has_latest_data:
+                    self._add_state_change(state,
+                                           sensor_data)
+
+                # Send state change event with old data from sensor.
+                else:
+                    self._add_state_change(state,
+                                           self.sensorData)
+
+            # If Sensor Alert event did not change the state of the Sensor, but contained the latest data
+            # send a state change event with the old state from the sensor.
+            elif has_latest_data:
+                self._add_state_change(self.state,
                                        sensor_data)
 
     def _add_state_change(self,
@@ -150,6 +192,11 @@ class _PollingSensor:
                           sensor_data: Optional[Union[int, float]] = None):
         """
         Internal function that adds a state change for processing.
+
+        Updates Sensor state.
+
+        Updates Sensor data.
+
         :param state:
         :param sensor_data:
         """
@@ -166,11 +213,12 @@ class _PollingSensor:
         state_change.dataType = self.sensorDataType
         state_change.sensorData = sensor_data
 
+        # Throw exception if we did not get Sensor data but we expected it.
         if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
-            if self.sensorDataType == SensorDataType.INT:
-                state_change.sensorData = 0
-            elif self.sensorDataType == SensorDataType.FLOAT:
-                state_change.sensorData = 0.0
+            raise ValueError("Expected data since data type is not NONE")
+
+        self.state = state
+        self.sensorData = state_change.sensorData
 
         self._add_event(state_change)
 
