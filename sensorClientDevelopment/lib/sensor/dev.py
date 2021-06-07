@@ -65,9 +65,9 @@ class DevSensor(_PollingSensor):
         else:
             self.consoleInputState = 0
 
-        self.state = self.consoleInputState
+        new_state = self.consoleInputState
 
-        if self.state == self.triggerState:
+        if new_state == self.triggerState:
             if self.triggerAlert:
                 self._add_sensor_alert(self.triggerState,
                                        True,

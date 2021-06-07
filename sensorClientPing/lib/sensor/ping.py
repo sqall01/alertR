@@ -120,12 +120,10 @@ class PingSensor(_PollingSensor):
                             self._process.kill()
 
                         exit_code = self._process.poll()
-
-                        old_state = self.state
-                        self.state = self.triggerState
+                        new_state = self.triggerState
 
                         # Process state change.
-                        if old_state != self.state:
+                        if new_state != self.state:
 
                             # Check if the sensor triggers a sensor alert => send sensor alert to server.
                             if self.triggerAlert:
@@ -146,27 +144,26 @@ class PingSensor(_PollingSensor):
 
                 # Process has finished.
                 else:
-                    old_state = self.state
                     optional_data = {"host": self.host}
 
                     # Check if the process has exited with code 0 = host reachable.
                     exit_code = self._process.poll()
                     if exit_code == 0:
-                        self.state = 1 - self.triggerState
+                        new_state = 1 - self.triggerState
                         optional_data["reason"] = "reachable"
 
                     # Process did not exited correctly => host not reachable.
                     else:
-                        self.state = self.triggerState
+                        new_state = self.triggerState
                         optional_data["reason"] = "notreachable"
 
                     optional_data["exitCode"] = exit_code
 
                     # Process state change.
-                    if old_state != self.state:
+                    if new_state != self.state:
 
                         # Check if the current state is a sensor alert triggering state.
-                        if self.state == self.triggerState:
+                        if new_state == self.triggerState:
 
                             # Check if the sensor triggers a sensor alert => send sensor alert to server.
                             if self.triggerAlert:

@@ -186,12 +186,10 @@ class ExecuterSensor(_PollingSensor):
                                                    {"message": "Illegal output"})
 
                     else:
-                        old_state = self.state
-
                         # Check if the process has exited with code 0 => everything works fine
                         exit_code = self._process.poll()
                         if exit_code == 0:
-                            self.state = 1 - self.triggerState
+                            new_state = 1 - self.triggerState
 
                         # process did not exited correctly => something is wrong with the service
                         else:
@@ -203,13 +201,13 @@ class ExecuterSensor(_PollingSensor):
                             logging.error("[%s] Sensor with id '%d' stderr: %s"
                                           % (self._log_tag, self.id, err))
 
-                            self.state = self.triggerState
+                            new_state = self.triggerState
 
                         # Process state change.
-                        if old_state != self.state:
+                        if new_state != self.state:
 
                             # Check if the current state is a sensor alert triggering state.
-                            if self.state == self.triggerState:
+                            if new_state == self.triggerState:
                                 self._add_sensor_alert(self.triggerState,
                                                        True,
                                                        {"exitCode": exit_code})
@@ -268,9 +266,6 @@ class ExecuterSensor(_PollingSensor):
                 if self.sensorData != temp_input_data or self.state != temp_input_state:
                     self._add_state_change(temp_input_state,
                                            temp_input_data)
-
-                self.state = temp_input_state
-                self.sensorData = temp_input_data
 
             # Type: sensoralert
             elif str(message["message"]).upper() == "SENSORALERT":
@@ -333,14 +328,6 @@ class ExecuterSensor(_PollingSensor):
                                         % (self._log_tag, self.id)
                                         + "invalid. Ignoring output.")
                         return False
-
-                # Set new state.
-                if temp_change_state:
-                    self.state = temp_input_state
-
-                # Set new data.
-                if temp_has_latest_data and self.sensorDataType != SensorDataType.NONE:
-                    self.sensorData = temp_input_data
 
                 self._add_sensor_alert(temp_input_state,
                                        temp_change_state,

@@ -179,9 +179,6 @@ class FIFOSensor(_PollingSensor):
                             self._add_state_change(temp_input_state,
                                                    temp_input_data)
 
-                        self.state = temp_input_state
-                        self.sensorData = temp_input_data
-
                     # Type: sensoralert
                     elif str(message["message"]).upper() == "SENSORALERT":
 
@@ -245,14 +242,6 @@ class FIFOSensor(_PollingSensor):
                                                 % (self._log_tag, self.id)
                                                 + "invalid. Ignoring message.")
                                 continue
-
-                        # Set new state.
-                        if temp_change_state:
-                            self.state = temp_input_state
-
-                        # Set new data.
-                        if temp_has_latest_data and self.sensorDataType != SensorDataType.NONE:
-                            self.sensorData = temp_input_data
 
                         self._add_sensor_alert(temp_input_state,
                                                temp_change_state,
