@@ -38,7 +38,7 @@ class HumidityPollingSensor(_WeatherSensor):
         self._sane_lowest_value = 0
 
         # This sensor type string is used for log messages.
-        self._sensor_type = "Humidity"
+        self._log_desc = "Humidity"
 
     def _get_data(self) -> Union[float, int]:
         return self.dataCollector.getHumidity(self.country, self.city, self.lon, self.lat)

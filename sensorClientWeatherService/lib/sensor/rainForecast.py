@@ -39,7 +39,7 @@ class ForecastRainPollingSensor(_WeatherSensor):
         self._sane_lowest_value = 0
 
         # This sensor type string is used for log messages.
-        self._sensor_type = "Chance of rain"
+        self._log_desc = "Chance of rain"
 
     def _get_data(self) -> Union[float, int]:
         return self.dataCollector.getForecastRain(self.country, self.city, self.lon, self.lat, self.day)

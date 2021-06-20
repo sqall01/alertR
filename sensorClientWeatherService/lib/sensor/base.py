@@ -45,8 +45,8 @@ class _WeatherSensor(_PollingSensor):
         # Optional data send with every Sensor Alert.
         self._optional_data = None
 
-        # This sensor type string is used for log messages.
-        self._sensor_type = "Placeholder"
+        # This string is used for log messages and holds the type of the sensor.
+        self._log_desc = "Placeholder"
 
     def _execute(self):
         while True:
@@ -57,8 +57,6 @@ class _WeatherSensor(_PollingSensor):
             time.sleep(0.5)
 
             data = self._get_data()
-            if data != self.sensorData:
-                self._add_state_change(self.state, data)
 
             # Only check if threshold is reached if threshold check is activated.
             if self.hasThreshold:
@@ -66,37 +64,37 @@ class _WeatherSensor(_PollingSensor):
                 # Sensor is currently triggered => Check if it is "normal" again.
                 if self.state == self.triggerState:
                     if self.ordering == SensorOrdering.LT:
-                        if self.sensorData >= self.threshold and self.sensorData >= self._sane_lowest_value:
+                        if data >= self.threshold and data >= self._sane_lowest_value:
                             logging.info("[%s] %s %.1f of sensor '%s' is above threshold (back to normal)."
-                                         % (self._log_tag, self._sensor_type, float(self.sensorData), self.description))
+                                         % (self._log_tag, self._log_desc, float(data), self.description))
 
                             self._add_sensor_alert(1 - self.triggerState,
                                                    True,
                                                    self._optional_data,
                                                    True,
-                                                   self.sensorData)
+                                                   data)
 
                     elif self.ordering == SensorOrdering.EQ:
-                        if self.sensorData != self.threshold and self.sensorData >= self._sane_lowest_value:
+                        if data != self.threshold and data >= self._sane_lowest_value:
                             logging.info("[%s] %s %.1f of sensor '%s' is unequal to threshold (back to normal)."
-                                         % (self._log_tag, self._sensor_type, float(self.sensorData), self.description))
+                                         % (self._log_tag, self._log_desc, float(data), self.description))
 
                             self._add_sensor_alert(1 - self.triggerState,
                                                    True,
                                                    self._optional_data,
                                                    True,
-                                                   self.sensorData)
+                                                   data)
 
                     elif self.ordering == SensorOrdering.GT:
-                        if 0 <= self.sensorData <= self.threshold:
+                        if 0 <= data <= self.threshold:
                             logging.info("[%s] %s %.1f of sensor '%s' is below threshold (back to normal)."
-                                         % (self._log_tag, self._sensor_type, float(self.sensorData), self.description))
+                                         % (self._log_tag, self._log_desc, float(data), self.description))
 
                             self._add_sensor_alert(1 - self.triggerState,
                                                    True,
                                                    self._optional_data,
                                                    True,
-                                                   self.sensorData)
+                                                   data)
 
                     else:
                         logging.error("[%s] Do not know how to check threshold. Skipping check."
@@ -105,41 +103,44 @@ class _WeatherSensor(_PollingSensor):
                 # Sensor is currently not triggered => Check if it has to be triggered.
                 else:
                     if self.ordering == SensorOrdering.LT:
-                        if 0 <= self.sensorData < self.threshold:
+                        if 0 <= data < self.threshold:
                             logging.info("[%s] %s %.1f of sensor '%s' is below threshold (triggered)."
-                                         % (self._log_tag, self._sensor_type, float(self.sensorData), self.description))
+                                         % (self._log_tag, self._log_desc, float(data), self.description))
 
                             self._add_sensor_alert(self.triggerState,
                                                    True,
                                                    self._optional_data,
                                                    True,
-                                                   self.sensorData)
+                                                   data)
 
                     elif self.ordering == SensorOrdering.EQ:
-                        if self.sensorData == self.threshold and self.sensorData >= self._sane_lowest_value:
+                        if data == self.threshold and data >= self._sane_lowest_value:
                             logging.info("[%s] %s %.1f of sensor '%s' is equal to threshold (triggered)."
-                                         % (self._log_tag, self._sensor_type, float(self.sensorData), self.description))
+                                         % (self._log_tag, self._log_desc, float(data), self.description))
 
                             self._add_sensor_alert(self.triggerState,
                                                    True,
                                                    self._optional_data,
                                                    True,
-                                                   self.sensorData)
+                                                   data)
 
                     elif self.ordering == SensorOrdering.GT:
-                        if self.sensorData > self.threshold and self.sensorData >= self._sane_lowest_value:
+                        if data > self.threshold and data >= self._sane_lowest_value:
                             logging.info("[%s] %s %.1f of sensor '%s' is above threshold (triggered)."
-                                         % (self._log_tag, self._sensor_type, float(self.sensorData), self.description))
+                                         % (self._log_tag, self._log_desc, float(data), self.description))
 
                             self._add_sensor_alert(self.triggerState,
                                                    True,
                                                    self._optional_data,
                                                    True,
-                                                   self.sensorData)
+                                                   data)
 
                     else:
                         logging.error("[%s] Do not know how to check threshold. Skipping check."
                                       % self._log_tag)
+
+            if data != self.sensorData:
+                self._add_state_change(self.state, data)
 
     def _get_data(self) -> Union[float, int]:
         raise NotImplementedError("Function not implemented yet.")

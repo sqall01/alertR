@@ -42,7 +42,7 @@ class ForecastTempPollingSensor(_WeatherSensor):
         self._sane_lowest_value = 0
 
         # This sensor type string is used for log messages.
-        self._sensor_type = "Temperature forecast"
+        self._log_desc = "Temperature forecast"
 
     def _get_data(self) -> Union[float, int]:
         if self.kind == "HIGH":
