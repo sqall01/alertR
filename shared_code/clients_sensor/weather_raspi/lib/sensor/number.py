@@ -16,9 +16,9 @@ from ..globalData import SensorOrdering
 from typing import Optional, Union
 
 
-class _WeatherSensor(_PollingSensor):
+class _NumberSensor(_PollingSensor):
     """
-    Represents the base for a weather sensor that is able to check thresholds.
+    Represents the base for a numeric (int, float) sensor that is able to check thresholds.
     """
 
     def __init__(self):

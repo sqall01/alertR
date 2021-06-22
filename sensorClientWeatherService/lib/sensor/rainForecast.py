@@ -8,16 +8,16 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-from .base import _WeatherSensor
+from .number import _NumberSensor
 from ..globalData import SensorDataType
 from typing import Union
 
 
 # Class that controls one forecast rain sensor.
-class ForecastRainPollingSensor(_WeatherSensor):
+class ForecastRainPollingSensor(_NumberSensor):
 
     def __init__(self):
-        _WeatherSensor.__init__(self)
+        _NumberSensor.__init__(self)
 
         # Used for logging.
         self._log_tag = os.path.basename(__file__)
