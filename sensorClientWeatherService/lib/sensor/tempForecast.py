@@ -10,7 +10,7 @@
 import os
 from .number import _NumberSensor
 from ..globalData import SensorDataType
-from typing import Union
+from typing import Union, Optional
 
 
 # Class that controls one forecast temperature sensor.
@@ -44,7 +44,7 @@ class ForecastTempPollingSensor(_NumberSensor):
         # This sensor type string is used for log messages.
         self._log_desc = "Temperature forecast"
 
-    def _get_data(self) -> Union[float, int]:
+    def _get_data(self) -> Optional[Union[float, int]]:
         if self.kind == "HIGH":
             return self.dataCollector.getForecastTemperatureHigh(self.country, self.city, self.lon, self.lat, self.day)
 

@@ -7,21 +7,22 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import threading
 import re
 import os
 import logging
 import time
-from .core import _PollingSensor
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, SensorOrdering
-from typing import Optional
+from typing import Optional, Union
+from .number import _NumberSensor
+from ..globalData import SensorDataType
 
 
-# Class that reads one DS18b20 sensor connected to the Raspberry Pi.
-class RaspberryPiDS18b20Sensor(_PollingSensor):
+class RaspberryPiDS18b20Sensor(_NumberSensor):
+    """
+    Represents one DS18b20 sensor connected to the Raspberry Pi.
+    """
 
     def __init__(self):
-        _PollingSensor.__init__(self)
+        _NumberSensor.__init__(self)
 
         # Used for logging.
         self.fileName = os.path.basename(__file__)
@@ -30,7 +31,7 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
         self.sensorDataType = SensorDataType.FLOAT
 
         # The file of the sensor that should be parsed.
-        self.sensorFile = None
+        self._sensor_file = None
 
         # The name of the sensor that should be parsed.
         self.sensorName = None
@@ -40,182 +41,61 @@ class RaspberryPiDS18b20Sensor(_PollingSensor):
         self.interval = None
 
         # The time the last update of the data was sent to the server.
-        self.lastUpdate = None
+        self._last_update = None
 
-        # This flag indicates if this sensor has a threshold that should be
-        # checked and raise a sensor alert if it is reached.
-        self.hasThreshold = None
+        self._last_temperature_update = 0.0
 
-        # The threshold that should raise a sensor alert if it is reached.
-        self.threshold = None
+    def _get_data(self) -> Optional[Union[float, int]]:
+        """
+        Internal function that reads the data of the DS18b20 sensor.
 
-        # Says how the threshold should be checked
-        # (lower than, equal, greater than).
-        self.ordering = None
+        :return: temperature value or None
+        """
 
-        # To keep the traffic on the bus low, only allow temperature refreshes
-        # every 60 seconds.
-        self.refreshInterval = 60
-        self.lastTemperatureUpdate = 0.0
+        utc_timestamp = int(time.time())
+        if (utc_timestamp - self._last_temperature_update) > self.interval:
+            self._last_temperature_update = utc_timestamp
 
-        # Locks temperature value in order to be thread safe.
-        self.updateLock = threading.Semaphore(1)
+            try:
+                with open(self._sensor_file, 'r') as fp:
 
-        # Internal sensor data value only accessed when locked.
-        self._sensorData = None
+                    # File content looks like this:
+                    # 2d 00 4b 46 ff ff 04 10 b3 : crc=b3 YES
+                    # 2d 00 4b 46 ff ff 04 10 b3 t=22500
+                    fp.readline()
+                    line = fp.readline()
 
-    # Internal function that reads the data of the sensor.
-    def _updateData(self):
+                    reMatch = re.match("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", line)
+                    if reMatch:
+                        return float(reMatch.group(2)) / 1000
 
-        try:
-            with open(self.sensorFile, 'r') as fp:
+                    else:
+                        logging.error("[%s]: Could not parse sensor file." % self.fileName)
 
-                # File content looks like this:
-                # 2d 00 4b 46 ff ff 04 10 b3 : crc=b3 YES
-                # 2d 00 4b 46 ff ff 04 10 b3 t=22500
-                fp.readline()
-                line = fp.readline()
+            except Exception as e:
+                logging.exception("[%s]: Could not read sensor file." % self.fileName)
 
-                reMatch = re.match("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", line)
-                if reMatch:
+            return None
 
-                    temp = float(reMatch.group(2)) / 1000
-                    self.updateLock.acquire()
-                    self._sensorData = temp
-                    self.updateLock.release()
+        else:
+            return self.sensorData
 
-                else:
-                    logging.error("[%s]: Could not parse sensor file." % self.fileName)
-
-        except Exception as e:
-            logging.exception("[%s]: Could not read sensor file." % self.fileName)
-
-    def initializeSensor(self) -> bool:
-        self.hasLatestData = True
-        self.changeState = True
-
+    def initialize(self) -> bool:
         self.state = 1 - self.triggerState
 
-        self.sensorFile = "/sys/bus/w1/devices/" \
-                          + self.sensorName \
-                          + "/w1_slave"
+        self._sensor_file = "/sys/bus/w1/devices/" \
+                            + self.sensorName \
+                            + "/w1_slave"
 
         # First time the temperature is updated is done in a blocking way.
-        utcTimestamp = int(time.time())
-        self._updateData()
-        self.lastTemperatureUpdate = utcTimestamp
-        self.updateLock.acquire()
-        self.sensorData = self._sensorData
-        self.updateLock.release()
+        utc_timestamp = int(time.time())
+        self.sensorData = self._get_data()
+        self._last_temperature_update = utc_timestamp
 
-        if not self.sensorData:
+        if self.sensorData is None:
             return False
 
-        self.lastUpdate = utcTimestamp
-
-        self.hasOptionalData = True
-        self.optionalData = {"sensorName": self.sensorName}
+        self._last_update = utc_timestamp
+        self._optional_data = {"sensorName": self.sensorName}
 
         return True
-
-    def getState(self) -> int:
-        return self.state
-
-    def updateState(self):
-
-        # Restrict the times the temperature is actually read from the sensor
-        # to keep the traffic on the bus relatively low.
-        utcTimestamp = int(time.time())
-        if (utcTimestamp - self.lastTemperatureUpdate) > self.interval:
-            self.lastTemperatureUpdate = utcTimestamp
-
-            # Update temperature in a non-blocking way
-            # (this means also, that the current temperature value will
-            # not be the updated one, but one of the next rounds will have it)
-            thread = threading.Thread(target=self._updateData)
-            thread.daemon = True
-            thread.start()
-
-        self.updateLock.acquire()
-        self.sensorData = self._sensorData
-        self.updateLock.release()
-
-        logging.debug("[%s]: Current temperature of sensor '%s': %.3f."
-                      % (self.fileName, self.description, self.sensorData))
-
-        # Only check if threshold is reached if it is activated.
-        if self.hasThreshold:
-
-            # Sensor is currently triggered.
-            # Check if it is "normal" again.
-            if self.state == self.triggerState:
-                if self.ordering == SensorOrdering.LT:
-                    if self.sensorData >= self.threshold:
-                        self.state = 1 - self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is above threshold (back to normal).")
-
-                elif self.ordering == SensorOrdering.EQ:
-                    if self.sensorData != self.threshold:
-                        self.state = 1 - self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is unequal to threshold (back to normal).")
-
-                elif self.ordering == SensorOrdering.GT:
-                    if self.sensorData <= self.threshold:
-                        self.state = 1 - self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is below threshold (back to normal).")
-
-                else:
-                    logging.error("[%s]: Do not know how to check threshold. Skipping check." % self.fileName)
-
-            # Sensor is currently not triggered.
-            # Check if it has to be triggered.
-            else:
-                if self.ordering == SensorOrdering.LT:
-                    if self.sensorData < self.threshold:
-                        self.state = self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is below threshold (triggered).")
-
-                elif self.ordering == SensorOrdering.EQ:
-                    if self.sensorData == self.threshold:
-                        self.state = self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is equal to threshold (triggered).")
-
-                elif self.ordering == SensorOrdering.GT:
-                    if self.sensorData > self.threshold:
-                        self.state = self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is above threshold (triggered).")
-
-                else:
-                    logging.error("[%s]: Do not know how to check threshold. Skipping check." % self.fileName)
-
-    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
-        return None
-
-    def forceSendState(self) -> Optional[SensorObjStateChange]:
-        utcTimestamp = int(time.time())
-        if (utcTimestamp - self.lastUpdate) > self.interval:
-            self.lastUpdate = utcTimestamp
-
-            stateChange = SensorObjStateChange()
-            stateChange.clientSensorId = self.id
-            if self.state == self.triggerState:
-                stateChange.state = 1
-            else:
-                stateChange.state = 0
-            stateChange.dataType = self.sensorDataType
-            stateChange.sensorData = self.sensorData
-
-            return stateChange
-        return None

@@ -10,10 +10,10 @@
 import os
 import logging
 import time
-
+from typing import Optional, Union
 from .core import _PollingSensor
 from ..globalData import SensorOrdering
-from typing import Optional, Union
+
 
 
 class _NumberSensor(_PollingSensor):
@@ -57,6 +57,12 @@ class _NumberSensor(_PollingSensor):
             time.sleep(0.5)
 
             data = self._get_data()
+
+            if data is None:
+                continue
+
+            logging.debug("[%s] %s %.1f of sensor '%s'."
+                          % (self._log_tag, self._log_desc, float(data), self.description))
 
             # Only check if threshold is reached if threshold check is activated.
             if self.hasThreshold:
@@ -142,5 +148,5 @@ class _NumberSensor(_PollingSensor):
             if data != self.sensorData:
                 self._add_state_change(self.state, data)
 
-    def _get_data(self) -> Union[float, int]:
+    def _get_data(self) -> Optional[Union[float, int]]:
         raise NotImplementedError("Function not implemented yet.")
