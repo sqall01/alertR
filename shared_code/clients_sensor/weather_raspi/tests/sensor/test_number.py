@@ -296,3 +296,27 @@ class TestNumberSensor(TestCase):
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(0, events[0].state)
         self.assertEqual(2, events[0].sensorData)
+
+    def test_same_data(self):
+        """
+        Tests that no change in data does not generate an event.
+        """
+
+        sensor = self._create_base_sensor()
+
+        sensor.hasThreshold = False
+        sensor.state = 0
+        sensor.sensorData = 1337
+
+        sensor.initialize()
+        sensor.start()
+
+        self.assertEqual(1337, sensor.sensorData)
+
+        sensor.next_data = 1337
+        time.sleep(1.0)
+
+        self.assertEqual(1337, sensor.sensorData)
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
