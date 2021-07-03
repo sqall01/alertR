@@ -36,7 +36,7 @@ class _NumberSensor(_PollingSensor):
 
         # Says how the threshold should be checked
         # (lower than, equal, greater than).
-        self.ordering = None
+        self.ordering = None  # type: Optional[SensorOrdering]
 
         # As long as errors occurring during the fetching of data are encoded as negative values,
         # we need the lowest value that we use for our threshold check.
