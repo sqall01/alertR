@@ -61,7 +61,7 @@ class GlobalData:
         self.version = 0.800  # type: float
 
         # revision of the used server
-        self.rev = 2  # type: int
+        self.rev = 3  # type: int
 
         # Used database layout version.
         self.dbVersion = 3  # type: int

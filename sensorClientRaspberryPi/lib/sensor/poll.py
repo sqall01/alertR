@@ -7,13 +7,16 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import time
 import RPi.GPIO as GPIO
 from .core import _PollingSensor
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
-from typing import Optional
+from ..globalData import SensorDataType
 
-# class that controls one sensor at a gpio pin of the raspberry pi
+
 class RaspberryPiGPIOPollingSensor(_PollingSensor):
+    """
+    Controls one sensor at a gpio pin of the raspberry pi.
+    """
 
     def __init__(self):
         _PollingSensor.__init__(self)
@@ -27,37 +30,34 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
         # The counter of the state reads used to verify that the state
         # is read x times before it is actually changed.
-        self.currStateCtr = 0
+        self._curr_state_ctr = 0
         self.thresStateCtr = None
 
-    def initializeSensor(self) -> bool:
-        self.hasLatestData = False
-        self.changeState = True
+    def _execute(self):
+
+        while True:
+
+            if self._exit_flag:
+                return
+
+            time.sleep(0.5)
+
+            # Set state only if threshold of reads with the same state is reached.
+            curr_state = GPIO.input(self.gpioPin)
+            if curr_state != self.state:
+                self._curr_state_ctr += 1
+                if self._curr_state_ctr >= self.thresStateCtr:
+                    self._add_sensor_alert(curr_state,
+                                           True)
+
+            else:
+                self._curr_state_ctr = 0
+
+    def initialize(self) -> bool:
 
         # configure gpio pin and get initial state
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.gpioPin, GPIO.IN)
         self.state = GPIO.input(self.gpioPin)
-        self.tempState = self.state
 
         return True
-
-    def getState(self) -> int:
-        return self.state
-
-    def updateState(self):
-
-        # Set state only if threshold of reads with the same state is reached.
-        currState = GPIO.input(self.gpioPin)
-        if currState != self.state:
-            self.currStateCtr += 1
-            if self.currStateCtr >= self.thresStateCtr:
-                self.state = currState
-        else:
-            self.currStateCtr = 0
-
-    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
-        return None
-
-    def forceSendState(self) -> Optional[SensorObjStateChange]:
-        return None

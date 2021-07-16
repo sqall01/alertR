@@ -22,7 +22,7 @@ class GlobalData:
         self.version = 0.800  # type: float
 
         # revision of the used client
-        self.rev = 0  # type: int
+        self.rev = 1  # type: int
 
         # name of this client
         self.name = "AlertR Manager Client Keypad"  # type: str

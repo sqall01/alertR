@@ -1,0 +1,1 @@
+../../../shared_code/clients_sensor/weather_raspi/tests/sensor/test_number.py

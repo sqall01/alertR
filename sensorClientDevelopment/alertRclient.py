@@ -12,7 +12,7 @@ import os
 import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
-from lib import SensorDataType, SensorDev, SensorExecuter, SensorEventHandler
+from lib import SensorDataType, DevSensor, SensorExecuter, SensorEventHandler
 from lib import GlobalData
 import logging
 import time
@@ -153,7 +153,7 @@ if __name__ == '__main__':
         # parse all sensors
         for item in configRoot.find("sensors").iterfind("sensor"):
 
-            sensor = SensorDev()
+            sensor = DevSensor()
 
             # these options are needed by the server to
             # differentiate between the registered sensors
@@ -212,8 +212,15 @@ if __name__ == '__main__':
     # Initialize sensors before starting worker threads.
     logging.info("[%s] Initializing sensors." % fileName)
     for sensor in globalData.sensors:
-        if not sensor.initializeSensor():
+        if not sensor.initialize():
             logging.critical("[%s]: Not able to initialize sensor." % fileName)
+            sys.exit(1)
+
+    # Starting sensors before starting worker threads.
+    logging.info("[%s] Starting sensors." % fileName)
+    for sensor in globalData.sensors:
+        if not sensor.start():
+            logging.critical("[%s]: Not able to start sensor." % fileName)
             sys.exit(1)
 
     # generate object for the communication to the server and connect to it
@@ -244,6 +251,7 @@ if __name__ == '__main__':
 
             connectionRetries = 1
             break
+
         connectionRetries += 1
 
         logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)
@@ -275,7 +283,7 @@ if __name__ == '__main__':
     receiver.start()
 
     # Wait until thread is initialized.
-    while not executer.isInitialized():
+    while not executer.is_initialized:
         time.sleep(0.1)
 
     logging.info("[%s]: Client started." % fileName)
@@ -288,15 +296,18 @@ if __name__ == '__main__':
             dataString = ""
             if sensor.sensorDataType == SensorDataType.NONE:
                 dataString = "Current Data: NONE"
+
             elif sensor.sensorDataType == SensorDataType.INT:
                 dataString = "Current Data: (INT) %d" % sensor.sensorData
                 dataString += " -> Next Data: %d" % sensor.nextData
+
             elif sensor.sensorDataType == SensorDataType.FLOAT:
                 dataString = "Current Data: (FLOAT) %.3f" % sensor.sensorData
                 dataString += " -> Next Data: %.3f" % sensor.nextData
 
             if sensor.consoleInputState == sensor.triggerState:
                 print("Sensor Id: %d - Triggered (%s)" % (sensor.id, dataString))
+
             else:
                 print("Sensor Id: %d - Not Triggered (%s)" % (sensor.id, dataString))
 
@@ -312,7 +323,7 @@ if __name__ == '__main__':
             if sensor.id == localSensorId:
                 found = True
 
-                sensor.toggleConsoleState()
+                sensor.toggle_console_state()
                 break
         if not found:
             print("Sensor with local ID '%d' does not exist." % localSensorId)

@@ -8,20 +8,19 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-import logging
-from .core import _PollingSensor
-from ..globalData import SensorDataType, SensorOrdering, SensorObjSensorAlert, SensorObjStateChange
-from typing import Optional
+from .number import _NumberSensor
+from ..globalData import SensorDataType
+from typing import Union, Optional
 
 
 # Class that controls one forecast temperature sensor.
-class ForecastTempPollingSensor(_PollingSensor):
+class ForecastTempPollingSensor(_NumberSensor):
 
     def __init__(self):
-        _PollingSensor.__init__(self)
+        _NumberSensor.__init__(self)
 
         # Used for logging.
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.FLOAT
@@ -38,126 +37,29 @@ class ForecastTempPollingSensor(_PollingSensor):
         self.day = None
         self.kind = None
 
-        # This flag indicates if this sensor has a threshold that should be
-        # checked and raise a sensor alert if it is reached.
-        self.hasThreshold = False
+        # As long as errors occurring during the fetching of data are encoded as negative values,
+        # we need the lowest value that we use for our threshold check.
+        self._sane_lowest_value = 0
 
-        # The threshold that should raise a sensor alert if it is reached.
-        self.threshold = None
+        # This sensor type string is used for log messages.
+        self._log_desc = "Temperature forecast"
 
-        # Says how the threshold should be checked
-        # (lower than, equal, greater than).
-        self.ordering = None
+    def _get_data(self) -> Optional[Union[float, int]]:
+        if self.kind == "HIGH":
+            return self.dataCollector.getForecastTemperatureHigh(self.country, self.city, self.lon, self.lat, self.day)
 
-    def initializeSensor(self) -> bool:
-        self.hasLatestData = False
-        self.changeState = False
+        else:
+            return self.dataCollector.getForecastTemperatureLow(self.country, self.city, self.lon, self.lat, self.day)
+
+    def initialize(self) -> bool:
         self.state = 1 - self.triggerState
 
-        # Update data directly for the first time.
-        self.updateState()
-
-        self.hasOptionalData = True
-        self.optionalData = {"country": self.country,
-                             "city": self.city,
-                             "lon": self.lon,
-                             "lat": self.lat,
-                             "type": "forecasttemp",
-                             "kind": self.kind,
-                             "day": self.day}
+        self._optional_data = {"country": self.country,
+                               "city": self.city,
+                               "lon": self.lon,
+                               "lat": self.lat,
+                               "type": "forecasttemp",
+                               "kind": self.kind,
+                               "day": self.day}
 
         return True
-
-    def getState(self) -> int:
-        return self.state
-
-    def updateState(self):
-        if self.kind == "HIGH":
-            temp = self.dataCollector.getForecastTemperatureHigh(
-                self.country, self.city, self.lon, self.lat, self.day)
-        else:
-            temp = self.dataCollector.getForecastTemperatureLow(
-                self.country, self.city, self.lon, self.lat, self.day)
-        if temp != self.sensorData:
-            self.sensorData = temp
-            self._forceSendState = True
-
-        # Only check if threshold is reached if it is activated.
-        if self.hasThreshold:
-
-            # Sensor is currently triggered.
-            # Check if it is "normal" again.
-            if self.state == self.triggerState:
-                if self.ordering == SensorOrdering.LT:
-                    if self.sensorData >= self.threshold and self.sensorData >= -273.0:
-                        self.state = 1 - self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is above threshold (back to normal).")
-
-                elif self.ordering == SensorOrdering.EQ:
-                    if self.sensorData != self.threshold and self.sensorData >= -273.0:
-                        self.state = 1 - self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is unequal to threshold (back to normal).")
-
-                elif self.ordering == SensorOrdering.GT:
-                    if -273.0 <= self.sensorData <= self.threshold:
-                        self.state = 1 - self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is below threshold (back to normal).")
-
-                else:
-                    logging.error("[%s]: Do not know how to check threshold. "
-                                  % self.fileName
-                                  + "Skipping check.")
-
-            # Sensor is currently not triggered.
-            # Check if it has to be triggered.
-            else:
-                if self.ordering == SensorOrdering.LT:
-                    if -273.0 <= self.sensorData < self.threshold:
-                        self.state = self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is below threshold (triggered).")
-
-                elif self.ordering == SensorOrdering.EQ:
-                    if self.sensorData == self.threshold and self.sensorData >= -273.0:
-                        self.state = self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is equal to threshold (triggered).")
-
-                elif self.ordering == SensorOrdering.GT:
-                    if self.sensorData > self.threshold and self.sensorData >= -273.0:
-                        self.state = self.triggerState
-                        logging.info("[%s]: Temperature %.3f of sensor '%s' "
-                                     % (self.fileName, self.sensorData, self.description)
-                                     + "is above threshold (triggered).")
-
-                else:
-                    logging.error("[%s]: Do not know how to check threshold. "
-                                  % self.fileName
-                                  + "Skipping check.")
-
-    def forceSendAlert(self) -> Optional[SensorObjSensorAlert]:
-        return None
-
-    def forceSendState(self) -> Optional[SensorObjStateChange]:
-        if self._forceSendState:
-            self._forceSendState = False
-
-            stateChange = SensorObjStateChange()
-            stateChange.clientSensorId = self.id
-            if self.state == self.triggerState:
-                stateChange.state = 1
-            else:
-                stateChange.state = 0
-            stateChange.dataType = self.sensorDataType
-            stateChange.sensorData = self.sensorData
-
-            return stateChange
-        return None

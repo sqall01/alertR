@@ -21,7 +21,7 @@ class GlobalData:
         self.version = 0.800  # type: float
 
         # revision of the used client
-        self.rev = 0  # type: int
+        self.rev = 2  # type: int
 
         # name of this client
         self.name = "AlertR Sensor Client Executer"  # type: str

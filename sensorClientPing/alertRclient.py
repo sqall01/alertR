@@ -211,8 +211,15 @@ if __name__ == '__main__':
     # Initialize sensors before starting worker threads.
     logging.info("[%s] Initializing sensors." % fileName)
     for sensor in globalData.sensors:
-        if not sensor.initializeSensor():
+        if not sensor.initialize():
             logging.critical("[%s]: Not able to initialize sensor." % fileName)
+            sys.exit(1)
+
+    # Starting sensors before starting worker threads.
+    logging.info("[%s] Starting sensors." % fileName)
+    for sensor in globalData.sensors:
+        if not sensor.start():
+            logging.critical("[%s]: Not able to start sensor." % fileName)
             sys.exit(1)
 
     # generate object for the communication to the server and connect to it

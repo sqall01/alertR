@@ -205,7 +205,7 @@ class Communication:
         received_message_type = ""
         received_payload_type = ""
         try:
-            data = self._connection.recv(BUFSIZE)
+            data = self._connection.recv(BUFSIZE).decode("ascii")
             message = json.loads(data)
 
             # Check if an error was received
@@ -326,7 +326,7 @@ class Communication:
 
                     # Receive response.
                     try:
-                        data = self._connection.recv(BUFSIZE)
+                        data = self._connection.recv(BUFSIZE).decode("ascii")
                         message = json.loads(data)
 
                         # check if an error was received
@@ -472,7 +472,7 @@ class Communication:
                 return None
 
         self._last_communication = int(time.time())
-        return data
+        return data.decode("ascii")
 
     # noinspection PyBroadException
     def recv_request(self) -> Optional[MsgRequest]:
@@ -506,7 +506,7 @@ class Communication:
 
                 received_transaction_id = None
                 try:
-                    data = self._connection.recv(BUFSIZE, timeout=0.5)
+                    data = self._connection.recv(BUFSIZE, timeout=0.5).decode("ascii")
                     if not data:
                         self._has_channel = False
                         return None
@@ -540,22 +540,25 @@ class Communication:
                         self._connection.send(json.dumps(message))
 
                         # After initiating transaction receive actual command.
-                        data = ""
-                        last_size = 0
-                        while len(data) < message_size:
-                            data += self._connection.recv(BUFSIZE)
+                        num_read = 0
+                        # NOTE: Use bytearray since bytes are immutable and
+                        # for each += operator a new allocation is done.
+                        data_raw = bytearray(message_size)
+                        while num_read < message_size:
+                            temp_data = self._connection.recv(message_size - len(data))
+                            if not temp_data:
+                                break
 
-                            # Check if the size of the received data has changed.
-                            # If not we detected a possible dead lock.
-                            if last_size != len(data):
-                                last_size = len(data)
+                            recv_length = len(temp_data)
+                            data_raw[num_read:num_read+recv_length] = temp_data
+                            num_read += recv_length
 
-                            else:
-                                logging.error("[%s]: Possible dead lock detected while receiving data. "
-                                              % self._log_tag
-                                              + "Closing connection.")
-                                self._has_channel = False
-                                return None
+                        if num_read != message_size:
+                            logging.error("[%s]: Received data incomplete. Closing connection." % self._log_tag)
+                            self._has_channel = False
+                            return None
+
+                        data = data_raw.decode("ascii")
 
                     # if no RTS was received
                     # => other side does not stick to protocol
