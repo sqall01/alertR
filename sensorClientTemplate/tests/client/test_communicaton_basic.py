@@ -1,0 +1,1 @@
+../../../shared_code/clients_all/tests/client/test_communicaton_basic.py

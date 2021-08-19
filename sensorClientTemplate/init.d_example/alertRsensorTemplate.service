@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Sensor Client Template
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRsensorTemplate.sh start
+ExecStop=/etc/init.d/alertRsensorTemplate.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
