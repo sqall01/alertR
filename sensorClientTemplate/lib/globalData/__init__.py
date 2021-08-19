@@ -1,0 +1,1 @@
+../../../shared_code/clients_sensor/lib/globalData/__init__.py
