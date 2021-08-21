@@ -17,6 +17,7 @@ class SensorDataType:
     NONE = 0
     INT = 1
     FLOAT = 2
+    GPS = 3
 
 
 # This enum class gives the different orderings used to check if the data of a

@@ -10,7 +10,7 @@
 import os
 import time
 import logging
-from typing import Tuple
+from typing import Tuple, Optional
 from .core import _PollingSensor
 from ..globalData import SensorDataType
 
@@ -28,6 +28,11 @@ class _GPSSensor(_PollingSensor):
 
         # used for logging
         self._log_tag = os.path.basename(__file__)
+
+        # Interval in which GPS data is fetched.
+        self.interval = None  # type: Optional[int]
+
+        self._last_get_data = 0
 
     def initialize(self) -> bool:
         """
@@ -53,6 +58,14 @@ class _GPSSensor(_PollingSensor):
 
             if self._exit_flag:
                 return
+
+            current_time = int(time.time())
+            if (current_time - self._last_get_data) > self.interval:
+                try:
+                    lat, lon = self._get_data()
+
+                except Exception as e:
+                    lo
 
             print("Sensor: executing sensor logic")
 

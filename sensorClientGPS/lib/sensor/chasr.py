@@ -11,7 +11,7 @@ import re
 import os
 import logging
 import time
-from typing import Tuple
+from typing import Tuple, Optional
 from .gps import _GPSSensor
 from ..globalData import SensorDataType
 
@@ -23,7 +23,11 @@ class ChasRSensor(_GPSSensor):
     def __init__(self):
         super().__init__()
 
-        # TODO
+        # Name of the device to fetch GPS data for.
+        self.device = None  # type: Optional[str]
+
+        self.username = None  # type: Optional[str]
+        self.password = None  # type: Optional[str]
 
     def _get_data(self) -> Tuple[float, float]:
         # TODO
