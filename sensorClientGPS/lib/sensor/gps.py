@@ -62,12 +62,17 @@ class _GPSSensor(_PollingSensor):
             current_time = int(time.time())
             if (current_time - self._last_get_data) > self.interval:
                 try:
-                    lat, lon = self._get_data()
+                    lat, lon, utctime = self._get_data()
 
                 except Exception as e:
                     lo
 
             print("Sensor: executing sensor logic")
 
-    def _get_data(self) -> Tuple[float, float]:
+    def _get_data(self) -> Tuple[float, float, int]:
         raise NotImplementedError("Function not implemented yet.")
+
+
+'''
+Tool to get GPS coordinates on map and draw polygons: https://umap.openstreetmap.fr/en/map/new
+'''
