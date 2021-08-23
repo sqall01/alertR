@@ -6,13 +6,15 @@
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
-
+import binascii
 import os
 import logging
 import requests
 import hashlib
 from typing import Tuple, Optional, Dict
 from .gps import _GPSSensor
+from Crypto.Cipher import AES
+from Crypto.Util import Padding
 
 
 class ServerError(BaseException):
@@ -54,7 +56,21 @@ class ChasRSensor(_GPSSensor):
         raise NotImplementedError("TODO")
 
     def _decrypt_data(self, data: Dict[str, str]) -> Optional[Dict[str, str]]:
-        raise NotImplementedError("TODO")
+        decrypted_data = {
+            "device_name": data["device_name"],
+            "utctime": data["utctime"],
+            "authtag": data["authtag"]
+        }
+
+        iv = binascii.unhexlify(data["iv"])
+
+        for k in ["lat", "lon", "alt", "speed"]:
+            cipher = AES.new(self._key, AES.MODE_CBC, iv)
+            decrypted_data[k] = Padding.unpad(cipher.decrypt(binascii.unhexlify(data[k])),
+                                              16,
+                                              'pkcs7').decode("utf-8")
+
+        return decrypted_data
 
     def _get_data(self) -> Tuple[float, float, int]:
 
@@ -74,20 +90,29 @@ class ChasRSensor(_GPSSensor):
             request_result = r.json()
 
         except Exception as e:
-            logging.exception("[%s] Failed to fetch GPS data."
-                              % self._log_tag)
+            logging.exception("[%s] Failed to fetch GPS data." % self._log_tag)
             raise
 
         # Decrypt and authenticate data if fetching was successful.
         if request_result["code"] == ChasRErrorCodes.NO_ERROR:
 
-            decrypted_data = self._decrypt_data(request_result["data"][0])
+            decrypted_data = None
+            try:
+                decrypted_data = self._decrypt_data(request_result["data"][0])
+
+            except Exception as e:
+                logging.exception("[%s] Failed to decrypt GPS data." % self._log_tag)
+
             if decrypted_data is None:
-                logging.error("[%s] Unable to decrypt GPS data.")
+                logging.error("[%s] Unable to decrypt GPS data." % self._log_tag)
                 raise ValueError("Decryption Error")
 
+            if decrypted_data["device_name"] != self.device:
+                logging.error("[%s] Received GPS data for wrong device." % self._log_tag)
+                raise ValueError("Wrong device")
+
             if not self._check_hmac(decrypted_data):
-                logging.error("[%s] Unable to authenticate GPS data.")
+                logging.error("[%s] Unable to authenticate GPS data." % self._log_tag)
                 raise ValueError("Unauthenticated Data")
 
             return float(decrypted_data["lat"]), float(decrypted_data["lon"]), int(decrypted_data["utctime"])
@@ -142,3 +167,5 @@ class ChasRSensor(_GPSSensor):
         sha256 = hashlib.sha256()
         sha256.update(self.secret.encode("utf-8"))
         self._key = sha256.digest()
+
+        return True

@@ -34,6 +34,8 @@ class _GPSSensor(_PollingSensor):
 
         self._last_get_data = 0
 
+        self._last_utctime = 0
+
     def initialize(self) -> bool:
         """
         This function is called once before the sensor client has connected itself
@@ -65,7 +67,12 @@ class _GPSSensor(_PollingSensor):
                     lat, lon, utctime = self._get_data()
 
                 except Exception as e:
-                    lo
+                    raise # TODO
+
+                # Check if received GPS data is newer than the last one.
+                if utctime <= self._last_utctime:
+                    logging.error("[%s] Received old GPS data." % self._log_tag)
+                    continue
 
             print("Sensor: executing sensor logic")
 
