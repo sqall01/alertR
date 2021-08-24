@@ -11,10 +11,12 @@ import os
 import logging
 import requests
 import hashlib
-from typing import Tuple, Optional, Dict
-from .gps import _GPSSensor
+from typing import Optional, Dict
 from Crypto.Cipher import AES
+from Crypto.Hash import HMAC, SHA256
 from Crypto.Util import Padding
+from .gps import _GPSSensor
+from ..globalData import SensorDataGPS
 
 
 class ServerError(BaseException):
@@ -53,7 +55,21 @@ class ChasRSensor(_GPSSensor):
         self.secret = None  # type: Optional[str]
 
     def _check_hmac(self, data: Dict[str, str]) -> bool:
-        raise NotImplementedError("TODO")
+        hmac = HMAC.new(self._key, digestmod=SHA256)
+        hmac.update(data["device_name"].encode("utf-8"))
+        hmac.update(str(data["utctime"]).encode("utf-8"))
+        hmac.update(data["lat"].encode("utf-8"))
+        hmac.update(data["lon"].encode("utf-8"))
+        hmac.update(data["alt"].encode("utf-8"))
+        hmac.update(data["speed"].encode("utf-8"))
+
+        try:
+            hmac.hexverify(data["authtag"])
+
+        except Exception as e:
+            return False
+
+        return True
 
     def _decrypt_data(self, data: Dict[str, str]) -> Optional[Dict[str, str]]:
         decrypted_data = {
@@ -72,7 +88,7 @@ class ChasRSensor(_GPSSensor):
 
         return decrypted_data
 
-    def _get_data(self) -> Tuple[float, float, int]:
+    def _get_data(self) -> SensorDataGPS:
 
         logging.debug("[%s] Fetching data for device: %s" % (self._log_tag, self.device))
 
@@ -115,7 +131,9 @@ class ChasRSensor(_GPSSensor):
                 logging.error("[%s] Unable to authenticate GPS data." % self._log_tag)
                 raise ValueError("Unauthenticated Data")
 
-            return float(decrypted_data["lat"]), float(decrypted_data["lon"]), int(decrypted_data["utctime"])
+            return SensorDataGPS(float(decrypted_data["lat"]),
+                                 float(decrypted_data["lon"]),
+                                 int(decrypted_data["utctime"]))
 
         # Server has a database error.
         elif request_result["code"] == ChasRErrorCodes.DATABASE_ERROR:
