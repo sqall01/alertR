@@ -46,6 +46,14 @@ class _GPSSensor(_PollingSensor):
         self._polygon = None  # type: Optional[prepared.PreparedGeometry]
 
     def _process_position(self, gps_data: SensorDataGPS):
+
+        if self.sensorData is not None and self.sensorData == gps_data:
+            return
+
+        logging.debug("[%s] GPS position for '%s': %f, %f"
+                      % (self._log_tag, self.description, gps_data.lat, gps_data.lon))
+
+        # According to a tutorial, shapely needs coordinates in the form longitude, latitude.
         point = geometry.Point(gps_data.lon, gps_data.lat)
 
         if self._polygon.contains(point):
@@ -115,6 +123,7 @@ class _GPSSensor(_PollingSensor):
         try:
             shapely_coordinates = []
             for coord in self.coordinates:
+                # According to a tutorial, shapely needs coordinates in the form longitude, latitude.
                 shapely_coordinates.append((coord[1], coord[0]))
             polygon = geometry.Polygon(shapely_coordinates)
             self._polygon = prepared.prep(polygon)
@@ -157,6 +166,7 @@ class _GPSSensor(_PollingSensor):
                 if gps_data.utctime <= self._last_utctime:
                     logging.error("[%s] Received old GPS data." % self._log_tag)
                     continue
+                self._last_utctime = gps_data.utctime
 
                 self._process_position(gps_data)
 
@@ -166,8 +176,3 @@ class _GPSSensor(_PollingSensor):
         :return: Tuple with latitude, longitude and utc timestamp
         """
         raise NotImplementedError("Function not implemented yet.")
-
-
-'''
-TODO: Tool to get GPS coordinates on map and draw polygons: https://umap.openstreetmap.fr/en/map/new
-'''
