@@ -28,6 +28,40 @@ class SensorOrdering:
     GT = 2
 
 
+class SensorDataGPS:
+    def __init__(self, lat: float, lon: float, utctime: int):
+        self._lat = lat
+        self._lon = lon
+        self._utctime = utctime
+
+    def __eq__(self, other):
+        return self._lat == other.lat and self._lon == other.lon and self._utctime == other.utctime
+
+    @property
+    def lat(self) -> float:
+        return self._lat
+
+    @property
+    def lon(self) -> float:
+        return self._lon
+
+    @property
+    def utctime(self) -> int:
+        return self._utctime
+
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the GPS object into a dictionary.
+        :return:
+        """
+        obj_dict = {"lat": self._lat,
+                    "lon": self._lon,
+                    "utctime": self._utctime,
+                    }
+
+        return obj_dict
+
+
 # This class represents a triggered sensor alert of the sensor.
 class SensorObjSensorAlert(LocalObject):
 
@@ -52,24 +86,30 @@ class SensorObjSensorAlert(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[Union[int, float]]
+        self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
     def convert_to_dict(self) -> Dict[str, Any]:
         """
         Converts the Sensor Alert object into a dictionary.
         :return:
         """
-        sensor_alert_dict = {"clientSensorId": self.clientSensorId,
-                             "state": self.state,
-                             "hasOptionalData": self.hasOptionalData,
-                             "optionalData": copy.deepcopy(self.optionalData) if self.hasLatestData else None,
-                             "changeState": self.changeState,
-                             "hasLatestData": self.hasLatestData,
-                             "dataType": self.dataType,
-                             "sensorData": self.sensorData,
-                             }
+        obj_dict = {"clientSensorId": self.clientSensorId,
+                    "state": self.state,
+                    "hasOptionalData": self.hasOptionalData,
+                    "optionalData": copy.deepcopy(self.optionalData) if self.hasLatestData else None,
+                    "changeState": self.changeState,
+                    "hasLatestData": self.hasLatestData,
+                    "dataType": self.dataType,
+                    }
 
-        return sensor_alert_dict
+        # Convert sensor data for dict.
+        if self.dataType == SensorDataType.GPS:
+            obj_dict["sensorData"] = self.sensorData.convert_to_dict()
+
+        else:
+            obj_dict["sensorData"] = self.sensorData
+
+        return obj_dict
 
     def deepcopy(self, sensor_alert):
         """
@@ -83,7 +123,15 @@ class SensorObjSensorAlert(LocalObject):
         self.changeState = sensor_alert.changeState
         self.hasLatestData = sensor_alert.hasLatestData
         self.dataType = sensor_alert.dataType
-        self.sensorData = sensor_alert.sensorData
+
+        # Deep copy sensor data.
+        if self.dataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS(sensor_alert.sensorData.lat,
+                                            sensor_alert.sensorData.lon,
+                                            sensor_alert.sensorData.utctime)
+
+        else:
+            self.sensorData = sensor_alert.sensorData
 
         if type(sensor_alert.optionalData) == dict:
             self.optionalData = copy.deepcopy(sensor_alert.optionalData)
@@ -108,20 +156,26 @@ class SensorObjStateChange(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[Union[int, float]]
+        self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
     def convert_to_dict(self) -> Dict[str, Any]:
         """
         Converts the Sensor object into a dictionary.
         :return:
         """
-        sensor_dict = {"clientSensorId": self.clientSensorId,
-                       "state": self.state,
-                       "dataType": self.dataType,
-                       "sensorData": self.sensorData,
-                       }
+        obj_dict = {"clientSensorId": self.clientSensorId,
+                    "state": self.state,
+                    "dataType": self.dataType
+                    }
 
-        return sensor_dict
+        # Convert sensor data for dict.
+        if self.dataType == SensorDataType.GPS:
+            obj_dict["sensorData"] = self.sensorData.convert_to_dict()
+
+        else:
+            obj_dict["sensorData"] = self.sensorData
+
+        return obj_dict
 
     def deepcopy(self, state_change):
         """
@@ -132,5 +186,14 @@ class SensorObjStateChange(LocalObject):
         self.clientSensorId = state_change.clientSensorId
         self.state = state_change.clientSensorId
         self.dataType = state_change.dataType
-        self.sensorData = state_change.sensorData
+
+        # Deep copy sensor data.
+        if self.dataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS(state_change.sensorData.lat,
+                                            state_change.sensorData.lon,
+                                            state_change.sensorData.utctime)
+
+        else:
+            self.sensorData = state_change.sensorData
+
         return self
