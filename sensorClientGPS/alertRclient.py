@@ -153,6 +153,10 @@ if __name__ == '__main__':
         # parse all sensors
         for item in configRoot.find("sensors").iterfind("sensor"):
 
+            provider = str(item.find("gps").attrib["provider"])
+            if provider != "chasr":
+                raise ValueError("Unknown GPS provider: %s" % provider)
+
             sensor = ChasRSensor()
 
             # these options are needed by the server to
@@ -182,6 +186,34 @@ if __name__ == '__main__':
                                      % sensor.id
                                      + "has to be activated when "
                                      + "'triggerAlertNormal' is activated.")
+
+            sensor.interval = int(item.find("gps").attrib["interval"])
+            sensor.trigger_within = (str(item.find("gps").attrib["triggerWithin"]).upper() == "TRUE")
+            sensor.device = str(item.find("gps").attrib["device"])
+            sensor.username = str(item.find("gps").attrib["username"])
+            sensor.password = str(item.find("gps").attrib["password"])
+            sensor.secret = str(item.find("gps").attrib["secret"])
+
+            for polygon_xml in item.iterfind("polygon"):
+                polygon = []
+                for position_xml in polygon_xml.iterfind("position"):
+                    lat = float(position_xml.attrib["lat"])
+                    lon = float(position_xml.attrib["lon"])
+
+                    if not (-90 <= lat <= 90):
+                        raise ValueError("Invalid value for latitude: %f" % lat)
+
+                    if not (-180 <= lon <= 180):
+                        raise ValueError("Invalid value for longitude: %f" % lon)
+
+                    polygon.append((lat, lon))
+
+                if len(polygon) < 3:
+                    raise ValueError("Polygon needs at least 3 positions.")
+                sensor.polygons.append(polygon)
+
+            if sensor.interval <= 0:
+                raise ValueError("'interval' has to be greater than 0.")
 
             globalData.sensors.append(sensor)
 

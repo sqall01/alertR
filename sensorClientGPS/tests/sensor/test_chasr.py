@@ -3,11 +3,13 @@ import os
 import time
 import hashlib
 import copy
+import logging
 from unittest import TestCase
 from typing import Dict
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
 from Crypto.Util import Padding
+from tests.util import config_logging
 from lib.sensor.chasr import ChasRSensor
 
 
@@ -46,6 +48,9 @@ class TestChasRSensor(TestCase):
         encrypted_data["authtag"] = hmac.hexdigest()
 
         return encrypted_data
+
+    def setUp(self) -> None:
+        config_logging(logging.DEBUG)
 
     def test_decrypt_data_valid(self):
         """

@@ -63,7 +63,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.initialize()
 
@@ -95,7 +95,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.initialize()
 
@@ -127,7 +127,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = False
         sensor.initialize()
 
@@ -159,7 +159,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = False
         sensor.initialize()
 
@@ -191,7 +191,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.initialize()
 
@@ -225,7 +225,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = False
         sensor.initialize()
 
@@ -259,7 +259,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.initialize()
 
@@ -293,7 +293,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = False
         sensor.initialize()
 
@@ -314,6 +314,93 @@ class TestGpsSensor(TestCase):
         self.assertEqual(events[0].sensorData.lon, position.lon)
         self.assertEqual(events[0].sensorData.utctime, position.utctime)
 
+    def test_process_multi_geofences(self):
+        """
+        Tests position processing with multiple geofences (moving in and out of geofences).
+        """
+        fence_coords1 = [(52.519850777692575, 13.383772373199465),
+                        (52.52030775996867, 13.396904468536379),
+                        (52.51468001850454, 13.397247791290285),
+                        (52.51452331933269, 13.384673595428469)]
+        fence_coords2 = [(55.519850777692575, 10.383772373199465),
+                        (55.52030775996867, 10.396904468536379),
+                        (55.51468001850454, 10.397247791290285),
+                        (55.51452331933269, 10.384673595428469)]
+
+        sensor = _GPSSensor()
+        sensor.triggerState = 1
+        sensor.triggerAlert = True
+        sensor.triggerAlertNormal = True
+        sensor.polygons.append(fence_coords1)
+        sensor.polygons.append(fence_coords2)
+        sensor.trigger_within = True
+        sensor.initialize()
+
+        # Move into first geofence.
+        position = SensorDataGPS(52.51743522098097,
+                                 13.390316963195803,
+                                 1337)
+        sensor._process_position(position)
+
+        events = sensor.get_events()
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(type(events[0]), SensorObjSensorAlert)
+        self.assertEqual(events[0].state, 1)
+        self.assertEqual(events[0].dataType, SensorDataType.GPS)
+        self.assertEqual(events[0].sensorData.lat, position.lat)
+        self.assertEqual(events[0].sensorData.lon, position.lon)
+        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+
+        # Move out of geofence.
+        position = SensorDataGPS(42.51743522098097,
+                                 42.390316963195803,
+                                 1338)
+        sensor._process_position(position)
+
+        events = sensor.get_events()
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(type(events[0]), SensorObjSensorAlert)
+        self.assertEqual(events[0].state, 0)
+        self.assertEqual(events[0].dataType, SensorDataType.GPS)
+        self.assertEqual(events[0].sensorData.lat, position.lat)
+        self.assertEqual(events[0].sensorData.lon, position.lon)
+        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+
+        # Move into second geofence.
+        position = SensorDataGPS(55.51743522098097,
+                                 10.390316963195803,
+                                 1339)
+        sensor._process_position(position)
+
+        events = sensor.get_events()
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(type(events[0]), SensorObjSensorAlert)
+        self.assertEqual(events[0].state, 1)
+        self.assertEqual(events[0].dataType, SensorDataType.GPS)
+        self.assertEqual(events[0].sensorData.lat, position.lat)
+        self.assertEqual(events[0].sensorData.lon, position.lon)
+        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+
+        # Move into first geofence again.
+        position = SensorDataGPS(52.51743522098097,
+                                 13.390316963195803,
+                                 1340)
+        sensor._process_position(position)
+
+        events = sensor.get_events()
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(type(events[0]), SensorObjStateChange)
+        self.assertEqual(events[0].state, 1)
+        self.assertEqual(events[0].dataType, SensorDataType.GPS)
+        self.assertEqual(events[0].sensorData.lat, position.lat)
+        self.assertEqual(events[0].sensorData.lon, position.lon)
+        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+
+
     def test_integration_single_position(self):
         """
         Tests the GPS sensor execution with the processing of one position that resides inside the geofence.
@@ -328,7 +415,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.interval = 5
         sensor.initialize()
@@ -367,7 +454,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.interval = 3
         sensor.initialize()
@@ -422,7 +509,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.interval = 1
         sensor.initialize()
@@ -466,7 +553,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.interval = 1
         sensor.initialize()
@@ -515,7 +602,7 @@ class TestGpsSensor(TestCase):
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
-        sensor.coordinates = fence_coords
+        sensor.polygons.append(fence_coords)
         sensor.trigger_within = True
         sensor.interval = 1
         sensor.initialize()

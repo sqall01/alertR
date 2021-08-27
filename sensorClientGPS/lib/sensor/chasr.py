@@ -114,7 +114,7 @@ class ChasRSensor(_GPSSensor):
 
             decrypted_data = None
             try:
-                decrypted_data = self._decrypt_data(request_result["data"][0])
+                decrypted_data = self._decrypt_data(request_result["data"]["locations"][0])
 
             except Exception as e:
                 logging.exception("[%s] Failed to decrypt GPS data." % self._log_tag)

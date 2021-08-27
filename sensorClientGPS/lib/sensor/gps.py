@@ -33,8 +33,8 @@ class _GPSSensor(_PollingSensor):
         # Interval in which GPS data is fetched.
         self.interval = None  # type: Optional[int]
 
-        # List of coordinates in (latitude, longitude) form.
-        self.coordinates = []  # type: List[Tuple[float, float]]
+        # List of polygons which contain tuples in (latitude, longitude) form.
+        self.polygons = []  # type: List[List[Tuple[float, float]]]
 
         # Does sensor trigger if point is within or without the polygon.
         self.trigger_within = True
@@ -43,7 +43,7 @@ class _GPSSensor(_PollingSensor):
 
         self._last_utctime = 0
 
-        self._polygon = None  # type: Optional[prepared.PreparedGeometry]
+        self._polygons = []  # type: List[prepared.PreparedGeometry]
 
     def _process_position(self, gps_data: SensorDataGPS):
 
@@ -56,7 +56,7 @@ class _GPSSensor(_PollingSensor):
         # According to a tutorial, shapely needs coordinates in the form longitude, latitude.
         point = geometry.Point(gps_data.lon, gps_data.lat)
 
-        if self._polygon.contains(point):
+        if any([poly.contains(point) for poly in self._polygons]):
             if self.trigger_within:
                 if self.state != self.triggerState:
                     # Point inside polygon, should trigger within, state is not triggered yet.
@@ -121,12 +121,13 @@ class _GPSSensor(_PollingSensor):
 
         # Prepare geofence.
         try:
-            shapely_coordinates = []
-            for coord in self.coordinates:
-                # According to a tutorial, shapely needs coordinates in the form longitude, latitude.
-                shapely_coordinates.append((coord[1], coord[0]))
-            polygon = geometry.Polygon(shapely_coordinates)
-            self._polygon = prepared.prep(polygon)
+            for polygon in self.polygons:
+                shapely_coordinates = []
+                for coord in polygon:
+                    # According to a tutorial, shapely needs coordinates in the form longitude, latitude.
+                    shapely_coordinates.append((coord[1], coord[0]))
+                polygon = geometry.Polygon(shapely_coordinates)
+                self._polygons.append(prepared.prep(polygon))
 
         except Exception as e:
             logging.exception("[%s] Unable to build polygon for geofence." % self._log_tag)
@@ -163,7 +164,10 @@ class _GPSSensor(_PollingSensor):
                     continue
 
                 # Check if received GPS data is newer than the last one.
-                if gps_data.utctime <= self._last_utctime:
+                if gps_data.utctime == self._last_utctime:
+                    logging.debug("[%s] No GPS data update." % self._log_tag)
+                    continue
+                if gps_data.utctime < self._last_utctime:
                     logging.error("[%s] Received old GPS data." % self._log_tag)
                     continue
                 self._last_utctime = gps_data.utctime
