@@ -1457,6 +1457,10 @@ class MsgBuilder:
             tempSensor["description"] = sensor.description
             tempSensor["state"] = sensor.state
 
+            # TODO: quick workaround to integrate GPS sensor into old AlertR system
+            if sensor.sensorDataType == SensorDataType.GPS:
+                sensor.sensorDataType = SensorDataType.NONE
+
             # Only add data field if sensor data type is not "none".
             tempSensor["dataType"] = sensor.sensorDataType
             if sensor.sensorDataType != SensorDataType.NONE:
