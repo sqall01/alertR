@@ -11,7 +11,7 @@ import os
 import logging
 import requests
 import hashlib
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
 from Crypto.Util import Padding
@@ -176,6 +176,9 @@ class ChasRSensor(_GPSSensor):
             if "msg" in request_result.keys():
                 logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
             raise ServerError("Unknown Error")
+
+    def _get_optional_data(self) -> Optional[Dict[str, Any]]:
+        return None  # TODO implement
 
     def initialize(self) -> bool:
         if not super().initialize():

@@ -10,7 +10,7 @@
 import os
 import time
 import logging
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Any
 from shapely import geometry, prepared
 from .core import _PollingSensor
 from ..globalData import SensorDataType, SensorDataGPS
@@ -62,6 +62,7 @@ class _GPSSensor(_PollingSensor):
                     # Point inside polygon, should trigger within, state is not triggered yet.
                     self._add_sensor_alert(self.triggerState,
                                            True,
+                                           optional_data=self._get_optional_data(),
                                            has_latest_data=True,
                                            sensor_data=gps_data)
 
@@ -75,6 +76,7 @@ class _GPSSensor(_PollingSensor):
                     # Point inside polygon, should trigger outside, state is already triggered.
                     self._add_sensor_alert(1 - self.triggerState,
                                            True,
+                                           optional_data=self._get_optional_data(),
                                            has_latest_data=True,
                                            sensor_data=gps_data)
 
@@ -89,6 +91,7 @@ class _GPSSensor(_PollingSensor):
                     # Point outside polygon, should trigger within, state is already triggered.
                     self._add_sensor_alert(1 - self.triggerState,
                                            True,
+                                           optional_data=self._get_optional_data(),
                                            has_latest_data=True,
                                            sensor_data=gps_data)
 
@@ -102,6 +105,7 @@ class _GPSSensor(_PollingSensor):
                     # Point outside polygon, should trigger outside, state is not triggered yet.
                     self._add_sensor_alert(self.triggerState,
                                            True,
+                                           optional_data=self._get_optional_data(),
                                            has_latest_data=True,
                                            sensor_data=gps_data)
 
@@ -178,5 +182,12 @@ class _GPSSensor(_PollingSensor):
         """
         Internal function to get data from the GPS provider.
         :return: Tuple with latitude, longitude and utc timestamp
+        """
+        raise NotImplementedError("Function not implemented yet.")
+
+    def _get_optional_data(self) -> Optional[Dict[str, Any]]:
+        """
+        Internal function to get optional data used for a sensor alert.
+        :return: None for no optional data or dict for optional data.
         """
         raise NotImplementedError("Function not implemented yet.")
