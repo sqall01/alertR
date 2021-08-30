@@ -11,6 +11,7 @@ import os
 import logging
 import requests
 import hashlib
+import time
 from typing import Optional, Dict, Any
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
@@ -53,6 +54,8 @@ class ChasRSensor(_GPSSensor):
         self.password = None  # type: Optional[str]
 
         self.secret = None  # type: Optional[str]
+
+        self._last_position = None  # type: Optional[SensorDataGPS]
 
     def _check_hmac(self, data: Dict[str, str]) -> bool:
         hmac = HMAC.new(self._key, digestmod=SHA256)
@@ -131,9 +134,11 @@ class ChasRSensor(_GPSSensor):
                 logging.error("[%s] Unable to authenticate GPS data." % self._log_tag)
                 raise ValueError("Unauthenticated Data")
 
-            return SensorDataGPS(float(decrypted_data["lat"]),
-                                 float(decrypted_data["lon"]),
-                                 int(decrypted_data["utctime"]))
+            self._last_position = SensorDataGPS(float(decrypted_data["lat"]),
+                                                float(decrypted_data["lon"]),
+                                                int(decrypted_data["utctime"]))
+
+            return self._last_position
 
         # Server has a database error.
         elif request_result["code"] == ChasRErrorCodes.DATABASE_ERROR:
@@ -178,7 +183,24 @@ class ChasRSensor(_GPSSensor):
             raise ServerError("Unknown Error")
 
     def _get_optional_data(self) -> Optional[Dict[str, Any]]:
-        return None  # TODO implement
+        if self._last_position is None:
+            return None
+
+        url = "https://alertr.de/chasr/map.php#mode=view&device_name=%s&start=%d&end=%d" \
+              % (self.device, self._last_position.utctime, self._last_position.utctime)
+
+        time_str = time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self._last_position.utctime))
+
+        msg = "GPS position (%f, %f) at %s. View: %s"\
+              % (self._last_position.lat, self._last_position.lon, time_str, url)
+
+        optional_data = {
+            "device": self.device,
+            "username": self.username,
+            "url": url,
+            "message": msg
+        }
+        return optional_data
 
     def initialize(self) -> bool:
         if not super().initialize():
