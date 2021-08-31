@@ -20,7 +20,7 @@ from lib.config.parser import configure_alert_levels, configure_profiles
 try:
     import networkx as nx
     from networkx.drawing.nx_pydot import to_pydot
-except Exception:
+except ImportError as e:
     print("Requires pip packages 'networkx' and 'pydot'. "
           + "Please install them by executing 'pip3 install networkx pydot' "
           + "as well as the system package for 'graphviz'.")
