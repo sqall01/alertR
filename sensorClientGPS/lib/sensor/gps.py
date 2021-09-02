@@ -52,8 +52,8 @@ class _GPSSensor(_PollingSensor):
 
     def _process_position(self, gps_data: SensorDataGPS):
 
-        # Do not process initial bogus GPS data and GPS positions that is equal to the last position.
-        if self.sensorData.utctime == 0 or self.sensorData == gps_data:
+        # Do not process GPS positions that is equal to the last position.
+        if self.sensorData == gps_data:
             return
 
         logging.debug("[%s] GPS position for '%s': %f, %f"
