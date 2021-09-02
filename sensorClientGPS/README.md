@@ -1,6 +1,6 @@
 # AlertR Sensor Client GPS
 
-TODO
+This client handles the GPS position of a device as a sensor. It allows you to build a geofence which triggers an alarm as soon as the device leaves it (or enters it). With this you can build home automation (e.g., turn on the thermostats as soon as I am coming home) as well as alarm systems for movable objects (e.g., car leaves the "home zone" in which it normally drives). Currently, only ChasR is supported as GPS provider (https://alertr.de/chasr).
 
 
 ## How to use it?
