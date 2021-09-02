@@ -735,7 +735,10 @@ class MsgChecker:
             is_correct = True
         elif (dataType == SensorDataType.GPS
               and isinstance(data, dict)
-              and all([isinstance(x, str) for x in data.keys()])):
+              and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
+              and isinstance(data["lat"], float)
+              and isinstance(data["lon"], float)
+              and isinstance(data["utctime"], int)):
             is_correct = True
 
         if not is_correct:

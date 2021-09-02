@@ -24,6 +24,41 @@ class SensorDataType:
     NONE = 0
     INT = 1
     FLOAT = 2
+    GPS = 3
+
+
+class SensorDataGPS:
+    def __init__(self, lat: float, lon: float, utctime: int):
+        self._lat = lat
+        self._lon = lon
+        self._utctime = utctime
+
+    def __eq__(self, other):
+        return self._lat == other.lat and self._lon == other.lon and self._utctime == other.utctime
+
+    @property
+    def lat(self) -> float:
+        return self._lat
+
+    @property
+    def lon(self) -> float:
+        return self._lon
+
+    @property
+    def utctime(self) -> int:
+        return self._utctime
+
+    def convert_to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the GPS object into a dictionary.
+        :return:
+        """
+        obj_dict = {"lat": self._lat,
+                    "lon": self._lon,
+                    "utctime": self._utctime,
+                    }
+
+        return obj_dict
 
 
 # This class represents a single node of the system.
@@ -82,7 +117,15 @@ class Sensor:
         self.lastStateUpdated = sensor.lastStateUpdated
         self.alertDelay = sensor.alertDelay
         self.dataType = sensor.dataType
-        self.data = sensor.data
+
+        # Deep copy sensor data.
+        if self.dataType == SensorDataType.GPS:
+            self.data = SensorDataGPS(sensor.data.lat,
+                                      sensor.data.lon,
+                                      sensor.data.utctime)
+
+        else:
+            self.data = sensor.data
 
         return self
 
@@ -186,7 +229,14 @@ class SensorAlert:
         sensor_alert.triggeredAlertLevels = sensor_alert_dict["triggeredAlertLevels"]
         sensor_alert.hasLatestData = sensor_alert_dict["hasLatestData"]
         sensor_alert.dataType = sensor_alert_dict["dataType"]
-        sensor_alert.sensorData = sensor_alert_dict["data"]
+
+        if sensor_alert.dataType == SensorDataType.GPS:
+            sensor_alert.sensorData = SensorDataGPS(sensor_alert_dict["data"]["lat"],
+                                                    sensor_alert_dict["data"]["lon"],
+                                                    sensor_alert_dict["data"]["utctime"])
+
+        else:
+            sensor_alert.sensorData = sensor_alert_dict["data"]
 
         # Verify data types of attributes (raises ValueError if type is wrong).
         sensor_alert.verify_types()
@@ -211,8 +261,13 @@ class SensorAlert:
                              "triggeredAlertLevels": self.triggeredAlertLevels,
                              "hasLatestData": self.hasLatestData,
                              "dataType": self.dataType,
-                             "data": self.sensorData,
                              }
+
+        if self.dataType == SensorDataType.GPS:
+            sensor_alert_dict["data"] = self.sensorData.convert_to_dict()
+
+        else:
+            sensor_alert_dict["data"] = self.sensorData
 
         return sensor_alert_dict
 
@@ -234,13 +289,21 @@ class SensorAlert:
         self.triggeredAlertLevels = list(sensor_alert.triggeredAlertLevels)
         self.hasLatestData = sensor_alert.hasLatestData
         self.dataType = sensor_alert.dataType
-        self.sensorData = sensor_alert.sensorData
 
         if type(sensor_alert.optionalData) == dict:
             self.optionalData = copy.deepcopy(sensor_alert.optionalData)
 
         else:
             self.optionalData = None
+
+        # Deep copy sensor data.
+        if self.dataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS(sensor_alert.sensorData.lat,
+                                            sensor_alert.sensorData.lon,
+                                            sensor_alert.sensorData.utctime)
+
+        else:
+            self.sensorData = sensor_alert.sensorData
 
         return self
 
@@ -291,7 +354,10 @@ class SensorAlert:
             raise ValueError("hasLatestData not valid")
 
         if (type(self.dataType) != int
-                or self.dataType not in [SensorDataType.NONE, SensorDataType.INT, SensorDataType.FLOAT]):
+                or self.dataType not in [SensorDataType.NONE,
+                                         SensorDataType.INT,
+                                         SensorDataType.FLOAT,
+                                         SensorDataType.GPS]):
             raise ValueError("dataType not valid")
 
         if self.dataType == SensorDataType.NONE and self.sensorData is not None:
@@ -301,6 +367,11 @@ class SensorAlert:
             raise ValueError("data not valid")
 
         if self.dataType == SensorDataType.FLOAT and not isinstance(self.sensorData, float):
+            raise ValueError("data not valid")
+
+        if (self.dataType == SensorDataType.GPS
+                and not (isinstance(self.sensorData, dict)
+                         and all([isinstance(x, str) for x in self.sensorData.keys()]))):
             raise ValueError("data not valid")
 
 
