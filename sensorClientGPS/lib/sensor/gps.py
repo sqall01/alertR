@@ -24,8 +24,13 @@ class _GPSSensor(_PollingSensor):
     def __init__(self):
         _PollingSensor.__init__(self)
 
-        # Set sensor to not hold any data.
+        # Set sensor to hold GPS data.
         self.sensorDataType = SensorDataType.GPS
+
+        # Initialize sensor with bogus GPS data to allow connection to server or otherwise invalid data is sent to
+        # server and connection is terminated. While a GPS position (0.0, 0.0) at 1/1/1970 is technically valid,
+        # we consider it as bogus since the sensor is build to track current and not historical positions.
+        self.sensorData = SensorDataGPS(0.0, 0.0, 0)
 
         # used for logging
         self._log_tag = os.path.basename(__file__)
@@ -47,7 +52,8 @@ class _GPSSensor(_PollingSensor):
 
     def _process_position(self, gps_data: SensorDataGPS):
 
-        if self.sensorData is not None and self.sensorData == gps_data:
+        # Do not process initial bogus GPS data and GPS positions that is equal to the last position.
+        if self.sensorData.utctime == 0 or self.sensorData == gps_data:
             return
 
         logging.debug("[%s] GPS position for '%s': %f, %f"
