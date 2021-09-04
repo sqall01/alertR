@@ -762,12 +762,7 @@ class ClientCommunication:
         elif dataType == SensorDataType.FLOAT and not isinstance(data, float):
             isCorrect = False
 
-        elif (dataType == SensorDataType.GPS
-              and not (isinstance(data, dict)
-                       and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
-                       and isinstance(data["lat"], float)
-                       and isinstance(data["lon"], float)
-                       and isinstance(data["utctime"], int))):
+        elif dataType == SensorDataType.GPS and not SensorDataGPS.verify_dict(data):
             isCorrect = False
 
         if not isCorrect:
@@ -1115,7 +1110,7 @@ class ClientCommunication:
                        }
 
             if sensorAlert.dataType == SensorDataType.GPS:
-                payload["data"] = sensorAlert.sensorData.convert_to_dict()
+                payload["data"] = sensorAlert.sensorData.copy_to_dict()
 
             else:
                 payload["data"] = sensorAlert.sensorData
@@ -1132,7 +1127,7 @@ class ClientCommunication:
                        }
 
             if sensorAlert.dataType == SensorDataType.GPS:
-                payload["data"] = sensorAlert.sensorData.convert_to_dict()
+                payload["data"] = sensorAlert.sensorData.copy_to_dict()
 
             else:
                 payload["data"] = sensorAlert.sensorData
@@ -1179,7 +1174,7 @@ class ClientCommunication:
                    "dataType": dataType}
 
         if dataType == SensorDataType.GPS:
-            payload["data"] = data.convert_to_dict()
+            payload["data"] = data.copy_to_dict()
 
         elif dataType != SensorDataType.NONE:
             payload["data"] = data
@@ -1261,7 +1256,7 @@ class ClientCommunication:
                         "dataType": sensorObj.dataType}
 
             if sensorObj.dataType == SensorDataType.GPS:
-                tempDict["data"] = sensorObj.data.convert_to_dict()
+                tempDict["data"] = sensorObj.data.copy_to_dict()
 
             else:
                 tempDict["data"] = sensorObj.data
@@ -1826,9 +1821,7 @@ class ClientCommunication:
                     # Get data of sensor according to data type.
                     sensorData = None
                     if sensorDataType == SensorDataType.GPS:
-                        sensorData = SensorDataGPS(sensors[i]["data"]["lat"],
-                                                   sensors[i]["data"]["lon"],
-                                                   sensors[i]["data"]["utctime"])
+                        sensorData = SensorDataGPS.copy_from_dict(sensors[i]["data"])
 
                     elif sensorDataType != SensorDataType.NONE:
                         sensorData = sensors[i]["data"]
@@ -1889,6 +1882,7 @@ class ClientCommunication:
                 tempSensor.alertDelay = alertDelay
                 tempSensor.dataType = sensorDataType
                 tempSensor.data = sensorData
+
                 self.sensors.append(tempSensor)
 
             # add sensors to database
@@ -2380,6 +2374,9 @@ class ClientCommunication:
                 elif sensorDataType == SensorDataType.FLOAT:
                     sensor.data = sensors[i]["data"]
 
+                elif sensorDataType == SensorDataType.GPS:
+                    sensor.data = SensorDataGPS.copy_from_dict(sensors[i]["data"])
+
                 dataList.append((clientSensorId, sensor.data))
 
         except Exception as e:
@@ -2491,7 +2488,10 @@ class ClientCommunication:
 
             sensorDataType = incomingMessage["payload"]["dataType"]
             sensorData = None
-            if sensorDataType != SensorDataType.NONE:
+            if sensorDataType == SensorDataType.GPS:
+                sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
+
+            elif sensorDataType != SensorDataType.NONE:
                 sensorData = incomingMessage["payload"]["data"]
 
             # Check if client sensor is known.
@@ -2705,7 +2705,10 @@ class ClientCommunication:
             state = incomingMessage["payload"]["state"]
             sensorDataType = incomingMessage["payload"]["dataType"]
             sensorData = None
-            if sensorDataType != SensorDataType.NONE:
+            if sensorDataType == SensorDataType.GPS:
+                sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
+
+            elif sensorDataType != SensorDataType.NONE:
                 sensorData = incomingMessage["payload"]["data"]
 
             # Check if client sensor is known.
@@ -2775,6 +2778,11 @@ class ClientCommunication:
         elif sensorDataType == SensorDataType.FLOAT:
             self.logger.debug("[%s]: State change for client sensor id %d and state %d and data %.3f (%s:%d)."
                               % (self.fileName, clientSensorId, state, sensorData, self.clientAddress, self.clientPort))
+
+        elif sensorDataType == SensorDataType.GPS:
+            self.logger.debug("[%s]: State change for client sensor id %d and state %d and data (%f, %f) (%s:%d)."
+                              % (self.fileName, clientSensorId, state, sensorData.lat, sensorData.lon,
+                                 self.clientAddress, self.clientPort))
 
         # update sensor state
         stateTuple = (clientSensorId, state)
@@ -3903,6 +3911,3 @@ class AsynchronousSender(threading.Thread):
                 self.logger.error("[%s]: Sending profile change to alert client failed (%s:%d)."
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
-
-
-# TODO: not finished yet

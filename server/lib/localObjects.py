@@ -27,8 +27,52 @@ class SensorDataType:
     GPS = 3
 
 
-class SensorDataGPS:
+class _SensorData:
+    def __init__(self):
+        pass
+
+    def __eq__(self, other):
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        """
+        This function creates from the given dictionary an object of this class.
+        This function has to succeed if verify_dict() says dictionary is correct.
+        :param data:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def deepcopy(obj):
+        """
+        This function copies all attributes of the given object to a new data object.
+        :param obj:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        """
+        This function verifies the given dictionary representing this object for correctness.
+        Meaning, if verify_dict() succeeds, copy_from_dict() has to be able to create a valid object.
+        :return: correct or not
+        """
+        raise NotImplementedError("Abstract class.")
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        """
+        Copies the object's data into a dictionary.
+        :return: dictionary representation of a copy of this object
+        """
+        raise NotImplementedError("Abstract class.")
+
+
+class SensorDataGPS(_SensorData):
     def __init__(self, lat: float, lon: float, utctime: int):
+        super().__init__()
         self._lat = lat
         self._lon = lon
         self._utctime = utctime
@@ -48,11 +92,29 @@ class SensorDataGPS:
     def utctime(self) -> int:
         return self._utctime
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the GPS object into a dictionary.
-        :return:
-        """
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        return SensorDataGPS(data["lat"],
+                             data["lon"],
+                             data["utctime"])
+
+    @staticmethod
+    def deepcopy(obj):
+        return SensorDataGPS(obj.lat,
+                             obj.lon,
+                             obj.utctime)
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        if (isinstance(data, dict)
+                and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
+                and isinstance(data["lat"], float)
+                and isinstance(data["lon"], float)
+                and isinstance(data["utctime"], int)):
+            return True
+        return False
+
+    def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"lat": self._lat,
                     "lon": self._lon,
                     "utctime": self._utctime,
