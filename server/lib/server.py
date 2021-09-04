@@ -3903,3 +3903,6 @@ class AsynchronousSender(threading.Thread):
                 self.logger.error("[%s]: Sending profile change to alert client failed (%s:%d)."
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
+
+
+# TODO: not finished yet

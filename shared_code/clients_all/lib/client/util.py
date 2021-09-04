@@ -14,7 +14,7 @@ import socket
 import os
 import logging
 from typing import List, Dict, Any, Optional, Union
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, SensorDataGPS
 
 
 class MsgChecker:
@@ -733,12 +733,7 @@ class MsgChecker:
             is_correct = True
         elif dataType == SensorDataType.FLOAT and isinstance(data, float):
             is_correct = True
-        elif (dataType == SensorDataType.GPS
-              and isinstance(data, dict)
-              and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
-              and isinstance(data["lat"], float)
-              and isinstance(data["lon"], float)
-              and isinstance(data["utctime"], int)):
+        elif dataType == SensorDataType.GPS and SensorDataGPS.verify_dict(data):
             is_correct = True
 
         if not is_correct:
@@ -1469,7 +1464,7 @@ class MsgBuilder:
             tempSensor["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
             tempSensor["dataType"] = sensor.sensorDataType
             if sensor.sensorDataType == SensorDataType.GPS:
-                tempSensor["data"] = sensor.sensorData.convert_to_dict()
+                tempSensor["data"] = sensor.sensorData.copy_to_dict()
 
             elif sensor.sensorDataType != SensorDataType.NONE:
                 tempSensor["data"] = sensor.sensorData
@@ -1513,7 +1508,7 @@ class MsgBuilder:
         payload["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
         if sensor_alert.dataType == SensorDataType.GPS:
             # noinspection PyTypedDict
-            payload["data"] = sensor_alert.sensorData.convert_to_dict()
+            payload["data"] = sensor_alert.sensorData.copy_to_dict()
 
         elif sensor_alert.dataType != SensorDataType.NONE:
             payload["data"] = sensor_alert.sensorData
@@ -1541,7 +1536,7 @@ class MsgBuilder:
         payload["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
         if state_change.dataType == SensorDataType.GPS:
             # noinspection PyTypedDict
-            payload["data"] = state_change.sensorData.convert_to_dict()
+            payload["data"] = state_change.sensorData.copy_to_dict()
 
         elif state_change.dataType != SensorDataType.NONE:
             payload["data"] = state_change.sensorData
@@ -1576,7 +1571,7 @@ class MsgBuilder:
             temp_sensor["dataType"] = sensor.sensorDataType
             temp_sensor["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
             if sensor.sensorDataType == SensorDataType.GPS:
-                temp_sensor["data"] = sensor.sensorData.convert_to_dict()
+                temp_sensor["data"] = sensor.sensorData.copy_to_dict()
 
             elif sensor.sensorDataType != SensorDataType.NONE:
                 temp_sensor["data"] = sensor.sensorData

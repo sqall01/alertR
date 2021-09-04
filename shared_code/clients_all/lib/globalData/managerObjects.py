@@ -28,11 +28,7 @@ class ManagerObjOption(LocalObject):
               % (str(self.value) if self.value is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Option object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         option_dict = {"type": self.type,
                        "value": self.value,
                        }
@@ -40,11 +36,6 @@ class ManagerObjOption(LocalObject):
         return option_dict
 
     def deepcopy(self, option):
-        """
-        This function copies all attributes of the given option to this object.
-        :param option:
-        :return:
-        """
         self.type = option.type
         self.value = option.value
         return self
@@ -65,11 +56,7 @@ class ManagerObjProfile(LocalObject):
               % (str(self.name) if self.name is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Profile object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         profile_dict = {"profileId": self.profileId,
                         "name": self.name,
                         }
@@ -77,11 +64,6 @@ class ManagerObjProfile(LocalObject):
         return profile_dict
 
     def deepcopy(self, profile):
-        """
-        This function copies all attributes of the given profile to this object.
-        :param profile:
-        :return:
-        """
         self.profileId = profile.profileId
         self.name = profile.name
         return self
@@ -116,11 +98,7 @@ class ManagerObjNode(LocalObject):
               % (str(self.username) if self.username is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Node object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         node_dict = {"nodeId": self.nodeId,
                      "hostname": self.hostname,
                      "nodeType": self.nodeType,
@@ -135,11 +113,6 @@ class ManagerObjNode(LocalObject):
         return node_dict
 
     def deepcopy(self, node):
-        """
-        This function copies all attributes of the given node to this object.
-        :param node:
-        :return:
-        """
         self.nodeId = node.nodeId
         self.hostname = node.hostname
         self.nodeType = node.nodeType
@@ -183,11 +156,7 @@ class ManagerObjSensor(LocalObject):
               % (str(self.data) if self.data is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Sensor object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         sensor_dict = {"nodeId": self.nodeId,
                        "sensorId": self.sensorId,
                        "clientSensorId": self.clientSensorId,
@@ -203,11 +172,6 @@ class ManagerObjSensor(LocalObject):
         return sensor_dict
 
     def deepcopy(self, sensor):
-        """
-        This function copies all attributes of the given sensor to this object.
-        :param sensor:
-        :return:
-        """
         self.nodeId = sensor.nodeId
         self.sensorId = sensor.sensorId
         self.clientSensorId = sensor.clientSensorId
@@ -239,11 +203,7 @@ class ManagerObjManager(LocalObject):
               % (str(self.description) if self.description is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Manager object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         manager_dict = {"nodeId": self.nodeId,
                         "managerId": self.managerId,
                         "description": self.description,
@@ -281,11 +241,7 @@ class ManagerObjAlert(LocalObject):
               % (str(self.description) if self.description is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Alert object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         alert_dict = {"nodeId": self.nodeId,
                       "alertId": self.alertId,
                       "clientAlertId": self.clientAlertId,
@@ -296,11 +252,6 @@ class ManagerObjAlert(LocalObject):
         return alert_dict
 
     def deepcopy(self, alert):
-        """
-        This function copies all attributes of the given alert to this object.
-        :param alert:
-        :return:
-        """
         self.nodeId = alert.nodeId
         self.alertId = alert.alertId
         self.clientAlertId = alert.clientAlertId
@@ -357,11 +308,7 @@ class ManagerObjSensorAlert(LocalObject):
               % ", ".join(map(str, self.alertLevels))
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Sensor Alert object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         sensor_alert_dict = {"alertLevels": self.alertLevels,
                              "description": self.description,
                              "sensorId": self.sensorId,
@@ -377,12 +324,6 @@ class ManagerObjSensorAlert(LocalObject):
         return sensor_alert_dict
 
     def deepcopy(self, sensor_alert):
-        """
-        This function copies all attributes of the given sensor alert to this object.
-
-        :param sensor_alert:
-        :return:
-        """
         self.sensorId = sensor_alert.sensorId
         self.state = sensor_alert.state
         self.description = sensor_alert.description
@@ -426,11 +367,7 @@ class ManagerObjAlertLevel(LocalObject):
               % (str(self.instrumentation_active) if self.instrumentation_active is not None else "None")
         return tmp
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Alert Level object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         alert_level_dict = {"level": self.level,
                             "name": self.name,
                             "profiles": self.profiles,
@@ -442,11 +379,6 @@ class ManagerObjAlertLevel(LocalObject):
         return alert_level_dict
 
     def deepcopy(self, alert_level):
-        """
-        This function copies all attributes of the given alert level to this object.
-        :param alert_level:
-        :return:
-        """
         self.level = alert_level.level
         self.name = alert_level.name
         self.profiles = list(alert_level.profiles)

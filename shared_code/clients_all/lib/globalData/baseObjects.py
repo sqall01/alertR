@@ -33,8 +33,17 @@ class LocalObject:
     def is_stored(self):
         return self.internal_state == InternalState.STORED
 
-    def convert_to_dict(self) -> Dict[str, Any]:
+    def copy_to_dict(self) -> Dict[str, Any]:
+        """
+        Copies this object into a dictionary representation.
+        :return: dictionary representation of a copy of this object
+        """
         raise NotImplementedError("Abstract class.")
 
     def deepcopy(self, obj):
+        """
+        This function copies all attributes of the given object to this object.
+        :param obj:
+        :return: this object
+        """
         raise NotImplementedError("Abstract class.")

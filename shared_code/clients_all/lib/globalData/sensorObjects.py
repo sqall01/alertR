@@ -28,8 +28,52 @@ class SensorOrdering:
     GT = 2
 
 
-class SensorDataGPS:
+class _SensorData:
+    def __init__(self):
+        pass
+
+    def __eq__(self, other):
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        """
+        This function creates from the given dictionary an object of this class.
+        This function has to succeed if verify_dict() says dictionary is correct.
+        :param data:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def deepcopy(obj):
+        """
+        This function copies all attributes of the given object to a new data object.
+        :param obj:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        """
+        This function verifies the given dictionary representing this object for correctness.
+        Meaning, if verify_dict() succeeds, copy_from_dict() has to be able to create a valid object.
+        :return: correct or not
+        """
+        raise NotImplementedError("Abstract class.")
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        """
+        Copies the object's data into a dictionary.
+        :return: dictionary representation of a copy of this object
+        """
+        raise NotImplementedError("Abstract class.")
+
+
+class SensorDataGPS(_SensorData):
     def __init__(self, lat: float, lon: float, utctime: int):
+        super().__init__()
         self._lat = lat
         self._lon = lon
         self._utctime = utctime
@@ -49,11 +93,29 @@ class SensorDataGPS:
     def utctime(self) -> int:
         return self._utctime
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the GPS object into a dictionary.
-        :return:
-        """
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        return SensorDataGPS(data["lat"],
+                             data["lon"],
+                             data["utctime"])
+
+    @staticmethod
+    def deepcopy(obj):
+        return SensorDataGPS(obj.lat,
+                             obj.lon,
+                             obj.utctime)
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        if (isinstance(data, dict)
+                and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
+                and isinstance(data["lat"], float)
+                and isinstance(data["lon"], float)
+                and isinstance(data["utctime"], int)):
+            return True
+        return False
+
+    def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"lat": self._lat,
                     "lon": self._lon,
                     "utctime": self._utctime,
@@ -88,11 +150,7 @@ class SensorObjSensorAlert(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Sensor Alert object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"clientSensorId": self.clientSensorId,
                     "state": self.state,
                     "hasOptionalData": self.hasOptionalData,
@@ -104,7 +162,7 @@ class SensorObjSensorAlert(LocalObject):
 
         # Convert sensor data for dict.
         if self.dataType == SensorDataType.GPS:
-            obj_dict["sensorData"] = self.sensorData.convert_to_dict()
+            obj_dict["sensorData"] = self.sensorData.copy_to_dict()
 
         else:
             obj_dict["sensorData"] = self.sensorData
@@ -112,11 +170,6 @@ class SensorObjSensorAlert(LocalObject):
         return obj_dict
 
     def deepcopy(self, sensor_alert):
-        """
-        This function copies all attributes of the given state change to this object.
-        :param sensor_alert:
-        :return:
-        """
         self.clientSensorId = sensor_alert.clientSensorId
         self.state = sensor_alert.state
         self.hasOptionalData = sensor_alert.hasOptionalData
@@ -126,9 +179,7 @@ class SensorObjSensorAlert(LocalObject):
 
         # Deep copy sensor data.
         if self.dataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS(sensor_alert.sensorData.lat,
-                                            sensor_alert.sensorData.lon,
-                                            sensor_alert.sensorData.utctime)
+            self.sensorData = SensorDataGPS.deepcopy(sensor_alert.sensorData)
 
         else:
             self.sensorData = sensor_alert.sensorData
@@ -158,11 +209,7 @@ class SensorObjStateChange(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
-    def convert_to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Sensor object into a dictionary.
-        :return:
-        """
+    def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"clientSensorId": self.clientSensorId,
                     "state": self.state,
                     "dataType": self.dataType
@@ -170,7 +217,7 @@ class SensorObjStateChange(LocalObject):
 
         # Convert sensor data for dict.
         if self.dataType == SensorDataType.GPS:
-            obj_dict["sensorData"] = self.sensorData.convert_to_dict()
+            obj_dict["sensorData"] = self.sensorData.copy_to_dict()
 
         else:
             obj_dict["sensorData"] = self.sensorData
@@ -178,20 +225,13 @@ class SensorObjStateChange(LocalObject):
         return obj_dict
 
     def deepcopy(self, state_change):
-        """
-        This function copies all attributes of the given state change to this object.
-        :param state_change:
-        :return:
-        """
         self.clientSensorId = state_change.clientSensorId
         self.state = state_change.clientSensorId
         self.dataType = state_change.dataType
 
         # Deep copy sensor data.
         if self.dataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS(state_change.sensorData.lat,
-                                            state_change.sensorData.lon,
-                                            state_change.sensorData.utctime)
+            self.sensorData = SensorDataGPS.deepcopy(state_change.sensorData)
 
         else:
             self.sensorData = state_change.sensorData
