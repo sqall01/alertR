@@ -18,7 +18,7 @@ from .util import MsgBuilder
 from .communication import Communication, Promise, MsgState
 from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataGPS
 from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 from ..globalData import GlobalData
 
@@ -127,6 +127,8 @@ class ServerCommunication(Communication):
                 sensorAlert.sensorData = int(incomingMessage["payload"]["data"])
             elif sensorAlert.dataType == SensorDataType.FLOAT:
                 sensorAlert.sensorData = float(incomingMessage["payload"]["data"])
+            elif sensorAlert.dataType == SensorDataType.GPS:
+                sensorAlert.sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
@@ -187,9 +189,11 @@ class ServerCommunication(Communication):
 
             sensorData = None
             if dataType == SensorDataType.INT:
-                sensorData = incomingMessage["payload"]["data"]
+                sensorData = int(incomingMessage["payload"]["data"])
             elif dataType == SensorDataType.FLOAT:
-                sensorData = incomingMessage["payload"]["data"]
+                sensorData = float(incomingMessage["payload"]["data"])
+            elif dataType == SensorDataType.GPS:
+                sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received state change invalid." % self._log_tag)
@@ -327,7 +331,9 @@ class ServerCommunication(Communication):
                 dataType = sensors_raw[i]["dataType"]
 
                 sensorData = None
-                if dataType != SensorDataType.NONE:
+                if dataType == SensorDataType.GPS:
+                    sensorData = SensorDataGPS.copy_from_dict(sensors_raw[i]["data"])
+                elif dataType != SensorDataType.NONE:
                     sensorData = sensors_raw[i]["data"]
 
                 sensorAlertLevels = sensors_raw[i]["alertLevels"]
