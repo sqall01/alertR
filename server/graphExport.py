@@ -88,6 +88,8 @@ class GraphSensor:
             data_type = "Integer"
         elif self.sensor.dataType == SensorDataType.FLOAT:
             data_type = "Float"
+        elif self.sensor.dataType == SensorDataType.GPS:
+            data_type = "GPS"
         # noinspection PyPep8
         temp = "\"Sensor: " + self.sensor.description + "\l" \
                + "Sensor Id: " + str(self.sensor.sensorId) + "\l" \

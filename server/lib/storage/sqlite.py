@@ -18,7 +18,7 @@ import sqlite3
 from typing import Any, Optional, List, Union, Tuple, Dict
 from .core import _Storage
 from ..globalData import GlobalData
-from ..localObjects import Node, Alert, Manager, Sensor, SensorData, SensorDataType, Option
+from ..localObjects import Node, Alert, Manager, Sensor, SensorData, SensorDataType, Option, SensorDataGPS
 
 
 # class for using sqlite as storage backend
@@ -375,6 +375,9 @@ class Sqlite(_Storage):
                         return None
 
                     sensor.data = subResult[0][0]
+
+                elif sensor.dataType == SensorDataType.GPS:
+                    # TODO
 
                 else:
                     logger.error("[%s]: Not able to get sensor with id %d. Data type in database unknown."
@@ -839,6 +842,9 @@ class Sqlite(_Storage):
                 logger.exception("[%s]: Not able to add sensor's floating point data." % self.log_tag)
                 return False
 
+        elif dataType == SensorDataType.GPS:
+            # TODO
+
         else:
             logger.error("[%s]: Data type not known. Not able to add sensor." % self.log_tag)
             return False
@@ -1183,6 +1189,9 @@ class Sqlite(_Storage):
             # if data type is "none").
             if sensor["dataType"] == SensorDataType.NONE:
                 sensorData = None
+
+            elif sensor["dataType"] == SensorDataType.GPS:
+                sensorData = SensorDataGPS.copy_from_dict(sensor["data"])
 
             else:
                 sensorData = sensor["data"]
@@ -1974,6 +1983,9 @@ class Sqlite(_Storage):
                                         (dataTuple[1],
                                          sensorId))
 
+                elif dataType == SensorDataType.GPS:
+                    # TODO
+
             except Exception as e:
                 logger.exception("[%s]: Not able to update sensor data." % self.log_tag)
                 self._releaseLock(logger)
@@ -2671,6 +2683,9 @@ class Sqlite(_Storage):
                 logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
                 self._releaseLock(logger)
                 return None
+
+        elif dataType == SensorDataType.GPS:
+            # TODO
 
         self._releaseLock(logger)
 

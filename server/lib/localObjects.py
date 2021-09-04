@@ -293,9 +293,7 @@ class SensorAlert:
         sensor_alert.dataType = sensor_alert_dict["dataType"]
 
         if sensor_alert.dataType == SensorDataType.GPS:
-            sensor_alert.sensorData = SensorDataGPS(sensor_alert_dict["data"]["lat"],
-                                                    sensor_alert_dict["data"]["lon"],
-                                                    sensor_alert_dict["data"]["utctime"])
+            sensor_alert.sensorData = SensorDataGPS.copy_from_dict(sensor_alert_dict["data"])
 
         else:
             sensor_alert.sensorData = sensor_alert_dict["data"]
@@ -326,7 +324,7 @@ class SensorAlert:
                              }
 
         if self.dataType == SensorDataType.GPS:
-            sensor_alert_dict["data"] = self.sensorData.convert_to_dict()
+            sensor_alert_dict["data"] = self.sensorData.copy_to_dict()
 
         else:
             sensor_alert_dict["data"] = self.sensorData
@@ -360,9 +358,7 @@ class SensorAlert:
 
         # Deep copy sensor data.
         if self.dataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS(sensor_alert.sensorData.lat,
-                                            sensor_alert.sensorData.lon,
-                                            sensor_alert.sensorData.utctime)
+            self.sensorData = SensorDataGPS.deepcopy(sensor_alert.sensorData)
 
         else:
             self.sensorData = sensor_alert.sensorData
