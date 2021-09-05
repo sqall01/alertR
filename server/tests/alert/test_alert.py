@@ -5,7 +5,7 @@ import collections
 import threading
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor
+from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor, SensorDataGPS
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
@@ -1181,14 +1181,17 @@ class TestAlert(TestCase):
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
-            if (i % 3) == 0:
+            if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
+            elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
                 sensor.data = i
-            else:
+            elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
                 sensor.data = float(i)
+            else:
+                sensor.dataType = SensorDataType.GPS
+                sensor.data = SensorDataGPS(float(i), float(i), i)
             global_data.storage.add_sensor(sensor)
 
         self.assertFalse(manager_update_executer._manager_update_event.is_set())
@@ -1247,14 +1250,17 @@ class TestAlert(TestCase):
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
-            if (i % 3) == 0:
+            if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
+            elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
                 sensor.data = i
-            else:
+            elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
                 sensor.data = float(i)
+            else:
+                sensor.dataType = SensorDataType.GPS
+                sensor.data = SensorDataGPS(float(i), float(i), i)
             global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
@@ -1317,14 +1323,17 @@ class TestAlert(TestCase):
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
-            if (i % 3) == 0:
+            if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
+            elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
                 sensor.data = i
-            else:
+            elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
                 sensor.data = float(i)
+            else:
+                sensor.dataType = SensorDataType.GPS
+                sensor.data = SensorDataGPS(float(i), float(i), i)
             global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
@@ -1373,14 +1382,17 @@ class TestAlert(TestCase):
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
-            if (i % 3) == 0:
+            if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
-            elif (i % 3) == 1:
+            elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
                 sensor.data = i
-            else:
+            elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
                 sensor.data = float(i)
+            else:
+                sensor.dataType = SensorDataType.GPS
+                sensor.data = SensorDataGPS(float(i), float(i), i)
             global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)

@@ -427,9 +427,7 @@ class SensorAlert:
         if self.dataType == SensorDataType.FLOAT and not isinstance(self.sensorData, float):
             raise ValueError("data not valid")
 
-        if (self.dataType == SensorDataType.GPS
-                and not (isinstance(self.sensorData, dict)
-                         and all([isinstance(x, str) for x in self.sensorData.keys()]))):
+        if self.dataType == SensorDataType.GPS and not SensorDataGPS.verify_dict(self.sensorData.copy_to_dict()):
             raise ValueError("data not valid")
 
 
