@@ -70,6 +70,14 @@ class _SensorData:
         """
         raise NotImplementedError("Abstract class.")
 
+    def deepcopy_to_obj(self, obj):
+        """
+        This function copies all attributes of the given object to this object.
+        :param obj:
+        :return: this object
+        """
+        raise NotImplementedError("Abstract class.")
+
 
 class SensorDataGPS(_SensorData):
     def __init__(self, lat: float, lon: float, utctime: int):
@@ -122,6 +130,12 @@ class SensorDataGPS(_SensorData):
                     }
 
         return obj_dict
+
+    def deepcopy_to_obj(self, obj):
+        self._lat = obj.lat
+        self._lon = obj.lon
+        self._utctime = obj.utctime
+        return self
 
 
 # This class represents a triggered sensor alert of the sensor.

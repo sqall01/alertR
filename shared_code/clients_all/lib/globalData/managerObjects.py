@@ -185,7 +185,7 @@ class ManagerObjSensor(LocalObject):
                        }
 
         if self.dataType == SensorDataType.GPS:
-            sensor_dict["data"] = SensorDataGPS.deepcopy(self.data)
+            sensor_dict["data"] = self.data.copy_to_dict()
         else:
             sensor_dict["data"] = self.data
 
@@ -203,7 +203,10 @@ class ManagerObjSensor(LocalObject):
         self.dataType = sensor.dataType
 
         if self.dataType == SensorDataType.GPS:
-            self.data = SensorDataGPS.deepcopy(sensor.data)
+            if self.data is None:
+                self.data = SensorDataGPS.deepcopy(sensor.data)
+            else:
+                self.data.deepcopy_to_obj(sensor.data)
         else:
             self.data = sensor.data
 
@@ -376,7 +379,10 @@ class ManagerObjSensorAlert(LocalObject):
         self.dataType = sensor_alert.dataType
 
         if self.dataType == SensorDataType.GPS:
-            self.sensorData = sensor_alert.sensorData.copy_to_dict()
+            if self.sensorData is None:
+                self.sensorData = SensorDataGPS.deepcopy(sensor_alert.data)
+            else:
+                self.sensorData.deepcopy_to_obj(sensor_alert.data)
         else:
             self.sensorData = sensor_alert.sensorData
 
