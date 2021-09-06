@@ -21,7 +21,7 @@ class TestSystemDataCore(TestCase):
         alert_level.instrumentation_cmd = "instrumentation_cmd_1"
         alert_level.instrumentation_timeout = 1234
         self.alert_levels.append(alert_level)
-        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy(alert_level))
+        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy_to_obj(alert_level))
 
         alert_level = ManagerObjAlertLevel()
         alert_level.level = 2
@@ -29,7 +29,7 @@ class TestSystemDataCore(TestCase):
         alert_level.profiles = [1]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
-        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy(alert_level))
+        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy_to_obj(alert_level))
 
         alert_level = ManagerObjAlertLevel()
         alert_level.level = 3
@@ -37,7 +37,7 @@ class TestSystemDataCore(TestCase):
         alert_level.profiles = [0, 2]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
-        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy(alert_level))
+        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy_to_obj(alert_level))
 
         return system_data
 
@@ -57,7 +57,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_1"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         alert = ManagerObjAlert()
         alert.nodeId = 1
@@ -66,7 +66,7 @@ class TestSystemDataCore(TestCase):
         alert.alertLevels = [1]
         alert.description = "alert_1"
         self.alerts.append(alert)
-        system_data.update_alert(ManagerObjAlert().deepcopy(alert))
+        system_data.update_alert(ManagerObjAlert().deepcopy_to_obj(alert))
 
         node = ManagerObjNode()
         node.nodeId = 2
@@ -79,7 +79,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_2"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         alert = ManagerObjAlert()
         alert.nodeId = 2
@@ -88,7 +88,7 @@ class TestSystemDataCore(TestCase):
         alert.alertLevels = [2]
         alert.description = "alert_2"
         self.alerts.append(alert)
-        system_data.update_alert(ManagerObjAlert().deepcopy(alert))
+        system_data.update_alert(ManagerObjAlert().deepcopy_to_obj(alert))
 
         node = ManagerObjNode()
         node.nodeId = 3
@@ -101,7 +101,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_3"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         alert = ManagerObjAlert()
         alert.nodeId = 3
@@ -110,7 +110,7 @@ class TestSystemDataCore(TestCase):
         alert.alertLevels = [1, 2]
         alert.description = "alert_3"
         self.alerts.append(alert)
-        system_data.update_alert(ManagerObjAlert().deepcopy(alert))
+        system_data.update_alert(ManagerObjAlert().deepcopy_to_obj(alert))
 
         return system_data
 
@@ -137,14 +137,14 @@ class TestSystemDataCore(TestCase):
         node.username = "username_4"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         manager = ManagerObjManager()
         manager.nodeId = 4
         manager.managerId = 1
         manager.description = "manager_1"
         self.managers.append(manager)
-        system_data.update_manager(ManagerObjManager().deepcopy(manager))
+        system_data.update_manager(ManagerObjManager().deepcopy_to_obj(manager))
 
         node = ManagerObjNode()
         node.nodeId = 5
@@ -157,14 +157,14 @@ class TestSystemDataCore(TestCase):
         node.username = "username_5"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         manager = ManagerObjManager()
         manager.nodeId = 5
         manager.managerId = 2
         manager.description = "manager_2"
         self.managers.append(manager)
-        system_data.update_manager(ManagerObjManager().deepcopy(manager))
+        system_data.update_manager(ManagerObjManager().deepcopy_to_obj(manager))
 
         node = ManagerObjNode()
         node.nodeId = 6
@@ -177,14 +177,14 @@ class TestSystemDataCore(TestCase):
         node.username = "username_6"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         manager = ManagerObjManager()
         manager.nodeId = 6
         manager.managerId = 3
         manager.description = "manager_3"
         self.managers.append(manager)
-        system_data.update_manager(ManagerObjManager().deepcopy(manager))
+        system_data.update_manager(ManagerObjManager().deepcopy_to_obj(manager))
 
         return system_data
 
@@ -204,7 +204,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_7"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         sensor = ManagerObjSensor()
         sensor.nodeId = 7
@@ -217,7 +217,7 @@ class TestSystemDataCore(TestCase):
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy(sensor))
+        system_data.update_sensor(ManagerObjSensor().deepcopy_to_obj(sensor))
 
         node = ManagerObjNode()
         node.nodeId = 8
@@ -230,7 +230,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_8"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         sensor = ManagerObjSensor()
         sensor.nodeId = 8
@@ -243,7 +243,7 @@ class TestSystemDataCore(TestCase):
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy(sensor))
+        system_data.update_sensor(ManagerObjSensor().deepcopy_to_obj(sensor))
 
         node = ManagerObjNode()
         node.nodeId = 9
@@ -256,7 +256,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_9"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         sensor = ManagerObjSensor()
         sensor.nodeId = 9
@@ -269,7 +269,7 @@ class TestSystemDataCore(TestCase):
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy(sensor))
+        system_data.update_sensor(ManagerObjSensor().deepcopy_to_obj(sensor))
 
         node = ManagerObjNode()
         node.nodeId = 10
@@ -282,7 +282,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_10"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         sensor = ManagerObjSensor()
         sensor.nodeId = 10
@@ -295,7 +295,7 @@ class TestSystemDataCore(TestCase):
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy(sensor))
+        system_data.update_sensor(ManagerObjSensor().deepcopy_to_obj(sensor))
 
         node = ManagerObjNode()
         node.nodeId = 11
@@ -308,7 +308,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_11"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         sensor = ManagerObjSensor()
         sensor.nodeId = 11
@@ -321,7 +321,7 @@ class TestSystemDataCore(TestCase):
         sensor.state = 1
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy(sensor))
+        system_data.update_sensor(ManagerObjSensor().deepcopy_to_obj(sensor))
 
         node = ManagerObjNode()
         node.nodeId = 12
@@ -334,7 +334,7 @@ class TestSystemDataCore(TestCase):
         node.username = "username_12"
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy(node))
+        system_data.update_node(ManagerObjNode().deepcopy_to_obj(node))
 
         sensor = ManagerObjSensor()
         sensor.nodeId = 12
@@ -347,7 +347,7 @@ class TestSystemDataCore(TestCase):
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy(sensor))
+        system_data.update_sensor(ManagerObjSensor().deepcopy_to_obj(sensor))
 
         return system_data
 
@@ -367,19 +367,19 @@ class TestSystemDataCore(TestCase):
         option.type = "type_1"
         option.value = 1
         self.options.append(option)
-        system_data.update_option(ManagerObjOption().deepcopy(option))
+        system_data.update_option(ManagerObjOption().deepcopy_to_obj(option))
 
         option = ManagerObjOption()
         option.type = "type_2"
         option.value = 2
         self.options.append(option)
-        system_data.update_option(ManagerObjOption().deepcopy(option))
+        system_data.update_option(ManagerObjOption().deepcopy_to_obj(option))
 
         option = ManagerObjOption()
         option.type = "type_3"
         option.value = 3
         self.options.append(option)
-        system_data.update_option(ManagerObjOption().deepcopy(option))
+        system_data.update_option(ManagerObjOption().deepcopy_to_obj(option))
 
         return system_data
 
@@ -399,19 +399,19 @@ class TestSystemDataCore(TestCase):
         profile.profileId = 0
         profile.name = "profile_0"
         self.profiles.append(profile)
-        system_data.update_profile(ManagerObjProfile().deepcopy(profile))
+        system_data.update_profile(ManagerObjProfile().deepcopy_to_obj(profile))
 
         profile = ManagerObjProfile()
         profile.profileId = 1
         profile.name = "profile_1"
         self.profiles.append(profile)
-        system_data.update_profile(ManagerObjProfile().deepcopy(profile))
+        system_data.update_profile(ManagerObjProfile().deepcopy_to_obj(profile))
 
         profile = ManagerObjProfile()
         profile.profileId = 2
         profile.name = "profile_2"
         self.profiles.append(profile)
-        system_data.update_profile(ManagerObjProfile().deepcopy(profile))
+        system_data.update_profile(ManagerObjProfile().deepcopy_to_obj(profile))
 
         return system_data
 

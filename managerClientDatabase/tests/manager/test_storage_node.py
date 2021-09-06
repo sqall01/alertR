@@ -68,7 +68,7 @@ class TestManagerStorageNode(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for node in system_data.get_nodes_list():
-            temp_node = ManagerObjNode().deepcopy(node)
+            temp_node = ManagerObjNode.deepcopy(node)
             temp_node.hostname = "new_hostname_" + str(ctr + 1)
             temp_node.nodeType = ["alert", "manager", "sensor", "server"][ctr % 4]
             temp_node.instance = "new_instance_" + str(ctr + 1)

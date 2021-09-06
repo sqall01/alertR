@@ -150,6 +150,10 @@ class SensorObjSensorAlert(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
+    @staticmethod
+    def deepcopy(obj):
+        return SensorObjSensorAlert().deepcopy_to_obj(obj)
+
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"clientSensorId": self.clientSensorId,
                     "state": self.state,
@@ -169,7 +173,7 @@ class SensorObjSensorAlert(LocalObject):
 
         return obj_dict
 
-    def deepcopy(self, sensor_alert):
+    def deepcopy_to_obj(self, sensor_alert):
         self.clientSensorId = sensor_alert.clientSensorId
         self.state = sensor_alert.state
         self.hasOptionalData = sensor_alert.hasOptionalData
@@ -209,6 +213,10 @@ class SensorObjStateChange(LocalObject):
         self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
+    @staticmethod
+    def deepcopy(obj):
+        return SensorObjStateChange().deepcopy_to_obj(obj)
+
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"clientSensorId": self.clientSensorId,
                     "state": self.state,
@@ -224,7 +232,7 @@ class SensorObjStateChange(LocalObject):
 
         return obj_dict
 
-    def deepcopy(self, state_change):
+    def deepcopy_to_obj(self, state_change):
         self.clientSensorId = state_change.clientSensorId
         self.state = state_change.clientSensorId
         self.dataType = state_change.dataType

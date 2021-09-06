@@ -14,7 +14,7 @@ class TestSystemDataOption(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_options = []
         for i in range(len(self.options)):
-            temp_option = ManagerObjOption().deepcopy(self.options[i])
+            temp_option = ManagerObjOption().deepcopy_to_obj(self.options[i])
             temp_option.value = i+5
             new_options.append(temp_option)
 

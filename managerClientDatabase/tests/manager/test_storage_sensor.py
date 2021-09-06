@@ -56,7 +56,7 @@ class TestManagerStorageSensor(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for sensor in system_data.get_sensors_list():
-            temp_sensor = ManagerObjSensor().deepcopy(sensor)
+            temp_sensor = ManagerObjSensor.deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
             temp_sensor.clientSensorId = ctr
             temp_sensor.alertDelay = ctr + 10

@@ -77,19 +77,19 @@ class TestManagerStorage(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for option in system_data.get_options_list():
-            temp_option = ManagerObjOption().deepcopy(option)
+            temp_option = ManagerObjOption.deepcopy(option)
             temp_option.value = ctr
             system_data.update_option(temp_option)
             ctr += 1
 
         for profile in system_data.get_profiles_list():
-            temp_profile = ManagerObjProfile().deepcopy(profile)
+            temp_profile = ManagerObjProfile.deepcopy(profile)
             temp_profile.name = "new_profile_" + str(ctr)
             system_data.update_profile(temp_profile)
             ctr += 1
 
         for alert_level in system_data.get_alert_levels_list():
-            temp_alert_level = ManagerObjAlertLevel().deepcopy(alert_level)
+            temp_alert_level = ManagerObjAlertLevel.deepcopy(alert_level)
             temp_alert_level.name = "new_alert_level_" + str(ctr + 1)
             temp_alert_level.instrumentation_active = (ctr % 2) == 0
 
@@ -101,7 +101,7 @@ class TestManagerStorage(TestManagerStorageCore):
             ctr += 1
 
         for node in system_data.get_nodes_list():
-            temp_node = ManagerObjNode().deepcopy(node)
+            temp_node = ManagerObjNode.deepcopy(node)
             temp_node.hostname = "new_hostname_" + str(ctr + 1)
             temp_node.nodeType = ["alert", "manager", "sensor", "server"][ctr % 4]
             temp_node.instance = "new_instance_" + str(ctr + 1)
@@ -114,7 +114,7 @@ class TestManagerStorage(TestManagerStorageCore):
             ctr += 1
 
         for alert in system_data.get_alerts_list():
-            temp_alert = ManagerObjAlert().deepcopy(alert)
+            temp_alert = ManagerObjAlert.deepcopy(alert)
             temp_alert.description = "new_alert_" + str(ctr + 1)
             temp_alert.clientAlertId = ctr
             # We started the alert levels in our test data with level 1.
@@ -123,13 +123,13 @@ class TestManagerStorage(TestManagerStorageCore):
             ctr += 1
 
         for manager in system_data.get_managers_list():
-            temp_manager = ManagerObjManager().deepcopy(manager)
+            temp_manager = ManagerObjManager.deepcopy(manager)
             temp_manager.description = "new_manager_" + str(ctr + 1)
             system_data.update_manager(temp_manager)
             ctr += 1
 
         for sensor in system_data.get_sensors_list():
-            temp_sensor = ManagerObjSensor().deepcopy(sensor)
+            temp_sensor = ManagerObjSensor.deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
             temp_sensor.clientSensorId = ctr
             temp_sensor.alertDelay = ctr + 10
