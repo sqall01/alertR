@@ -49,7 +49,7 @@ class LocalObject:
         """
         raise NotImplementedError("Abstract class.")
 
-    def deepcopy_to_obj(self, obj):
+    def deepcopy_obj(self, obj):
         """
         This function copies all attributes of the given object to this object.
         :param obj:

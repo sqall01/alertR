@@ -656,7 +656,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new alert object
                 # to make sure others can work on the same object.
-                self._alerts[alert.alertId].deepcopy_to_obj(alert)
+                self._alerts[alert.alertId].deepcopy_obj(alert)
 
     def update_alert_level(self, alert_level: ManagerObjAlertLevel):
         """
@@ -676,7 +676,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new alert level object
                 # to make sure others can work on the same object.
-                self._alert_levels[alert_level.level].deepcopy_to_obj(alert_level)
+                self._alert_levels[alert_level.level].deepcopy_obj(alert_level)
 
     def update_manager(self, manager: ManagerObjManager):
         """
@@ -696,7 +696,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new manager object
                 # to make sure others can work on the same object.
-                self._managers[manager.managerId].deepcopy_to_obj(manager)
+                self._managers[manager.managerId].deepcopy_obj(manager)
 
     def update_node(self, node: ManagerObjNode):
         """
@@ -720,7 +720,7 @@ class SystemData:
 
                 # Do update of data instead of just using new node object
                 # to make sure others can work on the same object.
-                self._nodes[node.nodeId].deepcopy_to_obj(node)
+                self._nodes[node.nodeId].deepcopy_obj(node)
 
     def update_option(self, option: ManagerObjOption):
         """
@@ -736,7 +736,7 @@ class SystemData:
 
             # Update option object data.
             else:
-                self._options[option.type].deepcopy_to_obj(option)
+                self._options[option.type].deepcopy_obj(option)
 
     def update_profile(self, profile: ManagerObjProfile):
         """
@@ -752,7 +752,7 @@ class SystemData:
 
             # Update option object data.
             else:
-                self._profiles[profile.profileId].deepcopy_to_obj(profile)
+                self._profiles[profile.profileId].deepcopy_obj(profile)
 
     def update_sensor(self, sensor: ManagerObjSensor):
         """
@@ -772,4 +772,4 @@ class SystemData:
             else:
                 # Do update of data instead of just using new sensor object
                 # to make sure others can work on the same object.
-                self._sensors[sensor.sensorId].deepcopy_to_obj(sensor)
+                self._sensors[sensor.sensorId].deepcopy_obj(sensor)

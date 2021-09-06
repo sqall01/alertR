@@ -30,7 +30,7 @@ class ManagerObjOption(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjOption().deepcopy_to_obj(obj)
+        return ManagerObjOption().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         option_dict = {"type": self.type,
@@ -39,7 +39,7 @@ class ManagerObjOption(LocalObject):
 
         return option_dict
 
-    def deepcopy_to_obj(self, option):
+    def deepcopy_obj(self, option):
         self.type = option.type
         self.value = option.value
         return self
@@ -62,7 +62,7 @@ class ManagerObjProfile(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjProfile().deepcopy_to_obj(obj)
+        return ManagerObjProfile().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         profile_dict = {"profileId": self.profileId,
@@ -71,7 +71,7 @@ class ManagerObjProfile(LocalObject):
 
         return profile_dict
 
-    def deepcopy_to_obj(self, profile):
+    def deepcopy_obj(self, profile):
         self.profileId = profile.profileId
         self.name = profile.name
         return self
@@ -108,7 +108,7 @@ class ManagerObjNode(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjNode().deepcopy_to_obj(obj)
+        return ManagerObjNode().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         node_dict = {"nodeId": self.nodeId,
@@ -124,7 +124,7 @@ class ManagerObjNode(LocalObject):
 
         return node_dict
 
-    def deepcopy_to_obj(self, node):
+    def deepcopy_obj(self, node):
         self.nodeId = node.nodeId
         self.hostname = node.hostname
         self.nodeType = node.nodeType
@@ -170,7 +170,7 @@ class ManagerObjSensor(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjSensor().deepcopy_to_obj(obj)
+        return ManagerObjSensor().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         sensor_dict = {"nodeId": self.nodeId,
@@ -191,7 +191,7 @@ class ManagerObjSensor(LocalObject):
 
         return sensor_dict
 
-    def deepcopy_to_obj(self, sensor):
+    def deepcopy_obj(self, sensor):
         self.nodeId = sensor.nodeId
         self.sensorId = sensor.sensorId
         self.clientSensorId = sensor.clientSensorId
@@ -206,7 +206,7 @@ class ManagerObjSensor(LocalObject):
             if self.data is None:
                 self.data = SensorDataGPS.deepcopy(sensor.data)
             else:
-                self.data.deepcopy_to_obj(sensor.data)
+                self.data.deepcopy_obj(sensor.data)
         else:
             self.data = sensor.data
 
@@ -233,7 +233,7 @@ class ManagerObjManager(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjManager().deepcopy_to_obj(obj)
+        return ManagerObjManager().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         manager_dict = {"nodeId": self.nodeId,
@@ -244,7 +244,7 @@ class ManagerObjManager(LocalObject):
         return manager_dict
 
     # This function copies all attributes of the given manager to this object.
-    def deepcopy_to_obj(self, manager):
+    def deepcopy_obj(self, manager):
         self.nodeId = manager.nodeId
         self.managerId = manager.managerId
         self.description = manager.description
@@ -275,7 +275,7 @@ class ManagerObjAlert(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjAlert().deepcopy_to_obj(obj)
+        return ManagerObjAlert().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         alert_dict = {"nodeId": self.nodeId,
@@ -287,7 +287,7 @@ class ManagerObjAlert(LocalObject):
 
         return alert_dict
 
-    def deepcopy_to_obj(self, alert):
+    def deepcopy_obj(self, alert):
         self.nodeId = alert.nodeId
         self.alertId = alert.alertId
         self.clientAlertId = alert.clientAlertId
@@ -346,7 +346,7 @@ class ManagerObjSensorAlert(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjSensorAlert().deepcopy_to_obj(obj)
+        return ManagerObjSensorAlert().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         sensor_alert_dict = {"alertLevels": self.alertLevels,
@@ -367,7 +367,7 @@ class ManagerObjSensorAlert(LocalObject):
 
         return sensor_alert_dict
 
-    def deepcopy_to_obj(self, sensor_alert):
+    def deepcopy_obj(self, sensor_alert):
         self.sensorId = sensor_alert.sensorId
         self.state = sensor_alert.state
         self.description = sensor_alert.description
@@ -382,7 +382,7 @@ class ManagerObjSensorAlert(LocalObject):
             if self.sensorData is None:
                 self.sensorData = SensorDataGPS.deepcopy(sensor_alert.data)
             else:
-                self.sensorData.deepcopy_to_obj(sensor_alert.data)
+                self.sensorData.deepcopy_obj(sensor_alert.data)
         else:
             self.sensorData = sensor_alert.sensorData
 
@@ -420,7 +420,7 @@ class ManagerObjAlertLevel(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return ManagerObjAlertLevel().deepcopy_to_obj(obj)
+        return ManagerObjAlertLevel().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         alert_level_dict = {"level": self.level,
@@ -433,7 +433,7 @@ class ManagerObjAlertLevel(LocalObject):
 
         return alert_level_dict
 
-    def deepcopy_to_obj(self, alert_level):
+    def deepcopy_obj(self, alert_level):
         self.level = alert_level.level
         self.name = alert_level.name
         self.profiles = list(alert_level.profiles)

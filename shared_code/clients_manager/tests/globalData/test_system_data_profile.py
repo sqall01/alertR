@@ -15,7 +15,7 @@ class TestSystemDataProfile(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_profiles = []
         for i in range(len(self.profiles)):
-            temp_profile = ManagerObjProfile().deepcopy_to_obj(self.profiles[i])
+            temp_profile = ManagerObjProfile().deepcopy_obj(self.profiles[i])
             temp_profile.name += "_new"
             new_profiles.append(temp_profile)
 

@@ -75,7 +75,7 @@ class TestSystemDataManager(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_managers = []
         for i in range(len(self.managers)):
-            temp_manager = ManagerObjManager().deepcopy_to_obj(self.managers[i])
+            temp_manager = ManagerObjManager().deepcopy_obj(self.managers[i])
             temp_manager.description = "new_manager_" + str(i + 1)
             new_managers.append(temp_manager)
 

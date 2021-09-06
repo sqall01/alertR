@@ -128,7 +128,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_sensors = []
         for i in range(len(self.sensors)):
-            temp_sensor = ManagerObjSensor().deepcopy_to_obj(self.sensors[i])
+            temp_sensor = ManagerObjSensor().deepcopy_obj(self.sensors[i])
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.clientSensorId = i
             temp_sensor.alertDelay = i + 10

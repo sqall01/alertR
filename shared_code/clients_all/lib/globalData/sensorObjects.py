@@ -70,7 +70,7 @@ class _SensorData:
         """
         raise NotImplementedError("Abstract class.")
 
-    def deepcopy_to_obj(self, obj):
+    def deepcopy_obj(self, obj):
         """
         This function copies all attributes of the given object to this object.
         :param obj:
@@ -131,7 +131,7 @@ class SensorDataGPS(_SensorData):
 
         return obj_dict
 
-    def deepcopy_to_obj(self, obj):
+    def deepcopy_obj(self, obj):
         self._lat = obj.lat
         self._lon = obj.lon
         self._utctime = obj.utctime
@@ -166,7 +166,7 @@ class SensorObjSensorAlert(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return SensorObjSensorAlert().deepcopy_to_obj(obj)
+        return SensorObjSensorAlert().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"clientSensorId": self.clientSensorId,
@@ -187,7 +187,7 @@ class SensorObjSensorAlert(LocalObject):
 
         return obj_dict
 
-    def deepcopy_to_obj(self, sensor_alert):
+    def deepcopy_obj(self, sensor_alert):
         self.clientSensorId = sensor_alert.clientSensorId
         self.state = sensor_alert.state
         self.hasOptionalData = sensor_alert.hasOptionalData
@@ -229,7 +229,7 @@ class SensorObjStateChange(LocalObject):
 
     @staticmethod
     def deepcopy(obj):
-        return SensorObjStateChange().deepcopy_to_obj(obj)
+        return SensorObjStateChange().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"clientSensorId": self.clientSensorId,
@@ -246,7 +246,7 @@ class SensorObjStateChange(LocalObject):
 
         return obj_dict
 
-    def deepcopy_to_obj(self, state_change):
+    def deepcopy_obj(self, state_change):
         self.clientSensorId = state_change.clientSensorId
         self.state = state_change.clientSensorId
         self.dataType = state_change.dataType
