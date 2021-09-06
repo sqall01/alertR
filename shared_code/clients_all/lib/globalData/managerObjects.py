@@ -10,7 +10,7 @@
 import copy
 from typing import Optional, List, Any, Dict
 from .baseObjects import LocalObject
-from .sensorObjects import SensorDataType
+from .sensorObjects import SensorDataType, SensorDataGPS
 
 
 # this class represents an option of the server
@@ -165,9 +165,13 @@ class ManagerObjSensor(LocalObject):
                        "description": self.description,
                        "lastStateUpdated": self.lastStateUpdated,
                        "state": self.state,
-                       "dataType": self.dataType,
-                       "data": self.data
+                       "dataType": self.dataType
                        }
+
+        if self.dataType == SensorDataType.GPS:
+            sensor_dict["data"] = SensorDataGPS.deepcopy(self.data)
+        else:
+            sensor_dict["data"] = self.data
 
         return sensor_dict
 
@@ -181,7 +185,12 @@ class ManagerObjSensor(LocalObject):
         self.lastStateUpdated = sensor.lastStateUpdated
         self.state = sensor.state
         self.dataType = sensor.dataType
-        self.data = sensor.data
+
+        if self.dataType == SensorDataType.GPS:
+            self.data = SensorDataGPS.deepcopy(sensor.data)
+        else:
+            self.data = sensor.data
+
         return self
 
 
@@ -316,10 +325,14 @@ class ManagerObjSensorAlert(LocalObject):
                              "hasOptionalData": self.hasOptionalData,
                              "optionalData": copy.deepcopy(self.optionalData) if self.hasOptionalData else None,
                              "dataType": self.dataType,
-                             "data": self.sensorData,
                              "hasLatestData": self.hasLatestData,
                              "changeState": self.changeState
-                            }
+                             }
+
+        if self.dataType == SensorDataType.GPS:
+            sensor_alert_dict["data"] = self.sensorData.copy_to_dict()
+        else:
+            sensor_alert_dict["data"] = self.sensorData
 
         return sensor_alert_dict
 
@@ -333,7 +346,11 @@ class ManagerObjSensorAlert(LocalObject):
         self.changeState = sensor_alert.changeState
         self.hasLatestData = sensor_alert.hasLatestData
         self.dataType = sensor_alert.dataType
-        self.sensorData = sensor_alert.sensorData
+
+        if self.dataType == SensorDataType.GPS:
+            self.sensorData = sensor_alert.sensorData.copy_to_dict()
+        else:
+            self.sensorData = sensor_alert.sensorData
 
         if type(sensor_alert.optionalData) == dict:
             self.optionalData = copy.deepcopy(sensor_alert.optionalData)
