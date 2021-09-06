@@ -311,6 +311,8 @@ class AlertLevelDetailedUrwid:
             temp.append(urwid.Text("Integer"))
         elif sensor.dataType == SensorDataType.FLOAT:
             temp.append(urwid.Text("Floating Point"))
+        elif sensor.dataType == SensorDataType.GPS:
+            temp.append(urwid.Text("GPS"))
         else:
             temp.append(urwid.Text("Unknown"))
         temp.append(urwid.Divider())

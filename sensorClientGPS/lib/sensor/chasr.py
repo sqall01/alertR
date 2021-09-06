@@ -191,7 +191,7 @@ class ChasRSensor(_GPSSensor):
 
         time_str = time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self._last_position.utctime))
 
-        msg = "GPS position (%f, %f) at %s. View: %s"\
+        msg = "GPS position (Lat: %f, Lon: %f) at %s. View: %s"\
               % (self._last_position.lat, self._last_position.lon, time_str, url)
 
         optional_data = {

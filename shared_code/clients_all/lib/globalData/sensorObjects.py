@@ -8,6 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import copy
+import time
 from typing import Optional, Dict, Any, Union
 from .baseObjects import LocalObject
 
@@ -33,6 +34,9 @@ class _SensorData:
         pass
 
     def __eq__(self, other):
+        raise NotImplementedError("Abstract class.")
+
+    def __str__(self) -> str:
         raise NotImplementedError("Abstract class.")
 
     @staticmethod
@@ -88,6 +92,10 @@ class SensorDataGPS(_SensorData):
 
     def __eq__(self, other):
         return self._lat == other.lat and self._lon == other.lon and self._utctime == other.utctime
+
+    def __str__(self) -> str:
+        time_str = time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self._utctime))
+        return "(Lat: %f, Lon: %f) %s" % (self._lat, self._lon, time_str)
 
     @property
     def lat(self) -> float:
