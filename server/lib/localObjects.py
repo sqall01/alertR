@@ -7,6 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 import copy
+import time
 from typing import Optional, List, Any, Dict
 
 
@@ -32,6 +33,9 @@ class _SensorData:
         pass
 
     def __eq__(self, other):
+        raise NotImplementedError("Abstract class.")
+
+    def __str__(self) -> str:
         raise NotImplementedError("Abstract class.")
 
     @staticmethod
@@ -69,6 +73,14 @@ class _SensorData:
         """
         raise NotImplementedError("Abstract class.")
 
+    def deepcopy_obj(self, obj):
+        """
+        This function copies all attributes of the given object to this object.
+        :param obj:
+        :return: this object
+        """
+        raise NotImplementedError("Abstract class.")
+
 
 class SensorDataGPS(_SensorData):
     def __init__(self, lat: float, lon: float, utctime: int):
@@ -79,6 +91,10 @@ class SensorDataGPS(_SensorData):
 
     def __eq__(self, other):
         return self._lat == other.lat and self._lon == other.lon and self._utctime == other.utctime
+
+    def __str__(self) -> str:
+        time_str = time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self._utctime))
+        return "(Lat: %f, Lon: %f) %s" % (self._lat, self._lon, time_str)
 
     @property
     def lat(self) -> float:
@@ -109,8 +125,11 @@ class SensorDataGPS(_SensorData):
         if (isinstance(data, dict)
                 and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
                 and isinstance(data["lat"], float)
+                and -90.0 <= data["lat"] <= 90.0
                 and isinstance(data["lon"], float)
-                and isinstance(data["utctime"], int)):
+                and -180.0 <= data["lon"] <= 180.0
+                and isinstance(data["utctime"], int)
+                and 0 <= data["utctime"]):
             return True
         return False
 
@@ -121,6 +140,12 @@ class SensorDataGPS(_SensorData):
                     }
 
         return obj_dict
+
+    def deepcopy_obj(self, obj):
+        self._lat = obj.lat
+        self._lon = obj.lon
+        self._utctime = obj.utctime
+        return self
 
 
 # This class represents a single node of the system.
