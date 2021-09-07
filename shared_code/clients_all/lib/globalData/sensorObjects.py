@@ -208,7 +208,10 @@ class SensorObjSensorAlert(LocalObject):
 
         # Deep copy sensor data.
         if self.dataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS.deepcopy(sensor_alert.sensorData)
+            if self.sensorData is None:
+                self.sensorData = SensorDataGPS.deepcopy(sensor_alert.sensorData)
+            else:
+                self.sensorData.deepcopy_obj(sensor_alert.sensorData)
 
         else:
             self.sensorData = sensor_alert.sensorData
@@ -264,7 +267,10 @@ class SensorObjStateChange(LocalObject):
 
         # Deep copy sensor data.
         if self.dataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS.deepcopy(state_change.sensorData)
+            if self.sensorData is None:
+                self.sensorData = SensorDataGPS.deepcopy(state_change.sensorData)
+            else:
+                self.sensorData.deepcopy_obj(state_change.sensorData)
 
         else:
             self.sensorData = state_change.sensorData
