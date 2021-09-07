@@ -3,10 +3,16 @@ from typing import Optional
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjOption, ManagerObjAlertLevel, ManagerObjNode, ManagerObjAlert, \
     ManagerObjManager, ManagerObjSensor, ManagerObjProfile
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataGPS
 
 
 class TestSystemDataCore(TestCase):
+
+    def setUp(self):
+        self._next_node_id = 1
+        self._next_alert_id = 1
+        self._next_sensor_id = 1
+        self._next_manager_id = 1
 
     def _create_alert_levels(self, system_data: Optional[SystemData] = None) -> SystemData:
 
@@ -21,7 +27,7 @@ class TestSystemDataCore(TestCase):
         alert_level.instrumentation_cmd = "instrumentation_cmd_1"
         alert_level.instrumentation_timeout = 1234
         self.alert_levels.append(alert_level)
-        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy_obj(alert_level))
+        system_data.update_alert_level(ManagerObjAlertLevel.deepcopy(alert_level))
 
         alert_level = ManagerObjAlertLevel()
         alert_level.level = 2
@@ -29,7 +35,7 @@ class TestSystemDataCore(TestCase):
         alert_level.profiles = [1]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
-        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy_obj(alert_level))
+        system_data.update_alert_level(ManagerObjAlertLevel.deepcopy(alert_level))
 
         alert_level = ManagerObjAlertLevel()
         alert_level.level = 3
@@ -37,7 +43,7 @@ class TestSystemDataCore(TestCase):
         alert_level.profiles = [0, 2]
         alert_level.instrumentation_active = False
         self.alert_levels.append(alert_level)
-        system_data.update_alert_level(ManagerObjAlertLevel().deepcopy_obj(alert_level))
+        system_data.update_alert_level(ManagerObjAlertLevel.deepcopy(alert_level))
 
         return system_data
 
@@ -47,70 +53,79 @@ class TestSystemDataCore(TestCase):
             system_data = self._create_alert_levels()
 
         node = ManagerObjNode()
-        node.nodeId = 1
-        node.hostname = "hostname_1"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "alert"
-        node.instance = "instance_1"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_1"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         alert = ManagerObjAlert()
-        alert.nodeId = 1
-        alert.alertId = 2
+        alert.nodeId = self._next_node_id
+        alert.alertId = self._next_alert_id
         alert.clientAlertId = 0
         alert.alertLevels = [1]
-        alert.description = "alert_1"
+        alert.description = "alert_" + str(self._next_alert_id)
         self.alerts.append(alert)
-        system_data.update_alert(ManagerObjAlert().deepcopy_obj(alert))
+        system_data.update_alert(ManagerObjAlert.deepcopy(alert))
+
+        self._next_node_id += 1
+        self._next_alert_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 2
-        node.hostname = "hostname_2"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "alert"
-        node.instance = "instance_2"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_2"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         alert = ManagerObjAlert()
-        alert.nodeId = 2
-        alert.alertId = 1
+        alert.nodeId = self._next_node_id
+        alert.alertId = self._next_alert_id
         alert.clientAlertId = 3
         alert.alertLevels = [2]
-        alert.description = "alert_2"
+        alert.description = "alert_" + str(self._next_alert_id)
         self.alerts.append(alert)
-        system_data.update_alert(ManagerObjAlert().deepcopy_obj(alert))
+        system_data.update_alert(ManagerObjAlert.deepcopy(alert))
+
+        self._next_node_id += 1
+        self._next_alert_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 3
-        node.hostname = "hostname_3"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "alert"
-        node.instance = "instance_3"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_3"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         alert = ManagerObjAlert()
-        alert.nodeId = 3
-        alert.alertId = 3
+        alert.nodeId = self._next_node_id
+        alert.alertId = self._next_alert_id
         alert.clientAlertId = 1
         alert.alertLevels = [1, 2]
-        alert.description = "alert_3"
+        alert.description = "alert_" + str(self._next_alert_id)
         self.alerts.append(alert)
-        system_data.update_alert(ManagerObjAlert().deepcopy_obj(alert))
+        system_data.update_alert(ManagerObjAlert.deepcopy(alert))
+
+        self._next_node_id += 1
+        self._next_alert_id += 1
 
         return system_data
 
@@ -127,64 +142,73 @@ class TestSystemDataCore(TestCase):
             self.sensors = []
 
         node = ManagerObjNode()
-        node.nodeId = 4
-        node.hostname = "hostname_4"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "manager"
-        node.instance = "instance_4"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_4"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         manager = ManagerObjManager()
-        manager.nodeId = 4
-        manager.managerId = 1
-        manager.description = "manager_1"
+        manager.nodeId = self._next_node_id
+        manager.managerId = self._next_manager_id
+        manager.description = "manager_" + str(self._next_manager_id)
         self.managers.append(manager)
-        system_data.update_manager(ManagerObjManager().deepcopy_obj(manager))
+        system_data.update_manager(ManagerObjManager.deepcopy(manager))
+
+        self._next_node_id += 1
+        self._next_manager_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 5
-        node.hostname = "hostname_5"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "manager"
-        node.instance = "instance_5"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_5"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         manager = ManagerObjManager()
-        manager.nodeId = 5
-        manager.managerId = 2
-        manager.description = "manager_2"
+        manager.nodeId = self._next_node_id
+        manager.managerId = self._next_manager_id
+        manager.description = "manager_" + str(self._next_manager_id)
         self.managers.append(manager)
-        system_data.update_manager(ManagerObjManager().deepcopy_obj(manager))
+        system_data.update_manager(ManagerObjManager.deepcopy(manager))
+
+        self._next_node_id += 1
+        self._next_manager_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 6
-        node.hostname = "hostname_6"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "manager"
-        node.instance = "instance_6"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_6"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         manager = ManagerObjManager()
-        manager.nodeId = 6
-        manager.managerId = 3
-        manager.description = "manager_3"
+        manager.nodeId = self._next_node_id
+        manager.managerId = self._next_manager_id
+        manager.description = "manager_" + str(self._next_manager_id)
         self.managers.append(manager)
-        system_data.update_manager(ManagerObjManager().deepcopy_obj(manager))
+        system_data.update_manager(ManagerObjManager.deepcopy(manager))
+
+        self._next_node_id += 1
+        self._next_manager_id += 1
 
         return system_data
 
@@ -194,160 +218,212 @@ class TestSystemDataCore(TestCase):
             system_data = self._create_alert_levels()
 
         node = ManagerObjNode()
-        node.nodeId = 7
-        node.hostname = "hostname_7"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "sensor"
-        node.instance = "instance_7"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_7"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         sensor = ManagerObjSensor()
-        sensor.nodeId = 7
-        sensor.sensorId = 1
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
         sensor.clientSensorId = 2
         sensor.alertDelay = 0
         sensor.alertLevels = [2]
-        sensor.description = "sensor_1"
+        sensor.description = "sensor_" + str(self._next_sensor_id)
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy_obj(sensor))
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 8
-        node.hostname = "hostname_8"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "sensor"
-        node.instance = "instance_8"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_8"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         sensor = ManagerObjSensor()
-        sensor.nodeId = 8
-        sensor.sensorId = 2
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
         sensor.clientSensorId = 3
         sensor.alertDelay = 0
         sensor.alertLevels = [1, 2]
-        sensor.description = "sensor_2"
+        sensor.description = "sensor_" + str(self._next_sensor_id)
         sensor.lastStateUpdated = 0
         sensor.state = 0
-        sensor.dataType = SensorDataType.NONE
+        sensor.dataType = SensorDataType.INT
+        sensor.data = 1337
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy_obj(sensor))
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 9
-        node.hostname = "hostname_9"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
         node.nodeType = "sensor"
-        node.instance = "instance_9"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_9"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         sensor = ManagerObjSensor()
-        sensor.nodeId = 9
-        sensor.sensorId = 3
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
         sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [1]
-        sensor.description = "sensor_3"
+        sensor.description = "sensor_" + str(self._next_sensor_id)
         sensor.lastStateUpdated = 0
         sensor.state = 0
-        sensor.dataType = SensorDataType.NONE
+        sensor.dataType = SensorDataType.FLOAT
+        sensor.data = 1337.0
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy_obj(sensor))
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 10
-        node.hostname = "hostname_server_10"
-        node.nodeType = "server"
-        node.instance = "instance_10"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_" + str(self._next_node_id)
+        node.nodeType = "sensor"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_10"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         sensor = ManagerObjSensor()
-        sensor.nodeId = 10
-        sensor.sensorId = 4
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
+        sensor.clientSensorId = 1
+        sensor.alertDelay = 0
+        sensor.alertLevels = [1]
+        sensor.description = "sensor_" + str(self._next_sensor_id)
+        sensor.lastStateUpdated = 0
+        sensor.state = 0
+        sensor.dataType = SensorDataType.GPS
+        sensor.data = SensorDataGPS(99.0,
+                                    10.0,
+                                    1337)
+        self.sensors.append(sensor)
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
+
+        node = ManagerObjNode()
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_server_" + str(self._next_node_id)
+        node.nodeType = "server"
+        node.instance = "instance_" + str(self._next_node_id)
+        node.connected = 1
+        node.version = 1.0
+        node.rev = 0
+        node.username = "username_" + str(self._next_node_id)
+        node.persistent = 1
+        self.nodes.append(node)
+        system_data.update_node(ManagerObjNode.deepcopy(node))
+
+        sensor = ManagerObjSensor()
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
         sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [3]
-        sensor.description = "server_sensor_1"
+        sensor.description = "server_sensor_" + str(self._next_sensor_id)
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy_obj(sensor))
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 11
-        node.hostname = "hostname_server_11"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_server_" + str(self._next_node_id)
         node.nodeType = "server"
-        node.instance = "instance_11"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_11"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         sensor = ManagerObjSensor()
-        sensor.nodeId = 11
-        sensor.sensorId = 5
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
         sensor.clientSensorId = 4
         sensor.alertDelay = 0
         sensor.alertLevels = [1, 2]
-        sensor.description = "server_sensor_2"
+        sensor.description = "server_sensor_" + str(self._next_sensor_id)
         sensor.lastStateUpdated = 0
         sensor.state = 1
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy_obj(sensor))
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
 
         node = ManagerObjNode()
-        node.nodeId = 12
-        node.hostname = "hostname_server_12"
+        node.nodeId = self._next_node_id
+        node.hostname = "hostname_server_" + str(self._next_node_id)
         node.nodeType = "server"
-        node.instance = "instance_12"
+        node.instance = "instance_" + str(self._next_node_id)
         node.connected = 1
         node.version = 1.0
         node.rev = 0
-        node.username = "username_12"
+        node.username = "username_" + str(self._next_node_id)
         node.persistent = 1
         self.nodes.append(node)
-        system_data.update_node(ManagerObjNode().deepcopy_obj(node))
+        system_data.update_node(ManagerObjNode.deepcopy(node))
 
         sensor = ManagerObjSensor()
-        sensor.nodeId = 12
-        sensor.sensorId = 6
+        sensor.nodeId = self._next_node_id
+        sensor.sensorId = self._next_sensor_id
         sensor.clientSensorId = 1
         sensor.alertDelay = 0
         sensor.alertLevels = [2]
-        sensor.description = "server_sensor_3"
+        sensor.description = "server_sensor_" + str(self._next_sensor_id)
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         self.sensors.append(sensor)
-        system_data.update_sensor(ManagerObjSensor().deepcopy_obj(sensor))
+        system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
+
+        self._next_node_id += 1
+        self._next_sensor_id += 1
 
         return system_data
 
@@ -367,19 +443,19 @@ class TestSystemDataCore(TestCase):
         option.type = "type_1"
         option.value = 1
         self.options.append(option)
-        system_data.update_option(ManagerObjOption().deepcopy_obj(option))
+        system_data.update_option(ManagerObjOption.deepcopy(option))
 
         option = ManagerObjOption()
         option.type = "type_2"
         option.value = 2
         self.options.append(option)
-        system_data.update_option(ManagerObjOption().deepcopy_obj(option))
+        system_data.update_option(ManagerObjOption.deepcopy(option))
 
         option = ManagerObjOption()
         option.type = "type_3"
         option.value = 3
         self.options.append(option)
-        system_data.update_option(ManagerObjOption().deepcopy_obj(option))
+        system_data.update_option(ManagerObjOption.deepcopy(option))
 
         return system_data
 
@@ -399,19 +475,19 @@ class TestSystemDataCore(TestCase):
         profile.profileId = 0
         profile.name = "profile_0"
         self.profiles.append(profile)
-        system_data.update_profile(ManagerObjProfile().deepcopy_obj(profile))
+        system_data.update_profile(ManagerObjProfile.deepcopy(profile))
 
         profile = ManagerObjProfile()
         profile.profileId = 1
         profile.name = "profile_1"
         self.profiles.append(profile)
-        system_data.update_profile(ManagerObjProfile().deepcopy_obj(profile))
+        system_data.update_profile(ManagerObjProfile.deepcopy(profile))
 
         profile = ManagerObjProfile()
         profile.profileId = 2
         profile.name = "profile_2"
         self.profiles.append(profile)
-        system_data.update_profile(ManagerObjProfile().deepcopy_obj(profile))
+        system_data.update_profile(ManagerObjProfile.deepcopy(profile))
 
         return system_data
 

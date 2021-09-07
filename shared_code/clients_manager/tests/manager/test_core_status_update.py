@@ -7,6 +7,9 @@ from lib.globalData.globalData import GlobalData
 
 class TestManagerCoreStatusUpdate(TestSystemDataCore):
 
+    def setUp(self):
+        super().setUp()
+
     def test_content_update(self):
         """
         Tests status update of content.

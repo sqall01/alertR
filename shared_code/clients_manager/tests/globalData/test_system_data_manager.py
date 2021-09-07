@@ -15,7 +15,8 @@ class TestSystemDataManager(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_manager(manager)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("for corresponding manager" in str(e) and "does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of non-existing node expected.")
@@ -41,7 +42,8 @@ class TestSystemDataManager(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_manager(manager)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("not of correct type for corresponding manager" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -75,7 +77,7 @@ class TestSystemDataManager(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_managers = []
         for i in range(len(self.managers)):
-            temp_manager = ManagerObjManager().deepcopy_obj(self.managers[i])
+            temp_manager = ManagerObjManager.deepcopy(self.managers[i])
             temp_manager.description = "new_manager_" + str(i + 1)
             new_managers.append(temp_manager)
 
