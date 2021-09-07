@@ -126,8 +126,11 @@ class SensorDataGPS(_SensorData):
         if (isinstance(data, dict)
                 and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
                 and isinstance(data["lat"], float)
+                and -90.0 <= data["lat"] <= 90.0
                 and isinstance(data["lon"], float)
-                and isinstance(data["utctime"], int)):
+                and -180.0 <= data["lon"] <= 180.0
+                and isinstance(data["utctime"], int)
+                and 0 <= data["utctime"]):
             return True
         return False
 
