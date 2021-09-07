@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
     ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption, ManagerObjProfile
 from .baseObjects import InternalState
-from .sensorObjects import SensorDataType
+from .sensorObjects import SensorDataType, SensorDataGPS
 
 
 class SystemData:
@@ -262,7 +262,10 @@ class SystemData:
                 sensor.state = sensor_alert.state
 
             if sensor_alert.hasLatestData:
-                sensor.data = sensor_alert.sensorData
+                if sensor_alert.dataType == SensorDataGPS:
+                    sensor.data.deepcopy_obj(sensor_alert.sensorData)
+                else:
+                    sensor.data = sensor_alert.sensorData
 
         with self._data_lock:
             sensor_alert.internal_state = InternalState.STORED
@@ -636,7 +639,10 @@ class SystemData:
 
         with self._data_lock:
             sensor.state = state
-            sensor.data = sensor_data
+            if data_type == SensorDataGPS:
+                sensor.data.deepcopy_obj(sensor_data)
+            else:
+                sensor.data = sensor_data
 
     def update_alert(self, alert: ManagerObjAlert):
         """
