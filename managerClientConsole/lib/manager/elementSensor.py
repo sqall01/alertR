@@ -11,7 +11,7 @@ import time
 import urwid
 from typing import Any, List
 from .eventHandler import ManagerEventHandler
-from ..globalData import ManagerObjNode, ManagerObjSensor, ManagerObjAlertLevel,  SensorDataType
+from ..globalData import ManagerObjNode, ManagerObjSensor, ManagerObjAlertLevel, SensorDataType
 
 
 # this class is an urwid object for a sensor
@@ -367,6 +367,8 @@ class SensorDetailedUrwid:
             temp.append(urwid.Text("Integer"))
         elif sensor.dataType == SensorDataType.FLOAT:
             temp.append(urwid.Text("Floating Point"))
+        elif sensor.dataType == SensorDataType.GPS:
+            temp.append(urwid.Text("GPS"))
         else:
             temp.append(urwid.Text("Unknown"))
         temp.append(urwid.Divider())

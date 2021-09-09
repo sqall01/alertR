@@ -5,7 +5,7 @@ import time
 from typing import Dict, Any, List
 from unittest import TestCase
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
+from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorDataGPS
 from lib.alert.instrumentation import Instrumentation
 from lib.globalData import GlobalData
 
@@ -285,6 +285,28 @@ class TestInstrumentation(TestCase):
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.sensorData = 1337
+
+        arg = invalid_sensor_alert.convert_to_dict()
+        arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
+
+        # Test instrumentation script output processing.
+        was_success, new_sensor_alert = instrumentation._process_output(json.dumps(arg))
+        self.assertFalse(was_success)
+        self.assertIsNone(new_sensor_alert)
+
+    def test_process_output_invalid_data_gps(self):
+        """
+        Tests an invalid data output processing of an instrumentation script (gps expected, wrong type of lat).
+        """
+        instrumentation = self._create_instrumentation_dummy()
+        sensor_alert = instrumentation._sensor_alert
+        sensor_alert.dataType = SensorDataType.GPS
+        sensor_alert.sensorData = SensorDataGPS(1337.0,
+                                                1338.0,
+                                                1339)
+
+        invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
+        invalid_sensor_alert.sensorData._lat = 1337
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]

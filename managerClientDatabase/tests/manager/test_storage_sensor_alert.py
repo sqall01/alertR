@@ -50,7 +50,8 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
             sensor_alert.hasOptionalData = False
             sensor_alert.changeState = False
             sensor_alert.hasLatestData = False
-            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.dataType = sensor_list[i].dataType
+            sensor_alert.sensorData = sensor_list[i].data
 
             system_data.add_sensor_alert(sensor_alert)
 
@@ -94,7 +95,8 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
             sensor_alert.hasOptionalData = False
             sensor_alert.changeState = False
             sensor_alert.hasLatestData = False
-            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.dataType = sensor_list[i].dataType
+            sensor_alert.sensorData = sensor_list[i].data
 
             system_data.add_sensor_alert(sensor_alert)
 

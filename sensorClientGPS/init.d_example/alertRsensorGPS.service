@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=alertR Sensor Client GPS
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRsensorGPS.sh start
+ExecStop=/etc/init.d/alertRsensorGPS.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

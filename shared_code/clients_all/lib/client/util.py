@@ -13,8 +13,8 @@ import json
 import socket
 import os
 import logging
-from typing import List, Dict, Any, Optional
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from typing import List, Dict, Any, Optional, Union
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, SensorDataGPS
 
 
 class MsgChecker:
@@ -726,13 +726,15 @@ class MsgChecker:
     @staticmethod
     def check_sensor_data(data: Any, dataType: int) -> Optional[str]:
 
-        is_correct = True
-        if dataType == SensorDataType.NONE and data is not None:
-            is_correct = False
-        elif dataType == SensorDataType.INT and not isinstance(data, int):
-            is_correct = False
-        elif dataType == SensorDataType.FLOAT and not isinstance(data, float):
-            is_correct = False
+        is_correct = False
+        if dataType == SensorDataType.NONE and data is None:
+            is_correct = True
+        elif dataType == SensorDataType.INT and isinstance(data, int):
+            is_correct = True
+        elif dataType == SensorDataType.FLOAT and isinstance(data, float):
+            is_correct = True
+        elif dataType == SensorDataType.GPS and SensorDataGPS.verify_dict(data):
+            is_correct = True
 
         if not is_correct:
             return "data not valid"
@@ -748,7 +750,8 @@ class MsgChecker:
             is_correct = False
         elif not (SensorDataType.NONE == dataType
                   or SensorDataType.INT == dataType
-                  or SensorDataType.FLOAT == dataType):
+                  or SensorDataType.FLOAT == dataType
+                  or SensorDataType.GPS == dataType):
             is_correct = False
 
         if not is_correct:
@@ -1458,8 +1461,12 @@ class MsgBuilder:
             tempSensor["state"] = sensor.state
 
             # Only add data field if sensor data type is not "none".
+            tempSensor["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
             tempSensor["dataType"] = sensor.sensorDataType
-            if sensor.sensorDataType != SensorDataType.NONE:
+            if sensor.sensorDataType == SensorDataType.GPS:
+                tempSensor["data"] = sensor.sensorData.copy_to_dict()
+
+            elif sensor.sensorDataType != SensorDataType.NONE:
                 tempSensor["data"] = sensor.sensorData
 
             msg_sensors.append(tempSensor)
@@ -1498,7 +1505,12 @@ class MsgBuilder:
             payload["optionalData"] = sensor_alert.optionalData
 
         # Only add data field if sensor data type is not "none".
-        if sensor_alert.dataType != SensorDataType.NONE:
+        payload["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
+        if sensor_alert.dataType == SensorDataType.GPS:
+            # noinspection PyTypedDict
+            payload["data"] = sensor_alert.sensorData.copy_to_dict()
+
+        elif sensor_alert.dataType != SensorDataType.NONE:
             payload["data"] = sensor_alert.sensorData
 
         utc_timestamp = int(time.time())
@@ -1521,7 +1533,12 @@ class MsgBuilder:
                    "dataType": state_change.dataType}
 
         # Only add data field if sensor data type is not "none".
-        if state_change.dataType != SensorDataType.NONE:
+        payload["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
+        if state_change.dataType == SensorDataType.GPS:
+            # noinspection PyTypedDict
+            payload["data"] = state_change.sensorData.copy_to_dict()
+
+        elif state_change.dataType != SensorDataType.NONE:
             payload["data"] = state_change.sensorData
 
         utc_timestamp = int(time.time())
@@ -1552,7 +1569,11 @@ class MsgBuilder:
 
             # Only add data field if sensor data type is not "none".
             temp_sensor["dataType"] = sensor.sensorDataType
-            if sensor.sensorDataType != SensorDataType.NONE:
+            temp_sensor["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
+            if sensor.sensorDataType == SensorDataType.GPS:
+                temp_sensor["data"] = sensor.sensorData.copy_to_dict()
+
+            elif sensor.sensorDataType != SensorDataType.NONE:
                 temp_sensor["data"] = sensor.sensorData
 
             sensors.append(temp_sensor)

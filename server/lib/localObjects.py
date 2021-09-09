@@ -7,6 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 import copy
+import time
 from typing import Optional, List, Any, Dict
 
 
@@ -24,6 +25,127 @@ class SensorDataType:
     NONE = 0
     INT = 1
     FLOAT = 2
+    GPS = 3
+
+
+class _SensorData:
+    def __init__(self):
+        pass
+
+    def __eq__(self, other):
+        raise NotImplementedError("Abstract class.")
+
+    def __str__(self) -> str:
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        """
+        This function creates from the given dictionary an object of this class.
+        This function has to succeed if verify_dict() says dictionary is correct.
+        :param data:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def deepcopy(obj):
+        """
+        This function copies all attributes of the given object to a new data object.
+        :param obj:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        """
+        This function verifies the given dictionary representing this object for correctness.
+        Meaning, if verify_dict() succeeds, copy_from_dict() has to be able to create a valid object.
+        :return: correct or not
+        """
+        raise NotImplementedError("Abstract class.")
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        """
+        Copies the object's data into a dictionary.
+        :return: dictionary representation of a copy of this object
+        """
+        raise NotImplementedError("Abstract class.")
+
+    def deepcopy_obj(self, obj):
+        """
+        This function copies all attributes of the given object to this object.
+        :param obj:
+        :return: this object
+        """
+        raise NotImplementedError("Abstract class.")
+
+
+class SensorDataGPS(_SensorData):
+    def __init__(self, lat: float, lon: float, utctime: int):
+        super().__init__()
+        self._lat = lat
+        self._lon = lon
+        self._utctime = utctime
+
+    def __eq__(self, other):
+        return self._lat == other.lat and self._lon == other.lon and self._utctime == other.utctime
+
+    def __str__(self) -> str:
+        time_str = time.strftime("%d %b %Y at %H:%M:%S", time.localtime(self._utctime))
+        return "(Lat: %f, Lon: %f) %s" % (self._lat, self._lon, time_str)
+
+    @property
+    def lat(self) -> float:
+        return self._lat
+
+    @property
+    def lon(self) -> float:
+        return self._lon
+
+    @property
+    def utctime(self) -> int:
+        return self._utctime
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        return SensorDataGPS(data["lat"],
+                             data["lon"],
+                             data["utctime"])
+
+    @staticmethod
+    def deepcopy(obj):
+        return SensorDataGPS(obj.lat,
+                             obj.lon,
+                             obj.utctime)
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        if (isinstance(data, dict)
+                and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
+                and isinstance(data["lat"], float)
+                and -90.0 <= data["lat"] <= 90.0
+                and isinstance(data["lon"], float)
+                and -180.0 <= data["lon"] <= 180.0
+                and isinstance(data["utctime"], int)
+                and 0 <= data["utctime"]):
+            return True
+        return False
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        obj_dict = {"lat": self._lat,
+                    "lon": self._lon,
+                    "utctime": self._utctime,
+                    }
+
+        return obj_dict
+
+    def deepcopy_obj(self, obj):
+        self._lat = obj.lat
+        self._lon = obj.lon
+        self._utctime = obj.utctime
+        return self
 
 
 # This class represents a single node of the system.
@@ -82,7 +204,15 @@ class Sensor:
         self.lastStateUpdated = sensor.lastStateUpdated
         self.alertDelay = sensor.alertDelay
         self.dataType = sensor.dataType
-        self.data = sensor.data
+
+        # Deep copy sensor data.
+        if self.dataType == SensorDataType.GPS:
+            self.data = SensorDataGPS(sensor.data.lat,
+                                      sensor.data.lon,
+                                      sensor.data.utctime)
+
+        else:
+            self.data = sensor.data
 
         return self
 
@@ -186,7 +316,12 @@ class SensorAlert:
         sensor_alert.triggeredAlertLevels = sensor_alert_dict["triggeredAlertLevels"]
         sensor_alert.hasLatestData = sensor_alert_dict["hasLatestData"]
         sensor_alert.dataType = sensor_alert_dict["dataType"]
-        sensor_alert.sensorData = sensor_alert_dict["data"]
+
+        if sensor_alert.dataType == SensorDataType.GPS:
+            sensor_alert.sensorData = SensorDataGPS.copy_from_dict(sensor_alert_dict["data"])
+
+        else:
+            sensor_alert.sensorData = sensor_alert_dict["data"]
 
         # Verify data types of attributes (raises ValueError if type is wrong).
         sensor_alert.verify_types()
@@ -211,8 +346,13 @@ class SensorAlert:
                              "triggeredAlertLevels": self.triggeredAlertLevels,
                              "hasLatestData": self.hasLatestData,
                              "dataType": self.dataType,
-                             "data": self.sensorData,
                              }
+
+        if self.dataType == SensorDataType.GPS:
+            sensor_alert_dict["data"] = self.sensorData.copy_to_dict()
+
+        else:
+            sensor_alert_dict["data"] = self.sensorData
 
         return sensor_alert_dict
 
@@ -234,13 +374,19 @@ class SensorAlert:
         self.triggeredAlertLevels = list(sensor_alert.triggeredAlertLevels)
         self.hasLatestData = sensor_alert.hasLatestData
         self.dataType = sensor_alert.dataType
-        self.sensorData = sensor_alert.sensorData
 
         if type(sensor_alert.optionalData) == dict:
             self.optionalData = copy.deepcopy(sensor_alert.optionalData)
 
         else:
             self.optionalData = None
+
+        # Deep copy sensor data.
+        if self.dataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS.deepcopy(sensor_alert.sensorData)
+
+        else:
+            self.sensorData = sensor_alert.sensorData
 
         return self
 
@@ -291,7 +437,10 @@ class SensorAlert:
             raise ValueError("hasLatestData not valid")
 
         if (type(self.dataType) != int
-                or self.dataType not in [SensorDataType.NONE, SensorDataType.INT, SensorDataType.FLOAT]):
+                or self.dataType not in [SensorDataType.NONE,
+                                         SensorDataType.INT,
+                                         SensorDataType.FLOAT,
+                                         SensorDataType.GPS]):
             raise ValueError("dataType not valid")
 
         if self.dataType == SensorDataType.NONE and self.sensorData is not None:
@@ -301,6 +450,9 @@ class SensorAlert:
             raise ValueError("data not valid")
 
         if self.dataType == SensorDataType.FLOAT and not isinstance(self.sensorData, float):
+            raise ValueError("data not valid")
+
+        if self.dataType == SensorDataType.GPS and not SensorDataGPS.verify_dict(self.sensorData.copy_to_dict()):
             raise ValueError("data not valid")
 
 

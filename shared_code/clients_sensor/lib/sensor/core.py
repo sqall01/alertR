@@ -13,7 +13,7 @@ import logging
 import threading
 from typing import Optional, List, Union, Dict, Any
 from ..globalData import GlobalData
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorDataGPS
 
 
 class _PollingSensor:
@@ -58,7 +58,7 @@ class _PollingSensor:
         self.sensorDataType = None  # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None  # type: Optional[Union[int, float]]
+        self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
 
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
@@ -83,7 +83,7 @@ class _PollingSensor:
                           change_state: bool,
                           optional_data: Optional[Dict[str, Any]] = None,
                           has_latest_data: bool = False,
-                          sensor_data: Optional[Union[int, float]] = None):
+                          sensor_data: Optional[Union[int, float, SensorDataGPS]] = None):
         """
         Internal function that adds a Sensor Alert for processing.
 
@@ -189,7 +189,7 @@ class _PollingSensor:
 
     def _add_state_change(self,
                           state: int,
-                          sensor_data: Optional[Union[int, float]] = None):
+                          sensor_data: Optional[Union[int, float, SensorDataGPS]] = None):
         """
         Internal function that adds a state change for processing.
 

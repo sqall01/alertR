@@ -17,7 +17,7 @@ import os
 import random
 import json
 from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel, \
-    Profile
+    Profile, SensorDataGPS
 from .globalData import GlobalData
 from typing import Optional, Dict, Tuple, Any, List, Type
 
@@ -762,6 +762,9 @@ class ClientCommunication:
         elif dataType == SensorDataType.FLOAT and not isinstance(data, float):
             isCorrect = False
 
+        elif dataType == SensorDataType.GPS and not SensorDataGPS.verify_dict(data):
+            isCorrect = False
+
         if not isCorrect:
             # send error message back
             try:
@@ -792,7 +795,8 @@ class ClientCommunication:
 
         elif not (SensorDataType.NONE == dataType
                   or SensorDataType.INT == dataType
-                  or SensorDataType.FLOAT == dataType):
+                  or SensorDataType.FLOAT == dataType
+                  or SensorDataType.GPS == dataType):
             isCorrect = False
 
         if not isCorrect:
@@ -1102,9 +1106,14 @@ class ClientCommunication:
                        "optionalData": sensorAlert.optionalData,
                        "changeState": sensorAlert.changeState,
                        "hasLatestData": sensorAlert.hasLatestData,
-                       "dataType": sensorAlert.dataType,
-                       "data": sensorAlert.sensorData
+                       "dataType": sensorAlert.dataType
                        }
+
+            if sensorAlert.dataType == SensorDataType.GPS:
+                payload["data"] = sensorAlert.sensorData.copy_to_dict()
+
+            else:
+                payload["data"] = sensorAlert.sensorData
         else:
             payload = {"type": "request",
                        "sensorId": sensorAlert.sensorId,
@@ -1114,9 +1123,14 @@ class ClientCommunication:
                        "hasOptionalData": False,
                        "changeState": sensorAlert.changeState,
                        "hasLatestData": sensorAlert.hasLatestData,
-                       "dataType": sensorAlert.dataType,
-                       "data": sensorAlert.sensorData,
+                       "dataType": sensorAlert.dataType
                        }
+
+            if sensorAlert.dataType == SensorDataType.GPS:
+                payload["data"] = sensorAlert.sensorData.copy_to_dict()
+
+            else:
+                payload["data"] = sensorAlert.sensorData
 
         utc_time = int(time.time())
         message = {"msgTime": utc_time,
@@ -1158,8 +1172,13 @@ class ClientCommunication:
                    "sensorId": sensorId,
                    "state": state,
                    "dataType": dataType}
-        if dataType != SensorDataType.NONE:
+
+        if dataType == SensorDataType.GPS:
+            payload["data"] = data.copy_to_dict()
+
+        elif dataType != SensorDataType.NONE:
             payload["data"] = data
+
         utc_time = int(time.time())
         message = {"msgTime": utc_time,
                    "message": "statechange",
@@ -1234,8 +1253,13 @@ class ClientCommunication:
                         "lastStateUpdated": sensorObj.lastStateUpdated,
                         "alertDelay": sensorObj.alertDelay,
                         "alertLevels": sensorObj.alertLevels,
-                        "dataType": sensorObj.dataType,
-                        "data": sensorObj.data}
+                        "dataType": sensorObj.dataType}
+
+            if sensorObj.dataType == SensorDataType.GPS:
+                tempDict["data"] = sensorObj.data.copy_to_dict()
+
+            else:
+                tempDict["data"] = sensorObj.data
 
             sensors.append(tempDict)
 
@@ -1796,7 +1820,10 @@ class ClientCommunication:
 
                     # Get data of sensor according to data type.
                     sensorData = None
-                    if sensorDataType != SensorDataType.NONE:
+                    if sensorDataType == SensorDataType.GPS:
+                        sensorData = SensorDataGPS.copy_from_dict(sensors[i]["data"])
+
+                    elif sensorDataType != SensorDataType.NONE:
                         sensorData = sensors[i]["data"]
 
                 except Exception as e:
@@ -1855,6 +1882,7 @@ class ClientCommunication:
                 tempSensor.alertDelay = alertDelay
                 tempSensor.dataType = sensorDataType
                 tempSensor.data = sensorData
+
                 self.sensors.append(tempSensor)
 
             # add sensors to database
@@ -2346,6 +2374,9 @@ class ClientCommunication:
                 elif sensorDataType == SensorDataType.FLOAT:
                     sensor.data = sensors[i]["data"]
 
+                elif sensorDataType == SensorDataType.GPS:
+                    sensor.data = SensorDataGPS.copy_from_dict(sensors[i]["data"])
+
                 dataList.append((clientSensorId, sensor.data))
 
         except Exception as e:
@@ -2457,7 +2488,10 @@ class ClientCommunication:
 
             sensorDataType = incomingMessage["payload"]["dataType"]
             sensorData = None
-            if sensorDataType != SensorDataType.NONE:
+            if sensorDataType == SensorDataType.GPS:
+                sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
+
+            elif sensorDataType != SensorDataType.NONE:
                 sensorData = incomingMessage["payload"]["data"]
 
             # Check if client sensor is known.
@@ -2671,7 +2705,10 @@ class ClientCommunication:
             state = incomingMessage["payload"]["state"]
             sensorDataType = incomingMessage["payload"]["dataType"]
             sensorData = None
-            if sensorDataType != SensorDataType.NONE:
+            if sensorDataType == SensorDataType.GPS:
+                sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
+
+            elif sensorDataType != SensorDataType.NONE:
                 sensorData = incomingMessage["payload"]["data"]
 
             # Check if client sensor is known.
@@ -2741,6 +2778,11 @@ class ClientCommunication:
         elif sensorDataType == SensorDataType.FLOAT:
             self.logger.debug("[%s]: State change for client sensor id %d and state %d and data %.3f (%s:%d)."
                               % (self.fileName, clientSensorId, state, sensorData, self.clientAddress, self.clientPort))
+
+        elif sensorDataType == SensorDataType.GPS:
+            self.logger.debug("[%s]: State change for client sensor id %d and state %d and data (%f, %f) (%s:%d)."
+                              % (self.fileName, clientSensorId, state, sensorData.lat, sensorData.lon,
+                                 self.clientAddress, self.clientPort))
 
         # update sensor state
         stateTuple = (clientSensorId, state)

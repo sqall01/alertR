@@ -34,7 +34,8 @@ class TestSystemDataSensor(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_sensor(sensor)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("not of correct type for corresponding sensor" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -56,7 +57,8 @@ class TestSystemDataSensor(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_sensor(sensor)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("for corresponding sensor" in str(e) and "does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of non-existing node expected.")
@@ -88,7 +90,8 @@ class TestSystemDataSensor(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_sensor(sensor)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("Alert Level" in str(e) and "does not exist for sensor" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -128,7 +131,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_sensors = []
         for i in range(len(self.sensors)):
-            temp_sensor = ManagerObjSensor().deepcopy(self.sensors[i])
+            temp_sensor = ManagerObjSensor.deepcopy(self.sensors[i])
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.clientSensorId = i
             temp_sensor.alertDelay = i + 10
@@ -172,7 +175,8 @@ class TestSystemDataSensor(TestSystemDataCore):
                 temp_sensor_alert.optionalData = None
                 temp_sensor_alert.changeState = (j % 2) == 0
                 temp_sensor_alert.hasLatestData = False
-                temp_sensor_alert.dataType = SensorDataType.NONE
+                temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
+                temp_sensor_alert.sensorData = self.sensors[i % len(self.sensors)].data
                 temp_sensor_alert.timeReceived = j
                 system_data.add_sensor_alert(temp_sensor_alert)
 
@@ -229,7 +233,8 @@ class TestSystemDataSensor(TestSystemDataCore):
             sensor_alert.optionalData = None
             sensor_alert.changeState = True
             sensor_alert.hasLatestData = False
-            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.dataType = curr_sensor.dataType
+            sensor_alert.sensorData = curr_sensor.data
             sensor_alert.timeReceived = 0
             system_data.add_sensor_alert(sensor_alert)
 

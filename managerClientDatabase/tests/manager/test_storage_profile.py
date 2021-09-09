@@ -47,7 +47,7 @@ class TestManagerStorageAlertLevel(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for profile in system_data.get_profiles_list():
-            temp_profile = ManagerObjProfile().deepcopy(profile)
+            temp_profile = ManagerObjProfile.deepcopy(profile)
             temp_profile.name = "new_profile" + str(ctr + 1)
 
             system_data.update_profile(temp_profile)
