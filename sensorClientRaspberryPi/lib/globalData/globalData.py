@@ -18,10 +18,10 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.800  # type: float
+        self.version = 0.900  # type: float
 
         # revision of the used client
-        self.rev = 2  # type: int
+        self.rev = 0  # type: int
 
         # name of this client
         self.name = "AlertR Sensor Client Raspberry Pi"  # type: str

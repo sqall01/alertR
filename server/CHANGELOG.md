@@ -1,3 +1,7 @@
+## 0.900-0
+
+* Added GPS data processing support
+
 ## 0.800-3
 
 * Improved receiving data
