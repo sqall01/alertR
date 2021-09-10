@@ -9,7 +9,7 @@
 
 import copy
 import time
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any
 from .baseObjects import LocalObject
 
 
