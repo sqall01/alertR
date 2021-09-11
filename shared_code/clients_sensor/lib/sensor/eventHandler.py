@@ -9,11 +9,12 @@
 
 import logging
 import os
-from typing import List, Any
+from typing import List
 from ..client import EventHandler
 from ..globalData import ManagerObjManager, ManagerObjNode, ManagerObjOption, ManagerObjSensorAlert, \
     ManagerObjAlertLevel, ManagerObjAlert, ManagerObjSensor, ManagerObjProfile
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import _SensorData
 
 
 class SensorEventHandler(EventHandler):
@@ -57,7 +58,7 @@ class SensorEventHandler(EventHandler):
                      sensor_id: int,
                      state: int,
                      data_type: SensorDataType,
-                     sensor_data: Any) -> bool:
+                     sensor_data: _SensorData) -> bool:
         logging.critical("[%s]: state_change() not supported by node of type 'sensor'." % self._log_tag)
         raise NotImplementedError("Not supported by node of type 'sensor'.")
 

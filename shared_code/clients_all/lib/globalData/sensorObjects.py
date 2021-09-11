@@ -9,24 +9,9 @@
 
 import copy
 import time
+from enum import Enum
 from typing import Optional, Dict, Any
 from .baseObjects import LocalObject
-
-
-# This enum class gives the different data types of a sensor.
-class SensorDataType:
-    NONE = 0
-    INT = 1
-    FLOAT = 2
-    GPS = 3
-
-
-# This enum class gives the different orderings used to check if the data of a
-# sensor exceeds a threshold.
-class SensorOrdering:
-    LT = 0
-    EQ = 1
-    GT = 2
 
 
 class _SensorData:
@@ -63,6 +48,14 @@ class _SensorData:
         """
         This function verifies the given dictionary representing this object for correctness.
         Meaning, if verify_dict() succeeds, copy_from_dict() has to be able to create a valid object.
+        :return: correct or not
+        """
+        raise NotImplementedError("Abstract class.")
+
+    @staticmethod
+    def verify_type(data_type: int):
+        """
+        This function verifies if the given data type matches to this object.
         :return: correct or not
         """
         raise NotImplementedError("Abstract class.")
@@ -108,6 +101,10 @@ class SensorDataNone(_SensorData):
             return True
         return False
 
+    @staticmethod
+    def verify_type(data_type: int):
+        return data_type == SensorDataType.NONE
+
     def copy_to_dict(self) -> Dict[str, Any]:
         return {}
 
@@ -135,7 +132,7 @@ class SensorDataInt(_SensorData):
 
     @property
     def unit(self) -> str:
-        return self.unit
+        return self._unit
 
     @staticmethod
     def copy_from_dict(data: Dict[str, Any]):
@@ -151,10 +148,15 @@ class SensorDataInt(_SensorData):
     def verify_dict(data: Dict[str, Any]) -> bool:
         if (isinstance(data, dict)
                 and all([x in data.keys() for x in ["value", "unit"]])
+                and len(data.keys()) == 2
                 and isinstance(data["value"], int)
                 and isinstance(data["unit"], str)):
             return True
         return False
+
+    @staticmethod
+    def verify_type(data_type: int):
+        return data_type == SensorDataType.INT
 
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"value": self._value,
@@ -189,7 +191,7 @@ class SensorDataFloat(_SensorData):
 
     @property
     def unit(self) -> str:
-        return self.unit
+        return self._unit
 
     @staticmethod
     def copy_from_dict(data: Dict[str, Any]):
@@ -205,10 +207,15 @@ class SensorDataFloat(_SensorData):
     def verify_dict(data: Dict[str, Any]) -> bool:
         if (isinstance(data, dict)
                 and all([x in data.keys() for x in ["value", "unit"]])
+                and len(data.keys()) == 2
                 and isinstance(data["value"], float)
                 and isinstance(data["unit"], str)):
             return True
         return False
+
+    @staticmethod
+    def verify_type(data_type: int):
+        return data_type == SensorDataType.FLOAT
 
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"value": self._value,
@@ -268,6 +275,7 @@ class SensorDataGPS(_SensorData):
     def verify_dict(data: Dict[str, Any]) -> bool:
         if (isinstance(data, dict)
                 and all([x in data.keys() for x in ["lat", "lon", "utctime"]])
+                and len(data.keys()) == 3
                 and isinstance(data["lat"], float)
                 and -90.0 <= data["lat"] <= 90.0
                 and isinstance(data["lon"], float)
@@ -276,6 +284,10 @@ class SensorDataGPS(_SensorData):
                 and 0 <= data["utctime"]):
             return True
         return False
+
+    @staticmethod
+    def verify_type(data_type: int):
+        return data_type == SensorDataType.GPS
 
     def copy_to_dict(self) -> Dict[str, Any]:
         obj_dict = {"lat": self._lat,
@@ -290,6 +302,42 @@ class SensorDataGPS(_SensorData):
         self._lon = obj.lon
         self._utctime = obj.utctime
         return self
+
+
+class SensorDataType(Enum):
+    """
+    This enum class gives the different data types of a sensor.
+    """
+    NONE = 0
+    INT = 1
+    FLOAT = 2
+    GPS = 3
+
+    _sensor_class_map = {0: SensorDataNone,
+                         1: SensorDataInt,
+                         2: SensorDataFloat,
+                         3: SensorDataGPS}
+
+    @classmethod
+    def has_value(cls, value: int) -> bool:
+        return value in cls._value2member_map.keys()
+
+    @classmethod
+    def get_sensor_data_class(cls, k: int):
+        return cls._sensor_class_map[k]
+
+
+class SensorOrdering(Enum):
+    """
+    This enum class gives the different orderings used to check if the data of a sensor exceeds a threshold.
+    """
+    LT = 0
+    EQ = 1
+    GT = 2
+
+    @classmethod
+    def has_value(cls, value: int):
+        return value in cls._value2member_map.keys()
 
 
 # This class represents a triggered sensor alert of the sensor.

@@ -75,15 +75,15 @@ class TestCommunicationStress(TestCase):
         # Give each message 5 seconds time
         # ("count" messages sent by client and "count" messages sent by server).
         for _ in range(count * 2 * 5):
-            if client_receiver.isAlive():
+            if client_receiver.is_alive():
                 client_receiver.join(timeout=1.0)
-            elif server_receiver.isAlive():
+            elif server_receiver.is_alive():
                 server_receiver.join(timeout=1.0)
             else:
                 break
-        if client_receiver.isAlive():
+        if client_receiver.is_alive():
             self.fail("Client timed out while receiving messages.")
-        if server_receiver.isAlive():
+        if server_receiver.is_alive():
             self.fail("Server timed out while receiving messages.")
 
         if len(requests_client) != len(msg_requests_server):
@@ -164,7 +164,7 @@ class TestCommunicationStress(TestCase):
         reconnect_client_ctr = 0
         reconnect_server_ctr = 0
         for _ in range(20):
-            if server_receiver.isAlive():
+            if server_receiver.is_alive():
 
                 # Re-connect channel if it is down (since we simulate an error we have to re-connect).
                 if not comm_client.has_channel:
@@ -181,7 +181,7 @@ class TestCommunicationStress(TestCase):
             else:
                 break
 
-        if server_receiver.isAlive():
+        if server_receiver.is_alive():
             self.fail("Server timed out while receiving messages.")
 
         if reconnect_client_ctr > 4:

@@ -10,7 +10,7 @@
 import copy
 from typing import Optional, List, Any, Dict
 from .baseObjects import LocalObject
-from .sensorObjects import SensorDataType, _SensorData
+from .sensorObjects import _SensorData
 
 
 # this class represents an option of the server
@@ -150,7 +150,7 @@ class ManagerObjSensor(LocalObject):
         self.description = None  # type: Optional[str]
         self.lastStateUpdated = None  # type: Optional[int]
         self.state = None  # type: Optional[int]
-        self.dataType = None  # type: Optional[SensorDataType]
+        self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
 
     def __str__(self) -> str:
@@ -321,7 +321,7 @@ class ManagerObjSensorAlert(LocalObject):
         self.hasLatestData = None  # type: Optional[bool]
 
         # The sensor data type and data that is connected to this sensor alert.
-        self.dataType = None  # type: Optional[SensorDataType]
+        self.dataType = None  # type: Optional[int]
         self.sensorData = None  # type: Optional[_SensorData]
 
     def __str__(self) -> str:
