@@ -13,7 +13,7 @@ import time
 from typing import Optional, Union
 from .core import _PollingSensor
 from ..globalData import SensorOrdering
-
+from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat
 
 
 class _NumberSensor(_PollingSensor):
@@ -61,8 +61,8 @@ class _NumberSensor(_PollingSensor):
             if data is None:
                 continue
 
-            logging.debug("[%s] %s %.1f of sensor '%s'."
-                          % (self._log_tag, self._log_desc, float(data), self.description))
+            logging.debug("[%s] %s %s of sensor '%s'."
+                          % (self._log_tag, self._log_desc, data, self.description))
 
             # Only check if threshold is reached if threshold check is activated.
             if self.hasThreshold:
@@ -70,9 +70,9 @@ class _NumberSensor(_PollingSensor):
                 # Sensor is currently triggered => Check if it is "normal" again.
                 if self.state == self.triggerState:
                     if self.ordering == SensorOrdering.LT:
-                        if data >= self.threshold and data >= self._sane_lowest_value:
-                            logging.info("[%s] %s %.1f of sensor '%s' is above threshold (back to normal)."
-                                         % (self._log_tag, self._log_desc, float(data), self.description))
+                        if data.value >= self.threshold and data.value >= self._sane_lowest_value:
+                            logging.info("[%s] %s %s of sensor '%s' is above threshold (back to normal)."
+                                         % (self._log_tag, self._log_desc, data, self.description))
 
                             self._add_sensor_alert(1 - self.triggerState,
                                                    True,
@@ -81,9 +81,9 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.EQ:
-                        if data != self.threshold and data >= self._sane_lowest_value:
-                            logging.info("[%s] %s %.1f of sensor '%s' is unequal to threshold (back to normal)."
-                                         % (self._log_tag, self._log_desc, float(data), self.description))
+                        if data.value != self.threshold and data.value >= self._sane_lowest_value:
+                            logging.info("[%s] %s %s of sensor '%s' is unequal to threshold (back to normal)."
+                                         % (self._log_tag, self._log_desc, data, self.description))
 
                             self._add_sensor_alert(1 - self.triggerState,
                                                    True,
@@ -92,9 +92,9 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.GT:
-                        if 0 <= data <= self.threshold:
-                            logging.info("[%s] %s %.1f of sensor '%s' is below threshold (back to normal)."
-                                         % (self._log_tag, self._log_desc, float(data), self.description))
+                        if 0 <= data.value <= self.threshold:
+                            logging.info("[%s] %s %s of sensor '%s' is below threshold (back to normal)."
+                                         % (self._log_tag, self._log_desc, data, self.description))
 
                             self._add_sensor_alert(1 - self.triggerState,
                                                    True,
@@ -109,9 +109,9 @@ class _NumberSensor(_PollingSensor):
                 # Sensor is currently not triggered => Check if it has to be triggered.
                 else:
                     if self.ordering == SensorOrdering.LT:
-                        if 0 <= data < self.threshold:
-                            logging.info("[%s] %s %.1f of sensor '%s' is below threshold (triggered)."
-                                         % (self._log_tag, self._log_desc, float(data), self.description))
+                        if 0 <= data.value < self.threshold:
+                            logging.info("[%s] %s %s of sensor '%s' is below threshold (triggered)."
+                                         % (self._log_tag, self._log_desc, data, self.description))
 
                             self._add_sensor_alert(self.triggerState,
                                                    True,
@@ -120,9 +120,9 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.EQ:
-                        if data == self.threshold and data >= self._sane_lowest_value:
-                            logging.info("[%s] %s %.1f of sensor '%s' is equal to threshold (triggered)."
-                                         % (self._log_tag, self._log_desc, float(data), self.description))
+                        if data.value == self.threshold and data.value >= self._sane_lowest_value:
+                            logging.info("[%s] %s %s of sensor '%s' is equal to threshold (triggered)."
+                                         % (self._log_tag, self._log_desc, data, self.description))
 
                             self._add_sensor_alert(self.triggerState,
                                                    True,
@@ -131,9 +131,9 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.GT:
-                        if data > self.threshold and data >= self._sane_lowest_value:
-                            logging.info("[%s] %s %.1f of sensor '%s' is above threshold (triggered)."
-                                         % (self._log_tag, self._log_desc, float(data), self.description))
+                        if data.value > self.threshold and data.value >= self._sane_lowest_value:
+                            logging.info("[%s] %s %s of sensor '%s' is above threshold (triggered)."
+                                         % (self._log_tag, self._log_desc, data, self.description))
 
                             self._add_sensor_alert(self.triggerState,
                                                    True,
@@ -148,5 +148,5 @@ class _NumberSensor(_PollingSensor):
             if data != self.sensorData:
                 self._add_state_change(self.state, data)
 
-    def _get_data(self) -> Optional[Union[float, int]]:
+    def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         raise NotImplementedError("Function not implemented yet.")

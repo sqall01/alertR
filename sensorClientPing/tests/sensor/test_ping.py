@@ -1,7 +1,7 @@
 import os
 import time
 from unittest import TestCase
-from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange
 from lib.sensor.ping import PingSensor
 
 
