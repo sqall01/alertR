@@ -7,23 +7,30 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
 import os
+from typing import Optional
 from .number import _NumberSensor
 from ..globalData import SensorDataType
-from typing import Union, Optional
+from ..globalData.sensorObjects import SensorDataInt
 
 
-# Class that controls one humidity sensor.
 class HumidityPollingSensor(_NumberSensor):
+    """
+    Class that controls one humidity sensor.
+    """
 
     def __init__(self):
         _NumberSensor.__init__(self)
+
+        self._unit = "%"
 
         # Used for logging.
         self._log_tag = os.path.basename(__file__)
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.INT
+        self.sensorData = SensorDataInt(-1000, self._unit)
 
         # Instance of data collector thread.
         self.dataCollector = None
@@ -40,8 +47,16 @@ class HumidityPollingSensor(_NumberSensor):
         # This sensor type string is used for log messages.
         self._log_desc = "Humidity"
 
-    def _get_data(self) -> Optional[Union[float, int]]:
-        return self.dataCollector.getHumidity(self.country, self.city, self.lon, self.lat)
+    def _get_data(self) -> Optional[SensorDataInt]:
+        data = None
+        try:
+            data = SensorDataInt(self.dataCollector.getHumidity(self.country, self.city, self.lon, self.lat),
+                                 self._unit)
+
+        except Exception as e:
+            logging.exception("[%s] Unable to humidity data from provider." % self._log_tag)
+
+        return data
 
     def initialize(self) -> bool:
         self.state = 1 - self.triggerState

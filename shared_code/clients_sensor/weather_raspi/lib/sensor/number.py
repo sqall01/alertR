@@ -57,7 +57,6 @@ class _NumberSensor(_PollingSensor):
             time.sleep(0.5)
 
             data = self._get_data()
-
             if data is None:
                 continue
 

@@ -18,6 +18,7 @@ import threading
 import calendar
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataNone
 
 
 # Class that controls one icalendar.
@@ -30,6 +31,7 @@ class ICalendarSensor(_PollingSensor):
         # NOTE: Can be changed if "parseOutput" is set to true in the
         # configuration file.
         self.sensorDataType = SensorDataType.NONE
+        self.sensorData = SensorDataNone()
 
         # used for logging
         self._log_tag = os.path.basename(__file__)

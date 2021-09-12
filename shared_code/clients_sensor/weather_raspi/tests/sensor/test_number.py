@@ -1,6 +1,5 @@
 import time
 from unittest import TestCase
-from typing import Optional, Union
 from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorOrdering, \
     SensorDataInt
 from lib.sensor.number import _NumberSensor
