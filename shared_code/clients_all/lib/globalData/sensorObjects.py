@@ -9,7 +9,6 @@
 
 import copy
 import time
-from enum import Enum
 from typing import Optional, Dict, Any
 from .baseObjects import LocalObject
 
@@ -304,7 +303,7 @@ class SensorDataGPS(_SensorData):
         return self
 
 
-class SensorDataType(Enum):
+class SensorDataType:
     """
     This enum class gives the different data types of a sensor.
     """
@@ -320,14 +319,14 @@ class SensorDataType(Enum):
 
     @classmethod
     def has_value(cls, value: int) -> bool:
-        return value in cls._value2member_map.keys()
+        return value in cls._sensor_class_map.keys()
 
     @classmethod
     def get_sensor_data_class(cls, k: int):
         return cls._sensor_class_map[k]
 
 
-class SensorOrdering(Enum):
+class SensorOrdering:
     """
     This enum class gives the different orderings used to check if the data of a sensor exceeds a threshold.
     """
@@ -335,9 +334,11 @@ class SensorOrdering(Enum):
     EQ = 1
     GT = 2
 
+    _sensor_ordering_values = [0, 1, 2]
+
     @classmethod
     def has_value(cls, value: int):
-        return value in cls._value2member_map.keys()
+        return value in cls._sensor_ordering_values
 
 
 # This class represents a triggered sensor alert of the sensor.
@@ -389,13 +390,14 @@ class SensorObjSensorAlert(LocalObject):
         self.hasOptionalData = sensor_alert.hasOptionalData
         self.changeState = sensor_alert.changeState
         self.hasLatestData = sensor_alert.hasLatestData
-        self.dataType = sensor_alert.dataType
 
         # Deep copy sensor data.
-        if self.sensorData is None:
+        if self.sensorData is None or self.dataType != sensor_alert.dataType:
             self.sensorData = sensor_alert.sensorData.deepcopy(sensor_alert.sensorData)
         else:
             self.sensorData.deepcopy_obj(sensor_alert.sensorData)
+
+        self.dataType = sensor_alert.dataType
 
         if type(sensor_alert.optionalData) == dict:
             self.optionalData = copy.deepcopy(sensor_alert.optionalData)
@@ -438,12 +440,13 @@ class SensorObjStateChange(LocalObject):
     def deepcopy_obj(self, state_change):
         self.clientSensorId = state_change.clientSensorId
         self.state = state_change.clientSensorId
-        self.dataType = state_change.dataType
 
         # Deep copy sensor data.
-        if self.sensorData is None:
+        if self.sensorData is None or self.dataType != state_change.dataType:
             self.sensorData = state_change.sensorData.deepcopy(state_change.sensorData)
         else:
             self.sensorData.deepcopy_obj(state_change.sensorData)
+
+        self.dataType = state_change.dataType
 
         return self

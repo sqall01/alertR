@@ -9,9 +9,10 @@
 
 import time
 import urwid
-from typing import Any, List
+from typing import List
 from .eventHandler import ManagerEventHandler
-from ..globalData import ManagerObjNode, ManagerObjSensor, ManagerObjAlertLevel, SensorDataType
+from ..globalData import ManagerObjNode, ManagerObjSensor, ManagerObjAlertLevel
+from ..globalData.sensorObjects import _SensorData, SensorDataType
 
 
 # this class is an urwid object for a sensor
@@ -138,7 +139,7 @@ class SensorUrwid:
                 self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
     # this function updates the data of the object
-    def updateData(self, data: Any, dataType: SensorDataType):
+    def updateData(self, data: _SensorData, dataType: int):
         self.dataWidget.set_text("Data: " + str(data))
 
         # If the data type has changed and the new data type is "none",
@@ -374,10 +375,7 @@ class SensorDetailedUrwid:
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Data:"))
-        if sensor.dataType == SensorDataType.NONE:
-            temp.append(urwid.Text("None"))
-        else:
-            temp.append(urwid.Text(str(sensor.data)))
+        temp.append(urwid.Text(str(sensor.data)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Last Updated (Server Time):"))

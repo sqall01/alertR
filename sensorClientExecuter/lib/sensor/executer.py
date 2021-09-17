@@ -15,6 +15,7 @@ import json
 from typing import Optional
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat, SensorDataGPS, SensorDataNone
 
 
 class ExecuterSensor(_PollingSensor):
@@ -122,7 +123,9 @@ class ExecuterSensor(_PollingSensor):
 
                         self._add_sensor_alert(self.triggerState,
                                                False,
-                                               {"message": "Unable to execute process"})
+                                               {"message": "Unable to execute process"},
+                                               False,
+                                               self.sensorData)
 
             # Process is still running.
             else:
@@ -155,7 +158,9 @@ class ExecuterSensor(_PollingSensor):
                                          "exitCode": exit_code}
                         self._add_sensor_alert(self.triggerState,
                                                False,
-                                               optional_data)
+                                               optional_data,
+                                               False,
+                                               self.sensorData)
 
                         # Set process to None so it can be newly started in the next iteration.
                         self._process.stdout.close()
@@ -183,7 +188,9 @@ class ExecuterSensor(_PollingSensor):
 
                             self._add_sensor_alert(self.triggerState,
                                                    False,
-                                                   {"message": "Illegal output"})
+                                                   {"message": "Illegal output"},
+                                                   False,
+                                                   self.sensorData)
 
                     else:
                         # Check if the process has exited with code 0 => everything works fine
@@ -210,13 +217,17 @@ class ExecuterSensor(_PollingSensor):
                             if new_state == self.triggerState:
                                 self._add_sensor_alert(self.triggerState,
                                                        True,
-                                                       {"exitCode": exit_code})
+                                                       {"exitCode": exit_code},
+                                                       False,
+                                                       self.sensorData)
 
                             # Only possible situation left => sensor changed back from triggering state to normal state.
                             else:
                                 self._add_sensor_alert(1 - self.triggerState,
                                                        True,
-                                                       {"exitCode": exit_code})
+                                                       {"exitCode": exit_code},
+                                                       False,
+                                                       self.sensorData)
 
                     # Set process to none so it can be newly started in the next iteration.
                     self._process.stdout.close()
@@ -255,11 +266,13 @@ class ExecuterSensor(_PollingSensor):
                     return False
 
                 # Get new data.
-                temp_input_data = None
-                if self.sensorDataType == SensorDataType.INT:
-                    temp_input_data = int(message["payload"]["data"])
-                elif self.sensorDataType == SensorDataType.FLOAT:
-                    temp_input_data = float(message["payload"]["data"])
+                sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
+                if not sensor_data_class.verify_dict(message["payload"]["data"]):
+                    logging.error("[%s] Received data from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
+                                  + "invalid. Ignoring output.")
+                    return False
+                temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
                 # Create state change object that is send to the server if the data could be changed
                 # or the state has changed.
@@ -293,11 +306,14 @@ class ExecuterSensor(_PollingSensor):
                                   + "invalid. Ignoring output.")
                     return False
 
-                temp_input_data = None
-                if self.sensorDataType == SensorDataType.INT:
-                    temp_input_data = int(message["payload"]["data"])
-                elif self.sensorDataType == SensorDataType.FLOAT:
-                    temp_input_data = float(message["payload"]["data"])
+                # Get new data.
+                sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
+                if not sensor_data_class.verify_dict(message["payload"]["data"]):
+                    logging.error("[%s] Received data from output of sensor with id '%d' "
+                                  % (self._log_tag, self.id)
+                                  + "invalid. Ignoring output.")
+                    return False
+                temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
                 # Check if hasLatestData field is valid.
                 temp_has_latest_data = message["payload"]["hasLatestData"]
@@ -350,10 +366,23 @@ class ExecuterSensor(_PollingSensor):
         self._time_executed = 0
         self.state = 1 - self.triggerState
 
+        if self.sensorDataType == SensorDataType.NONE:
+            self.sensorData = SensorDataNone()
+
         if self.sensorDataType == SensorDataType.INT:
-            self.sensorData = 0
+            self.sensorData = SensorDataInt(0,
+                                            "")
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = 0.0
+            self.sensorData = SensorDataFloat(0.0,
+                                              "")
+
+        elif self.sensorDataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS(0.0,
+                                            0.0,
+                                            0)
+
+        else:
+            return False
 
         return True

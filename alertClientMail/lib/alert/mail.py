@@ -11,7 +11,7 @@ import time
 import os
 import logging
 import smtplib
-from ..globalData import SensorDataType, ManagerObjSensorAlert, ManagerObjProfile
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 from .core import _Alert
 
 
@@ -60,12 +60,7 @@ class MailAlert(_Alert):
             state_message = "Undefined"
 
         # Convert data to a string.
-        if sensor_alert.dataType == SensorDataType.NONE:
-            data_message = "None"
-        elif sensor_alert.dataType == SensorDataType.INT or sensor_alert.dataType == SensorDataType.FLOAT:
-            data_message = str(sensor_alert.sensorData)
-        else:
-            data_message = "Unknown"
+        data_message = str(sensor_alert.sensorData)
 
         # Replace wildcards in the message with the actual values.
         temp_msg = message.replace("$MESSAGE$", received_message)

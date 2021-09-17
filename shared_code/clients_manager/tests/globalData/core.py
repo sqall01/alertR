@@ -3,7 +3,7 @@ from typing import Optional
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjOption, ManagerObjAlertLevel, ManagerObjNode, ManagerObjAlert, \
     ManagerObjManager, ManagerObjSensor, ManagerObjProfile
-from lib.globalData.sensorObjects import SensorDataType, SensorDataGPS
+from lib.globalData.sensorObjects import SensorDataType, SensorDataGPS, SensorDataNone, SensorDataFloat, SensorDataInt
 
 
 class TestSystemDataCore(TestCase):
@@ -240,6 +240,7 @@ class TestSystemDataCore(TestCase):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         self.sensors.append(sensor)
         system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
 
@@ -269,7 +270,7 @@ class TestSystemDataCore(TestCase):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.INT
-        sensor.data = 1337
+        sensor.data = SensorDataInt(1337, "test unit")
         self.sensors.append(sensor)
         system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
 
@@ -299,7 +300,7 @@ class TestSystemDataCore(TestCase):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.FLOAT
-        sensor.data = 1337.0
+        sensor.data = SensorDataFloat(1337.0, "test unit")
         self.sensors.append(sensor)
         system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
 
@@ -361,6 +362,7 @@ class TestSystemDataCore(TestCase):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         self.sensors.append(sensor)
         system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
 
@@ -390,6 +392,7 @@ class TestSystemDataCore(TestCase):
         sensor.lastStateUpdated = 0
         sensor.state = 1
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         self.sensors.append(sensor)
         system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
 
@@ -419,6 +422,7 @@ class TestSystemDataCore(TestCase):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         self.sensors.append(sensor)
         system_data.update_sensor(ManagerObjSensor.deepcopy(sensor))
 

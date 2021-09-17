@@ -196,12 +196,13 @@ class ManagerObjSensor(LocalObject):
         self.description = sensor.description
         self.lastStateUpdated = sensor.lastStateUpdated
         self.state = sensor.state
-        self.dataType = sensor.dataType
 
-        if self.data is None:
+        if self.data is None or self.dataType != sensor.dataType:
             self.data = sensor.data.deepcopy(sensor.data)
         else:
             self.data.deepcopy_obj(sensor.data)
+
+        self.dataType = sensor.dataType
 
         return self
 
@@ -365,12 +366,13 @@ class ManagerObjSensorAlert(LocalObject):
         self.hasOptionalData = sensor_alert.hasOptionalData
         self.changeState = sensor_alert.changeState
         self.hasLatestData = sensor_alert.hasLatestData
-        self.dataType = sensor_alert.dataType
 
-        if self.sensorData is None:
+        if self.sensorData is None or self.dataType != sensor_alert.dataType:
             self.sensorData = sensor_alert.deepcopy(sensor_alert.data)
         else:
             self.sensorData.deepcopy_obj(sensor_alert.data)
+
+        self.dataType = sensor_alert.dataType
 
         if type(sensor_alert.optionalData) == dict:
             self.optionalData = copy.deepcopy(sensor_alert.optionalData)

@@ -7,7 +7,7 @@ from tests.globalData.util import compare_nodes_content, compare_alerts_content,
 from lib.globalData.globalData import SystemData
 from lib.globalData.managerObjects import ManagerObjNode, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, \
                                           ManagerObjSensor, ManagerObjOption, ManagerObjProfile
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataInt
 
 
 class TestManagerStorage(TestManagerStorageCore):
@@ -136,7 +136,7 @@ class TestManagerStorage(TestManagerStorageCore):
             temp_sensor.lastStateUpdated = ctr + 10
             temp_sensor.state = ctr % 2
             temp_sensor.dataType = SensorDataType.INT
-            temp_sensor.data = ctr
+            temp_sensor.data = SensorDataInt(ctr, "test unit")
             # We started the alert levels in our test data with level 1.
             temp_sensor.alertLevels = [(ctr % len(system_data.get_alert_levels_list())) + 1]
             system_data.update_sensor(temp_sensor)

@@ -181,7 +181,7 @@
                     (see https://github.com/sqall01/alertR/wiki/Protocol#protocol_schematics_executer_sensor
                     for the used protocol).
                 dataType - Gives the data type of this sensor
-                    (0 = none, 1 = int, 2 = float).
+                    (0 = none, 1 = int, 2 = float, 3 GPS).
                     Is only used if "parseOutput" is set to "True".
             -->
             <executer
@@ -266,7 +266,7 @@
                     (see https://github.com/sqall01/alertR/wiki/Protocol#protocol_schematics_executer_sensor
                     for the used protocol).
                 dataType - Gives the data type of this sensor
-                    (0 = none, 1 = int, 2 = float).
+                    (0 = none, 1 = int, 2 = float, 3 GPS).
                     Is only used if "parseOutput" is set to "True".
             -->
             <executer

@@ -137,7 +137,7 @@ if __name__ == '__main__':
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Set connection settings.
-        globalData.persistent = 1 # Consider sensor client always persistent
+        globalData.persistent = 1  # Consider sensor client always persistent
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -179,9 +179,7 @@ if __name__ == '__main__':
                 raise ValueError("FIFO file directory for sensor %d does not exist." % sensor.id)
 
             # Check sanity of sensor data type.
-            if (sensor.sensorDataType != SensorDataType.NONE
-                    and sensor.sensorDataType != SensorDataType.INT
-                    and sensor.sensorDataType != SensorDataType.FLOAT):
+            if not SensorDataType.has_value(sensor.sensorDataType):
                 raise ValueError("Illegal data type for sensor %d." % sensor.id)
 
             # check if description is empty

@@ -171,7 +171,7 @@
                     see the alertR wiki for a more detailed message syntax
                     for the FIFO sensor)
                 dataType - Gives the data type of this sensor
-                    (0 = none, 1 = int, 2 = float).
+                    (0 = none, 1 = int, 2 = float, 3 GPS).
             -->
             <fifo
                 umask="0000"
@@ -232,7 +232,7 @@
                     see the alertR wiki for a more detailed message syntax
                     for the FIFO sensor)
                 dataType - Gives the data type of this sensor
-                    (0 = none, 1 = int, 2 = float).
+                    (0 = none, 1 = int, 2 = float, 3 GPS).
             -->
             <fifo
                 umask="0002"

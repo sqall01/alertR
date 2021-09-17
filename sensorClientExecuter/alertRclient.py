@@ -10,14 +10,15 @@
 import sys
 import os
 import stat
-from lib import ServerCommunication, ConnectionWatchdog, Receiver
-from lib import SMTPAlert
-from lib import ExecuterSensor, SensorExecuter, SensorEventHandler
-from lib import GlobalData
 import logging
 import time
 import random
 import xml.etree.ElementTree
+from lib import ServerCommunication, ConnectionWatchdog, Receiver
+from lib import SMTPAlert
+from lib import ExecuterSensor, SensorExecuter, SensorEventHandler
+from lib import GlobalData
+from lib.globalData import SensorDataType
 
 
 # Function creates a path location for the given user input.
@@ -136,7 +137,7 @@ if __name__ == '__main__':
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Set connection settings.
-        globalData.persistent = 1 # Consider sensor client always persistent
+        globalData.persistent = 1  # Consider sensor client always persistent
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -182,6 +183,9 @@ if __name__ == '__main__':
             for argument in item.find("executer").iterfind("argument"):
                 sensor.execute.append(str(argument.text))
 
+            if not SensorDataType.has_value(sensor.sensorDataType):
+                raise ValueError("Illegal data type for sensor %d." % sensor.id)
+
             if sensor.timeout > sensor.intervalToCheck:
                 raise ValueError("IntervalToCheck of sensor %d has to be "
                                  % sensor.id
@@ -197,10 +201,10 @@ if __name__ == '__main__':
                     raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
             if not sensor.triggerAlert and sensor.triggerAlertNormal:
-                    raise ValueError("'triggerAlert' for sensor %d "
-                                     % sensor.id
-                                     + "has to be activated when "
-                                     + "'triggerAlertNormal' is activated.")
+                raise ValueError("'triggerAlert' for sensor %d "
+                                 % sensor.id
+                                 + "has to be activated when "
+                                 + "'triggerAlertNormal' is activated.")
 
             globalData.sensors.append(sensor)
 

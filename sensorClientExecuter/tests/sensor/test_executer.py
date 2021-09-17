@@ -2,7 +2,8 @@ import json
 import os
 import time
 from unittest import TestCase
-from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorDataNone, \
+    SensorDataInt
 from lib.sensor.executer import ExecuterSensor
 
 
@@ -38,6 +39,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 5
         sensor.intervalToCheck = 60
         sensor.parseOutput = False
@@ -72,6 +74,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 5
         sensor.intervalToCheck = 60
         sensor.parseOutput = False
@@ -105,6 +108,7 @@ class TestExecuterSensor(TestCase):
         sensor.triggerAlertNormal = False
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 5
         sensor.intervalToCheck = 60
         sensor.parseOutput = False
@@ -140,6 +144,7 @@ class TestExecuterSensor(TestCase):
         sensor.triggerAlert = False
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 5
         sensor.intervalToCheck = 60
         sensor.parseOutput = False
@@ -172,6 +177,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 5
         sensor.intervalToCheck = 60
         sensor.parseOutput = False
@@ -206,6 +212,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = False
@@ -244,7 +251,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": False,
                 "optionalData": None,
                 "dataType": SensorDataType.INT,
-                "data": 1337,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
                 "hasLatestData": False,
                 "changeState": True
             }
@@ -253,6 +260,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.INT
+        sensor.sensorData = SensorDataInt(0, "test unit")
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -280,7 +288,8 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(1, sensor.state)
 
         # Make sure data has not changed.
-        self.assertNotEqual(payload["payload"]["data"], sensor.sensorData)
+        self.assertTrue(SensorDataInt.verify_dict(payload["payload"]["data"]))
+        self.assertNotEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.sensorData)
 
     def test_output_handling_sensor_alert_data_change(self):
         """
@@ -297,7 +306,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": False,
                 "optionalData": None,
                 "dataType": SensorDataType.INT,
-                "data": 1337,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
                 "hasLatestData": True,
                 "changeState": False
             }
@@ -306,6 +315,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.INT
+        sensor.sensorData = SensorDataInt(0, "test unit")
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -326,7 +336,7 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(payload["payload"]["state"], events[0].state)
         self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["data"], events[0].sensorData)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), events[0].sensorData)
         self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
         self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
 
@@ -334,7 +344,8 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has changed.
-        self.assertEqual(payload["payload"]["data"], sensor.sensorData)
+        self.assertTrue(SensorDataInt.verify_dict(payload["payload"]["data"]))
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.sensorData)
 
     def test_output_handling_state_change_triggered(self):
         """
@@ -349,13 +360,14 @@ class TestExecuterSensor(TestCase):
             "payload": {
                 "state": 1,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
             }
         }
 
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -375,6 +387,8 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(payload["payload"]["state"], events[0].state)
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertTrue(SensorDataNone.verify_dict(payload["payload"]["data"]))
+        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].sensorData)
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
@@ -392,13 +406,14 @@ class TestExecuterSensor(TestCase):
             "payload": {
                 "state": 1,
                 "dataType": SensorDataType.INT,
-                "data": 1337,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
             }
         }
 
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.INT
+        sensor.sensorData = SensorDataInt(0, "test unit")
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -418,13 +433,13 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(payload["payload"]["state"], events[0].state)
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["data"], events[0].sensorData)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), events[0].sensorData)
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
 
         # Make sure sensor data has changed.
-        self.assertEqual(payload["payload"]["data"], sensor.sensorData)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.sensorData)
 
     def test_output_handling_illegal_data(self):
         """
@@ -436,6 +451,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -472,13 +488,14 @@ class TestExecuterSensor(TestCase):
             "payload": {
                 "state": 1,
                 "dataType": SensorDataType.INT,
-                "data": 1337,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
             }
         }
 
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -502,6 +519,7 @@ class TestExecuterSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorDataNone(), sensor.sensorData)
 
     def test_output_handling_state_change_illegal_state(self):
         """
@@ -515,13 +533,14 @@ class TestExecuterSensor(TestCase):
             "payload": {
                 "state": 1337,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
             }
         }
 
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -545,6 +564,7 @@ class TestExecuterSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorDataNone(), sensor.sensorData)
 
     def test_output_handling_state_change_illegal_data_type(self):
         """
@@ -558,13 +578,14 @@ class TestExecuterSensor(TestCase):
             "payload": {
                 "state": 1,
                 "dataType": SensorDataType.INT,
-                "data": 1338,
+                "data": SensorDataInt(1338, "test unit").copy_to_dict(),
             }
         }
 
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -590,7 +611,7 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertIsNone(sensor.sensorData)
+        self.assertEqual(SensorDataNone(), sensor.sensorData)
 
     def test_output_handling_sensor_alert_illegal_state(self):
         """
@@ -606,7 +627,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": False,
                 "optionalData": None,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
                 "hasLatestData": True,
                 "changeState": False
             }
@@ -615,6 +636,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -653,7 +675,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": False,
                 "optionalData": None,
                 "dataType": SensorDataType.INT,
-                "data": 1337,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
                 "hasLatestData": True,
                 "changeState": False
             }
@@ -662,6 +684,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -687,7 +710,7 @@ class TestExecuterSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertIsNone(sensor.sensorData)
+        self.assertEqual(SensorDataNone(), sensor.sensorData)
 
     def test_output_handling_sensor_alert_illegal_has_optional_data(self):
         """
@@ -703,7 +726,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": 1,
                 "optionalData": None,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
                 "hasLatestData": True,
                 "changeState": False
             }
@@ -712,6 +735,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -750,7 +774,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": False,
                 "optionalData": None,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
                 "hasLatestData": 1,
                 "changeState": False
             }
@@ -759,6 +783,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -797,7 +822,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": False,
                 "optionalData": None,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
                 "hasLatestData": False,
                 "changeState": 1
             }
@@ -806,6 +831,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
@@ -844,7 +870,7 @@ class TestExecuterSensor(TestCase):
                 "hasOptionalData": True,
                 "optionalData": None,
                 "dataType": SensorDataType.NONE,
-                "data": None,
+                "data": SensorDataNone().copy_to_dict(),
                 "hasLatestData": False,
                 "changeState": False
             }
@@ -853,6 +879,7 @@ class TestExecuterSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
+        sensor.sensorData = SensorDataNone()
         sensor.timeout = 2
         sensor.intervalToCheck = 60
         sensor.parseOutput = True
