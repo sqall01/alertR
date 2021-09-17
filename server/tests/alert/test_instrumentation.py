@@ -5,7 +5,8 @@ import time
 from typing import Dict, Any, List
 from unittest import TestCase
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorDataGPS
+from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorDataGPS, SensorDataNone, SensorDataInt, \
+    SensorDataFloat
 from lib.alert.instrumentation import Instrumentation
 from lib.globalData import GlobalData
 
@@ -52,7 +53,7 @@ class TestInstrumentation(TestCase):
         sensor_alert.triggeredAlertLevels = [1]
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = None
+        sensor_alert.sensorData = SensorDataNone()
 
         logger = logging.getLogger("Instrumentation Test Case")
 
@@ -226,7 +227,7 @@ class TestInstrumentation(TestCase):
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.dataType = SensorDataType.INT
-        invalid_sensor_alert.sensorData = 1
+        invalid_sensor_alert.sensorData = SensorDataInt(1, "test unit")
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -261,10 +262,10 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.INT
-        sensor_alert.sensorData = 1337
+        sensor_alert.sensorData = SensorDataInt(1337, "test unit")
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData = 1337.0
+        invalid_sensor_alert.sensorData._value = 1337.0
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -281,10 +282,10 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.FLOAT
-        sensor_alert.sensorData = 1337.0
+        sensor_alert.sensorData = SensorDataFloat(1337.0, "test unit")
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData = 1337
+        invalid_sensor_alert.sensorData._value = 1337
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -323,10 +324,10 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = None
+        sensor_alert.sensorData = SensorDataNone()
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData = 1337
+        invalid_sensor_alert.sensorData = SensorDataInt(1337, "test unit")
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]

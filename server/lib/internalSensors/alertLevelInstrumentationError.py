@@ -10,7 +10,7 @@
 import os
 from typing import Optional, Dict, Any
 from .core import _InternalSensor
-from ..localObjects import SensorDataType, AlertLevel
+from ..localObjects import SensorDataType, AlertLevel, SensorDataNone
 from ..globalData import GlobalData
 # noinspection PyProtectedMember
 from ..storage.core import _Storage
@@ -25,6 +25,7 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
         _InternalSensor.__init__(self)
 
         self.dataType = SensorDataType.NONE
+        self.data = SensorDataNone()
         self.alertDelay = 0
         self.state = 0
 

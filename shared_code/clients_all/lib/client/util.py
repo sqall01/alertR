@@ -726,7 +726,8 @@ class MsgChecker:
     def check_sensor_data(data: Dict[str, Any], data_type: int) -> Optional[str]:
 
         is_correct = False
-        if isinstance(data, _SensorData) and data.verify_type(data_type) and data.verify_dict(data):
+        sensor_data_class = SensorDataType.get_sensor_data_class(data_type)
+        if sensor_data_class.verify_dict(data):
             is_correct = True
 
         if not is_correct:

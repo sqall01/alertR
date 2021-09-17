@@ -10,7 +10,7 @@
 import os
 from typing import List
 from ..globalData import GlobalData
-from ..localObjects import SensorDataType, Option, Profile
+from ..localObjects import SensorDataType, Option, Profile, SensorDataInt
 from .core import _InternalSensor
 
 
@@ -65,14 +65,14 @@ class ProfileChangeSensor(_InternalSensor):
                                % (self._log_tag, option.value))
             return
 
-        if not self.storage.updateSensorData(self.nodeId,  # nodeId
-                                             [(self.clientSensorId, curr_profile.profileId)],  # dataList
-                                             self._logger):  # logger
+        if not self.storage.updateSensorData(self.nodeId,
+                                             [(self.clientSensorId, SensorDataInt(curr_profile.profileId, ""))],
+                                             self._logger):
             self._logger.error("[%s]: Not able to change sensor data for internal profile change sensor."
                                % self._log_tag)
             return
 
-        self.data = curr_profile.profileId
+        self.data = SensorDataInt(curr_profile.profileId, "")
 
         message = "Changing system profile to '%s'." % curr_profile.name
 

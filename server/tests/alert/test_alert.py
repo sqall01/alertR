@@ -5,7 +5,8 @@ import collections
 import threading
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor, SensorDataGPS
+from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor, SensorDataGPS, \
+    SensorDataNone, SensorDataInt, SensorDataFloat
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
 from lib.globalData import GlobalData
@@ -177,6 +178,7 @@ class TestAlert(TestCase):
             sensor_alert.alertLevels.append(i)
             sensor_alert.hasLatestData = False
             sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.sensorData = SensorDataNone()
             sensor_alerts.append(sensor_alert)
 
         return alert_levels, sensor_alerts
@@ -1183,12 +1185,13 @@ class TestAlert(TestCase):
             sensor.state = sensor_alert.state
             if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
+                sensor.data = SensorDataNone()
             elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
-                sensor.data = i
+                sensor.data = SensorDataInt(i, "test unit")
             elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
-                sensor.data = float(i)
+                sensor.data = SensorDataFloat(float(i), "test unit")
             else:
                 sensor.dataType = SensorDataType.GPS
                 sensor.data = SensorDataGPS(float(i), float(i), i)
@@ -1252,12 +1255,13 @@ class TestAlert(TestCase):
             sensor.state = sensor_alert.state
             if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
+                sensor.data = SensorDataNone()
             elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
-                sensor.data = i
+                sensor.data = SensorDataInt(i, "test unit")
             elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
-                sensor.data = float(i)
+                sensor.data = SensorDataFloat(float(i), "test unit")
             else:
                 sensor.dataType = SensorDataType.GPS
                 sensor.data = SensorDataGPS(float(i), float(i), i)
@@ -1325,12 +1329,13 @@ class TestAlert(TestCase):
             sensor.state = sensor_alert.state
             if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
+                sensor.data = SensorDataNone()
             elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
-                sensor.data = i
+                sensor.data = SensorDataInt(i, "test unit")
             elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
-                sensor.data = float(i)
+                sensor.data = SensorDataFloat(float(i), "test unit")
             else:
                 sensor.dataType = SensorDataType.GPS
                 sensor.data = SensorDataGPS(float(i), float(i), i)
@@ -1384,12 +1389,13 @@ class TestAlert(TestCase):
             sensor.state = sensor_alert.state
             if (i % 4) == 0:
                 sensor.dataType = SensorDataType.NONE
+                sensor.data = SensorDataNone()
             elif (i % 4) == 1:
                 sensor.dataType = SensorDataType.INT
-                sensor.data = i
+                sensor.data = SensorDataInt(i, "test unit")
             elif (i % 4) == 2:
                 sensor.dataType = SensorDataType.FLOAT
-                sensor.data = float(i)
+                sensor.data = SensorDataFloat(float(i), "test unit")
             else:
                 sensor.dataType = SensorDataType.GPS
                 sensor.data = SensorDataGPS(float(i), float(i), i)

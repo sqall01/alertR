@@ -10,7 +10,7 @@
 import os
 from .core import _PollingSensor
 from ..globalData import SensorDataType
-from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorDataInt, SensorDataFloat
+from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS
 from typing import Optional
 
 
@@ -49,6 +49,12 @@ class DevSensor(_PollingSensor):
             self.sensorData = SensorDataFloat(0.0, "Dev")
             self.nextData = SensorDataFloat(self.sensorData.value + 0.5, self.sensorData.unit)
 
+        elif self.sensorDataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS(0.0, 0.0, 0)
+            self.nextData = SensorDataGPS(self.sensorData.lat + 0.1,
+                                          self.sensorData.lon + 0.1,
+                                          self.sensorData.utctime + 1)
+
         return True
 
     def toggle_console_state(self):
@@ -66,6 +72,13 @@ class DevSensor(_PollingSensor):
             self.sensorData = self.nextData
             # noinspection PyTypeChecker
             self.nextData = SensorDataFloat(self.sensorData.value + 0.5, self.sensorData.unit)
+
+        elif self.sensorDataType == SensorDataType.GPS:
+            self.sensorData = self.nextData
+            # noinspection PyTypeChecker
+            self.nextData = SensorDataGPS(self.sensorData.lat + 0.1,
+                                          self.sensorData.lon + 0.1,
+                                          self.sensorData.utctime + 1)
 
         if self.consoleInputState == 0:
             self.consoleInputState = 1

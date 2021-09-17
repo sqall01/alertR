@@ -170,9 +170,7 @@ if __name__ == '__main__':
 
             # Development sensor specific options.
             sensor.sensorDataType = int(item.find("dev").attrib["dataType"])
-            if (sensor.sensorDataType != SensorDataType.NONE
-                    and sensor.sensorDataType != SensorDataType.INT
-                    and sensor.sensorDataType != SensorDataType.FLOAT):
+            if not SensorDataType.has_value(sensor.sensorDataType):
                 raise ValueError("Illegal data type for sensor %d." % sensor.id)
 
             # check if description is empty
