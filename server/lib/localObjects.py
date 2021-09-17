@@ -515,12 +515,63 @@ class SensorAlert:
         sensor_data_class = SensorDataType.get_sensor_data_class(sensor_alert.dataType)
         sensor_alert.sensorData = sensor_data_class.copy_from_dict(sensor_alert_dict["data"])
 
-        # Verify data types of attributes (raises ValueError if type is wrong).
-        sensor_alert.verify_types()
-        if not sensor_data_class.verify_dict(sensor_alert_dict["data"]):
-            raise ValueError("data not valid")
-
         return sensor_alert
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        if "nodeId" not in data.keys() or type(data["nodeId"]) != int:
+            return False
+
+        if "sensorId" not in data.keys() or type(data["sensorId"]) != int:
+            return False
+
+        if "description" not in data.keys() or type(data["description"]) != str:
+            return False
+
+        if "timeReceived" not in data.keys() or type(data["timeReceived"]) != int:
+            return False
+
+        if "alertDelay" not in data.keys() or type(data["alertDelay"]) != int:
+            return False
+
+        if "state" not in data.keys() or type(data["state"]) != int or data["state"] not in [0, 1]:
+            return False
+
+        if "hasOptionalData" not in data.keys() or type(data["hasOptionalData"]) != bool:
+            return False
+
+        if data["hasOptionalData"] and ("optionalData" not in data.keys() or type(data["optionalData"]) != dict):
+            return False
+
+        if "alertDelay" not in data.keys() or type(data["alertDelay"]) != int:
+            return False
+
+        if "changeState" not in data.keys() or type(data["changeState"]) != bool:
+            return False
+
+        if ("alertLevels" not in data.keys()
+                or type(data["alertLevels"]) != list
+                or not all(isinstance(item, int) for item in data["alertLevels"])):
+            return False
+
+        if ("triggeredAlertLevels" not in data.keys()
+                or type(data["triggeredAlertLevels"]) != list
+                or not all(isinstance(item, int) for item in data["triggeredAlertLevels"])):
+            return False
+
+        if "hasLatestData" not in data.keys() or type(data["hasLatestData"]) != bool:
+            return False
+
+        if ("dataType" not in data.keys()
+                or type(data["dataType"]) != int
+                or not SensorDataType.has_value(data["dataType"])):
+            return False
+
+        sensor_data_class = SensorDataType.get_sensor_data_class(data["dataType"])
+        if "data" not in data.keys() or not sensor_data_class.verify_dict(data["data"]):
+            return False
+
+        return True
 
     def convert_to_dict(self) -> Dict[str, Any]:
         """
@@ -575,59 +626,6 @@ class SensorAlert:
         self.sensorData = sensor_data_class.deepcopy(sensor_alert.sensorData)
 
         return self
-
-    def verify_types(self):
-        """
-        Verifies data types of attributes (raises ValueError if attribute is wrong).
-        """
-        if type(self.nodeId) != int:
-            raise ValueError("nodeId not valid")
-
-        if type(self.sensorId) != int:
-            raise ValueError("sensorId not valid")
-
-        if type(self.description) != str:
-            raise ValueError("description not valid")
-
-        if type(self.timeReceived) != int:
-            raise ValueError("timeReceived not valid")
-
-        if type(self.alertDelay) != int:
-            raise ValueError("alertDelay not valid")
-
-        if (type(self.state) != int
-                or self.state not in [0, 1]):
-            raise ValueError("state not valid")
-
-        if type(self.hasOptionalData) != bool:
-            raise ValueError("hasOptionalData not valid")
-
-        if self.hasOptionalData and type(self.optionalData) != dict:
-            raise ValueError("optionalData not valid")
-
-        if type(self.alertDelay) != int:
-            raise ValueError("alertDelay not valid")
-
-        if type(self.changeState) != bool:
-            raise ValueError("changeState not valid")
-
-        if (type(self.alertLevels) != list
-                or not all(isinstance(item, int) for item in self.alertLevels)):
-            raise ValueError("alertLevels not valid")
-
-        if (type(self.triggeredAlertLevels) != list
-                or not all(isinstance(item, int) for item in self.triggeredAlertLevels)):
-            raise ValueError("triggeredAlertLevels not valid")
-
-        if type(self.hasLatestData) != bool:
-            raise ValueError("hasLatestData not valid")
-
-        if type(self.dataType) != int or not SensorDataType.has_value(self.dataType):
-            raise ValueError("dataType not valid")
-
-        sensor_data_class = SensorDataType.get_sensor_data_class(self.dataType)
-        if not sensor_data_class.verify_dict(self.sensorData.copy_to_dict()):
-            raise ValueError("data not valid")
 
 
 # This class represents sensor data.
