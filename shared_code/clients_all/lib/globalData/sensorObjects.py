@@ -379,7 +379,7 @@ class SensorObjSensorAlert(LocalObject):
                     "changeState": self.changeState,
                     "hasLatestData": self.hasLatestData,
                     "dataType": self.dataType,
-                    "sensorData": self.sensorData.copy_to_dict()
+                    "data": self.sensorData.copy_to_dict()
                     }
 
         return obj_dict
@@ -432,7 +432,7 @@ class SensorObjStateChange(LocalObject):
         obj_dict = {"clientSensorId": self.clientSensorId,
                     "state": self.state,
                     "dataType": self.dataType,
-                    "sensorData": self.sensorData.copy_to_dict()
+                    "data": self.sensorData.copy_to_dict()
                     }
 
         return obj_dict
