@@ -13,7 +13,7 @@ import logging
 import re
 from lightweightpush import LightweightPush, ErrorCodes
 from .core import _Alert
-from ..globalData import SensorDataType, ManagerObjSensorAlert, ManagerObjProfile
+from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
 
 # This class represents an alert that sends a notification to the push service
@@ -83,12 +83,7 @@ class PushAlert(_Alert):
             state_message = "Undefined"
 
         # Convert data to a string.
-        if sensor_alert.dataType == SensorDataType.NONE:
-            data_message = "None"
-        elif sensor_alert.dataType == SensorDataType.INT or sensor_alert.dataType == SensorDataType.FLOAT:
-            data_message = str(sensor_alert.sensorData)
-        else:
-            data_message = "Unknown"
+        data_message = str(sensor_alert.sensorData)
 
         # Replace wildcards in the message with the actual values.
         temp_msg = message.replace("$MESSAGE$", received_message)

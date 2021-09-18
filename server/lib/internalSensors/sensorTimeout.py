@@ -11,7 +11,7 @@ import os
 import time
 from typing import Set
 from .core import _InternalSensor
-from ..localObjects import SensorDataType, Node, Sensor
+from ..localObjects import SensorDataType, Node, Sensor, SensorDataNone
 from ..globalData import GlobalData
 
 
@@ -24,6 +24,7 @@ class SensorTimeoutSensor(_InternalSensor):
         _InternalSensor.__init__(self)
 
         self.dataType = SensorDataType.NONE
+        self.data = SensorDataNone()
 
         # file name of this file (used for logging)
         self.log_tag = os.path.basename(__file__)
@@ -101,7 +102,7 @@ class SensorTimeoutSensor(_InternalSensor):
                                                            change_state,
                                                            False,
                                                            SensorDataType.NONE,
-                                                           None,
+                                                           self.data,
                                                            self.logger):
             self.logger.error("[%s]: Not able to add sensor alert for internal sensor timeout sensor."
                               % self.log_tag)
@@ -147,7 +148,7 @@ class SensorTimeoutSensor(_InternalSensor):
                                                            change_state,
                                                            False,
                                                            SensorDataType.NONE,
-                                                           None,
+                                                           self.data,
                                                            self.logger):
             self.logger.error("[%s]: Not able to add sensor alert for internal sensor timeout sensor."
                               % self.log_tag)
@@ -215,7 +216,7 @@ class SensorTimeoutSensor(_InternalSensor):
                                                            False,
                                                            False,
                                                            SensorDataType.NONE,
-                                                           None,
+                                                           self.data,
                                                            self.logger):
             self.logger.error("[%s]: Not able to add sensor alert for internal sensor timeout sensor."
                               % self.log_tag)

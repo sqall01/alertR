@@ -9,11 +9,12 @@
 
 import os
 import logging
+from typing import List
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..client import EventHandler
 from ..globalData import GlobalData
-from typing import List, Any
+from ..globalData.sensorObjects import _SensorData
 
 
 class BaseManagerEventHandler(EventHandler):
@@ -172,8 +173,8 @@ class BaseManagerEventHandler(EventHandler):
                      msg_time: int,
                      sensor_id: int,
                      state: int,
-                     data_type: SensorDataType,
-                     sensor_data: Any) -> bool:
+                     data_type: int,
+                     sensor_data: _SensorData) -> bool:
 
         self.msg_time = msg_time
 

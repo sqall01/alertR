@@ -11,6 +11,7 @@ import time
 import RPi.GPIO as GPIO
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataNone
 
 
 class RaspberryPiGPIOPollingSensor(_PollingSensor):
@@ -23,6 +24,7 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
         # Set sensor to not hold any data.
         self.sensorDataType = SensorDataType.NONE
+        self.sensorData = SensorDataNone()
 
         # the gpio pin number (NOTE: python uses the actual
         # pin number and not the gpio number)

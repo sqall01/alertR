@@ -7,17 +7,19 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from typing import List, Any
+from typing import List
 from .screenUpdater import ScreenUpdater
 from .core import BaseManagerEventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import GlobalData
+from ..globalData.sensorObjects import _SensorData
 
 
-# this class handles an incoming server event (sensor alert message,
-# status update, ...)
 class ManagerEventHandler(BaseManagerEventHandler):
+    """
+    This class handles an incoming server event (sensor alert message, status update, ...)
+    """
 
     def __init__(self,
                  global_data: GlobalData):
@@ -66,8 +68,8 @@ class ManagerEventHandler(BaseManagerEventHandler):
                      server_time: int,
                      sensor_id: int,
                      state: int,
-                     data_type: SensorDataType,
-                     sensor_data: Any) -> bool:
+                     data_type: int,
+                     sensor_data: _SensorData) -> bool:
 
         result = super().state_change(server_time,
                                       sensor_id,

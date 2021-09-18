@@ -13,7 +13,8 @@ import logging
 from typing import Tuple, Optional, List, Dict, Any
 from shapely import geometry, prepared
 from .core import _PollingSensor
-from ..globalData import SensorDataType, SensorDataGPS
+from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataGPS
 
 
 class _GPSSensor(_PollingSensor):

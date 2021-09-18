@@ -13,7 +13,7 @@ import RPi.GPIO as GPIO
 inputPin = 18
 
 pulledUpDown = GPIO.PUD_UP
-#pulledUpDown = GPIO.PUD_DOWN
+# pulledUpDown = GPIO.PUD_DOWN
 
 edge = GPIO.FALLING
 # edge = GPIO.RISING

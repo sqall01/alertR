@@ -13,7 +13,7 @@ import time
 from typing import Optional
 from ..update import Updater
 from .core import _InternalSensor
-from ..localObjects import SensorDataType
+from ..localObjects import SensorDataType, SensorDataNone
 from ..globalData import GlobalData
 
 
@@ -87,6 +87,7 @@ class VersionInformerSensor(_InternalSensor):
         _InternalSensor.__init__(self)
 
         self.dataType = SensorDataType.NONE
+        self.data = SensorDataNone()
 
         # used for logging
         self.fileName = os.path.basename(__file__)
@@ -151,7 +152,7 @@ class VersionInformerSensor(_InternalSensor):
                                                                    change_state,
                                                                    False,
                                                                    SensorDataType.NONE,
-                                                                   None,
+                                                                   self.data,
                                                                    self.logger):
                     self.logger.error("[%s]: Not able to add sensor alert for internal version informer sensor."
                                       % self.fileName)
@@ -276,7 +277,7 @@ class VersionInformerSensor(_InternalSensor):
                                                                            change_state,
                                                                            False,
                                                                            SensorDataType.NONE,
-                                                                           None,
+                                                                           self.data,
                                                                            self.logger):
                             self.logger.error("[%s]: Not able to add sensor alert for internal version informer sensor."
                                               % self.fileName)
@@ -309,7 +310,7 @@ class VersionInformerSensor(_InternalSensor):
                                                                    True,
                                                                    False,
                                                                    SensorDataType.NONE,
-                                                                   None,
+                                                                   self.data,
                                                                    self.logger):
                     self.logger.error("[%s]: Not able to add sensor alert for internal version informer sensor."
                                       % self.fileName)

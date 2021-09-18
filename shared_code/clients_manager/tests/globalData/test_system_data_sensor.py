@@ -2,7 +2,7 @@ from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjNode, ManagerObjSensor, ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataNone, SensorDataInt
 
 
 class TestSystemDataSensor(TestSystemDataCore):
@@ -31,6 +31,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
@@ -54,6 +55,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
@@ -87,6 +89,7 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
@@ -138,7 +141,7 @@ class TestSystemDataSensor(TestSystemDataCore):
             temp_sensor.lastStateUpdated = i + 10
             temp_sensor.state = i % 2
             temp_sensor.dataType = SensorDataType.INT
-            temp_sensor.data = i
+            temp_sensor.data = SensorDataInt(i, "test unit")
             # We started the alert levels in our test data with level 1.
             temp_sensor.alertLevels = [(i % len(self.alert_levels)) + 1]
             new_sensors.append(temp_sensor)
@@ -160,7 +163,7 @@ class TestSystemDataSensor(TestSystemDataCore):
 
     def test_delete_sensor(self):
         """
-        Test Sensor object deleting.
+        Test dataSensor object deleting.
         """
         system_data = self._create_sensors()
         number_sensor_alerts = 3

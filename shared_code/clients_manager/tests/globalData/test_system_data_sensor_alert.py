@@ -1,7 +1,7 @@
 from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataInt, SensorDataNone
 from lib.globalData.baseObjects import InternalState
 
 
@@ -18,6 +18,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.sensorData = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -40,6 +41,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.sensorData = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -65,6 +67,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.sensorData = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -87,7 +90,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.INT
-        sensor_alert.sensorData = 0
+        sensor_alert.sensorData = SensorDataInt(0, "test unit")
         sensor_alert.timeReceived = 0
 
         is_exception = False

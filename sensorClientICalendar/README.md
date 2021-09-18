@@ -1,6 +1,6 @@
 # AlertR Sensor Client iCalendar
 
-This client handles calendar services as a sensor. For this, reminders in this calendar are used to trigger sensor alerts. Every calendar service that gives the option to retrieve the calendar data as .ics file via an URL can be used with this sensor client. For example, you can combine this sensor client with your Google calendar to generate sensor alerts every time a reminder is triggered. These sensor alerts can then be instrumented by AlertR to perform a certain task (e.g., display a message on your Kodi media center setup). Furthermore, this allows you to generate a schedule in your calender which then trigger certain tasks in your AlertR system.
+This client handles calendar services as a sensor. For this, reminders in this calendar are used to trigger sensor alerts. Every calendar service that gives the option to retrieve the calendar data as .ics file via a URL can be used with this sensor client. For example, you can combine this sensor client with your Google calendar to generate sensor alerts every time a reminder is triggered. These sensor alerts can then be instrumented by AlertR to perform a certain task (e.g., display a message on your Kodi media center setup). Furthermore, this allows you to generate a schedule in your calendar which then trigger certain tasks in your AlertR system.
 
 
 ## How to use it?

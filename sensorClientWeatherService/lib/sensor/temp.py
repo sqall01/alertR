@@ -7,23 +7,30 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
 import os
+from typing import Optional
 from .number import _NumberSensor
 from ..globalData import SensorDataType
-from typing import Union, Optional
+from ..globalData.sensorObjects import SensorDataFloat
 
 
-# Class that controls one temperature sensor.
 class TempPollingSensor(_NumberSensor):
+    """
+    Class that controls one temperature sensor.
+    """
 
     def __init__(self):
         _NumberSensor.__init__(self)
+
+        self._unit = "°C"
 
         # Used for logging.
         self._log_tag = os.path.basename(__file__)
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.FLOAT
+        self.sensorData = SensorDataFloat(-1000.0, self._unit)
 
         # Instance of data collector thread.
         self.dataCollector = None
@@ -40,8 +47,16 @@ class TempPollingSensor(_NumberSensor):
         # This sensor type string is used for log messages.
         self._log_desc = "Temperature"
 
-    def _get_data(self) -> Optional[Union[float, int]]:
-        return self.dataCollector.getTemperature(self.country, self.city, self.lon, self.lat)
+    def _get_data(self) -> Optional[SensorDataFloat]:
+        data = None
+        try:
+            data = SensorDataFloat(self.dataCollector.getTemperature(self.country, self.city, self.lon, self.lat),
+                                   self._unit)
+
+        except Exception as e:
+            logging.exception("[%s] Unable to temperature data from provider." % self._log_tag)
+
+        return data
 
     def initialize(self) -> bool:
         self.state = 1 - self.triggerState

@@ -18,7 +18,7 @@ from .util import MsgBuilder
 from .communication import Communication, Promise, MsgState
 from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataGPS
+    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
 from ..globalData import GlobalData
 
@@ -98,7 +98,7 @@ class ServerCommunication(Communication):
         :return: success or failure
         """
         logging.debug("[%s]: Received sensor alert '%s' with state %d."
-                     % (self._log_tag, incomingMessage["payload"]["description"], incomingMessage["payload"]["state"]))
+                      % (self._log_tag, incomingMessage["payload"]["description"], incomingMessage["payload"]["state"]))
 
         # extract sensor alert values
         sensorAlert = ManagerObjSensorAlert()
@@ -122,13 +122,8 @@ class ServerCommunication(Communication):
             sensorAlert.hasLatestData = incomingMessage["payload"]["hasLatestData"]
             sensorAlert.dataType = incomingMessage["payload"]["dataType"]
 
-            sensorAlert.sensorData = None
-            if sensorAlert.dataType == SensorDataType.INT:
-                sensorAlert.sensorData = int(incomingMessage["payload"]["data"])
-            elif sensorAlert.dataType == SensorDataType.FLOAT:
-                sensorAlert.sensorData = float(incomingMessage["payload"]["data"])
-            elif sensorAlert.dataType == SensorDataType.GPS:
-                sensorAlert.sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
+            sensor_data_cls = SensorDataType.get_sensor_data_class(sensorAlert.dataType)
+            sensorAlert.sensorData = sensor_data_cls.copy_from_dict(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
@@ -187,13 +182,8 @@ class ServerCommunication(Communication):
             state = incomingMessage["payload"]["state"]
             dataType = incomingMessage["payload"]["dataType"]
 
-            sensorData = None
-            if dataType == SensorDataType.INT:
-                sensorData = int(incomingMessage["payload"]["data"])
-            elif dataType == SensorDataType.FLOAT:
-                sensorData = float(incomingMessage["payload"]["data"])
-            elif dataType == SensorDataType.GPS:
-                sensorData = SensorDataGPS.copy_from_dict(incomingMessage["payload"]["data"])
+            sensor_data_cls = SensorDataType.get_sensor_data_class(dataType)
+            sensorData = sensor_data_cls.copy_from_dict(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received state change invalid." % self._log_tag)
@@ -217,7 +207,7 @@ class ServerCommunication(Communication):
         :param incomingMessage:
         :return: success or failure
         """
-        logging.debug("[%s]: Received status update."% self._log_tag)
+        logging.debug("[%s]: Received status update." % self._log_tag)
 
         options = list()
         profiles = list()
@@ -330,11 +320,8 @@ class ServerCommunication(Communication):
                 alertDelay = sensors_raw[i]["alertDelay"]
                 dataType = sensors_raw[i]["dataType"]
 
-                sensorData = None
-                if dataType == SensorDataType.GPS:
-                    sensorData = SensorDataGPS.copy_from_dict(sensors_raw[i]["data"])
-                elif dataType != SensorDataType.NONE:
-                    sensorData = sensors_raw[i]["data"]
+                sensor_data_cls = SensorDataType.get_sensor_data_class(dataType)
+                sensorData = sensor_data_cls.copy_from_dict(sensors_raw[i]["data"])
 
                 sensorAlertLevels = sensors_raw[i]["alertLevels"]
                 description = sensors_raw[i]["description"]

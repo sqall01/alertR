@@ -322,13 +322,13 @@ class TestGpsSensor(TestCase):
         Tests position processing with multiple geofences (moving in and out of geofences).
         """
         fence_coords1 = [(52.519850777692575, 13.383772373199465),
-                        (52.52030775996867, 13.396904468536379),
-                        (52.51468001850454, 13.397247791290285),
-                        (52.51452331933269, 13.384673595428469)]
+                         (52.52030775996867, 13.396904468536379),
+                         (52.51468001850454, 13.397247791290285),
+                         (52.51452331933269, 13.384673595428469)]
         fence_coords2 = [(55.519850777692575, 10.383772373199465),
-                        (55.52030775996867, 10.396904468536379),
-                        (55.51468001850454, 10.397247791290285),
-                        (55.51452331933269, 10.384673595428469)]
+                         (55.52030775996867, 10.396904468536379),
+                         (55.51468001850454, 10.397247791290285),
+                         (55.51452331933269, 10.384673595428469)]
 
         sensor = MockSensor()
         sensor.triggerState = 1
@@ -402,7 +402,6 @@ class TestGpsSensor(TestCase):
         self.assertEqual(events[0].sensorData.lat, position.lat)
         self.assertEqual(events[0].sensorData.lon, position.lon)
         self.assertEqual(events[0].sensorData.utctime, position.utctime)
-
 
     def test_integration_single_position(self):
         """

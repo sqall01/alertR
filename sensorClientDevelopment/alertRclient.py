@@ -136,7 +136,7 @@ if __name__ == '__main__':
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Set connection settings.
-        globalData.persistent = 1 # Consider sensor client always persistent
+        globalData.persistent = 1  # Consider sensor client always persistent
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -170,10 +170,8 @@ if __name__ == '__main__':
 
             # Development sensor specific options.
             sensor.sensorDataType = int(item.find("dev").attrib["dataType"])
-            if (sensor.sensorDataType != SensorDataType.NONE
-                and sensor.sensorDataType != SensorDataType.INT
-                and sensor.sensorDataType != SensorDataType.FLOAT):
-                raise ValueError("Illegal data type for sensor %d."% sensor.id)
+            if not SensorDataType.has_value(sensor.sensorDataType):
+                raise ValueError("Illegal data type for sensor %d." % sensor.id)
 
             # check if description is empty
             if len(sensor.description) == 0:
@@ -185,10 +183,9 @@ if __name__ == '__main__':
                     raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
             if not sensor.triggerAlert and sensor.triggerAlertNormal:
-                    raise ValueError("'triggerAlert' for sensor %d "
-                                     % sensor.id
-                                     + "has to be activated when "
-                                     + "'triggerAlertNormal' is activated.")
+                raise ValueError("'triggerAlert' for sensor %d " % sensor.id
+                                 + "has to be activated when "
+                                 + "'triggerAlertNormal' is activated.")
 
             globalData.sensors.append(sensor)
 
@@ -293,17 +290,8 @@ if __name__ == '__main__':
 
         print("--------")
         for sensor in globalData.sensors:
-            dataString = ""
-            if sensor.sensorDataType == SensorDataType.NONE:
-                dataString = "Current Data: NONE"
-
-            elif sensor.sensorDataType == SensorDataType.INT:
-                dataString = "Current Data: (INT) %d" % sensor.sensorData
-                dataString += " -> Next Data: %d" % sensor.nextData
-
-            elif sensor.sensorDataType == SensorDataType.FLOAT:
-                dataString = "Current Data: (FLOAT) %.3f" % sensor.sensorData
-                dataString += " -> Next Data: %.3f" % sensor.nextData
+            dataString = "Current Data: %s" % sensor.sensorData
+            dataString += " -> Next Data: %s" % sensor.nextData
 
             if sensor.consoleInputState == sensor.triggerState:
                 print("Sensor Id: %d - Triggered (%s)" % (sensor.id, dataString))

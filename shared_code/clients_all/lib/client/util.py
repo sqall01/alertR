@@ -13,8 +13,9 @@ import json
 import socket
 import os
 import logging
-from typing import List, Dict, Any, Optional, Union
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, SensorDataGPS
+from typing import List, Dict, Any, Optional
+from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from ..globalData.sensorObjects import _SensorData
 
 
 class MsgChecker:
@@ -121,16 +122,15 @@ class MsgChecker:
                 logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
                 return error_msg
 
-            if message["payload"]["dataType"] != SensorDataType.NONE:
-                if "data" not in message["payload"].keys():
-                    logging.error("[%s]: data missing." % MsgChecker._log_tag)
-                    return "data expected"
+            if "data" not in message["payload"].keys():
+                logging.error("[%s]: data missing." % MsgChecker._log_tag)
+                return "data expected"
 
-                error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
-                                                         message["payload"]["dataType"])
-                if error_msg is not None:
-                    logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
-                    return error_msg
+            error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
+                                                     message["payload"]["dataType"])
+            if error_msg is not None:
+                logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
+                return error_msg
 
             if "hasLatestData" not in message["payload"].keys():
                 logging.error("[%s]: hasLatestData missing." % MsgChecker._log_tag)
@@ -217,16 +217,15 @@ class MsgChecker:
                 logging.error("[%s]: Received dataType invalid." % MsgChecker._log_tag)
                 return error_msg
 
-            if message["payload"]["dataType"] != SensorDataType.NONE:
-                if "data" not in message["payload"].keys():
-                    logging.error("[%s]: data missing." % MsgChecker._log_tag)
-                    return "data expected"
+            if "data" not in message["payload"].keys():
+                logging.error("[%s]: data missing." % MsgChecker._log_tag)
+                return "data expected"
 
-                error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
-                                                         message["payload"]["dataType"])
-                if error_msg is not None:
-                    logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
-                    return error_msg
+            error_msg = MsgChecker.check_sensor_data(message["payload"]["data"],
+                                                     message["payload"]["dataType"])
+            if error_msg is not None:
+                logging.error("[%s]: Received data invalid." % MsgChecker._log_tag)
+                return error_msg
 
         # Check "STATUS" message.
         elif request == "status":
@@ -724,16 +723,11 @@ class MsgChecker:
 
     # Internal function to check sanity of the sensor data.
     @staticmethod
-    def check_sensor_data(data: Any, dataType: int) -> Optional[str]:
+    def check_sensor_data(data: Dict[str, Any], data_type: int) -> Optional[str]:
 
         is_correct = False
-        if dataType == SensorDataType.NONE and data is None:
-            is_correct = True
-        elif dataType == SensorDataType.INT and isinstance(data, int):
-            is_correct = True
-        elif dataType == SensorDataType.FLOAT and isinstance(data, float):
-            is_correct = True
-        elif dataType == SensorDataType.GPS and SensorDataGPS.verify_dict(data):
+        sensor_data_class = SensorDataType.get_sensor_data_class(data_type)
+        if sensor_data_class.verify_dict(data):
             is_correct = True
 
         if not is_correct:
@@ -743,15 +737,12 @@ class MsgChecker:
 
     # Internal function to check sanity of the sensor data type.
     @staticmethod
-    def check_sensor_data_type(dataType: int) -> Optional[str]:
+    def check_sensor_data_type(data_type: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(dataType, int):
+        if not isinstance(data_type, int):
             is_correct = False
-        elif not (SensorDataType.NONE == dataType
-                  or SensorDataType.INT == dataType
-                  or SensorDataType.FLOAT == dataType
-                  or SensorDataType.GPS == dataType):
+        elif not SensorDataType.has_value(data_type):
             is_correct = False
 
         if not is_correct:
@@ -1257,14 +1248,13 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if sensor["dataType"] != SensorDataType.NONE:
-                if "data" not in sensor.keys():
-                    is_correct = False
-                    break
+            if "data" not in sensor.keys():
+                is_correct = False
+                break
 
-                elif MsgChecker.check_sensor_data(sensor["data"], sensor["dataType"]) is not None:
-                    is_correct = False
-                    break
+            elif MsgChecker.check_sensor_data(sensor["data"], sensor["dataType"]) is not None:
+                is_correct = False
+                break
 
             if sensor["sensorId"] in sensor_ids:
                 is_correct = False
@@ -1459,15 +1449,8 @@ class MsgBuilder:
             tempSensor["alertLevels"] = sensor.alertLevels
             tempSensor["description"] = sensor.description
             tempSensor["state"] = sensor.state
-
-            # Only add data field if sensor data type is not "none".
-            tempSensor["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
             tempSensor["dataType"] = sensor.sensorDataType
-            if sensor.sensorDataType == SensorDataType.GPS:
-                tempSensor["data"] = sensor.sensorData.copy_to_dict()
-
-            elif sensor.sensorDataType != SensorDataType.NONE:
-                tempSensor["data"] = sensor.sensorData
+            tempSensor["data"] = sensor.sensorData.copy_to_dict()
 
             msg_sensors.append(tempSensor)
 
@@ -1498,20 +1481,12 @@ class MsgBuilder:
                    "hasOptionalData": sensor_alert.hasOptionalData,
                    "changeState": sensor_alert.changeState,
                    "hasLatestData": sensor_alert.hasLatestData,
-                   "dataType": sensor_alert.dataType}
+                   "dataType": sensor_alert.dataType,
+                   "data": sensor_alert.sensorData.copy_to_dict()}
 
         # Only add optional data field if it should be transfered.
         if sensor_alert.hasOptionalData:
             payload["optionalData"] = sensor_alert.optionalData
-
-        # Only add data field if sensor data type is not "none".
-        payload["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
-        if sensor_alert.dataType == SensorDataType.GPS:
-            # noinspection PyTypedDict
-            payload["data"] = sensor_alert.sensorData.copy_to_dict()
-
-        elif sensor_alert.dataType != SensorDataType.NONE:
-            payload["data"] = sensor_alert.sensorData
 
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
@@ -1526,20 +1501,11 @@ class MsgBuilder:
 
         :param state_change:
         """
-
         payload = {"type": "request",
                    "clientSensorId": state_change.clientSensorId,
                    "state": state_change.state,
-                   "dataType": state_change.dataType}
-
-        # Only add data field if sensor data type is not "none".
-        payload["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
-        if state_change.dataType == SensorDataType.GPS:
-            # noinspection PyTypedDict
-            payload["data"] = state_change.sensorData.copy_to_dict()
-
-        elif state_change.dataType != SensorDataType.NONE:
-            payload["data"] = state_change.sensorData
+                   "dataType": state_change.dataType,
+                   "data": state_change.sensorData.copy_to_dict()}
 
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
@@ -1559,6 +1525,8 @@ class MsgBuilder:
         for sensor in polling_sensors:
             temp_sensor = dict()
             temp_sensor["clientSensorId"] = sensor.id
+            temp_sensor["dataType"] = sensor.sensorDataType
+            temp_sensor["data"] = sensor.sensorData.copy_to_dict()
 
             # convert the internal trigger state to the state
             # convention of the alert system (1 = trigger, 0 = normal)
@@ -1566,15 +1534,6 @@ class MsgBuilder:
                 temp_sensor["state"] = 1
             else:
                 temp_sensor["state"] = 0
-
-            # Only add data field if sensor data type is not "none".
-            temp_sensor["dataType"] = sensor.sensorDataType
-            temp_sensor["data"] = None  # type: Union[None, int, float, Dict[str, Any]]
-            if sensor.sensorDataType == SensorDataType.GPS:
-                temp_sensor["data"] = sensor.sensorData.copy_to_dict()
-
-            elif sensor.sensorDataType != SensorDataType.NONE:
-                temp_sensor["data"] = sensor.sensorData
 
             sensors.append(temp_sensor)
 

@@ -19,7 +19,7 @@ from .elementProfile import ProfileChoiceUrwid
 from .elementStatus import StatusUrwid
 from .elementSensor import SensorDetailedUrwid, SensorUrwid
 from .elementSensorAlert import SensorAlertUrwid
-from .eventHandler import ManagerEventHandler
+from ..client.eventHandler import EventHandler
 from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile
 from ..globalData import GlobalData
 from ..client import ServerCommunication
@@ -44,7 +44,7 @@ class Console:
         self.system_data = self.globalData.system_data
         self.connectionTimeout = self.globalData.connectionTimeout
         self.serverComm = self.globalData.serverComm  # type: ServerCommunication
-        self.serverEventHandler = self.serverComm.event_handler  # type: ManagerEventHandler
+        self.serverEventHandler = self.serverComm.event_handler  # type: EventHandler
         self.timeShowSensorAlert = self.globalData.timeShowSensorAlert
         self.maxCountShowSensorAlert = self.globalData.maxCountShowSensorAlert
         self.maxCountShowSensorsPerPage = self.globalData.maxCountShowSensorsPerPage

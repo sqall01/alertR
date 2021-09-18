@@ -630,7 +630,8 @@ class Communication:
                                     + "(%d seconds difference, allowed (+/-)%d seconds)."
                                     % (time_diff, self._msg_expiration))
 
-                    logging.debug("[%s]: Sending 'expired' response message of type '%s'." % (self._log_tag, request_type))
+                    logging.debug("[%s]: Sending 'expired' response message of type '%s'."
+                                  % (self._log_tag, request_type))
                     try:
                         payload = {"type": "response",
                                    "result": "expired"}

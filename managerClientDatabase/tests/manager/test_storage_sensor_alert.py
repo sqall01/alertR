@@ -5,7 +5,6 @@ from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_sensor_alerts_content
 from lib.globalData.globalData import SystemData
 from lib.globalData.managerObjects import ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType
 from lib.manager.storage import Mysql
 
 

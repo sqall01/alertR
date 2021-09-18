@@ -136,7 +136,7 @@ if __name__ == '__main__':
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Set connection settings.
-        globalData.persistent = 1 # Consider sensor client always persistent
+        globalData.persistent = 1  # Consider sensor client always persistent
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -182,10 +182,10 @@ if __name__ == '__main__':
                     raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
             if not sensor.triggerAlert and sensor.triggerAlertNormal:
-                    raise ValueError("'triggerAlert' for sensor %d "
-                                     % sensor.id
-                                     + "has to be activated when "
-                                     + "'triggerAlertNormal' is activated.")
+                raise ValueError("'triggerAlert' for sensor %d "
+                                 % sensor.id
+                                 + "has to be activated when "
+                                 + "'triggerAlertNormal' is activated.")
 
             sensor.interval = int(item.find("gps").attrib["interval"])
             sensor.trigger_within = (str(item.find("gps").attrib["triggerWithin"]).upper() == "TRUE")

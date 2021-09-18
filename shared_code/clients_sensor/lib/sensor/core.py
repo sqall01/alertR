@@ -13,7 +13,8 @@ import logging
 import threading
 from typing import Optional, List, Union, Dict, Any
 from ..globalData import GlobalData
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorDataGPS
+from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from ..globalData.sensorObjects import _SensorData, SensorDataNone
 
 
 class _PollingSensor:
@@ -58,7 +59,7 @@ class _PollingSensor:
         self.sensorDataType = None  # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None  # type: Optional[Union[int, float, SensorDataGPS]]
+        self.sensorData = None  # type: Optional[_SensorData]
 
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
@@ -83,7 +84,7 @@ class _PollingSensor:
                           change_state: bool,
                           optional_data: Optional[Dict[str, Any]] = None,
                           has_latest_data: bool = False,
-                          sensor_data: Optional[Union[int, float, SensorDataGPS]] = None):
+                          sensor_data: Optional[_SensorData] = None):
         """
         Internal function that adds a Sensor Alert for processing.
 
@@ -128,11 +129,16 @@ class _PollingSensor:
 
         sensor_alert.hasLatestData = has_latest_data
         sensor_alert.dataType = self.sensorDataType
-        sensor_alert.sensorData = sensor_data
 
         # Throw exception if we did not get Sensor data but we expected it.
         if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
             raise ValueError("Expected data since data type is not NONE")
+
+        if sensor_data is None:
+            sensor_alert.sensorData = SensorDataNone()
+
+        else:
+            sensor_alert.sensorData = sensor_data
 
         # Change sensor state if it is set.
         if change_state:
@@ -189,7 +195,7 @@ class _PollingSensor:
 
     def _add_state_change(self,
                           state: int,
-                          sensor_data: Optional[Union[int, float, SensorDataGPS]] = None):
+                          sensor_data: Optional[_SensorData] = None):
         """
         Internal function that adds a state change for processing.
 
@@ -211,11 +217,15 @@ class _PollingSensor:
             state_change.state = 0
 
         state_change.dataType = self.sensorDataType
-        state_change.sensorData = sensor_data
 
         # Throw exception if we did not get Sensor data but we expected it.
         if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
             raise ValueError("Expected data since data type is not NONE")
+
+        if sensor_data is None:
+            state_change.sensorData = SensorDataNone()
+        else:
+            state_change.sensorData = sensor_data
 
         self.state = state
         self.sensorData = state_change.sensorData

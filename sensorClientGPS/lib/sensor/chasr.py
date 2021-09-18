@@ -17,7 +17,7 @@ from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
 from Crypto.Util import Padding
 from .gps import _GPSSensor
-from ..globalData import SensorDataGPS
+from ..globalData.sensorObjects import SensorDataGPS
 
 
 class ServerError(BaseException):

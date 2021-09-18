@@ -14,7 +14,7 @@ import subprocess
 import threading
 import time
 from typing import Optional, Tuple
-from ..localObjects import AlertLevel, SensorAlert
+from ..localObjects import AlertLevel, SensorAlert, SensorDataType
 from ..internalSensors import AlertLevelInstrumentationErrorSensor
 
 
@@ -285,6 +285,9 @@ class Instrumentation:
 
             # Manually update Sensor Alert dictionary
             sensor_alert_dict["triggeredAlertLevels"] = []
+
+            if not SensorAlert.verify_dict(sensor_alert_dict):
+                raise ValueError("invalid input data")
 
             new_sensor_alert = SensorAlert.convert_from_dict(sensor_alert_dict)
 

@@ -98,7 +98,7 @@ class TestCommunicationBasic(TestCase):
         reconnect_client_ctr = 0
         reconnect_server_ctr = 0
         for _ in range(5):
-            if server_receiver.isAlive():
+            if server_receiver.is_alive():
 
                 # Re-connect channel if it is down (since we simulate an error we have to re-connect).
                 if not comm_client.has_channel:
@@ -115,7 +115,7 @@ class TestCommunicationBasic(TestCase):
             else:
                 break
 
-        if server_receiver.isAlive():
+        if server_receiver.is_alive():
             self.fail("Server timed out while receiving messages.")
 
         if reconnect_client_ctr > 1:
@@ -187,7 +187,7 @@ class TestCommunicationBasic(TestCase):
         reconnect_client_ctr = 0
         reconnect_server_ctr = 0
         for _ in range(5):
-            if server_receiver.isAlive():
+            if server_receiver.is_alive():
 
                 # Re-connect channel if it is down (since we simulate an error we have to re-connect).
                 if not comm_client.has_channel:
@@ -204,7 +204,7 @@ class TestCommunicationBasic(TestCase):
             else:
                 break
 
-        if server_receiver.isAlive():
+        if server_receiver.is_alive():
             self.fail("Server timed out while receiving messages.")
 
         if reconnect_client_ctr > 1:
@@ -276,7 +276,7 @@ class TestCommunicationBasic(TestCase):
         reconnect_client_ctr = 0
         reconnect_server_ctr = 0
         for _ in range(5):
-            if server_receiver.isAlive():
+            if server_receiver.is_alive():
 
                 # Re-connect channel if it is down (since we simulate an error we have to re-connect).
                 if not comm_client.has_channel:
@@ -293,7 +293,7 @@ class TestCommunicationBasic(TestCase):
             else:
                 break
 
-        if server_receiver.isAlive():
+        if server_receiver.is_alive():
             self.fail("Server timed out while receiving messages.")
 
         if reconnect_client_ctr > 1:
@@ -365,7 +365,7 @@ class TestCommunicationBasic(TestCase):
         reconnect_client_ctr = 0
         reconnect_server_ctr = 0
         for _ in range(5):
-            if server_receiver.isAlive():
+            if server_receiver.is_alive():
 
                 # Re-connect channel if it is down (since we simulate an error we have to re-connect).
                 if not comm_client.has_channel:
@@ -382,7 +382,7 @@ class TestCommunicationBasic(TestCase):
             else:
                 break
 
-        if server_receiver.isAlive():
+        if server_receiver.is_alive():
             self.fail("Server timed out while receiving messages.")
 
         if reconnect_client_ctr > 1:

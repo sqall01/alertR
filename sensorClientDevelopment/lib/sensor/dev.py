@@ -9,7 +9,8 @@
 
 import os
 from .core import _PollingSensor
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from ..globalData import SensorDataType
+from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS
 from typing import Optional
 
 
@@ -27,7 +28,7 @@ class DevSensor(_PollingSensor):
         self.consoleInputState = 0
 
         # Field in which the next send data is added.
-        self.nextData = None
+        self.nextData = None  # type: Optional[_SensorData]
 
     def _execute(self):
         pass
@@ -36,13 +37,23 @@ class DevSensor(_PollingSensor):
         self.state = self.consoleInputState
 
         # Initialize the data the sensor holds.
+        if self.sensorDataType == SensorDataType.NONE:
+            self.sensorData = SensorDataNone()
+            self.nextData = SensorDataNone()
+
         if self.sensorDataType == SensorDataType.INT:
-            self.sensorData = 0
-            self.nextData = self.sensorData + 1
+            self.sensorData = SensorDataInt(0, "Dev")
+            self.nextData = SensorDataInt(self.sensorData.value + 1, self.sensorData.unit)
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = 0.0
-            self.nextData = self.sensorData + 0.5
+            self.sensorData = SensorDataFloat(0.0, "Dev")
+            self.nextData = SensorDataFloat(self.sensorData.value + 0.5, self.sensorData.unit)
+
+        elif self.sensorDataType == SensorDataType.GPS:
+            self.sensorData = SensorDataGPS(0.0, 0.0, 0)
+            self.nextData = SensorDataGPS(self.sensorData.lat + 0.1,
+                                          self.sensorData.lon + 0.1,
+                                          self.sensorData.utctime + 1)
 
         return True
 
@@ -54,11 +65,20 @@ class DevSensor(_PollingSensor):
 
         elif self.sensorDataType == SensorDataType.INT:
             self.sensorData = self.nextData
-            self.nextData += 1
+            # noinspection PyTypeChecker
+            self.nextData = SensorDataInt(self.sensorData.value + 1, self.sensorData.unit)
 
         elif self.sensorDataType == SensorDataType.FLOAT:
             self.sensorData = self.nextData
-            self.nextData += 0.5
+            # noinspection PyTypeChecker
+            self.nextData = SensorDataFloat(self.sensorData.value + 0.5, self.sensorData.unit)
+
+        elif self.sensorDataType == SensorDataType.GPS:
+            self.sensorData = self.nextData
+            # noinspection PyTypeChecker
+            self.nextData = SensorDataGPS(self.sensorData.lat + 0.1,
+                                          self.sensorData.lon + 0.1,
+                                          self.sensorData.utctime + 1)
 
         if self.consoleInputState == 0:
             self.consoleInputState = 1
