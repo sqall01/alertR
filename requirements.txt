@@ -2,7 +2,7 @@ requests==2.20.0
 pycryptodome==3.10.1
 Shapely==1.7.1
 lightweightpush==0.0.5
-RPi.GPIO
+RPi.GPIO==0.5.2
 kodi-json==1.0.0
 urwid==2.1.0
 mysqlclient==1.4.6

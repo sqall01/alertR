@@ -1,6 +1,7 @@
-## 0.900-0
+## 0.900-1
 
 * Added GPS data processing support
+* Refactored sensor data processing
 
 ## 0.800-1
 
