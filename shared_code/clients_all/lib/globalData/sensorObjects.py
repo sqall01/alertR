@@ -365,7 +365,7 @@ class SensorObjSensorAlert(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[_SensorData]
+        self.data = None  # type: Optional[_SensorData]
 
     @staticmethod
     def deepcopy(obj):
@@ -379,7 +379,7 @@ class SensorObjSensorAlert(LocalObject):
                     "changeState": self.changeState,
                     "hasLatestData": self.hasLatestData,
                     "dataType": self.dataType,
-                    "data": self.sensorData.copy_to_dict()
+                    "data": self.data.copy_to_dict()
                     }
 
         return obj_dict
@@ -392,10 +392,10 @@ class SensorObjSensorAlert(LocalObject):
         self.hasLatestData = sensor_alert.hasLatestData
 
         # Deep copy sensor data.
-        if self.sensorData is None or self.dataType != sensor_alert.dataType:
-            self.sensorData = sensor_alert.sensorData.deepcopy(sensor_alert.sensorData)
+        if self.data is None or self.dataType != sensor_alert.dataType:
+            self.data = sensor_alert.data.deepcopy(sensor_alert.data)
         else:
-            self.sensorData.deepcopy_obj(sensor_alert.sensorData)
+            self.data.deepcopy_obj(sensor_alert.data)
 
         self.dataType = sensor_alert.dataType
 
@@ -422,7 +422,7 @@ class SensorObjStateChange(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[_SensorData]
+        self.data = None  # type: Optional[_SensorData]
 
     @staticmethod
     def deepcopy(obj):
@@ -432,7 +432,7 @@ class SensorObjStateChange(LocalObject):
         obj_dict = {"clientSensorId": self.clientSensorId,
                     "state": self.state,
                     "dataType": self.dataType,
-                    "data": self.sensorData.copy_to_dict()
+                    "data": self.data.copy_to_dict()
                     }
 
         return obj_dict
@@ -442,10 +442,10 @@ class SensorObjStateChange(LocalObject):
         self.state = state_change.clientSensorId
 
         # Deep copy sensor data.
-        if self.sensorData is None or self.dataType != state_change.dataType:
-            self.sensorData = state_change.sensorData.deepcopy(state_change.sensorData)
+        if self.data is None or self.dataType != state_change.dataType:
+            self.data = state_change.data.deepcopy(state_change.data)
         else:
-            self.sensorData.deepcopy_obj(state_change.sensorData)
+            self.data.deepcopy_obj(state_change.data)
 
         self.dataType = state_change.dataType
 

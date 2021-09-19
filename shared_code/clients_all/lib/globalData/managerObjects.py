@@ -323,7 +323,7 @@ class ManagerObjSensorAlert(LocalObject):
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[_SensorData]
+        self.data = None  # type: Optional[_SensorData]
 
     def __str__(self) -> str:
         tmp = "Sensor Alert (Description: '%s'; " \
@@ -350,7 +350,7 @@ class ManagerObjSensorAlert(LocalObject):
                              "hasOptionalData": self.hasOptionalData,
                              "optionalData": copy.deepcopy(self.optionalData) if self.hasOptionalData else None,
                              "dataType": self.dataType,
-                             "data": self.sensorData.copy_to_dict(),
+                             "data": self.data.copy_to_dict(),
                              "hasLatestData": self.hasLatestData,
                              "changeState": self.changeState
                              }
@@ -367,10 +367,10 @@ class ManagerObjSensorAlert(LocalObject):
         self.changeState = sensor_alert.changeState
         self.hasLatestData = sensor_alert.hasLatestData
 
-        if self.sensorData is None or self.dataType != sensor_alert.dataType:
-            self.sensorData = sensor_alert.deepcopy(sensor_alert.data)
+        if self.data is None or self.dataType != sensor_alert.dataType:
+            self.data = sensor_alert.deepcopy(sensor_alert.data)
         else:
-            self.sensorData.deepcopy_obj(sensor_alert.data)
+            self.data.deepcopy_obj(sensor_alert.data)
 
         self.dataType = sensor_alert.dataType
 

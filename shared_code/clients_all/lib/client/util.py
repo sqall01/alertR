@@ -1450,7 +1450,7 @@ class MsgBuilder:
             tempSensor["description"] = sensor.description
             tempSensor["state"] = sensor.state
             tempSensor["dataType"] = sensor.sensorDataType
-            tempSensor["data"] = sensor.sensorData.copy_to_dict()
+            tempSensor["data"] = sensor.data.copy_to_dict()
 
             msg_sensors.append(tempSensor)
 
@@ -1482,7 +1482,7 @@ class MsgBuilder:
                    "changeState": sensor_alert.changeState,
                    "hasLatestData": sensor_alert.hasLatestData,
                    "dataType": sensor_alert.dataType,
-                   "data": sensor_alert.sensorData.copy_to_dict()}
+                   "data": sensor_alert.data.copy_to_dict()}
 
         # Only add optional data field if it should be transfered.
         if sensor_alert.hasOptionalData:
@@ -1505,7 +1505,7 @@ class MsgBuilder:
                    "clientSensorId": state_change.clientSensorId,
                    "state": state_change.state,
                    "dataType": state_change.dataType,
-                   "data": state_change.sensorData.copy_to_dict()}
+                   "data": state_change.data.copy_to_dict()}
 
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
@@ -1526,7 +1526,7 @@ class MsgBuilder:
             temp_sensor = dict()
             temp_sensor["clientSensorId"] = sensor.id
             temp_sensor["dataType"] = sensor.sensorDataType
-            temp_sensor["data"] = sensor.sensorData.copy_to_dict()
+            temp_sensor["data"] = sensor.data.copy_to_dict()
 
             # convert the internal trigger state to the state
             # convention of the alert system (1 = trigger, 0 = normal)

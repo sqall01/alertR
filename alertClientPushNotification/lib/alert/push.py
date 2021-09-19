@@ -83,7 +83,7 @@ class PushAlert(_Alert):
             state_message = "Undefined"
 
         # Convert data to a string.
-        data_message = str(sensor_alert.sensorData)
+        data_message = str(sensor_alert.data)
 
         # Replace wildcards in the message with the actual values.
         temp_msg = message.replace("$MESSAGE$", received_message)

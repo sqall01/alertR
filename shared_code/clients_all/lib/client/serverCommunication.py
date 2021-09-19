@@ -123,7 +123,7 @@ class ServerCommunication(Communication):
             sensorAlert.dataType = incomingMessage["payload"]["dataType"]
 
             sensor_data_cls = SensorDataType.get_sensor_data_class(sensorAlert.dataType)
-            sensorAlert.sensorData = sensor_data_cls.copy_from_dict(incomingMessage["payload"]["data"])
+            sensorAlert.data = sensor_data_cls.copy_from_dict(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received sensor alert invalid." % self._log_tag)
@@ -183,7 +183,7 @@ class ServerCommunication(Communication):
             dataType = incomingMessage["payload"]["dataType"]
 
             sensor_data_cls = SensorDataType.get_sensor_data_class(dataType)
-            sensorData = sensor_data_cls.copy_from_dict(incomingMessage["payload"]["data"])
+            sensor_data = sensor_data_cls.copy_from_dict(incomingMessage["payload"]["data"])
 
         except Exception:
             logging.exception("[%s]: Received state change invalid." % self._log_tag)
@@ -194,7 +194,7 @@ class ServerCommunication(Communication):
                                             sensorId,
                                             state,
                                             dataType,
-                                            sensorData):
+                                            sensor_data):
             return True
 
         return False
@@ -279,7 +279,7 @@ class ServerCommunication(Communication):
         for i in range(len(nodes_raw)):
 
             try:
-                nodeId = nodes_raw[i]["nodeId"]
+                node_id = nodes_raw[i]["nodeId"]
                 hostname = nodes_raw[i]["hostname"]
                 nodeType = nodes_raw[i]["nodeType"]
                 instance = nodes_raw[i]["instance"]
@@ -294,10 +294,10 @@ class ServerCommunication(Communication):
                 return False
 
             logging.debug("[%s]: Received node information: %d:'%s':'%s':%d:%d."
-                          % (self._log_tag, nodeId, hostname, nodeType, connected, persistent))
+                          % (self._log_tag, node_id, hostname, nodeType, connected, persistent))
 
             node = ManagerObjNode()
-            node.nodeId = nodeId
+            node.nodeId = node_id
             node.hostname = hostname
             node.nodeType = nodeType
             node.instance = instance
@@ -314,14 +314,14 @@ class ServerCommunication(Communication):
         for i in range(len(sensors_raw)):
 
             try:
-                nodeId = sensors_raw[i]["nodeId"]
-                sensorId = sensors_raw[i]["sensorId"]
-                clientSensorId = sensors_raw[i]["clientSensorId"]
-                alertDelay = sensors_raw[i]["alertDelay"]
-                dataType = sensors_raw[i]["dataType"]
+                node_id = sensors_raw[i]["nodeId"]
+                sensor_id = sensors_raw[i]["sensorId"]
+                client_sensor_id = sensors_raw[i]["clientSensorId"]
+                alert_delay = sensors_raw[i]["alertDelay"]
+                data_type = sensors_raw[i]["dataType"]
 
-                sensor_data_cls = SensorDataType.get_sensor_data_class(dataType)
-                sensorData = sensor_data_cls.copy_from_dict(sensors_raw[i]["data"])
+                sensor_data_cls = SensorDataType.get_sensor_data_class(data_type)
+                sensor_data = sensor_data_cls.copy_from_dict(sensors_raw[i]["data"])
 
                 sensorAlertLevels = sensors_raw[i]["alertLevels"]
                 description = sensors_raw[i]["description"]
@@ -333,19 +333,19 @@ class ServerCommunication(Communication):
                 return False
 
             logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d:%d."
-                          % (self._log_tag, nodeId, sensorId, alertDelay, description, lastStateUpdated, state))
+                          % (self._log_tag, node_id, sensor_id, alert_delay, description, lastStateUpdated, state))
 
             sensor = ManagerObjSensor()
-            sensor.nodeId = nodeId
-            sensor.sensorId = sensorId
-            sensor.clientSensorId = clientSensorId
-            sensor.alertDelay = alertDelay
+            sensor.nodeId = node_id
+            sensor.sensorId = sensor_id
+            sensor.clientSensorId = client_sensor_id
+            sensor.alertDelay = alert_delay
             sensor.alertLevels = sensorAlertLevels
             sensor.description = description
             sensor.lastStateUpdated = lastStateUpdated
             sensor.state = state
-            sensor.dataType = dataType
-            sensor.data = sensorData
+            sensor.dataType = data_type
+            sensor.data = sensor_data
 
             sensors.append(sensor)
 
@@ -355,7 +355,7 @@ class ServerCommunication(Communication):
         for i in range(len(managers_raw)):
 
             try:
-                nodeId = managers_raw[i]["nodeId"]
+                node_id = managers_raw[i]["nodeId"]
                 managerId = managers_raw[i]["managerId"]
                 description = managers_raw[i]["description"]
 
@@ -364,10 +364,10 @@ class ServerCommunication(Communication):
                 return False
 
             logging.debug("[%s]: Received manager information: %d:%d:'%s'."
-                          % (self._log_tag, nodeId, managerId, description))
+                          % (self._log_tag, node_id, managerId, description))
 
             manager = ManagerObjManager()
-            manager.nodeId = nodeId
+            manager.nodeId = node_id
             manager.managerId = managerId
             manager.description = description
             managers.append(manager)
@@ -378,7 +378,7 @@ class ServerCommunication(Communication):
         for i in range(len(alerts_raw)):
 
             try:
-                nodeId = alerts_raw[i]["nodeId"]
+                node_id = alerts_raw[i]["nodeId"]
                 alertId = alerts_raw[i]["alertId"]
                 clientAlertId = alerts_raw[i]["clientAlertId"]
                 description = alerts_raw[i]["description"]
@@ -389,10 +389,10 @@ class ServerCommunication(Communication):
                 return False
 
             logging.debug("[%s]: Received alert information: %d:%d:'%s'."
-                          % (self._log_tag, nodeId, alertId, description))
+                          % (self._log_tag, node_id, alertId, description))
 
             alert = ManagerObjAlert()
-            alert.nodeId = nodeId
+            alert.nodeId = node_id
             alert.alertId = alertId
             alert.clientAlertId = clientAlertId
             alert.alertLevels = alertAlertLevels
