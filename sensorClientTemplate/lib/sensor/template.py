@@ -22,7 +22,7 @@ class TemplateSensor(_PollingSensor):
 
         # Set sensor to not hold any data.
         self.sensorDataType = SensorDataType.NONE
-        self.sensorData = SensorDataNone()
+        self.data = SensorDataNone()
 
         # used for logging
         self._log_tag = os.path.basename(__file__)

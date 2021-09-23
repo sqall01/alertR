@@ -262,7 +262,7 @@ class SystemData:
                 sensor.state = sensor_alert.state
 
             if sensor_alert.hasLatestData:
-                sensor.data.deepcopy_obj(sensor_alert.sensorData)
+                sensor.data.deepcopy_obj(sensor_alert.data)
 
         with self._data_lock:
             sensor_alert.internal_state = InternalState.STORED

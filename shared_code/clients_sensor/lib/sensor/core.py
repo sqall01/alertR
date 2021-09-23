@@ -59,7 +59,7 @@ class _PollingSensor:
         self.sensorDataType = None  # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None  # type: Optional[_SensorData]
+        self.data = None  # type: Optional[_SensorData]
 
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
@@ -135,10 +135,10 @@ class _PollingSensor:
             raise ValueError("Expected data since data type is not NONE")
 
         if sensor_data is None:
-            sensor_alert.sensorData = SensorDataNone()
+            sensor_alert.data = SensorDataNone()
 
         else:
-            sensor_alert.sensorData = sensor_data
+            sensor_alert.data = sensor_data
 
         # Change sensor state if it is set.
         if change_state:
@@ -146,7 +146,7 @@ class _PollingSensor:
 
         # Update sensor data if it has latest data.
         if has_latest_data:
-            self.sensorData = sensor_alert.sensorData
+            self.data = sensor_alert.data
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
         # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
@@ -164,7 +164,7 @@ class _PollingSensor:
                 # Send state change event with old data from sensor.
                 else:
                     self._add_state_change(state,
-                                           self.sensorData)
+                                           self.data)
 
             # If Sensor Alert event did not change the state of the Sensor, but contained the latest data
             # send a state change event with the old state from the sensor.
@@ -185,7 +185,7 @@ class _PollingSensor:
                 # Send state change event with old data from sensor.
                 else:
                     self._add_state_change(state,
-                                           self.sensorData)
+                                           self.data)
 
             # If Sensor Alert event did not change the state of the Sensor, but contained the latest data
             # send a state change event with the old state from the sensor.
@@ -223,12 +223,12 @@ class _PollingSensor:
             raise ValueError("Expected data since data type is not NONE")
 
         if sensor_data is None:
-            state_change.sensorData = SensorDataNone()
+            state_change.data = SensorDataNone()
         else:
-            state_change.sensorData = sensor_data
+            state_change.data = sensor_data
 
         self.state = state
-        self.sensorData = state_change.sensorData
+        self.data = state_change.data
 
         self._add_event(state_change)
 

@@ -488,7 +488,7 @@ class SensorAlert:
 
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
-        self.sensorData = None  # type: Optional[_SensorData]
+        self.data = None  # type: Optional[_SensorData]
 
     @staticmethod
     def convert_from_dict(sensor_alert_dict: Dict[str, Any]):
@@ -513,7 +513,7 @@ class SensorAlert:
         sensor_alert.dataType = sensor_alert_dict["dataType"]
 
         sensor_data_class = SensorDataType.get_sensor_data_class(sensor_alert.dataType)
-        sensor_alert.sensorData = sensor_data_class.copy_from_dict(sensor_alert_dict["data"])
+        sensor_alert.data = sensor_data_class.copy_from_dict(sensor_alert_dict["data"])
 
         return sensor_alert
 
@@ -591,7 +591,7 @@ class SensorAlert:
                              "triggeredAlertLevels": self.triggeredAlertLevels,
                              "hasLatestData": self.hasLatestData,
                              "dataType": self.dataType,
-                             "data": self.sensorData.copy_to_dict()
+                             "data": self.data.copy_to_dict()
                              }
 
         return sensor_alert_dict
@@ -623,7 +623,7 @@ class SensorAlert:
 
         # Deep copy sensor data.
         sensor_data_class = SensorDataType.get_sensor_data_class(self.dataType)
-        self.sensorData = sensor_data_class.deepcopy(sensor_alert.sensorData)
+        self.data = sensor_data_class.deepcopy(sensor_alert.data)
 
         return self
 

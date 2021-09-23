@@ -144,7 +144,7 @@ class _NumberSensor(_PollingSensor):
                         logging.error("[%s] Do not know how to check threshold. Skipping check."
                                       % self._log_tag)
 
-            if data != self.sensorData:
+            if data != self.data:
                 self._add_state_change(self.state, data)
 
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:

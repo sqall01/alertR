@@ -261,7 +261,7 @@ def compare_sensor_alerts_content(context: TestCase,
                     and new_sensor_alert.changeState == gt_sensor_alert.changeState
                     and new_sensor_alert.hasLatestData == gt_sensor_alert.hasLatestData
                     and new_sensor_alert.dataType == gt_sensor_alert.dataType
-                    and new_sensor_alert.sensorData == gt_sensor_alert.sensorData
+                    and new_sensor_alert.data == gt_sensor_alert.data
                     and any(map(lambda x: x in gt_sensor_alert.alertLevels, new_sensor_alert.alertLevels))
                     and any(map(lambda x: x in new_sensor_alert.alertLevels, gt_sensor_alert.alertLevels))):
 

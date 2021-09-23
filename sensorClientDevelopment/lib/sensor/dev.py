@@ -11,7 +11,7 @@ import os
 from .core import _PollingSensor
 from ..globalData import SensorDataType
 from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS
-from typing import Optional
+from typing import Optional, cast
 
 
 class DevSensor(_PollingSensor):
@@ -38,22 +38,22 @@ class DevSensor(_PollingSensor):
 
         # Initialize the data the sensor holds.
         if self.sensorDataType == SensorDataType.NONE:
-            self.sensorData = SensorDataNone()
+            self.data = SensorDataNone()
             self.nextData = SensorDataNone()
 
         if self.sensorDataType == SensorDataType.INT:
-            self.sensorData = SensorDataInt(0, "Dev")
-            self.nextData = SensorDataInt(self.sensorData.value + 1, self.sensorData.unit)
+            self.data = SensorDataInt(0, "Dev")
+            self.nextData = SensorDataInt(self.data.value + 1, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = SensorDataFloat(0.0, "Dev")
-            self.nextData = SensorDataFloat(self.sensorData.value + 0.5, self.sensorData.unit)
+            self.data = SensorDataFloat(0.0, "Dev")
+            self.nextData = SensorDataFloat(self.data.value + 0.5, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS(0.0, 0.0, 0)
-            self.nextData = SensorDataGPS(self.sensorData.lat + 0.1,
-                                          self.sensorData.lon + 0.1,
-                                          self.sensorData.utctime + 1)
+            self.data = SensorDataGPS(0.0, 0.0, 0)
+            self.nextData = SensorDataGPS(self.data.lat + 0.1,
+                                          self.data.lon + 0.1,
+                                          self.data.utctime + 1)
 
         return True
 
@@ -64,21 +64,18 @@ class DevSensor(_PollingSensor):
             pass
 
         elif self.sensorDataType == SensorDataType.INT:
-            self.sensorData = self.nextData
-            # noinspection PyTypeChecker
-            self.nextData = SensorDataInt(self.sensorData.value + 1, self.sensorData.unit)
+            self.data = cast(self.nextData, SensorDataInt)
+            self.nextData = SensorDataInt(self.data.value + 1, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = self.nextData
-            # noinspection PyTypeChecker
-            self.nextData = SensorDataFloat(self.sensorData.value + 0.5, self.sensorData.unit)
+            self.data = cast(self.nextData, SensorDataFloat)
+            self.nextData = SensorDataFloat(self.data.value + 0.5, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.GPS:
-            self.sensorData = self.nextData
-            # noinspection PyTypeChecker
-            self.nextData = SensorDataGPS(self.sensorData.lat + 0.1,
-                                          self.sensorData.lon + 0.1,
-                                          self.sensorData.utctime + 1)
+            self.data = cast(self.nextData, SensorDataGPS)
+            self.nextData = SensorDataGPS(self.data.lat + 0.1,
+                                          self.data.lon + 0.1,
+                                          self.data.utctime + 1)
 
         if self.consoleInputState == 0:
             self.consoleInputState = 1
@@ -92,19 +89,19 @@ class DevSensor(_PollingSensor):
                 self._add_sensor_alert(self.triggerState,
                                        True,
                                        has_latest_data=True,
-                                       sensor_data=self.sensorData)
+                                       sensor_data=self.data)
 
             else:
                 self._add_state_change(self.triggerState,
-                                       self.sensorData)
+                                       self.data)
 
         else:
             if self.triggerAlertNormal:
                 self._add_sensor_alert(1 - self.triggerState,
                                        True,
                                        has_latest_data=True,
-                                       sensor_data=self.sensorData)
+                                       sensor_data=self.data)
 
             else:
                 self._add_state_change(1 - self.triggerState,
-                                       self.sensorData)
+                                       self.data)

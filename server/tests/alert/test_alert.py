@@ -178,7 +178,7 @@ class TestAlert(TestCase):
             sensor_alert.alertLevels.append(i)
             sensor_alert.hasLatestData = False
             sensor_alert.dataType = SensorDataType.NONE
-            sensor_alert.sensorData = SensorDataNone()
+            sensor_alert.data = SensorDataNone()
             sensor_alerts.append(sensor_alert)
 
         return alert_levels, sensor_alerts
@@ -1459,7 +1459,7 @@ class TestAlert(TestCase):
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
             sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.sensorData
+            sensor.data = sensor_alert.data
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
@@ -1470,7 +1470,7 @@ class TestAlert(TestCase):
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
-                                                   sensor_alert.sensorData)
+                                                   sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1565,7 +1565,7 @@ class TestAlert(TestCase):
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
         sensor.state = base_sensor_alert.state
         sensor.dataType = base_sensor_alert.dataType
-        sensor.data = base_sensor_alert.sensorData
+        sensor.data = base_sensor_alert.data
         global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
@@ -1578,7 +1578,7 @@ class TestAlert(TestCase):
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
-                                               base_sensor_alert.sensorData)
+                                               base_sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1685,7 +1685,7 @@ class TestAlert(TestCase):
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
         sensor.state = base_sensor_alert.state
         sensor.dataType = base_sensor_alert.dataType
-        sensor.data = base_sensor_alert.sensorData
+        sensor.data = base_sensor_alert.data
         global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
@@ -1698,7 +1698,7 @@ class TestAlert(TestCase):
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
-                                               base_sensor_alert.sensorData)
+                                               base_sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1792,7 +1792,7 @@ class TestAlert(TestCase):
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
         sensor.state = base_sensor_alert.state
         sensor.dataType = base_sensor_alert.dataType
-        sensor.data = base_sensor_alert.sensorData
+        sensor.data = base_sensor_alert.data
         global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
@@ -1805,7 +1805,7 @@ class TestAlert(TestCase):
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
-                                               base_sensor_alert.sensorData)
+                                               base_sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1883,7 +1883,7 @@ class TestAlert(TestCase):
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
         sensor.state = base_sensor_alert.state
         sensor.dataType = base_sensor_alert.dataType
-        sensor.data = base_sensor_alert.sensorData
+        sensor.data = base_sensor_alert.data
         global_data.storage.add_sensor(sensor)
 
         sensor_alert_executer = SensorAlertExecuter(global_data)
@@ -1896,7 +1896,7 @@ class TestAlert(TestCase):
                                                base_sensor_alert.changeState,
                                                base_sensor_alert.hasLatestData,
                                                base_sensor_alert.dataType,
-                                               base_sensor_alert.sensorData)
+                                               base_sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -1968,7 +1968,7 @@ class TestAlert(TestCase):
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
             sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.sensorData
+            sensor.data = sensor_alert.data
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
@@ -1979,7 +1979,7 @@ class TestAlert(TestCase):
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
-                                                   sensor_alert.sensorData)
+                                                   sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -2063,7 +2063,7 @@ class TestAlert(TestCase):
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
             sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.sensorData
+            sensor.data = sensor_alert.data
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
@@ -2074,7 +2074,7 @@ class TestAlert(TestCase):
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
-                                                   sensor_alert.sensorData)
+                                                   sensor_alert.data)
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -2161,7 +2161,7 @@ class TestAlert(TestCase):
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
             sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.sensorData
+            sensor.data = sensor_alert.data
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
@@ -2172,7 +2172,7 @@ class TestAlert(TestCase):
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
-                                                   sensor_alert.sensorData)
+                                                   sensor_alert.data)
 
         gt_last_state_updated = int(time.time()) - 10
         internal_sensor.lastStateUpdated = gt_last_state_updated
@@ -2249,7 +2249,7 @@ class TestAlert(TestCase):
             sensor.alertLevels = list(sensor_alert.alertLevels)
             sensor.state = sensor_alert.state
             sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.sensorData
+            sensor.data = sensor_alert.data
             global_data.storage.add_sensor(sensor)
 
             # Add sensor alert for processing.
@@ -2260,7 +2260,7 @@ class TestAlert(TestCase):
                                                    sensor_alert.changeState,
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
-                                                   sensor_alert.sensorData)
+                                                   sensor_alert.data)
 
         gt_last_state_updated = int(time.time()) - 31
         internal_sensor.lastStateUpdated = gt_last_state_updated

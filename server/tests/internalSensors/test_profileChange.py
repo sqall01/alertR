@@ -40,7 +40,7 @@ class MockSensorAlertExecuter:
         sensor_alert.changeState = change_state
         sensor_alert.hasLatestData = has_latest_data
         sensor_alert.dataType = data_type
-        sensor_alert.sensorData = sensor_data
+        sensor_alert.data = sensor_data
 
         sensor_alert.hasOptionalData = False
         sensor_alert.optionalData = optional_data
@@ -131,7 +131,7 @@ class TestProfileChange(TestCase):
 
         sensor_alert_executer = global_data.sensorAlertExecuter
         self.assertEqual(len(sensor_alert_executer.sensor_alerts), 1)
-        self.assertEqual(sensor_alert_executer.sensor_alerts[0].sensorData, SensorDataInt(option.value, ""))
+        self.assertEqual(sensor_alert_executer.sensor_alerts[0].data, SensorDataInt(option.value, ""))
 
     def test_wrong_option_type(self):
         """

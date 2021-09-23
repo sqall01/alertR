@@ -57,7 +57,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -110,7 +110,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -163,7 +163,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -217,7 +217,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -271,7 +271,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.INT
-        sensor.sensorData = SensorDataInt(1, "test unit")
+        sensor.data = SensorDataInt(1, "test unit")
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -302,7 +302,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has changed.
-        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.sensorData)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
 
     def test_sensor_alert_no_data_change(self):
         """
@@ -327,7 +327,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.INT
-        sensor.sensorData = SensorDataInt(1, "test unit")
+        sensor.data = SensorDataInt(1, "test unit")
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -358,7 +358,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data hasnot  changed.
-        self.assertNotEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.sensorData)
+        self.assertNotEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
 
     def test_state_change_triggered(self):
         """
@@ -379,7 +379,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -402,7 +402,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(payload["payload"]["state"], events[0].state)
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].sensorData)
+        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].data)
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
@@ -426,7 +426,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -450,7 +450,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(payload["payload"]["state"], events[0].state)
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].sensorData)
+        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].data)
 
         # Make sure sensor state has changed.
         self.assertEqual(0, sensor.state)
@@ -474,7 +474,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.INT
-        sensor.sensorData = SensorDataInt(1, "test unit")
+        sensor.data = SensorDataInt(1, "test unit")
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -497,13 +497,13 @@ class TestFifoSensor(TestCase):
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(payload["payload"]["state"], events[0].state)
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), events[0].sensorData)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), events[0].data)
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
 
         # Make sure sensor data has changed.
-        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.sensorData)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
 
     def test_illegal_data(self):
         """
@@ -517,7 +517,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -560,7 +560,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -603,7 +603,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -646,7 +646,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -671,7 +671,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertEqual(sensor.sensorData, SensorDataNone())
+        self.assertEqual(sensor.data, SensorDataNone())
 
     def test_sensor_alert_illegal_state(self):
         """
@@ -696,7 +696,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -743,7 +743,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -768,7 +768,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertEqual(sensor.sensorData, SensorDataNone())
+        self.assertEqual(sensor.data, SensorDataNone())
 
     def test_sensor_alert_illegal_has_optional_data(self):
         """
@@ -793,7 +793,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -818,7 +818,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertEqual(sensor.sensorData, SensorDataNone())
+        self.assertEqual(sensor.data, SensorDataNone())
 
     def test_sensor_alert_illegal_has_latest_data(self):
         """
@@ -843,7 +843,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -868,7 +868,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertEqual(sensor.sensorData, SensorDataNone())
+        self.assertEqual(sensor.data, SensorDataNone())
 
     def test_sensor_alert_illegal_change_state(self):
         """
@@ -893,7 +893,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -918,7 +918,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertEqual(sensor.sensorData, SensorDataNone())
+        self.assertEqual(sensor.data, SensorDataNone())
 
     def test_sensor_alert_illegal_optional_data(self):
         """
@@ -943,7 +943,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -968,7 +968,7 @@ class TestFifoSensor(TestCase):
         self.assertEqual(0, sensor.state)
 
         # Make sure data has not changed.
-        self.assertEqual(sensor.sensorData, SensorDataNone())
+        self.assertEqual(sensor.data, SensorDataNone())
 
     def test_create_fifo(self):
         """
@@ -980,7 +980,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -1017,7 +1017,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -1058,7 +1058,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -1095,7 +1095,7 @@ class TestFifoSensor(TestCase):
         sensor = self._create_base_sensor()
 
         sensor.sensorDataType = SensorDataType.NONE
-        sensor.sensorData = SensorDataNone()
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 

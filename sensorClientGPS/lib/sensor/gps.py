@@ -31,7 +31,7 @@ class _GPSSensor(_PollingSensor):
         # Initialize sensor with bogus GPS data to allow connection to server or otherwise invalid data is sent to
         # server and connection is terminated. While a GPS position (0.0, 0.0) at 1/1/1970 is technically valid,
         # we consider it as bogus since the sensor is build to track current and not historical positions.
-        self.sensorData = SensorDataGPS(0.0, 0.0, 0)
+        self.data = SensorDataGPS(0.0, 0.0, 0)
 
         # used for logging
         self._log_tag = os.path.basename(__file__)
@@ -54,7 +54,7 @@ class _GPSSensor(_PollingSensor):
     def _process_position(self, gps_data: SensorDataGPS):
 
         # Do not process GPS positions that is equal to the last position.
-        if self.sensorData == gps_data:
+        if self.data == gps_data:
             return
 
         logging.debug("[%s] GPS position for '%s': %f, %f"

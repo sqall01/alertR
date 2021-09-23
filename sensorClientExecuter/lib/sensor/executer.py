@@ -125,7 +125,7 @@ class ExecuterSensor(_PollingSensor):
                                                False,
                                                {"message": "Unable to execute process"},
                                                False,
-                                               self.sensorData)
+                                               self.data)
 
             # Process is still running.
             else:
@@ -160,7 +160,7 @@ class ExecuterSensor(_PollingSensor):
                                                False,
                                                optional_data,
                                                False,
-                                               self.sensorData)
+                                               self.data)
 
                         # Set process to None so it can be newly started in the next iteration.
                         self._process.stdout.close()
@@ -190,7 +190,7 @@ class ExecuterSensor(_PollingSensor):
                                                    False,
                                                    {"message": "Illegal output"},
                                                    False,
-                                                   self.sensorData)
+                                                   self.data)
 
                     else:
                         # Check if the process has exited with code 0 => everything works fine
@@ -219,7 +219,7 @@ class ExecuterSensor(_PollingSensor):
                                                        True,
                                                        {"exitCode": exit_code},
                                                        False,
-                                                       self.sensorData)
+                                                       self.data)
 
                             # Only possible situation left => sensor changed back from triggering state to normal state.
                             else:
@@ -227,7 +227,7 @@ class ExecuterSensor(_PollingSensor):
                                                        True,
                                                        {"exitCode": exit_code},
                                                        False,
-                                                       self.sensorData)
+                                                       self.data)
 
                     # Set process to none so it can be newly started in the next iteration.
                     self._process.stdout.close()
@@ -276,7 +276,7 @@ class ExecuterSensor(_PollingSensor):
 
                 # Create state change object that is send to the server if the data could be changed
                 # or the state has changed.
-                if self.sensorData != temp_input_data or self.state != temp_input_state:
+                if self.data!= temp_input_data or self.state != temp_input_state:
                     self._add_state_change(temp_input_state,
                                            temp_input_data)
 
@@ -367,18 +367,18 @@ class ExecuterSensor(_PollingSensor):
         self.state = 1 - self.triggerState
 
         if self.sensorDataType == SensorDataType.NONE:
-            self.sensorData = SensorDataNone()
+            self.data= SensorDataNone()
 
         if self.sensorDataType == SensorDataType.INT:
-            self.sensorData = SensorDataInt(0,
+            self.data= SensorDataInt(0,
                                             "")
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = SensorDataFloat(0.0,
+            self.data= SensorDataFloat(0.0,
                                               "")
 
         elif self.sensorDataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS(0.0,
+            self.data= SensorDataGPS(0.0,
                                             0.0,
                                             0)
 

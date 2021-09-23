@@ -18,7 +18,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = SensorDataNone()
+        sensor_alert.data = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -41,7 +41,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = SensorDataNone()
+        sensor_alert.data = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -67,7 +67,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = SensorDataNone()
+        sensor_alert.data = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -90,7 +90,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.INT
-        sensor_alert.sensorData = SensorDataInt(0, "test unit")
+        sensor_alert.data = SensorDataInt(0, "test unit")
         sensor_alert.timeReceived = 0
 
         is_exception = False
@@ -120,7 +120,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
             temp_sensor_alert.changeState = (i % 2) == 0
             temp_sensor_alert.hasLatestData = False
             temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
-            temp_sensor_alert.sensorData = self.sensors[i % len(self.sensors)].data
+            temp_sensor_alert.data = self.sensors[i % len(self.sensors)].data
             temp_sensor_alert.timeReceived = i + 5
             new_sensor_alerts.append(temp_sensor_alert)
 
@@ -162,7 +162,7 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
             temp_sensor_alert.changeState = (i % 2) == 0
             temp_sensor_alert.hasLatestData = False
             temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
-            temp_sensor_alert.sensorData = self.sensors[i % len(self.sensors)].data
+            temp_sensor_alert.data = self.sensors[i % len(self.sensors)].data
             temp_sensor_alert.timeReceived = i
             new_sensor_alerts.append(temp_sensor_alert)
             system_data.add_sensor_alert(temp_sensor_alert)

@@ -500,7 +500,7 @@ class SensorAlertExecuter(threading.Thread):
         sensor_alert.changeState = change_state
         sensor_alert.hasLatestData = has_latest_data
         sensor_alert.dataType = data_type
-        sensor_alert.sensorData = sensor_data
+        sensor_alert.data = sensor_data
 
         sensor_alert.hasOptionalData = False
         sensor_alert.optionalData = optional_data

@@ -30,7 +30,7 @@ class ForecastRainPollingSensor(_NumberSensor):
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.INT
-        self.sensorData = SensorDataInt(-1000, self._unit)
+        self.data = SensorDataInt(-1000, self._unit)
 
         # Instance of data collector thread.
         self.dataCollector = None

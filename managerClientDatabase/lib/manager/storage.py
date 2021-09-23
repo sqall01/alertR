@@ -223,8 +223,8 @@ class Mysql(_Storage):
                                      + "unit) "
                                      + "VALUES (%s, %s, %s)",
                                      (db_sensor_alert_id,
-                                      sensor_alert.sensorData.value,
-                                      sensor_alert.sensorData.unit))
+                                      sensor_alert.data.value,
+                                      sensor_alert.data.unit))
 
             elif sensor_alert.dataType == SensorDataType.FLOAT:
                 self._cursor.execute("INSERT INTO sensorAlertsDataFloat ("
@@ -233,8 +233,8 @@ class Mysql(_Storage):
                                      + "unit) "
                                      + "VALUES (%s, %s, %s)",
                                      (db_sensor_alert_id,
-                                      sensor_alert.sensorData.value,
-                                      sensor_alert.sensorData.unit))
+                                      sensor_alert.data.value,
+                                      sensor_alert.data.unit))
 
             elif sensor_alert.dataType == SensorDataType.GPS:
                 self._cursor.execute("INSERT INTO sensorAlertsDataGPS ("
@@ -244,9 +244,9 @@ class Mysql(_Storage):
                                      + "utctime) "
                                      + "VALUES (%s, %s, %s, %s)",
                                      (db_sensor_alert_id,
-                                      sensor_alert.sensorData.lat,
-                                      sensor_alert.sensorData.lon,
-                                      sensor_alert.sensorData.utctime))
+                                      sensor_alert.data.lat,
+                                      sensor_alert.data.lon,
+                                      sensor_alert.data.utctime))
 
         except Exception:
             logging.exception("[%s]: Not able to add Sensor Alert." % self._log_tag)
@@ -657,27 +657,27 @@ class Mysql(_Storage):
 
             # Get data of Sensor Alert.
             if sensor_alert.dataType == SensorDataType.NONE:
-                sensor_alert.sensorData = SensorDataNone()
+                sensor_alert.data = SensorDataNone()
 
             elif sensor_alert.dataType == SensorDataType.INT:
                 self._cursor.execute("SELECT value, unit FROM sensorAlertsDataInt WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
-                sensor_alert.sensorData = SensorDataInt(result_data[0][0],
+                sensor_alert.data = SensorDataInt(result_data[0][0],
                                                         result_data[0][1])
 
             elif sensor_alert.dataType == SensorDataType.FLOAT:
                 self._cursor.execute("SELECT value, unit FROM sensorAlertsDataFloat WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
-                sensor_alert.sensorData = SensorDataFloat(result_data[0][0],
+                sensor_alert.data = SensorDataFloat(result_data[0][0],
                                                           result_data[0][1])
 
             elif sensor_alert.dataType == SensorDataType.GPS:
                 self._cursor.execute("SELECT lat, lon, utctime FROM sensorAlertsDataGPS WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
-                sensor_alert.sensorData = SensorDataGPS(result_data[0][0],
+                sensor_alert.data = SensorDataGPS(result_data[0][0],
                                                         result_data[0][1],
                                                         result_data[0][2])
 

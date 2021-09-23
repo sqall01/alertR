@@ -30,7 +30,7 @@ class TempPollingSensor(_NumberSensor):
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.FLOAT
-        self.sensorData = SensorDataFloat(-1000.0, self._unit)
+        self.data = SensorDataFloat(-1000.0, self._unit)
 
         # Instance of data collector thread.
         self.dataCollector = None

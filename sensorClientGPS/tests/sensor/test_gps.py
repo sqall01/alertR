@@ -81,9 +81,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_without_trigger_within(self):
         """
@@ -113,9 +113,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_without_trigger_without(self):
         """
@@ -145,9 +145,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_within_trigger_without(self):
         """
@@ -177,9 +177,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_within_trigger_within_triggered(self):
         """
@@ -211,9 +211,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_without_trigger_without_triggered(self):
         """
@@ -245,9 +245,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_without_trigger_within_triggered(self):
         """
@@ -279,9 +279,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_position_within_trigger_without_triggered(self):
         """
@@ -313,9 +313,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_process_multi_geofences(self):
         """
@@ -351,9 +351,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
         # Move out of geofence.
         position = SensorDataGPS(42.51743522098097,
@@ -367,9 +367,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
         # Move into second geofence.
         position = SensorDataGPS(55.51743522098097,
@@ -383,9 +383,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
         # Move into first geofence again.
         position = SensorDataGPS(52.51743522098097,
@@ -399,9 +399,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_integration_single_position(self):
         """
@@ -437,9 +437,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)
 
     def test_integration_multi_positions(self):
         """
@@ -481,9 +481,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position1.lat)
-        self.assertEqual(events[0].sensorData.lon, position1.lon)
-        self.assertEqual(events[0].sensorData.utctime, position1.utctime)
+        self.assertEqual(events[0].data.lat, position1.lat)
+        self.assertEqual(events[0].data.lon, position1.lon)
+        self.assertEqual(events[0].data.utctime, position1.utctime)
 
         time.sleep(4.0)
 
@@ -493,9 +493,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position2.lat)
-        self.assertEqual(events[0].sensorData.lon, position2.lon)
-        self.assertEqual(events[0].sensorData.utctime, position2.utctime)
+        self.assertEqual(events[0].data.lat, position2.lat)
+        self.assertEqual(events[0].data.lon, position2.lon)
+        self.assertEqual(events[0].data.utctime, position2.utctime)
 
     def test_integration_one_position_only_changes(self):
         """
@@ -531,9 +531,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position1.lat)
-        self.assertEqual(events[0].sensorData.lon, position1.lon)
-        self.assertEqual(events[0].sensorData.utctime, position1.utctime)
+        self.assertEqual(events[0].data.lat, position1.lat)
+        self.assertEqual(events[0].data.lon, position1.lon)
+        self.assertEqual(events[0].data.utctime, position1.utctime)
 
         time.sleep(4.0)
 
@@ -580,9 +580,9 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjStateChange)
         self.assertEqual(events[0].state, 0)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position1.lat)
-        self.assertEqual(events[0].sensorData.lon, position1.lon)
-        self.assertEqual(events[0].sensorData.utctime, position1.utctime)
+        self.assertEqual(events[0].data.lat, position1.lat)
+        self.assertEqual(events[0].data.lon, position1.lon)
+        self.assertEqual(events[0].data.utctime, position1.utctime)
 
         time.sleep(4.0)
 
@@ -633,6 +633,6 @@ class TestGpsSensor(TestCase):
         self.assertEqual(type(events[0]), SensorObjSensorAlert)
         self.assertEqual(events[0].state, 1)
         self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].sensorData.lat, position.lat)
-        self.assertEqual(events[0].sensorData.lon, position.lon)
-        self.assertEqual(events[0].sensorData.utctime, position.utctime)
+        self.assertEqual(events[0].data.lat, position.lat)
+        self.assertEqual(events[0].data.lon, position.lon)
+        self.assertEqual(events[0].data.utctime, position.utctime)

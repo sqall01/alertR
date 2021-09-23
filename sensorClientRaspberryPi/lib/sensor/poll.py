@@ -24,7 +24,7 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
 
         # Set sensor to not hold any data.
         self.sensorDataType = SensorDataType.NONE
-        self.sensorData = SensorDataNone()
+        self.data = SensorDataNone()
 
         # the gpio pin number (NOTE: python uses the actual
         # pin number and not the gpio number)

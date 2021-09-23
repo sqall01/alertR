@@ -53,7 +53,7 @@ class TestInstrumentation(TestCase):
         sensor_alert.triggeredAlertLevels = [1]
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = SensorDataNone()
+        sensor_alert.data = SensorDataNone()
 
         logger = logging.getLogger("Instrumentation Test Case")
 
@@ -90,7 +90,7 @@ class TestInstrumentation(TestCase):
                                 sensor_alert.alertLevels)))
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
-        self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
+        self.assertEqual(sensor_alert.data, new_sensor_alert.data)
         self.assertEqual(0, len(new_sensor_alert.triggeredAlertLevels))
 
     def test_process_output_invalid_node_id(self):
@@ -227,7 +227,7 @@ class TestInstrumentation(TestCase):
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
         invalid_sensor_alert.dataType = SensorDataType.INT
-        invalid_sensor_alert.sensorData = SensorDataInt(1, "test unit")
+        invalid_sensor_alert.data = SensorDataInt(1, "test unit")
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -262,10 +262,10 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.INT
-        sensor_alert.sensorData = SensorDataInt(1337, "test unit")
+        sensor_alert.data = SensorDataInt(1337, "test unit")
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData._value = 1337.0
+        invalid_sensor_alert.data._value = 1337.0
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -282,10 +282,10 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.FLOAT
-        sensor_alert.sensorData = SensorDataFloat(1337.0, "test unit")
+        sensor_alert.data = SensorDataFloat(1337.0, "test unit")
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData._value = 1337
+        invalid_sensor_alert.data._value = 1337
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -302,12 +302,12 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.GPS
-        sensor_alert.sensorData = SensorDataGPS(1337.0,
+        sensor_alert.data = SensorDataGPS(1337.0,
                                                 1338.0,
                                                 1339)
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData._lat = 1337
+        invalid_sensor_alert.data._lat = 1337
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -324,10 +324,10 @@ class TestInstrumentation(TestCase):
         instrumentation = self._create_instrumentation_dummy()
         sensor_alert = instrumentation._sensor_alert
         sensor_alert.dataType = SensorDataType.NONE
-        sensor_alert.sensorData = SensorDataNone()
+        sensor_alert.data = SensorDataNone()
 
         invalid_sensor_alert = SensorAlert().deepcopy(sensor_alert)
-        invalid_sensor_alert.sensorData = SensorDataInt(1337, "test unit")
+        invalid_sensor_alert.data = SensorDataInt(1337, "test unit")
 
         arg = invalid_sensor_alert.convert_to_dict()
         arg["instrumentationAlertLevel"] = sensor_alert.alertLevels[0]
@@ -373,7 +373,7 @@ class TestInstrumentation(TestCase):
                                 sensor_alert.alertLevels)))
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
-        self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
+        self.assertEqual(sensor_alert.data, new_sensor_alert.data)
 
     def test_execute_valid_non_blocking(self):
         """
@@ -416,7 +416,7 @@ class TestInstrumentation(TestCase):
                                 sensor_alert.alertLevels)))
         self.assertEqual(sensor_alert.hasLatestData, new_sensor_alert.hasLatestData)
         self.assertEqual(sensor_alert.dataType, new_sensor_alert.dataType)
-        self.assertEqual(sensor_alert.sensorData, new_sensor_alert.sensorData)
+        self.assertEqual(sensor_alert.data, new_sensor_alert.data)
 
     def test_execute_valid_suppress(self):
         """

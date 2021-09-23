@@ -290,7 +290,7 @@ if __name__ == '__main__':
 
         print("--------")
         for sensor in globalData.sensors:
-            dataString = "Current Data: %s" % sensor.sensorData
+            dataString = "Current Data: %s" % sensor.data
             dataString += " -> Next Data: %s" % sensor.nextData
 
             if sensor.consoleInputState == sensor.triggerState:

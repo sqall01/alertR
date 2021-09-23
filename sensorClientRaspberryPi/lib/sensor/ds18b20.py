@@ -32,7 +32,7 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.FLOAT
-        self.sensorData = None  # Sensor initialization fails if no data could be collected.
+        self.data = None  # Sensor initialization fails if no data could be collected.
 
         # The file of the sensor that should be parsed.
         self._sensor_file = None
@@ -82,7 +82,7 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
             return None
 
         else:
-            return self.sensorData
+            return self.data
 
     def initialize(self) -> bool:
         self.state = 1 - self.triggerState
@@ -93,10 +93,10 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
 
         # First time the temperature is updated is done in a blocking way.
         utc_timestamp = int(time.time())
-        self.sensorData = self._get_data()
+        self.data = self._get_data()
         self._last_temperature_update = utc_timestamp
 
-        if self.sensorData is None:
+        if self.data is None:
             return False
 
         self._last_update = utc_timestamp

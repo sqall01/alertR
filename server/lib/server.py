@@ -1093,7 +1093,7 @@ class ClientCommunication:
                    "changeState": sensorAlert.changeState,
                    "hasLatestData": sensorAlert.hasLatestData,
                    "dataType": sensorAlert.dataType,
-                   "data": sensorAlert.sensorData.copy_to_dict()
+                   "data": sensorAlert.data.copy_to_dict()
                    }
 
         if sensorAlert.hasOptionalData:

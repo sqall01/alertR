@@ -178,7 +178,7 @@ class FIFOSensor(_PollingSensor):
 
                         # Create state change object that is send to the server if the data could be changed
                         # or the state has changed.
-                        if self.sensorData != temp_input_data or self.state != temp_input_state:
+                        if self.data != temp_input_data or self.state != temp_input_state:
                             self._add_state_change(temp_input_state,
                                                    temp_input_data)
 
@@ -322,18 +322,18 @@ class FIFOSensor(_PollingSensor):
         self.state = 1 - self.triggerState
 
         if self.sensorDataType == SensorDataType.NONE:
-            self.sensorData = SensorDataNone()
+            self.data = SensorDataNone()
 
         if self.sensorDataType == SensorDataType.INT:
-            self.sensorData = SensorDataInt(0,
+            self.data = SensorDataInt(0,
                                             "")
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = SensorDataFloat(0.0,
+            self.data = SensorDataFloat(0.0,
                                               "")
 
         elif self.sensorDataType == SensorDataType.GPS:
-            self.sensorData = SensorDataGPS(0.0,
+            self.data = SensorDataGPS(0.0,
                                             0.0,
                                             0)
 
