@@ -64,15 +64,15 @@ class DevSensor(_PollingSensor):
             pass
 
         elif self.sensorDataType == SensorDataType.INT:
-            self.data = cast(self.nextData, SensorDataInt)
+            self.data = cast(SensorDataInt, self.nextData)
             self.nextData = SensorDataInt(self.data.value + 1, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.data = cast(self.nextData, SensorDataFloat)
+            self.data = cast(SensorDataFloat, self.nextData)
             self.nextData = SensorDataFloat(self.data.value + 0.5, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.GPS:
-            self.data = cast(self.nextData, SensorDataGPS)
+            self.data = cast(SensorDataGPS, self.nextData)
             self.nextData = SensorDataGPS(self.data.lat + 0.1,
                                           self.data.lon + 0.1,
                                           self.data.utctime + 1)
