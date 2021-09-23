@@ -11,7 +11,8 @@ var configUnixSocketActive =
 var SensorDataType = {
 	NONE: 0,
 	INT: 1,
-	FLOAT: 2
+	FLOAT: 2,
+	GPS: 3
 }
 
 // global objects filled with server responses
@@ -2048,7 +2049,7 @@ function outputOverview() {
 		var lastStateUpdated = sensors[i]["lastStateUpdated"];
 		var state = sensors[i]["state"];
 		var dataType = sensors[i]["dataType"];
-		var sensorData = sensors[i]["data"];
+		var data = sensors[i]["data"];
 		var connected = 0;
 
 		// get connected information from corresponding node
@@ -2065,7 +2066,7 @@ function outputOverview() {
 		newTd.appendChild(document.createTextNode(description));
 		if(dataType != SensorDataType.NONE) {
 			newTd.appendChild(document.createElement("br"));
-			newTd.appendChild(document.createTextNode("Data: " + sensorData));
+			newTd.appendChild(document.createTextNode("Data: " + data));
 		}
 
 		if(connected == 0) {
@@ -2266,7 +2267,7 @@ function outputSensorAlerts() {
 		var description = sensorAlerts[i]["description"];
 		var optionalData = JSON.parse(jsonData);
 		var dataType = sensorAlerts[i]["dataType"];
-		var sensorData = sensorAlerts[i]["data"];
+		var data = sensorAlerts[i]["data"];
 		var alertLevels = sensorAlerts[i]["alertLevels"];
 
 
@@ -2358,7 +2359,7 @@ function outputSensorAlerts() {
 
 			newTr = document.createElement("tr");
 			newTd = document.createElement("td");
-			newTd.textContent = sensorData;
+			newTd.textContent = data;
 			newTd.className = "neutralTd";
 			newTr.appendChild(newTd);
 			sensorAlertTable.appendChild(newTr);
@@ -2596,7 +2597,7 @@ function outputSensors() {
 			var state = relatedSensors[j]["state"];
 			var relatedAlertLevels = relatedSensors[j]["alertLevels"];
 			var dataType = relatedSensors[j]["dataType"];
-			var sensorData = relatedSensors[j]["data"];
+			var data = relatedSensors[j]["data"];
 
 
 			// create row for sensor output
@@ -2659,7 +2660,7 @@ function outputSensors() {
 
 				var newTr = document.createElement("tr");
 				var newTd = document.createElement("td");
-				newTd.textContent = sensorData;
+				newTd.textContent = data;
 				newTd.className = "neutralTd";
 				newTr.appendChild(newTd);
 				sensorTable.appendChild(newTr);

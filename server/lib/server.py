@@ -1777,7 +1777,7 @@ class ClientCommunication:
 
                     # Get data of sensor according to data type.
                     sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
-                    sensorData = sensor_data_class.copy_from_dict(sensors[i]["data"])
+                    sensor_data = sensor_data_class.copy_from_dict(sensors[i]["data"])
 
                 except Exception as e:
                     self.logger.exception("[%s]: Sensor data invalid (%s:%d)."
@@ -1834,7 +1834,7 @@ class ClientCommunication:
                 tempSensor.lastStateUpdated = utcTimestamp
                 tempSensor.alertDelay = alertDelay
                 tempSensor.dataType = sensorDataType
-                tempSensor.data = sensorData
+                tempSensor.data = sensor_data
 
                 self.sensors.append(tempSensor)
 
@@ -2283,7 +2283,7 @@ class ClientCommunication:
             return False
 
         # Extract sensor data.
-        # Generate a list of tuples with (clientSensorId, sensorData).
+        # Generate a list of tuples with (clientSensorId, sensor_data).
         dataList = list()
         try:
             for i in range(self.sensorCount):
@@ -2431,7 +2431,7 @@ class ClientCommunication:
             sensorDataType = incomingMessage["payload"]["dataType"]
 
             sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
-            sensorData = sensor_data_class.copy_from_dict(incomingMessage["payload"]["data"])
+            sensor_data = sensor_data_class.copy_from_dict(incomingMessage["payload"]["data"])
 
             # Check if client sensor is known.
             for currentSensor in self.sensors:
@@ -2531,10 +2531,10 @@ class ClientCommunication:
         # Update data of the sensor if sensor alert carries latest
         # sensor data.
         if hasLatestData:
-            sensor.data = sensorData
+            sensor.data = sensor_data
 
             if not self.storage.updateSensorData(self.nodeId,
-                                                 [(clientSensorId, sensorData)],
+                                                 [(clientSensorId, sensor_data)],
                                                  logger=self.logger):
                 self.logger.error("[%s]: Not able to update sensor data (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
@@ -2573,7 +2573,7 @@ class ClientCommunication:
                                                          changeState,
                                                          hasLatestData,
                                                          sensorDataType,
-                                                         sensorData,
+                                                         sensor_data,
                                                          self.logger):
 
             # send error message back
@@ -2644,7 +2644,7 @@ class ClientCommunication:
             sensorDataType = incomingMessage["payload"]["dataType"]
 
             sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
-            sensorData = sensor_data_class.copy_from_dict(incomingMessage["payload"]["data"])
+            sensor_data = sensor_data_class.copy_from_dict(incomingMessage["payload"]["data"])
 
             # Check if client sensor is known.
             for currentSensor in self.sensors:
@@ -2685,7 +2685,7 @@ class ClientCommunication:
             # Update sensor object.
             sensor.state = state
             sensor.lastStateUpdated = int(time.time())
-            sensor.data = sensorData
+            sensor.data = sensor_data
 
         except Exception as e:
             self.logger.exception("[%s]: Received state change invalid (%s:%d)."
@@ -2703,7 +2703,7 @@ class ClientCommunication:
             return False
 
         self.logger.debug("[%s]: State change for client sensor id %d and state %d and data (%s) (%s:%d)."
-                          % (self.fileName, clientSensorId, state, str(sensorData), self.clientAddress, self.clientPort))
+                          % (self.fileName, clientSensorId, state, str(sensor_data), self.clientAddress, self.clientPort))
 
         # update sensor state
         stateTuple = (clientSensorId, state)
@@ -2727,7 +2727,7 @@ class ClientCommunication:
 
         # Update sensor data if it holds data.
         if sensorDataType != SensorDataType.NONE:
-            dataTuple = (clientSensorId, sensorData)
+            dataTuple = (clientSensorId, sensor_data)
             dataList = [dataTuple]
 
             if not self.storage.updateSensorData(self.nodeId,

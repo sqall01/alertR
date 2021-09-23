@@ -1223,7 +1223,7 @@ class Sqlite(_Storage):
 
             # Extract sensor data.
             sensor_data_class = SensorDataType.get_sensor_data_class(sensor["dataType"])
-            sensorData = sensor_data_class.copy_from_dict(sensor["data"])
+            sensor_data = sensor_data_class.copy_from_dict(sensor["data"])
 
             # check if a sensor with the same client id for this node
             # already exists in the database
@@ -1279,7 +1279,7 @@ class Sqlite(_Storage):
                     return False
 
                 # Depending on the data type of the sensor add it to the corresponding table.
-                if not self._insertSensorData(sensorId, sensor["dataType"], sensorData, logger):
+                if not self._insertSensorData(sensorId, sensor["dataType"], sensor_data, logger):
                     logger.error("[%s]: Not able to add data for newly added sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
@@ -1382,7 +1382,7 @@ class Sqlite(_Storage):
 
                     # Depending on the data type of the sensor add it to the
                     # corresponding table.
-                    if not self._insertSensorData(sensorId, sensor["dataType"], sensorData, logger):
+                    if not self._insertSensorData(sensorId, sensor["dataType"], sensor_data, logger):
                         logger.error("[%s]: Not able to add data for changed sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
