@@ -369,7 +369,7 @@ class ExecuterSensor(_PollingSensor):
         if self.sensorDataType == SensorDataType.NONE:
             self.data= SensorDataNone()
 
-        if self.sensorDataType == SensorDataType.INT:
+        elif self.sensorDataType == SensorDataType.INT:
             self.data= SensorDataInt(0,
                                             "")
 
