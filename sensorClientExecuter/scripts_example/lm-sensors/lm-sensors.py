@@ -101,7 +101,7 @@ def create_sensor_alert(value, msg, state):
     optionalData["message"] = msg
     payload["optionalData"] = optionalData
     payload["dataType"] = 2
-    payload["data"] = {"value": value, "unit": "C"}
+    payload["data"] = {"value": value, "unit": "°C"}
     payload["hasLatestData"] = True
     payload["changeState"] = True
     result["payload"] = payload
@@ -114,7 +114,7 @@ def create_state_change(value, state):
     payload = dict()
     payload["state"] = state
     payload["dataType"] = 2
-    payload["data"] = {"value": value, "unit": "C"}
+    payload["data"] = {"value": value, "unit": "°C"}
     result["payload"] = payload
     return result
 
