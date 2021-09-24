@@ -16,6 +16,7 @@ abstract class SensorDataType {
     const NONE_TYPE = 0;
     const INT_TYPE = 1;
     const FLOAT_TYPE = 2;
+    const GPS_TYPE = 3;
 }
 
 
@@ -146,19 +147,19 @@ if(isset($_GET["data"])
                     switch($row["dataType"]) {
 
                         case SensorDataType::INT_TYPE:
-                            $stmt = $mysqli->query("SELECT data FROM "
+                            $stmt = $mysqli->query("SELECT value, unit FROM "
                                 . "sensorsDataInt WHERE sensorId = "
                                 . intval($row["id"]));
                             $dataRow = $stmt->fetch_assoc();
-                            $data = $dataRow["data"];
+                            $data = $dataRow["value"];
                             break;
 
                         case SensorDataType::FLOAT_TYPE:
-                            $stmt = $mysqli->query("SELECT data FROM "
+                            $stmt = $mysqli->query("SELECT value, unit FROM "
                                 . "sensorsDataFloat WHERE sensorId = "
                                 . intval($row["id"]));
                             $dataRow = $stmt->fetch_assoc();
-                            $data = $dataRow["data"];
+                            $data = $dataRow["value"];
                             break;
 
                         case SensorDataType::NONE_TYPE:
