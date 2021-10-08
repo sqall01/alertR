@@ -148,10 +148,18 @@
             -->
             <general
                 id="0"
-                description="template"
+                description="my gps device"
                 alertDelay="0"
                 triggerAlert="True"
                 triggerAlertNormal="False" />
+
+
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>3</alertLevel>
 
             <!--
                 the GPS configuration of a sensor
@@ -172,54 +180,49 @@
                 device="test_device"
                 username="my_chasr_username@somedomain.com"
                 password="my_chasr_password"
-                secret="my_end_to_end_encryption_secret" />
+                secret="my_end_to_end_encryption_secret">
 
-            <!--
-                The geofence given as polygon. You can configure one or multiple polygons for your
-                geofencing. A great tool to build your geofence on a map and export the coordinates
-                can be found here: https://umap.openstreetmap.fr/en/map/new
-                Note that you do not have to configure any polygon if you do not want to use
-                geofencing for this sensor. But please be aware that the sensor will not generate any
-                alert events then.
-            -->
-            <polygon>
                 <!--
-                    A polygon needs at least 3 positions.
+                    The geofence given as polygon. You can configure one or multiple polygons for your
+                    geofencing. A great tool to build your geofence on a map and export the coordinates
+                    can be found here: https://umap.openstreetmap.fr/en/map/new
+                    Note that you do not have to configure any polygon if you do not want to use
+                    geofencing for this sensor. But please be aware that the sensor will not generate any
+                    alert events then.
                 -->
-                <position
-                   lat="52.519850777692575"
-                   lon="13.383772373199465" />
-                <position
-                   lat="52.52030775996867"
-                   lon="13.396904468536379" />
-                <position
-                   lat="52.51468001850454"
-                   lon="13.397247791290285" />
-            </polygon>
-            <polygon>
-                <!--
-                    A polygon needs at least 3 positions.
-                -->
-                <position
-                   lat="49.519850777692575"
-                   lon="13.383772373199465" />
-                <position
-                   lat="49.52030775996867"
-                   lon="13.396904468536379" />
-                <position
-                   lat="49.51468001850454"
-                   lon="13.397247791290285" />
-                <position
-                   lat="49.51452331933269"
-                   lon="13.384673595428469" />
-            </polygon>
+                <polygon>
+                    <!--
+                        A polygon needs at least 3 positions.
+                    -->
+                    <position
+                       lat="52.519850777692575"
+                       lon="13.383772373199465" />
+                    <position
+                       lat="52.52030775996867"
+                       lon="13.396904468536379" />
+                    <position
+                       lat="52.51468001850454"
+                       lon="13.397247791290285" />
+                </polygon>
+                <polygon>
+                    <!--
+                        A polygon needs at least 3 positions.
+                    -->
+                    <position
+                       lat="49.519850777692575"
+                       lon="13.383772373199465" />
+                    <position
+                       lat="49.52030775996867"
+                       lon="13.396904468536379" />
+                    <position
+                       lat="49.51468001850454"
+                       lon="13.397247791290285" />
+                    <position
+                       lat="49.51452331933269"
+                       lon="13.384673595428469" />
+                </polygon>
 
-            <!--
-                the alert level that is triggered by the sensor
-                (a sensor must have one but can have multiple alert levels)
-            -->
-            <alertLevel>0</alertLevel>
-            <alertLevel>3</alertLevel>
+            </gps>
 
         </sensor>
 
@@ -253,16 +256,62 @@
             -->
             <general
                 id="1"
-                description="another template"
+                description="another gps device"
                 alertDelay="0"
                 triggerAlert="True"
                 triggerAlertNormal="False" />
+
 
             <!--
                 the alert level that is triggered by the sensor
                 (a sensor must have one but can have multiple alert levels)
             -->
             <alertLevel>0</alertLevel>
+
+            <!--
+                the GPS configuration of a sensor
+                interval - interval in seconds in which the GPS position is fetched from the provider.
+                triggerWithin - does the sensor trigger an alert when the position is within
+                    the given geofence or outside of the given geofence.
+                    ("True" or "False")
+                provider - GPS provider (currently only "chasr" supported - https://alertr.de/chasr).
+                device - name of the device stored on the ChasR server.
+                username - username for ChasR.
+                password - password for ChasR.
+                secret - secret used to encrypt the GPS data before they are stored on the ChasR server.
+            -->
+            <gps
+                interval="30"
+                triggerWithin="True"
+                provider="chasr"
+                device="test_device"
+                username="my_chasr_username@somedomain.com"
+                password="my_chasr_password"
+                secret="my_end_to_end_encryption_secret">
+
+                <!--
+                    The geofence given as polygon. You can configure one or multiple polygons for your
+                    geofencing. A great tool to build your geofence on a map and export the coordinates
+                    can be found here: https://umap.openstreetmap.fr/en/map/new
+                    Note that you do not have to configure any polygon if you do not want to use
+                    geofencing for this sensor. But please be aware that the sensor will not generate any
+                    alert events then.
+                -->
+                <polygon>
+                    <!--
+                        A polygon needs at least 3 positions.
+                    -->
+                    <position
+                       lat="42.519850777692575"
+                       lon="23.383772373199465" />
+                    <position
+                       lat="42.52030775996867"
+                       lon="23.396904468536379" />
+                    <position
+                       lat="42.51468001850454"
+                       lon="23.397247791290285" />
+                </polygon>
+            </gps>
 
         </sensor>
 

@@ -194,7 +194,7 @@ if __name__ == '__main__':
             sensor.password = str(item.find("gps").attrib["password"])
             sensor.secret = str(item.find("gps").attrib["secret"])
 
-            for polygon_xml in item.iterfind("polygon"):
+            for polygon_xml in item.find("gps").iterfind("polygon"):
                 polygon = []
                 for position_xml in polygon_xml.iterfind("position"):
                     lat = float(position_xml.attrib["lat"])
