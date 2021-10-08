@@ -147,7 +147,7 @@ class WundergroundDataCollector(DataCollector):
                           + "/" \
                           + city \
                           + "json"
-                    r = requests.get(url)
+                    r = requests.get(url, verify=True, timeout=20.0)
 
                     # Extract data.
                     if r.status_code == 200:

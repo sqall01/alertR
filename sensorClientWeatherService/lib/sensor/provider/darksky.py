@@ -126,7 +126,7 @@ class DarkskyDataCollector(DataCollector):
                 r = None
                 try:
                     url = self.host + "/forecast/" + self.apiKey + "/" + lat + "," + lon + "?units=si"
-                    r = requests.get(url, verify=True)
+                    r = requests.get(url, verify=True, timeout=20.0)
 
                     # Extract data.
                     if r.status_code == 200:
