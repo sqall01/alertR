@@ -1,3 +1,8 @@
+## 0.900-0
+
+* Added GPS data processing support
+* Refactored sensor data processing
+
 ## 0.800-2
 
 * Refactoring sensor processing
@@ -18,7 +23,7 @@
 
 * Refactored client code to get a more resilient connection.
 * Unified client code to make it more maintainable.
-* Guarantee that requests are send to server in timely order.
+* Guarantee that requests are sent to server in timely order.
 * Removed clientTime/serverTime from messages.
 * Introduced msgTime into messages to check expiration.
 * Separated FIFO reading and processing to make blocking of FIFO file shorter.

@@ -29,7 +29,8 @@ class TestSystemDataAlert(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_alert(alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -45,7 +46,8 @@ class TestSystemDataAlert(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_alert(alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("for corresponding alert" in str(e) and "does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of non-existing node expected.")
@@ -73,7 +75,8 @@ class TestSystemDataAlert(TestSystemDataCore):
         is_exception = False
         try:
             system_data.update_alert(alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("not of correct type for corresponding alert" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -113,7 +116,7 @@ class TestSystemDataAlert(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_alerts = []
         for i in range(len(self.alerts)):
-            temp_alert = ManagerObjAlert().deepcopy(self.alerts[i])
+            temp_alert = ManagerObjAlert.deepcopy(self.alerts[i])
             temp_alert.description = "new_alert_" + str(i + 1)
             temp_alert.clientAlertId = i
             # We started the alert levels in our test data with level 1.

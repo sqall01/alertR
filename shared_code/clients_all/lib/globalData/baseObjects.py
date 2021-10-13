@@ -27,14 +27,32 @@ class LocalObject:
         # To lock internal data structure if necessary for multi threaded programs.
         self.internal_data_lock = threading.Lock()
 
+    @staticmethod
+    def deepcopy(obj):
+        """
+        This function copies all attributes of the given object to a new object.
+        :param obj:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
+
     def is_deleted(self):
         return self.internal_state == InternalState.DELETED
 
     def is_stored(self):
         return self.internal_state == InternalState.STORED
 
-    def convert_to_dict(self) -> Dict[str, Any]:
+    def copy_to_dict(self) -> Dict[str, Any]:
+        """
+        Copies this object into a dictionary representation.
+        :return: dictionary representation of a copy of this object
+        """
         raise NotImplementedError("Abstract class.")
 
-    def deepcopy(self, obj):
+    def deepcopy_obj(self, obj):
+        """
+        This function copies all attributes of the given object to this object.
+        :param obj:
+        :return: this object
+        """
         raise NotImplementedError("Abstract class.")

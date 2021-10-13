@@ -86,7 +86,7 @@ def extract_value(sensors, device, sensor, key):
         return None
     if key not in sensors[device]["sensors"][sensor].keys():
         print("Key '%s' for sensor '%s' of device '%s' does not exist."
-            % (key, sensor, device))
+              % (key, sensor, device))
         return None
     return sensors[device]["sensors"][sensor][key]
 
@@ -101,7 +101,7 @@ def create_sensor_alert(value, msg, state):
     optionalData["message"] = msg
     payload["optionalData"] = optionalData
     payload["dataType"] = 2
-    payload["data"] = value
+    payload["data"] = {"value": value, "unit": "°C"}
     payload["hasLatestData"] = True
     payload["changeState"] = True
     result["payload"] = payload
@@ -114,7 +114,7 @@ def create_state_change(value, state):
     payload = dict()
     payload["state"] = state
     payload["dataType"] = 2
-    payload["data"] = value
+    payload["data"] = {"value": value, "unit": "°C"}
     result["payload"] = payload
     return result
 
@@ -134,7 +134,7 @@ def main():
         "https://github.com/sqall01/alertR/wiki"
 
     sensor_group = optparse.OptionGroup(parser,
-        "alertR options.")
+                                        "alertR options.")
     sensor_group.add_option(
         "-d",
         "--device",
@@ -161,22 +161,21 @@ def main():
         dest="max_value",
         action="store",
         type="float",
-        help="The maximum value the sensor is allowed to have. "\
-            "If this value is exceeded a sensor alert "\
-            "is given back (Optional).",
+        help="The maximum value the sensor is allowed to have. "
+             "If this value is exceeded a sensor alert "
+             "is given back (Optional).",
         default=None)
     sensor_group.add_option(
         "--min_value",
         dest="min_value",
         action="store",
         type="float",
-        help="The minimum value the sensor is allowed to have. "\
-            "If the sensor's value is below a sensor alert is "\
-            "given back (Optional).",
+        help="The minimum value the sensor is allowed to have. "
+             "If the sensor's value is below a sensor alert is "
+             "given back (Optional).",
         default=None)
 
-    misc_group = optparse.OptionGroup(parser,
-        "Miscellaneous options.")
+    misc_group = optparse.OptionGroup(parser, "Miscellaneous options.")
     misc_group.add_option(
         "-p",
         "--pretty",
@@ -199,9 +198,9 @@ def main():
     elif options.device and options.sensor and options.key:
         sensors = parse_sensors()
         value = extract_value(sensors,
-            options.device,
-            options.sensor,
-            options.key)
+                              options.device,
+                              options.sensor,
+                              options.key)
         if value is None:
             return
 
@@ -220,8 +219,7 @@ def main():
 
         # Decide what kind of alertR message is given back.
         # If a limits are given, decide if we are outside of these.
-        if (options.max_value is not None
-            or options.min_value is not None):
+        if options.max_value is not None or options.min_value is not None:
 
             # Check if our value is above the limit.
             if options.max_value is not None and value > options.max_value:
@@ -234,8 +232,8 @@ def main():
                 # We are above the limit now => output a sensor alert.
                 else:
                     result = create_sensor_alert(value,
-                        "Value is above allowed limit.",
-                        1)
+                                                 "Value is above allowed limit.",
+                                                 1)
 
             # Check if our value is below the limit.
             elif options.min_value is not None and value < options.min_value:
@@ -248,8 +246,8 @@ def main():
                 # We are below the limit now => output a sensor alert.
                 else:
                     result = create_sensor_alert(value,
-                        "Value is below allowed limit.",
-                        1)
+                                                 "Value is below allowed limit.",
+                                                 1)
 
             # We are inside the given limits => just output the state.
             else:

@@ -10,7 +10,8 @@
 import time
 import urwid
 from typing import List
-from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile, SensorDataType
+from ..globalData import ManagerObjSensor, ManagerObjAlert, ManagerObjAlertLevel, ManagerObjProfile
+from ..globalData.sensorObjects import SensorDataType
 
 
 # this class is an urwid object for an alert level
@@ -311,15 +312,14 @@ class AlertLevelDetailedUrwid:
             temp.append(urwid.Text("Integer"))
         elif sensor.dataType == SensorDataType.FLOAT:
             temp.append(urwid.Text("Floating Point"))
+        elif sensor.dataType == SensorDataType.GPS:
+            temp.append(urwid.Text("GPS"))
         else:
             temp.append(urwid.Text("Unknown"))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Data:"))
-        if sensor.dataType == SensorDataType.NONE:
-            temp.append(urwid.Text("None"))
-        else:
-            temp.append(urwid.Text(str(sensor.data)))
+        temp.append(urwid.Text(str(sensor.data)))
         temp.append(urwid.Divider())
 
         temp.append(urwid.Text("Last Updated (Server Time):"))

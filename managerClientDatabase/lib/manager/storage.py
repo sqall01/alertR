@@ -16,11 +16,14 @@ import MySQLdb
 from typing import List, Optional
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjAlert, ManagerObjManager, \
     ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
-from ..globalData import SensorDataType
+from ..globalData import SensorDataType, SensorDataGPS
 from ..globalData import GlobalData
 
 
 # internal abstract class for new storage backends
+from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat, SensorDataNone
+
+
 class _Storage:
 
     def synchronize_database_to_system_data(self):
@@ -216,15 +219,34 @@ class Mysql(_Storage):
             if sensor_alert.dataType == SensorDataType.INT:
                 self._cursor.execute("INSERT INTO sensorAlertsDataInt ("
                                      + "sensorAlertId, "
-                                     + "data) "
-                                     + "VALUES (%s, %s)",
-                                     (db_sensor_alert_id, sensor_alert.sensorData))
+                                     + "value, "
+                                     + "unit) "
+                                     + "VALUES (%s, %s, %s)",
+                                     (db_sensor_alert_id,
+                                      sensor_alert.data.value,
+                                      sensor_alert.data.unit))
+
             elif sensor_alert.dataType == SensorDataType.FLOAT:
                 self._cursor.execute("INSERT INTO sensorAlertsDataFloat ("
                                      + "sensorAlertId, "
-                                     + "data) "
-                                     + "VALUES (%s, %s)",
-                                     (db_sensor_alert_id, sensor_alert.sensorData))
+                                     + "value, "
+                                     + "unit) "
+                                     + "VALUES (%s, %s, %s)",
+                                     (db_sensor_alert_id,
+                                      sensor_alert.data.value,
+                                      sensor_alert.data.unit))
+
+            elif sensor_alert.dataType == SensorDataType.GPS:
+                self._cursor.execute("INSERT INTO sensorAlertsDataGPS ("
+                                     + "sensorAlertId, "
+                                     + "lat, "
+                                     + "lon, "
+                                     + "utctime) "
+                                     + "VALUES (%s, %s, %s, %s)",
+                                     (db_sensor_alert_id,
+                                      sensor_alert.data.lat,
+                                      sensor_alert.data.lon,
+                                      sensor_alert.data.utctime))
 
         except Exception:
             logging.exception("[%s]: Not able to add Sensor Alert." % self._log_tag)
@@ -243,9 +265,10 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("INSERT INTO sensorsDataInt ("
                                      + "sensorId, "
-                                     + "data) "
-                                     + "VALUES (%s, %s)",
-                                     (sensor.sensorId, sensor.data))
+                                     + "value, "
+                                     + "unit) "
+                                     + "VALUES (%s, %s, %s)",
+                                     (sensor.sensorId, sensor.data.value, sensor.data.unit))
 
             except Exception:
                 logging.exception("[%s]: Not able to add integer data for Sensor %d."
@@ -256,11 +279,26 @@ class Mysql(_Storage):
             try:
                 self._cursor.execute("INSERT INTO sensorsDataFloat ("
                                      + "sensorId, "
-                                     + "data) "
-                                     + "VALUES (%s, %s)",
-                                     (sensor.sensorId, sensor.data))
+                                     + "value, "
+                                     + "unit) "
+                                     + "VALUES (%s, %s, %s)",
+                                     (sensor.sensorId, sensor.data.value, sensor.data.unit))
             except Exception:
                 logging.exception("[%s]: Not able to add float data for Sensor %d."
+                                  % (self._log_tag, sensor.sensorId))
+                raise
+
+        elif sensor.dataType == SensorDataType.GPS:
+            try:
+                self._cursor.execute("INSERT INTO sensorsDataGPS ("
+                                     + "sensorId, "
+                                     + "lat, "
+                                     + "lon, "
+                                     + "utctime) "
+                                     + "VALUES (%s, %s, %s, %s)",
+                                     (sensor.sensorId, sensor.data.lat, sensor.data.lon, sensor.data.utctime))
+            except Exception:
+                logging.exception("[%s]: Not able to add GPS data for Sensor %d."
                                   % (self._log_tag, sensor.sensorId))
                 raise
 
@@ -447,6 +485,10 @@ class Mysql(_Storage):
                                      + "sensorAlertsDataFloat "
                                      + "WHERE sensorAlertId = %s",
                                      (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM "
+                                     + "sensorAlertsDataGPS "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
                 self._cursor.execute("DELETE FROM sensorAlerts "
                                      + "WHERE id = %s",
                                      (id_tuple[0], ))
@@ -492,6 +534,9 @@ class Mysql(_Storage):
                 self._cursor.execute("DELETE FROM sensorAlertsDataFloat "
                                      + "WHERE sensorAlertId = %s",
                                      (id_tuple[0], ))
+                self._cursor.execute("DELETE FROM sensorAlertsDataGPS "
+                                     + "WHERE sensorAlertId = %s",
+                                     (id_tuple[0], ))
                 self._cursor.execute("DELETE FROM sensorAlerts "
                                      + "WHERE id = %s",
                                      (id_tuple[0], ))
@@ -512,6 +557,10 @@ class Mysql(_Storage):
                                  (sensor_id, ))
 
             self._cursor.execute("DELETE FROM sensorsDataFloat "
+                                 + "WHERE sensorId = %s",
+                                 (sensor_id, ))
+
+            self._cursor.execute("DELETE FROM sensorsDataGPS "
                                  + "WHERE sensorId = %s",
                                  (sensor_id, ))
         except Exception:
@@ -553,9 +602,11 @@ class Mysql(_Storage):
         self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsAlertLevels")
         self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
         self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataGPS")
         self._cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
         self._cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
         self._cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
+        self._cursor.execute("DROP TABLE IF EXISTS sensorsDataGPS")
         self._cursor.execute("DROP TABLE IF EXISTS sensors")
         self._cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
         self._cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -606,19 +657,29 @@ class Mysql(_Storage):
 
             # Get data of Sensor Alert.
             if sensor_alert.dataType == SensorDataType.NONE:
-                sensor_alert.sensorData = None
+                sensor_alert.data = SensorDataNone()
 
             elif sensor_alert.dataType == SensorDataType.INT:
-                self._cursor.execute("SELECT data FROM sensorAlertsDataInt WHERE sensorAlertId = %s",
+                self._cursor.execute("SELECT value, unit FROM sensorAlertsDataInt WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
-                sensor_alert.sensorData = result_data[0][0]
+                sensor_alert.data = SensorDataInt(result_data[0][0],
+                                                        result_data[0][1])
 
             elif sensor_alert.dataType == SensorDataType.FLOAT:
-                self._cursor.execute("SELECT data FROM sensorAlertsDataFloat WHERE sensorAlertId = %s",
+                self._cursor.execute("SELECT value, unit FROM sensorAlertsDataFloat WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
-                sensor_alert.sensorData = result_data[0][0]
+                sensor_alert.data = SensorDataFloat(result_data[0][0],
+                                                          result_data[0][1])
+
+            elif sensor_alert.dataType == SensorDataType.GPS:
+                self._cursor.execute("SELECT lat, lon, utctime FROM sensorAlertsDataGPS WHERE sensorAlertId = %s",
+                                     (sensor_alert_id, ))
+                result_data = self._cursor.fetchall()
+                sensor_alert.data = SensorDataGPS(result_data[0][0],
+                                                        result_data[0][1],
+                                                        result_data[0][2])
 
             sensor_alerts.append(sensor_alert)
 
@@ -1279,23 +1340,35 @@ class Mysql(_Storage):
 
             # Get sensor data from database.
             if sensor.dataType == SensorDataType.NONE:
-                sensor.data = None
+                sensor.data = SensorDataNone()
 
             elif sensor.dataType == SensorDataType.INT:
                 self._cursor.execute("SELECT "
-                                     + "data "
+                                     + "value, unit "
                                      + "FROM sensorsDataInt "
                                      + "WHERE sensorId = %s", (sensor.sensorId, ))
                 data_result = self._cursor.fetchall()
-                sensor.data = data_result[0][0]
+                sensor.data = SensorDataInt(data_result[0][0],
+                                            data_result[0][1])
 
             elif sensor.dataType == SensorDataType.FLOAT:
                 self._cursor.execute("SELECT "
-                                     + "data "
+                                     + "value, unit "
                                      + "FROM sensorsDataFloat "
                                      + "WHERE sensorId = %s", (sensor.sensorId, ))
                 data_result = self._cursor.fetchall()
-                sensor.data = data_result[0][0]
+                sensor.data = SensorDataFloat(data_result[0][0],
+                                              data_result[0][1])
+
+            elif sensor.dataType == SensorDataType.GPS:
+                self._cursor.execute("SELECT "
+                                     + "lat, lon, utctime "
+                                     + "FROM sensorsDataGPS "
+                                     + "WHERE sensorId = %s", (sensor.sensorId, ))
+                data_result = self._cursor.fetchall()
+                sensor.data = SensorDataGPS(data_result[0][0],
+                                            data_result[0][1],
+                                            data_result[0][2])
 
             self._system_data.update_sensor(sensor)
 
@@ -1439,7 +1512,8 @@ class Mysql(_Storage):
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE sensorsDataInt ("
                                      + "sensorId INTEGER PRIMARY KEY NOT NULL, "
-                                     + "data INTEGER NOT NULL, "
+                                     + "value INTEGER NOT NULL, "
+                                     + "unit TEXT NOT NULL, "
                                      + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
             # Create sensorsDataFloat table if it does not exist.
@@ -1448,7 +1522,19 @@ class Mysql(_Storage):
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE sensorsDataFloat ("
                                      + "sensorId INTEGER PRIMARY KEY NOT NULL, "
-                                     + "data REAL NOT NULL, "
+                                     + "value REAL NOT NULL, "
+                                     + "unit TEXT NOT NULL, "
+                                     + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+            # Create sensorsDataGPS table if it does not exist.
+            self._cursor.execute("SHOW TABLES LIKE 'sensorsDataGPS'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorsDataGPS ("
+                                     + "sensorId INTEGER PRIMARY KEY NOT NULL, "
+                                     + "lat REAL NOT NULL, "
+                                     + "lon REAL NOT NULL, "
+                                     + "utctime INTEGER NOT NULL, "
                                      + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
             # create sensorAlerts table if it does not exist
@@ -1472,7 +1558,8 @@ class Mysql(_Storage):
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE sensorAlertsDataInt ("
                                      + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
-                                     + "data INTEGER NOT NULL, "
+                                     + "value INTEGER NOT NULL, "
+                                     + "unit TEXT NOT NULL, "
                                      + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
             # Create sensorAlertsDataFloat table if it does not exist.
@@ -1481,7 +1568,19 @@ class Mysql(_Storage):
             if len(result) == 0:
                 self._cursor.execute("CREATE TABLE sensorAlertsDataFloat ("
                                      + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
-                                     + "data REAL NOT NULL, "
+                                     + "value REAL NOT NULL, "
+                                     + "unit TEXT NOT NULL, "
+                                     + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
+
+            # Create sensorAlertsDataGPS table if it does not exist.
+            self._cursor.execute("SHOW TABLES LIKE 'sensorAlertsDataGPS'")
+            result = self._cursor.fetchall()
+            if len(result) == 0:
+                self._cursor.execute("CREATE TABLE sensorAlertsDataGPS ("
+                                     + "sensorAlertId INTEGER PRIMARY KEY NOT NULL, "
+                                     + "lat REAL NOT NULL, "
+                                     + "lon REAL NOT NULL, "
+                                     + "utctime INTEGER NOT NULL, "
                                      + "FOREIGN KEY(sensorAlertId) REFERENCES sensorAlerts(id))")
 
             # create sensorAlertsAlertLevels table if it does not exist

@@ -4,7 +4,7 @@ from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.globalData import SystemData
 from lib.globalData.managerObjects import ManagerObjSensor
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataInt
 from lib.manager.storage import Mysql
 
 
@@ -56,14 +56,14 @@ class TestManagerStorageSensor(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for sensor in system_data.get_sensors_list():
-            temp_sensor = ManagerObjSensor().deepcopy(sensor)
+            temp_sensor = ManagerObjSensor.deepcopy(sensor)
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
             temp_sensor.clientSensorId = ctr
             temp_sensor.alertDelay = ctr + 10
             temp_sensor.lastStateUpdated = ctr + 10
             temp_sensor.state = ctr % 2
             temp_sensor.dataType = SensorDataType.INT
-            temp_sensor.data = ctr
+            temp_sensor.data = SensorDataInt(ctr, "test unit")
             # We started the alert levels in our test data with level 1.
             temp_sensor.alertLevels = [(ctr % len(system_data.get_alert_levels_list())) + 1]
             system_data.update_sensor(temp_sensor)

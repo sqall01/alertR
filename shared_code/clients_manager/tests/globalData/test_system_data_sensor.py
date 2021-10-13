@@ -2,7 +2,7 @@ from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjNode, ManagerObjSensor, ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataNone, SensorDataInt
 
 
 class TestSystemDataSensor(TestSystemDataCore):
@@ -31,10 +31,12 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("not of correct type for corresponding sensor" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -53,10 +55,12 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("for corresponding sensor" in str(e) and "does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of non-existing node expected.")
@@ -85,10 +89,12 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("Alert Level" in str(e) and "does not exist for sensor" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -128,14 +134,14 @@ class TestSystemDataSensor(TestSystemDataCore):
         # Create changes that should be copied to the stored object.
         new_sensors = []
         for i in range(len(self.sensors)):
-            temp_sensor = ManagerObjSensor().deepcopy(self.sensors[i])
+            temp_sensor = ManagerObjSensor.deepcopy(self.sensors[i])
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.clientSensorId = i
             temp_sensor.alertDelay = i + 10
             temp_sensor.lastStateUpdated = i + 10
             temp_sensor.state = i % 2
             temp_sensor.dataType = SensorDataType.INT
-            temp_sensor.data = i
+            temp_sensor.data = SensorDataInt(i, "test unit")
             # We started the alert levels in our test data with level 1.
             temp_sensor.alertLevels = [(i % len(self.alert_levels)) + 1]
             new_sensors.append(temp_sensor)
@@ -157,7 +163,7 @@ class TestSystemDataSensor(TestSystemDataCore):
 
     def test_delete_sensor(self):
         """
-        Test Sensor object deleting.
+        Test dataSensor object deleting.
         """
         system_data = self._create_sensors()
         number_sensor_alerts = 3
@@ -172,7 +178,8 @@ class TestSystemDataSensor(TestSystemDataCore):
                 temp_sensor_alert.optionalData = None
                 temp_sensor_alert.changeState = (j % 2) == 0
                 temp_sensor_alert.hasLatestData = False
-                temp_sensor_alert.dataType = SensorDataType.NONE
+                temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
+                temp_sensor_alert.data = self.sensors[i % len(self.sensors)].data
                 temp_sensor_alert.timeReceived = j
                 system_data.add_sensor_alert(temp_sensor_alert)
 
@@ -229,7 +236,8 @@ class TestSystemDataSensor(TestSystemDataCore):
             sensor_alert.optionalData = None
             sensor_alert.changeState = True
             sensor_alert.hasLatestData = False
-            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.dataType = curr_sensor.dataType
+            sensor_alert.data = curr_sensor.data
             sensor_alert.timeReceived = 0
             system_data.add_sensor_alert(sensor_alert)
 

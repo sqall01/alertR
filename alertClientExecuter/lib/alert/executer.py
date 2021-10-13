@@ -105,7 +105,7 @@ class ExecuterAlert(_Alert):
         temp_execute = list(self.cmd_triggered_list)
         for i in self.cmd_triggered_replace_list:
             if temp_execute[i].upper() == "$SENSORALERT$":
-                temp_execute[i] = json.dumps(sensor_alert.convert_to_dict())
+                temp_execute[i] = json.dumps(sensor_alert.copy_to_dict())
 
             elif temp_execute[i].upper() == "$PROFILECHANGE$":
                 temp_execute[i] = "None"
@@ -127,7 +127,7 @@ class ExecuterAlert(_Alert):
         temp_execute = list(self.cmd_normal_list)
         for i in self.cmd_normal_replace_list:
             if temp_execute[i].upper() == "$SENSORALERT$":
-                temp_execute[i] = json.dumps(sensor_alert.convert_to_dict())
+                temp_execute[i] = json.dumps(sensor_alert.copy_to_dict())
 
             elif temp_execute[i].upper() == "$PROFILECHANGE$":
                 temp_execute[i] = "None"
@@ -156,6 +156,6 @@ class ExecuterAlert(_Alert):
                 temp_execute[i] = "None"
 
             elif temp_execute[i].upper() == "$PROFILECHANGE$":
-                temp_execute[i] = json.dumps(profile.convert_to_dict())
+                temp_execute[i] = json.dumps(profile.copy_to_dict())
 
         self._execute_cmd(temp_execute)

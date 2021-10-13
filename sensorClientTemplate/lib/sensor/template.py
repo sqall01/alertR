@@ -9,9 +9,9 @@
 
 import os
 import time
-import logging
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataNone
 
 
 # Class that controls one template sensor.
@@ -22,6 +22,7 @@ class TemplateSensor(_PollingSensor):
 
         # Set sensor to not hold any data.
         self.sensorDataType = SensorDataType.NONE
+        self.data = SensorDataNone()
 
         # used for logging
         self._log_tag = os.path.basename(__file__)

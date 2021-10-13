@@ -18,10 +18,10 @@ import sqlite3
 from typing import Any, Optional, List, Union, Tuple, Dict
 from .core import _Storage
 from ..globalData import GlobalData
-from ..localObjects import Node, Alert, Manager, Sensor, SensorData, SensorDataType, Option
+from ..localObjects import Node, Alert, Manager, Sensor, SensorData, SensorDataType, Option, SensorDataGPS, \
+    SensorDataNone, SensorDataFloat, SensorDataInt, _SensorData
 
 
-# class for using sqlite as storage backend
 class Sqlite(_Storage):
 
     def __init__(self,
@@ -352,10 +352,10 @@ class Sqlite(_Storage):
 
                 # Extract sensor data.
                 if sensor.dataType == SensorDataType.NONE:
-                    sensor.data = None
+                    sensor.data = SensorDataNone()
 
                 elif sensor.dataType == SensorDataType.INT:
-                    self.cursor.execute("SELECT data FROM sensorsDataInt WHERE sensorId = ?", (sensor.sensorId, ))
+                    self.cursor.execute("SELECT value, unit FROM sensorsDataInt WHERE sensorId = ?", (sensor.sensorId, ))
                     subResult = self.cursor.fetchall()
 
                     if len(subResult) != 1:
@@ -363,10 +363,11 @@ class Sqlite(_Storage):
                                      % (self.log_tag, sensor.sensorId))
                         return None
 
-                    sensor.data = subResult[0][0]
+                    sensor.data = SensorDataInt(subResult[0][0],
+                                                subResult[0][1])
 
                 elif sensor.dataType == SensorDataType.FLOAT:
-                    self.cursor.execute("SELECT data FROM sensorsDataFloat WHERE sensorId = ?", (sensor.sensorId, ))
+                    self.cursor.execute("SELECT value, unit FROM sensorsDataFloat WHERE sensorId = ?", (sensor.sensorId, ))
                     subResult = self.cursor.fetchall()
 
                     if len(subResult) != 1:
@@ -374,7 +375,22 @@ class Sqlite(_Storage):
                                      % (self.log_tag, sensor.sensorId))
                         return None
 
-                    sensor.data = subResult[0][0]
+                    sensor.data = SensorDataFloat(subResult[0][0],
+                                                subResult[0][1])
+
+                elif sensor.dataType == SensorDataType.GPS:
+                    self.cursor.execute("SELECT lat, lon, utctime FROM sensorsDataGPS WHERE sensorId = ?",
+                                        (sensor.sensorId, ))
+                    subResult = self.cursor.fetchall()
+
+                    if len(subResult) != 1:
+                        logger.error("[%s]: Sensor data for sensor with id %d was not found."
+                                     % (self.log_tag, sensor.sensorId))
+                        return None
+
+                    sensor.data = SensorDataGPS(subResult[0][0],
+                                                subResult[0][1],
+                                                subResult[0][2])
 
                 else:
                     logger.error("[%s]: Not able to get sensor with id %d. Data type in database unknown."
@@ -571,13 +587,23 @@ class Sqlite(_Storage):
         # Create sensorsDataInt table.
         self.cursor.execute("CREATE TABLE sensorsDataInt ("
                             + "sensorId INTEGER NOT NULL PRIMARY KEY, "
-                            + "data INTEGER NOT NULL, "
+                            + "value INTEGER NOT NULL, "
+                            + "unit TEXT NOT NULL, "
                             + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
         # Create sensorsDataFloat table.
         self.cursor.execute("CREATE TABLE sensorsDataFloat ("
                             + "sensorId INTEGER NOT NULL PRIMARY KEY, "
-                            + "data REAL NOT NULL, "
+                            + "value REAL NOT NULL, "
+                            + "unit TEXT NOT NULL, "
+                            + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
+
+        # Create sensorsDataGPS table.
+        self.cursor.execute("CREATE TABLE sensorsDataGPS ("
+                            + "sensorId INTEGER NOT NULL PRIMARY KEY, "
+                            + "lat REAL NOT NULL, "
+                            + "lon REAL NOT NULL, "
+                            + "utctime INTEGER NOT NULL, "
                             + "FOREIGN KEY(sensorId) REFERENCES sensors(id))")
 
         # create alerts table
@@ -616,6 +642,7 @@ class Sqlite(_Storage):
         self.cursor.execute("DROP TABLE IF EXISTS sensorsAlertLevels")
         self.cursor.execute("DROP TABLE IF EXISTS sensorsDataInt")
         self.cursor.execute("DROP TABLE IF EXISTS sensorsDataFloat")
+        self.cursor.execute("DROP TABLE IF EXISTS sensorsDataGPS")
         self.cursor.execute("DROP TABLE IF EXISTS sensors")
         self.cursor.execute("DROP TABLE IF EXISTS alertsAlertLevels")
         self.cursor.execute("DROP TABLE IF EXISTS alerts")
@@ -623,9 +650,9 @@ class Sqlite(_Storage):
         self.cursor.execute("DROP TABLE IF EXISTS nodes")
 
         # Remove tables of former versions.
-        self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
         self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataInt")
         self.cursor.execute("DROP TABLE IF EXISTS sensorAlertsDataFloat")
+        self.cursor.execute("DROP TABLE IF EXISTS sensorAlerts")
 
         # commit all changes
         self.conn.commit()
@@ -741,6 +768,7 @@ class Sqlite(_Storage):
             for sensorIdResult in result:
                 self.cursor.execute("DELETE FROM sensorsDataInt WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensorsDataFloat WHERE sensorId = ?", (sensorIdResult[0], ))
+                self.cursor.execute("DELETE FROM sensorsDataGPS WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensors WHERE id = ?", (sensorIdResult[0], ))
 
             # Commit all changes.
@@ -807,7 +835,7 @@ class Sqlite(_Storage):
     def _insertSensorData(self,
                           sensorId: int,
                           dataType: int,
-                          data: Any,
+                          data: _SensorData,
                           logger: logging.Logger = None) -> bool:
         """
         Internal function that inserts sensor data according to its type.
@@ -825,7 +853,9 @@ class Sqlite(_Storage):
 
         elif dataType == SensorDataType.INT:
             try:
-                self.cursor.execute("INSERT INTO sensorsDataInt (sensorId, data) VALUES (?, ?)",  (sensorId, data))
+                # noinspection PyUnresolvedReferences
+                self.cursor.execute("INSERT INTO sensorsDataInt (sensorId, value, unit) VALUES (?, ?, ?)",
+                                    (sensorId, data.value, data.unit))
 
             except Exception as e:
                 logger.exception("[%s]: Not able to add sensor's integer data." % self.log_tag)
@@ -833,10 +863,22 @@ class Sqlite(_Storage):
 
         elif dataType == SensorDataType.FLOAT:
             try:
-                self.cursor.execute("INSERT INTO sensorsDataFloat (sensorId, data) VALUES (?, ?)", (sensorId, data))
+                # noinspection PyUnresolvedReferences
+                self.cursor.execute("INSERT INTO sensorsDataFloat (sensorId, value, unit) VALUES (?, ?, ?)",
+                                    (sensorId, data.value, data.unit))
 
             except Exception as e:
                 logger.exception("[%s]: Not able to add sensor's floating point data." % self.log_tag)
+                return False
+
+        elif dataType == SensorDataType.GPS:
+            try:
+                # noinspection PyUnresolvedReferences
+                self.cursor.execute("INSERT INTO sensorsDataGPS (sensorId, lat, lon, utctime) VALUES (?, ?, ?, ?)",
+                                    (sensorId, data.lat, data.lon, data.utctime))
+
+            except Exception as e:
+                logger.exception("[%s]: Not able to add sensor's GPS data." % self.log_tag)
                 return False
 
         else:
@@ -1179,13 +1221,9 @@ class Sqlite(_Storage):
         # add/update all sensors
         for sensor in sensors:
 
-            # Extract sensor data (field does not exist
-            # if data type is "none").
-            if sensor["dataType"] == SensorDataType.NONE:
-                sensorData = None
-
-            else:
-                sensorData = sensor["data"]
+            # Extract sensor data.
+            sensor_data_class = SensorDataType.get_sensor_data_class(sensor["dataType"])
+            sensor_data = sensor_data_class.copy_from_dict(sensor["data"])
 
             # check if a sensor with the same client id for this node
             # already exists in the database
@@ -1240,9 +1278,8 @@ class Sqlite(_Storage):
                     self._releaseLock(logger)
                     return False
 
-                # Depending on the data type of the sensor add it to the
-                # corresponding table.
-                if not self._insertSensorData(sensorId, sensor["dataType"], sensorData, logger):
+                # Depending on the data type of the sensor add it to the corresponding table.
+                if not self._insertSensorData(sensorId, sensor["dataType"], sensor_data, logger):
                     logger.error("[%s]: Not able to add data for newly added sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
@@ -1321,6 +1358,10 @@ class Sqlite(_Storage):
                                             + "sensorsDataFloat "
                                             + "WHERE sensorId = ?",
                                             (sensorId, ))
+                        self.cursor.execute("DELETE FROM "
+                                            + "sensorsDataGPS "
+                                            + "WHERE sensorId = ?",
+                                            (sensorId, ))
 
                     except Exception as e:
                         logger.exception("[%s]: Not able to remove old data entry of sensor." % self.log_tag)
@@ -1341,7 +1382,7 @@ class Sqlite(_Storage):
 
                     # Depending on the data type of the sensor add it to the
                     # corresponding table.
-                    if not self._insertSensorData(sensorId, sensor["dataType"], sensorData, logger):
+                    if not self._insertSensorData(sensorId, sensor["dataType"], sensor_data, logger):
                         logger.error("[%s]: Not able to add data for changed sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
@@ -1454,6 +1495,11 @@ class Sqlite(_Storage):
                                     + "sensorsDataFloat "
                                     + "WHERE sensorId = ?",
                                     (dbSensor[0], ))
+                self.cursor.execute("DELETE FROM "
+                                    + "sensorsDataGPS "
+                                    + "WHERE sensorId = ?",
+                                    (dbSensor[0], ))
+
                 # Finally, delete sensor.
                 self.cursor.execute("DELETE FROM sensors "
                                     + "WHERE id = ?",
@@ -1928,7 +1974,7 @@ class Sqlite(_Storage):
 
     def updateSensorData(self,
                          nodeId: int,
-                         dataList: List[Tuple[int, Any]],
+                         dataList: List[Tuple[int, _SensorData]],
                          logger: logging.Logger = None) -> bool:
 
         # Set logger instance to use.
@@ -1957,21 +2003,38 @@ class Sqlite(_Storage):
                 dataType = result[0][1]
 
                 if dataType == SensorDataType.NONE:
-                    logger.error("[%s]: Sensor with client id %d holds no data. Ignoring it."
-                                 % (self.log_tag, dataTuple[0]))
+                    pass
 
                 elif dataType == SensorDataType.INT:
+                    # noinspection PyUnresolvedReferences
                     self.cursor.execute("UPDATE sensorsDataInt SET "
-                                        + "data = ? "
+                                        + "value = ?, "
+                                        + "unit = ? "
                                         + "WHERE sensorId = ?",
-                                        (dataTuple[1],
+                                        (dataTuple[1].value,
+                                         dataTuple[1].unit,
                                          sensorId))
 
                 elif dataType == SensorDataType.FLOAT:
+                    # noinspection PyUnresolvedReferences
                     self.cursor.execute("UPDATE sensorsDataFloat SET "
-                                        + "data = ? "
+                                        + "value = ?, "
+                                        + "unit = ? "
                                         + "WHERE sensorId = ?",
-                                        (dataTuple[1],
+                                        (dataTuple[1].value,
+                                         dataTuple[1].unit,
+                                         sensorId))
+
+                elif dataType == SensorDataType.GPS:
+                    # noinspection PyUnresolvedReferences
+                    self.cursor.execute("UPDATE sensorsDataGPS SET "
+                                        + "lat = ?, "
+                                        + "lon = ?, "
+                                        + "utctime = ? "
+                                        + "WHERE sensorId = ?",
+                                        (dataTuple[1].lat,
+                                         dataTuple[1].lon,
+                                         dataTuple[1].utctime,
                                          sensorId))
 
             except Exception as e:
@@ -2630,12 +2693,12 @@ class Sqlite(_Storage):
         data.sensorId = sensorId
         data.dataType = dataType
         if dataType == SensorDataType.NONE:
-            data.data = None
+            data.data = SensorDataNone()
 
         elif dataType == SensorDataType.INT:
             try:
                 # Get data type from database.
-                self.cursor.execute("SELECT data "
+                self.cursor.execute("SELECT value, unit "
                                     + "FROM sensorsDataInt "
                                     + "WHERE sensorId = ?",
                                     (sensorId, ))
@@ -2645,7 +2708,8 @@ class Sqlite(_Storage):
                     self._releaseLock(logger)
                     return None
 
-                data.data = result[0][0]
+                data.data = SensorDataInt(result[0][0],
+                                          result[0][1])
 
             except Exception as e:
                 logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
@@ -2655,7 +2719,7 @@ class Sqlite(_Storage):
         elif dataType == SensorDataType.FLOAT:
             try:
                 # Get data type from database.
-                self.cursor.execute("SELECT data "
+                self.cursor.execute("SELECT value, unit "
                                     + "FROM sensorsDataFloat "
                                     + "WHERE sensorId = ?",
                                     (sensorId, ))
@@ -2665,7 +2729,30 @@ class Sqlite(_Storage):
                     self._releaseLock(logger)
                     return None
 
-                data.data = result[0][0]
+                data.data = SensorDataFloat(result[0][0],
+                                            result[0][1])
+
+            except Exception as e:
+                logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
+                self._releaseLock(logger)
+                return None
+
+        elif dataType == SensorDataType.GPS:
+            try:
+                # Get data type from database.
+                self.cursor.execute("SELECT lat, lon, utctime "
+                                    + "FROM sensorsDataGPS "
+                                    + "WHERE sensorId = ?",
+                                    (sensorId, ))
+                result = self.cursor.fetchall()
+                if len(result) != 1:
+                    logger.error("[%s]: Sensor data was not found." % self.log_tag)
+                    self._releaseLock(logger)
+                    return None
+
+                data.data = SensorDataGPS(result[0][0],
+                                          result[0][1],
+                                          result[0][2])
 
             except Exception as e:
                 logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)

@@ -14,6 +14,7 @@ import threading
 from typing import Optional, List, Union, Dict, Any
 from ..globalData import GlobalData
 from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from ..globalData.sensorObjects import _SensorData, SensorDataNone
 
 
 class _PollingSensor:
@@ -58,7 +59,7 @@ class _PollingSensor:
         self.sensorDataType = None  # type: Optional[int]
 
         # The actual data the sensor holds.
-        self.sensorData = None  # type: Optional[Union[int, float]]
+        self.data = None  # type: Optional[_SensorData]
 
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
@@ -83,7 +84,7 @@ class _PollingSensor:
                           change_state: bool,
                           optional_data: Optional[Dict[str, Any]] = None,
                           has_latest_data: bool = False,
-                          sensor_data: Optional[Union[int, float]] = None):
+                          sensor_data: Optional[_SensorData] = None):
         """
         Internal function that adds a Sensor Alert for processing.
 
@@ -128,11 +129,16 @@ class _PollingSensor:
 
         sensor_alert.hasLatestData = has_latest_data
         sensor_alert.dataType = self.sensorDataType
-        sensor_alert.sensorData = sensor_data
 
         # Throw exception if we did not get Sensor data but we expected it.
         if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
             raise ValueError("Expected data since data type is not NONE")
+
+        if sensor_data is None:
+            sensor_alert.data = SensorDataNone()
+
+        else:
+            sensor_alert.data = sensor_data
 
         # Change sensor state if it is set.
         if change_state:
@@ -140,7 +146,7 @@ class _PollingSensor:
 
         # Update sensor data if it has latest data.
         if has_latest_data:
-            self.sensorData = sensor_alert.sensorData
+            self.data = sensor_alert.data
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
         # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
@@ -158,7 +164,7 @@ class _PollingSensor:
                 # Send state change event with old data from sensor.
                 else:
                     self._add_state_change(state,
-                                           self.sensorData)
+                                           self.data)
 
             # If Sensor Alert event did not change the state of the Sensor, but contained the latest data
             # send a state change event with the old state from the sensor.
@@ -179,7 +185,7 @@ class _PollingSensor:
                 # Send state change event with old data from sensor.
                 else:
                     self._add_state_change(state,
-                                           self.sensorData)
+                                           self.data)
 
             # If Sensor Alert event did not change the state of the Sensor, but contained the latest data
             # send a state change event with the old state from the sensor.
@@ -189,7 +195,7 @@ class _PollingSensor:
 
     def _add_state_change(self,
                           state: int,
-                          sensor_data: Optional[Union[int, float]] = None):
+                          sensor_data: Optional[_SensorData] = None):
         """
         Internal function that adds a state change for processing.
 
@@ -211,14 +217,18 @@ class _PollingSensor:
             state_change.state = 0
 
         state_change.dataType = self.sensorDataType
-        state_change.sensorData = sensor_data
 
         # Throw exception if we did not get Sensor data but we expected it.
         if sensor_data is None and self.sensorDataType != SensorDataType.NONE:
             raise ValueError("Expected data since data type is not NONE")
 
+        if sensor_data is None:
+            state_change.data = SensorDataNone()
+        else:
+            state_change.data = sensor_data
+
         self.state = state
-        self.sensorData = state_change.sensorData
+        self.data = state_change.data
 
         self._add_event(state_change)
 

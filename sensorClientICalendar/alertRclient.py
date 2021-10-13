@@ -136,7 +136,7 @@ if __name__ == '__main__':
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
         # Set connection settings.
-        globalData.persistent = 1 # Consider sensor client always persistent
+        globalData.persistent = 1  # Consider sensor client always persistent
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -233,14 +233,14 @@ if __name__ == '__main__':
     logging.info("[%s] Initializing sensors." % fileName)
     for sensor in globalData.sensors:
         if not sensor.initialize():
-            logging.critical("[%s]: Not able to initialize sensor." % fileName)
+            logging.critical("[%s]: Not able to initialize sensor %d." % (fileName, sensor.id))
             sys.exit(1)
 
     # Starting sensors before starting worker threads.
     logging.info("[%s] Starting sensors." % fileName)
     for sensor in globalData.sensors:
         if not sensor.start():
-            logging.critical("[%s]: Not able to start sensor." % fileName)
+            logging.critical("[%s]: Not able to start sensor %d." % (fileName, sensor.id))
             sys.exit(1)
 
     # generate object for the communication to the server and connect to it

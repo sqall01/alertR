@@ -1,0 +1,320 @@
+<?xml version="1.0"?>
+
+<!--
+    this is a template configuration file
+    please rename this template to "config.xml" if you want to use it
+    for the client
+-->
+<config version="0.900">
+
+    <!--
+        in this section general options are configured
+    -->
+    <general>
+
+        <!--
+            the settings for the logfile
+            file - absolute path to the logfile
+            level - valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        -->
+        <log
+            file="/absolute/path/to/logfile.log"
+            level="INFO" />
+
+        <!--
+            the settings for the server
+            host - location/address of the server
+            port - port that is used by the server
+            caFile - path to the CA file to check the correctness of the
+                used SSL connection
+        -->
+        <server
+            host="server.h4des.org"
+            port="12345"
+            caFile="/absolute/path/to/server_CA.pem" />
+
+        <!--
+            the settings for a client certificate
+            certificateRequired - sets if it is required for the client
+                to authenticate itself via a certificate or not
+                (if you have the alert system reachable from the internet
+                you should use client certificates)
+                ("True" or "False")
+            certFile - path to the certificate file of the client
+                this is used for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+            keyFile - path to the key file of the client that is used
+                for the SSL connection
+                (only processed if "certificateRequired" is set to "True")
+        -->
+        <client
+            certificateRequired="True"
+            certFile="/absolute/path/to/client.crt"
+            keyFile="/absolute/path/to/client.key" />
+
+        <!--
+            user credentials of this client
+            (WARNING: have to be unique for each client or strange
+            behavior will happen)
+            username - the username
+            password - the password (thanks cpt obvious ...)
+        -->
+        <credentials
+            username="user"
+            password="pass" />
+
+    </general>
+
+
+    <!--
+        in this section options for email alerts are configured
+    -->
+    <smtp>
+
+        <!--
+            the general settings of the email notifications
+            activated - are email alerts active? ("True" or "False")
+            fromAddr - email address from which this email should be sent
+            toAddr - email address to which the email should be sent
+        -->
+        <general
+            activated="True"
+            fromAddr="alertSystem@h4des.org"
+            toAddr="youraddress@somehost.de" />
+
+        <!--
+            the server settings of the email notifications
+            host - address of the used smtp server
+                (only 127.0.0.1 supported at the moment)
+            port - port of the used smtp server
+        -->
+        <server
+            host="127.0.0.1"
+            port="25" />
+
+    </smtp>
+
+
+    <!--
+        in this section the options of the update process are configured
+    -->
+    <update>
+
+        <!--
+            the server settings of the update process (only change these
+                settings if you want to use your own repository and not
+                the AlertR master repository on github)
+            url - URL to AlertR repository
+                NOTE: the update process uses HTTPS and does not allow HTTP
+        -->
+        <server
+            url="https://raw.githubusercontent.com/sqall01/alertR/master/" />
+
+    </update>
+
+
+    <!--
+        section of all sensors that are monitored
+    -->
+    <sensors>
+
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
+
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="0"
+                description="my gps device"
+                alertDelay="0"
+                triggerAlert="True"
+                triggerAlertNormal="False" />
+
+
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>3</alertLevel>
+
+            <!--
+                the GPS configuration of a sensor
+                interval - interval in seconds in which the GPS position is fetched from the provider.
+                triggerWithin - does the sensor trigger an alert when the position is within
+                    the given geofence or outside of the given geofence.
+                    ("True" or "False")
+                provider - GPS provider (currently only "chasr" supported - https://alertr.de/chasr).
+                device - name of the device stored on the ChasR server.
+                username - username for ChasR.
+                password - password for ChasR.
+                secret - secret used to encrypt the GPS data before they are stored on the ChasR server.
+            -->
+            <gps
+                interval="30"
+                triggerWithin="True"
+                provider="chasr"
+                device="test_device"
+                username="my_chasr_username@somedomain.com"
+                password="my_chasr_password"
+                secret="my_end_to_end_encryption_secret">
+
+                <!--
+                    The geofence given as polygon. You can configure one or multiple polygons for your
+                    geofencing. A great tool to build your geofence on a map and export the coordinates
+                    can be found here: https://umap.openstreetmap.fr/en/map/new
+                    Note that you do not have to configure any polygon if you do not want to use
+                    geofencing for this sensor. But please be aware that the sensor will not generate any
+                    alert events then.
+                -->
+                <polygon>
+                    <!--
+                        A polygon needs at least 3 positions.
+                    -->
+                    <position
+                       lat="52.519850777692575"
+                       lon="13.383772373199465" />
+                    <position
+                       lat="52.52030775996867"
+                       lon="13.396904468536379" />
+                    <position
+                       lat="52.51468001850454"
+                       lon="13.397247791290285" />
+                </polygon>
+                <polygon>
+                    <!--
+                        A polygon needs at least 3 positions.
+                    -->
+                    <position
+                       lat="49.519850777692575"
+                       lon="13.383772373199465" />
+                    <position
+                       lat="49.52030775996867"
+                       lon="13.396904468536379" />
+                    <position
+                       lat="49.51468001850454"
+                       lon="13.397247791290285" />
+                    <position
+                       lat="49.51452331933269"
+                       lon="13.384673595428469" />
+                </polygon>
+
+            </gps>
+
+        </sensor>
+
+        <!--
+            a single sensor is configured in a "sensor" element
+            if you need additional sensors just add a new one
+        -->
+        <sensor>
+
+            <!--
+                the general configuration of a sensor
+                id - local id of this sensor (has to be unique on this client)
+                description - description of this sensor
+                alertDelay - delay after which (when the alert system is still
+                    active) the alert should trigger (this is processed
+                    by the server and the value here is only used to register
+                    with it at the server)
+                triggerAlert - this flag indicates if this sensor should
+                    trigger an alert for example it could be just used to
+                    signal the state to the server and not trigger
+                    any alert (regardless of if the alert system is
+                    active or not)
+                    ("True" or "False")
+                triggerAlertNormal - this flag indicates if this sensor should
+                    trigger an alert when it goes back to a normal state (and
+                    not only if a triggered state is reached and the flag
+                    "triggerAlert" is set). If this flag is not set, this
+                    client sends only a state change to the server to inform
+                    it about the new state.
+                    ("True" or "False")
+            -->
+            <general
+                id="1"
+                description="another gps device"
+                alertDelay="0"
+                triggerAlert="True"
+                triggerAlertNormal="False" />
+
+
+            <!--
+                the alert level that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels)
+            -->
+            <alertLevel>0</alertLevel>
+
+            <!--
+                the GPS configuration of a sensor
+                interval - interval in seconds in which the GPS position is fetched from the provider.
+                triggerWithin - does the sensor trigger an alert when the position is within
+                    the given geofence or outside of the given geofence.
+                    ("True" or "False")
+                provider - GPS provider (currently only "chasr" supported - https://alertr.de/chasr).
+                device - name of the device stored on the ChasR server.
+                username - username for ChasR.
+                password - password for ChasR.
+                secret - secret used to encrypt the GPS data before they are stored on the ChasR server.
+            -->
+            <gps
+                interval="30"
+                triggerWithin="True"
+                provider="chasr"
+                device="test_device"
+                username="my_chasr_username@somedomain.com"
+                password="my_chasr_password"
+                secret="my_end_to_end_encryption_secret">
+
+                <!--
+                    The geofence given as polygon. You can configure one or multiple polygons for your
+                    geofencing. A great tool to build your geofence on a map and export the coordinates
+                    can be found here: https://umap.openstreetmap.fr/en/map/new
+                    Note that you do not have to configure any polygon if you do not want to use
+                    geofencing for this sensor. But please be aware that the sensor will not generate any
+                    alert events then.
+                -->
+                <polygon>
+                    <!--
+                        A polygon needs at least 3 positions.
+                    -->
+                    <position
+                       lat="42.519850777692575"
+                       lon="23.383772373199465" />
+                    <position
+                       lat="42.52030775996867"
+                       lon="23.396904468536379" />
+                    <position
+                       lat="42.51468001850454"
+                       lon="23.397247791290285" />
+                </polygon>
+            </gps>
+
+        </sensor>
+
+    </sensors>
+
+</config>

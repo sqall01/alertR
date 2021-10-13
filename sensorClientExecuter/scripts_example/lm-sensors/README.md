@@ -77,7 +77,7 @@ The corresponding sensor configuration for the alertR Sensor Client Executer loo
 
 ```xml
 
-[...]
+<!-- [...] -->
 <sensor>
 
 	<general
@@ -108,7 +108,7 @@ The corresponding sensor configuration for the alertR Sensor Client Executer loo
 	</executer>
 
 </sensor>
-[...]
+<!-- [...] -->
 
 ```
 

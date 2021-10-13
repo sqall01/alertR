@@ -14,16 +14,20 @@ import logging
 from typing import Optional
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataNone
 
 
-# Class that controls one ping checked host.
 class PingSensor(_PollingSensor):
+    """
+    Class that controls one ping checked host.
+    """
 
     def __init__(self):
         _PollingSensor.__init__(self)
 
         # Set sensor to not hold any data.
         self.sensorDataType = SensorDataType.NONE
+        self.data = SensorDataNone()
 
         # used for logging
         self._log_tag = os.path.basename(__file__)

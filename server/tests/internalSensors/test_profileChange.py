@@ -2,7 +2,7 @@ import logging
 from typing import Any, List, Tuple, Optional, Dict
 from collections import defaultdict
 from unittest import TestCase
-from lib.localObjects import SensorAlert, Option, Profile
+from lib.localObjects import SensorAlert, Option, Profile, SensorDataInt
 from lib.internalSensors import ProfileChangeSensor
 from lib.globalData import GlobalData
 # noinspection PyProtectedMember
@@ -40,7 +40,7 @@ class MockSensorAlertExecuter:
         sensor_alert.changeState = change_state
         sensor_alert.hasLatestData = has_latest_data
         sensor_alert.dataType = data_type
-        sensor_alert.sensorData = sensor_data
+        sensor_alert.data = sensor_data
 
         sensor_alert.hasOptionalData = False
         sensor_alert.optionalData = optional_data
@@ -99,7 +99,7 @@ class TestProfileChange(TestCase):
 
         sensor = ProfileChangeSensor(global_data)
         sensor.initialize()
-        sensor.data = 1
+        sensor.data = SensorDataInt(1, "")
         sensor.nodeId = 1
         sensor.clientSensorId = 2
         return sensor, global_data
@@ -114,11 +114,11 @@ class TestProfileChange(TestCase):
         option.type = "profile"
         option.value = 2
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor.process_option(option)
 
-        self.assertEqual(sensor.data, 2)
+        self.assertEqual(sensor.data, SensorDataInt(2, ""))
 
         sensor_data = global_data.storage.sensor_data
         self.assertEqual(len(sensor_data.keys()), 1)
@@ -131,7 +131,7 @@ class TestProfileChange(TestCase):
 
         sensor_alert_executer = global_data.sensorAlertExecuter
         self.assertEqual(len(sensor_alert_executer.sensor_alerts), 1)
-        self.assertEqual(sensor_alert_executer.sensor_alerts[0].sensorData, int(option.value))
+        self.assertEqual(sensor_alert_executer.sensor_alerts[0].data, SensorDataInt(option.value, ""))
 
     def test_wrong_option_type(self):
         """
@@ -143,11 +143,11 @@ class TestProfileChange(TestCase):
         option.type = "does_not_exist"
         option.value = 2
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor.process_option(option)
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor_data = global_data.storage.sensor_data
         self.assertEqual(len(sensor_data.keys()), 0)
@@ -165,11 +165,11 @@ class TestProfileChange(TestCase):
         option.type = "profile"
         option.value = 1337
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor.process_option(option)
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor_data = global_data.storage.sensor_data
         self.assertEqual(len(sensor_data.keys()), 0)
@@ -188,11 +188,11 @@ class TestProfileChange(TestCase):
         option.type = "profile"
         option.value = 2
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor.process_option(option)
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor_data = global_data.storage.sensor_data
         self.assertEqual(len(sensor_data.keys()), 0)
@@ -211,11 +211,11 @@ class TestProfileChange(TestCase):
         option.type = "profile"
         option.value = 2
 
-        self.assertEqual(sensor.data, 1)
+        self.assertEqual(sensor.data, SensorDataInt(1, ""))
 
         sensor.process_option(option)
 
-        self.assertEqual(sensor.data, 2)
+        self.assertEqual(sensor.data, SensorDataInt(2, ""))
 
         sensor_data = global_data.storage.sensor_data
         self.assertEqual(len(sensor_data.keys()), 1)

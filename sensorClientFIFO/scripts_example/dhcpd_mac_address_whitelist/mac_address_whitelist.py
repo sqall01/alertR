@@ -71,8 +71,7 @@ if not found:
                 port_list = nm[host][protocol].keys()
                 port_list.sort()
                 for port in port_list:
-                    nmap_result_string += "%d/%s/%s; " % (port, protocol,
-                        nm[host][protocol][port]['state'])
+                    nmap_result_string += "%d/%s/%s; " % (port, protocol, nm[host][protocol][port]['state'])
         if nmap_result_string == "":
             nmap_result_string = "None"
 
@@ -84,24 +83,24 @@ if not found:
         message = "DHCP lease for an unknown client was detected.\n\n"
         message += "IP: %s\n" % client_ip
         message += "MAC: %s\n" % client_mac_address
-        if not nm is None:
+        if nm is not None:
             message += "\nNmap scan results:\n"
             for host in nm.all_hosts():
                 for protocol in nm[host].all_protocols():
                     port_list = nm[host][protocol].keys()
                     port_list.sort()
                     for port in port_list:
-                        message += "%d/%s - %s - %s\n" % (port, protocol,
-                            nm[host][protocol][port]["state"],
-                            nm[host][protocol][port]['name'])
+                        message += "%d/%s - %s - %s\n" % (port,
+                                                          protocol,
+                                                          nm[host][protocol][port]["state"],
+                                                          nm[host][protocol][port]['name'])
 
         email_header = "From: %s\r\nTo: %s\r\nSubject: %s\r\n" \
             % (FROM_ADDR, TO_ADDR, subject)
 
         try:
             smtp_server = smtplib.SMTP("127.0.0.1", 25)
-            smtp_server.sendmail(FROM_ADDR, TO_ADDR, 
-                email_header + message)
+            smtp_server.sendmail(FROM_ADDR, TO_ADDR, email_header + message)
             smtp_server.quit()
         except Exception as e:
             pass
@@ -134,7 +133,6 @@ if not found:
                 % client_ip \
                 + "and MAC: %s." \
                 % client_mac_address
-
 
         payload_dict["optionalData"] = optionalData_dict
         msg_dict["payload"] = payload_dict

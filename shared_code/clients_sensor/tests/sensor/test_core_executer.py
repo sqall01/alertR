@@ -2,7 +2,7 @@ import time
 from unittest import TestCase
 from tests.sensor.core import MockServerCommunication, MockSensors
 from lib.globalData.globalData import GlobalData
-from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
+from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorDataNone
 from lib.sensor.core import SensorExecuter
 
 
@@ -48,6 +48,7 @@ class TestSensorExecuter(TestCase):
                 sensor_alert.changeState = False
                 sensor_alert.hasLatestData = False
                 sensor_alert.dataType = SensorDataType.NONE
+                sensor_alert.data = SensorDataNone()
                 sensor.add_sensor_alert(sensor_alert)
                 gt_events_list.append(sensor_alert)
                 num_sensor_alerts += 1
@@ -57,6 +58,7 @@ class TestSensorExecuter(TestCase):
                 state_change.clientSensorId = i
                 state_change.state = 1
                 state_change.dataType = SensorDataType.NONE
+                state_change.data = SensorDataNone()
                 sensor.add_state_change(state_change)
                 gt_events_list.append(state_change)
                 num_state_changes += 1
@@ -101,6 +103,7 @@ class TestSensorExecuter(TestCase):
                 sensor_alert.changeState = False
                 sensor_alert.hasLatestData = False
                 sensor_alert.dataType = SensorDataType.NONE
+                sensor_alert.data = SensorDataNone()
                 sensor.add_sensor_alert(sensor_alert)
                 gt_events_list.append(sensor_alert)
                 num_sensor_alerts += 1
@@ -110,6 +113,7 @@ class TestSensorExecuter(TestCase):
                 state_change.clientSensorId = i
                 state_change.state = 1
                 state_change.dataType = SensorDataType.NONE
+                state_change.data = SensorDataNone()
                 sensor.add_state_change(state_change)
                 gt_events_list.append(state_change)
                 num_state_changes += 1

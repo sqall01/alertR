@@ -8,11 +8,11 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
     ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption, ManagerObjProfile
 from .baseObjects import InternalState
-from .sensorObjects import SensorDataType
+from .sensorObjects import _SensorData
 
 
 class SystemData:
@@ -148,14 +148,14 @@ class SystemData:
             self._nodes[node_id].internal_state = InternalState.DELETED
             del self._nodes[node_id]
 
-    def _delete_profile_by_id(self, id: int):
-        if id in self._profiles.keys():
+    def _delete_profile_by_id(self, profile_id: int):
+        if profile_id in self._profiles.keys():
 
             # Remove profile from Alert Level objects.
             to_delete = set()
             for _, alert_level in self._alert_levels.items():
-                if id in alert_level.profiles:
-                    alert_level.profiles.remove(id)
+                if profile_id in alert_level.profiles:
+                    alert_level.profiles.remove(profile_id)
 
                 # Delete Alert Level if it does not have a profile anymore.
                 if not alert_level.profiles:
@@ -164,8 +164,8 @@ class SystemData:
             for level in to_delete:
                 self._delete_alert_level_by_level(level)
 
-            self._profiles[id].internal_state = InternalState.DELETED
-            del self._profiles[id]
+            self._profiles[profile_id].internal_state = InternalState.DELETED
+            del self._profiles[profile_id]
 
     def _delete_option_by_type(self, option_type: str):
         if option_type in self._options.keys():
@@ -262,7 +262,7 @@ class SystemData:
                 sensor.state = sensor_alert.state
 
             if sensor_alert.hasLatestData:
-                sensor.data = sensor_alert.sensorData
+                sensor.data.deepcopy_obj(sensor_alert.data)
 
         with self._data_lock:
             sensor_alert.internal_state = InternalState.STORED
@@ -620,8 +620,8 @@ class SystemData:
     def sensor_state_change(self,
                             sensor_id: int,
                             state: int,
-                            data_type: SensorDataType,
-                            sensor_data: Any):
+                            data_type: int,
+                            sensor_data: _SensorData):
         """
         Updates sensor state given by id.
 
@@ -636,7 +636,7 @@ class SystemData:
 
         with self._data_lock:
             sensor.state = state
-            sensor.data = sensor_data
+            sensor.data.deepcopy_obj(sensor_data)
 
     def update_alert(self, alert: ManagerObjAlert):
         """
@@ -656,7 +656,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new alert object
                 # to make sure others can work on the same object.
-                self._alerts[alert.alertId].deepcopy(alert)
+                self._alerts[alert.alertId].deepcopy_obj(alert)
 
     def update_alert_level(self, alert_level: ManagerObjAlertLevel):
         """
@@ -676,7 +676,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new alert level object
                 # to make sure others can work on the same object.
-                self._alert_levels[alert_level.level].deepcopy(alert_level)
+                self._alert_levels[alert_level.level].deepcopy_obj(alert_level)
 
     def update_manager(self, manager: ManagerObjManager):
         """
@@ -696,7 +696,7 @@ class SystemData:
             else:
                 # Do update of data instead of just using new manager object
                 # to make sure others can work on the same object.
-                self._managers[manager.managerId].deepcopy(manager)
+                self._managers[manager.managerId].deepcopy_obj(manager)
 
     def update_node(self, node: ManagerObjNode):
         """
@@ -720,7 +720,7 @@ class SystemData:
 
                 # Do update of data instead of just using new node object
                 # to make sure others can work on the same object.
-                self._nodes[node.nodeId].deepcopy(node)
+                self._nodes[node.nodeId].deepcopy_obj(node)
 
     def update_option(self, option: ManagerObjOption):
         """
@@ -736,7 +736,7 @@ class SystemData:
 
             # Update option object data.
             else:
-                self._options[option.type].deepcopy(option)
+                self._options[option.type].deepcopy_obj(option)
 
     def update_profile(self, profile: ManagerObjProfile):
         """
@@ -752,7 +752,7 @@ class SystemData:
 
             # Update option object data.
             else:
-                self._profiles[profile.profileId].deepcopy(profile)
+                self._profiles[profile.profileId].deepcopy_obj(profile)
 
     def update_sensor(self, sensor: ManagerObjSensor):
         """
@@ -772,4 +772,4 @@ class SystemData:
             else:
                 # Do update of data instead of just using new sensor object
                 # to make sure others can work on the same object.
-                self._sensors[sensor.sensorId].deepcopy(sensor)
+                self._sensors[sensor.sensorId].deepcopy_obj(sensor)

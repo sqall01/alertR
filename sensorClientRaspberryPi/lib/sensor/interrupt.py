@@ -13,6 +13,7 @@ import logging
 import time
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataNone
 
 
 class RaspberryPiGPIOInterruptSensor(_PollingSensor):
@@ -26,6 +27,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
         # Set sensor to not hold any data.
         self.sensorDataType = SensorDataType.NONE
+        self.data = SensorDataNone()
 
         # the gpio pin number (NOTE: python uses the actual
         # pin number and not the gpio number)

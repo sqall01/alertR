@@ -17,7 +17,7 @@ import logging
 from ..users import CSVBackend
 from ..storage import Sqlite
 from ..globalData import GlobalData
-from ..localObjects import AlertLevel, Profile
+from ..localObjects import AlertLevel, Profile, SensorDataInt
 from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChangeSensor, VersionInformerSensor, \
     AlertLevelInstrumentationErrorSensor
 
@@ -506,6 +506,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
+            temp["data"] = sensor.data.copy_to_dict()
             dbSensors.append(temp)
 
             # Add tuple to db state list to set initial states of the
@@ -554,6 +555,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
+            temp["data"] = sensor.data.copy_to_dict()
             dbSensors.append(temp)
 
             # Add tuple to db state list to set initial states of the
@@ -601,7 +603,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
                 global_data.logger.error("[%s]: Unable to get 'profile' option from database." % log_tag)
                 return False
 
-            sensor.data = option.value
+            sensor.data = SensorDataInt(option.value, "")
 
             # Create sensor dictionary element for database interaction.
             temp = dict()
@@ -611,7 +613,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
-            temp["data"] = sensor.data
+            temp["data"] = sensor.data.copy_to_dict()
             dbSensors.append(temp)
 
             # Add tuple to db state list to set initial states of the
@@ -662,6 +664,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
+            temp["data"] = sensor.data.copy_to_dict()
             dbSensors.append(temp)
 
             # Add tuple to db state list to set initial states of the
@@ -708,6 +711,7 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             temp["description"] = sensor.description
             temp["state"] = 0
             temp["dataType"] = sensor.dataType
+            temp["data"] = sensor.data.copy_to_dict()
             dbSensors.append(temp)
 
             # Add tuple to db state list to set initial states of the

@@ -20,7 +20,7 @@ from lib.config.parser import configure_alert_levels, configure_profiles
 try:
     import networkx as nx
     from networkx.drawing.nx_pydot import to_pydot
-except Exception:
+except ImportError as e:
     print("Requires pip packages 'networkx' and 'pydot'. "
           + "Please install them by executing 'pip3 install networkx pydot' "
           + "as well as the system package for 'graphviz'.")
@@ -88,6 +88,8 @@ class GraphSensor:
             data_type = "Integer"
         elif self.sensor.dataType == SensorDataType.FLOAT:
             data_type = "Float"
+        elif self.sensor.dataType == SensorDataType.GPS:
+            data_type = "GPS"
         # noinspection PyPep8
         temp = "\"Sensor: " + self.sensor.description + "\l" \
                + "Sensor Id: " + str(self.sensor.sensorId) + "\l" \

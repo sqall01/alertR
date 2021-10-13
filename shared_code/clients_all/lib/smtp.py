@@ -61,16 +61,13 @@ class SMTPAlert:
             % (self.fromAddr, self.toAddr, subject)
 
         # sending eMail alert to configured smtp server
-        logging.info("[%s]: Sending eMail alert to %s." 
-            % (self.fileName, self.toAddr))
+        logging.info("[%s]: Sending eMail alert to %s." % (self.fileName, self.toAddr))
         try:
             smtpServer = smtplib.SMTP(self.host, self.port)
-            smtpServer.sendmail(self.fromAddr, self.toAddr, 
-                emailHeader + message)
+            smtpServer.sendmail(self.fromAddr, self.toAddr, emailHeader + message)
             smtpServer.quit()
         except Exception as e:
-            logging.exception("[%s]: Unable to send eMail alert. " 
-                % self.fileName)
+            logging.exception("[%s]: Unable to send eMail alert. " % self.fileName)
             return False
 
         # set flag that a communication alert was sent before exiting
@@ -96,16 +93,13 @@ class SMTPAlert:
             % (self.fromAddr, self.toAddr, subject)
 
         # sending eMail alert to configured smtp server
-        logging.info("[%s]: Sending eMail alert to %s." 
-            % (self.fileName, self.toAddr))
+        logging.info("[%s]: Sending eMail alert to %s." % (self.fileName, self.toAddr))
         try:
             smtpServer = smtplib.SMTP(self.host, self.port)
-            smtpServer.sendmail(self.fromAddr, self.toAddr, 
-                emailHeader + message)
+            smtpServer.sendmail(self.fromAddr, self.toAddr, emailHeader + message)
             smtpServer.quit()
         except Exception as e:
-            logging.exception("[%s]: Unable to send eMail alert. " 
-                % self.fileName)
+            logging.exception("[%s]: Unable to send eMail alert. " % self.fileName)
             return False
 
         # clear flag that a communication alert was sent before exiting

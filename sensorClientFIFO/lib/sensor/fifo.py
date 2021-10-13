@@ -16,6 +16,7 @@ import threading
 from typing import Optional
 from .core import _PollingSensor
 from ..globalData import SensorDataType
+from ..globalData.sensorObjects import SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS
 
 
 class FIFOSensor(_PollingSensor):
@@ -167,15 +168,17 @@ class FIFOSensor(_PollingSensor):
                             continue
 
                         # Get new data.
-                        temp_input_data = None
-                        if self.sensorDataType == SensorDataType.INT:
-                            temp_input_data = int(message["payload"]["data"])
-                        elif self.sensorDataType == SensorDataType.FLOAT:
-                            temp_input_data = float(message["payload"]["data"])
+                        sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
+                        if not sensor_data_class.verify_dict(message["payload"]["data"]):
+                            logging.error("[%s] Received data from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
+                                          + "invalid. Ignoring message.")
+                            continue
+                        temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
                         # Create state change object that is send to the server if the data could be changed
                         # or the state has changed.
-                        if self.sensorData != temp_input_data or self.state != temp_input_state:
+                        if self.data != temp_input_data or self.state != temp_input_state:
                             self._add_state_change(temp_input_state,
                                                    temp_input_data)
 
@@ -207,11 +210,13 @@ class FIFOSensor(_PollingSensor):
                                           + "invalid. Ignoring message.")
                             continue
 
-                        temp_input_data = None
-                        if self.sensorDataType == SensorDataType.INT:
-                            temp_input_data = int(message["payload"]["data"])
-                        elif self.sensorDataType == SensorDataType.FLOAT:
-                            temp_input_data = float(message["payload"]["data"])
+                        sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
+                        if not sensor_data_class.verify_dict(message["payload"]["data"]):
+                            logging.error("[%s] Received data from FIFO file of sensor with id '%d' "
+                                          % (self._log_tag, self.id)
+                                          + "invalid. Ignoring message.")
+                            continue
+                        temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
                         # Check if hasLatestData field is valid.
                         temp_has_latest_data = message["payload"]["hasLatestData"]
@@ -316,10 +321,20 @@ class FIFOSensor(_PollingSensor):
     def initialize(self) -> bool:
         self.state = 1 - self.triggerState
 
+        if self.sensorDataType == SensorDataType.NONE:
+            self.data = SensorDataNone()
+
         if self.sensorDataType == SensorDataType.INT:
-            self.sensorData = 0
+            self.data = SensorDataInt(0,
+                                            "")
 
         elif self.sensorDataType == SensorDataType.FLOAT:
-            self.sensorData = 0.0
+            self.data = SensorDataFloat(0.0,
+                                              "")
+
+        elif self.sensorDataType == SensorDataType.GPS:
+            self.data = SensorDataGPS(0.0,
+                                            0.0,
+                                            0)
 
         return True

@@ -5,7 +5,6 @@ from tests.manager.core import TestManagerStorageCore
 from tests.globalData.util import compare_sensor_alerts_content
 from lib.globalData.globalData import SystemData
 from lib.globalData.managerObjects import ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType
 from lib.manager.storage import Mysql
 
 
@@ -50,7 +49,8 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
             sensor_alert.hasOptionalData = False
             sensor_alert.changeState = False
             sensor_alert.hasLatestData = False
-            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.dataType = sensor_list[i].dataType
+            sensor_alert.data = sensor_list[i].data
 
             system_data.add_sensor_alert(sensor_alert)
 
@@ -94,7 +94,8 @@ class TestManagerStorageSensorAlert(TestManagerStorageCore):
             sensor_alert.hasOptionalData = False
             sensor_alert.changeState = False
             sensor_alert.hasLatestData = False
-            sensor_alert.dataType = SensorDataType.NONE
+            sensor_alert.dataType = sensor_list[i].dataType
+            sensor_alert.data = sensor_list[i].data
 
             system_data.add_sensor_alert(sensor_alert)
 

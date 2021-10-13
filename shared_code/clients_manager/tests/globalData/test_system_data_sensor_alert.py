@@ -1,7 +1,7 @@
 from tests.globalData.core import TestSystemDataCore
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType
+from lib.globalData.sensorObjects import SensorDataType, SensorDataInt, SensorDataNone
 from lib.globalData.baseObjects import InternalState
 
 
@@ -18,12 +18,14 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.data = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
         try:
             system_data.add_sensor_alert(sensor_alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("Alert Level" in str(e) and "corresponding to sensor alert does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -39,12 +41,14 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.data = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
         try:
             system_data.add_sensor_alert(sensor_alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("Sensor" in str(e) and "corresponding to sensor alert does not exist" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -63,12 +67,14 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.NONE
+        sensor_alert.data = SensorDataNone()
         sensor_alert.timeReceived = 0
 
         is_exception = False
         try:
             system_data.add_sensor_alert(sensor_alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("does not handle Alert Level" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -84,13 +90,14 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
         sensor_alert.changeState = True
         sensor_alert.hasLatestData = False
         sensor_alert.dataType = SensorDataType.INT
-        sensor_alert.sensorData = 0
+        sensor_alert.data = SensorDataInt(0, "test unit")
         sensor_alert.timeReceived = 0
 
         is_exception = False
         try:
             system_data.add_sensor_alert(sensor_alert)
-        except ValueError:
+        except ValueError as e:
+            self.assertTrue("corresponding to sensor alert has different data type" in str(e))
             is_exception = True
         if not is_exception:
             self.fail("Exception because of wrong node type expected.")
@@ -112,7 +119,8 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
             temp_sensor_alert.optionalData = None
             temp_sensor_alert.changeState = (i % 2) == 0
             temp_sensor_alert.hasLatestData = False
-            temp_sensor_alert.dataType = SensorDataType.NONE
+            temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
+            temp_sensor_alert.data = self.sensors[i % len(self.sensors)].data
             temp_sensor_alert.timeReceived = i + 5
             new_sensor_alerts.append(temp_sensor_alert)
 
@@ -153,7 +161,8 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
             temp_sensor_alert.optionalData = None
             temp_sensor_alert.changeState = (i % 2) == 0
             temp_sensor_alert.hasLatestData = False
-            temp_sensor_alert.dataType = SensorDataType.NONE
+            temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
+            temp_sensor_alert.data = self.sensors[i % len(self.sensors)].data
             temp_sensor_alert.timeReceived = i
             new_sensor_alerts.append(temp_sensor_alert)
             system_data.add_sensor_alert(temp_sensor_alert)

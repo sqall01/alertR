@@ -55,7 +55,7 @@ class TestManagerStorageAlert(TestManagerStorageCore):
         # Update local objects.
         ctr = 0
         for alert in system_data.get_alerts_list():
-            temp_alert = ManagerObjAlert().deepcopy(alert)
+            temp_alert = ManagerObjAlert.deepcopy(alert)
             temp_alert.description = "new_alert_" + str(ctr + 1)
             temp_alert.clientAlertId = ctr
             # We started the alert levels in our test data with level 1.

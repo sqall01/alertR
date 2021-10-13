@@ -7,25 +7,30 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
 import os
+from typing import Optional
 from .number import _NumberSensor
 from ..globalData import SensorDataType
-from typing import Union, Optional
+from ..globalData.sensorObjects import SensorDataFloat
 
 
-# Class that controls one forecast temperature sensor.
 class ForecastTempPollingSensor(_NumberSensor):
+    """
+    Class that controls one forecast temperature sensor.
+    """
 
     def __init__(self):
         _NumberSensor.__init__(self)
+
+        self._unit = "°C"
 
         # Used for logging.
         self._log_tag = os.path.basename(__file__)
 
         # Set sensor to hold float data.
         self.sensorDataType = SensorDataType.FLOAT
-
-        self._forceSendState = False
+        self.data = SensorDataFloat(-1000.0, self._unit)
 
         # Instance of data collector thread.
         self.dataCollector = None
@@ -44,12 +49,29 @@ class ForecastTempPollingSensor(_NumberSensor):
         # This sensor type string is used for log messages.
         self._log_desc = "Temperature forecast"
 
-    def _get_data(self) -> Optional[Union[float, int]]:
-        if self.kind == "HIGH":
-            return self.dataCollector.getForecastTemperatureHigh(self.country, self.city, self.lon, self.lat, self.day)
+    def _get_data(self) -> Optional[SensorDataFloat]:
+        data = None
+        try:
+            if self.kind == "HIGH":
+                data = SensorDataFloat(self.dataCollector.getForecastTemperatureHigh(self.country,
+                                                                                     self.city,
+                                                                                     self.lon,
+                                                                                     self.lat,
+                                                                                     self.day),
+                                       self._unit)
 
-        else:
-            return self.dataCollector.getForecastTemperatureLow(self.country, self.city, self.lon, self.lat, self.day)
+            else:
+                data = SensorDataFloat(self.dataCollector.getForecastTemperatureLow(self.country,
+                                                                                    self.city,
+                                                                                    self.lon,
+                                                                                    self.lat,
+                                                                                    self.day),
+                                       self._unit)
+
+        except Exception as e:
+            logging.exception("[%s] Unable to temperature forecast data from provider." % self._log_tag)
+
+        return data
 
     def initialize(self) -> bool:
         self.state = 1 - self.triggerState

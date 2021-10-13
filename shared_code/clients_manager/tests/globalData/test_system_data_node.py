@@ -21,7 +21,7 @@ class TestSystemDataNode(TestSystemDataCore):
                 self.fail("Node does not exist.")
 
             # Update node type.
-            new_node = ManagerObjNode().deepcopy(target_node)
+            new_node = ManagerObjNode.deepcopy(target_node)
             new_node.nodeType = new_node_type
             system_data.update_node(new_node)
 
@@ -52,7 +52,7 @@ class TestSystemDataNode(TestSystemDataCore):
                 self.fail("Node does not exist.")
 
             # Update node type.
-            new_node = ManagerObjNode().deepcopy(target_node)
+            new_node = ManagerObjNode.deepcopy(target_node)
             new_node.nodeType = new_node_type
             system_data.update_node(new_node)
 
@@ -84,7 +84,7 @@ class TestSystemDataNode(TestSystemDataCore):
                 self.fail("Node does not exist.")
 
             # Update node type.
-            new_node = ManagerObjNode().deepcopy(target_node)
+            new_node = ManagerObjNode.deepcopy(target_node)
             new_node.nodeType = new_node_type
             system_data.update_node(new_node)
 
