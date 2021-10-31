@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the server
 -->
-<config version="0.900">
+<config version="0.901">
 
     <!--
         in this section general options are configured
@@ -22,32 +22,11 @@
             level="INFO" />
 
         <!--
-            the settings for the server
-            certFile - path to the certificate file of the server
-                that is used for the SSL connection
-            keyFile - path to the key file of the server that is used for
-                the SSL connection
+            The settings for the server
             port - port that is used by the server
         -->
         <server
-            certFile="/absolute/path/to/server.crt"
-            keyFile="/absolute/path/to/server.key"
             port="12345" />
-
-        <!--
-            the settings for a client certificate
-            useClientCertificates - sets if it is required for all clients to
-                authenticate themselves via a certificate or not (if you have
-                the alert system reachable from the internet you should use
-                client certificates)
-                ("True" or "False")
-            clientCAFile - path to the CA file that is used to check the
-                client certificates
-                (only processed if "useClientCertificates" is set to "True")
-        -->
-        <client
-            useClientCertificates="True"
-            clientCAFile="/absolute/path/to/some_CA.pem" />
 
         <!--
             The settings used for the TLS/SSL connection. In order to be
@@ -56,6 +35,8 @@
             is to set everything to "True". However, since TLSv1.3 is not
             widely adopted yet (OpenSSL version 1.1.1), you should
             also allow TLSv1.2.
+            enabled - Sets if TLS/SSL is used for connections.
+                Only disable it for testing purposes and NEVER in a production environment.
             noSSLv2 - Disables the use of SSLv2.
             noSSLv3 - Disables the use of SSLv3.
             noTLSv1_0 - Disables the use of TLSv1.0.
@@ -65,11 +46,37 @@
                 (Needs at least OpenSSL version 1.0.1).
         -->
         <ssl
+            enabled="True"
             noSSLv2="True"
             noSSLv3="True"
             noTLSv1_0="True"
             noTLSv1_1="True"
-            noTLSv1_2="False" />
+            noTLSv1_2="False">
+
+            <!--
+                The settings for server certificates. Only used if TLS/SSL is enabled.
+                certFile - Path to the certificate file of the server that is used for the SSL connection.
+                keyFile - Path to the key file of the server that is used for the SSL connection.
+            -->
+            <server
+                certFile="/absolute/path/to/server.crt"
+                keyFile="/absolute/path/to/server.key" />
+
+            <!--
+                The settings for a client certificate. Only used if TLS/SSL is enabled.
+                useClientCertificates - sets if it is required for all clients to
+                    authenticate themselves via a certificate or not (if you have
+                    the alert system reachable from the internet you should use
+                    client certificates)
+                    ("True" or "False")
+                clientCAFile - path to the CA file that is used to check the
+                    client certificates
+                    (only processed if "useClientCertificates" is set to "True")
+            -->
+            <client
+                useClientCertificates="True"
+                clientCAFile="/absolute/path/to/some_CA.pem" />
+        </ssl>
 
         <!--
             settings for the alertR survey

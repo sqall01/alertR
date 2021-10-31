@@ -28,11 +28,11 @@ BUFSIZE = 4096
 class ClientCommunication:
 
     def __init__(self,
-                 sslSocket: ssl.SSLSocket,
+                 sock: socket.socket,
                  clientAddress: str,
                  clientPort: int,
                  globalData: GlobalData):
-        self.sslSocket = sslSocket
+        self.socket = sock
         self.clientAddress = clientAddress
         self.clientPort = clientPort
 
@@ -130,7 +130,7 @@ class ClientCommunication:
 
         :param data:
         """
-        self.sslSocket.send(data.encode("ascii"))
+        self.socket.send(data.encode("ascii"))
 
     def _recv(self, bufsize: int = BUFSIZE) -> str:
         """
@@ -138,7 +138,7 @@ class ClientCommunication:
 
         :return:
         """
-        return self.sslSocket.recv(bufsize).decode("ascii")
+        return self.socket.recv(bufsize).decode("ascii")
 
     def _checkMsgAlertDelay(self,
                             alertDelay: int,
@@ -3204,7 +3204,7 @@ class ClientCommunication:
         self._acquireLock()
 
         # set timeout of the socket to configured seconds
-        self.sslSocket.settimeout(self.serverReceiveTimeout)
+        self.socket.settimeout(self.serverReceiveTimeout)
 
         # Initialize communication with the client
         # (Authentication, Version verification, Registration).
@@ -3307,7 +3307,7 @@ class ClientCommunication:
             messageSize = 0
             try:
                 # set timeout of the socket to 0.5 seconds
-                self.sslSocket.settimeout(0.5)
+                self.socket.settimeout(0.5)
 
                 data = self._recv()
                 if not data:
@@ -3319,7 +3319,7 @@ class ClientCommunication:
                     return
 
                 # change timeout of the socket back to configured seconds
-                self.sslSocket.settimeout(self.serverReceiveTimeout)
+                self.socket.settimeout(self.serverReceiveTimeout)
 
                 data = data.strip()
                 message = json.loads(data)
@@ -3390,7 +3390,7 @@ class ClientCommunication:
             except socket.timeout as e:
                 # change timeout of the socket back to configured seconds
                 # before releasing the lock
-                self.sslSocket.settimeout(self.serverReceiveTimeout)
+                self.socket.settimeout(self.serverReceiveTimeout)
 
                 # release lock and acquire to let other threads send
                 # data to the client
@@ -3596,9 +3596,7 @@ class ServerSession(socketserver.BaseRequestHandler):
         # file nme of this file (used for logging)
         self.fileName = os.path.basename(__file__)
 
-        # ssl socket
-        self.sslSocket = None
-        self.sslContext = None
+        self.socket = request
 
         # instance of the client communication object
         self.clientComm = None
@@ -3623,6 +3621,7 @@ class ServerSession(socketserver.BaseRequestHandler):
         self.sslProtocol = self.globalData.sslProtocol
         self.sslCiphers = self.globalData.sslCiphers
         self.sslOptions = self.globalData.sslOptions
+        self.sslEnabled = self.globalData.sslEnabled
 
         # add own server session to the global list of server sessions
         self.serverSessions = self.globalData.serverSessions
@@ -3641,51 +3640,50 @@ class ServerSession(socketserver.BaseRequestHandler):
 
         self.logger.info("[%s]: Client connected (%s:%d)." % (self.fileName, self.clientAddress, self.clientPort))
 
-        # Set SSL context.
-        self.sslContext = ssl.SSLContext(self.sslProtocol)
-        self.sslContext.load_cert_chain(certfile=self.serverCertFile,
+        # Set TLS context.
+        if self.sslEnabled:
+            ssl_context = ssl.SSLContext(self.sslProtocol)
+            ssl_context.load_cert_chain(certfile=self.serverCertFile,
                                         keyfile=self.serverKeyFile)
-        self.sslContext.set_ciphers(self.sslCiphers)
-        self.sslContext.options = self.sslOptions
+            ssl_context.set_ciphers(self.sslCiphers)
+            ssl_context.options = self.sslOptions
 
-        # If activated, require a client certificate.
-        if self.useClientCertificates:
-            self.sslContext.verify_mode = ssl.CERT_REQUIRED
-            self.sslContext.load_verify_locations(cafile=self.clientCAFile)
+            # If activated, require a client certificate.
+            if self.useClientCertificates:
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+                ssl_context.load_verify_locations(cafile=self.clientCAFile)
 
-        # try to initiate ssl with client
-        try:
-            self.sslSocket = self.sslContext.wrap_socket(self.request,
-                                                         server_side=True)
-
-        except Exception as e:
-            self.logger.exception("[%s]: Unable to initialize SSL connection (%s:%d)."
-                                  % (self.fileName, self.clientAddress, self.clientPort))
-
-            # remove own server session from the global list of server sessions
-            # before closing server session
+            # try to initiate ssl with client
             try:
-                self.serverSessions.remove(self)
+                self.socket = ssl_context.wrap_socket(self.request,
+                                                      server_side=True)
 
             except Exception as e:
-                pass
+                self.logger.exception("[%s]: Unable to initialize SSL connection (%s:%d)."
+                                      % (self.fileName, self.clientAddress, self.clientPort))
 
-            return
+                # remove own server session from the global list of server sessions
+                # before closing server session
+                try:
+                    self.serverSessions.remove(self)
 
-        # give incoming connection to client communication handler
-        self.clientComm = ClientCommunication(self.sslSocket,
+                except Exception as e:
+                    pass
+
+                return
+
+        # Give incoming connection to client communication handler
+        self.clientComm = ClientCommunication(self.socket,
                                               self.clientAddress,
                                               self.clientPort,
                                               self.globalData)
         self.clientComm.handleCommunication()
 
-        # close ssl connection gracefully
         try:
-            # self.sslSocket.shutdown(socket.SHUT_RDWR)
-            self.sslSocket.close()
+            self.socket.close()
 
         except Exception as e:
-            self.logger.exception("[%s]: Unable to close SSL connection gracefully with %s:%d."
+            self.logger.exception("[%s]: Unable to close connection gracefully with %s:%d."
                                   % (self.fileName, self.clientAddress, self.clientPort))
 
         # remove own server session from the global list of server sessions
@@ -3707,13 +3705,13 @@ class ServerSession(socketserver.BaseRequestHandler):
         self.logger.info("[%s]: Closing connection to client (%s:%d)."
                          % (self.fileName, self.clientAddress, self.clientPort))
         try:
-            self.sslSocket.shutdown(socket.SHUT_RDWR)
+            self.socket.shutdown(socket.SHUT_RDWR)
 
         except Exception as e:
             pass
 
         try:
-            self.sslSocket.close()
+            self.socket.close()
         except Exception as e:
             pass
 

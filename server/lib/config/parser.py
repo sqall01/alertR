@@ -236,60 +236,71 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
     # Get server configurations
     try:
         global_data.logger.debug("[%s]: Parsing server configuration." % log_tag)
-        global_data.serverCertFile = make_path(str(configRoot.find("general").find("server").attrib["certFile"]))
-        global_data.serverKeyFile = make_path(str(configRoot.find("general").find("server").attrib["keyFile"]))
         global_data.server_port = int(configRoot.find("general").find("server").attrib["port"])
 
     except Exception:
         global_data.logger.exception("[%s]: Configuring server failed." % log_tag)
         return False
 
-    if os.path.exists(global_data.serverCertFile) is False or os.path.exists(global_data.serverKeyFile) is False:
-        global_data.logger.error("[%s]: Server certificate or key does not exist." % log_tag)
-        return False
-
-    key_stat = os.stat(global_data.serverKeyFile)
-    if (key_stat.st_mode & stat.S_IROTH
-            or key_stat.st_mode & stat.S_IWOTH
-            or key_stat.st_mode & stat.S_IXOTH):
-        global_data.logger.error("[%s]: Server key is accessible by others. " % log_tag
-                                 + "Please remove file permissions for others.")
-        return False
-
-    # get client configurations
-    try:
-        global_data.useClientCertificates = (str(configRoot.find("general").find("client").attrib[
-                                                     "useClientCertificates"]).upper() == "TRUE")
-
-    except Exception:
-        global_data.logger.exception("[%s]: Configuring client certificate failed." % log_tag)
-        return False
-
-    if global_data.useClientCertificates is True:
-        global_data.clientCAFile = make_path(str(configRoot.find("general").find("client").attrib["clientCAFile"]))
-
-        if os.path.exists(global_data.clientCAFile) is False:
-            global_data.logger.error("[%s]: Client CA file does not exist." % log_tag)
-            return False
-
     # Get TLS/SSL configurations.
     try:
-        noSSLv2 = (str(configRoot.find("general").find("ssl").attrib["noSSLv2"]).upper() == "TRUE")
-        noSSLv3 = (str(configRoot.find("general").find("ssl").attrib["noSSLv3"]).upper() == "TRUE")
-        noTLSv1_0 = (str(configRoot.find("general").find("ssl").attrib["noTLSv1_0"]).upper() == "TRUE")
-        noTLSv1_1 = (str(configRoot.find("general").find("ssl").attrib["noTLSv1_1"]).upper() == "TRUE")
-        noTLSv1_2 = (str(configRoot.find("general").find("ssl").attrib["noTLSv1_2"]).upper() == "TRUE")
+        global_data.sslEnabled = (str(configRoot.find("general").find("ssl").attrib["enabled"]).upper() == "TRUE")
 
-        if noSSLv2:
-            global_data.sslOptions |= ssl.OP_NO_SSLv2
-        if noSSLv3:
-            global_data.sslOptions |= ssl.OP_NO_SSLv3
-        if noTLSv1_0:
-            global_data.sslOptions |= ssl.OP_NO_TLSv1
-        if noTLSv1_1:
-            global_data.sslOptions |= ssl.OP_NO_TLSv1_1
-        if noTLSv1_2:
-            global_data.sslOptions |= ssl.OP_NO_TLSv1_2
+        if global_data.sslEnabled:
+            noSSLv2 = (str(configRoot.find("general").find("ssl").attrib["noSSLv2"]).upper() == "TRUE")
+            noSSLv3 = (str(configRoot.find("general").find("ssl").attrib["noSSLv3"]).upper() == "TRUE")
+            noTLSv1_0 = (str(configRoot.find("general").find("ssl").attrib["noTLSv1_0"]).upper() == "TRUE")
+            noTLSv1_1 = (str(configRoot.find("general").find("ssl").attrib["noTLSv1_1"]).upper() == "TRUE")
+            noTLSv1_2 = (str(configRoot.find("general").find("ssl").attrib["noTLSv1_2"]).upper() == "TRUE")
+
+            if noSSLv2:
+                global_data.sslOptions |= ssl.OP_NO_SSLv2
+            if noSSLv3:
+                global_data.sslOptions |= ssl.OP_NO_SSLv3
+            if noTLSv1_0:
+                global_data.sslOptions |= ssl.OP_NO_TLSv1
+            if noTLSv1_1:
+                global_data.sslOptions |= ssl.OP_NO_TLSv1_1
+            if noTLSv1_2:
+                global_data.sslOptions |= ssl.OP_NO_TLSv1_2
+
+            global_data.serverCertFile = make_path(str(configRoot.find("general").find("ssl").find("server").attrib[
+                                                           "certFile"]))
+            global_data.serverKeyFile = make_path(str(configRoot.find("general").find("ssl").find("server").attrib[
+                                                          "keyFile"]))
+
+            if (os.path.exists(global_data.serverCertFile) is False
+                    or os.path.exists(global_data.serverKeyFile) is False):
+                global_data.logger.error("[%s]: Server certificate or key does not exist." % log_tag)
+                return False
+
+            key_stat = os.stat(global_data.serverKeyFile)
+            if (key_stat.st_mode & stat.S_IROTH
+                    or key_stat.st_mode & stat.S_IWOTH
+                    or key_stat.st_mode & stat.S_IXOTH):
+                global_data.logger.error("[%s]: Server key is accessible by others. " % log_tag
+                                         + "Please remove file permissions for others.")
+                return False
+
+            try:
+                global_data.useClientCertificates = (str(configRoot.find("general").find("ssl").find("client").attrib[
+                                                             "useClientCertificates"]).upper() == "TRUE")
+
+            except Exception:
+                global_data.logger.exception("[%s]: Configuring client certificate failed." % log_tag)
+                return False
+
+            if global_data.useClientCertificates is True:
+                global_data.clientCAFile = make_path(str(configRoot.find("general").find("ssl").find("client").attrib[
+                                                             "clientCAFile"]))
+
+                if os.path.exists(global_data.clientCAFile) is False:
+                    global_data.logger.error("[%s]: Client CA file does not exist." % log_tag)
+                    return False
+
+        else:
+            global_data.logger.warning("[%s]: TLS is disabled. Do NOT use this setting in a production environment."
+                                       % log_tag)
 
     except Exception:
         global_data.logger.exception("[%s]: Configuring TLS/SSL failed." % log_tag)
