@@ -3659,7 +3659,7 @@ class ServerSession(socketserver.BaseRequestHandler):
                                                       server_side=True)
 
             except Exception as e:
-                self.logger.exception("[%s]: Unable to initialize SSL connection (%s:%d)."
+                self.logger.exception("[%s]: Unable to initialize TLS/SSL connection (%s:%d)."
                                       % (self.fileName, self.clientAddress, self.clientPort))
 
                 # remove own server session from the global list of server sessions

@@ -299,7 +299,7 @@ def configure_server(configRoot: xml.etree.ElementTree.Element, global_data: Glo
                     return False
 
         else:
-            global_data.logger.warning("[%s]: TLS is disabled. Do NOT use this setting in a production environment."
+            global_data.logger.warning("[%s]: TLS/SSL is disabled. Do NOT use this setting in a production environment."
                                        % log_tag)
 
     except Exception:

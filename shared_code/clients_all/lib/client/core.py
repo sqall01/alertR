@@ -56,53 +56,53 @@ class Client(Connection):
     def __init__(self,
                  host: str,
                  port: int,
-                 server_ca_file: str,
-                 client_cert_file: str,
-                 client_key_file: str):
-        self.host = host
-        self.port = port
-        self.server_ca_file = server_ca_file
-        self.client_cert_file = client_cert_file
-        self.client_key_file = client_key_file
-        self.socket = None
-        self.sslSocket = None
+                 server_ca_file: Optional[str],
+                 client_cert_file: Optional[str],
+                 client_key_file: Optional[str]):
+        self._host = host
+        self._port = port
+        self._server_ca_file = server_ca_file
+        self._client_cert_file = client_cert_file
+        self._client_key_file = client_key_file
+        self._socket = None  # type: Optional[socket.socket]
 
     def connect(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        # check if a client certificate is required
-        if self.client_cert_file is None or self.client_key_file is None:
-            self.sslSocket = ssl.wrap_socket(self.socket,
-                                             ca_certs=self.server_ca_file,
-                                             cert_reqs=ssl.CERT_REQUIRED)
-        else:
-            self.sslSocket = ssl.wrap_socket(self.socket,
-                                             ca_certs=self.server_ca_file,
-                                             cert_reqs=ssl.CERT_REQUIRED,
-                                             certfile=self.client_cert_file,
-                                             keyfile=self.client_key_file)
+        # Check if TLS is enabled.
+        if self._server_ca_file is not None:
+            # Check if a client certificate is required.
+            if self._client_cert_file is None or self._client_key_file is None:
+                self._socket = ssl.wrap_socket(self._socket,
+                                               ca_certs=self._server_ca_file,
+                                               cert_reqs=ssl.CERT_REQUIRED)
+            else:
+                self._socket = ssl.wrap_socket(self._socket,
+                                               ca_certs=self._server_ca_file,
+                                               cert_reqs=ssl.CERT_REQUIRED,
+                                               certfile=self._client_cert_file,
+                                               keyfile=self._client_key_file)
 
-        self.sslSocket.connect((self.host, self.port))
+        self._socket.connect((self._host, self._port))
 
     def send(self,
              data: str):
-        self.sslSocket.send(data.encode('ascii'))
+        self._socket.send(data.encode('ascii'))
 
     def recv(self,
              buffsize: int,
              timeout: Optional[float] = 20.0) -> bytes:
-        self.sslSocket.settimeout(timeout)
+        self._socket.settimeout(timeout)
 
         try:
-            data = self.sslSocket.recv(buffsize)
+            data = self._socket.recv(buffsize)
 
         except socket.timeout:
             raise RecvTimeout
 
-        self.sslSocket.settimeout(None)
+        self._socket.settimeout(None)
         return data
 
     def close(self):
-        if self.sslSocket is not None:
-            # closing SSLSocket will also close the underlying socket
-            self.sslSocket.close()
+        if self._socket is not None:
+            self._socket.close()

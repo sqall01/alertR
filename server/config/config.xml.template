@@ -55,8 +55,8 @@
 
             <!--
                 The settings for server certificates. Only used if TLS/SSL is enabled.
-                certFile - Path to the certificate file of the server that is used for the SSL connection.
-                keyFile - Path to the key file of the server that is used for the SSL connection.
+                certFile - Path to the certificate file of the server that is used for the TLS/SSL connection.
+                keyFile - Path to the key file of the server that is used for the TLS/SSL connection.
             -->
             <server
                 certFile="/absolute/path/to/server.crt"

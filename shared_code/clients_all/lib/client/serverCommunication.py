@@ -540,6 +540,11 @@ class ServerCommunication(Communication):
         # get authentication response from server
         try:
             data = self.recv_raw()
+
+            if data is None:
+                logging.error("[%s]: No data received." % self._log_tag)
+                return False
+
             message = json.loads(data)
             # check if an error was received
             if "error" in message.keys():
