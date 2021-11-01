@@ -133,7 +133,7 @@ if __name__ == '__main__':
                     raise ValueError("Client key is accessible by others. Please remove file permissions for others.")
 
         else:
-            logging.warning("[%s]: TLS/SSL is disabled. Do NOT use this setting in a production environment."
+            logging.warning("[%s] TLS/SSL is disabled. Do NOT use this setting in a production environment."
                             % log_tag)
 
         # get user credentials
@@ -183,15 +183,14 @@ if __name__ == '__main__':
                     raise ValueError("Id of sensor %d is already taken." % sensor.id)
 
             if not sensor.triggerAlert and sensor.triggerAlertNormal:
-                raise ValueError("'triggerAlert' for sensor %d "
-                                 % sensor.id
+                raise ValueError("'triggerAlert' for sensor %d " % sensor.id
                                  + "has to be activated when "
                                  + "'triggerAlertNormal' is activated.")
 
             globalData.sensors.append(sensor)
 
     except Exception as e:
-        logging.exception("[%s]: Could not parse config." % log_tag)
+        logging.exception("[%s] Could not parse config." % log_tag)
         sys.exit(1)
 
     random.seed()
@@ -204,21 +203,21 @@ if __name__ == '__main__':
 
     # check if sensors were found => if not exit
     if not globalData.sensors:
-        logging.critical("[%s]: No sensors configured." % log_tag)
+        logging.critical("[%s] No sensors configured." % log_tag)
         sys.exit(1)
 
     # Initialize sensors before starting worker threads.
     logging.info("[%s] Initializing sensors." % log_tag)
     for sensor in globalData.sensors:
         if not sensor.initialize():
-            logging.critical("[%s]: Not able to initialize sensor %d." % (log_tag, sensor.id))
+            logging.critical("[%s] Not able to initialize sensor %d." % (log_tag, sensor.id))
             sys.exit(1)
 
     # Starting sensors before starting worker threads.
     logging.info("[%s] Starting sensors." % log_tag)
     for sensor in globalData.sensors:
         if not sensor.start():
-            logging.critical("[%s]: Not able to start sensor %d." % (log_tag, sensor.id))
+            logging.critical("[%s] Not able to start sensor %d." % (log_tag, sensor.id))
             sys.exit(1)
 
     # Generate object for the communication to the server and connect to it.
@@ -232,7 +231,7 @@ if __name__ == '__main__':
                                                 SensorEventHandler(),
                                                 globalData)
     connectionRetries = 1
-    logging.info("[%s]: Connecting to server." % log_tag)
+    logging.info("[%s] Connecting to server." % log_tag)
     while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
@@ -252,12 +251,12 @@ if __name__ == '__main__':
 
         connectionRetries += 1
 
-        logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % log_tag)
+        logging.critical("[%s] Connecting to server failed. Try again in 5 seconds." % log_tag)
         time.sleep(5)
 
     # when connected => generate watchdog object to monitor the
     # server connection
-    logging.info("[%s]: Starting watchdog thread." % log_tag)
+    logging.info("[%s] Starting watchdog thread." % log_tag)
     watchdog = ConnectionWatchdog(globalData.serverComm,
                                   globalData.pingInterval,
                                   globalData.smtpAlert)
@@ -273,7 +272,7 @@ if __name__ == '__main__':
     executer.daemon = True
     executer.start()
 
-    logging.info("[%s]: Client started." % log_tag)
+    logging.info("[%s] Client started." % log_tag)
 
     # generate receiver to handle incoming data (for example status updates)
     # (note: we will not return from the receiver unless the client is terminated)

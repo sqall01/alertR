@@ -25,7 +25,6 @@
             the settings for the server
             host - location/address of the server
             port - port that is used by the server
-
         -->
         <server
             host="server.h4des.org"
