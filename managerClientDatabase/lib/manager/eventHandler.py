@@ -15,7 +15,6 @@ from typing import List, Any
 from .core import BaseManagerEventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, \
     ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
-from ..globalData import SensorDataType
 from ..globalData import GlobalData
 
 
@@ -26,13 +25,20 @@ class ManagerEventHandler(BaseManagerEventHandler):
         super().__init__(global_data)
 
         # file name of this file (used for logging)
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # get global configured data
         self.global_data = global_data
         self.sensorAlertLifeSpan = self.global_data.sensorAlertLifeSpan
-        self.storage = self.global_data.storage
+        self._storage = self.global_data.storage
         self.connectionTimeout = self.global_data.connectionTimeout
+
+    def _update_connected_non_blocking(self, is_connected: int):
+        """
+        Internal function that updates connected flag in the database without blocking the current thread.
+        """
+        thread = threading.Thread(target=self._storage.update_connected, args=(is_connected, ), daemon=True)
+        thread.start()
 
     def _update_db_data(self):
         """
@@ -45,17 +51,17 @@ class ManagerEventHandler(BaseManagerEventHandler):
             self._system_data.delete_sensor_alerts_received_before(int(time.time()) + 1)
 
         # Update the local server information.
-        if not self.storage.update_server_information(self.msg_time,
-                                                      self._system_data.get_options_list(),
-                                                      self._system_data.get_profiles_list(),
-                                                      self._system_data.get_nodes_list(),
-                                                      self._system_data.get_sensors_list(),
-                                                      self._system_data.get_alerts_list(),
-                                                      self._system_data.get_managers_list(),
-                                                      self._system_data.get_alert_levels_list(),
-                                                      self._system_data.get_sensor_alerts_list()):
+        if not self._storage.update_server_information(self.msg_time,
+                                                       self._system_data.get_options_list(),
+                                                       self._system_data.get_profiles_list(),
+                                                       self._system_data.get_nodes_list(),
+                                                       self._system_data.get_sensors_list(),
+                                                       self._system_data.get_alerts_list(),
+                                                       self._system_data.get_managers_list(),
+                                                       self._system_data.get_alert_levels_list(),
+                                                       self._system_data.get_sensor_alerts_list()):
 
-            logging.error("[%s]: Unable to update server information." % self.fileName)
+            logging.error("[%s]: Unable to update server information." % self._log_tag)
 
         else:
             # Clear sensor alerts list to prevent it from getting too big.
@@ -106,7 +112,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
                      server_time: int,
                      sensor_id: int,
                      state: int,
-                     data_type: SensorDataType,
+                     data_type: int,
                      sensor_data: Any) -> bool:
 
         result = super().state_change(server_time,
@@ -121,8 +127,10 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
     def close_connection(self):
         super().close_connection()
+        self._update_connected_non_blocking(0)
         self._update_db_data_non_blocking()
 
     def new_connection(self):
         super().new_connection()
+        self._update_connected_non_blocking(1)
         self._update_db_data_non_blocking()

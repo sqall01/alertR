@@ -1,6 +1,7 @@
 ## 0.901-0
 
 * Added configuration option to disable TLS for testing purposes
+* Added connected flag in database (internals table)
 
 ## 0.900-1
 

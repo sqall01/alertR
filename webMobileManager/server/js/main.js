@@ -124,7 +124,7 @@ function addMenu(newBody, current) {
 	// process options of the alert system
 	for(var i = 0; i < options.length; i++) {
 
-		// only evaluate "alertSystemActive"
+		// only evaluate "profile"
 		if(options[i]["type"].toUpperCase() == "PROFILE") {
 
 			// add system profile of AlertR system
