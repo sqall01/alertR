@@ -1709,6 +1709,9 @@ class Mysql(_Storage):
                 self._close_connection()
                 return False
 
+            # commit all changes
+            self._conn.commit()
+
             self._close_connection()
             return True
 

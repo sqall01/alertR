@@ -208,6 +208,9 @@ if __name__ == '__main__':
     else:
         globalData.smtpAlert = None
 
+    # Mark connection as not available in database.
+    globalData.storage.update_connected(0)
+
     # Generate object for the communication to the server and connect to it.
     globalData.serverComm = ServerCommunication(server,
                                                 serverPort,
