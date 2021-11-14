@@ -1204,6 +1204,7 @@ class Mysql(_Storage):
     def _update_connected(self, is_connected: int):
         """
         Internal function that updates connected flag in the database. Does not catch exceptions.
+        Does not commit changes to database.
 
         :param is_connected: flag that indicates if the client is connected or not
         """
@@ -1215,6 +1216,7 @@ class Mysql(_Storage):
     def _update_msg_time(self, msg_time: int):
         """
         Internal function that updates msg time in the database. Does not catch exceptions.
+        Does not commit changes to database.
 
         :param msg_time:
         """
