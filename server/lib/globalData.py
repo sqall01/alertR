@@ -58,7 +58,7 @@ class GlobalData:
     def __init__(self):
 
         # version of the used server (and protocol)
-        self.version = 0.900  # type: float
+        self.version = 0.901  # type: float
 
         # revision of the used server
         self.rev = 0  # type: int
@@ -146,6 +146,7 @@ class GlobalData:
             self.sslProtocol = ssl.PROTOCOL_SSLv23
         self.sslOptions = ssl.OP_ALL
         self.sslCiphers = "HIGH:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4"
+        self.sslEnabled = True
 
         # Port the server is listening on.
         self.server_port = None  # type: Optional[int]

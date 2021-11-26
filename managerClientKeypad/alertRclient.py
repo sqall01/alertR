@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # generate object of the global needed data
     globalData = GlobalData()
 
-    fileName = os.path.basename(__file__)
+    log_tag = os.path.basename(__file__)
 
     # parse config file, get logfile configurations
     # and initialize logging
@@ -142,33 +142,38 @@ if __name__ == '__main__':
         server = str(configRoot.find("general").find("server").attrib["host"])
         serverPort = int(configRoot.find("general").find("server").attrib["port"])
 
-        # get server certificate file and check if it does exist
-        serverCAFile = os.path.abspath(make_path(str(configRoot.find("general").find("server").attrib["caFile"])))
-        if os.path.exists(serverCAFile) is False:
-            raise ValueError("Server CA does not exist.")
+        # Get TLS/SSL configurations.
+        ssl_enabled = (str(configRoot.find("general").find("ssl").attrib["enabled"]).upper() == "TRUE")
+        server_ca_file = None
+        client_cert_file = None
+        client_key_file = None
+        if ssl_enabled:
+            server_ca_file = os.path.abspath(make_path(str(configRoot.find("general").find("ssl").find("server").attrib[
+                                                             "caFile"])))
+            if os.path.exists(server_ca_file) is False:
+                raise ValueError("Server CA does not exist.")
 
-        # get client certificate and keyfile (if required)
-        certificateRequired = (str(configRoot.find("general").find(
-                               "client").attrib["certificateRequired"]).upper() == "TRUE")
+            certificate_required = (str(configRoot.find("general").find("ssl").find("client").attrib[
+                                           "certificateRequired"]).upper() == "TRUE")
 
-        if certificateRequired is True:
-            clientCertFile = os.path.abspath(
-                             make_path(str(configRoot.find("general").find("client").attrib["certFile"])))
-            clientKeyFile = os.path.abspath(
-                            make_path(str(configRoot.find("general").find("client").attrib["keyFile"])))
-            if (os.path.exists(clientCertFile) is False
-                    or os.path.exists(clientKeyFile) is False):
-                raise ValueError("Client certificate or key does not exist.")
+            if certificate_required is True:
+                client_cert_file = os.path.abspath(
+                                 make_path(str(configRoot.find("general").find("ssl").find("client").attrib["certFile"])))
+                client_key_file = os.path.abspath(
+                                make_path(str(configRoot.find("general").find("ssl").find("client").attrib["keyFile"])))
+                if (os.path.exists(client_cert_file) is False
+                        or os.path.exists(client_key_file) is False):
+                    raise ValueError("Client certificate or key does not exist.")
 
-            key_stat = os.stat(clientKeyFile)
-            if (key_stat.st_mode & stat.S_IROTH
-                    or key_stat.st_mode & stat.S_IWOTH
-                    or key_stat.st_mode & stat.S_IXOTH):
-                raise ValueError("Client key is accessible by others. Please remove file permissions for others.")
+                key_stat = os.stat(client_key_file)
+                if (key_stat.st_mode & stat.S_IROTH
+                        or key_stat.st_mode & stat.S_IWOTH
+                        or key_stat.st_mode & stat.S_IXOTH):
+                    raise ValueError("Client key is accessible by others. Please remove file permissions for others.")
 
         else:
-            clientCertFile = None
-            clientKeyFile = None
+            logging.warning("[%s] TLS/SSL is disabled. Do NOT use this setting in a production environment."
+                            % log_tag)
 
         # get user credentials
         username = str(configRoot.find("general").find("credentials").attrib["username"])
@@ -234,7 +239,7 @@ if __name__ == '__main__':
             globalData.sensorWarningStates.append(temp)
 
     except Exception as e:
-        logging.exception("[%s]: Could not parse config." % fileName)
+        logging.exception("[%s] Could not parse config." % log_tag)
         sys.exit(1)
 
     random.seed()
@@ -246,28 +251,28 @@ if __name__ == '__main__':
         globalData.smtpAlert = None
 
     # generate a screen updater thread (that generates the GUI)
-    logging.info("[%s] Starting screen updater thread." % fileName)
+    logging.info("[%s] Starting screen updater thread." % log_tag)
     globalData.screenUpdater = ScreenUpdater(globalData)
 
-    # generate object for the communication to the server and connect to it
+    # Generate object for the communication to the server and connect to it.
     globalData.serverComm = ServerCommunication(server,
                                                 serverPort,
-                                                serverCAFile,
+                                                server_ca_file,
                                                 username,
                                                 password,
-                                                clientCertFile,
-                                                clientKeyFile,
+                                                client_cert_file,
+                                                client_key_file,
                                                 ManagerEventHandler(globalData),
                                                 globalData)
     connectionRetries = 1
-    logging.info("[%s] Connecting to server." % fileName)
+    logging.info("[%s] Connecting to server." % log_tag)
     print("Connecting to server at '%s:%d'." % (server, serverPort))
     while True:
         # check if 5 unsuccessful attempts are made to connect
         # to the server and if smtp alert is activated
         # => send eMail alert
         if (globalData.smtpAlert is not None
-           and (connectionRetries % 5) == 0):
+                and (connectionRetries % 5) == 0):
             globalData.smtpAlert.sendCommunicationAlert(connectionRetries)
 
         if globalData.serverComm.initialize() is True:
@@ -278,15 +283,16 @@ if __name__ == '__main__':
 
             connectionRetries = 1
             break
+
         connectionRetries += 1
 
-        logging.critical("[%s]: Connecting to server failed. Try again in 5 seconds." % fileName)
+        logging.critical("[%s] Connecting to server failed. Try again in 5 seconds." % log_tag)
         print("Connecting to server failed. Try again in 5 seconds.")
         time.sleep(5)
 
     # when connected => generate watchdog object to monitor the
     # server connection
-    logging.info("[%s] Starting watchdog thread." % fileName)
+    logging.info("[%s] Starting watchdog thread." % log_tag)
     watchdog = ConnectionWatchdog(globalData.serverComm,
                                   globalData.pingInterval,
                                   globalData.smtpAlert)
@@ -296,14 +302,14 @@ if __name__ == '__main__':
     watchdog.start()
 
     # generate receiver to handle incoming data (for example status updates)
-    logging.info("[%s] Starting receiver thread." % fileName)
+    logging.info("[%s] Starting receiver thread." % log_tag)
     receiver = Receiver(globalData.serverComm)
     # set thread to daemon
     # => threads terminates when main thread terminates
     receiver.daemon = True
     receiver.start()
 
-    logging.info("[%s] Client started." % fileName)
+    logging.info("[%s] Client started." % log_tag)
 
     # generate the console object and start it
     # (does not return unless it is exited)

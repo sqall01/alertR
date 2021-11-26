@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="0.900">
+<config version="0.901">
 
     <!--
         in this section general options are configured
@@ -25,32 +25,45 @@
             the settings for the server
             host - location/address of the server
             port - port that is used by the server
-            caFile - path to the CA file to check the correctness of the
-                used SSL connection
         -->
         <server
             host="server.h4des.org"
-            port="12345"
-            caFile="/absolute/path/to/server_CA.pem" />
+            port="12345" />
 
         <!--
-            the settings for a client certificate
-            certificateRequired - sets if it is required for the client
-                to authenticate itself via a certificate or not
-                (if you have the alert system reachable from the internet
-                you should use client certificates)
-                ("True" or "False")
-            certFile - path to the certificate file of the client
-                this is used for the SSL connection
-                (only processed if "certificateRequired" is set to "True")
-            keyFile - path to the key file of the client that is used
-                for the SSL connection
-                (only processed if "certificateRequired" is set to "True")
+            The settings used for the TLS/SSL connection.
+            enabled - Sets if TLS/SSL is used for connections.
+                Only disable it for testing purposes and NEVER in a production environment. Has to be set to the same value on each AlertR instance.
         -->
-        <client
-            certificateRequired="True"
-            certFile="/absolute/path/to/client.crt"
-            keyFile="/absolute/path/to/client.key" />
+        <ssl
+            enabled="True">
+
+            <!--
+                The settings for server certificates. Only used if TLS/SSL is enabled.
+                caFile - path to the CA file to check the correctness of the used TLS/SSL connection
+            -->
+            <server
+                caFile="/absolute/path/to/server_CA.pem" />
+
+            <!--
+                The settings for a client certificate. Only used if TLS/SSL is enabled.
+                certificateRequired - sets if it is required for the client
+                    to authenticate itself via a certificate or not
+                    (if you have the alert system reachable from the internet
+                    you should use client certificates)
+                    ("True" or "False")
+                certFile - path to the certificate file of the client
+                    this is used for the TLS/SSL connection
+                    (only processed if "certificateRequired" is set to "True")
+                keyFile - path to the key file of the client that is used
+                    for the TLS/SSL connection
+                    (only processed if "certificateRequired" is set to "True")
+            -->
+            <client
+                certificateRequired="True"
+                certFile="/absolute/path/to/client.crt"
+                keyFile="/absolute/path/to/client.key" />
+        </ssl>
 
         <!--
             user credentials of this client

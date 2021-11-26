@@ -13,7 +13,7 @@ import threading
 import time
 import json
 import MySQLdb
-from typing import List, Optional
+from typing import List, Optional, cast
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjAlert, ManagerObjManager, \
     ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
 from ..globalData import SensorDataType, SensorDataGPS
@@ -217,6 +217,7 @@ class Mysql(_Storage):
 
             # Only store data if sensor alert carries it.
             if sensor_alert.dataType == SensorDataType.INT:
+                sensor_alert.data = cast(SensorDataInt, sensor_alert.data)
                 self._cursor.execute("INSERT INTO sensorAlertsDataInt ("
                                      + "sensorAlertId, "
                                      + "value, "
@@ -227,6 +228,7 @@ class Mysql(_Storage):
                                       sensor_alert.data.unit))
 
             elif sensor_alert.dataType == SensorDataType.FLOAT:
+                sensor_alert.data = cast(SensorDataFloat, sensor_alert.data)
                 self._cursor.execute("INSERT INTO sensorAlertsDataFloat ("
                                      + "sensorAlertId, "
                                      + "value, "
@@ -237,6 +239,7 @@ class Mysql(_Storage):
                                       sensor_alert.data.unit))
 
             elif sensor_alert.dataType == SensorDataType.GPS:
+                sensor_alert.data = cast(SensorDataGPS, sensor_alert.data)
                 self._cursor.execute("INSERT INTO sensorAlertsDataGPS ("
                                      + "sensorAlertId, "
                                      + "lat, "
@@ -262,6 +265,7 @@ class Mysql(_Storage):
             pass
 
         elif sensor.dataType == SensorDataType.INT:
+            sensor.data = cast(SensorDataInt, sensor.data)
             try:
                 self._cursor.execute("INSERT INTO sensorsDataInt ("
                                      + "sensorId, "
@@ -276,6 +280,7 @@ class Mysql(_Storage):
                 raise
 
         elif sensor.dataType == SensorDataType.FLOAT:
+            sensor.data = cast(SensorDataFloat, sensor.data)
             try:
                 self._cursor.execute("INSERT INTO sensorsDataFloat ("
                                      + "sensorId, "
@@ -289,6 +294,7 @@ class Mysql(_Storage):
                 raise
 
         elif sensor.dataType == SensorDataType.GPS:
+            sensor.data = cast(SensorDataGPS, sensor.data)
             try:
                 self._cursor.execute("INSERT INTO sensorsDataGPS ("
                                      + "sensorId, "
@@ -664,22 +670,22 @@ class Mysql(_Storage):
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
                 sensor_alert.data = SensorDataInt(result_data[0][0],
-                                                        result_data[0][1])
+                                                  result_data[0][1])
 
             elif sensor_alert.dataType == SensorDataType.FLOAT:
                 self._cursor.execute("SELECT value, unit FROM sensorAlertsDataFloat WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
                 sensor_alert.data = SensorDataFloat(result_data[0][0],
-                                                          result_data[0][1])
+                                                    result_data[0][1])
 
             elif sensor_alert.dataType == SensorDataType.GPS:
                 self._cursor.execute("SELECT lat, lon, utctime FROM sensorAlertsDataGPS WHERE sensorAlertId = %s",
                                      (sensor_alert_id, ))
                 result_data = self._cursor.fetchall()
                 sensor_alert.data = SensorDataGPS(result_data[0][0],
-                                                        result_data[0][1],
-                                                        result_data[0][2])
+                                                  result_data[0][1],
+                                                  result_data[0][2])
 
             sensor_alerts.append(sensor_alert)
 
@@ -1195,9 +1201,22 @@ class Mysql(_Storage):
                                   % (self._log_tag, sensor.sensorId))
                 raise
 
+    def _update_connected(self, is_connected: int):
+        """
+        Internal function that updates connected flag in the database. Does not catch exceptions.
+        Does not commit changes to database.
+
+        :param is_connected: flag that indicates if the client is connected or not
+        """
+        self._cursor.execute("UPDATE internals SET "
+                             + "value = %s "
+                             + "WHERE type = %s",
+                             (is_connected, "connected"))
+
     def _update_msg_time(self, msg_time: int):
         """
         Internal function that updates msg time in the database. Does not catch exceptions.
+        Does not commit changes to database.
 
         :param msg_time:
         """
@@ -1218,13 +1237,6 @@ class Mysql(_Storage):
 
         # connect to the database
         self._open_connection()
-
-        # get last stored msg time
-        self._cursor.execute("SELECT "
-                             + "value "
-                             + "FROM internals WHERE type = 'msgTime'")
-        result = self._cursor.fetchall()
-        msg_time = result[0][0]
 
         # create option objects from db
         self._cursor.execute("SELECT "
@@ -1448,6 +1460,11 @@ class Mysql(_Storage):
                                      + "value) VALUES (%s, %s)",
                                      ("msgTime", 0.0))
 
+                self._cursor.execute("INSERT INTO internals ("
+                                     + "type, "
+                                     + "value) VALUES (%s, %s)",
+                                     ("connected", 1.0))
+
                 # insert version field
                 self._cursor.execute("INSERT INTO internals ("
                                      + "type, "
@@ -1661,6 +1678,44 @@ class Mysql(_Storage):
 
             # close connection to the database
             self._close_connection()
+
+    def update_connected(self,
+                         is_connected: int) -> bool:
+        """
+        Updates connected flag in database.
+
+        :param is_connected:
+        :return: Success or Failure
+        """
+        if is_connected != 0 and is_connected != 1:
+            logging.error("[%s]: Invalid value for connected flag." % self._log_tag)
+            return False
+
+        with self._lock:
+
+            # connect to the database
+            try:
+                self._open_connection()
+
+            except Exception:
+                logging.exception("[%s]: Not able to connect to MySQL server." % self._log_tag)
+                self._close_connection()
+                return False
+
+            # Update msg time.
+            try:
+                self._update_connected(is_connected)
+
+            except Exception:
+                logging.exception("[%s]: Not able to update connected flag." % self._log_tag)
+                self._close_connection()
+                return False
+
+            # commit all changes
+            self._conn.commit()
+
+            self._close_connection()
+            return True
 
     def update_server_information(self,
                                   msg_time: int,
