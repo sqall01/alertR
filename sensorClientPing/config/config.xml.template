@@ -33,7 +33,7 @@
         <!--
             The settings used for the TLS/SSL connection.
             enabled - Sets if TLS/SSL is used for connections.
-                Only disable it for testing purposes and NEVER in a production environment.
+                Only disable it for testing purposes and NEVER in a production environment. Has to be set to the same value on each AlertR instance.
         -->
         <ssl
             enabled="True">

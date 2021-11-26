@@ -36,7 +36,7 @@
             widely adopted yet (OpenSSL version 1.1.1), you should
             also allow TLSv1.2.
             enabled - Sets if TLS/SSL is used for connections.
-                Only disable it for testing purposes and NEVER in a production environment.
+                Only disable it for testing purposes and NEVER in a production environment. Has to be set to the same value on each AlertR instance.
             noSSLv2 - Disables the use of SSLv2.
             noSSLv3 - Disables the use of SSLv3.
             noTLSv1_0 - Disables the use of TLSv1.0.
@@ -74,7 +74,7 @@
                     (only processed if "useClientCertificates" is set to "True")
             -->
             <client
-                useClientCertificates="True"
+                useClientCertificates="False"
                 clientCAFile="/absolute/path/to/some_CA.pem" />
         </ssl>
 
