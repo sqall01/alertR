@@ -45,7 +45,7 @@ class TemplateAlert(_Alert):
             # Set state of alert to "triggered"
             self.state = sensor_alert.state
 
-            logging.info("[%s]: Alert '%d' change to state %d." % (self._log_tag, self.id, self.state))
+            self._log_info(self._log_tag, "Change state to %d." % self.state)
 
         print("Sensor Alert 'Triggered': trigger alert")
 
@@ -57,7 +57,7 @@ class TemplateAlert(_Alert):
             # Set state of alert to "normal"
             self.state = sensor_alert.state
 
-            logging.info("[%s]: Alert '%d' change to state %d." % (self._log_tag, self.id, self.state))
+            self._log_info(self._log_tag, "Change state to %d." % self.state)
 
         print("Sensor Alert 'Normal': trigger alert")
 
@@ -65,7 +65,7 @@ class TemplateAlert(_Alert):
 
     def alert_profile_change(self, profile: ManagerObjProfile):
 
-        logging.info("[%s]: Alert '%d' process system profile change." % (self._log_tag, self.id))
+        self._log_info(self._log_tag, "Process system profile change.")
 
         print("Profile Change to '%d'" % profile.profileId)
 
