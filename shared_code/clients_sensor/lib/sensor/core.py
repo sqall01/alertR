@@ -25,6 +25,9 @@ class _PollingSensor:
 
     def __init__(self):
 
+        # Used for logging.
+        self._log_tag = os.path.basename(__file__)
+
         # Id of this sensor on this client.
         self.id = None  # type: Optional[int]
 
@@ -153,6 +156,7 @@ class _PollingSensor:
         # Otherwise, drop event.
         if state == self.triggerState:
             if self.triggerAlert:
+                self._log_info(self._log_tag, "Sensor Alert for 'triggered' raised.")
                 self._add_event(sensor_alert)
 
             elif change_state:
@@ -174,6 +178,7 @@ class _PollingSensor:
 
         else:
             if self.triggerAlertNormal:
+                self._log_info(self._log_tag, "Sensor Alert for 'normal' raised.")
                 self._add_event(sensor_alert)
 
             elif change_state:

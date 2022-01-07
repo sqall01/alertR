@@ -9,7 +9,6 @@
 
 import re
 import os
-import logging
 import time
 from typing import Optional, Union
 from .number import _NumberSensor
@@ -74,10 +73,10 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
                         return SensorDataFloat(float(reMatch.group(2)) / 1000, self._unit)
 
                     else:
-                        logging.error("[%s]: Could not parse sensor file." % self._log_tag)
+                        self._log_error(self._log_tag, "Could not parse sensor file.")
 
             except Exception as e:
-                logging.exception("[%s]: Could not read sensor file." % self._log_tag)
+                self._log_exception(self._log_tag, "Could not read sensor file.")
 
             return None
 

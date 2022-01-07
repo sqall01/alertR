@@ -9,7 +9,6 @@
 
 import os
 import time
-import logging
 import icalendar
 import datetime
 import dateutil
@@ -99,8 +98,8 @@ class ICalendarSensor(_PollingSensor):
                 thread = threading.Thread(target=self._get_calendar)
                 thread.start()
 
-                logging.debug("[%s] Number of remaining already triggered elements (Sensor %d): %d"
-                              % (self._log_tag, self.id, len(self._already_triggered)))
+                self._log_debug(self._log_tag, "Number of remaining already triggered elements: %d"
+                                % len(self._already_triggered))
 
             # Process calendar data for occurring reminder.
             if (utc_timestamp - self._last_process) > self.intervalProcess:
@@ -129,8 +128,7 @@ class ICalendarSensor(_PollingSensor):
                                        True,
                                        optional_data)
 
-                logging.warning("[%s] Fetching calendar failed for %d attempts (Sensor %d)."
-                                % (self._log_tag, self._failed_counter, self.id))
+                self._log_warning(self._log_tag, "Fetching calendar failed for %d attempts." % self._failed_counter)
 
             # If we are in a failed retrieval state and we could retrieve
             # new calendar data trigger a Sensor Alert for "normal".
@@ -145,8 +143,7 @@ class ICalendarSensor(_PollingSensor):
                                        True,
                                        optional_data)
 
-                logging.warning("[%s] Fetching calendar succeeded after multiple failed attempts (Sensor %d)."
-                                % (self._log_tag, self.id))
+                self._log_warning(self._log_tag, "Fetching calendar succeeded after multiple failed attempts.")
 
     # Collect calendar data from the server.
     def _get_calendar(self):
@@ -155,7 +152,7 @@ class ICalendarSensor(_PollingSensor):
         utc_timestamp = int(time.time())
         self._last_fetch = utc_timestamp
 
-        logging.debug("[%s] Retrieving calendar data from '%s' (Sensor %d)." % (self._log_tag, self.location, self.id))
+        self._log_debug(self._log_tag, "Retrieving calendar data from '%s'." % self.location)
 
         # Request data from server.
         request = None
@@ -163,14 +160,13 @@ class ICalendarSensor(_PollingSensor):
             request = requests.get(self.location, verify=True, auth=self.htaccessData)
 
         except Exception:
-            logging.exception("[%s] Could not get calendar data from server (Sensor %d)." % (self._log_tag, self.id))
+            self._log_exception(self._log_tag, "Could not get calendar data from server.")
             self._failed_counter += 1
             return
 
         # Check status code.
         if request.status_code != 200:
-            logging.error("[%s] Server responded with wrong status code (Sensor %d): %d"
-                          % (self._log_tag, self.id, request.status_code))
+            self._log_error(self._log_tag, "Server responded with wrong status code: %d" % request.status_code)
             self._failed_counter += 1
             return
 
@@ -180,8 +176,7 @@ class ICalendarSensor(_PollingSensor):
             temp_cal = icalendar.Calendar.from_ical(request.content)
 
         except Exception:
-            logging.exception("[%s] Could not parse calendar data (Sensor %d)."
-                              % (self._log_tag, self.id))
+            self._log_exception(self._log_tag, "Could not parse calendar data.")
             self._failed_counter += 1
             return
 
@@ -238,8 +233,7 @@ class ICalendarSensor(_PollingSensor):
                 event_datetime = event_datetime.replace(tzinfo=datetime.timezone.utc)
 
         else:
-            logging.debug("[%s] Do not know how to handle type '%s' of event start (Sensor %d)."
-                          % (self._log_tag, dtstart.dt.__class__, self.id))
+            self._log_debug(self._log_tag, "Do not know how to handle type '%s' of event start." % dtstart.dt.__class__)
             return
 
         # Create current datetime object.
@@ -289,8 +283,7 @@ class ICalendarSensor(_PollingSensor):
                 event_datetime_before = rrset.before(current_datetime)
 
             except Exception:
-                logging.exception("[%s] Not able to parse rrule for '%s' (Sensor %d)."
-                                  % (self._log_tag, event.get("SUMMARY"), self.id))
+                self._log_exception(self._log_tag, "Not able to parse rrule for '%s'." % event.get("SUMMARY"))
 
             # Process the event alarms for the first event occurring after the current time.
             if event_datetime_after:
@@ -349,8 +342,8 @@ class ICalendarSensor(_PollingSensor):
                     trigger_datetime = trigger_datetime.replace(tzinfo=event_datetime.tzinfo)
 
                 else:
-                    logging.error("[%s] Error: Do not know how to handle trigger type '%s' (Sensor %d)."
-                                  % (self._log_tag, trigger.dt.__class__, self.id))
+                    self._log_error(self._log_tag, "Do not know how to handle trigger type '%s'."
+                                    % trigger.dt.__class__)
                     continue
 
                 # Uid of event is needed.
