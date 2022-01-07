@@ -10,7 +10,6 @@
 import os
 import subprocess
 import time
-import logging
 from typing import Optional
 from .core import _PollingSensor
 from ..globalData import SensorDataType
@@ -79,7 +78,7 @@ class PingSensor(_PollingSensor):
                 utc_timestamp = int(time.time())
                 if (utc_timestamp - self._time_executed) > self.intervalToCheck:
 
-                    logging.debug("[%s] Executing process for '%s'." % (self._log_tag, self.description))
+                    self._log_debug(self._log_tag, "Executing process.")
 
                     try:
                         # Set time before executing process in order to not hammer process creation
@@ -88,8 +87,7 @@ class PingSensor(_PollingSensor):
                         self._process = subprocess.Popen([self.execute, "-c3", str(self.host)])
 
                     except Exception as e:
-                        logging.exception("[%s] Unable to execute process for '%s'."
-                                          % (self._log_tag, self.description))
+                        self._log_exception(self._log_tag, "Unable to execute process.")
 
                         optional_data = {"host": self.host,
                                          "reason": "processerror",
@@ -107,8 +105,7 @@ class PingSensor(_PollingSensor):
                     # Check if process has timed out
                     utc_timestamp = int(time.time())
                     if (utc_timestamp - self._time_executed) > self.timeout:
-                        logging.error("[%s] Process for '%s' has timed out."
-                                      % (self._log_tag, self.description))
+                        self._log_error(self._log_tag, "Process has timed out.")
 
                         # terminate process
                         self._process.terminate()
@@ -118,8 +115,7 @@ class PingSensor(_PollingSensor):
                             self._process.wait(5.0)
 
                         except subprocess.TimeoutExpired:
-                            logging.error("[%s] Could not terminate process for '%s'. Killing it."
-                                          % (self._log_tag, self.description))
+                            self._log_error(self._log_tag, "Could not terminate process. Killing it.")
 
                             self._process.kill()
 
