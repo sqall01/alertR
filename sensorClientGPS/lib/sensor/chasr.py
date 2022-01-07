@@ -20,7 +20,7 @@ from .gps import _GPSSensor
 from ..globalData.sensorObjects import SensorDataGPS
 
 
-class ServerError(BaseException):
+class ServerError(Exception):
     pass
 
 
