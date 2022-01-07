@@ -238,6 +238,42 @@ class _PollingSensor:
         """
         raise NotImplementedError("Function not implemented yet.")
 
+    def _log_debug(self, log_tag: str, msg: str):
+        """
+        Internal function to log debug messages.
+        """
+        logging.debug("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_info(self, log_tag: str, msg: str):
+        """
+        Internal function to log info messages.
+        """
+        logging.info("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_warning(self, log_tag: str, msg: str):
+        """
+        Internal function to log warning messages.
+        """
+        logging.warning("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_error(self, log_tag: str, msg: str):
+        """
+        Internal function to log error messages.
+        """
+        logging.error("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_critical(self, log_tag: str, msg: str):
+        """
+        Internal function to log critical messages.
+        """
+        logging.critical("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_exception(self, log_tag: str, msg: str):
+        """
+        Internal function to log exception messages.
+        """
+        logging.exception("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
     def exit(self):
         """
         Exits sensor thread.

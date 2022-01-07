@@ -1,3 +1,7 @@
+## 0.901-2
+
+* Updated logging of sensor messages
+
 ## 0.901-1
 
 * Fixed crashes in error handling
