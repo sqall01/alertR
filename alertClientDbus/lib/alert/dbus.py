@@ -9,7 +9,6 @@
 
 import time
 import os
-import logging
 import dbus
 from typing import Optional
 from .core import _Alert
@@ -23,7 +22,7 @@ class DbusAlert(_Alert):
     def __init__(self):
         _Alert.__init__(self)
 
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # these values are used to check when the alert was triggered
         # the last time and if it should trigger again
@@ -50,8 +49,7 @@ class DbusAlert(_Alert):
             self.triggered = utc_timestamp
 
             intersect_alert_levels = [str(x) for x in set(sensor_alert.alertLevels).intersection(self.alertLevels)]
-            logging.info("[%s] Alert '%d' triggered for alert levels %s."
-                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
+            self._log_info(self._log_tag, "Triggered for alert levels %s." % ", ".join(intersect_alert_levels))
 
             # extract the received message if it was received and should be
             # displayed
@@ -111,7 +109,7 @@ class DbusAlert(_Alert):
                                  [],
                                  self.displayTime)
             except Exception as e:
-                logging.exception("[%s]: Alert '%d' could not send notification via dbus." % (self.fileName, self.id))
+                self._log_exception(self._log_tag, "Could not send notification via dbus.")
                 return
 
     def initialize(self):

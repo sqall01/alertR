@@ -9,7 +9,6 @@
 
 import time
 import os
-import logging
 import re
 from lightweightpush import LightweightPush, ErrorCodes
 from .core import _Alert
@@ -23,7 +22,7 @@ class PushAlert(_Alert):
     def __init__(self, globalData):
         _Alert.__init__(self)
 
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         self.globalData = globalData
         self.pushRetryTimeout = self.globalData.pushRetryTimeout
@@ -112,8 +111,8 @@ class PushAlert(_Alert):
 
             ctr += 1
 
-            logging.info("[%s] Alert '%d' sending message for triggered alert levels %s."
-                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
+            self._log_info(self._log_tag, "Sending message for triggered alert levels %s."
+                           % ", ".join(intersect_alert_levels))
 
             error_code = self.push_service.send_msg(subject,
                                                     msg,
@@ -123,39 +122,33 @@ class PushAlert(_Alert):
                                                     max_retries=1)
 
             if error_code == ErrorCodes.NO_ERROR:
-                logging.info("[%s] Alert '%d' sending message successful."
-                             % (self.fileName, self.id))
+                self._log_info(self._log_tag, "Sending message successful.")
                 break
 
             else:
                 if error_code == ErrorCodes.AUTH_ERROR:
-                    logging.error("[%s] Alert '%d' unable to authenticate at server. Please check your credentials."
-                                  % (self.fileName, self.id))
+                    self._log_error(self._log_tag, "Unable to authenticate at server. Please check your credentials.")
 
                 elif error_code == ErrorCodes.ILLEGAL_MSG_ERROR:
-                    logging.error("[%s] Alert '%d' server replies that message is malformed."
-                                  % (self.fileName, self.id))
+                    self._log_error(self._log_tag, "Server replies that message is malformed.")
 
                 elif error_code == ErrorCodes.VERSION_MISSMATCH:
-                    logging.error("[%s] Alert '%d' used version is no longer used. Please update your AlertR instance."
-                                  % (self.fileName, self.id))
+                    self._log_error(self._log_tag, "Used version is no longer used. Please update your AlertR instance.")
 
                 else:
-                    logging.error("[%s] Alert '%d' server responded with error '%d'."
-                                  % (self.fileName, self.id, error_code))
+                    self._log_error(self._log_tag, "Server responded with error '%d'." % error_code)
 
             # Only retry sending message if we can recover from error.
             if error_code not in self.retryCodes:
-                logging.error("[%s]: Alert '%d' do not retry to send message." % (self.fileName, self.id))
+                self._log_error(self._log_tag, "Not retrying to re-send message.")
                 break
 
             if ctr > self.pushRetries:
-                logging.error("[%s]: Alert '%d' tried to send message for %d times. Giving up."
-                              % (self.fileName, self.id, ctr))
+                self._log_error(self._log_tag, "Tried to send message for %d times. Giving up." % ctr)
                 break
             
-            logging.info("[%s] Alert '%d' retrying to send notification to channel '%s' in %d seconds."
-                         % (self.fileName, self.id, self.channel, self.pushRetryTimeout))
+            self._log_info(self._log_tag, "Retrying to send notification to channel '%s' in %d seconds."
+                           % (self.channel, self.pushRetryTimeout))
 
             time.sleep(self.pushRetryTimeout)
 

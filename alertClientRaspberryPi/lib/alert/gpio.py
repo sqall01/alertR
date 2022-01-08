@@ -9,7 +9,6 @@
 
 import time
 import os
-import logging
 import threading
 import RPi.GPIO as GPIO
 from typing import Optional
@@ -25,7 +24,7 @@ class RaspberryPiGPIOAlert(_Alert):
         _Alert.__init__(self)
 
         # File nme of this file (used for logging).
-        self.log_tag = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # this flag is used to signalize if the alert is triggered or not
         self.state = None  # type: Optional[int]
@@ -104,16 +103,14 @@ class RaspberryPiGPIOAlert(_Alert):
         # Only execute if we are not in the state already.
         if curr_state != target_state:
 
-            logging.info("[%s]: Alert '%d' sets pin for state %d."
-                         % (self.log_tag, self.id, target_state))
+            self._log_info(self._log_tag, "Setting pin for state %d." % target_state)
 
             self.set_state(target_state)
 
             # Start reset watchdog if reset is activated and target state of Alert object was "triggered".
             if self.gpio_reset_activated and target_state == 1:
 
-                logging.debug("[%s]: Alert '%d' starting reset watchdog with %d seconds."
-                              % (self.log_tag, self.id, self.gpio_reset_state_time))
+                self._log_debug(self._log_tag, "Starting reset watchdog with %d seconds." % self.gpio_reset_state_time)
 
                 # Ask already running thread to stop (if exists).
                 if self.gpio_reset_thread is not None:
@@ -126,7 +123,7 @@ class RaspberryPiGPIOAlert(_Alert):
                 self.gpio_reset_thread.start()
 
         else:
-            logging.debug("[%s]: Alert '%d' already in state %d." % (self.log_tag, self.id, curr_state))
+            self._log_debug(self._log_tag, "Already in state %d." % curr_state)
 
     def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """
@@ -220,8 +217,9 @@ class RaspberryPiGPIOReset(threading.Thread):
                 self.set_exit()
                 return
 
-        logging.info("[%s]: Alert '%d' resetting to normal state after %d seconds have passed."
-                     % (self.alert.log_tag, self.alert.id, self.reset_time))
+        # noinspection PyProtectedMember
+        self.alert._log_info(self.alert._log_tag, "Resetting to normal state after %d seconds have passed."
+                             % self.reset_time)
 
         self.alert.set_state(0)
         self.set_exit()

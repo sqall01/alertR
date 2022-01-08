@@ -9,7 +9,6 @@
 
 import time
 import os
-import logging
 import smtplib
 from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 from .core import _Alert
@@ -22,7 +21,7 @@ class MailAlert(_Alert):
     def __init__(self):
         _Alert.__init__(self)
 
-        self.fileName = os.path.basename(__file__)
+        self._log_tag = os.path.basename(__file__)
 
         # these are the mail settings
         self.host = None
@@ -82,15 +81,14 @@ class MailAlert(_Alert):
 
         intersect_alert_levels = [str(x) for x in set(sensor_alert.alertLevels).intersection(self.alertLevels)]
         try:
-            logging.info("[%s] Alert '%d' sending eMail for triggered alert levels %s."
-                         % (self.fileName, self.id, ", ".join(intersect_alert_levels)))
+            self._log_info(self._log_tag, "Sending mail for triggered alert levels %s."
+                           % ", ".join(intersect_alert_levels))
             smtp_server = smtplib.SMTP(self.host, self.port)
             smtp_server.sendmail(self.fromAddr, self.toAddr, email_header + temp_msg)
             smtp_server.quit()
 
         except Exception as e:
-            logging.exception("[%s]: Alert '%d' unable to send eMail for triggered alert."
-                              % (self.fileName, self.id))
+            self._log_exception(self._log_tag, "Unable to send mail.")
 
     def initialize(self):
         """
