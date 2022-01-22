@@ -48,6 +48,9 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
 
         self._last_temperature_update = 0.0
 
+        # This sensor type string is used for log messages.
+        self._log_desc = "Temperature"
+
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         """
         Internal function that reads the data of the DS18b20 sensor.
