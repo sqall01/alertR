@@ -48,6 +48,10 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
 
         self._last_temperature_update = 0.0
 
+        # As long as errors occurring during the fetching of data are encoded as negative values,
+        # we need the lowest value that we use for our threshold check.
+        self._sane_lowest_value = -273.0
+
         # This sensor type string is used for log messages.
         self._log_desc = "Temperature"
 
