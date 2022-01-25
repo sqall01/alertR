@@ -1,3 +1,7 @@
+## 0.901-2
+
+* Added sanity checks during sensor initialization
+
 ## 0.901-1
 
 * Updated logging of sensor messages

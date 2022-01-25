@@ -63,6 +63,9 @@ class ForecastRainPollingSensor(_NumberSensor):
         return data
 
     def initialize(self) -> bool:
+        if not super().initialize():
+            return False
+
         self.state = 1 - self.triggerState
 
         self._optional_data = {"country": self.country,

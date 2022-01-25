@@ -1,3 +1,8 @@
+## 0.901-2
+
+* Fixed threshold processing bug
+* Added sanity checks during sensor initialization
+
 ## 0.901-1
 
 * Updated logging of sensor messages
