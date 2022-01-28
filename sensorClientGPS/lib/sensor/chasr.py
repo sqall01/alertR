@@ -8,7 +8,6 @@
 # Licensed under the GNU Affero General Public License, version 3.
 import binascii
 import os
-import logging
 import requests
 import hashlib
 import time
@@ -93,7 +92,7 @@ class ChasRSensor(_GPSSensor):
 
     def _get_data(self) -> SensorDataGPS:
 
-        logging.debug("[%s] Fetching data for device: %s" % (self._log_tag, self.device))
+        self._log_debug(self._log_tag, "Fetching data for device: %s" % self.device)
 
         # Prepare POST data.
         payload = {"user": self.username,
@@ -109,7 +108,7 @@ class ChasRSensor(_GPSSensor):
             request_result = r.json()
 
         except Exception as e:
-            logging.exception("[%s] Failed to fetch GPS data." % self._log_tag)
+            self._log_exception(self._log_tag, "Failed to fetch GPS data.")
             raise
 
         # Decrypt and authenticate data if fetching was successful.
@@ -120,18 +119,18 @@ class ChasRSensor(_GPSSensor):
                 decrypted_data = self._decrypt_data(request_result["data"]["locations"][0])
 
             except Exception as e:
-                logging.exception("[%s] Failed to decrypt GPS data." % self._log_tag)
+                self._log_exception(self._log_tag, "Failed to decrypt GPS data.")
 
             if decrypted_data is None:
-                logging.error("[%s] Unable to decrypt GPS data." % self._log_tag)
+                self._log_error(self._log_tag, "Unable to decrypt GPS data.")
                 raise ValueError("Decryption Error")
 
             if decrypted_data["device_name"] != self.device:
-                logging.error("[%s] Received GPS data for wrong device." % self._log_tag)
+                self._log_error(self._log_tag, "Received GPS data for wrong device.")
                 raise ValueError("Wrong device")
 
             if not self._check_hmac(decrypted_data):
-                logging.error("[%s] Unable to authenticate GPS data." % self._log_tag)
+                self._log_error(self._log_tag, "Unable to authenticate GPS data.")
                 raise ValueError("Unauthenticated Data")
 
             self._last_position = SensorDataGPS(float(decrypted_data["lat"]),
@@ -142,44 +141,44 @@ class ChasRSensor(_GPSSensor):
 
         # Server has a database error.
         elif request_result["code"] == ChasRErrorCodes.DATABASE_ERROR:
-            logging.error("[%s] Failed to fetch GPS data. Server has a database error." % self._log_tag)
+            self._log_error(self._log_tag, "Failed to fetch GPS data. Server has a database error.")
             if "msg" in request_result.keys():
-                logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
+                self._log_error(self._log_tag, "Server message: %s" % request_result["msg"])
             raise ServerError("Server Database Error")
 
         # Authentication error.
         elif request_result["code"] == ChasRErrorCodes.AUTH_ERROR:
-            logging.error("[%s] Failed to fetch GPS data. Authentication failed." % self._log_tag)
+            self._log_error(self._log_tag, "Failed to fetch GPS data. Authentication failed.")
             if "msg" in request_result.keys():
-                logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
+                self._log_error(self._log_tag, "Server message: %s" % request_result["msg"])
             raise ServerError("Authentication Error")
 
         # Illegal message error.
         elif request_result["code"] == ChasRErrorCodes.ILLEGAL_MSG_ERROR:
-            logging.error("[%s] Failed to fetch GPS data. Message illegal." % self._log_tag)
+            self._log_error(self._log_tag, "Failed to fetch GPS data. Message illegal.")
             if "msg" in request_result.keys():
-                logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
+                self._log_error(self._log_tag, "Server message: %s" % request_result["msg"])
             raise ServerError("Illegal Message Error")
 
         # Session expired error.
         elif request_result["code"] == ChasRErrorCodes.SESSION_EXPIRED:
-            logging.error("[%s] Failed to fetch GPS data. Session expired." % self._log_tag)
+            self._log_error(self._log_tag, "Failed to fetch GPS data. Session expired.")
             if "msg" in request_result.keys():
-                logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
+                self._log_error(self._log_tag, "Server message: %s" % request_result["msg"])
             raise ServerError("Session Expired")
 
         # Request not allowed (e.g., no device slots left).
         elif request_result["code"] == ChasRErrorCodes.ACL_ERROR:
-            logging.error("[%s] Failed to fetch GPS data. ACL error." % self._log_tag)
+            self._log_error(self._log_tag, "Failed to fetch GPS data. ACL error.")
             if "msg" in request_result.keys():
-                logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
+                self._log_error(self._log_tag, "Server message: %s" % request_result["msg"])
             raise ServerError("ACL Error")
 
         # Unknown error.
         else:
-            logging.error("[%s] Failed to fetch GPS data. Unknown error: %d." % (self._log_tag, request_result["code"]))
+            self._log_error(self._log_tag, "Failed to fetch GPS data. Unknown error: %d." % request_result["code"])
             if "msg" in request_result.keys():
-                logging.error("[%s] Server message: %s" % (self._log_tag, request_result["msg"]))
+                self._log_error(self._log_tag, "Server message: %s" % request_result["msg"])
             raise ServerError("Unknown Error")
 
     def _get_optional_data(self) -> Optional[Dict[str, Any]]:

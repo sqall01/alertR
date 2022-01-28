@@ -1,3 +1,12 @@
+## 0.901-2
+
+* Fixed threshold processing bug
+* Added sanity checks during sensor initialization
+
+## 0.901-1
+
+* Updated logging of sensor messages
+
 ## 0.901-0
 
 * Added configuration option to disable TLS for testing purposes

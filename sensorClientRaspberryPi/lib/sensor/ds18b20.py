@@ -9,7 +9,6 @@
 
 import re
 import os
-import logging
 import time
 from typing import Optional, Union
 from .number import _NumberSensor
@@ -49,6 +48,13 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
 
         self._last_temperature_update = 0.0
 
+        # As long as errors occurring during the fetching of data are encoded as negative values,
+        # we need the lowest value that we use for our threshold check.
+        self._sane_lowest_value = -273.0
+
+        # This sensor type string is used for log messages.
+        self._log_desc = "Temperature"
+
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         """
         Internal function that reads the data of the DS18b20 sensor.
@@ -74,10 +80,10 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
                         return SensorDataFloat(float(reMatch.group(2)) / 1000, self._unit)
 
                     else:
-                        logging.error("[%s]: Could not parse sensor file." % self._log_tag)
+                        self._log_error(self._log_tag, "Could not parse sensor file.")
 
             except Exception as e:
-                logging.exception("[%s]: Could not read sensor file." % self._log_tag)
+                self._log_exception(self._log_tag, "Could not read sensor file.")
 
             return None
 
@@ -85,6 +91,9 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
             return self.data
 
     def initialize(self) -> bool:
+        if not super().initialize():
+            return False
+
         self.state = 1 - self.triggerState
 
         self._sensor_file = "/sys/bus/w1/devices/" \

@@ -25,6 +25,9 @@ class _PollingSensor:
 
     def __init__(self):
 
+        # Used for logging.
+        self._log_tag = os.path.basename(__file__)
+
         # Id of this sensor on this client.
         self.id = None  # type: Optional[int]
 
@@ -153,6 +156,7 @@ class _PollingSensor:
         # Otherwise, drop event.
         if state == self.triggerState:
             if self.triggerAlert:
+                self._log_info(self._log_tag, "Sensor Alert for 'triggered' raised.")
                 self._add_event(sensor_alert)
 
             elif change_state:
@@ -174,6 +178,7 @@ class _PollingSensor:
 
         else:
             if self.triggerAlertNormal:
+                self._log_info(self._log_tag, "Sensor Alert for 'normal' raised.")
                 self._add_event(sensor_alert)
 
             elif change_state:
@@ -237,6 +242,42 @@ class _PollingSensor:
         Internal function that implements the actual sensor logic.
         """
         raise NotImplementedError("Function not implemented yet.")
+
+    def _log_debug(self, log_tag: str, msg: str):
+        """
+        Internal function to log debug messages.
+        """
+        logging.debug("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_info(self, log_tag: str, msg: str):
+        """
+        Internal function to log info messages.
+        """
+        logging.info("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_warning(self, log_tag: str, msg: str):
+        """
+        Internal function to log warning messages.
+        """
+        logging.warning("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_error(self, log_tag: str, msg: str):
+        """
+        Internal function to log error messages.
+        """
+        logging.error("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_critical(self, log_tag: str, msg: str):
+        """
+        Internal function to log critical messages.
+        """
+        logging.critical("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _log_exception(self, log_tag: str, msg: str):
+        """
+        Internal function to log exception messages.
+        """
+        logging.exception("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
 
     def exit(self):
         """

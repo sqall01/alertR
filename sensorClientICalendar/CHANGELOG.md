@@ -1,3 +1,7 @@
+## 0.901-1
+
+* Updated logging of sensor messages
+
 ## 0.901-0
 
 * Added configuration option to disable TLS for testing purposes

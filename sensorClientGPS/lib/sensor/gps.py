@@ -9,7 +9,6 @@
 
 import os
 import time
-import logging
 from typing import Tuple, Optional, List, Dict, Any
 from shapely import geometry, prepared
 from .core import _PollingSensor
@@ -57,8 +56,7 @@ class _GPSSensor(_PollingSensor):
         if self.data == gps_data:
             return
 
-        logging.debug("[%s] GPS position for '%s': %f, %f"
-                      % (self._log_tag, self.description, gps_data.lat, gps_data.lon))
+        self._log_debug(self._log_tag, "GPS position: %f, %f" % (gps_data.lat, gps_data.lon))
 
         # According to a tutorial, shapely needs coordinates in the form longitude, latitude.
         point = geometry.Point(gps_data.lon, gps_data.lat)
@@ -141,7 +139,7 @@ class _GPSSensor(_PollingSensor):
                 self._polygons.append(prepared.prep(polygon))
 
         except Exception as e:
-            logging.exception("[%s] Unable to build polygon for geofence." % self._log_tag)
+            self._log_exception(self._log_tag, "Unable to build polygon for geofence.")
             return False
 
         return True
@@ -171,15 +169,15 @@ class _GPSSensor(_PollingSensor):
                     gps_data = self._get_data()
 
                 except Exception as e:
-                    logging.exception("[%s] Unable to fetch GPS data from provider." % self._log_tag)
+                    self._log_exception(self._log_tag, "Unable to fetch GPS data from provider.")
                     continue
 
                 # Check if received GPS data is newer than the last one.
                 if gps_data.utctime == self._last_utctime:
-                    logging.debug("[%s] No GPS data update." % self._log_tag)
+                    self._log_debug(self._log_tag, "No GPS data update.")
                     continue
                 if gps_data.utctime < self._last_utctime:
-                    logging.error("[%s] Received old GPS data." % self._log_tag)
+                    self._log_error(self._log_tag, "Received old GPS data.")
                     continue
                 self._last_utctime = gps_data.utctime
 

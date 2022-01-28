@@ -7,6 +7,7 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
+import logging
 from typing import Optional
 from ..globalData import ManagerObjSensorAlert, ManagerObjProfile
 
@@ -20,6 +21,42 @@ class _Alert(object):
         self.id = None  # type: Optional[int]
         self.description = None  # type: Optional[str]
         self.alertLevels = list()
+
+    def _log_debug(self, log_tag: str, msg: str):
+        """
+        Internal function to log debug messages.
+        """
+        logging.debug("[%s] [Alert %d] %s" % (log_tag, self.id, msg))
+
+    def _log_info(self, log_tag: str, msg: str):
+        """
+        Internal function to log info messages.
+        """
+        logging.info("[%s] [Alert %d] %s" % (log_tag, self.id, msg))
+
+    def _log_warning(self, log_tag: str, msg: str):
+        """
+        Internal function to log warning messages.
+        """
+        logging.warning("[%s] [Alert %d] %s" % (log_tag, self.id, msg))
+
+    def _log_error(self, log_tag: str, msg: str):
+        """
+        Internal function to log error messages.
+        """
+        logging.error("[%s] [Alert %d] %s" % (log_tag, self.id, msg))
+
+    def _log_critical(self, log_tag: str, msg: str):
+        """
+        Internal function to log critical messages.
+        """
+        logging.critical("[%s] [Alert %d] %s" % (log_tag, self.id, msg))
+
+    def _log_exception(self, log_tag: str, msg: str):
+        """
+        Internal function to log exception messages.
+        """
+        logging.exception("[%s] [Alert %d] %s" % (log_tag, self.id, msg))
 
     def alert_triggered(self, sensor_alert: ManagerObjSensorAlert):
         """

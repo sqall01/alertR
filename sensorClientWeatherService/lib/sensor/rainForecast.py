@@ -7,7 +7,6 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-import logging
 import os
 from typing import Optional
 from .number import _NumberSensor
@@ -59,11 +58,14 @@ class ForecastRainPollingSensor(_NumberSensor):
                                  self._unit)
 
         except Exception as e:
-            logging.exception("[%s] Unable to rain forecast data from provider." % self._log_tag)
+            self._log_exception(self._log_tag, "Unable to get rain forecast data from provider.")
 
         return data
 
     def initialize(self) -> bool:
+        if not super().initialize():
+            return False
+
         self.state = 1 - self.triggerState
 
         self._optional_data = {"country": self.country,

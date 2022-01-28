@@ -9,7 +9,6 @@
 
 import RPi.GPIO as GPIO
 import os
-import logging
 import time
 from .core import _PollingSensor
 from ..globalData import SensorDataType
@@ -99,15 +98,14 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
 
         self._edge_counter += 1
 
-        logging.debug("[%s] %d Interrupt for sensor '%s' triggered."
-                      % (self._log_tag, self._edge_counter, self.description))
+        self._log_debug(self._log_tag, "%d Interrupt for sensor triggered." % self._edge_counter)
 
         # if edge counter reaches threshold
         # => trigger state
         if self._edge_counter >= self.edgeCountBeforeTrigger:
             self._internal_state = self.triggerState
 
-            logging.debug("[%s] Sensor '%s' triggered." % (self._log_tag, self.description))
+            self._log_debug(self._log_tag, "Sensor triggered.")
 
     def initialize(self) -> bool:
 
@@ -117,7 +115,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
         elif self.pulledUpOrDown == 1:
             pulledUpOrDown = GPIO.PUD_UP
         else:
-            logging.critical("[%s] Value for pulled up or down setting not known." % self._log_tag)
+            self._log_critical(self._log_tag, "Value for pulled up or down setting not known.")
             return False
 
         # Configure gpio pin and get initial state.
@@ -138,7 +136,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
                                   GPIO.RISING,
                                   callback=self._interrupt_callback)
         else:
-            logging.critical("[%s] Value for edge detection not known." % self._log_tag)
+            self._log_critical(self._log_tag, "Value for edge detection not known.")
             return False
 
         return True
