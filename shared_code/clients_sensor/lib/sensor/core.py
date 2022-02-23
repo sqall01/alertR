@@ -108,6 +108,8 @@ class _PollingSensor:
         If state_change and has_latest_data are False and the corresponding triggered or normal state is disabled
         in the Sensor configuration, the event will be dropped.
 
+        Updates error state to OK.
+
         :param state:
         :param change_state:
         :param optional_data:
@@ -153,6 +155,9 @@ class _PollingSensor:
         # Update sensor data if it has latest data.
         if has_latest_data:
             self.data = sensor_alert.data
+
+        # Set error state to OK (Sensor Alerts can only happen if the Sensor is in no error state).
+        self.error_state.set_ok()
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
         # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
@@ -211,6 +216,8 @@ class _PollingSensor:
 
         Updates Sensor data.
 
+        Updates error state to OK.
+
         :param state:
         :param sensor_data:
         """
@@ -234,6 +241,9 @@ class _PollingSensor:
             state_change.data = SensorDataNone()
         else:
             state_change.data = sensor_data
+
+        # Set error state to OK (state changes can only happen if the Sensor is in no error state).
+        self.error_state.set_ok()
 
         self.state = state
         self.data = state_change.data
@@ -281,6 +291,12 @@ class _PollingSensor:
         Internal function to log exception messages.
         """
         logging.exception("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
+
+    def _set_error_state(self, error_state: int, msg: str):
+        """
+        Internal function
+        """
+        # TODO
 
     def exit(self):
         """
