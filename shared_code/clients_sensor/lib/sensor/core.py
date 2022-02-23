@@ -13,8 +13,8 @@ import logging
 import threading
 from typing import Optional, List, Union, Dict, Any
 from ..globalData import GlobalData
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
-from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorErrorState
+from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorErrorState, SensorObjErrorStateChange,\
+    SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 
 
 class _PollingSensor:
@@ -70,14 +70,14 @@ class _PollingSensor:
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
         # (first element triggered before the second element and so on).
-        self._events = []  # type: List[Union[SensorObjSensorAlert, SensorObjStateChange]]
+        self._events = []  # type: List[Union[SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange]]
         self._events_lock = threading.Lock()
 
         self._thread = None  # type: Optional[threading.Thread]
 
         self._exit_flag = False
 
-    def _add_event(self, event: Union[SensorObjSensorAlert, SensorObjStateChange]):
+    def _add_event(self, event: Union[SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange]):
         """
         Internal function to add an event (e.g., Sensor Alert or state change) for processing.
         :param event:
@@ -108,7 +108,7 @@ class _PollingSensor:
         If state_change and has_latest_data are False and the corresponding triggered or normal state is disabled
         in the Sensor configuration, the event will be dropped.
 
-        Updates error state to OK.
+        If not in OK state it clears error state and adds an error state change for processing.
 
         :param state:
         :param change_state:
@@ -217,7 +217,7 @@ class _PollingSensor:
 
         Updates Sensor data.
 
-        Updates error state to OK.
+        If not in OK state it clears error state and adds an error state change for processing.
 
         :param state:
         :param sensor_data:
@@ -302,7 +302,8 @@ class _PollingSensor:
 
     def _set_error_state(self, error_state: int, msg: str):
         """
-        Internal function to set the Sensor error state.
+        Internal function to set the Sensor error state and
+        adds an error state change event to the queue for processing.
 
         :param error_state:
         :param msg:
@@ -313,9 +314,11 @@ class _PollingSensor:
         else:
             self.error_state.set_error(error_state, msg)
 
-        # TODO use self._add_event() to add error state event
-        # Remember to make a copy of the error state for the event object to not use the error state object of the sensor
-        raise NotImplementedError("TODO")
+        obj = SensorObjErrorStateChange()
+        obj.clientSensorId = self.id
+        obj.error_state = SensorErrorState.deepcopy(self.error_state)
+
+        self._add_event(obj)
 
     def exit(self):
         """
@@ -323,7 +326,7 @@ class _PollingSensor:
         """
         self._exit_flag = True
 
-    def get_events(self) -> List[Union[SensorObjSensorAlert, SensorObjStateChange]]:
+    def get_events(self) -> List[Union[SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange]]:
         """
         Gets a list of triggered events (e.g., Sensor Alert or state change) not yet processed.
         :return: List of events

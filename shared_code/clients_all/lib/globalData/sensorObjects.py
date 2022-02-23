@@ -317,8 +317,107 @@ class SensorOrdering:
         return value in cls._sensor_ordering_values
 
 
-# This class represents a triggered sensor alert of the sensor.
+class SensorErrorState(_Data):
+    """
+    Represents the error state of a sensor.
+    """
+
+    OK = 0
+    GenericError = 1
+    ProcessingError = 2
+    TimeoutError = 3
+
+    _str = {0: "OK",
+            1: "Generic Error",
+            2: "Processing Error",
+            3: "Timeout Error"}
+
+    def __init__(self, state: int = 0, msg: str = ""):
+        super(SensorErrorState, self).__init__()
+        if state not in SensorErrorState._str.keys():
+            raise ValueError("State %d does not exist." % state)
+
+        if state == SensorErrorState.OK and msg.strip() != "":
+            raise ValueError("Message has to be empty.")
+
+        if state != SensorErrorState.OK and msg.strip() == "":
+            raise ValueError("Message is not allowed to be empty.")
+
+        self._state = state
+        self._msg = msg
+
+    def __eq__(self, other):
+        return (type(other) == SensorErrorState
+                and self._state == other.state
+                and self._msg == other.msg)
+
+    def __str__(self) -> str:
+        if self._state in SensorErrorState._str.keys():
+            return "%s (%s)" % (SensorErrorState._str[self._state], self._msg)
+        return "Unknown (%s)" % self._msg
+
+    @property
+    def state(self) -> int:
+        return self._state
+
+    @property
+    def msg(self) -> str:
+        return self._msg
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        return SensorErrorState(data["state"], data["msg"])
+
+    @staticmethod
+    def deepcopy(obj):
+        return SensorErrorState(obj.state, obj.msg)
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        if (isinstance(data, dict)
+                and all([x in data.keys() for x in ["state", "msg"]])
+                and len(data.keys()) == 2
+                and isinstance(data["state"], int)
+                and data["state"] in SensorErrorState._str.keys()
+                and isinstance(data["msg"], str)
+                and ((data["state"] == SensorErrorState.OK and data["msg"].strip() == "")
+                     or (data["state"] != SensorErrorState.OK and data["msg"].strip() != ""))):
+            return True
+        return False
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        dict_obj = {"state": self._state,
+                    "msg": self._msg,
+                    }
+        return dict_obj
+
+    def deepcopy_obj(self, obj):
+        self._state = obj.state
+        self._msg = obj.msg
+        return self
+
+    def set_error(self, state: int, msg: str):
+        if state not in SensorErrorState._str.keys():
+            raise ValueError("State %d does not exist." % state)
+
+        if state == SensorErrorState.OK:
+            raise ValueError("State %d is not an error state." % state)
+
+        if msg.strip() == "":
+            raise ValueError("Message is not allowed to be empty.")
+
+        self._state = state
+        self._msg = msg
+
+    def set_ok(self):
+        self._state = SensorErrorState.OK
+        self._msg = ""
+
+
 class SensorObjSensorAlert(_LocalObject):
+    """
+    This class represents a triggered sensor alert of the sensor.
+    """
 
     def __init__(self):
         super().__init__()
@@ -401,8 +500,10 @@ class SensorObjSensorAlert(_LocalObject):
         return self
 
 
-# This class represents a state change of the sensor.
 class SensorObjStateChange(_LocalObject):
+    """
+    This class represents a state change of the sensor.
+    """
 
     def __init__(self):
         super().__init__()
@@ -410,10 +511,10 @@ class SensorObjStateChange(_LocalObject):
         # Sensor id of the local sensor.
         self.clientSensorId = None  # type: Optional[int]
 
-        # State of the sensor alert ("triggered" = 1; "normal" = 0).
+        # State of the sensor ("triggered" = 1; "normal" = 0).
         self.state = None  # type: Optional[int]
 
-        # The sensor data type and data that is connected to this sensor alert.
+        # The sensor data type and data that is connected to this sensor.
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
 
@@ -458,123 +559,46 @@ class SensorObjStateChange(_LocalObject):
         return self
 
 
-class SensorErrorState(_Data):
+class SensorObjErrorStateChange(_LocalObject):
     """
-    Represents the error state of a sensor.
+    This class represents a error state change of the sensor.
     """
 
-    OK = 0
-    GenericError = 1
-    ProcessingError = 2
-    TimeoutError = 3
+    def __init__(self):
+        super().__init__()
 
-    _str = {0: "OK",
-            1: "Generic Error",
-            2: "Processing Error",
-            3: "Timeout Error"}
+        # Sensor id of the local sensor.
+        self.clientSensorId = None  # type: Optional[int]
 
-    def __init__(self, state: int = 0, msg: str = ""):
-        super(SensorErrorState, self).__init__()
-        if state not in SensorErrorState._str.keys():
-            raise ValueError("State %d does not exist." % state)
-
-        if state == SensorErrorState.OK and msg.strip() != "":
-            raise ValueError("Message has to be empty.")
-
-        if state != SensorErrorState.OK and msg.strip() == "":
-            raise ValueError("Message is not allowed to be empty.")
-
-        self._state = state
-        self._msg = msg
-
-    def __eq__(self, other):
-        return (type(other) == SensorErrorState
-                and self._state == other.state
-                and self._msg == other.msg)
-
-    def __str__(self) -> str:
-        if self._state in SensorErrorState._str.keys():
-            return "%s (%s)" % (SensorErrorState._str[self._state], self._msg)
-        return "Unknown (%s)" % self._msg
-
-    @property
-    def state(self) -> int:
-        return self._state
-
-    @property
-    def msg(self) -> str:
-        return self._msg
+        # Error state of the sensor.
+        self.error_state = None  # type: Optional[SensorErrorState]
 
     @staticmethod
     def copy_from_dict(data: Dict[str, Any]):
-        """
-        This function creates from the given dictionary an object of this class.
-        This function has to succeed if verify_dict() says dictionary is correct.
-        :param data:
-        :return: object of this class
-        """
-        return SensorErrorState(data["state"], data["msg"])
+        obj = SensorObjErrorStateChange()
+        obj.clientSensorId = data["clientSensorId"]
+        obj.error_state = SensorErrorState.copy_from_dict(data["error_state"])
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):
-        """
-        This function copies all attributes of the given object to a new data object.
-        :param obj:
-        :return: object of this class
-        """
-        return SensorErrorState(obj.msg, obj.msg)
-
-    @staticmethod
-    def verify_dict(data: Dict[str, Any]) -> bool:
-        """
-        This function verifies the given dictionary representing this object for correctness.
-        Meaning, if verify_dict() succeeds, copy_from_dict() has to be able to create a valid object.
-        :return: correct or not
-        """
-        if (isinstance(data, dict)
-                and all([x in data.keys() for x in ["state", "msg"]])
-                and len(data.keys()) == 2
-                and isinstance(data["state"], int)
-                and data["state"] in SensorErrorState._str.keys()
-                and isinstance(data["msg"], str)
-                and ((data["state"] == SensorErrorState.OK and data["msg"].strip() == "")
-                     or (data["state"] != SensorErrorState.OK and data["msg"].strip() != ""))):
-            return True
-        return False
+        return SensorObjErrorStateChange().deepcopy_obj(obj)
 
     def copy_to_dict(self) -> Dict[str, Any]:
-        """
-        Copies the object's data into a dictionary.
-        :return: dictionary representation of a copy of this object
-        """
-        dict_obj = {"state": self._state,
-                    "msg": self._msg,
+        obj_dict = {"clientSensorId": self.clientSensorId,
+                    "error_state": self.error_state.copy_to_dict(),
                     }
-        return dict_obj
+
+        return obj_dict
 
     def deepcopy_obj(self, obj):
-        """
-        This function copies all attributes of the given object to this object.
-        :param obj:
-        :return: this object
-        """
-        self._state = obj.state
-        self._msg = obj.msg
+        self.clientSensorId = obj.clientSensorId
+
+        # Deep copy error state.
+        if self.error_state is None:
+            self.error_state = SensorErrorState.deepcopy(obj.error_state)
+        else:
+            self.error_state.deepcopy_obj(obj.error_state)
+
         return self
-
-    def set_error(self, state: int, msg: str):
-        if state not in SensorErrorState._str.keys():
-            raise ValueError("State %d does not exist." % state)
-
-        if state == SensorErrorState.OK:
-            raise ValueError("State %d is not an error state." % state)
-
-        if msg.strip() == "":
-            raise ValueError("Message is not allowed to be empty.")
-
-        self._state = state
-        self._msg = msg
-
-    def set_ok(self):
-        self._state = SensorErrorState.OK
-        self._msg = ""

@@ -1,6 +1,6 @@
 from unittest import TestCase
 from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorDataNone, \
-    SensorDataInt
+    SensorDataInt, SensorErrorState, SensorObjErrorStateChange
 # noinspection PyProtectedMember
 from lib.sensor.core import _PollingSensor
 
@@ -510,6 +510,34 @@ class TestPollingSensor(TestCase):
         # Make sure sensor data did not change.
         self.assertEqual(SensorDataInt(1, "test unit"), sensor.data)
 
+    def test_add_sensor_alert_clears_error_state(self):
+        """
+        Tests if adding a sensor alert is correctly processed
+        (clears error state).
+        """
+
+        sensor = self._create_base_sensor()
+
+        sensor.error_state.set_error(SensorErrorState.GenericError, "Some Error")
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
+
+        sensor._add_sensor_alert(sensor.triggerState,
+                                 change_state=True)
+
+        events = sensor.get_events()
+        self.assertEqual(2, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorObjSensorAlert, type(events[1]))
+        self.assertEqual(sensor.id, events[0].clientSensorId)
+        self.assertEqual(SensorErrorState.OK, events[0].error_state.state)
+        self.assertEqual("", events[0].error_state.msg)
+
+        # Make sure error state did change.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
+
     def test_get_events(self):
         """
         Tests if getting events clears the event list.
@@ -632,3 +660,76 @@ class TestPollingSensor(TestCase):
 
         # Make sure sensor data did not change.
         self.assertEqual(SensorDataInt(1, "test unit"), sensor.data)
+
+    def test_add_state_change_clears_error_state(self):
+        """
+        Tests if adding a state change is correctly processed
+        (clears error state).
+        """
+
+        sensor = self._create_base_sensor()
+
+        sensor.error_state.set_error(SensorErrorState.GenericError, "Some Error")
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
+
+        sensor._add_state_change(sensor.triggerState)
+
+        events = sensor.get_events()
+        self.assertEqual(2, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorObjStateChange, type(events[1]))
+        self.assertEqual(sensor.id, events[0].clientSensorId)
+        self.assertEqual(SensorErrorState.OK, events[0].error_state.state)
+        self.assertEqual("", events[0].error_state.msg)
+
+        # Make sure error state did change.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
+
+    def test_clear_error_state(self):
+        """
+        Tests if clearing error state is correctly processed.
+        """
+
+        sensor = self._create_base_sensor()
+        sensor.error_state.set_error(SensorErrorState.GenericError, "Some Error")
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
+
+        sensor._clear_error_state()
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(sensor.id, events[0].clientSensorId)
+        self.assertEqual(sensor.error_state, events[0].error_state)
+        self.assertFalse(sensor.error_state is events[0].error_state)
+
+        # Make sure error state did change.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
+
+    def test_set_error_state(self):
+        """
+        Tests if setting error state is correctly processed.
+        """
+
+        sensor = self._create_base_sensor()
+
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+
+        sensor._set_error_state(SensorErrorState.GenericError, "Some Error")
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(sensor.id, events[0].clientSensorId)
+        self.assertEqual(sensor.error_state, events[0].error_state)
+        self.assertFalse(sensor.error_state is events[0].error_state)
+
+        # Make sure error state did change.
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("Some Error", sensor.error_state.msg)
