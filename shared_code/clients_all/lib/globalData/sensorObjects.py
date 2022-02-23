@@ -458,9 +458,9 @@ class SensorObjStateChange(_LocalObject):
         return self
 
 
-class SensorInternalState(_Data):
+class SensorErrorState(_Data):
     """
-    Represents the internal state of a sensor.
+    Represents the error state of a sensor.
     """
 
     OK = 0
@@ -474,18 +474,18 @@ class SensorInternalState(_Data):
             3: "Timeout Error"}
 
     def __init__(self, state: int = 0, msg: str = ""):
-        super(SensorInternalState, self).__init__()
+        super(SensorErrorState, self).__init__()
         self._state = state
         self._msg = msg
 
     def __eq__(self, other):
-        return (type(other) == SensorInternalState
+        return (type(other) == SensorErrorState
                 and self._state == other.state
                 and self._msg == other.msg)
 
     def __str__(self) -> str:
-        if self._state in SensorInternalState._str.keys():
-            return "%s (%s)" % (SensorInternalState._str[self._state], self._msg)
+        if self._state in SensorErrorState._str.keys():
+            return "%s (%s)" % (SensorErrorState._str[self._state], self._msg)
         return "Unknown (%s)" % self._msg
 
     @property
@@ -504,7 +504,7 @@ class SensorInternalState(_Data):
         :param data:
         :return: object of this class
         """
-        return SensorInternalState(data["state"], data["msg"])
+        return SensorErrorState(data["state"], data["msg"])
 
     @staticmethod
     def deepcopy(obj):
@@ -513,7 +513,7 @@ class SensorInternalState(_Data):
         :param obj:
         :return: object of this class
         """
-        return SensorInternalState(obj.msg, obj.msg)
+        return SensorErrorState(obj.msg, obj.msg)
 
     @staticmethod
     def verify_dict(data: Dict[str, Any]) -> bool:
@@ -526,7 +526,7 @@ class SensorInternalState(_Data):
                 and all([x in data.keys() for x in ["state", "msg"]])
                 and len(data.keys()) == 2
                 and isinstance(data["state"], int)
-                and data["state"] in SensorInternalState._str.keys()
+                and data["state"] in SensorErrorState._str.keys()
                 and isinstance(data["msg"], str)):
             return True
         return False
@@ -552,10 +552,10 @@ class SensorInternalState(_Data):
         return self
 
     def set_error(self, state: int, msg: str):
-        if state not in SensorInternalState._str.keys():
+        if state not in SensorErrorState._str.keys():
             raise ValueError("State %d does not exist." % state)
 
-        if state == SensorInternalState.OK:
+        if state == SensorErrorState.OK:
             raise ValueError("State %d is not an error state." % state)
 
         if msg.strip() == "":
@@ -565,5 +565,5 @@ class SensorInternalState(_Data):
         self._msg = msg
 
     def set_ok(self):
-        self._state = SensorInternalState.OK
+        self._state = SensorErrorState.OK
         self._msg = ""

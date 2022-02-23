@@ -14,7 +14,7 @@ import threading
 from typing import Optional, List, Union, Dict, Any
 from ..globalData import GlobalData
 from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
-from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorInternalState
+from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorErrorState
 
 
 class _PollingSensor:
@@ -64,8 +64,8 @@ class _PollingSensor:
         # The actual data the sensor holds.
         self.data = None  # type: Optional[_SensorData]
 
-        # The internal error state of the sensor
-        self.internal_state = SensorInternalState()  # type: SensorInternalState
+        # The error state of the sensor.
+        self.error_state = SensorErrorState()  # type: SensorErrorState
 
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
