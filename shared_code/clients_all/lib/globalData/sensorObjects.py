@@ -475,6 +475,15 @@ class SensorErrorState(_Data):
 
     def __init__(self, state: int = 0, msg: str = ""):
         super(SensorErrorState, self).__init__()
+        if state not in SensorErrorState._str.keys():
+            raise ValueError("State %d does not exist." % state)
+
+        if state == SensorErrorState.OK and msg.strip() != "":
+            raise ValueError("Message has to be empty.")
+
+        if state != SensorErrorState.OK and msg.strip() == "":
+            raise ValueError("Message is not allowed to be empty.")
+
         self._state = state
         self._msg = msg
 
@@ -527,7 +536,9 @@ class SensorErrorState(_Data):
                 and len(data.keys()) == 2
                 and isinstance(data["state"], int)
                 and data["state"] in SensorErrorState._str.keys()
-                and isinstance(data["msg"], str)):
+                and isinstance(data["msg"], str)
+                and ((data["state"] == SensorErrorState.OK and data["msg"].strip() == "")
+                     or (data["state"] != SensorErrorState.OK and data["msg"].strip() != ""))):
             return True
         return False
 
