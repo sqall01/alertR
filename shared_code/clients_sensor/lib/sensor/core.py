@@ -404,14 +404,19 @@ class SensorExecuter(threading.Thread):
             for sensor in self._sensors:
                 for event in sensor.get_events():
                     if type(event) == SensorObjSensorAlert:
-                        logging.info("[%s]: Sensor alert triggered by '%s' with state %d."
-                                     % (self._log_tag, sensor.description, event.state))
+                        logging.info("[%s]: Sensor alert triggered for Sensor %d with state %d."
+                                     % (self._log_tag, sensor.id, event.state))
                         self._connection.send_sensor_alert(event)
 
                     elif type(event) == SensorObjStateChange:
-                        logging.debug("[%s]: State changed by '%s' to state %d."
-                                      % (self._log_tag, sensor.description, event.state))
+                        logging.debug("[%s]: State changed for Sensor %d to state %d."
+                                      % (self._log_tag, sensor.id, event.state))
                         self._connection.send_state_change(event)
+
+                    elif type(event) == SensorObjErrorStateChange:
+                        logging.debug("[%s]: Error state changed for Sensor %d to error state %d"
+                                      % (self._log_tag, sensor.id, event.error_state.state))
+                        self._connection.send_error_state_change(event)  # TODO
 
             # Check if the last state that was sent to the server is older than 60 seconds => send state update
             utc_timestamp = int(time.time())
