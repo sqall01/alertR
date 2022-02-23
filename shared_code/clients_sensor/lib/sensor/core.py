@@ -157,7 +157,8 @@ class _PollingSensor:
             self.data = sensor_alert.data
 
         # Set error state to OK (Sensor Alerts can only happen if the Sensor is in no error state).
-        self.error_state.set_ok()
+        if self.error_state.state != SensorErrorState.OK:
+            self._clear_error_state()
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
         # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
@@ -243,12 +244,19 @@ class _PollingSensor:
             state_change.data = sensor_data
 
         # Set error state to OK (state changes can only happen if the Sensor is in no error state).
-        self.error_state.set_ok()
+        if self.error_state.state != SensorErrorState.OK:
+            self._clear_error_state()
 
         self.state = state
         self.data = state_change.data
 
         self._add_event(state_change)
+
+    def _clear_error_state(self):
+        """
+        Internal function to clear the Sensor error state.
+        """
+        self._set_error_state(SensorErrorState.OK, "")
 
     def _execute(self):
         """
@@ -294,9 +302,20 @@ class _PollingSensor:
 
     def _set_error_state(self, error_state: int, msg: str):
         """
-        Internal function
+        Internal function to set the Sensor error state.
+
+        :param error_state:
+        :param msg:
         """
-        # TODO
+
+        if error_state == SensorErrorState.OK:
+            self.error_state.set_ok()
+        else:
+            self.error_state.set_error(error_state, msg)
+
+        # TODO use self._add_event() to add error state event
+        # Remember to make a copy of the error state for the event object to not use the error state object of the sensor
+        raise NotImplementedError("TODO")
 
     def exit(self):
         """
