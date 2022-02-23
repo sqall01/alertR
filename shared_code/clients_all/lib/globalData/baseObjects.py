@@ -17,34 +17,30 @@ class InternalState:
     DELETED = 2
 
 
-class LocalObject:
+class _Copyable:
 
-    def __init__(self):
-        # Internal data used by the manager.
-        self.internal_state = InternalState.NOT_USED
-        self.internal_data = dict()
-
-        # To lock internal data structure if necessary for multi threaded programs.
-        self.internal_data_lock = threading.Lock()
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        """
+        This function creates from the given dictionary an object of this class.
+        This function has to succeed if verify_dict() says dictionary is correct.
+        :param data:
+        :return: object of this class
+        """
+        raise NotImplementedError("Abstract class.")
 
     @staticmethod
     def deepcopy(obj):
         """
-        This function copies all attributes of the given object to a new object.
+        This function copies all attributes of the given object to a new data object.
         :param obj:
         :return: object of this class
         """
         raise NotImplementedError("Abstract class.")
 
-    def is_deleted(self):
-        return self.internal_state == InternalState.DELETED
-
-    def is_stored(self):
-        return self.internal_state == InternalState.STORED
-
     def copy_to_dict(self) -> Dict[str, Any]:
         """
-        Copies this object into a dictionary representation.
+        Copies the object's data into a dictionary.
         :return: dictionary representation of a copy of this object
         """
         raise NotImplementedError("Abstract class.")
@@ -56,3 +52,21 @@ class LocalObject:
         :return: this object
         """
         raise NotImplementedError("Abstract class.")
+
+
+# noinspection PyAbstractClass
+class _LocalObject(_Copyable):
+
+    def __init__(self):
+        # Internal data used by the manager.
+        self.internal_state = InternalState.NOT_USED
+        self.internal_data = dict()
+
+        # To lock internal data structure if necessary for multi threaded programs.
+        self.internal_data_lock = threading.Lock()
+
+    def is_deleted(self):
+        return self.internal_state == InternalState.DELETED
+
+    def is_stored(self):
+        return self.internal_state == InternalState.STORED
