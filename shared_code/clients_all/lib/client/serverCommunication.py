@@ -19,7 +19,8 @@ from .communication import Communication, Promise, MsgState
 from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
     ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from ..globalData.sensorObjects import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, \
+    SensorObjErrorStateChange
 from ..globalData import GlobalData
 
 
@@ -873,6 +874,19 @@ class ServerCommunication(Communication):
         ping_message = MsgBuilder.build_ping_msg()
 
         return self.send_request("ping", ping_message)
+
+    def send_error_state_change(self,
+                                error_state_change: SensorObjErrorStateChange) -> Promise:
+        """
+        This function sends an error state change to the server for example to signal that the sensor has an error.
+
+        :param error_state_change:
+        :return: Promise that the request will be sent and that contains the state of the send request
+        """
+
+        error_state_change_message = MsgBuilder.build_error_state_change_msg_sensor(error_state_change)
+
+        return self.send_request("errorstatechange", error_state_change_message)
 
     def send_sensor_alert(self,
                           sensor_alert: SensorObjSensorAlert) -> Promise:

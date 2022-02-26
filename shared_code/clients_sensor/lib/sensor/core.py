@@ -12,6 +12,7 @@ import os
 import logging
 import threading
 from typing import Optional, List, Union, Dict, Any
+from ..client.serverCommunication import ServerCommunication
 from ..globalData import GlobalData
 from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorErrorState, SensorObjErrorStateChange,\
     SensorObjSensorAlert, SensorObjStateChange, SensorDataType
@@ -303,7 +304,7 @@ class _PollingSensor:
     def _set_error_state(self, error_state: int, msg: str):
         """
         Internal function to set the Sensor error state and
-        adds an error state change event to the queue for processing.
+        adding an error state change event to the queue for processing.
 
         :param error_state:
         :param msg:
@@ -363,7 +364,7 @@ class SensorExecuter(threading.Thread):
         threading.Thread.__init__(self)
         self._log_tag = os.path.basename(__file__)
         self._global_data = global_data
-        self._connection = self._global_data.serverComm
+        self._connection = self._global_data.serverComm  # type: Optional[ServerCommunication]
         self._sensors = self._global_data.sensors
 
         # Interval in which a full state of the Sensors are send to the server.
@@ -416,7 +417,7 @@ class SensorExecuter(threading.Thread):
                     elif type(event) == SensorObjErrorStateChange:
                         logging.debug("[%s]: Error state changed for Sensor %d to error state %d"
                                       % (self._log_tag, sensor.id, event.error_state.state))
-                        self._connection.send_error_state_change(event)  # TODO
+                        self._connection.send_error_state_change(event)
 
             # Check if the last state that was sent to the server is older than 60 seconds => send state update
             utc_timestamp = int(time.time())

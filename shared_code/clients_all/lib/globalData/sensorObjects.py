@@ -326,11 +326,15 @@ class SensorErrorState(_Data):
     GenericError = 1
     ProcessingError = 2
     TimeoutError = 3
+    ConnectionError = 4
+    ExecutionError = 5
 
     _str = {0: "OK",
             1: "Generic Error",
             2: "Processing Error",
-            3: "Timeout Error"}
+            3: "Timeout Error",
+            4: "Connection Error",
+            5: "Execution Error"}
 
     def __init__(self, state: int = 0, msg: str = ""):
         super(SensorErrorState, self).__init__()
