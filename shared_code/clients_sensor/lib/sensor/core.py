@@ -102,9 +102,9 @@ class _PollingSensor:
         If the Sensor configuration disables Sensor Alert events for triggered or normal states the Sensor Alert
         event with this state will be transformed into a state change event (which will lose optional data).
         State change events will be sent if state_change flag is True or has_latest_data flag is True.
-        If state_change flag is set to True, the send state change event contains the state given to the function,
+        If state_change flag is set to True, the send-state change event contains the state given to the function,
         otherwise the current state of the Sensor is used.
-        If has_latest_data flag is set to True, the send state change event contains the data given to the function,
+        If has_latest_data flag is set to True, the send-state change event contains the data given to the function,
         otherwise the current data of the Sensor is used.
         If state_change and has_latest_data are False and the corresponding triggered or normal state is disabled
         in the Sensor configuration, the event will be dropped.

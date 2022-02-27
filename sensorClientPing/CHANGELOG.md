@@ -1,3 +1,8 @@
+## 1.000-0
+
+* Added sensor error states
+* Streamlined sensor alert processing
+
 ## 0.901-1
 
 * Updated logging of sensor messages
