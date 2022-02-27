@@ -12,8 +12,7 @@ import time
 from typing import Tuple, Optional, List, Dict, Any
 from shapely import geometry, prepared
 from .core import _PollingSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataGPS
+from ..globalData.sensorObjects import SensorDataGPS, SensorDataType, SensorErrorState
 
 
 class _GPSSensor(_PollingSensor):
@@ -170,6 +169,8 @@ class _GPSSensor(_PollingSensor):
 
                 except Exception as e:
                     self._log_exception(self._log_tag, "Unable to fetch GPS data from provider.")
+                    self._set_error_state(SensorErrorState.ProcessingError,
+                                          "Unable to fetch GPS data from provider: %s" % str(e))
                     continue
 
                 # Check if received GPS data is newer than the last one.

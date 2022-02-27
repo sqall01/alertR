@@ -87,7 +87,7 @@ class PingSensor(_PollingSensor):
 
                     except Exception as e:
                         self._log_exception(self._log_tag, "Unable to execute ping command.")
-                        self._set_error_state(SensorErrorState.ProcessingError, "Unable to execute ping command.")
+                        self._set_error_state(SensorErrorState.ExecutionError, "Unable to execute ping command.")
 
             # Process is still running.
             else:
