@@ -9,8 +9,10 @@ from lib.sensor.core import SensorExecuter
 class TestSensorExecuter(TestCase):
 
     def setUp(self):
+        sensor = MockSensors()
+        sensor.id = 1
         self._sensors = []
-        self._sensors.append(MockSensors())
+        self._sensors.append(sensor)
         self._communication = MockServerCommunication()
 
         self._global_data = GlobalData()

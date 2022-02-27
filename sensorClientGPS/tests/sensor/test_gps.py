@@ -3,7 +3,8 @@ import logging
 from unittest import TestCase
 from typing import List, Optional, Dict, Any
 from tests.util import config_logging
-from lib.globalData.sensorObjects import SensorDataGPS, SensorObjSensorAlert, SensorDataType, SensorObjStateChange
+from lib.globalData.sensorObjects import SensorDataGPS, SensorObjSensorAlert, SensorDataType, SensorObjStateChange, \
+    SensorObjErrorStateChange, SensorErrorState
 from lib.sensor.gps import _GPSSensor
 
 '''
@@ -63,6 +64,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -95,6 +97,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -127,6 +130,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -159,6 +163,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -191,6 +196,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -225,6 +231,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -259,6 +266,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -293,6 +301,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -331,6 +340,7 @@ class TestGpsSensor(TestCase):
                          (55.51452331933269, 10.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -414,6 +424,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -453,6 +464,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -508,6 +520,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -552,6 +565,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -601,6 +615,7 @@ class TestGpsSensor(TestCase):
                         (52.51452331933269, 13.384673595428469)]
 
         sensor = MockSensor()
+        sensor.id = 1
         sensor.triggerState = 1
         sensor.triggerAlert = True
         sensor.triggerAlertNormal = True
@@ -620,8 +635,10 @@ class TestGpsSensor(TestCase):
         time.sleep(3.0)
 
         events = sensor.get_events()
-
-        self.assertEqual(len(events), 0)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(type(events[0]), SensorObjErrorStateChange)
+        self.assertEqual(events[0].error_state.state, SensorErrorState.ProcessingError)
+        self.assertTrue(events[0].error_state.msg.endswith("Test Exception"))
 
         sensor.raise_exception = False
 
@@ -629,10 +646,15 @@ class TestGpsSensor(TestCase):
 
         events = sensor.get_events()
 
-        self.assertEqual(len(events), 1)
-        self.assertEqual(type(events[0]), SensorObjSensorAlert)
-        self.assertEqual(events[0].state, 1)
-        self.assertEqual(events[0].dataType, SensorDataType.GPS)
-        self.assertEqual(events[0].data.lat, position.lat)
-        self.assertEqual(events[0].data.lon, position.lon)
-        self.assertEqual(events[0].data.utctime, position.utctime)
+        # We expect two events:
+        # 1) sensor error state back to OK
+        # 2) sensor alert with new data
+        self.assertEqual(len(events), 2)
+        self.assertEqual(type(events[0]), SensorObjErrorStateChange)
+        self.assertEqual(events[0].error_state.state, SensorErrorState.OK)
+        self.assertEqual(type(events[1]), SensorObjSensorAlert)
+        self.assertEqual(events[1].state, 1)
+        self.assertEqual(events[1].dataType, SensorDataType.GPS)
+        self.assertEqual(events[1].data.lat, position.lat)
+        self.assertEqual(events[1].data.lon, position.lon)
+        self.assertEqual(events[1].data.utctime, position.utctime)
