@@ -187,6 +187,7 @@ class _GPSSensor(_PollingSensor):
     def _get_data(self) -> SensorDataGPS:
         """
         Internal function to get data from the GPS provider.
+        Throws exception in error cases.
         :return: Tuple with latitude, longitude and utc timestamp
         """
         raise NotImplementedError("Function not implemented yet.")
