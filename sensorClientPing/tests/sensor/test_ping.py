@@ -1,7 +1,8 @@
 import os
 import time
 from unittest import TestCase
-from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange
+from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange, \
+    SensorErrorState
 from lib.sensor.ping import PingSensor
 
 
@@ -162,7 +163,7 @@ class TestPingSensor(TestCase):
 
     def test_not_executable(self):
         """
-        Tests if a sensor alert is triggered if ping execution fails.
+        Tests if a sensor error state event is triggered if ping execution fails.
         """
         target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "ping_scripts",
@@ -185,18 +186,16 @@ class TestPingSensor(TestCase):
 
         events = sensor.get_events()
         self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(1, events[0].state)
-        self.assertTrue(events[0].hasOptionalData)
-        self.assertEqual("Unable to execute process", events[0].optionalData["message"])
-        self.assertEqual("processerror", events[0].optionalData["reason"])
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.ExecutionError, events[0].error_state.state)
+        self.assertEqual("Unable to execute ping command.", events[0].error_state.msg)
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
 
     def test_timeout(self):
         """
-        Tests if a sensor alert is triggered if ping times out.
+        Tests if a sensor error state event is triggered if ping times out.
         """
         target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "ping_scripts",
@@ -219,11 +218,9 @@ class TestPingSensor(TestCase):
 
         events = sensor.get_events()
         self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(1, events[0].state)
-        self.assertTrue(events[0].hasOptionalData)
-        self.assertEqual("Timeout", events[0].optionalData["message"])
-        self.assertEqual("processtimeout", events[0].optionalData["reason"])
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.TimeoutError, events[0].error_state.state)
+        self.assertEqual("Ping process timed out.", events[0].error_state.msg)
 
-        # Make sure sensor state has changed.
-        self.assertEqual(1, sensor.state)
+        # Make sure sensor has not changed.
+        self.assertEqual(0, sensor.state)
