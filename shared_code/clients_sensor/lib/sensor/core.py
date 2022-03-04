@@ -14,6 +14,7 @@ import threading
 from typing import Optional, List, Union, Dict, Any
 from ..client.serverCommunication import ServerCommunication
 from ..globalData import GlobalData
+# noinspection PyProtectedMember
 from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorErrorState, SensorObjErrorStateChange,\
     SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 
