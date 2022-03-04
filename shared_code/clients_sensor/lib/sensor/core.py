@@ -109,7 +109,7 @@ class _PollingSensor:
         If state_change and has_latest_data are False and the corresponding triggered or normal state is disabled
         in the Sensor configuration, the event will be dropped.
 
-        If not in OK state it clears error state and adds an error state change for processing.
+        If sensor not in OK state it clears error state and adds an error state change for processing.
 
         :param state:
         :param change_state:
@@ -158,8 +158,8 @@ class _PollingSensor:
             self.data = sensor_alert.data
 
         # Set error state to OK (Sensor Alerts can only happen if the Sensor is in no error state).
-        if self.error_state.state != SensorErrorState.OK:
-            self._clear_error_state()
+        # Function only clears error state if it is in not OK state.
+        self._clear_error_state()
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
         # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
@@ -218,7 +218,7 @@ class _PollingSensor:
 
         Updates Sensor data.
 
-        If not in OK state it clears error state and adds an error state change for processing.
+        If sensor not in OK state it clears error state and adds an error state change for processing.
 
         :param state:
         :param sensor_data:
@@ -245,8 +245,8 @@ class _PollingSensor:
             state_change.data = sensor_data
 
         # Set error state to OK (state changes can only happen if the Sensor is in no error state).
-        if self.error_state.state != SensorErrorState.OK:
-            self._clear_error_state()
+        # Function only clears error state if it is in not OK state.
+        self._clear_error_state()
 
         self.state = state
         self.data = state_change.data
@@ -256,7 +256,12 @@ class _PollingSensor:
     def _clear_error_state(self):
         """
         Internal function to clear the Sensor error state.
+
+        Only clears it if error state is not OK, otherwise does nothing.
         """
+        if self.error_state.state == SensorErrorState.OK:
+            return
+
         self._set_error_state(SensorErrorState.OK, "")
 
     def _execute(self):
@@ -306,14 +311,23 @@ class _PollingSensor:
         Internal function to set the Sensor error state and
         adding an error state change event to the queue for processing.
 
+        Only sets error state if:
+        1) Sensor error state is not OK and sensor error state should be set to OK
+        2) Sensor error state is OK and sensor error state should be set to not OK
+        Otherwise it does nothing.
+
         :param error_state:
         :param msg:
         """
 
-        if error_state == SensorErrorState.OK:
+        if error_state == SensorErrorState.OK and self.error_state.state != SensorErrorState.OK:
             self.error_state.set_ok()
-        else:
+
+        elif error_state != SensorErrorState.OK and self.error_state.state == SensorErrorState.OK:
             self.error_state.set_error(error_state, msg)
+
+        else:
+            return
 
         obj = SensorObjErrorStateChange()
         obj.clientSensorId = self.id

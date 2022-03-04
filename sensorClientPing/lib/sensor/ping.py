@@ -87,10 +87,7 @@ class PingSensor(_PollingSensor):
 
                     except Exception as e:
                         self._log_exception(self._log_tag, "Unable to execute ping command.")
-
-                        # Only set error state if we are currently OK, otherwise we might spam the server with events.
-                        if self.error_state.state == SensorErrorState.OK:
-                            self._set_error_state(SensorErrorState.ExecutionError, "Unable to execute ping command.")
+                        self._set_error_state(SensorErrorState.ExecutionError, "Unable to execute ping command.")
 
             # Process is still running.
             else:
@@ -115,9 +112,7 @@ class PingSensor(_PollingSensor):
 
                             self._process.kill()
 
-                        # Only set error state if we are currently OK, otherwise we might spam the server with events.
-                        if self.error_state.state == SensorErrorState.OK:
-                            self._set_error_state(SensorErrorState.TimeoutError, "Ping process timed out.")
+                        self._set_error_state(SensorErrorState.TimeoutError, "Ping process timed out.")
 
                         # Set process to None so it can be newly started in the next iteration.
                         self._process = None

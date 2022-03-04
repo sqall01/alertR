@@ -690,7 +690,7 @@ class TestPollingSensor(TestCase):
 
     def test_clear_error_state(self):
         """
-        Tests if clearing error state is correctly processed.
+        Tests if clearing error state is correctly processed (clears error state).
         """
 
         sensor = self._create_base_sensor()
@@ -712,9 +712,28 @@ class TestPollingSensor(TestCase):
         self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
         self.assertEqual("", sensor.error_state.msg)
 
+    def test_clear_error_state_no_change(self):
+        """
+        Tests if clearing error state is correctly processed (does not clear error state if already cleared).
+        """
+
+        sensor = self._create_base_sensor()
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
+
+        sensor._clear_error_state()
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
+
+        # Make sure error state did not change.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
+
     def test_set_error_state(self):
         """
-        Tests if setting error state is correctly processed.
+        Tests if setting error state is correctly processed (error state is set).
         """
 
         sensor = self._create_base_sensor()
@@ -731,5 +750,36 @@ class TestPollingSensor(TestCase):
         self.assertFalse(sensor.error_state is events[0].error_state)
 
         # Make sure error state did change.
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("Some Error", sensor.error_state.msg)
+
+    def test_set_error_state_no_change(self):
+        """
+        Tests if setting error state is correctly processed (error state is not set if already in error state).
+        """
+
+        sensor = self._create_base_sensor()
+
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+
+        sensor._set_error_state(SensorErrorState.GenericError, "Some Error")
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(sensor.id, events[0].clientSensorId)
+        self.assertEqual(sensor.error_state, events[0].error_state)
+        self.assertFalse(sensor.error_state is events[0].error_state)
+
+        # Make sure error state did change.
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("Some Error", sensor.error_state.msg)
+
+        sensor._set_error_state(SensorErrorState.TimeoutError, "Timeout Error")
+
+        events = sensor.get_events()
+        self.assertEqual(0, len(events))
+
+        # Make sure error state did not change.
         self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
         self.assertEqual("Some Error", sensor.error_state.msg)

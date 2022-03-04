@@ -169,12 +169,8 @@ class _GPSSensor(_PollingSensor):
 
                 except Exception as e:
                     self._log_exception(self._log_tag, "Unable to fetch GPS data from provider: %s" % str(e))
-
-                    # Only set new error state if we are currently OK,
-                    # otherwise we might spam the server with state changes.
-                    if self.error_state.state == SensorErrorState.OK:
-                        self._set_error_state(SensorErrorState.ProcessingError,
-                                              "Unable to fetch GPS data from provider: %s" % str(e))
+                    self._set_error_state(SensorErrorState.ProcessingError,
+                                          "Unable to fetch GPS data from provider: %s" % str(e))
 
                     continue
 
