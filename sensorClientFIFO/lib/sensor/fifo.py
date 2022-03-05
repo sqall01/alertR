@@ -14,8 +14,8 @@ import json
 import threading
 from typing import Optional
 from .core import _PollingSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS
+from ..globalData.sensorObjects import SensorDataType, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS, \
+    SensorErrorState
 
 
 class FIFOSensor(_PollingSensor):
@@ -150,20 +150,20 @@ class FIFOSensor(_PollingSensor):
                         # Check if state is valid.
                         temp_input_state = message["payload"]["state"]
                         if not self._check_state(temp_input_state):
-                            self._log_error(self._log_tag, "Received state from FIFO file invalid. Ignoring message.")
+                            self._log_error(self._log_tag, "Received 'state' from FIFO file invalid. Ignoring message.")
                             continue
 
                         # Check if data type is valid.
                         temp_data_type = message["payload"]["dataType"]
                         if not self._check_data_type(temp_data_type):
                             self._log_error(self._log_tag,
-                                            "Received data type from FIFO file invalid. Ignoring message.")
+                                            "Received 'dataType' from FIFO file invalid. Ignoring message.")
                             continue
 
                         # Get new data.
                         sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
                         if not sensor_data_class.verify_dict(message["payload"]["data"]):
-                            self._log_error(self._log_tag, "Received data from FIFO file invalid. Ignoring message.")
+                            self._log_error(self._log_tag, "Received 'data' from FIFO file invalid. Ignoring message.")
                             continue
                         temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
@@ -179,27 +179,26 @@ class FIFOSensor(_PollingSensor):
                         # Check if state is valid.
                         temp_input_state = message["payload"]["state"]
                         if not self._check_state(temp_input_state):
-                            self._log_error(self._log_tag, "Received state from FIFO file invalid. Ignoring message.")
+                            self._log_error(self._log_tag, "Received 'state' from FIFO file invalid. Ignoring message.")
                             continue
 
                         # Check if hasOptionalData field is valid.
-                        temp_has_optional_data = message[
-                            "payload"]["hasOptionalData"]
+                        temp_has_optional_data = message["payload"]["hasOptionalData"]
                         if not self._check_has_optional_data(temp_has_optional_data):
                             self._log_error(self._log_tag,
-                                            "Received hasOptionalData field from FIFO file invalid. Ignoring message.")
+                                            "Received 'hasOptionalData' field from FIFO file invalid. Ignoring message.")
                             continue
 
                         # Check if data type is valid.
                         temp_data_type = message["payload"]["dataType"]
                         if not self._check_data_type(temp_data_type):
                             self._log_error(self._log_tag,
-                                            "Received data type from FIFO file invalid. Ignoring message.")
+                                            "Received 'dataType' from FIFO file invalid. Ignoring message.")
                             continue
 
                         sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
                         if not sensor_data_class.verify_dict(message["payload"]["data"]):
-                            self._log_error(self._log_tag, "Received data from FIFO file invalid. Ignoring message.")
+                            self._log_error(self._log_tag, "Received 'data' from FIFO file invalid. Ignoring message.")
                             continue
                         temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
@@ -207,17 +206,17 @@ class FIFOSensor(_PollingSensor):
                         temp_has_latest_data = message["payload"]["hasLatestData"]
                         if not self._check_has_latest_data(temp_has_latest_data):
                             self._log_error(self._log_tag,
-                                            "Received hasLatestData field from FIFO file invalid. Ignoring message.")
+                                            "Received 'hasLatestData' field from FIFO file invalid. Ignoring message.")
                             continue
 
                         # Check if changeState field is valid.
                         temp_change_state = message["payload"]["changeState"]
                         if not self._check_change_state(temp_change_state):
                             self._log_error(self._log_tag,
-                                            "Received changeState field from FIFO file invalid. Ignoring message.")
+                                            "Received 'changeState' field from FIFO file invalid. Ignoring message.")
                             continue
 
-                        # Check if data should be transfered with the sensor alert
+                        # Check if data should be transferred with the sensor alert
                         # => if it should parse it
                         temp_optional_data = None
                         if temp_has_optional_data:
@@ -227,7 +226,7 @@ class FIFOSensor(_PollingSensor):
                             # check if data is of type dict
                             if not isinstance(temp_optional_data, dict):
                                 self._log_error(self._log_tag,
-                                                "Received optional data from FIFO file invalid. Ignoring message.")
+                                                "Received 'optionalData' from FIFO file invalid. Ignoring message.")
                                 continue
 
                         self._add_sensor_alert(temp_input_state,
@@ -236,6 +235,18 @@ class FIFOSensor(_PollingSensor):
                                                temp_has_latest_data,
                                                temp_input_data)
 
+                    # Type: errorstatechange
+                    elif str(message["message"]).upper() == "ERRORSTATECHANGE":
+
+                        # Check if error state is valid.
+                        temp_input_error_state = message["payload"]["error_state"]
+                        if not SensorErrorState.verify_dict(temp_input_error_state):
+                            self._log_error(self._log_tag,
+                                            "Received 'error_state' from FIFO file invalid. Ignoring message.")
+                            continue
+
+                        self._set_error_state(temp_input_error_state["state"], temp_input_error_state["msg"])
+
                     # Type: invalid
                     else:
                         raise ValueError("Received invalid message type.")
@@ -243,6 +254,12 @@ class FIFOSensor(_PollingSensor):
                 except Exception as e:
                     self._log_exception(self._log_tag, "Could not parse received data from FIFO file.")
                     self._log_error(self._log_tag, "Received data: %s" % data)
+                    self._set_error_state(SensorErrorState.ProcessingError,
+                                          "Could not parse received data from FIFO file.")
+
+
+                    # TODO What about errors that occur because validation failed? Do not set error state yet.
+
                     continue
 
     def _thread_read_fifo(self):
@@ -283,6 +300,8 @@ class FIFOSensor(_PollingSensor):
 
                 except Exception as e:
                     self._log_exception(self._log_tag, "Could not read data from FIFO file.")
+                    self._set_error_state(SensorErrorState.ProcessingError,
+                                          "Could not read data from FIFO file: %s" % str(e))
                     break
 
                 with self._data_queue_lock:

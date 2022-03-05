@@ -13,8 +13,8 @@ import time
 import json
 from typing import Optional
 from .core import _PollingSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat, SensorDataGPS, SensorDataNone
+from ..globalData.sensorObjects import SensorDataType, SensorDataInt, SensorDataFloat, SensorDataGPS, SensorDataNone, \
+    SensorErrorState
 
 
 class ExecuterSensor(_PollingSensor):
@@ -118,12 +118,7 @@ class ExecuterSensor(_PollingSensor):
 
                     except Exception as e:
                         self._log_exception(self._log_tag, "Unable to execute process.")
-
-                        self._add_sensor_alert(self.triggerState,
-                                               False,
-                                               {"message": "Unable to execute process"},
-                                               False,
-                                               self.data)
+                        self._set_error_state(SensorErrorState.ExecutionError, "Unable to execute process: %s" % str(e))
 
             # Process is still running.
             else:
@@ -148,15 +143,7 @@ class ExecuterSensor(_PollingSensor):
 
                             self._process.kill()
 
-                        exit_code = self._process.poll()
-
-                        optional_data = {"message": "Timeout",
-                                         "exitCode": exit_code}
-                        self._add_sensor_alert(self.triggerState,
-                                               False,
-                                               optional_data,
-                                               False,
-                                               self.data)
+                        self._set_error_state(SensorErrorState.TimeoutError, "Process timed out.")
 
                         # Set process to None so it can be newly started in the next iteration.
                         self._process.stdout.close()
@@ -174,16 +161,11 @@ class ExecuterSensor(_PollingSensor):
                         output = output.decode("ascii")
                         err = err.decode("ascii")
                         if not self._handle_output(output):
-
                             self._log_error(self._log_tag, "Not able to parse output of sensor script.")
                             self._log_error(self._log_tag, "Stdout: %s" % output)
                             self._log_error(self._log_tag, "Stderr: %s" % err)
 
-                            self._add_sensor_alert(self.triggerState,
-                                                   False,
-                                                   {"message": "Illegal output"},
-                                                   False,
-                                                   self.data)
+                            self._set_error_state(SensorErrorState.ProcessingError, "Illegal output.")
 
                     else:
                         # Check if the process has exited with code 0 => everything works fine
@@ -245,21 +227,21 @@ class ExecuterSensor(_PollingSensor):
                 temp_input_state = message["payload"]["state"]
                 if not self._check_state(temp_input_state):
                     self._log_error(self._log_tag,
-                                    "Received state from output of sensor script invalid. Ignoring output.")
+                                    "Received 'state' from output of sensor script invalid. Ignoring output.")
                     return False
 
                 # Check if data type is valid.
                 temp_data_type = message["payload"]["dataType"]
                 if not self._check_data_type(temp_data_type):
                     self._log_error(self._log_tag,
-                                    "Received data type from output of sensor script invalid. Ignoring output.")
+                                    "Received 'dataType' from output of sensor script invalid. Ignoring output.")
                     return False
 
                 # Get new data.
                 sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
                 if not sensor_data_class.verify_dict(message["payload"]["data"]):
                     self._log_error(self._log_tag,
-                                    "Received data from output of sensor script invalid. Ignoring output.")
+                                    "Received 'data' from output of sensor script invalid. Ignoring output.")
                     return False
                 temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
@@ -276,14 +258,14 @@ class ExecuterSensor(_PollingSensor):
                 temp_input_state = message["payload"]["state"]
                 if not self._check_state(temp_input_state):
                     self._log_error(self._log_tag,
-                                    "Received state from output of sensor script invalid. Ignoring output.")
+                                    "Received 'state' from output of sensor script invalid. Ignoring output.")
                     return False
 
                 # Check if hasOptionalData field is valid.
                 temp_has_optional_data = message["payload"]["hasOptionalData"]
                 if not self._check_has_optional_data(temp_has_optional_data):
                     self._log_error(self._log_tag,
-                                    "Received hasOptionalData field from output of sensor script invalid. "
+                                    "Received 'hasOptionalData' field from output of sensor script invalid. "
                                     + "Ignoring output.")
                     return False
 
@@ -291,14 +273,14 @@ class ExecuterSensor(_PollingSensor):
                 temp_data_type = message["payload"]["dataType"]
                 if not self._check_data_type(temp_data_type):
                     self._log_error(self._log_tag,
-                                    "Received data type from output of sensor script invalid. Ignoring output.")
+                                    "Received 'dataType' from output of sensor script invalid. Ignoring output.")
                     return False
 
                 # Get new data.
                 sensor_data_class = SensorDataType.get_sensor_data_class(temp_data_type)
                 if not sensor_data_class.verify_dict(message["payload"]["data"]):
                     self._log_error(self._log_tag,
-                                    "Received data from output of sensor script invalid. Ignoring output.")
+                                    "Received 'data' from output of sensor script invalid. Ignoring output.")
                     return False
                 temp_input_data = sensor_data_class.copy_from_dict(message["payload"]["data"])
 
@@ -306,7 +288,7 @@ class ExecuterSensor(_PollingSensor):
                 temp_has_latest_data = message["payload"]["hasLatestData"]
                 if not self._check_has_latest_data(temp_has_latest_data):
                     self._log_error(self._log_tag,
-                                    "Received hasLatestData field from output of sensor script invalid. "
+                                    "Received 'hasLatestData' field from output of sensor script invalid. "
                                     + "Ignoring output.")
                     return False
 
@@ -314,7 +296,7 @@ class ExecuterSensor(_PollingSensor):
                 temp_change_state = message["payload"]["changeState"]
                 if not self._check_change_state(temp_change_state):
                     self._log_error(self._log_tag,
-                                    "Received changeState field from output of sensor script invalid. Ignoring output.")
+                                    "Received 'changeState' field from output of sensor script invalid. Ignoring output.")
                     return False
 
                 # Check if data should be transfered with the sensor alert
@@ -327,7 +309,7 @@ class ExecuterSensor(_PollingSensor):
                     # check if data is of type dict
                     if not isinstance(temp_optional_data, dict):
                         self._log_error(self._log_tag,
-                                        "Received optional data from output of sensor script invalid. Ignoring output.")
+                                        "Received 'optionalData' from output of sensor script invalid. Ignoring output.")
                         return False
 
                 self._add_sensor_alert(temp_input_state,
@@ -335,6 +317,18 @@ class ExecuterSensor(_PollingSensor):
                                        temp_optional_data,
                                        temp_has_latest_data,
                                        temp_input_data)
+
+            # Type: errorstatechange
+            elif str(message["message"]).upper() == "ERRORSTATECHANGE":
+
+                # Check if error state is valid.
+                temp_input_error_state = message["payload"]["error_state"]
+                if not SensorErrorState.verify_dict(temp_input_error_state):
+                    self._log_error(self._log_tag,
+                                    "Received 'error_state' from output of sensor script invalid. Ignoring output.")
+                    return False
+
+                self._set_error_state(temp_input_error_state["state"], temp_input_error_state["msg"])
 
             # Type: invalid
             else:
