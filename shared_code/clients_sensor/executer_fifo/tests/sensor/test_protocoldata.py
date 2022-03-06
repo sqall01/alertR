@@ -464,7 +464,7 @@ class TestProtocolDataSensor(TestCase):
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
 
-    def test_sensor_alert_triggered(self):
+    def test_sensor_alert_triggered_state_change(self):
         """
         Tests if a Sensor Alert is triggered (with state change).
         """
@@ -504,6 +504,213 @@ class TestProtocolDataSensor(TestCase):
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
 
+    def test_sensor_alert_triggered_no_state_change(self):
+        """
+        Tests if a Sensor Alert is triggered (with no state change).
+        """
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": SensorDataNone().copy_to_dict(),
+                "hasLatestData": False,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
+        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_sensor_alert_normal_state_change(self):
+        """
+        Tests if a Sensor Alert is triggered (with state change).
+        """
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 0,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": SensorDataNone().copy_to_dict(),
+                "hasLatestData": False,
+                "changeState": True
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
+        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
+
+        # Make sure sensor state has changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_sensor_alert_normal_no_state_change(self):
+        """
+        Tests if a Sensor Alert is triggered (with no state change).
+        """
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 0,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.NONE,
+                "data": SensorDataNone().copy_to_dict(),
+                "hasLatestData": False,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
+        sensor.state = 1
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(1, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
+        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(1, sensor.state)
+
+    def test_sensor_alert_data_change(self):
+        """
+        Tests if a Sensor Alert is triggered (with data change).
+        """
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.INT,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
+                "hasLatestData": True,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.INT
+        sensor.data = SensorDataInt(1, "test unit")
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
+        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+        # Make sure data has changed.
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
+
+    def test_sensor_alert_no_data_change(self):
+        """
+        Tests if a Sensor Alert is triggered (with no data change).
+        """
+        payload = {
+            "message": "sensoralert",
+            "payload": {
+                "state": 1,
+                "hasOptionalData": False,
+                "optionalData": None,
+                "dataType": SensorDataType.INT,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
+                "hasLatestData": False,
+                "changeState": False
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.INT
+        sensor.data = SensorDataInt(0, "test unit")
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
+        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+        # Make sure data hasnot  changed.
+        self.assertNotEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
+
     def test_state_change_triggered(self):
         """
         Tests if state change is processed correctly (state is changed to triggered).
@@ -537,6 +744,78 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
+
+    def test_state_change_normal(self):
+        """
+        Tests if state change is processed correctly (state is changed to normal).
+        """
+        payload = {
+            "message": "statechange",
+            "payload": {
+                "state": 0,
+                "dataType": SensorDataType.NONE,
+                "data": SensorDataNone().copy_to_dict(),
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
+        sensor.state = 1
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(1, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjStateChange, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].data)
+
+        # Make sure sensor state has changed.
+        self.assertEqual(0, sensor.state)
+
+    def test_state_change_data_change(self):
+        """
+        Tests if state change is processed correctly (data is changed).
+        """
+        payload = {
+            "message": "statechange",
+            "payload": {
+                "state": 1,
+                "dataType": SensorDataType.INT,
+                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.INT
+        sensor.data = SensorDataInt(0, "test unit")
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjStateChange, type(events[0]))
+        self.assertEqual(payload["payload"]["state"], events[0].state)
+        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), events[0].data)
+
+        # Make sure sensor state has changed.
+        self.assertEqual(1, sensor.state)
+
+        # Make sure sensor data has changed.
+        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
 
     def test_error_state_change(self):
         """
