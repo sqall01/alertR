@@ -53,6 +53,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(payload))
 
@@ -61,6 +63,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_wrong_type(self):
         """
@@ -83,6 +89,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -91,6 +99,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_state_change_illegal_state(self):
         """
@@ -113,6 +125,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -121,6 +135,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_state_change_illegal_data_type(self):
         """
@@ -143,6 +161,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -154,6 +174,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertEqual(sensor.data, SensorDataNone())
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_illegal_state(self):
         """
@@ -180,6 +204,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -188,6 +214,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_illegal_data_type(self):
         """
@@ -214,6 +244,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -225,6 +257,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertEqual(sensor.data, SensorDataNone())
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_illegal_has_optional_data(self):
         """
@@ -251,6 +287,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -262,6 +300,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertEqual(sensor.data, SensorDataNone())
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_illegal_has_latest_data(self):
         """
@@ -288,6 +330,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -299,6 +343,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertEqual(sensor.data, SensorDataNone())
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_illegal_change_state(self):
         """
@@ -325,6 +373,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -336,6 +386,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertEqual(sensor.data, SensorDataNone())
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_illegal_optional_data(self):
         """
@@ -362,6 +416,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -373,6 +429,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has not changed.
         self.assertEqual(sensor.data, SensorDataNone())
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_error_state_change_illegal_error_state(self):
         """
@@ -393,6 +453,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -401,6 +463,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_error_state_change_illegal_state(self):
         """
@@ -424,6 +490,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -432,6 +500,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_error_state_change_illegal_msg(self):
         """
@@ -455,6 +527,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertFalse(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -463,6 +537,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_triggered_state_change(self):
         """
@@ -489,6 +567,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -503,6 +583,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_triggered_no_state_change(self):
         """
@@ -529,6 +613,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -543,6 +629,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_normal_state_change(self):
         """
@@ -569,6 +659,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -583,6 +675,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_normal_no_state_change(self):
         """
@@ -610,6 +706,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(1, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -624,6 +722,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(1, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_data_change(self):
         """
@@ -650,6 +752,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -667,6 +771,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data has changed.
         self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_sensor_alert_no_data_change(self):
         """
@@ -693,6 +801,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -710,6 +820,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure data hasnot  changed.
         self.assertNotEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_state_change_triggered(self):
         """
@@ -732,6 +846,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -744,6 +860,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_state_change_normal(self):
         """
@@ -767,6 +887,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(1, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -779,6 +901,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_state_change_data_change(self):
         """
@@ -801,6 +927,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -816,6 +944,10 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor data has changed.
         self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
+
+        # Make sure error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_error_state_change(self):
         """
@@ -839,6 +971,8 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
 
@@ -850,3 +984,7 @@ class TestProtocolDataSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure error state has changed.
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("Some error", sensor.error_state.msg)
