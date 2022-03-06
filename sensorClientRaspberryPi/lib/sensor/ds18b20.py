@@ -91,9 +91,6 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
             return self.data
 
     def initialize(self) -> bool:
-        if not super().initialize():
-            return False
-
         self.state = 1 - self.triggerState
 
         self._sensor_file = "/sys/bus/w1/devices/" \

@@ -146,27 +146,27 @@ class _NumberSensor(_PollingSensor):
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         raise NotImplementedError("Function not implemented yet.")
 
-    def initialize(self) -> bool:
+    def start(self) -> bool:
         """
-        Initializes the number sensor and checks if the object has necessary values set.
+        Starts the number sensor and checks if the object has necessary values set.
 
         :return: success or failure
         """
         if self._log_desc is None:
-            self._log_critical(self._log_tag, "Variable _log_desc not set in object.")
+            self._log_critical(self._log_tag, "Variable '_log_desc' not set in object.")
             return False
 
         if self._sane_lowest_value is None:
-            self._log_critical(self._log_tag, "Variable _sane_lowest_value not set in object.")
+            self._log_critical(self._log_tag, "Variable '_sane_lowest_value' not set in object.")
             return False
 
         if self.hasThreshold:
             if self.ordering is None:
-                self._log_critical(self._log_tag, "Variable ordering not set in object.")
+                self._log_critical(self._log_tag, "Variable 'ordering' not set in object.")
                 return False
 
             if self.threshold is None:
-                self._log_critical(self._log_tag, "Variable threshold not set in object.")
+                self._log_critical(self._log_tag, "Variable 'threshold' not set in object.")
                 return False
 
-        return True
+        return super().start()
