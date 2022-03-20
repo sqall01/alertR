@@ -8,8 +8,9 @@ from lib.sensor.number import _NumberSensor
 class MockNumberSensor(_NumberSensor):
 
     def __init__(self):
-        self._next_data = SensorDataInt(0, "test unit")
         super().__init__()
+        self._next_data = SensorDataInt(0, "test unit")
+        self._log_desc = "Mock Sensor"
 
     def _get_data(self) -> SensorDataInt:
         return self._next_data

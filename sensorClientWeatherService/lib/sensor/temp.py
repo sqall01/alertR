@@ -10,8 +10,9 @@
 import os
 from typing import Optional
 from .number import _NumberSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataFloat
+# noinspection PyProtectedMember
+from .provider.core import _DataCollector
+from ..globalData.sensorObjects import SensorDataFloat, SensorDataType, SensorErrorState
 
 
 class TempPollingSensor(_NumberSensor):
@@ -32,28 +33,31 @@ class TempPollingSensor(_NumberSensor):
         self.data = SensorDataFloat(-1000.0, self._unit)
 
         # Instance of data collector thread.
-        self.dataCollector = None
+        self.dataCollector = None  # type: Optional[_DataCollector]
 
         self.country = None
         self.city = None
         self.lon = None
         self.lat = None
 
-        # As long as errors occurring during the fetching of data are encoded as negative values,
-        # we need the lowest value that we use for our threshold check.
-        self._sane_lowest_value = -273.0
-
         # This sensor type string is used for log messages.
         self._log_desc = "Temperature"
 
     def _get_data(self) -> Optional[SensorDataFloat]:
         data = None
+        # noinspection PyBroadException
         try:
-            data = SensorDataFloat(self.dataCollector.getTemperature(self.country, self.city, self.lon, self.lat),
-                                   self._unit)
+            provider_data = self.dataCollector.getTemperature(self.country, self.city, self.lon, self.lat)
+            if provider_data.data is None:
+                self._set_error_state(provider_data.error.state, provider_data.error.msg)
+            else:
+                data = SensorDataFloat(provider_data.data,
+                                       self._unit)
 
         except Exception as e:
-            self._log_exception(self._log_tag, "Unable to get temperature data from provider.")
+            self._log_exception(self._log_tag, "Unable to get data from provider.")
+            self._set_error_state(SensorErrorState.ProcessingError,
+                                  "Unable to get data from provider: " + str(e))
 
         return data
 

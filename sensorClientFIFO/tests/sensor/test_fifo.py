@@ -69,6 +69,8 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
             fp.write(json.dumps(payload))
@@ -86,6 +88,10 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
+
+        # Make sure sensor error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_state_change(self):
         """
@@ -118,6 +124,8 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
             fp.write(json.dumps(payload))
@@ -133,6 +141,8 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(1, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
     def test_error_state_change(self):
         """
@@ -166,6 +176,8 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
             fp.write(json.dumps(payload))
@@ -180,6 +192,52 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
+
+        # Make sure sensor error state has changed
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("some msg", sensor.error_state.msg)
+
+    def test_data_processing_illegal_data(self):
+        """
+        Tests if data processing triggers an ProcessingError error state.
+        """
+        fifo_file = os.path.join(self._temp_dir.name,
+                                 "sensor1.fifo")
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
+        sensor.umask = int("0000", 8)
+        sensor.fifoFile = fifo_file
+
+        sensor.initialize()
+
+        sensor.start()
+
+        time.sleep(0.5)
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
+
+        with open(fifo_file, 'w') as fp:
+            fp.write("illegal data")
+
+        time.sleep(1.0)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.ProcessingError, events[0].error_state.state)
+        self.assertEqual("Received illegal data.", events[0].error_state.msg)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+        # Make sure sensor error state has changed
+        self.assertEqual(SensorErrorState.ProcessingError, sensor.error_state.state)
+        self.assertEqual("Received illegal data.", sensor.error_state.msg)
 
     def test_create_fifo(self):
         """

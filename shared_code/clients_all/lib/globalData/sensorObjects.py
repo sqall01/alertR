@@ -328,13 +328,15 @@ class SensorErrorState(_Data):
     TimeoutError = 3
     ConnectionError = 4
     ExecutionError = 5
+    ValueError = 6
 
     _str = {0: "OK",
             1: "Generic Error",
             2: "Processing Error",
             3: "Timeout Error",
             4: "Connection Error",
-            5: "Execution Error"}
+            5: "Execution Error",
+            6: "Value Error"}
 
     def __init__(self, state: int = 0, msg: str = ""):
         super(SensorErrorState, self).__init__()
@@ -357,7 +359,10 @@ class SensorErrorState(_Data):
 
     def __str__(self) -> str:
         if self._state in SensorErrorState._str.keys():
-            return "%s (%s)" % (SensorErrorState._str[self._state], self._msg)
+            if self._state == SensorErrorState.OK:
+                return "%s" % SensorErrorState._str[self._state]
+            else:
+                return "%s (%s)" % (SensorErrorState._str[self._state], self._msg)
         return "Unknown (%s)" % self._msg
 
     @property

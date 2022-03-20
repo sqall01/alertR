@@ -290,33 +290,36 @@ if __name__ == '__main__':
 
     logging.info("[%s] Client started." % log_tag)
 
+    # Quick way to clear the screen.
+    os.system('clear' if os.name == 'posix' else 'cls')
+
     # read keyboard input and toggle the sensors accordingly
     while True:
-
-        print("--------")
-        for sensor in globalData.sensors:
-            dataString = "Current Data: %s" % sensor.data
-            dataString += " -> Next Data: %s" % sensor.nextData
-
-            if sensor.consoleInputState == sensor.triggerState:
-                print("Sensor Id: %d - Triggered (%s)" % (sensor.id, dataString))
-
-            else:
-                print("Sensor Id: %d - Not Triggered (%s)" % (sensor.id, dataString))
-
         try:
-            localSensorId = int(input("Please enter sensor ID to toggle: "))
+            print("#"*80)
+            for sensor in globalData.sensors:
+                print("-" * 40)
+                print(str(sensor))
+                print()
+            print()
+
+            local_sensor_id = int(input("Please enter ID to change its values: "))
+
+            # Quick way to clear the screen.
+            os.system('clear' if os.name == 'posix' else 'cls')
+
+            found = False
+            for sensor in globalData.sensors:
+                if sensor.id == local_sensor_id:
+                    found = True
+
+                    sensor.ui_change_values()
+                    break
+            if not found:
+                print("Sensor with ID '%d' does not exist." % local_sensor_id)
         except KeyboardInterrupt:
             break
-        except:
-            continue
-
-        found = False
-        for sensor in globalData.sensors:
-            if sensor.id == localSensorId:
-                found = True
-
-                sensor.toggle_console_state()
-                break
-        if not found:
-            print("Sensor with local ID '%d' does not exist." % localSensorId)
+        except Exception as e:
+            # Quick way to clear the screen.
+            os.system('clear' if os.name == 'posix' else 'cls')
+            print(str(e))

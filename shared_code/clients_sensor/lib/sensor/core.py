@@ -357,7 +357,7 @@ class _PollingSensor:
         Initializes the sensor.
         :return: success or failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class.")
 
     def start(self) -> bool:
         """
