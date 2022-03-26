@@ -12,8 +12,7 @@ import os
 import time
 from typing import Optional, Union
 from .number import _NumberSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataFloat, SensorDataInt
+from ..globalData.sensorObjects import SensorDataFloat, SensorDataInt, SensorDataType, SensorErrorState
 
 
 class RaspberryPiDS18b20Sensor(_NumberSensor):
@@ -80,10 +79,12 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
                         return SensorDataFloat(float(reMatch.group(2)) / 1000, self._unit)
 
                     else:
-                        self._log_error(self._log_tag, "Could not parse sensor file.")
+                        self._log_error(self._log_tag, "Could not parse DS18B20 sensor file.")
+                        self._set_error_state(SensorErrorState.ProcessingError, "Could not parse DS18B20 sensor file.")
 
             except Exception as e:
-                self._log_exception(self._log_tag, "Could not read sensor file.")
+                self._log_exception(self._log_tag, "Could not read DS18B20 sensor file.")
+                self._set_error_state(SensorErrorState.ProcessingError, "Could not read DS18B20 sensor file: " + str(e))
 
             return None
 
