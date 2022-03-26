@@ -40,10 +40,6 @@ class DarkskyDataCollector(_DataCollector):
         # collectedData[<lon>][<lat>]["temp"/"humidity"]
         self.collectedData = dict()
 
-        # Number of failed updates we tolerate before we change
-        # the data to signal the problem.
-        self.maxToleratedFails = None  # type: Optional[int]
-
     def addLocation(self, country: str, city: str, lon: str, lat: str):
 
         # Check if location is already registered.
@@ -113,7 +109,7 @@ class DarkskyDataCollector(_DataCollector):
         logging.info("[%s]: Starting DarkSky data collector thread." % self._log_tag)
 
         # Tolerate failed updates for at least 12 hours.
-        self.maxToleratedFails = int(43200 / self.interval) + 1
+        max_tolerated_fails = int(43200 / self.interval) + 1
 
         fail_ctr = 0
         while True:
@@ -227,7 +223,7 @@ class DarkskyDataCollector(_DataCollector):
                         logging.error("[%s]: Received response code %d from DarkSky."
                                       % (self._log_tag, r.status_code))
 
-                        if fail_ctr >= self.maxToleratedFails:
+                        if fail_ctr >= max_tolerated_fails:
                             with self.updateLock:
                                 error_data = WeatherData(None,
                                                          SensorErrorState(SensorErrorState.ConnectionError,
@@ -252,7 +248,7 @@ class DarkskyDataCollector(_DataCollector):
                         logging.error("[%s]: Received data from server: '%s'."
                                       % (self._log_tag, r.text))
 
-                    if fail_ctr >= self.maxToleratedFails:
+                    if fail_ctr >= max_tolerated_fails:
                         with self.updateLock:
                             error_data = WeatherData(None,
                                                      SensorErrorState(SensorErrorState.ProcessingError,

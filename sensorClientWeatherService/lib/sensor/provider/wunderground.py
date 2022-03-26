@@ -40,10 +40,6 @@ class WundergroundDataCollector(_DataCollector):
         # collectedData[<country>][<city>]["temp"/"humidity"]
         self.collectedData = dict()
 
-        # Number of failed updates we tolerate before we change
-        # the data to signal the problem.
-        self.maxToleratedFails = None  # type: Optional[int]
-
     def addLocation(self, country: str, city: str, lon: str, lat: str):
         temp_country = country.lower()
         temp_city = city.lower()
@@ -125,7 +121,7 @@ class WundergroundDataCollector(_DataCollector):
         logging.info("[%s]: Starting Wunderground data collector thread." % self._log_tag)
 
         # Tolerate failed updates for at least 12 hours.
-        self.maxToleratedFails = int(43200 / self.interval) + 1
+        max_tolerated_fails = int(43200 / self.interval) + 1
 
         fail_ctr = 0
         while True:
@@ -135,10 +131,8 @@ class WundergroundDataCollector(_DataCollector):
                 country = locationTuple[0]
                 city = locationTuple[1]
 
-                logging.debug("[%s]: Getting weather data from "
-                              % self._log_tag
-                              + "Wunderground for %s in %s."
-                              % (city, country))
+                logging.debug("[%s]: Getting weather data from Wunderground for %s in %s."
+                              % (self._log_tag, city, country))
 
                 r = None
                 try:
@@ -251,11 +245,10 @@ class WundergroundDataCollector(_DataCollector):
 
                     else:
                         fail_ctr += 1
-                        logging.error("[%s]: Received response code %d "
-                                      % (self._log_tag, r.status_code)
-                                      + "from Wunderground.")
+                        logging.error("[%s]: Received response code %d from Wunderground."
+                                      % (self._log_tag, r.status_code))
 
-                        if fail_ctr >= self.maxToleratedFails:
+                        if fail_ctr >= max_tolerated_fails:
                             with self.updateLock:
                                 error_data = WeatherData(None,
                                                          SensorErrorState(SensorErrorState.ConnectionError,
@@ -274,15 +267,13 @@ class WundergroundDataCollector(_DataCollector):
 
                 except Exception as e:
                     fail_ctr += 1
-                    logging.exception("[%s]: Could not get weather data "
-                                      % self._log_tag
-                                      + "for %s in %s."
-                                      % (city, country))
+                    logging.exception("[%s]: Could not get weather data for %s in %s."
+                                      % (self._log_tag, city, country))
                     if r is not None:
                         logging.error("[%s]: Received data from server: '%s'."
                                       % (self._log_tag, r.text))
 
-                    if fail_ctr >= self.maxToleratedFails:
+                    if fail_ctr >= max_tolerated_fails:
                         with self.updateLock:
                             error_data = WeatherData(None,
                                                      SensorErrorState(SensorErrorState.ProcessingError,
