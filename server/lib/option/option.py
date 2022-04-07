@@ -170,8 +170,8 @@ class OptionExecuter(threading.Thread):
 
                 # Special handling of "profile" options.
                 if option.type == "profile":
-                    self._sensor_profile_change(option)
                     self._send_profile_change(option)
+                    self._sensor_profile_change(option)
 
             # Only wake up manager update executer if we have any option changes.
             if has_option_changes:
