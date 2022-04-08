@@ -163,13 +163,11 @@ if __name__ == '__main__':
         provider = str(tempConf.attrib["provider"]).upper()
         # Create sensor data collector thread.
         if provider == "WUNDERGROUND":
-            sensorDataCollector = WundergroundDataCollector(globalData)
-            sensorDataCollector.apiKey = str(tempConf.attrib["apiKey"])
-            sensorDataCollector.interval = int(tempConf.attrib["interval"])
+            sensorDataCollector = WundergroundDataCollector(int(tempConf.attrib["interval"]),
+                                                            str(tempConf.attrib["apiKey"]))
         elif provider == "DARKSKY":
-            sensorDataCollector = DarkskyDataCollector(globalData)
-            sensorDataCollector.apiKey = str(tempConf.attrib["apiKey"])
-            sensorDataCollector.interval = int(tempConf.attrib["interval"])
+            sensorDataCollector = DarkskyDataCollector(int(tempConf.attrib["interval"]),
+                                                       str(tempConf.attrib["apiKey"]))
         else:
             raise ValueError("Provider '%s' unknown." % provider)
 

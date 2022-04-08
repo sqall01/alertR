@@ -1,0 +1,867 @@
+{
+  "response": {
+  "version":"0.1",
+  "termsofService":"http://www.wunderground.com/weather/api/d/terms.html",
+  "features": {
+  "geolookup": 1
+  ,
+  "conditions": 1
+  ,
+  "forecast": 1
+  }
+	}
+		,	"location": {
+		"type":"INTLCITY",
+		"country":"DL",
+		"country_iso3166":"DE",
+		"country_name":"Germany",
+		"state":"",
+		"city":"Bochum",
+		"tz_short":"CEST",
+		"tz_long":"Europe/Berlin",
+		"lat":"51.48333359",
+		"lon":"7.21666718",
+		"zip":"00000",
+		"magic":"11",
+		"wmo":"10413",
+		"l":"/q/zmw:00000.11.10413",
+		"requesturl":"global/stations/10413.html",
+		"wuiurl":"https://www.wunderground.com/global/stations/10413.html",
+		"nearby_weather_stations": {
+		"airport": {
+		"station": [
+		{ "city":"", "state":"", "country":"", "icao":"", "lat":"", "lon":"" }
+		,{ "city":"Dortmund", "state":"", "country":"DL", "icao":"EDLW", "lat":"51.51831436", "lon":"7.61224222" }
+		,{ "city":"Duesseldorf", "state":"", "country":"DL", "icao":"EDDL", "lat":"51.29595947", "lon":"6.76865005" }
+		]
+		}
+		,
+		"pws": {
+		"station": [
+		{
+		"neighborhood":"Bongardstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM199",
+		"lat":51.481846,
+		"lon":7.216236,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Bongardstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DL",
+		"id":"IBOCHUM234",
+		"lat":51.481846,
+		"lon":7.216236,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Dr.-Ruer-Platz",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM64",
+		"lat":51.480301,
+		"lon":7.218300,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Scharnhorststraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM167",
+		"lat":51.481407,
+		"lon":7.223743,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Kortumstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DL",
+		"id":"IBOCHUM159",
+		"lat":51.478039,
+		"lon":7.216404,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Signalstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM46",
+		"lat":51.487705,
+		"lon":7.208026,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Herner Straße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM20",
+		"lat":51.491779,
+		"lon":7.213743,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Hermannshöhe",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM123",
+		"lat":51.474442,
+		"lon":7.218174,
+		"distance_km":0,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Blumenstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM89",
+		"lat":51.483532,
+		"lon":7.233002,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Marthastraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM209",
+		"lat":51.493782,
+		"lon":7.222054,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Flurstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM279",
+		"lat":51.485661,
+		"lon":7.234076,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Ewaldstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM325",
+		"lat":51.472267,
+		"lon":7.219163,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Lessingstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM85",
+		"lat":51.494621,
+		"lon":7.219930,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Weiherstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM55",
+		"lat":51.471981,
+		"lon":7.221390,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Bochum",
+		"city":"Bochum",
+		"state":"",
+		"country":"DL",
+		"id":"IBOCHUM110",
+		"lat":51.495087,
+		"lon":7.210735,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Bischof-Benno-Straße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM53",
+		"lat":51.471024,
+		"lon":7.214933,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Dorstener Straße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM223",
+		"lat":51.490566,
+		"lon":7.199911,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Knüwerweg",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM34",
+		"lat":51.470367,
+		"lon":7.223758,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Robertstrasse",
+		"city":"Bochum",
+		"state":"NORDRHEIN-WESTFALEN",
+		"country":"DE",
+		"id":"INORDRHE742",
+		"lat":51.495819,
+		"lon":7.204286,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Staufenstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM363",
+		"lat":51.495762,
+		"lon":7.204087,
+		"distance_km":1,
+		"distance_mi":0
+		},
+		{
+		"neighborhood":"Königsallee",
+		"city":"Bochum",
+		"state":"",
+		"country":"DL",
+		"id":"IBOCHUM3",
+		"lat":51.467010,
+		"lon":7.219170,
+		"distance_km":1,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Grummer Street",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM5",
+		"lat":51.501781,
+		"lon":7.220010,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Wengewiese",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM229",
+		"lat":51.499561,
+		"lon":7.199720,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Schulenburgstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM115",
+		"lat":51.478920,
+		"lon":7.246984,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Hunscheidtstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM35",
+		"lat":51.461353,
+		"lon":7.219092,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Drusenbergstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM75",
+		"lat":51.460480,
+		"lon":7.213860,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Aggerstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM29",
+		"lat":51.498150,
+		"lon":7.245617,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Breslauer Straße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM225",
+		"lat":51.497940,
+		"lon":7.185764,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Philippstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM207",
+		"lat":51.462753,
+		"lon":7.237777,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Aggerstraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM335",
+		"lat":51.501659,
+		"lon":7.243759,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Braunsberger Straße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM105",
+		"lat":51.501842,
+		"lon":7.187768,
+		"distance_km":2,
+		"distance_mi":1
+		},
+		{
+		"neighborhood":"Untere Heidestraße",
+		"city":"Bochum",
+		"state":"",
+		"country":"DE",
+		"id":"IBOCHUM82",
+		"lat":51.495201,
+		"lon":7.177741,
+		"distance_km":3,
+		"distance_mi":1
+		}
+		]
+		}
+		}
+	}
+  ,	"current_observation": {
+		"image": {
+		"url":"http://icons.wxug.com/graphics/wu2/logo_130x80.png",
+		"title":"Weather Underground",
+		"link":"http://www.wunderground.com"
+		},
+		"display_location": {
+		"full":"Bochum, Germany",
+		"city":"Bochum",
+		"state":"",
+		"state_name":"Germany",
+		"country":"DL",
+		"country_iso3166":"DE",
+		"zip":"00000",
+		"magic":"11",
+		"wmo":"10413",
+		"latitude":"51.48333359",
+		"longitude":"7.21666718",
+		"elevation":"94.00000000"
+		},
+		"observation_location": {
+		"full":"Robertstrasse, Bochum, NORDRHEIN-WESTFALEN",
+		"city":"Robertstrasse, Bochum",
+		"state":"NORDRHEIN-WESTFALEN",
+		"country":"DE",
+		"country_iso3166":"DE",
+		"latitude":"51.495819",
+		"longitude":"7.204286",
+		"elevation":"262 ft"
+		},
+		"estimated": {
+		},
+		"station_id":"INORDRHE742",
+		"observation_time":"Last Updated on July 19, 8:12 PM CEST",
+		"observation_time_rfc822":"Tue, 19 Jul 2016 20:12:59 +0200",
+		"observation_epoch":"1468951979",
+		"local_time_rfc822":"Tue, 19 Jul 2016 20:29:49 +0200",
+		"local_epoch":"1468952989",
+		"local_tz_short":"CEST",
+		"local_tz_long":"Europe/Berlin",
+		"local_tz_offset":"+0200",
+		"weather":"Clear",
+		"temperature_string":"86.5 F (30.3 C)",
+		"temp_f":86.5,
+		"temp_c":30.3,
+		"relative_humidity":"37%",
+		"wind_string":"Calm",
+		"wind_dir":"North",
+		"wind_degrees":-9999,
+		"wind_mph":0.6,
+		"wind_gust_mph":0,
+		"wind_kph":1.0,
+		"wind_gust_kph":0,
+		"pressure_mb":"1019",
+		"pressure_in":"30.09",
+		"pressure_trend":"0",
+		"dewpoint_string":"59 F (15 C)",
+		"dewpoint_f":59,
+		"dewpoint_c":15,
+		"heat_index_string":"85 F (30 C)",
+		"heat_index_f":85,
+		"heat_index_c":30,
+		"windchill_string":"NA",
+		"windchill_f":"NA",
+		"windchill_c":"NA",
+		"feelslike_string":"85 F (30 C)",
+		"feelslike_f":"85",
+		"feelslike_c":"30",
+		"visibility_mi":"N/A",
+		"visibility_km":"N/A",
+		"solarradiation":"--",
+		"UV":"-1","precip_1hr_string":"-999.00 in ( 0 mm)",
+		"precip_1hr_in":"-999.00",
+		"precip_1hr_metric":" 0",
+		"precip_today_string":"-999.00 in (-25375 mm)",
+		"precip_today_in":"-999.00",
+		"precip_today_metric":"--",
+		"icon":"clear",
+		"icon_url":"http://icons.wxug.com/i/c/k/clear.gif",
+		"forecast_url":"http://www.wunderground.com/global/stations/10413.html",
+		"history_url":"http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=INORDRHE742",
+		"ob_url":"http://www.wunderground.com/cgi-bin/findweather/getForecast?query=51.495819,7.204286",
+		"nowcast":""
+	}
+		,
+	"forecast":{
+		"txt_forecast": {
+		"date":"7:24 PM CEST",
+		"forecastday": [
+		{
+		"period":0,
+		"icon":"clear",
+		"icon_url":"http://icons.wxug.com/i/c/k/clear.gif",
+		"title":"Tuesday",
+		"fcttext":"Clear. Lows overnight in the upper 60s.",
+		"fcttext_metric":"Clear. Low 19C.",
+		"pop":"0"
+		}
+		,
+		{
+		"period":1,
+		"icon":"nt_clear",
+		"icon_url":"http://icons.wxug.com/i/c/k/nt_clear.gif",
+		"title":"Tuesday Night",
+		"fcttext":"A clear sky. Low 67F. Winds ESE at 5 to 10 mph.",
+		"fcttext_metric":"Clear skies. Low 19C. Winds ESE at 10 to 15 km/h.",
+		"pop":"0"
+		}
+		,
+		{
+		"period":2,
+		"icon":"clear",
+		"icon_url":"http://icons.wxug.com/i/c/k/clear.gif",
+		"title":"Wednesday",
+		"fcttext":"Sunshine. Hot. High 94F. Winds SE at 10 to 15 mph.",
+		"fcttext_metric":"Generally sunny. Hot. High around 35C. Winds SE at 15 to 25 km/h.",
+		"pop":"20"
+		}
+		,
+		{
+		"period":3,
+		"icon":"nt_chancetstorms",
+		"icon_url":"http://icons.wxug.com/i/c/k/nt_chancetstorms.gif",
+		"title":"Wednesday Night",
+		"fcttext":"Scattered thunderstorms in the evening with a few showers possible late. Low 67F. Winds SSW at 5 to 10 mph. Chance of rain 50%.",
+		"fcttext_metric":"Scattered thunderstorms during the evening followed by a few showers overnight. Low 19C. Winds SSW at 10 to 15 km/h. Chance of rain 50%.",
+		"pop":"50"
+		}
+		,
+		{
+		"period":4,
+		"icon":"chancerain",
+		"icon_url":"http://icons.wxug.com/i/c/k/chancerain.gif",
+		"title":"Thursday",
+		"fcttext":"Cloudy with showers. High 86F. Winds W at 5 to 10 mph. Chance of rain 50%.",
+		"fcttext_metric":"Rain showers in the morning with scattered thunderstorms arriving in the afternoon. High near 30C. Winds W at 10 to 15 km/h. Chance of rain 40%.",
+		"pop":"50"
+		}
+		,
+		{
+		"period":5,
+		"icon":"nt_chancetstorms",
+		"icon_url":"http://icons.wxug.com/i/c/k/nt_chancetstorms.gif",
+		"title":"Thursday Night",
+		"fcttext":"Partly to mostly cloudy skies with scattered thunderstorms before midnight. Low around 65F. Winds N at 5 to 10 mph. Chance of rain 40%.",
+		"fcttext_metric":"Scattered thunderstorms in the evening. Partly cloudy skies overnight. Low 18C. Winds light and variable. Chance of rain 40%.",
+		"pop":"40"
+		}
+		,
+		{
+		"period":6,
+		"icon":"chancetstorms",
+		"icon_url":"http://icons.wxug.com/i/c/k/chancetstorms.gif",
+		"title":"Friday",
+		"fcttext":"Cloudy early. Scattered thunderstorms developing later in the day. High around 80F. Winds N at 5 to 10 mph. Chance of rain 60%.",
+		"fcttext_metric":"Scattered thunderstorms developing during the afternoon. High 27C. Winds N at 10 to 15 km/h. Chance of rain 60%.",
+		"pop":"60"
+		}
+		,
+		{
+		"period":7,
+		"icon":"nt_chancetstorms",
+		"icon_url":"http://icons.wxug.com/i/c/k/nt_chancetstorms.gif",
+		"title":"Friday Night",
+		"fcttext":"Mostly cloudy with showers and a few thunderstorms. Low 61F. Winds N at 5 to 10 mph. Chance of rain 50%.",
+		"fcttext_metric":"Scattered thunderstorms in the evening, then variable clouds overnight with more showers at times. Low 16C. Winds light and variable. Chance of rain 50%.",
+		"pop":"50"
+		}
+		]
+		},
+		"simpleforecast": {
+		"forecastday": [
+		{"date":{
+	"epoch":"1468947600",
+	"pretty":"7:00 PM CEST on July 19, 2016",
+	"day":19,
+	"month":7,
+	"year":2016,
+	"yday":200,
+	"hour":19,
+	"min":"00",
+	"sec":0,
+	"isdst":"1",
+	"monthname":"July",
+	"monthname_short":"Jul",
+	"weekday_short":"Tue",
+	"weekday":"Tuesday",
+	"ampm":"PM",
+	"tz_short":"CEST",
+	"tz_long":"Europe/Berlin"
+},
+		"period":1,
+		"high": {
+		"fahrenheit":"89",
+		"celsius":"32"
+		},
+		"low": {
+		"fahrenheit":"67",
+		"celsius":"19"
+		},
+		"conditions":"Clear",
+		"icon":"clear",
+		"icon_url":"http://icons.wxug.com/i/c/k/clear.gif",
+		"skyicon":"",
+		"pop":0,
+		"qpf_allday": {
+		"in": 0.00,
+		"mm": 0
+		},
+		"qpf_day": {
+		"in": null,
+		"mm": null
+		},
+		"qpf_night": {
+		"in": 0.00,
+		"mm": 0
+		},
+		"snow_allday": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_day": {
+		"in": null,
+		"cm": null
+		},
+		"snow_night": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"maxwind": {
+		"mph": 9,
+		"kph": 15,
+		"dir": "SSE",
+		"degrees": 0
+		},
+		"avewind": {
+		"mph": 5,
+		"kph": 8,
+		"dir": "East",
+		"degrees": 0
+		},
+		"avehumidity": 58,
+		"maxhumidity": 0,
+		"minhumidity": 0
+		}
+		,
+		{"date":{
+	"epoch":"1469034000",
+	"pretty":"7:00 PM CEST on July 20, 2016",
+	"day":20,
+	"month":7,
+	"year":2016,
+	"yday":201,
+	"hour":19,
+	"min":"00",
+	"sec":0,
+	"isdst":"1",
+	"monthname":"July",
+	"monthname_short":"Jul",
+	"weekday_short":"Wed",
+	"weekday":"Wednesday",
+	"ampm":"PM",
+	"tz_short":"CEST",
+	"tz_long":"Europe/Berlin"
+},
+		"period":2,
+		"high": {
+		"fahrenheit":"94",
+		"celsius":"34"
+		},
+		"low": {
+		"fahrenheit":"67",
+		"celsius":"19"
+		},
+		"conditions":"Clear",
+		"icon":"clear",
+		"icon_url":"http://icons.wxug.com/i/c/k/clear.gif",
+		"skyicon":"",
+		"pop":20,
+		"qpf_allday": {
+		"in": 0.10,
+		"mm": 3
+		},
+		"qpf_day": {
+		"in": 0.00,
+		"mm": 0
+		},
+		"qpf_night": {
+		"in": 0.06,
+		"mm": 2
+		},
+		"snow_allday": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_day": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_night": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"maxwind": {
+		"mph": 15,
+		"kph": 24,
+		"dir": "SE",
+		"degrees": 142
+		},
+		"avewind": {
+		"mph": 12,
+		"kph": 19,
+		"dir": "SE",
+		"degrees": 142
+		},
+		"avehumidity": 47,
+		"maxhumidity": 0,
+		"minhumidity": 0
+		}
+		,
+		{"date":{
+	"epoch":"1469120400",
+	"pretty":"7:00 PM CEST on July 21, 2016",
+	"day":21,
+	"month":7,
+	"year":2016,
+	"yday":202,
+	"hour":19,
+	"min":"00",
+	"sec":0,
+	"isdst":"1",
+	"monthname":"July",
+	"monthname_short":"Jul",
+	"weekday_short":"Thu",
+	"weekday":"Thursday",
+	"ampm":"PM",
+	"tz_short":"CEST",
+	"tz_long":"Europe/Berlin"
+},
+		"period":3,
+		"high": {
+		"fahrenheit":"86",
+		"celsius":"30"
+		},
+		"low": {
+		"fahrenheit":"65",
+		"celsius":"18"
+		},
+		"conditions":"Chance of Rain",
+		"icon":"chancerain",
+		"icon_url":"http://icons.wxug.com/i/c/k/chancerain.gif",
+		"skyicon":"",
+		"pop":50,
+		"qpf_allday": {
+		"in": 0.05,
+		"mm": 1
+		},
+		"qpf_day": {
+		"in": 0.04,
+		"mm": 1
+		},
+		"qpf_night": {
+		"in": 0.00,
+		"mm": 0
+		},
+		"snow_allday": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_day": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_night": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"maxwind": {
+		"mph": 10,
+		"kph": 16,
+		"dir": "W",
+		"degrees": 262
+		},
+		"avewind": {
+		"mph": 7,
+		"kph": 11,
+		"dir": "W",
+		"degrees": 262
+		},
+		"avehumidity": 58,
+		"maxhumidity": 0,
+		"minhumidity": 0
+		}
+		,
+		{"date":{
+	"epoch":"1469206800",
+	"pretty":"7:00 PM CEST on July 22, 2016",
+	"day":22,
+	"month":7,
+	"year":2016,
+	"yday":203,
+	"hour":19,
+	"min":"00",
+	"sec":0,
+	"isdst":"1",
+	"monthname":"July",
+	"monthname_short":"Jul",
+	"weekday_short":"Fri",
+	"weekday":"Friday",
+	"ampm":"PM",
+	"tz_short":"CEST",
+	"tz_long":"Europe/Berlin"
+},
+		"period":4,
+		"high": {
+		"fahrenheit":"80",
+		"celsius":"27"
+		},
+		"low": {
+		"fahrenheit":"61",
+		"celsius":"16"
+		},
+		"conditions":"Chance of a Thunderstorm",
+		"icon":"chancetstorms",
+		"icon_url":"http://icons.wxug.com/i/c/k/chancetstorms.gif",
+		"skyicon":"",
+		"pop":60,
+		"qpf_allday": {
+		"in": 0.21,
+		"mm": 5
+		},
+		"qpf_day": {
+		"in": 0.13,
+		"mm": 3
+		},
+		"qpf_night": {
+		"in": 0.08,
+		"mm": 2
+		},
+		"snow_allday": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_day": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"snow_night": {
+		"in": 0.0,
+		"cm": 0.0
+		},
+		"maxwind": {
+		"mph": 10,
+		"kph": 16,
+		"dir": "N",
+		"degrees": 8
+		},
+		"avewind": {
+		"mph": 6,
+		"kph": 10,
+		"dir": "N",
+		"degrees": 8
+		},
+		"avehumidity": 69,
+		"maxhumidity": 0,
+		"minhumidity": 0
+		}
+		]
+		}
+	}
+}

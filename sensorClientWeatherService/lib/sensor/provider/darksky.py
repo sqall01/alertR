@@ -10,28 +10,30 @@
 import threading
 import logging
 import requests
-import time
+import json
+import os
 from typing import Optional
 
 from .core import _DataCollector, WeatherData
-from ...globalData import GlobalData
 from ...globalData.sensorObjects import SensorErrorState
 
 
 class DarkskyDataCollector(_DataCollector):
 
-    def __init__(self, global_data: GlobalData):
-        super(DarkskyDataCollector, self).__init__(global_data)
+    def __init__(self, interval: int, api_key: str):
+        super(DarkskyDataCollector, self).__init__()
 
-        self.updateLock = threading.Semaphore(1)
+        self._log_tag = os.path.basename(__file__)
+
+        self.updateLock = threading.Lock()
 
         self.host = "https://api.darksky.net"
 
         # Api key of darksky.
-        self.apiKey = None  # type: Optional[str]
+        self.apiKey = api_key
 
         # Interval in seconds in which the data is fetched.
-        self.interval = None  # type: Optional[int]
+        self.interval = interval
 
         # Dict with tuples in the form (lon, lat) as key.
         self.locations = dict()
@@ -39,6 +41,33 @@ class DarkskyDataCollector(_DataCollector):
         # Dictionary that holds the data that is collected in the form:
         # collectedData[<lon>][<lat>]["temp"/"humidity"]
         self.collectedData = dict()
+
+        self._exit_event = threading.Event()
+        self._exit_event.clear()
+
+        self._fail_ctr = 0
+
+    def _get_data(self,
+                  country: Optional[str] = None,
+                  city: Optional[str] = None,
+                  lon: Optional[str] = None,
+                  lat: Optional[str] = None) -> Optional[str]:
+        try:
+            url = self.host + "/forecast/" + self.apiKey + "/" + lat + "," + lon + "?units=si"
+            r = requests.get(url, verify=True, timeout=20.0)
+
+            # Extract data.
+            if r.status_code == 200:
+                return r.text
+            else:
+                logging.error("[%s]: Received response code %d from DarkSky."
+                              % (self._log_tag, r.status_code))
+
+        except Exception as e:
+            logging.exception("[%s]: Could not get weather data for %s in %s."
+                              % (self._log_tag, city, country))
+
+        return None
 
     def addLocation(self, country: str, city: str, lon: str, lat: str):
 
@@ -111,27 +140,25 @@ class DarkskyDataCollector(_DataCollector):
         # Tolerate failed updates for at least 12 hours.
         max_tolerated_fails = int(43200 / self.interval) + 1
 
-        fail_ctr = 0
+        self._fail_ctr = 0
         while True:
 
-            for locationTuple in self.locations.keys():
+            for location_tuple in self.locations.keys():
 
-                lon = locationTuple[0]
-                lat = locationTuple[1]
-                country = self.locations[locationTuple]["country"]
-                city = self.locations[locationTuple]["city"]
+                lon = location_tuple[0]
+                lat = location_tuple[1]
+                country = self.locations[location_tuple]["country"]
+                city = self.locations[location_tuple]["city"]
 
                 logging.debug("[%s]: Getting weather data from Darksky for %s in %s."
                               % (self._log_tag, city, country))
 
-                r = None
-                try:
-                    url = self.host + "/forecast/" + self.apiKey + "/" + lat + "," + lon + "?units=si"
-                    r = requests.get(url, verify=True, timeout=20.0)
+                data = self._get_data(country=country, city=city, lon=lon, lat=lat)
 
+                try:
                     # Extract data.
-                    if r.status_code == 200:
-                        json_data = r.json()
+                    if data:
+                        json_data = json.loads(data)
 
                         humidity = WeatherData(int(float(json_data["currently"]["humidity"]) * 100))
                         temp = WeatherData(float(json_data["currently"]["temperature"]))
@@ -162,68 +189,66 @@ class DarkskyDataCollector(_DataCollector):
                             self.collectedData[lon][lat]["forecast"][2]["rain"] = forecast_day2_rain
 
                         # Reset fail count.
-                        fail_ctr = 0
+                        self._fail_ctr = 0
 
                         logging.info("[%s]: Received new humidity data "
                                      % self._log_tag
-                                     + "from DarkSky: %d%% for %s in %s."
+                                     + "%d%% for %s in %s."
                                      % (humidity.data, city, country))
 
                         logging.info("[%s]: Received new temperature data "
                                      % self._log_tag
-                                     + "from DarkSky: %.1f degrees Celsius "
+                                     + "%.1f degrees Celsius "
                                      % temp.data
                                      + "for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
                                      % self._log_tag
-                                     + "from DarkSky for day 0: min %.1f max %.1f "
+                                     + "for day 0: min %.1f max %.1f "
                                      % (forecast_day0_temp_low.data, forecast_day0_temp_high.data)
                                      + "degrees Celsius for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
                                      % self._log_tag
-                                     + "from DarkSky for day 0: %d%% "
+                                     + "for day 0: %d%% "
                                      % forecast_day0_rain.data
                                      + "chance of rain for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
                                      % self._log_tag
-                                     + "from DarkSky for day 1: min %.1f max %.1f "
+                                     + "for day 1: min %.1f max %.1f "
                                      % (forecast_day1_temp_low.data, forecast_day1_temp_high.data)
                                      + "degrees Celsius for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
                                      % self._log_tag
-                                     + "from DarkSky for day 1: %d%% "
+                                     + "for day 1: %d%% "
                                      % forecast_day1_rain.data
                                      + "chance of rain for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
                                      % self._log_tag
-                                     + "from DarkSky for day 2: min %.1f max %.1f "
+                                     + "for day 2: min %.1f max %.1f "
                                      % (forecast_day2_temp_low.data, forecast_day2_temp_high.data)
                                      + "degrees Celsius for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
                                      % self._log_tag
-                                     + "from DarkSky for day 2: %d%% "
+                                     + "for day 2: %d%% "
                                      % forecast_day2_rain.data
                                      + "chance of rain for %s in %s."
                                      % (city, country))
 
                     else:
-                        fail_ctr += 1
-                        logging.error("[%s]: Received response code %d from DarkSky."
-                                      % (self._log_tag, r.status_code))
+                        self._fail_ctr += 1
 
-                        if fail_ctr >= max_tolerated_fails:
+                        if self._fail_ctr >= max_tolerated_fails:
                             with self.updateLock:
                                 error_data = WeatherData(None,
                                                          SensorErrorState(SensorErrorState.ConnectionError,
@@ -241,14 +266,14 @@ class DarkskyDataCollector(_DataCollector):
                                 self.collectedData[lon][lat]["forecast"][2]["rain"] = error_data
 
                 except Exception as e:
-                    fail_ctr += 1
+                    self._fail_ctr += 1
                     logging.exception("[%s]: Could not get weather data for %s in %s."
                                       % (self._log_tag, city, country))
-                    if r is not None:
-                        logging.error("[%s]: Received data from server: '%s'."
-                                      % (self._log_tag, r.text))
+                    if data is not None:
+                        logging.error("[%s]: Received data from server: %s"
+                                      % (self._log_tag, data))
 
-                    if fail_ctr >= max_tolerated_fails:
+                    if self._fail_ctr >= max_tolerated_fails:
                         with self.updateLock:
                             error_data = WeatherData(None,
                                                      SensorErrorState(SensorErrorState.ProcessingError,
@@ -266,4 +291,8 @@ class DarkskyDataCollector(_DataCollector):
                             self.collectedData[lon][lat]["forecast"][2]["rain"] = error_data
 
             # Sleep until next update cycle.
-            time.sleep(self.interval)
+            if self._exit_event.wait(self.interval):
+                return
+
+    def exit(self):
+        self._exit_event.set()

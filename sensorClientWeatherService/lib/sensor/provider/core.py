@@ -10,7 +10,6 @@
 import os
 import threading
 from typing import Union, Optional
-from ...globalData import GlobalData
 from ...globalData.sensorObjects import SensorErrorState
 
 
@@ -38,10 +37,25 @@ class WeatherData:
 
 
 class _DataCollector(threading.Thread):
-    def __init__(self, global_data: GlobalData):
+    def __init__(self):
         threading.Thread.__init__(self)
         self._log_tag = os.path.basename(__file__)
-        self.globalData = global_data
+
+    def _get_data(self,
+                  country: Optional[str] = None,
+                  city: Optional[str] = None,
+                  lon: Optional[str] = None,
+                  lat: Optional[str] = None) -> Optional[str]:
+        """
+        Internal function that fetches data from weather provider.
+
+        :param country:
+        :param city:
+        :param lon:
+        :param lat:
+        :return: returned data from weather provider
+        """
+        raise NotImplementedError("Abstract class.")
 
     def addLocation(self, country: str, city: str, lon: str, lat: str):
         raise NotImplementedError("Abstract class.")
@@ -59,6 +73,9 @@ class _DataCollector(threading.Thread):
         raise NotImplementedError("Abstract class.")
 
     def getHumidity(self, country: str, city: str, lon: str, lat: str) -> WeatherData:
+        raise NotImplementedError("Abstract class.")
+
+    def exit(self):
         raise NotImplementedError("Abstract class.")
 
     def run(self):
