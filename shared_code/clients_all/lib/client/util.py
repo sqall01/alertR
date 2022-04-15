@@ -1491,6 +1491,7 @@ class MsgBuilder:
         for sensor in polling_sensors:
             temp_sensor = dict()
             temp_sensor["clientSensorId"] = sensor.id
+            temp_sensor["error_state"] = sensor.error_state.copy_to_dict()
             temp_sensor["alertDelay"] = sensor.alertDelay
             temp_sensor["alertLevels"] = sensor.alertLevels
             temp_sensor["description"] = sensor.description
@@ -1588,6 +1589,7 @@ class MsgBuilder:
         for sensor in polling_sensors:
             temp_sensor = dict()
             temp_sensor["clientSensorId"] = sensor.id
+            temp_sensor["error_state"] = sensor.error_state.copy_to_dict()
             temp_sensor["dataType"] = sensor.sensorDataType
             temp_sensor["data"] = sensor.data.copy_to_dict()
 
