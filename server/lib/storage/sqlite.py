@@ -252,66 +252,6 @@ class Sqlite(_Storage):
 
         return None
 
-    def _get_option_by_type(self,
-                            option_type: str,
-                            logger: logging.Logger = None) -> Optional[Option]:
-        """
-        Internal function that gets the option from the database given by its type.
-
-        :param option_type:
-        :param logger:
-        :return: an option object or None
-        """
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        option = None
-        try:
-            self.cursor.execute("SELECT type, value FROM options WHERE type = ?", (option_type, ))
-
-            result = self.cursor.fetchall()
-
-            if len(result) == 1:
-                option = Option()
-                option.type = result[0][0]
-                option.value = result[0][1]
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to get option with type %s." % (self.log_tag, option_type))
-            return None
-
-        return option
-
-    def _get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
-        """
-        Internal function that gets the options from the database.
-
-        :param logger:
-        :return: list of option objects or None
-        """
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        options = list()
-        try:
-            self.cursor.execute("SELECT type, value FROM options")
-
-            result = self.cursor.fetchall()
-
-            for option_tuple in result:
-                option = Option()
-                option.type = option_tuple[0]
-                option.value = option_tuple[1]
-                options.append(option)
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to get options ." % self.log_tag)
-            return None
-
-        return options
-
     def _getSensorById(self,
                        sensorId: int,
                        logger: logging.Logger = None) -> Optional[Sensor]:
@@ -723,29 +663,6 @@ class Sqlite(_Storage):
 
         return True
 
-    def _delete_option_by_type(self,
-                               option_type: str,
-                               logger: logging.Logger = None) -> bool:
-        """
-        Internal function that deletes option given by type.
-
-        :param option_type:
-        :param logger:
-        :return: Success or Failure
-        """
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        try:
-            self.cursor.execute("DELETE FROM options WHERE type = ?", (option_type, ))
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to delete option with type '%s'." % (self.log_tag, option_type))
-            return False
-
-        return True
-
     def _deleteSensorsForNodeId(self,
                                 nodeId: int,
                                 logger: logging.Logger = None) -> bool:
@@ -889,53 +806,6 @@ class Sqlite(_Storage):
 
         return True
 
-    def _update_option(self,
-                       option: Option,
-                       logger: logging.Logger = None) -> bool:
-        """
-        Internal function that updates option data.
-
-        :param option:
-        :param logger:
-        :return: success of failure
-        """
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        try:
-            # check if option does exist
-            self.cursor.execute("SELECT type "
-                                + "FROM options "
-                                + "WHERE type = ?",
-                                (option.type, ))
-            result = self.cursor.fetchall()
-
-            # Insert option data.
-            if len(result) == 0:
-                self.cursor.execute("INSERT INTO options ("
-                                    + "type, "
-                                    + "value) "
-                                    + "VALUES (?, ?)",
-                                    (option.type, option.value))
-
-            # Update option data.
-            elif len(result) == 1:
-                self.cursor.execute("UPDATE options SET "
-                                    + "value = ? "
-                                    + "WHERE type = ?",
-                                    (option.value, option.type))
-
-            else:
-                raise ValueError("Option type not unique.")
-
-        except Exception as e:
-            logger.exception("[%s]: Not able to update option with type '%s' in database."
-                             % (self.log_tag, option.type))
-            return False
-
-        return True
 
     def checkVersionAndClearConflict(self,
                                      logger: logging.Logger = None):
@@ -2217,19 +2087,6 @@ class Sqlite(_Storage):
         self._releaseLock(logger)
         return True
 
-    def delete_option_by_type(self,
-                              option_type: str,
-                              logger: logging.Logger = None) -> bool:
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        with self.dbLock:
-            if self._delete_option_by_type(option_type, logger):
-                self.conn.commit()
-                return True
-
-        return False
 
     def getAllAlertsAlertLevels(self,
                                 logger: logging.Logger = None) -> Optional[List[int]]:
@@ -2488,27 +2345,6 @@ class Sqlite(_Storage):
 
         # return a sensor object or None
         return result
-
-    def get_option_by_type(self,
-                           option_type: str,
-                           logger: logging.Logger = None) -> Optional[Option]:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        with self.dbLock:
-            return self._get_option_by_type(option_type,
-                                            logger)
-
-    def get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        with self.dbLock:
-            return self._get_options_list(logger)
 
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:
@@ -2780,6 +2616,174 @@ class Sqlite(_Storage):
 
         self._releaseLock(logger)
 
+    #region Refactored API
+
+    def _delete_option_by_type(self,
+                               option_type: str,
+                               logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes option given by type.
+
+        :param option_type:
+        :param logger:
+        :return: Success or Failure
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("DELETE FROM options WHERE type = ?", (option_type, ))
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to delete option with type '%s'." % (self.log_tag, option_type))
+            return False
+
+        return True
+
+    def _get_option_by_type(self,
+                            option_type: str,
+                            logger: logging.Logger = None) -> Optional[Option]:
+        """
+        Internal function that gets the option from the database given by its type.
+
+        :param option_type:
+        :param logger:
+        :return: an option object or None
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        option = None
+        try:
+            self.cursor.execute("SELECT type, value FROM options WHERE type = ?", (option_type, ))
+
+            result = self.cursor.fetchall()
+
+            if len(result) == 1:
+                option = Option()
+                option.type = result[0][0]
+                option.value = result[0][1]
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to get option with type %s." % (self.log_tag, option_type))
+            return None
+
+        return option
+
+    def _get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+        """
+        Internal function that gets the options from the database.
+
+        :param logger:
+        :return: list of option objects or None
+        """
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        options = list()
+        try:
+            self.cursor.execute("SELECT type, value FROM options")
+
+            result = self.cursor.fetchall()
+
+            for option_tuple in result:
+                option = Option()
+                option.type = option_tuple[0]
+                option.value = option_tuple[1]
+                options.append(option)
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to get options ." % self.log_tag)
+            return None
+
+        return options
+
+    def _update_option(self,
+                       option: Option,
+                       logger: logging.Logger = None) -> bool:
+        """
+        Internal function that updates option data.
+
+        :param option:
+        :param logger:
+        :return: success of failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            # check if option does exist
+            self.cursor.execute("SELECT type "
+                                + "FROM options "
+                                + "WHERE type = ?",
+                                (option.type, ))
+            result = self.cursor.fetchall()
+
+            # Insert option data.
+            if len(result) == 0:
+                self.cursor.execute("INSERT INTO options ("
+                                    + "type, "
+                                    + "value) "
+                                    + "VALUES (?, ?)",
+                                    (option.type, option.value))
+
+            # Update option data.
+            elif len(result) == 1:
+                self.cursor.execute("UPDATE options SET "
+                                    + "value = ? "
+                                    + "WHERE type = ?",
+                                    (option.value, option.type))
+
+            else:
+                raise ValueError("Option type not unique.")
+
+        except Exception as e:
+            logger.exception("[%s]: Not able to update option with type '%s' in database."
+                             % (self.log_tag, option.type))
+            return False
+
+        return True
+
+    def delete_option_by_type(self,
+                              option_type: str,
+                              logger: logging.Logger = None) -> bool:
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            if self._delete_option_by_type(option_type, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
+    def get_option_by_type(self,
+                           option_type: str,
+                           logger: logging.Logger = None) -> Optional[Option]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            return self._get_option_by_type(option_type,
+                                            logger)
+
+    def get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            return self._get_options_list(logger)
+
     def update_option(self,
                       option_type: str,
                       option_value: int,
@@ -2814,3 +2818,5 @@ class Sqlite(_Storage):
                 return True
 
         return False
+
+    #endregion
