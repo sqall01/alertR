@@ -20,7 +20,7 @@ from typing import Optional, Dict, Tuple, Any, List, Type
 from .localObjects import Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel, \
     Profile
 from .globalData.globalData import GlobalData
-from .globalData.sensorObjects import SensorDataType
+from .globalData.sensorObjects import SensorDataType, SensorErrorState
 
 BUFSIZE = 4096
 
@@ -1775,6 +1775,7 @@ class ClientCommunication:
                     alertLevels = sensors[i]["alertLevels"]
                     description = sensors[i]["description"]
                     state = sensors[i]["state"]
+                    error_state = SensorErrorState.copy_from_dict(sensors[i]["error_state"])
 
                     # Get data of sensor according to data type.
                     sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
@@ -1836,6 +1837,7 @@ class ClientCommunication:
                 tempSensor.alertDelay = alertDelay
                 tempSensor.dataType = sensorDataType
                 tempSensor.data = sensor_data
+                tempSensor.error_state = error_state
 
                 self.sensors.append(tempSensor)
 

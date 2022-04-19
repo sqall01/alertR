@@ -6,10 +6,11 @@
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
+
 import copy
 from typing import Optional, List, Any, Dict
 # noinspection PyProtectedMember
-from .globalData.sensorObjects import SensorDataType, _SensorData
+from .globalData.sensorObjects import SensorDataType, SensorErrorState, _SensorData
 
 
 # This class contains the error codes used by the alertr.de server.
@@ -56,6 +57,7 @@ class Sensor:
         self.clientSensorId = None  # type: Optional[int]
         self.description = None  # type: Optional[str]
         self.state = None  # type: Optional[int]
+        self.error_state = None  # type: Optional[SensorErrorState]
         self.alertLevels = list()  # type: List[int]
         self.lastStateUpdated = None  # type: Optional[int]
         self.alertDelay = None  # type: Optional[int]
