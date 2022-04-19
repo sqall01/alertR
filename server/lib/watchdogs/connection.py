@@ -12,8 +12,8 @@ import time
 import os
 from typing import List, Optional, Set, Tuple
 from ..localObjects import Sensor
-from ..globalData import GlobalData
 from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor
+from ..globalData.globalData import GlobalData
 
 
 # This class handles all timeouts of nodes, sensors, and so on.

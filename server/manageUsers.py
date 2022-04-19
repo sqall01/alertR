@@ -15,8 +15,8 @@ import optparse
 import getpass
 from typing import List, Tuple
 from lib import CSVBackend
-from lib import GlobalData
 from lib import Updater
+from lib.globalData.globalData import GlobalData
 
 
 def make_path(input_location: str) -> str:

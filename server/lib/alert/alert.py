@@ -15,8 +15,8 @@ from typing import List, Tuple, Optional, Any, Dict
 from .instrumentation import Instrumentation, InstrumentationPromise
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
-from ..globalData import GlobalData
 from ..internalSensors import AlertLevelInstrumentationErrorSensor
+from ..globalData.globalData import GlobalData
 
 
 class InstrumentationNotFinished(Exception):

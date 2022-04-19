@@ -10,12 +10,12 @@
 import sys
 import os
 import json
-from lib import GlobalData
-from lib import Updater
-import xml.etree.ElementTree
 import logging
 import optparse
 import importlib
+import xml.etree.ElementTree
+from lib import Updater
+from lib.globalData.globalData import GlobalData
 
 
 def outputUpdateFailed():

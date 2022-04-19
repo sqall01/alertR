@@ -6,7 +6,7 @@ from unittest import TestCase
 from typing import Optional, List
 from lib.localObjects import Option
 from lib.storage.sqlite import Sqlite
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
 
 
 class TestStorageCore(TestCase):

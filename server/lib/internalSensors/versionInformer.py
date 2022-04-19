@@ -11,10 +11,10 @@ import threading
 import os
 import time
 from typing import Optional
-from ..update import Updater
 from .core import _InternalSensor
-from ..localObjects import SensorDataType, SensorDataNone
-from ..globalData import GlobalData
+from ..update import Updater
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataNone, SensorDataType
 
 
 # This class handles the version information for a given instance.

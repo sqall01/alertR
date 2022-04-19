@@ -9,9 +9,10 @@
 
 import os
 from typing import List
-from ..globalData import GlobalData
-from ..localObjects import SensorDataType, Option, Profile, SensorDataInt
 from .core import _InternalSensor
+from ..localObjects import Option, Profile
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataInt, SensorDataType
 
 
 class ProfileChangeSensor(_InternalSensor):

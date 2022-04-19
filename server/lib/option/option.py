@@ -11,10 +11,10 @@ import threading
 import os
 import time
 from typing import Optional
-from ..globalData import GlobalData
 from ..internalSensors import ProfileChangeSensor
 from ..localObjects import Option
 from ..server import AsynchronousSender
+from ..globalData.globalData import GlobalData
 
 
 class OptionExecuter(threading.Thread):

@@ -5,11 +5,11 @@ import collections
 import threading
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor, SensorDataGPS, \
-    SensorDataNone, SensorDataInt, SensorDataFloat
+from lib.localObjects import AlertLevel, SensorAlert, SensorData, Option, Sensor
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
+from lib.globalData.sensorObjects import SensorDataGPS, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataType
 # noinspection PyProtectedMember
 from lib.storage.core import _Storage
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor

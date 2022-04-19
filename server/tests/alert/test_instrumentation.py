@@ -5,10 +5,10 @@ import time
 from typing import Dict, Any, List
 from unittest import TestCase
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorDataGPS, SensorDataNone, SensorDataInt, \
-    SensorDataFloat
+from lib.localObjects import AlertLevel, SensorAlert
 from lib.alert.instrumentation import Instrumentation
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
+from lib.globalData.sensorObjects import SensorDataGPS, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataType
 
 
 class MockInternalSensor(AlertLevelInstrumentationErrorSensor):

@@ -10,8 +10,9 @@
 import os
 from typing import Set
 from .core import _InternalSensor
-from ..localObjects import SensorDataType, Node, SensorDataNone
-from ..globalData import GlobalData
+from ..localObjects import Node
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataNone, SensorDataType
 
 
 # Class that represents the internal sensor that

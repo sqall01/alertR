@@ -5,7 +5,7 @@ from typing import Tuple
 from tests.util import config_logging
 from lib.localObjects import Option
 from lib.option.option import OptionExecuter
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
 from lib.internalSensors import ProfileChangeSensor
 # noinspection PyProtectedMember
 from lib.storage.core import _Storage

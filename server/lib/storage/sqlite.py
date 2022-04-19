@@ -17,9 +17,11 @@ import logging
 import sqlite3
 from typing import Any, Optional, List, Union, Tuple, Dict
 from .core import _Storage
-from ..globalData import GlobalData
-from ..localObjects import Node, Alert, Manager, Sensor, SensorData, SensorDataType, Option, SensorDataGPS, \
-    SensorDataNone, SensorDataFloat, SensorDataInt, _SensorData
+from ..localObjects import Node, Alert, Manager, Sensor, SensorData, Option
+from ..globalData.globalData import GlobalData
+# noinspection PyProtectedMember
+from ..globalData.sensorObjects import SensorDataGPS, SensorDataNone, SensorDataFloat, SensorDataInt, _SensorData, \
+    SensorDataType
 
 
 class Sqlite(_Storage):

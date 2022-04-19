@@ -14,7 +14,7 @@ import subprocess
 import threading
 import time
 from typing import Optional, Tuple
-from ..localObjects import AlertLevel, SensorAlert, SensorDataType
+from ..localObjects import AlertLevel, SensorAlert
 from ..internalSensors import AlertLevelInstrumentationErrorSensor
 
 

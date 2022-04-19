@@ -16,10 +16,11 @@ import logging
 import os
 import random
 import json
-from .localObjects import SensorDataType, Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel, \
-    Profile
-from .globalData import GlobalData
 from typing import Optional, Dict, Tuple, Any, List, Type
+from .localObjects import Sensor, SensorData, SensorAlert, Option, Alert, Manager, Node, AlertLevel, \
+    Profile
+from .globalData.globalData import GlobalData
+from .globalData.sensorObjects import SensorDataType
 
 BUFSIZE = 4096
 

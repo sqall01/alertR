@@ -11,8 +11,9 @@ import os
 import time
 from typing import Set
 from .core import _InternalSensor
-from ..localObjects import SensorDataType, Node, Sensor, SensorDataNone
-from ..globalData import GlobalData
+from ..localObjects import Node, Sensor
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataNone, SensorDataType
 
 
 # Class that represents the internal sensor that

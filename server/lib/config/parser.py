@@ -16,10 +16,11 @@ import xml.etree.ElementTree
 import logging
 from ..users import CSVBackend
 from ..storage import Sqlite
-from ..globalData import GlobalData
-from ..localObjects import AlertLevel, Profile, SensorDataInt
+from ..localObjects import AlertLevel, Profile
 from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChangeSensor, VersionInformerSensor, \
     AlertLevelInstrumentationErrorSensor
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataInt
 
 log_tag = os.path.basename(__file__)
 

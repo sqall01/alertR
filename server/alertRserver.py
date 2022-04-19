@@ -15,9 +15,9 @@ from lib import VersionInformerSensor
 from lib import SensorAlertExecuter
 from lib import ManagerUpdateExecuter
 from lib import OptionExecuter
-from lib import GlobalData
 from lib import SurveyExecuter
 from lib import parse_config
+from lib.globalData.globalData import GlobalData
 import time
 import threading
 import random

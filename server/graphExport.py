@@ -13,8 +13,9 @@ import optparse
 import xml.etree.ElementTree
 from typing import Tuple, List, Dict, Optional
 from lib import Sqlite
-from lib import GlobalData
-from lib.localObjects import Alert, Sensor, AlertLevel, SensorDataType, Node
+from lib.globalData.globalData import GlobalData
+from lib.globalData.sensorObjects import SensorDataType
+from lib.localObjects import Alert, Sensor, AlertLevel, Node
 from lib.config.parser import configure_alert_levels, configure_profiles
 
 try:

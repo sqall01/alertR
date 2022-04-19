@@ -2,8 +2,9 @@ import logging
 import os
 import xml.etree.ElementTree
 from unittest import TestCase
-from lib import GlobalData, Sqlite
+from lib.storage.sqlite import Sqlite
 from lib.config.parser import configure_alert_levels, configure_profiles
+from lib.globalData.globalData import GlobalData
 from graphExport import Filter, get_objects_from_db
 
 

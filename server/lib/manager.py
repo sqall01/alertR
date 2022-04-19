@@ -13,8 +13,8 @@ import time
 import collections
 from typing import Optional
 from .server import AsynchronousSender
-from .globalData import GlobalData
 from .localObjects import SensorData
+from .globalData.globalData import GlobalData
 
 
 # this class is woken up if a sensor alert or state change is received
