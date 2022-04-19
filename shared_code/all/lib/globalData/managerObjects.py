@@ -10,7 +10,7 @@
 import copy
 from typing import Optional, List, Any, Dict
 from .baseObjects import _LocalObject
-from .sensorObjects import _SensorData, SensorDataType
+from .sensorObjects import _SensorData, SensorDataType, SensorErrorState
 
 
 # this class represents an option of the server
@@ -180,6 +180,7 @@ class ManagerObjSensor(_LocalObject):
         self.state = None  # type: Optional[int]
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
+        self.error_state = None  # type: Optional[SensorErrorState]
 
     def __str__(self) -> str:
         tmp = "Sensor (Node Id: %s; " \
@@ -192,8 +193,10 @@ class ManagerObjSensor(_LocalObject):
               % (str(self.description) if self.description is not None else "None") \
               + "State: %s; " \
               % (str(self.state) if self.state is not None else "None") \
-              + "Data: '%s')" \
-              % (str(self.data) if self.data is not None else "None")
+              + "Data: '%s'; " \
+              % (str(self.data) if self.data is not None else "None") \
+              + "Error State: '%s')" \
+              % (str(self.error_state) if self.error_state is not None else "None")
         return tmp
 
     @staticmethod
@@ -213,6 +216,8 @@ class ManagerObjSensor(_LocalObject):
         sensor_data_class = SensorDataType.get_sensor_data_class(obj.dataType)
         obj.data = sensor_data_class.copy_from_dict(data["data"])
 
+        obj.error_state = SensorErrorState.copy_from_dict(data["error_state"])
+
         return obj
 
     @staticmethod
@@ -229,7 +234,8 @@ class ManagerObjSensor(_LocalObject):
                        "lastStateUpdated": self.lastStateUpdated,
                        "state": self.state,
                        "dataType": self.dataType,
-                       "data": self.data.copy_to_dict()
+                       "data": self.data.copy_to_dict(),
+                       "error_state": self.error_state.copy_to_dict(),
                        }
 
         return sensor_dict
@@ -250,6 +256,11 @@ class ManagerObjSensor(_LocalObject):
             self.data.deepcopy_obj(sensor.data)
 
         self.dataType = sensor.dataType
+
+        if self.error_state is None:
+            self.error_state = SensorErrorState.deepcopy(sensor.error_state)
+        else:
+            self.error_state.deepcopy_obj(sensor.error_state)
 
         return self
 
