@@ -29,4 +29,4 @@ class _InternalSensor:
         """
         Initializes the sensor and is called during start up of server.
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")

@@ -15,7 +15,7 @@ import struct
 import hashlib
 import logging
 import sqlite3
-from typing import Any, Optional, List, Union, Tuple, Dict
+from typing import Any, Optional, List, Union, Tuple, Dict, cast
 from .core import _Storage
 from ..localObjects import Node, Alert, Manager, Sensor, SensorData, Option
 from ..globalData.globalData import GlobalData
@@ -177,14 +177,14 @@ class Sqlite(_Storage):
                 # Set alert levels for alert.
                 alertLevels = self._getAlertAlertLevels(alert.alertId, logger)
                 if alertLevels is None:
-                    logger.error("[%s]: Not able to get alert levels for alert with id %d."
+                    logger.error("[%s]: Unable to get alert levels for alert with id %d."
                                  % (self.log_tag, alert.alertId))
                     return None
 
                 alert.alertLevels = alertLevels
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alert with id %d." % (self.log_tag, alertId))
+            logger.exception("[%s]: Unable to get alert with id %d." % (self.log_tag, alertId))
             return None
 
         return alert
@@ -216,7 +216,7 @@ class Sqlite(_Storage):
                 manager.description = result[0][2]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get manager with id %d." % (self.log_tag, managerId))
+            logger.exception("[%s]: Unable to get manager with id %d." % (self.log_tag, managerId))
             return None
 
         return manager
@@ -240,7 +240,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node with id %d." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to get node with id %d." % (self.log_tag, nodeId))
             return None
 
         if len(result) == 1:
@@ -248,7 +248,7 @@ class Sqlite(_Storage):
                 return self._convertNodeTupleToObj(result[0])
 
             except Exception as e:
-                logger.exception("[%s]: Not able to convert node data for id %d to object." % (self.log_tag, nodeId))
+                logger.exception("[%s]: Unable to convert node data for id %d to object." % (self.log_tag, nodeId))
 
         return None
 
@@ -286,7 +286,7 @@ class Sqlite(_Storage):
                 # Set alert levels for sensor.
                 alertLevels = self._getSensorAlertLevels(sensor.sensorId, logger)
                 if alertLevels is None:
-                    logger.error("[%s]: Not able to get alert levels for sensor with id %d."
+                    logger.error("[%s]: Unable to get alert levels for sensor with id %d."
                                  % (self.log_tag, sensor.sensorId))
                     return None
 
@@ -335,12 +335,12 @@ class Sqlite(_Storage):
                                                 subResult[0][2])
 
                 else:
-                    logger.error("[%s]: Not able to get sensor with id %d. Data type in database unknown."
+                    logger.error("[%s]: Unable to get sensor with id %d. Data type in database unknown."
                                  % (self.log_tag, sensor.sensorId))
                     return None
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor with id %d." % (self.log_tag, sensorId))
+            logger.exception("[%s]: Unable to get sensor with id %d." % (self.log_tag, sensorId))
             return None
 
         return sensor
@@ -426,7 +426,7 @@ class Sqlite(_Storage):
             self.globalData.uniqueID = self.cursor.fetchall()[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get the unique id." % self.log_tag)
+            logger.exception("[%s]: Unable to get the unique id." % self.log_tag)
 
         return self.globalData.uniqueID
 
@@ -631,7 +631,7 @@ class Sqlite(_Storage):
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete alerts for node with id %d." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to delete alerts for node with id %d." % (self.log_tag, nodeId))
 
             return False
 
@@ -658,7 +658,7 @@ class Sqlite(_Storage):
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete manager for node with id %d." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to delete manager for node with id %d." % (self.log_tag, nodeId))
             return False
 
         return True
@@ -694,7 +694,7 @@ class Sqlite(_Storage):
             self.conn.commit()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete sensors for node with id %d." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to delete sensors for node with id %d." % (self.log_tag, nodeId))
             return False
 
         return True
@@ -718,7 +718,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alert levels for alert with id %d." % (self.log_tag, alertId))
+            logger.exception("[%s]: Unable to get alert levels for alert with id %d." % (self.log_tag, alertId))
             return None
 
         # return list of alertLevels
@@ -743,69 +743,13 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alert levels for sensor with id %d." % (self.log_tag, sensorId))
+            logger.exception("[%s]: Unable to get alert levels for sensor with id %d." % (self.log_tag, sensorId))
 
             # return None if action failed
             return None
 
         # return list of alertLevel
         return [x[0] for x in result]
-
-    def _insertSensorData(self,
-                          sensorId: int,
-                          dataType: int,
-                          data: _SensorData,
-                          logger: logging.Logger = None) -> bool:
-        """
-        Internal function that inserts sensor data according to its type.
-
-        :param sensorId:
-        :param dataType:
-        :param data:
-        :param logger:
-        :return: true if everything worked fine.
-        """
-        # Depending on the data type of the sensor add it to the
-        # corresponding table.
-        if dataType == SensorDataType.NONE:
-            return True
-
-        elif dataType == SensorDataType.INT:
-            try:
-                # noinspection PyUnresolvedReferences
-                self.cursor.execute("INSERT INTO sensorsDataInt (sensorId, value, unit) VALUES (?, ?, ?)",
-                                    (sensorId, data.value, data.unit))
-
-            except Exception as e:
-                logger.exception("[%s]: Not able to add sensor's integer data." % self.log_tag)
-                return False
-
-        elif dataType == SensorDataType.FLOAT:
-            try:
-                # noinspection PyUnresolvedReferences
-                self.cursor.execute("INSERT INTO sensorsDataFloat (sensorId, value, unit) VALUES (?, ?, ?)",
-                                    (sensorId, data.value, data.unit))
-
-            except Exception as e:
-                logger.exception("[%s]: Not able to add sensor's floating point data." % self.log_tag)
-                return False
-
-        elif dataType == SensorDataType.GPS:
-            try:
-                # noinspection PyUnresolvedReferences
-                self.cursor.execute("INSERT INTO sensorsDataGPS (sensorId, lat, lon, utctime) VALUES (?, ?, ?, ?)",
-                                    (sensorId, data.lat, data.lon, data.utctime))
-
-            except Exception as e:
-                logger.exception("[%s]: Not able to add sensor's GPS data." % self.log_tag)
-                return False
-
-        else:
-            logger.error("[%s]: Data type not known. Not able to add sensor." % self.log_tag)
-            return False
-
-        return True
-
 
     def checkVersionAndClearConflict(self,
                                      logger: logging.Logger = None):
@@ -895,7 +839,7 @@ class Sqlite(_Storage):
                                     (hostname, username, nodeType, instance, 0, version, rev, persistent))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add node." % self.log_tag)
+                logger.exception("[%s]: Unable to add node." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -926,7 +870,7 @@ class Sqlite(_Storage):
                 dbPersistent = result[0][5]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get node information." % self.log_tag)
+                logger.exception("[%s]: Unable to get node information." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -942,7 +886,7 @@ class Sqlite(_Storage):
                                         (hostname, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update hostname of node." % self.log_tag)
+                    logger.exception("[%s]: Unable to update hostname of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -958,7 +902,7 @@ class Sqlite(_Storage):
                                         (instance, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update instance of node." % self.log_tag)
+                    logger.exception("[%s]: Unable to update instance of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -974,7 +918,7 @@ class Sqlite(_Storage):
                                         (version, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update version of node." % self.log_tag)
+                    logger.exception("[%s]: Unable to update version of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -990,7 +934,7 @@ class Sqlite(_Storage):
                                         (rev, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update revision of node." % self.log_tag)
+                    logger.exception("[%s]: Unable to update revision of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1006,7 +950,7 @@ class Sqlite(_Storage):
                                         (persistent, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update persistent flag of node." % self.log_tag)
+                    logger.exception("[%s]: Unable to update persistent flag of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1060,7 +1004,7 @@ class Sqlite(_Storage):
                                         (nodeType, nodeId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update type of node." % self.log_tag)
+                    logger.exception("[%s]: Unable to update type of node." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1086,7 +1030,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.log_tag)
+            logger.exception("[%s]: Unable to get node id." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1130,7 +1074,7 @@ class Sqlite(_Storage):
                                          sensor["dataType"]))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add sensor." % self.log_tag)
+                    logger.exception("[%s]: Unable to add sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1146,13 +1090,13 @@ class Sqlite(_Storage):
                                             (sensorId, alertLevel))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add sensor's alert levels." % self.log_tag)
+                    logger.exception("[%s]: Unable to add sensor's alert levels." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
                 # Depending on the data type of the sensor add it to the corresponding table.
-                if not self._insertSensorData(sensorId, sensor["dataType"], sensor_data, logger):
-                    logger.error("[%s]: Not able to add data for newly added sensor." % self.log_tag)
+                if not self._insert_sensor_data(sensorId, sensor["dataType"], sensor_data, logger):
+                    logger.error("[%s]: Unable to add data for newly added sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1178,7 +1122,7 @@ class Sqlite(_Storage):
                     dbDataType = result[0][2]
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get sensor information." % self.log_tag)
+                    logger.exception("[%s]: Unable to get sensor information." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1194,7 +1138,7 @@ class Sqlite(_Storage):
                                             (str(sensor["description"]), sensorId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update description of sensor." % self.log_tag)
+                        logger.exception("[%s]: Unable to update description of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1210,7 +1154,7 @@ class Sqlite(_Storage):
                                             (int(sensor["alertDelay"]), sensorId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update alert delay of sensor." % self.log_tag)
+                        logger.exception("[%s]: Unable to update alert delay of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1236,7 +1180,7 @@ class Sqlite(_Storage):
                                             (sensorId, ))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to remove old data entry of sensor." % self.log_tag)
+                        logger.exception("[%s]: Unable to remove old data entry of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1248,14 +1192,14 @@ class Sqlite(_Storage):
                                             (int(sensor["dataType"]), sensorId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update data type of sensor." % self.log_tag)
+                        logger.exception("[%s]: Unable to update data type of sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
                     # Depending on the data type of the sensor add it to the
                     # corresponding table.
-                    if not self._insertSensorData(sensorId, sensor["dataType"], sensor_data, logger):
-                        logger.error("[%s]: Not able to add data for changed sensor." % self.log_tag)
+                    if not self._insert_sensor_data(sensorId, sensor["dataType"], sensor_data, logger):
+                        logger.error("[%s]: Unable to add data for changed sensor." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1267,7 +1211,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alert levels of the sensor." % self.log_tag)
+                    logger.exception("[%s]: Unable to get alert levels of the sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1301,7 +1245,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get updated alert levels of the sensor." % self.log_tag)
+                    logger.exception("[%s]: Unable to get updated alert levels of the sensor." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1334,7 +1278,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get updated sensors from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get updated sensors from database." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1378,7 +1322,7 @@ class Sqlite(_Storage):
                                     (dbSensor[0], ))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to delete sensor." % self.log_tag)
+                logger.exception("[%s]: Unable to delete sensor." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1403,7 +1347,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.log_tag)
+            logger.exception("[%s]: Unable to get node id." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1434,7 +1378,7 @@ class Sqlite(_Storage):
                                          str(alert["description"])))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add alert." % self.log_tag)
+                    logger.exception("[%s]: Unable to add alert." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1443,7 +1387,7 @@ class Sqlite(_Storage):
                     alertId = self._getAlertId(nodeId, int(alert["clientAlertId"]))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alertId." % self.log_tag)
+                    logger.exception("[%s]: Unable to get alertId." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1456,7 +1400,7 @@ class Sqlite(_Storage):
                                             (alertId, alertLevel))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to add alert alert levels." % self.log_tag)
+                    logger.exception("[%s]: Unable to add alert alert levels." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1478,7 +1422,7 @@ class Sqlite(_Storage):
                     dbDescription = result[0][0]
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alert information." % self.log_tag)
+                    logger.exception("[%s]: Unable to get alert information." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1494,7 +1438,7 @@ class Sqlite(_Storage):
                                             (str(alert["description"]), alertId))
 
                     except Exception as e:
-                        logger.exception("[%s]: Not able to update description of alert." % self.log_tag)
+                        logger.exception("[%s]: Unable to update description of alert." % self.log_tag)
                         self._releaseLock(logger)
                         return False
 
@@ -1506,7 +1450,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get alert levels of the alert." % self.log_tag)
+                    logger.exception("[%s]: Unable to get alert levels of the alert." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1540,7 +1484,7 @@ class Sqlite(_Storage):
                     result = self.cursor.fetchall()
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to get updated alert levels of the alert." % self.log_tag)
+                    logger.exception("[%s]: Unable to get updated alert levels of the alert." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1572,7 +1516,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get updated alerts from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get updated alerts from database." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1600,7 +1544,7 @@ class Sqlite(_Storage):
                                     (dbAlert[0], ))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to delete alert." % self.log_tag)
+                logger.exception("[%s]: Unable to delete alert." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1625,7 +1569,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.log_tag)
+            logger.exception("[%s]: Unable to get node id." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1650,7 +1594,7 @@ class Sqlite(_Storage):
                                      str(manager["description"])))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to add manager." % self.log_tag)
+                logger.exception("[%s]: Unable to add manager." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1670,7 +1614,7 @@ class Sqlite(_Storage):
                 dbDescription = result[0][0]
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get manager information." % self.log_tag)
+                logger.exception("[%s]: Unable to get manager information." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1686,7 +1630,7 @@ class Sqlite(_Storage):
                                         (str(manager["description"]), managerId))
 
                 except Exception as e:
-                    logger.exception("[%s]: Not able to update description of manager." % self.log_tag)
+                    logger.exception("[%s]: Unable to update description of manager." % self.log_tag)
                     self._releaseLock(logger)
                     return False
 
@@ -1710,7 +1654,7 @@ class Sqlite(_Storage):
             nodeId = self._getNodeId(username)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node id." % self.log_tag)
+            logger.exception("[%s]: Unable to get node id." % self.log_tag)
 
         self._releaseLock(logger)
         return nodeId
@@ -1733,7 +1677,7 @@ class Sqlite(_Storage):
             nodeIds = [x[0] for x in result]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get node ids." % self.log_tag)
+            logger.exception("[%s]: Unable to get node ids." % self.log_tag)
 
         self._releaseLock(logger)
         return nodeIds
@@ -1758,7 +1702,7 @@ class Sqlite(_Storage):
             sensorCount = len(result)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor count." % self.log_tag)
+            logger.exception("[%s]: Unable to get sensor count." % self.log_tag)
 
         self._releaseLock(logger)
         return sensorCount
@@ -1782,7 +1726,7 @@ class Sqlite(_Storage):
             surveyData = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get survey data." % self.log_tag)
+            logger.exception("[%s]: Unable to get survey data." % self.log_tag)
 
         self._releaseLock(logger)
         return surveyData
@@ -1835,7 +1779,7 @@ class Sqlite(_Storage):
                                     (stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to update sensor state." % self.log_tag)
+                logger.exception("[%s]: Unable to update sensor state." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1910,7 +1854,7 @@ class Sqlite(_Storage):
                                          sensorId))
 
             except Exception as e:
-                logger.exception("[%s]: Not able to update sensor data." % self.log_tag)
+                logger.exception("[%s]: Unable to update sensor data." % self.log_tag)
                 self._releaseLock(logger)
                 return False
 
@@ -1938,7 +1882,7 @@ class Sqlite(_Storage):
                                 (utcTimestamp, sensorId))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to update sensor time." % self.log_tag)
+            logger.exception("[%s]: Unable to update sensor time." % self.log_tag)
             self._releaseLock(logger)
             return False
 
@@ -1962,7 +1906,7 @@ class Sqlite(_Storage):
             sensorId = self._getSensorId(nodeId, clientSensorId)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensorId from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get sensorId from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -1984,7 +1928,7 @@ class Sqlite(_Storage):
             alertId = self._getAlertId(nodeId, clientAlertId)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get alertId from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get alertId from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2038,7 +1982,7 @@ class Sqlite(_Storage):
         # Get node type from database.
         nodeObj = self._getNodeById(nodeId, logger)
         if nodeObj is None:
-            logger.error("[%s]: Not able to get node with id %d." % (self.log_tag, nodeId))
+            logger.error("[%s]: Unable to get node with id %d." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2078,7 +2022,7 @@ class Sqlite(_Storage):
                                 (nodeId, ))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete node with id %d." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to delete node with id %d." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2103,7 +2047,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all alert levels for alert clients." % self.log_tag)
+            logger.exception("[%s]: Unable to get all alert levels for alert clients." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2128,7 +2072,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all alert levels for sensors." % self.log_tag)
+            logger.exception("[%s]: Unable to get all alert levels for sensors." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2155,7 +2099,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all connected node ids." % self.log_tag)
+            logger.exception("[%s]: Unable to get all connected node ids." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2182,7 +2126,7 @@ class Sqlite(_Storage):
             result = self.cursor.fetchall()
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get all persistent node ids." % self.log_tag)
+            logger.exception("[%s]: Unable to get all persistent node ids." % self.log_tag)
             self._releaseLock(logger)
             # return None if action failed
             return None
@@ -2208,7 +2152,7 @@ class Sqlite(_Storage):
                                 (0, nodeId))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to mark node '%d' as not connected." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to mark node '%d' as not connected." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2233,7 +2177,7 @@ class Sqlite(_Storage):
                                 (1, nodeId))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to mark node '%d' as connected." % (self.log_tag, nodeId))
+            logger.exception("[%s]: Unable to mark node '%d' as connected." % (self.log_tag, nodeId))
             self._releaseLock(logger)
             return False
 
@@ -2268,7 +2212,7 @@ class Sqlite(_Storage):
                     sensorList.append(sensor)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensors from database which update was older than %d."
+            logger.exception("[%s]: Unable to get sensors from database which update was older than %d."
                              % (self.log_tag, oldestTimeUpdated))
             self._releaseLock(logger)
             return None
@@ -2366,7 +2310,7 @@ class Sqlite(_Storage):
                 nodes.append(node)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get nodes from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get nodes from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2452,7 +2396,7 @@ class Sqlite(_Storage):
             alertSystemInformation.append(alertList)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get complete system information from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get complete system information from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2491,7 +2435,7 @@ class Sqlite(_Storage):
             state = result[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor state from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get sensor state from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2523,7 +2467,7 @@ class Sqlite(_Storage):
             dataType = result[0][0]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get sensor data type from database." % self.log_tag)
+            logger.exception("[%s]: Unable to get sensor data type from database." % self.log_tag)
             self._releaseLock(logger)
             return None
 
@@ -2550,7 +2494,7 @@ class Sqlite(_Storage):
                                           result[0][1])
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
+                logger.exception("[%s]: Unable to get sensor data from database." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 
@@ -2571,7 +2515,7 @@ class Sqlite(_Storage):
                                             result[0][1])
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
+                logger.exception("[%s]: Unable to get sensor data from database." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 
@@ -2593,7 +2537,7 @@ class Sqlite(_Storage):
                                           result[0][2])
 
             except Exception as e:
-                logger.exception("[%s]: Not able to get sensor data from database." % self.log_tag)
+                logger.exception("[%s]: Unable to get sensor data from database." % self.log_tag)
                 self._releaseLock(logger)
                 return None
 
@@ -2616,7 +2560,7 @@ class Sqlite(_Storage):
 
         self._releaseLock(logger)
 
-    #region Refactored API
+    # region Option API
 
     def _delete_option_by_type(self,
                                option_type: str,
@@ -2636,7 +2580,7 @@ class Sqlite(_Storage):
             self.cursor.execute("DELETE FROM options WHERE type = ?", (option_type, ))
 
         except Exception as e:
-            logger.exception("[%s]: Not able to delete option with type '%s'." % (self.log_tag, option_type))
+            logger.exception("[%s]: Unable to delete option with type '%s'." % (self.log_tag, option_type))
             return False
 
         return True
@@ -2667,7 +2611,7 @@ class Sqlite(_Storage):
                 option.value = result[0][1]
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get option with type %s." % (self.log_tag, option_type))
+            logger.exception("[%s]: Unable to get option with type %s." % (self.log_tag, option_type))
             return None
 
         return option
@@ -2696,7 +2640,7 @@ class Sqlite(_Storage):
                 options.append(option)
 
         except Exception as e:
-            logger.exception("[%s]: Not able to get options ." % self.log_tag)
+            logger.exception("[%s]: Unable to get options ." % self.log_tag)
             return None
 
         return options
@@ -2743,7 +2687,7 @@ class Sqlite(_Storage):
                 raise ValueError("Option type not unique.")
 
         except Exception as e:
-            logger.exception("[%s]: Not able to update option with type '%s' in database."
+            logger.exception("[%s]: Unable to update option with type '%s' in database."
                              % (self.log_tag, option.type))
             return False
 
@@ -2819,4 +2763,421 @@ class Sqlite(_Storage):
 
         return False
 
-    #endregion
+    # endregion
+
+    # region Sensor API
+
+    def _delete_sensor(self,
+                       sensor_id: int,
+                       logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes sensor from the database given by sensor id.
+
+        :param sensor_id:
+        :param logger:
+        :return: success or failure
+        """
+        # TODO
+        raise NotImplementedError("TODO")
+
+    def _delete_sensor_data(self,
+                            sensor_id: int,
+                            logger: logging.Logger = None) -> bool:
+        """
+        Internal function that deletes sensor data for the given sensor.
+
+        :param sensor_id:
+        :param logger:
+        :return: success or failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        # Remove old data entry of sensor.
+        try:
+            self.cursor.execute("DELETE FROM "
+                                + "sensorsDataInt "
+                                + "WHERE sensorId = ?",
+                                (sensor_id,))
+            self.cursor.execute("DELETE FROM "
+                                + "sensorsDataFloat "
+                                + "WHERE sensorId = ?",
+                                (sensor_id,))
+            self.cursor.execute("DELETE FROM "
+                                + "sensorsDataGPS "
+                                + "WHERE sensorId = ?",
+                                (sensor_id,))
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to remove data for sensor id %d."
+                             % (self.log_tag, sensor_id))
+            return False
+
+        return True
+
+    def _get_sensor_id(self,
+                       node_id: int,
+                       client_sensor_id: int,
+                       logger: logging.Logger = None) -> Optional[int]:
+        """
+        Internal function that gets the sensor id of a sensor for the given node id and client sensor id.
+
+        :param node_id:
+        :param client_sensor_id:
+        :return: sensor id or None (throws exception in error case)
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? AND clientSensorId = ?",
+                                (node_id, client_sensor_id))
+            result = self.cursor.fetchall()
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to get sensor id for node id %d and client sensor id %d."
+                              % (self.log_tag, node_id, client_sensor_id))
+            raise
+
+        return result[0][0] if result else None
+
+    def _get_sensor_ids(self,
+                        node_id: int,
+                        logger: logging.Logger = None) -> List[int]:
+        """
+        Internal function that gets all sensor ids for the given node id.
+
+        :param node_id:
+        :return: list of sensor ids (throws exception in error case)
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? ORDER BY asc",
+                                (node_id,))
+            result = self.cursor.fetchall()
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to get sensor ids for node id %d."
+                              % (self.log_tag, node_id))
+            raise
+
+        return [x[0] for x in result]
+
+    def _get_sensors(self,
+                     node_id: int,
+                     logger: logging.Logger = None) -> List[Sensor]:
+        """
+        Internal function that gets all sensors for the given node id.
+
+        :param node_id:
+        :return: list of sensors (throws exception in error case)
+        """
+
+        # TODO
+        raise NotImplementedError("TODO")
+
+    def _insert_sensor_data(self,
+                            sensor_id: int,
+                            data_type: int,
+                            data: _SensorData,
+                            logger: logging.Logger = None) -> bool:
+        """
+        Internal function that inserts sensor data according to its type.
+
+        :param sensor_id:
+        :param data_type:
+        :param data:
+        :param logger:
+        :return: success or failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        # Depending on the data type of the sensor add it to the
+        # corresponding table.
+        if data_type == SensorDataType.NONE:
+            return True
+
+        elif data_type == SensorDataType.INT:
+            try:
+                data = cast(SensorDataInt, data)
+                self.cursor.execute("INSERT INTO sensorsDataInt (sensorId, value, unit) VALUES (?, ?, ?)",
+                                    (sensor_id, data.value, data.unit))
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to add integer data for sensor id %d."
+                                 % (self.log_tag, sensor_id))
+                return False
+
+        elif data_type == SensorDataType.FLOAT:
+            try:
+                data = cast(SensorDataFloat, data)
+                self.cursor.execute("INSERT INTO sensorsDataFloat (sensorId, value, unit) VALUES (?, ?, ?)",
+                                    (sensor_id, data.value, data.unit))
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to add floating point data for sensor id %d."
+                                 % (self.log_tag, sensor_id))
+                return False
+
+        elif data_type == SensorDataType.GPS:
+            try:
+                data = cast(SensorDataGPS, data)
+                self.cursor.execute("INSERT INTO sensorsDataGPS (sensorId, lat, lon, utctime) VALUES (?, ?, ?, ?)",
+                                    (sensor_id, data.lat, data.lon, data.utctime))
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to add GPS data for sensor id %d." % (self.log_tag, sensor_id))
+                return False
+
+        else:
+            logger.error("[%s]: Data type unknown. Unable to add data for sensor id %d." % (self.log_tag, sensor_id))
+            return False
+
+        return True
+
+    def _upsert_sensor(self,
+                       node_id: int,
+                       sensor: Sensor,
+                       logger: logging.Logger = None) -> bool:
+        """
+        Internal function that inserts/updates a sensor.
+
+        :param sensor:
+        :param logger:
+        :return: success of failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        # Check if a sensor with the same client id for this node already exists in the database.
+        try:
+            sensor_id = self._get_sensor_id(node_id, sensor.clientSensorId)
+        except Exception as e:
+            return False
+
+        utc_timestamp = int(time.time())
+
+        # If the sensor does not exist => add it
+        if not sensor_id:
+            logger.info("[%s]: Sensor with client id %d does not exist in database. Adding it."
+                        % (self.log_tag, sensor.clientSensorId))
+
+            # add sensor to database
+            try:
+                self.cursor.execute("INSERT INTO sensors ("
+                                    + "nodeId, "
+                                    + "clientSensorId, "
+                                    + "description, "
+                                    + "state, "
+                                    + "lastStateUpdated, "
+                                    + "alertDelay, "
+                                    + "dataType) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                    (node_id,
+                                     sensor.clientSensorId,
+                                     sensor.description,
+                                     sensor.state,
+                                     utc_timestamp,
+                                     sensor.alertDelay,
+                                     sensor.dataType))
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to add sensor." % self.log_tag)
+                return False
+
+            # Get sensor id of currently added sensor.
+            sensor_id = self.cursor.lastrowid
+
+            # Add sensor alert levels to database.
+            try:
+                for alert_level in sensor.alertLevels:
+                    self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+                                        + "sensorId, "
+                                        + "alertLevel) VALUES (?, ?)",
+                                        (sensor_id, alert_level))
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to add alert levels for sensor id %d."
+                                 % (self.log_tag, sensor_id))
+                return False
+
+            # Depending on the data type of the sensor add it to the corresponding table.
+            if not self._insert_sensor_data(sensor_id,
+                                            sensor.dataType,
+                                            sensor.data,
+                                            logger):
+                return False
+
+        # If the sensor does already exist => update it.
+        else:
+            logger.info("[%s]: Sensor with client id %d already exists in database."
+                        % (self.log_tag, sensor.clientSensorId))
+
+            self.cursor.execute("UPDATE sensors SET "
+                                + "description = ?, "
+                                + "state = ?, "
+                                + "lastStateUpdated = ?, "
+                                + "alertDelay = ?, "
+                                + "dataType = ?, "
+                                + "WHERE id = ?",
+                                (sensor.description,
+                                 sensor.state,
+                                 utc_timestamp,
+                                 sensor.alertDelay,
+                                 sensor.dataType,
+                                 sensor_id))
+
+            if not self._upsert_sensor_data(sensor_id, sensor.dataType, sensor.data, logger):
+                return False
+
+            if not self._upsert_sensor_alert_levels(sensor_id, sensor.alertLevels, logger):
+                return False
+
+        return True
+
+    def _upsert_sensor_alert_levels(self,
+                                    sensor_id: int,
+                                    alert_levels: List[int],
+                                    logger: logging.Logger = None) -> bool:
+        """
+        Internal function that inserts/updates alert levels of a sensor.
+
+        :param sensor_id:
+        :param alert_levels:
+        :param logger:
+        :return: success or failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("DELETE FROM sensorsAlertLevels WHERE sensorId = ?",
+                                (sensor_id, ))
+
+            for alert_level in alert_levels:
+                self.cursor.execute("INSERT INTO sensorsAlertLevels ("
+                                    + "sensorId, "
+                                    + "alertLevel) VALUES (?, ?)",
+                                    (sensor_id, alert_level))
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to upsert alert levels for sensor id %d." % (self.log_tag, sensor_id))
+            return False
+
+        return True
+
+    def _upsert_sensor_data(self,
+                            sensor_id: int,
+                            data_type: int,
+                            data: _SensorData,
+                            logger: logging.Logger = None) -> bool:
+        """
+        Internal function that inserts/updates sensor data.
+
+        :param sensor_id:
+        :param data_type:
+        :param data:
+        :param logger:
+        :return: success or failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        if not self._delete_sensor_data(sensor_id, logger):
+            return False
+
+        return self._insert_sensor_data(sensor_id, data_type, data, logger)
+
+    def upsert_sensor(self,
+                      node_id: int,
+                      sensor: Sensor,
+                      logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            if self._upsert_sensor(node_id, sensor, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
+    def upsert_sensor_by_username(self,
+                                  username: str,
+                                  sensor: Sensor,
+                                  logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+
+            # get the id of the node
+            try:
+                node_id = self._getNodeId(username)
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to get node id for '%s'." % (self.log_tag, username))
+                return False
+
+            if self._upsert_sensor(node_id, sensor, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
+    def upsert_sensors(self,
+                       node_id: int,
+                       sensors: List[Sensor],
+                       logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+
+            # Upsert given sensors.
+            for sensor in sensors:
+                if not self._upsert_sensor(node_id, sensor, logger):
+                    return False
+
+            # Remove all remaining sensors from database that were not part of the given sensors list argument.
+            try:
+                db_sensors = self._get_sensors(node_id, logger)
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to get sensors for node id %d."
+                                 % (self.log_tag, node_id))
+                return False
+
+            client_sensor_ids = [obj.clientSensorId for obj in sensors]
+            to_remove = filter(lambda x: x.clientSensorId not in client_sensor_ids, db_sensors)
+
+            for db_sensor in to_remove:
+                if not self._delete_sensor(db_sensor.sensorId, logger):
+                    return False
+
+            self.conn.commit()
+            return True
+
+    # endregion
