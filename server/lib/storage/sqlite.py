@@ -688,6 +688,7 @@ class Sqlite(_Storage):
                 self.cursor.execute("DELETE FROM sensorsDataInt WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensorsDataFloat WHERE sensorId = ?", (sensorIdResult[0], ))
                 self.cursor.execute("DELETE FROM sensorsDataGPS WHERE sensorId = ?", (sensorIdResult[0], ))
+                self.cursor.execute("DELETE FROM sensorsAlertLevels WHERE sensorId = ?", (sensorIdResult[0],))
                 self.cursor.execute("DELETE FROM sensors WHERE id = ?", (sensorIdResult[0], ))
 
             # Commit all changes.
@@ -2474,72 +2475,10 @@ class Sqlite(_Storage):
         data = SensorData()
         data.sensorId = sensorId
         data.dataType = dataType
-        if dataType == SensorDataType.NONE:
-            data.data = SensorDataNone()
+        data.data = self._get_sensor_data(sensorId, logger)
 
-        elif dataType == SensorDataType.INT:
-            try:
-                # Get data type from database.
-                self.cursor.execute("SELECT value, unit "
-                                    + "FROM sensorsDataInt "
-                                    + "WHERE sensorId = ?",
-                                    (sensorId, ))
-                result = self.cursor.fetchall()
-                if len(result) != 1:
-                    logger.error("[%s]: Sensor data was not found." % self.log_tag)
-                    self._releaseLock(logger)
-                    return None
-
-                data.data = SensorDataInt(result[0][0],
-                                          result[0][1])
-
-            except Exception as e:
-                logger.exception("[%s]: Unable to get sensor data from database." % self.log_tag)
-                self._releaseLock(logger)
-                return None
-
-        elif dataType == SensorDataType.FLOAT:
-            try:
-                # Get data type from database.
-                self.cursor.execute("SELECT value, unit "
-                                    + "FROM sensorsDataFloat "
-                                    + "WHERE sensorId = ?",
-                                    (sensorId, ))
-                result = self.cursor.fetchall()
-                if len(result) != 1:
-                    logger.error("[%s]: Sensor data was not found." % self.log_tag)
-                    self._releaseLock(logger)
-                    return None
-
-                data.data = SensorDataFloat(result[0][0],
-                                            result[0][1])
-
-            except Exception as e:
-                logger.exception("[%s]: Unable to get sensor data from database." % self.log_tag)
-                self._releaseLock(logger)
-                return None
-
-        elif dataType == SensorDataType.GPS:
-            try:
-                # Get data type from database.
-                self.cursor.execute("SELECT lat, lon, utctime "
-                                    + "FROM sensorsDataGPS "
-                                    + "WHERE sensorId = ?",
-                                    (sensorId, ))
-                result = self.cursor.fetchall()
-                if len(result) != 1:
-                    logger.error("[%s]: Sensor data was not found." % self.log_tag)
-                    self._releaseLock(logger)
-                    return None
-
-                data.data = SensorDataGPS(result[0][0],
-                                          result[0][1],
-                                          result[0][2])
-
-            except Exception as e:
-                logger.exception("[%s]: Unable to get sensor data from database." % self.log_tag)
-                self._releaseLock(logger)
-                return None
+        if data.data is None:
+            data = None
 
         self._releaseLock(logger)
 
@@ -2777,8 +2716,50 @@ class Sqlite(_Storage):
         :param logger:
         :return: success or failure
         """
-        # TODO
-        raise NotImplementedError("TODO")
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        if not self._delete_sensor_data(sensor_id, logger):
+            return False
+
+        if not self._delete_sensor_alert_levels(sensor_id, logger):
+            return False
+
+        try:
+            self.cursor.execute("DELETE FROM sensors WHERE id = ?", (sensor_id,))
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to delete sensor id %d." % (self.log_tag, sensor_id))
+            return False
+
+        return True
+
+    def _delete_sensor_alert_levels(self,
+                                    sensor_id: int,
+                                    logger: logging.Logger = None) -> bool:
+        """
+        Deletes alert levels corresponding to the given sensor id.
+
+        :param sensor_id:
+        :param logger:
+        :return: success or failure
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            self.cursor.execute("DELETE FROM sensorsAlertLevels WHERE sensorId = ?",
+                                (sensor_id, ))
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to delete alert levels for sensor id %d." % (self.log_tag, sensor_id))
+            return False
+
+        return True
 
     def _delete_sensor_data(self,
                             sensor_id: int,
@@ -2811,11 +2792,92 @@ class Sqlite(_Storage):
                                 (sensor_id,))
 
         except Exception as e:
-            logger.exception("[%s]: Unable to remove data for sensor id %d."
+            logger.exception("[%s]: Unable to delete data for sensor id %d."
                              % (self.log_tag, sensor_id))
             return False
 
         return True
+
+    def _get_sensor_data(self,
+                         sensor_id: int,
+                         logger: logging.Logger = None) -> Optional[_SensorData]:
+        """
+        Internal function that gets the sensor data for the sensor given by id.
+
+        :param sensor_id:
+        :param logger:
+        :return: sensor data or None
+        """
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        try:
+            # Get data type from database.
+            self.cursor.execute("SELECT dataType FROM sensors WHERE id = ?",
+                                (sensor_id, ))
+            result = self.cursor.fetchall()
+            if not result:
+                logger.error("[%s]: Sensor id %d was not found." % (self.log_tag, sensor_id))
+                return None
+
+            data_type = result[0][0]
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to get data type for sensor id %d." % (self.log_tag, sensor_id))
+            return None
+
+        # Get data for sensor.
+        data = None
+        try:
+            if data_type == SensorDataType.NONE:
+                data = SensorDataNone()
+
+            elif data_type == SensorDataType.INT:
+                self.cursor.execute("SELECT value, unit "
+                                    + "FROM sensorsDataInt "
+                                    + "WHERE sensorId = ?",
+                                    (sensor_id, ))
+                result = self.cursor.fetchall()
+                if not result:
+                    logger.error("[%s]: Data for sensor id %d was not found." % (self.log_tag, sensor_id))
+
+                else:
+                    data = SensorDataInt(result[0][0], result[0][1])
+
+            elif data_type == SensorDataType.FLOAT:
+                self.cursor.execute("SELECT value, unit "
+                                    + "FROM sensorsDataFloat "
+                                    + "WHERE sensorId = ?",
+                                    (sensor_id, ))
+                result = self.cursor.fetchall()
+                if not result:
+                    logger.error("[%s]: Data for sensor id %d was not found." % (self.log_tag, sensor_id))
+
+                else:
+                    data = SensorDataFloat(result[0][0], result[0][1])
+
+            elif data_type == SensorDataType.GPS:
+                self.cursor.execute("SELECT lat, lon, utctime "
+                                    + "FROM sensorsDataGPS "
+                                    + "WHERE sensorId = ?",
+                                    (sensor_id, ))
+                result = self.cursor.fetchall()
+                if not result:
+                    logger.error("[%s]: Data for sensor id %d was not found." % (self.log_tag, sensor_id))
+
+                else:
+                    data = SensorDataGPS(result[0][0], result[0][1], result[0][2])
+
+            else:
+                logger.error("[%s]: Unknown data type %d for sensor id %d."
+                             % (self.log_tag, data_type, sensor_id))
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to get data for sensor id %d." % (self.log_tag, sensor_id))
+
+        return data
 
     def _get_sensor_id(self,
                        node_id: int,
@@ -2866,7 +2928,7 @@ class Sqlite(_Storage):
 
         except Exception as e:
             logger.exception("[%s]: Unable to get sensor ids for node id %d."
-                              % (self.log_tag, node_id))
+                             % (self.log_tag, node_id))
             raise
 
         return [x[0] for x in result]
@@ -2881,8 +2943,59 @@ class Sqlite(_Storage):
         :return: list of sensors (throws exception in error case)
         """
 
-        # TODO
-        raise NotImplementedError("TODO")
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        sensors = []
+
+        try:
+            self.cursor.execute("SELECT id, "
+                                + "clientSensorId, "
+                                + "description, "
+                                + "state, "
+                                + "lastStateUpdated, "
+                                + "alertDelay, "
+                                + "dataType "
+                                + "FROM sensors "
+                                + "WHERE nodeId = ? ORDER BY asc",
+                                (node_id,))
+            result = self.cursor.fetchall()
+
+            for sensor_tuple in result:
+                sensor = Sensor()
+                sensor.nodeId = node_id
+                sensor.sensorId = sensor_tuple[0]
+                sensor.clientSensorId = sensor_tuple[1]
+                sensor.description = sensor_tuple[2]
+                sensor.state = sensor_tuple[3]
+                sensor.lastStateUpdated = sensor_tuple[4]
+                sensor.alertDelay = sensor_tuple[5]
+                sensor.dataType = sensor_tuple[6]
+
+                # Get alert levels.
+                self.cursor.execute("SELECT alertLevel "
+                                    + "FROM sensorsAlertLevels "
+                                    + "WHERE sensorId = ? ORDER BY asc",
+                                    (sensor.sensorId,))
+                sub_result = self.cursor.fetchall()
+                for alert_level_tuple in sub_result:
+                    sensor.alertLevels.append(alert_level_tuple[0])
+
+                # Get sensor data.
+                sensor_data = self._get_sensor_data(sensor.sensorId, logger)
+                if sensor_data is None:
+                    raise ValueError("Unable to get data for sensor id %d." % sensor.sensorId)
+                sensor.data = sensor_data
+
+                sensors.append(sensor)
+
+        except Exception as e:
+            logger.exception("[%s]: Unable to get sensors for node id %d."
+                             % (self.log_tag, node_id))
+            raise
+
+        return sensors
 
     def _insert_sensor_data(self,
                             sensor_id: int,
@@ -3064,10 +3177,10 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
-        try:
-            self.cursor.execute("DELETE FROM sensorsAlertLevels WHERE sensorId = ?",
-                                (sensor_id, ))
+        if not self._delete_sensor_alert_levels(sensor_id, logger):
+            return False
 
+        try:
             for alert_level in alert_levels:
                 self.cursor.execute("INSERT INTO sensorsAlertLevels ("
                                     + "sensorId, "
