@@ -500,6 +500,30 @@ class _Storage:
 
     # region Sensor API
 
+    def delete_sensor(self,
+                      sensor_id: int,
+                      logger: logging.Logger = None) -> bool:
+        """
+        Deletes sensor from the database given by sensor id.
+
+        :param sensor_id:
+        :param logger:
+        :return: success or failure
+        """
+        raise NotImplementedError("Abstract class")
+
+    def get_sensors(self,
+                    node_id: int,
+                    logger: logging.Logger = None) -> List[Sensor]:
+        """
+        Gets all sensors for the given node id.
+
+        :param node_id:
+        :param logger:
+        :return: list of sensors
+        """
+        raise NotImplementedError("Abstract class")
+
     def upsert_sensor(self,
                       node_id: int,
                       sensor: Sensor,

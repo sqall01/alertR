@@ -2922,7 +2922,7 @@ class Sqlite(_Storage):
             logger = self.logger
 
         try:
-            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? ORDER BY asc",
+            self.cursor.execute("SELECT id FROM sensors WHERE nodeId = ? ORDER BY id ASC",
                                 (node_id,))
             result = self.cursor.fetchall()
 
@@ -2940,6 +2940,7 @@ class Sqlite(_Storage):
         Internal function that gets all sensors for the given node id.
 
         :param node_id:
+        :param logger:
         :return: list of sensors (throws exception in error case)
         """
 
@@ -2958,7 +2959,8 @@ class Sqlite(_Storage):
                                 + "alertDelay, "
                                 + "dataType "
                                 + "FROM sensors "
-                                + "WHERE nodeId = ? ORDER BY asc",
+                                + "WHERE nodeId = ? "
+                                + "ORDER BY id ASC",
                                 (node_id,))
             result = self.cursor.fetchall()
 
@@ -2976,7 +2978,7 @@ class Sqlite(_Storage):
                 # Get alert levels.
                 self.cursor.execute("SELECT alertLevel "
                                     + "FROM sensorsAlertLevels "
-                                    + "WHERE sensorId = ? ORDER BY asc",
+                                    + "WHERE sensorId = ? ORDER BY alertLevel ASC",
                                     (sensor.sensorId,))
                 sub_result = self.cursor.fetchall()
                 for alert_level_tuple in sub_result:
@@ -3216,6 +3218,36 @@ class Sqlite(_Storage):
             return False
 
         return self._insert_sensor_data(sensor_id, data_type, data, logger)
+
+    def delete_sensor(self,
+                      sensor_id: int,
+                      logger: logging.Logger = None) -> bool:
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            if self._delete_sensor(sensor_id, logger):
+                self.conn.commit()
+                return True
+
+        return False
+
+    def get_sensors(self,
+                    node_id: int,
+                    logger: logging.Logger = None) -> List[Sensor]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        sensors = []
+        with self.dbLock:
+            try:
+                sensors = self._get_sensors(node_id, logger)
+            except Exception as e:
+                logger.exception("[%s]: Unable to get sensors for node id %d." % (self.log_tag, node_id))
+        return sensors
 
     def upsert_sensor(self,
                       node_id: int,
