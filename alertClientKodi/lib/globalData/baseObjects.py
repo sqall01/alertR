@@ -1,1 +1,1 @@
-../../../shared_code/clients_all/lib/globalData/baseObjects.py
+../../../shared_code/all/lib/globalData/baseObjects.py
