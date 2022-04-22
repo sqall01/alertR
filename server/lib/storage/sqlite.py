@@ -3062,7 +3062,6 @@ class Sqlite(_Storage):
         return True
 
     def _upsert_sensor(self,
-                       node_id: int,
                        sensor: Sensor,
                        logger: logging.Logger = None) -> bool:
         """
@@ -3079,7 +3078,7 @@ class Sqlite(_Storage):
 
         # Check if a sensor with the same client id for this node already exists in the database.
         try:
-            sensor_id = self._get_sensor_id(node_id, sensor.clientSensorId)
+            sensor_id = self._get_sensor_id(sensor.nodeId, sensor.clientSensorId)
         except Exception as e:
             return False
 
@@ -3098,7 +3097,7 @@ class Sqlite(_Storage):
                                     + "lastStateUpdated, "
                                     + "alertDelay, "
                                     + "dataType) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                    (node_id,
+                                    (sensor.nodeId,
                                      sensor.clientSensorId,
                                      sensor.description,
                                      sensor.state,
@@ -3143,7 +3142,7 @@ class Sqlite(_Storage):
                                 + "state = ?, "
                                 + "lastStateUpdated = ?, "
                                 + "alertDelay = ?, "
-                                + "dataType = ?, "
+                                + "dataType = ? "
                                 + "WHERE id = ?",
                                 (sensor.description,
                                  sensor.state,
@@ -3248,7 +3247,6 @@ class Sqlite(_Storage):
         return sensors
 
     def upsert_sensor(self,
-                      node_id: int,
                       sensor: Sensor,
                       logger: logging.Logger = None) -> bool:
 
@@ -3257,39 +3255,13 @@ class Sqlite(_Storage):
             logger = self.logger
 
         with self.dbLock:
-            if self._upsert_sensor(node_id, sensor, logger):
-                self.conn.commit()
-                return True
-
-        return False
-
-    def upsert_sensor_by_username(self,
-                                  username: str,
-                                  sensor: Sensor,
-                                  logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        with self.dbLock:
-
-            # get the id of the node
-            try:
-                node_id = self._getNodeId(username)
-
-            except Exception as e:
-                logger.exception("[%s]: Unable to get node id for '%s'." % (self.log_tag, username))
-                return False
-
-            if self._upsert_sensor(node_id, sensor, logger):
+            if self._upsert_sensor(sensor, logger):
                 self.conn.commit()
                 return True
 
         return False
 
     def upsert_sensors(self,
-                       node_id: int,
                        sensors: List[Sensor],
                        logger: logging.Logger = None) -> bool:
 
@@ -3297,11 +3269,20 @@ class Sqlite(_Storage):
         if not logger:
             logger = self.logger
 
+        if not sensors:
+            logger.warning("[%s]: No sensors given. Nothing to do." % self.log_tag)
+            return False
+
+        node_id = sensors[0].nodeId
+        if any(node_id != obj.nodeId for obj in sensors):
+            logger.error("[%s]: Some sensors do not have the node id %d." % (self.log_tag, node_id))
+            return False
+
         with self.dbLock:
 
             # Upsert given sensors.
             for sensor in sensors:
-                if not self._upsert_sensor(node_id, sensor, logger):
+                if not self._upsert_sensor(sensor, logger):
                     return False
 
             # Remove all remaining sensors from database that were not part of the given sensors list argument.

@@ -110,7 +110,7 @@ class TestStorageCore(TestCase):
         sensor.alertDelay = 1
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
-        storage.upsert_sensor(sensor.nodeId, sensor)
+        storage.upsert_sensor(sensor)
         sensor.sensorId = storage.getSensorId(sensor.nodeId, sensor.clientSensorId)
         self.sensors.append(sensor)
 
@@ -124,8 +124,8 @@ class TestStorageCore(TestCase):
         sensor.lastStateUpdated = 2
         sensor.alertDelay = 2
         sensor.dataType = SensorDataType.INT
-        sensor.data = SensorDataInt(1337, "test unit")
-        storage.upsert_sensor(sensor.nodeId, sensor)
+        sensor.data = SensorDataInt(2, "test unit")
+        storage.upsert_sensor(sensor)
         sensor.sensorId = storage.getSensorId(sensor.nodeId, sensor.clientSensorId)
         self.sensors.append(sensor)
 
@@ -139,8 +139,8 @@ class TestStorageCore(TestCase):
         sensor.lastStateUpdated = 3
         sensor.alertDelay = 3
         sensor.dataType = SensorDataType.FLOAT
-        sensor.data = SensorDataFloat(1338.0, "test unit")
-        storage.upsert_sensor(sensor.nodeId, sensor)
+        sensor.data = SensorDataFloat(3.0, "test unit")
+        storage.upsert_sensor(sensor)
         sensor.sensorId = storage.getSensorId(sensor.nodeId, sensor.clientSensorId)
         self.sensors.append(sensor)
 
@@ -154,8 +154,8 @@ class TestStorageCore(TestCase):
         sensor.lastStateUpdated = 4
         sensor.alertDelay = 4
         sensor.dataType = SensorDataType.GPS
-        sensor.data = SensorDataGPS(1.0, 2.0, 1337)
-        storage.upsert_sensor(sensor.nodeId, sensor)
+        sensor.data = SensorDataGPS(4.0, 4.0, 4)
+        storage.upsert_sensor(sensor)
         sensor.sensorId = storage.getSensorId(sensor.nodeId, sensor.clientSensorId)
         self.sensors.append(sensor)
 

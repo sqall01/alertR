@@ -525,27 +525,11 @@ class _Storage:
         raise NotImplementedError("Abstract class")
 
     def upsert_sensor(self,
-                      node_id: int,
                       sensor: Sensor,
                       logger: logging.Logger = None) -> bool:
         """
-        Upserts the single sensor for the node given by id.
+        Upserts the single sensor.
 
-        :param node_id:
-        :param sensor:
-        :param logger:
-        :return: success or failure
-        """
-        raise NotImplementedError("Abstract class")
-
-    def upsert_sensor_by_username(self,
-                                  username: str,
-                                  sensor: Sensor,
-                                  logger: logging.Logger = None) -> bool:
-        """
-        Upserts the single sensor for the node given by username.
-
-        :param username:
         :param sensor:
         :param logger:
         :return: success or failure
@@ -553,14 +537,12 @@ class _Storage:
         raise NotImplementedError("Abstract class")
 
     def upsert_sensors(self,
-                       node_id: int,
                        sensors: List[Sensor],
                        logger: logging.Logger = None) -> bool:
         """
-        Upserts all sensors for the node given by id. Function also deletes all remaining sensors that were not
-        part of the sensors argument.
+        Upserts all sensors. All sensors must have the same node id.
+        Function also deletes all remaining sensors that were not part of the sensors argument.
 
-        :param node_id:
         :param sensors:
         :param logger:
         :return: success or failure

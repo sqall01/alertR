@@ -3,6 +3,8 @@ from tests.util import config_logging
 from tests.storage.sqlite_core import TestStorageCore
 from tests.storage.util import compare_sensors_content
 from lib.localObjects import Sensor
+from lib.globalData.sensorObjects import SensorErrorState, SensorDataInt, SensorDataFloat, SensorDataGPS, \
+    SensorDataType, SensorDataNone
 
 
 class TestStorageSensor(TestStorageCore):
@@ -38,3 +40,103 @@ class TestStorageSensor(TestStorageCore):
                 self.assertFalse(any([obj.sensorId == curr_db_sensor.sensorId for obj in removed_sensors]))
 
             compare_sensors_content(self, remaining_sensors, curr_db_sensors)
+
+    def test_upsert_sensor_update(self):
+        """
+        Test update of Sensor object.
+        """
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        compare_sensors_content(self, self.sensors, init_db_sensors)
+
+        for sensor in self.sensors:
+            sensor.description += "_change"
+            sensor.state = 1 - sensor.state
+            sensor.error_state = SensorErrorState(SensorErrorState.GenericError,
+                                                  "test error")
+            sensor.alertLevels.append(2)
+            sensor.lastStateUpdated += 1
+            sensor.alertDelay += 2
+            if sensor.dataType == SensorDataType.INT:
+                sensor.data = SensorDataInt(1337, "some unit")
+            elif sensor.dataType == SensorDataType.FLOAT:
+                sensor.data = SensorDataFloat(1337.0, "some other unit")
+            elif sensor.dataType == SensorDataType.GPS:
+                sensor.data = SensorDataGPS(1337.0, 1337.0, 1337)
+
+            storage.upsert_sensor(sensor)
+
+            curr_db_sensors = storage.get_sensors(node_id)
+
+            compare_sensors_content(self, self.sensors, curr_db_sensors)
+
+    def test_upsert_sensor_insert(self):
+        """
+        Test insert of Sensor object.
+        """
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        new_sensor = Sensor()
+        new_sensor.nodeId = node_id
+        new_sensor.clientSensorId = 1337
+        new_sensor.description = "sensor_new"
+        new_sensor.state = 0
+        new_sensor.error_state = SensorErrorState()
+        new_sensor.alertLevels.append(1337)
+        new_sensor.lastStateUpdated = 1337
+        new_sensor.alertDelay = 1337
+        new_sensor.dataType = SensorDataType.NONE
+        new_sensor.data = SensorDataNone()
+
+        storage.upsert_sensor(new_sensor)
+        new_sensor.sensorId = storage.getSensorId(new_sensor.nodeId, new_sensor.clientSensorId)
+        self.sensors.append(new_sensor)
+
+        curr_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors) + 1, len(curr_db_sensors))
+
+        compare_sensors_content(self, self.sensors, curr_db_sensors)
+
+    def test_upsert_sensors_update(self):
+        """
+        Test update of Sensor objects.
+        """
+        raise NotImplementedError("TODO")
+
+    def test_upsert_sensors_insert(self):
+        """
+        Test insert of Sensor objects.
+        """
+        raise NotImplementedError("TODO")
+
+    def test_upsert_sensors_different_node_id(self):
+        """
+        Test error processing of upsert function if sensors have different node ids.
+        """
+        raise NotImplementedError("TODO")
+
+    def test_upsert_sensors_delete_sensors_not_in_list(self):
+        """
+        Test if sensors that are stored in database but not part of the argument list are deleted.
+        """
+        raise NotImplementedError("TODO")
+
+    def test_upsert_sensors_empty_list(self):
+        """
+        Test if sensors are not touched if an empty list is given.
+        """
+        raise NotImplementedError("TODO")
