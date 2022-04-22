@@ -3083,8 +3083,6 @@ class Sqlite(_Storage):
         except Exception as e:
             return False
 
-        utc_timestamp = int(time.time())
-
         # If the sensor does not exist => add it
         if not sensor_id:
             logger.info("[%s]: Sensor with client id %d does not exist in database. Adding it."
@@ -3104,7 +3102,7 @@ class Sqlite(_Storage):
                                      sensor.clientSensorId,
                                      sensor.description,
                                      sensor.state,
-                                     utc_timestamp,
+                                     sensor.lastStateUpdated,
                                      sensor.alertDelay,
                                      sensor.dataType))
 
@@ -3149,7 +3147,7 @@ class Sqlite(_Storage):
                                 + "WHERE id = ?",
                                 (sensor.description,
                                  sensor.state,
-                                 utc_timestamp,
+                                 sensor.lastStateUpdated,
                                  sensor.alertDelay,
                                  sensor.dataType,
                                  sensor_id))

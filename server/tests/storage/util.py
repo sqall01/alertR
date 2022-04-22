@@ -73,7 +73,7 @@ def compare_sensors_content(context: TestCase, gt_sensors: List[Sensor], new_sen
                         # or new_sensor.error_state != gt_sensor.error_state TODO add check
                         or new_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
                         or new_sensor.alertDelay != gt_sensor.alertDelay
-                        or new_sensor.dataType != gt_sensor.alertDelay
+                        or new_sensor.dataType != gt_sensor.dataType
                         or new_sensor.data != gt_sensor.data
                         or not any(x in gt_sensor.alertLevels for x in new_sensor.alertLevels)
                         or not any(x in new_sensor.alertLevels for x in gt_sensor.alertLevels)):
