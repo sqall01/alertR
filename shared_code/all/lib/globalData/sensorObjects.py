@@ -349,8 +349,8 @@ class SensorErrorState(_Data):
         if state != SensorErrorState.OK and msg.strip() == "":
             raise ValueError("Message is not allowed to be empty.")
 
-        self._state = state
-        self._msg = msg
+        self._state = state  # type: int
+        self._msg = msg  # type: str
 
     def __eq__(self, other):
         return (type(other) == SensorErrorState

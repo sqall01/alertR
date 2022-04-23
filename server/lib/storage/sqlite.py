@@ -21,7 +21,7 @@ from ..localObjects import Node, Alert, Manager, Sensor, SensorData, Option
 from ..globalData.globalData import GlobalData
 # noinspection PyProtectedMember
 from ..globalData.sensorObjects import SensorDataGPS, SensorDataNone, SensorDataFloat, SensorDataInt, _SensorData, \
-    SensorDataType
+    SensorDataType, SensorErrorState
 
 
 class Sqlite(_Storage):
@@ -517,6 +517,8 @@ class Sqlite(_Storage):
                             + "lastStateUpdated INTEGER NOT NULL, "
                             + "alertDelay INTEGER NOT NULL, "
                             + "dataType INTEGER NOT NULL, "
+                            + "error_state INTEGER NOT NULL, "
+                            + "error_msg TEXT NOT NULL, "
                             + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
         # create sensorsAlertLevels table
@@ -2957,7 +2959,9 @@ class Sqlite(_Storage):
                                 + "state, "
                                 + "lastStateUpdated, "
                                 + "alertDelay, "
-                                + "dataType "
+                                + "dataType, "
+                                + "error_state, "
+                                + "error_msg "
                                 + "FROM sensors "
                                 + "WHERE nodeId = ? "
                                 + "ORDER BY id ASC",
@@ -2974,6 +2978,7 @@ class Sqlite(_Storage):
                 sensor.lastStateUpdated = sensor_tuple[4]
                 sensor.alertDelay = sensor_tuple[5]
                 sensor.dataType = sensor_tuple[6]
+                sensor.error_state = SensorErrorState(sensor_tuple[7], sensor_tuple[8])
 
                 # Get alert levels.
                 self.cursor.execute("SELECT alertLevel "
@@ -3096,14 +3101,18 @@ class Sqlite(_Storage):
                                     + "state, "
                                     + "lastStateUpdated, "
                                     + "alertDelay, "
-                                    + "dataType) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                    + "dataType,"
+                                    + "error_state,"
+                                    + "error_msg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                     (sensor.nodeId,
                                      sensor.clientSensorId,
                                      sensor.description,
                                      sensor.state,
                                      sensor.lastStateUpdated,
                                      sensor.alertDelay,
-                                     sensor.dataType))
+                                     sensor.dataType,
+                                     sensor.error_state.state,
+                                     sensor.error_state.msg))
 
             except Exception as e:
                 logger.exception("[%s]: Unable to add sensor." % self.log_tag)
@@ -3142,13 +3151,17 @@ class Sqlite(_Storage):
                                 + "state = ?, "
                                 + "lastStateUpdated = ?, "
                                 + "alertDelay = ?, "
-                                + "dataType = ? "
+                                + "dataType = ?, "
+                                + "error_state = ?, "
+                                + "error_msg = ? "
                                 + "WHERE id = ?",
                                 (sensor.description,
                                  sensor.state,
                                  sensor.lastStateUpdated,
                                  sensor.alertDelay,
                                  sensor.dataType,
+                                 sensor.error_state.state,
+                                 sensor.error_state.msg,
                                  sensor_id))
 
             if not self._upsert_sensor_data(sensor_id, sensor.dataType, sensor.data, logger):
