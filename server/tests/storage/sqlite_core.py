@@ -132,7 +132,7 @@ class TestStorageCore(TestCase):
         sensor = Sensor()
         sensor.nodeId = 1
         sensor.clientSensorId = 3
-        sensor.description = "sensor_none"
+        sensor.description = "sensor_float"
         sensor.state = 0
         sensor.error_state = SensorErrorState()
         sensor.alertLevels.append(1)
@@ -147,7 +147,7 @@ class TestStorageCore(TestCase):
         sensor = Sensor()
         sensor.nodeId = 1
         sensor.clientSensorId = 4
-        sensor.description = "sensor_none"
+        sensor.description = "sensor_gps"
         sensor.state = 0
         sensor.error_state = SensorErrorState()
         sensor.alertLevels.append(1)

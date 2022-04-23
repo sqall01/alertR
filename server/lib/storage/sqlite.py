@@ -3275,7 +3275,7 @@ class Sqlite(_Storage):
 
         node_id = sensors[0].nodeId
         if any(node_id != obj.nodeId for obj in sensors):
-            logger.error("[%s]: Some sensors do not have the node id %d." % (self.log_tag, node_id))
+            logger.error("[%s]: Some sensors do not have node id %d." % (self.log_tag, node_id))
             return False
 
         with self.dbLock:

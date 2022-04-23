@@ -27,7 +27,7 @@ class TestStorageSensor(TestStorageCore):
         remaining_sensors = list(self.sensors)
         for i in range(len(self.sensors)):
             sensor = self.sensors[i]
-            storage.delete_sensor(sensor.sensorId)
+            self.assertTrue(storage.delete_sensor(sensor.sensorId))
             removed_sensors.append(sensor)
             remaining_sensors.remove(sensor)
 
@@ -70,7 +70,7 @@ class TestStorageSensor(TestStorageCore):
             elif sensor.dataType == SensorDataType.GPS:
                 sensor.data = SensorDataGPS(1337.0, 1337.0, 1337)
 
-            storage.upsert_sensor(sensor)
+            self.assertTrue(storage.upsert_sensor(sensor))
 
             curr_db_sensors = storage.get_sensors(node_id)
 
@@ -101,7 +101,7 @@ class TestStorageSensor(TestStorageCore):
         new_sensor.dataType = SensorDataType.NONE
         new_sensor.data = SensorDataNone()
 
-        storage.upsert_sensor(new_sensor)
+        self.assertTrue(storage.upsert_sensor(new_sensor))
         new_sensor.sensorId = storage.getSensorId(new_sensor.nodeId, new_sensor.clientSensorId)
         self.sensors.append(new_sensor)
 
@@ -115,28 +115,165 @@ class TestStorageSensor(TestStorageCore):
         """
         Test update of Sensor objects.
         """
-        raise NotImplementedError("TODO")
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        compare_sensors_content(self, self.sensors, init_db_sensors)
+
+        for sensor in self.sensors:
+            sensor.description += "_change"
+            sensor.state = 1 - sensor.state
+            sensor.error_state = SensorErrorState(SensorErrorState.GenericError,
+                                                  "test error")
+            sensor.alertLevels.append(2)
+            sensor.lastStateUpdated += 1
+            sensor.alertDelay += 2
+            if sensor.dataType == SensorDataType.INT:
+                sensor.data = SensorDataInt(1337, "some unit")
+            elif sensor.dataType == SensorDataType.FLOAT:
+                sensor.data = SensorDataFloat(1337.0, "some other unit")
+            elif sensor.dataType == SensorDataType.GPS:
+                sensor.data = SensorDataGPS(1337.0, 1337.0, 1337)
+
+            self.assertTrue(storage.upsert_sensors(self.sensors))
+
+            curr_db_sensors = storage.get_sensors(node_id)
+
+            compare_sensors_content(self, self.sensors, curr_db_sensors)
 
     def test_upsert_sensors_insert(self):
         """
         Test insert of Sensor objects.
         """
-        raise NotImplementedError("TODO")
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        new_sensor = Sensor()
+        new_sensor.nodeId = node_id
+        new_sensor.clientSensorId = 1337
+        new_sensor.description = "sensor_new"
+        new_sensor.state = 0
+        new_sensor.error_state = SensorErrorState()
+        new_sensor.alertLevels.append(1337)
+        new_sensor.lastStateUpdated = 1337
+        new_sensor.alertDelay = 1337
+        new_sensor.dataType = SensorDataType.NONE
+        new_sensor.data = SensorDataNone()
+
+        self.sensors.append(new_sensor)
+
+        self.assertTrue(storage.upsert_sensors(self.sensors))
+
+        curr_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors) + 1, len(curr_db_sensors))
+
+        # Update sensor id in sensor object since it only gets assigned from the database.
+        for curr_db_sensor in curr_db_sensors:
+            if curr_db_sensor.clientSensorId == new_sensor.clientSensorId:
+                new_sensor.sensorId = curr_db_sensor.sensorId
+                break
+
+        compare_sensors_content(self, self.sensors, curr_db_sensors)
 
     def test_upsert_sensors_different_node_id(self):
         """
         Test error processing of upsert function if sensors have different node ids.
         """
-        raise NotImplementedError("TODO")
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        new_sensor = Sensor()
+        new_sensor.nodeId = node_id + 1
+        new_sensor.clientSensorId = 1337
+        new_sensor.description = "sensor_new"
+        new_sensor.state = 0
+        new_sensor.error_state = SensorErrorState()
+        new_sensor.alertLevels.append(1337)
+        new_sensor.lastStateUpdated = 1337
+        new_sensor.alertDelay = 1337
+        new_sensor.dataType = SensorDataType.NONE
+        new_sensor.data = SensorDataNone()
+
+        self.sensors.append(new_sensor)
+
+        self.assertFalse(storage.upsert_sensors(self.sensors))
+
+        curr_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(curr_db_sensors))
+
+        compare_sensors_content(self, init_db_sensors, curr_db_sensors)
 
     def test_upsert_sensors_delete_sensors_not_in_list(self):
         """
         Test if sensors that are stored in database but not part of the argument list are deleted.
         """
-        raise NotImplementedError("TODO")
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        compare_sensors_content(self, self.sensors, init_db_sensors)
+
+        removed_sensors = []
+        for i in range(len(init_db_sensors)):
+            sensor = self.sensors[len(init_db_sensors) - 1 - i]
+            self.sensors.remove(sensor)
+            removed_sensors.append(sensor)
+
+            if not self.sensors:
+                break
+
+            self.assertTrue(storage.upsert_sensors(self.sensors))
+
+            curr_db_sensors = storage.get_sensors(node_id)
+
+            compare_sensors_content(self, self.sensors, curr_db_sensors)
+
+            self.assertEqual(len(init_db_sensors) - i - 1, len(curr_db_sensors))
+
+            # Check removed sensors are no longer stored in database.
+            for curr_db_sensor in curr_db_sensors:
+                self.assertFalse(any([obj.sensorId == curr_db_sensor.sensorId for obj in removed_sensors]))
 
     def test_upsert_sensors_empty_list(self):
         """
         Test if sensors are not touched if an empty list is given.
         """
-        raise NotImplementedError("TODO")
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        self.assertFalse(storage.upsert_sensors([]))
+
+        curr_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(curr_db_sensors))
+
+        compare_sensors_content(self, init_db_sensors, curr_db_sensors)
