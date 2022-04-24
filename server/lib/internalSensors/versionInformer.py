@@ -14,7 +14,7 @@ from typing import Optional
 from .core import _InternalSensor
 from ..update import Updater
 from ..globalData.globalData import GlobalData
-from ..globalData.sensorObjects import SensorDataNone, SensorDataType
+from ..globalData.sensorObjects import SensorDataNone, SensorDataType, SensorErrorState
 
 
 # This class handles the version information for a given instance.
@@ -88,6 +88,12 @@ class VersionInformerSensor(_InternalSensor):
 
         self.dataType = SensorDataType.NONE
         self.data = SensorDataNone()
+        self.state = 0
+        self.alertDelay = 0
+        self.error_state = SensorErrorState()
+
+        # Version informer sensor has always this fix internal id.
+        self.clientSensorId = 3
 
         # used for logging
         self.fileName = os.path.basename(__file__)

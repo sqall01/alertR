@@ -12,7 +12,7 @@ from typing import List
 from .core import _InternalSensor
 from ..localObjects import Option, Profile
 from ..globalData.globalData import GlobalData
-from ..globalData.sensorObjects import SensorDataInt, SensorDataType
+from ..globalData.sensorObjects import SensorDataInt, SensorDataType, SensorErrorState
 
 
 class ProfileChangeSensor(_InternalSensor):
@@ -27,6 +27,11 @@ class ProfileChangeSensor(_InternalSensor):
 
         self.dataType = SensorDataType.INT
         self.state = 0
+        self.alertDelay = 0
+        self.error_state = SensorErrorState()
+
+        # Profile change sensor has always this fix internal id.
+        self.clientSensorId = 2
 
         # used for logging
         self._log_tag = os.path.basename(__file__)

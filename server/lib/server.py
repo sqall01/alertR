@@ -21,6 +21,8 @@ from .localObjects import Sensor, SensorData, SensorAlert, Option, Alert, Manage
     Profile
 from .globalData.globalData import GlobalData
 from .globalData.sensorObjects import SensorDataType, SensorErrorState
+# noinspection PyProtectedMember
+from .storage.core import _Storage
 
 BUFSIZE = 4096
 
@@ -41,7 +43,7 @@ class ClientCommunication:
         self.globalData = globalData
         self.serverVersion = self.globalData.version
         self.serverRev = self.globalData.rev
-        self.storage = self.globalData.storage
+        self.storage = self.globalData.storage  # type: _Storage
         self.userBackend = self.globalData.userBackend
         self.sensorAlertExecuter = self.globalData.sensorAlertExecuter
         self.managerUpdateExecuter = self.globalData.managerUpdateExecuter
@@ -1760,26 +1762,21 @@ class ClientCommunication:
 
                 return False
 
-            sensorCount = len(sensors)
-
-            self.logger.debug("[%s]: Sensor count: %d (%s:%d)."
-                              % (self.fileName, sensorCount, self.clientAddress, self.clientPort))
-
-            for i in range(sensorCount):
+            for sensor_dict in sensors:
 
                 # extract sensor data
                 try:
-                    sensorId = sensors[i]["clientSensorId"]
-                    alertDelay = sensors[i]["alertDelay"]
-                    sensorDataType = sensors[i]["dataType"]
-                    alertLevels = sensors[i]["alertLevels"]
-                    description = sensors[i]["description"]
-                    state = sensors[i]["state"]
-                    error_state = SensorErrorState.copy_from_dict(sensors[i]["error_state"])
+                    clientSensorId = sensor_dict["clientSensorId"]
+                    alertDelay = sensor_dict["alertDelay"]
+                    sensorDataType = sensor_dict["dataType"]
+                    alertLevels = sensor_dict["alertLevels"]
+                    description = sensor_dict["description"]
+                    state = sensor_dict["state"]
+                    error_state = SensorErrorState.copy_from_dict(sensor_dict["error_state"])
 
                     # Get data of sensor according to data type.
                     sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
-                    sensor_data = sensor_data_class.copy_from_dict(sensors[i]["data"])
+                    sensor_data = sensor_data_class.copy_from_dict(sensor_dict["data"])
 
                 except Exception as e:
                     self.logger.exception("[%s]: Sensor data invalid (%s:%d)."
@@ -1797,7 +1794,7 @@ class ClientCommunication:
                     return False
 
                 self.logger.debug("[%s]: Received sensor: %d:%d:'%s' (%s:%d)."
-                                  % (self.fileName, sensorId, alertDelay, description, self.clientAddress,
+                                  % (self.fileName, clientSensorId, alertDelay, description, self.clientAddress,
                                      self.clientPort))
 
                 for tempAlertLevel in alertLevels:
@@ -1826,14 +1823,14 @@ class ClientCommunication:
 
                 # Create sensor object for the currently received sensor.
                 # NOTE: sensor id is not known yet.
-                utcTimestamp = int(time.time())
+                utc_timestamp = int(time.time())
                 tempSensor = Sensor()
                 tempSensor.nodeId = self.nodeId
-                tempSensor.clientSensorId = sensorId
+                tempSensor.clientSensorId = clientSensorId
                 tempSensor.description = description
                 tempSensor.state = state
                 tempSensor.alertLevels = alertLevels
-                tempSensor.lastStateUpdated = utcTimestamp
+                tempSensor.lastStateUpdated = utc_timestamp
                 tempSensor.alertDelay = alertDelay
                 tempSensor.dataType = sensorDataType
                 tempSensor.data = sensor_data
@@ -1841,10 +1838,8 @@ class ClientCommunication:
 
                 self.sensors.append(tempSensor)
 
-            # add sensors to database
-            if not self.storage.addSensors(self.username,
-                                           sensors,
-                                           logger=self.logger):
+            # Add sensors to database
+            if not self.storage.upsert_sensors(self.sensors, self.logger):
                 self.logger.error("[%s]: Unable to add sensors to database (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
 

@@ -13,7 +13,7 @@ from typing import Set
 from .core import _InternalSensor
 from ..localObjects import Node, Sensor
 from ..globalData.globalData import GlobalData
-from ..globalData.sensorObjects import SensorDataNone, SensorDataType
+from ..globalData.sensorObjects import SensorDataNone, SensorDataType, SensorErrorState
 
 
 # Class that represents the internal sensor that
@@ -26,6 +26,12 @@ class SensorTimeoutSensor(_InternalSensor):
 
         self.dataType = SensorDataType.NONE
         self.data = SensorDataNone()
+        self.alertDelay = 0
+        self.state = 0
+        self.error_state = SensorErrorState()
+
+        # Sensor timeout sensor has always this fix internal id.
+        self.clientSensorId = 0
 
         # file name of this file (used for logging)
         self.log_tag = os.path.basename(__file__)

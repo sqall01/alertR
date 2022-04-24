@@ -49,20 +49,6 @@ class _Storage:
         """
         raise NotImplementedError("Abstract class")
 
-    def addSensors(self,
-                   username: str,
-                   sensors: List[Dict[str, Any]],
-                   logger: logging.Logger = None) -> bool:
-        """
-        Adds/updates the data that is given by the node for the sensors to the database.
-
-        :param username:
-        :param sensors:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Abstract class")
-
     def addAlerts(self,
                   username: str,
                   alerts: List[Dict[str, Any]],
