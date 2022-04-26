@@ -3628,13 +3628,13 @@ class ClientCommunication:
                     self._finalizeLogger()
                     return
 
-            # check if SENSORSTATECHANGE was received (for sensor only)
+            # check if SENSORERRORSTATECHANGE was received (for sensor only)
             # => add new state to the database
-            elif command == "SENSORSTATECHANGE" and self.nodeType == "sensor":
+            elif command == "SENSORERRORSTATECHANGE" and self.nodeType == "sensor":
                 self.logger.debug("[%s]: Received sensor error state change message (%s:%d)."
                                   % (self.fileName, self.clientAddress, self.clientPort))
 
-                if not self._sensorErrorStateChange(message):
+                if not self._sensorErrorStateChangeHandler(message):
                     self.logger.error("[%s]: Handling sensor error state change failed (%s:%d)."
                                       % (self.fileName, self.clientAddress, self.clientPort))
                     # clean up session before exiting
