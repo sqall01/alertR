@@ -112,17 +112,20 @@ class GlobalData:
         # path to the configuration file of the client
         self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                        "..",
+                                       "..",
                                        "config",
                                        "config.xml")
 
         # path to the csv user credentials file (if csv is used as backend)
         self.userBackendCsvFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                "..",
+                                               "..",
                                                "config",
                                                "users.csv")
 
         # path to the sqlite database file (if sqlite is used as backend)
         self.storageBackendSqliteFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                     "..",
                                                      "..",
                                                      "config",
                                                      "database.db")
