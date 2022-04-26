@@ -37,7 +37,9 @@ class Sqlite(_Storage):
         # version of server
         self.version = self.globalData.version
         self.rev = self.globalData.rev
-        self.dbVersion = self.globalData.dbVersion
+
+        # Used database layout version.
+        self.dbVersion = 6
 
         # file nme of this file (used for logging)
         self.log_tag = os.path.basename(__file__)
