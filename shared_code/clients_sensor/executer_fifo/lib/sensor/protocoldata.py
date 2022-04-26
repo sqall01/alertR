@@ -166,8 +166,8 @@ class _ProtocolDataSensor(_PollingSensor):
                                        temp_has_latest_data,
                                        temp_input_data)
 
-            # Type: errorstatechange
-            elif str(message["message"]).upper() == "ERRORSTATECHANGE":
+            # Type: sensorerrorstatechange
+            elif str(message["message"]).upper() == "SENSORERRORSTATECHANGE":
 
                 # Check if error state is valid.
                 temp_input_error_state = message["payload"]["error_state"]

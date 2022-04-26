@@ -51,8 +51,8 @@ class MsgChecker:
             else:
                 return "msgTime expected"
 
-        # Check "ERRORSTATECHANGE" message.
-        elif request == "errorstatechange":
+        # Check "SENSORERRORSTATECHANGE" message.
+        elif request == "sensorerrorstatechange":
             if "msgTime" not in message.keys():
                 logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
                 return "msgTime expected"
@@ -1527,7 +1527,7 @@ class MsgBuilder:
 
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
-                   "message": "errorstatechange",
+                   "message": "sensorerrorstatechange",
                    "payload": payload}
         return json.dumps(message)
 

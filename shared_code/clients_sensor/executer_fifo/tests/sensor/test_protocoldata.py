@@ -439,7 +439,7 @@ class TestProtocolDataSensor(TestCase):
         Tests if an illegal error state for an error state change is handled correctly.
         """
         payload = {
-            "message": "errorstatechange",
+            "message": "sensorerrorstatechange",
             "payload": {
                 "error_state": "wrong data"
             }
@@ -473,7 +473,7 @@ class TestProtocolDataSensor(TestCase):
         Tests if an illegal state for an error state change is handled correctly.
         """
         payload = {
-            "message": "errorstatechange",
+            "message": "sensorerrorstatechange",
             "payload": {
                 "error_state": {
                     "state": -1337,
@@ -510,7 +510,7 @@ class TestProtocolDataSensor(TestCase):
         Tests if an illegal msg for an error state change is handled correctly.
         """
         payload = {
-            "message": "errorstatechange",
+            "message": "sensorerrorstatechange",
             "payload": {
                 "error_state": {
                     "state": SensorErrorState.OK,
@@ -954,7 +954,7 @@ class TestProtocolDataSensor(TestCase):
         Tests if error state change is processed correctly.
         """
         payload = {
-            "message": "errorstatechange",
+            "message": "sensorerrorstatechange",
             "payload": {
                 "error_state": {
                     "state": SensorErrorState.GenericError,

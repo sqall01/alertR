@@ -392,7 +392,7 @@ class TestExecuterSensor(TestCase):
                                   "mirror.py")
 
         payload = {
-            "message": "errorstatechange",
+            "message": "sensorerrorstatechange",
             "payload": {
                 "error_state": {
                     "state": SensorErrorState.GenericError,

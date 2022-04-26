@@ -886,7 +886,7 @@ class ServerCommunication(Communication):
 
         error_state_change_message = MsgBuilder.build_error_state_change_msg_sensor(error_state_change)
 
-        return self.send_request("errorstatechange", error_state_change_message)
+        return self.send_request("sensorerrorstatechange", error_state_change_message)
 
     def send_sensor_alert(self,
                           sensor_alert: SensorObjSensorAlert) -> Promise:

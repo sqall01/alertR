@@ -152,7 +152,7 @@ class TestFifoSensor(TestCase):
                                  "sensor1.fifo")
 
         payload = {
-            "message": "errorstatechange",
+            "message": "sensorerrorstatechange",
             "payload": {
                 "error_state": {
                     "state": SensorErrorState.GenericError,
