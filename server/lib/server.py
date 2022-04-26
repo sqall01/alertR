@@ -805,6 +805,30 @@ class ClientCommunication:
 
         return True
 
+    def _checkMsgSensorErrorState(self,
+                                  error_state: Dict[str, Any],
+                                  messageType: str) -> bool:
+        """
+        Internal function to check sanity of the error_state.
+
+        :param error_state:
+        :param messageType:
+        :return:
+        """
+        if not SensorErrorState.verify_dict(error_state):
+            # send error message back
+            try:
+                message = {"message": messageType,
+                           "error": "error_state not valid"}
+                self._send(json.dumps(message))
+
+            except Exception as e:
+                pass
+
+            return False
+
+        return True
+
     def _checkMsgStatusSensorsList(self,
                                    sensors: Dict[str, Any],
                                    messageType: str) -> bool:
@@ -2787,6 +2811,67 @@ class ClientCommunication:
 
         return True
 
+    def _sensorErrorStateChangeHandler(self,
+                                       incomingMessage: Dict[str, Any]) -> bool:
+        """
+        this internal function handles received sensor error state changes
+        (wakes up the error state executer)
+
+        :param incomingMessage:
+        :return: success or failure
+        """
+        # Extract state change values.
+        try:
+            if not self._checkMsgClientSensorId(incomingMessage["payload"]["clientSensorId"],
+                                                incomingMessage["message"]):
+                self.logger.error("[%s]: Received clientSensorId invalid (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+                return False
+
+            if not self._checkMsgSensorErrorState(incomingMessage["payload"]["error_state"],
+                                                  incomingMessage["message"]):
+                self.logger.error("[%s]: Received error_state invalid (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+                return False
+
+            client_sensor_id = incomingMessage["payload"]["clientSensorId"]
+            error_state = SensorErrorState.copy_from_dict(incomingMessage["payload"]["error_state"])
+
+            # Check if client sensor is known.
+            if not any([curr_sensor.clientSensorId == client_sensor_id for curr_sensor in self.sensors]):
+                self.logger.error("[%s]: Unknown client sensor id %d (%s:%d)."
+                                  % (self.fileName, client_sensor_id, self.clientAddress, self.clientPort))
+
+                # send error message back
+                try:
+                    message = {"message": incomingMessage["message"],
+                               "error": "unknown client sensor id"}
+                    self._send(json.dumps(message))
+
+                except Exception as e:
+                    pass
+
+                return False
+
+            # TODO queue sensor error state change and wake up error state handler thread
+
+        except Exception as e:
+            self.logger.exception("[%s]: Received sensor error state change invalid (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+
+            # send error message back
+            try:
+                message = {"message": incomingMessage["message"],
+                           "error": "received sensor error state change invalid"}
+                self._send(json.dumps(message))
+
+            except Exception as e:
+                pass
+
+            return False
+
+        return True
+
     def _sendManagerAllInformation(self,
                                    alertSystemStateMessage: str) -> bool:
         """
@@ -3536,6 +3621,21 @@ class ClientCommunication:
 
                 if not self._optionHandler(message):
                     self.logger.error("[%s]: Handling option failed (%s:%d)."
+                                      % (self.fileName, self.clientAddress, self.clientPort))
+                    # clean up session before exiting
+                    self._cleanUpSessionForClosing()
+                    self._releaseLock()
+                    self._finalizeLogger()
+                    return
+
+            # check if SENSORSTATECHANGE was received (for sensor only)
+            # => add new state to the database
+            elif command == "SENSORSTATECHANGE" and self.nodeType == "sensor":
+                self.logger.debug("[%s]: Received sensor error state change message (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+
+                if not self._sensorErrorStateChange(message):
+                    self.logger.error("[%s]: Handling sensor error state change failed (%s:%d)."
                                       % (self.fileName, self.clientAddress, self.clientPort))
                     # clean up session before exiting
                     self._cleanUpSessionForClosing()
