@@ -2928,6 +2928,32 @@ class Sqlite(_Storage):
 
         return False
 
+    def get_sensor_error_state(self,
+                               sensor_id: int,
+                               logger: logging.Logger = None) -> Optional[SensorErrorState]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        with self.dbLock:
+            try:
+                self.cursor.execute("SELECT error_state, "
+                                    + "error_msg "
+                                    + "FROM sensors "
+                                    + "WHERE id = ?",
+                                    (sensor_id,))
+                result = self.cursor.fetchall()
+
+                if result:
+                    return SensorErrorState(result[0][0], result[0][1])
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to get sensor error state for sensor id %d."
+                                 % (self.log_tag, sensor_id))
+
+        return None
+
     def get_sensor_ids_in_error_state(self,
                                         logger: logging.Logger = None) -> List[int]:
 

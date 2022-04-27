@@ -335,3 +335,51 @@ class TestStorageSensor(TestStorageCore):
             self.assertEqual(len(sensor_ids), i + 1)
 
             self.assertEqual(gt_in_error, set(sensor_ids))
+
+    def test_get_sensor_error_state(self):
+        """
+        Test getting sensor error state.
+        """
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        compare_sensors_content(self, self.sensors, init_db_sensors)
+
+        for sensor in self.sensors:
+
+            init_error_state = storage.get_sensor_error_state(sensor.sensorId)
+
+            self.assertEqual(init_error_state, sensor.error_state)
+
+            sensor.error_state = SensorErrorState(SensorErrorState.GenericError,
+                                                  "test error")
+
+            self.assertTrue(storage.update_sensor_error_state(sensor.nodeId,
+                                                              sensor.clientSensorId,
+                                                              sensor.error_state))
+
+            curr_error_state = storage.get_sensor_error_state(sensor.sensorId)
+
+            self.assertEqual(curr_error_state, sensor.error_state)
+            self.assertNotEqual(curr_error_state, init_error_state)
+
+    def test_get_sensor_error_state_invalid_sensor_id(self):
+        """
+        Test getting sensor error state with invalid sensor id.
+        """
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        compare_sensors_content(self, self.sensors, init_db_sensors)
+
+        self.assertIsNone(storage.get_sensor_error_state(4567))

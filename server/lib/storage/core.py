@@ -499,6 +499,18 @@ class _Storage:
         """
         raise NotImplementedError("Abstract class")
 
+    def get_sensor_error_state(self,
+                               sensor_id: int,
+                               logger: logging.Logger = None) -> Optional[SensorErrorState]:
+        """
+        Gets error state of the Sensor given by sensor id.
+
+        :param sensor_id:
+        :param logger:
+        :return: sensor error state or none
+        """
+        raise NotImplementedError("Abstract class")
+
     def get_sensor_ids_in_error_state(self,
                                         logger: logging.Logger = None) -> List[int]:
         """

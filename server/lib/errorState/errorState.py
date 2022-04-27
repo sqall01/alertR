@@ -37,6 +37,7 @@ class ErrorStateExecuter(threading.Thread):
         # Create an event that is used to wake this thread up and react on options.
         self._error_state_event = threading.Event()
         self._error_state_event.clear()
+        self._error_state_event_timeout = 30
 
         self._exit_flag = False
 
@@ -57,7 +58,7 @@ class ErrorStateExecuter(threading.Thread):
 
     def _process_error_state_changes(self):
         """
-        Internal function that processes error state events in queue.
+        Internal function that processes error state events in queue. If queue is empty, nothing happens.
 
         :return:
         """
@@ -110,10 +111,18 @@ class ErrorStateExecuter(threading.Thread):
         missed_events = self._sensor_ids_in_error ^ curr_sensor_ids  # missed ok events and error events
 
         for sensor_id in missed_events:
-            pass  # TODO get error state from db and send sensor error state changes
+            error_state = self._storage.get_sensor_error_state(sensor_id, self._logger)
 
-        # TODO
-        raise NotImplementedError("TODO")
+            if error_state is None:
+                self._logger.error("[%s]: Unable to get error state for sensor id %d."
+                                   % (self._log_tag, sensor_id))
+                continue
+
+            self._send_sensor_error_state_change_by_sensor_id(sensor_id, error_state)
+
+            self._update_sensor_error_state_sensor_by_sensor_id(sensor_id, error_state)
+
+        self._sensor_ids_in_error = curr_sensor_ids
 
     def _send_sensor_error_state_change(self,
                                         node_id: int,
@@ -126,6 +135,11 @@ class ErrorStateExecuter(threading.Thread):
                                % (self._log_tag, node_id, client_sensor_id))
             return
 
+        self._send_sensor_error_state_change_by_sensor_id(sensor_id, error_state)
+
+    def _send_sensor_error_state_change_by_sensor_id(self,
+                                                     sensor_id: int,
+                                                     error_state: SensorErrorState):
         for server_session in self._server_sessions:
             # Ignore sessions which do not exist yet and that are not managers.
             if server_session.clientComm is None:
@@ -159,10 +173,26 @@ class ErrorStateExecuter(threading.Thread):
         :param client_sensor_id:
         :param error_state:
         """
+        sensor_id = self._storage.getSensorId(node_id, client_sensor_id, self._logger)
+        if sensor_id is None:
+            self._logger.error("[%s]: Sensor for node id %d with client sensor id %d does not exist."
+                               % (self._log_tag, node_id, client_sensor_id))
+            return
+
+        self._update_sensor_error_state_sensor_by_sensor_id(sensor_id, error_state)
+
+    def _update_sensor_error_state_sensor_by_sensor_id(self,
+                                                       sensor_id: int,
+                                                       error_state: SensorErrorState):
+        """
+        Internal function that triggers the internal sensor for sensor error states.
+        :param sensor_id:
+        :param error_state:
+        """
         # TODO
         """
         if self._internal_sensor is not None:
-            self._internal_sensor.process_error_state(node_id, client_sensor_id, error_state)
+            self._internal_sensor.process_error_state(sensor_id, error_state)
         """
         raise NotImplementedError("TODO")
 
@@ -214,20 +244,21 @@ class ErrorStateExecuter(threading.Thread):
 
             # Wait until a new object has to be processed if we do not have anything in the queue.
             else:
-                self._error_state_event.wait()
+                self._error_state_event.wait(self._error_state_event_timeout)
 
             if self._exit_flag:
                 return
 
-            # Process error state change events.
+            # Process error state change events in queue. If no event is in queue, function does nothing.
             self._process_error_state_changes()
 
+            # Process sensor error states to make sure that the system has the correct state and we did not
+            # miss any sensor error state event.
             self._process_sensor_error_states()
 
 
 # TODO
 """
-- recover state after missed error state events
 - sensor error state sensor
 - test cases
 - start thread during server startup
