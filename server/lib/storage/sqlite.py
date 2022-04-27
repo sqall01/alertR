@@ -2928,6 +2928,29 @@ class Sqlite(_Storage):
 
         return False
 
+    def get_sensor_ids_in_error_state(self,
+                                        logger: logging.Logger = None) -> List[int]:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        result = []
+        with self.dbLock:
+            try:
+                self.cursor.execute("SELECT id "
+                                    + "FROM sensors "
+                                    + "WHERE error_state != ? "
+                                    + "ORDER BY id ASC",
+                                    (SensorErrorState.OK,))
+                result = self.cursor.fetchall()
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to get sensor ids for sensors in an error state."
+                                 % self.log_tag)
+
+        return [x[0] for x in result]
+
     def get_sensors(self,
                     node_id: int,
                     logger: logging.Logger = None) -> List[Sensor]:

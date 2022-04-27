@@ -499,6 +499,16 @@ class _Storage:
         """
         raise NotImplementedError("Abstract class")
 
+    def get_sensor_ids_in_error_state(self,
+                                        logger: logging.Logger = None) -> List[int]:
+        """
+        Gets all sensor ids for sensors that are currently in an error state.
+
+        :param logger:
+        :return: list of sensor ids
+        """
+        raise NotImplementedError("Abstract class")
+
     def get_sensors(self,
                     node_id: int,
                     logger: logging.Logger = None) -> List[Sensor]:

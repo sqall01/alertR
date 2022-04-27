@@ -43,6 +43,9 @@ class ErrorStateExecuter(threading.Thread):
         self._error_state_queue = list()  # type: List[Tuple[int, int, SensorErrorState]]
         self._error_state_queue_lock = threading.Lock()
 
+        # Set of sensor ids that are currently in an error state.
+        self._sensor_ids_in_error = set()
+
         # TODO
         """
         # Get instance of the internal sensor error state sensor (if exists).
@@ -75,6 +78,18 @@ class ErrorStateExecuter(threading.Thread):
                                    % (self._log_tag, node_id, client_sensor_id))
                 continue
 
+            sensor_id = self._storage.getSensorId(node_id, client_sensor_id, self._logger)
+            if sensor_id is None:
+                self._logger.error("[%s]: Sensor for node id %d with client sensor id %d does not exist."
+                                   % (self._log_tag, node_id, client_sensor_id))
+                return
+
+            # Update local set of sensors in error state.
+            if error_state.state == SensorErrorState.OK:
+                self._sensor_ids_in_error.discard(sensor_id)
+            else:
+                self._sensor_ids_in_error.add(sensor_id)
+
             self._send_sensor_error_state_change(node_id,
                                                  client_sensor_id,
                                                  error_state)
@@ -90,6 +105,13 @@ class ErrorStateExecuter(threading.Thread):
 
         :return:
         """
+        curr_sensor_ids = set(self._storage.get_sensor_ids_in_error_state(self._logger))
+
+        missed_events = self._sensor_ids_in_error ^ curr_sensor_ids  # missed ok events and error events
+
+        for sensor_id in missed_events:
+            pass  # TODO get error state from db and send sensor error state changes
+
         # TODO
         raise NotImplementedError("TODO")
 
@@ -180,6 +202,9 @@ class ErrorStateExecuter(threading.Thread):
         state change and message never got through to the server) and thus has to recover the
         correct state for the system.
         """
+
+        # Create initial set of sensor ids that are currently in an error state.
+        self._sensor_ids_in_error = set(self._storage.get_sensor_ids_in_error_state(self._logger))
 
         while True:
 
