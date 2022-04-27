@@ -77,7 +77,7 @@ class OptionExecuter(threading.Thread):
             if not server_session.clientComm.clientInitialized:
                 continue
 
-            # sending sensor alerts off to alert client
+            # Sending profile change to alert client
             # via a thread to not block this one
             sender = AsynchronousSender(self._global_data, server_session.clientComm)
             # set thread to daemon

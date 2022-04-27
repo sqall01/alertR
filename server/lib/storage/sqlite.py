@@ -2774,8 +2774,8 @@ class Sqlite(_Storage):
 
         # If the sensor does not exist => add it
         if not sensor_id:
-            logger.info("[%s]: Sensor with client id %d does not exist in database. Adding it."
-                        % (self.log_tag, sensor.clientSensorId))
+            logger.info("[%s]: Sensor on node id %d with client id %d does not exist in database. Adding it."
+                        % (self.log_tag, sensor.nodeId, sensor.clientSensorId))
 
             # add sensor to database
             try:
@@ -2943,6 +2943,48 @@ class Sqlite(_Storage):
             except Exception as e:
                 logger.exception("[%s]: Unable to get sensors for node id %d." % (self.log_tag, node_id))
         return sensors
+
+    def update_sensor_error_state(self,
+                                  node_id: int,
+                                  client_sensor_id: int,
+                                  error_state: SensorErrorState,
+                                  logger: logging.Logger = None) -> bool:
+
+        # Set logger instance to use.
+        if not logger:
+            logger = self.logger
+
+        self.logger.debug("[%s]: Updating sensor error state for node id %d with client id %d: %s"
+                          % (self.log_tag, node_id, client_sensor_id, str(error_state)))
+
+        with self.dbLock:
+            # Get sensor id.
+            try:
+                sensor_id = self._get_sensor_id(node_id, client_sensor_id)
+            except Exception as e:
+                return False
+
+            if not sensor_id:
+                logger.error("[%s]: Sensor on node id %d with client id %d does not exist in database."
+                             % (self.log_tag, node_id, client_sensor_id))
+                return False
+
+            try:
+                self.cursor.execute("UPDATE sensors SET "
+                                    + "error_state = ?, "
+                                    + "error_msg = ? "
+                                    + "WHERE id = ?",
+                                    (error_state.state,
+                                     error_state.msg,
+                                     sensor_id))
+
+            except Exception as e:
+                logger.exception("[%s]: Unable to update sensor error state for node id %d with client id %d."
+                                 % (self.log_tag, node_id, client_sensor_id))
+                return False
+
+            self.conn.commit()
+            return True
 
     def upsert_sensor(self,
                       sensor: Sensor,

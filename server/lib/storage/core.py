@@ -10,6 +10,7 @@
 import logging
 from typing import Any, Optional, List, Union, Tuple, Dict
 from ..localObjects import Node, Alert, Manager, Sensor, Option, SensorData
+from ..globalData.sensorObjects import SensorErrorState
 
 
 # Internal abstract class for new storage backends.
@@ -507,6 +508,22 @@ class _Storage:
         :param node_id:
         :param logger:
         :return: list of sensors
+        """
+        raise NotImplementedError("Abstract class")
+
+    def update_sensor_error_state(self,
+                                  node_id: int,
+                                  client_sensor_id: int,
+                                  error_state: SensorErrorState,
+                                  logger: logging.Logger = None) -> bool:
+        """
+        Updates the error state for the sensor given by node id and client sensor id.
+
+        :param node_id:
+        :param client_sensor_id:
+        :param error_state:
+        :param logger:
+        :return: success or failure
         """
         raise NotImplementedError("Abstract class")
 

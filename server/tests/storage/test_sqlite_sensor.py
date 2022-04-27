@@ -277,3 +277,29 @@ class TestStorageSensor(TestStorageCore):
         self.assertEqual(len(init_db_sensors), len(curr_db_sensors))
 
         compare_sensors_content(self, init_db_sensors, curr_db_sensors)
+
+    def test_update_sensor_error_state(self):
+        """
+        Test update of error state.
+        """
+        config_logging(logging.INFO)
+        storage = self._create_sensors()
+
+        node_id = self.sensors[0].nodeId
+        init_db_sensors = storage.get_sensors(node_id)
+
+        self.assertEqual(len(init_db_sensors), len(self.sensors))
+
+        compare_sensors_content(self, self.sensors, init_db_sensors)
+
+        for sensor in self.sensors:
+            sensor.error_state = SensorErrorState(SensorErrorState.GenericError,
+                                                  "test error")
+
+            self.assertTrue(storage.update_sensor_error_state(sensor.nodeId,
+                                                              sensor.clientSensorId,
+                                                              sensor.error_state))
+
+            curr_db_sensors = storage.get_sensors(node_id)
+
+            compare_sensors_content(self, self.sensors, curr_db_sensors)

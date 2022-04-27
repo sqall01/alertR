@@ -3163,6 +3163,15 @@ class ClientCommunication:
         self._releaseLock()
         return returnValue
 
+    def send_sensor_error_state_change(self, sensor_id: int, error_state: SensorErrorState) -> bool:
+        """
+        Function that sends a sensor error state change to a manager client
+
+        :return:
+        """
+        # TODO
+        raise NotImplementedError("TODO")
+
     def sendManagerUpdate(self) -> bool:
         """
         function that sends a full information update to a manager client
@@ -3868,12 +3877,18 @@ class AsynchronousSender(threading.Thread):
         self.send_profile_change = False
         self.profile = None
 
+        # This option is used when the thread should
+        # send a sensor error state change to the client
+        self.send_sensor_error_state_change = False
+        self.sensor_id = None
+        self.error_state = None
+
     def run(self):
 
-        # check if a status update to a manager should be send
+        # check if a status update to a manager should be sent
         if self.sendManagerUpdate:
             if self.clientComm.nodeType != "manager":
-                self.logger.error("[%s]: Sending status update to manager failed. Client is not a "
+                self.logger.error("[%s]: Sending status update to manager client failed. Client is not a "
                                   % self.fileName
                                   + "'manager' node (%s:%d)."
                                   % (self.clientComm.clientAddress, self.clientComm.clientPort))
@@ -3885,7 +3900,7 @@ class AsynchronousSender(threading.Thread):
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
 
-        # check if a sensor alert to a manager/alert should be send
+        # check if a sensor alert to a manager/alert should be sent
         elif self.sendSensorAlert:
             if self.clientComm.nodeType != "manager" and self.clientComm.nodeType != "alert":
                 self.logger.error("[%s]: Sending sensor alert failed. Client is not a 'manager'/'alert' node (%s:%d)."
@@ -3896,10 +3911,10 @@ class AsynchronousSender(threading.Thread):
                 self.logger.error("[%s]: Sending sensor alert to manager/alert failed (%s:%d)."
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
 
-        # check if a state change to a manager should be send
+        # check if a state change to a manager should be sent
         elif self.sendManagerStateChange:
             if self.clientComm.nodeType != "manager":
-                self.logger.error("[%s]: Sending state change to manager failed. Client is not a "
+                self.logger.error("[%s]: Sending state change to manager client failed. Client is not a "
                                   % self.fileName
                                   + "'manager' node (%s:%d)."
                                   % (self.clientComm.clientAddress, self.clientComm.clientPort))
@@ -3914,10 +3929,10 @@ class AsynchronousSender(threading.Thread):
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
 
-        # check if a profile change to an alert client should be send
+        # check if a profile change to an alert client should be sent
         elif self.send_profile_change:
             if self.clientComm.nodeType != "alert":
-                self.logger.error("[%s]: Sending profile change to alert failed. Client is not a "
+                self.logger.error("[%s]: Sending profile change to alert client failed. Client is not a "
                                   % self.fileName
                                   + "'alert' node (%s:%d)."
                                   % (self.clientComm.clientAddress, self.clientComm.clientPort))
@@ -3926,5 +3941,20 @@ class AsynchronousSender(threading.Thread):
             # sending profile change to alert client
             if not self.clientComm.send_profile_change(self.profile):
                 self.logger.error("[%s]: Sending profile change to alert client failed (%s:%d)."
+                                  % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
+                return
+
+        # check if a sensor error state to a manager client should be sent
+        elif self.send_sensor_error_state_change:
+            if self.clientComm.nodeType != "manager":
+                self.logger.error("[%s]: Sending sensor error state change to manager client failed. Client is not a "
+                                  % self.fileName
+                                  + "'manager' node (%s:%d)."
+                                  % (self.clientComm.clientAddress, self.clientComm.clientPort))
+                return
+
+            # sending sensor error state to manager client
+            if not self.clientComm.send_sensor_error_state_change(self.sensor_id, self.error_state):
+                self.logger.error("[%s]: Sending sensor error state to alert client failed (%s:%d)."
                                   % (self.fileName, self.clientComm.clientAddress, self.clientComm.clientPort))
                 return
