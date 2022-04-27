@@ -87,6 +87,9 @@ class GlobalData:
         # Object that handles option message processing.
         self.option_executer = None
 
+        # Object that handles error state updates.
+        self.error_state_executer = None
+
         # this is the time in seconds when the client times out
         self.connectionTimeout = 90
 

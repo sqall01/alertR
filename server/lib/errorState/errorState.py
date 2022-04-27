@@ -202,7 +202,6 @@ class ErrorStateExecuter(threading.Thread):
 
 # TODO
 """
-- implement send_sensor_error_state_change in server.py
 - recover state after missed error state events
 - sensor error state sensor
 - test cases

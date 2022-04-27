@@ -52,6 +52,7 @@ class ClientCommunication:
         self.connectionWatchdog = self.globalData.connectionWatchdog
         self.serverSessions = self.globalData.serverSessions
         self._option_executer = self.globalData.option_executer
+        self._error_state_executer = self.globalData.error_state_executer
 
         # Time the last message was received by the server. Since the 
         # connection counts as a message, set it to the current time
@@ -1144,6 +1145,22 @@ class ClientCommunication:
         utc_time = int(time.time())
         message = {"msgTime": utc_time,
                    "message": "profilechange",
+                   "payload": payload}
+
+        return json.dumps(message)
+
+    def _build_sensor_error_state_change_message(self, sensor_id: int, error_state: SensorErrorState) -> str:
+        """
+        Internal function that builds the sensor error state change message.
+
+        :return:
+        """
+        payload = {"type": "request",
+                   "sensorId": sensor_id,
+                   "error_state": error_state.copy_to_dict()}
+        utc_time = int(time.time())
+        message = {"msgTime": utc_time,
+                   "message": "sensorerrorstatechange",
                    "payload": payload}
 
         return json.dumps(message)
@@ -2853,7 +2870,9 @@ class ClientCommunication:
 
                 return False
 
-            # TODO queue sensor error state change and wake up error state handler thread
+            self._error_state_executer.add_error_state(self.nodeId,
+                                                       client_sensor_id,
+                                                       error_state)
 
         except Exception as e:
             self.logger.exception("[%s]: Received sensor error state change invalid (%s:%d)."
@@ -3114,6 +3133,88 @@ class ClientCommunication:
 
         return True
 
+    def _send_sensor_error_state_change(self,
+                                        error_state_msg: str) -> bool:
+        """
+        Internal function to send a sensor error state change to a manager client
+
+        :param error_state_msg:
+        :return:
+        """
+        # Send sensor error state message.
+        try:
+            self.logger.debug("[%s]: Sending sensor error state change message (%s:%d)."
+                              % (self.fileName, self.clientAddress, self.clientPort))
+            self._send(error_state_msg)
+
+        except Exception as e:
+            self.logger.exception("[%s]: Sending sensor error state change message failed (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+            return False
+
+        # get sensor error state change acknowledgement
+        self.logger.debug("[%s]: Receiving sensor error state change response (%s:%d)."
+                          % (self.fileName, self.clientAddress, self.clientPort))
+
+        try:
+            data = self._recv()
+            message = json.loads(data)
+            # check if an error was received
+            if "error" in message.keys():
+                self.logger.error("[%s]: Error received: '%s' (%s:%d)."
+                                  % (self.fileName, message["error"], self.clientAddress, self.clientPort))
+                return False
+
+            # check if the received message type is the correct one
+            if str(message["message"]).upper() != "SENSORERRORSTATECHANGE":
+                self.logger.error("[%s]: sensor error state change message expected (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+
+                # send error message back
+                try:
+                    message = {"message": message["message"],
+                               "error": "sensor error state change message expected"}
+                    self._send(json.dumps(message))
+
+                except Exception as e:
+                    pass
+
+                return False
+
+            # check if the received type is the correct one
+            if str(message["payload"]["type"]).upper() != "RESPONSE":
+                self.logger.error("[%s]: response expected (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+
+                # send error message back
+                try:
+                    message = {"message": message["message"],
+                               "error": "response expected"}
+                    self._send(json.dumps(message))
+
+                except Exception as e:
+                    pass
+
+                return False
+
+            # check if status message was correctly received
+            if str(message["payload"]["result"]).upper() == "EXPIRED":
+                self.logger.warning("[%s]: Client reported 'sensorerrorstatechange' messages as expired." % self.fileName)
+
+            elif str(message["payload"]["result"]).upper() != "OK":
+                self.logger.error("[%s]: Result not ok: '%s' (%s:%d)."
+                                  % (self.fileName, message["payload"]["result"], self.clientAddress, self.clientPort))
+                return False
+
+        except Exception as e:
+            self.logger.exception("[%s]: Receiving sensor error state change response failed (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
+            return False
+
+        self.lastRecv = int(time.time())
+
+        return True
+
     def sendManagerStateChange(self,
                                sensorId: int,
                                state: int,
@@ -3169,8 +3270,18 @@ class ClientCommunication:
 
         :return:
         """
-        # TODO
-        raise NotImplementedError("TODO")
+        error_state_msg = self._build_sensor_error_state_change_message(sensor_id, error_state)
+
+        # initiate transaction with client and acquire lock
+        if not self._initiateTransaction("sensorerrorstatechange",
+                                         len(error_state_msg),
+                                         acquireLock=True):
+            return False
+
+        returnValue = self._send_sensor_error_state_change(error_state_msg)
+
+        self._releaseLock()
+        return returnValue
 
     def sendManagerUpdate(self) -> bool:
         """
