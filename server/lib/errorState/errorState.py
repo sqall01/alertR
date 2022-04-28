@@ -37,7 +37,7 @@ class ErrorStateExecuter(threading.Thread):
         # Create an event that is used to wake this thread up and react on options.
         self._error_state_event = threading.Event()
         self._error_state_event.clear()
-        self._error_state_event_timeout = 30
+        self._error_state_event_timeout = 60
 
         self._exit_flag = False
 
@@ -256,6 +256,11 @@ class ErrorStateExecuter(threading.Thread):
             # miss any sensor error state event.
             self._process_sensor_error_states()
 
+    def start_processing(self):
+        """
+        Wakes up the processing thread to run a processing round (and fix possible wrong error states in the system).
+        """
+        self._error_state_event.set()
 
 # TODO
 """

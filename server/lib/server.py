@@ -110,7 +110,7 @@ class ClientCommunication:
 
         # List of all sensors this client manages (is only used if the client
         # is of type "sensor").
-        self.sensors = list()
+        self.sensors = list()  # type: List[Sensor]
 
         # Needed for logging.
         self.logger = self.globalData.logger
@@ -887,6 +887,15 @@ class ClientCommunication:
 
             elif not self._checkMsgState(sensor["state"],
                                          messageType):
+                isCorrect = False
+                break
+
+            if "error_state" not in sensor.keys():
+                isCorrect = False
+                break
+
+            elif not self._checkMsgSensorErrorState(sensor["error_state"],
+                                                    messageType):
                 isCorrect = False
                 break
 
@@ -2249,12 +2258,14 @@ class ClientCommunication:
 
             return False
 
-        # Extract sensor states.
-        # Generate a list of tuples with (clientSensorId, state).
-        stateList = list()
+        # Extract data.
+        stateList = list()  # List of tuples with (clientSensorId, state)
+        dataList = list()  # List of tuples with (clientSensorId, sensor_data)
+        error_state_list = list()  # type: List[Sensor]
         try:
             for i in range(self.sensorCount):
                 clientSensorId = sensors[i]["clientSensorId"]
+                sensorDataType = sensors[i]["dataType"]
 
                 # Check if client sensor is known.
                 sensor = None
@@ -2279,9 +2290,38 @@ class ClientCommunication:
 
                     return False
 
+                # Check if received message contains the correct data type.
+                if sensor.dataType != sensorDataType:
+
+                    self.logger.error("[%s]: Received sensor data type for client sensor %d invalid (%s:%d)."
+                                      % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
+
+                    # send error message back
+                    try:
+                        message = {"message": incomingMessage["message"],
+                                   "error": "received sensor data type wrong"}
+                        self._send(json.dumps(message))
+
+                    except Exception as e:
+                        pass
+
+                    return False
+
                 # Update sensor object.
                 sensor.state = sensors[i]["state"]
                 sensor.lastStateUpdated = int(time.time())
+
+                # Only update error state if it has changed.
+                error_state = SensorErrorState.copy_from_dict(sensors[i]["error_state"])
+                if error_state != sensor.error_state:
+                    sensor.error_state = error_state
+                    error_state_list.append(sensor)
+
+                # Extract received data.
+                sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
+                sensor.data = sensor_data_class.copy_from_dict(sensors[i]["data"])
+
+                dataList.append((clientSensorId, sensor.data))
 
                 stateList.append((clientSensorId, sensor.state))
 
@@ -2321,61 +2361,30 @@ class ClientCommunication:
 
             return False
 
-        # Extract sensor data.
-        # Generate a list of tuples with (clientSensorId, sensor_data).
-        dataList = list()
-        try:
-            for i in range(self.sensorCount):
-                clientSensorId = sensors[i]["clientSensorId"]
+        # Update error states for sensors in database if they have changed
+        # which is only possible if we missed a sensor state change message.
+        for sensor in error_state_list:
+            if not self.storage.update_sensor_error_state(sensor.nodeId,
+                                                          sensor.clientSensorId,
+                                                          sensor.error_state,
+                                                          self.logger):
+                self.logger.error("[%s]: Unable to update error state for sensor id %d (%s:%d)."
+                                  % (self.fileName, sensor.sensorId, self.clientAddress, self.clientPort))
 
-                # Check if client sensor is known.
-                # NOTE: omit check if client sensor id is valid because we
-                # know it is, we checked it earlier.
-                sensor = None
-                for currentSensor in self.sensors:
-                    if currentSensor.clientSensorId == clientSensorId:
-                        sensor = currentSensor
-                        break
+                # send error message back
+                try:
+                    message = {"message": incomingMessage["message"],
+                               "error": "unable to update sensor error state in database"}
+                    self._send(json.dumps(message))
 
-                sensorDataType = sensors[i]["dataType"]
+                except Exception as e:
+                    pass
 
-                # Check if received message contains the correct data type.
-                if sensor.dataType != sensorDataType:
-
-                    self.logger.error("[%s]: Received sensor data type for client sensor %d invalid (%s:%d)."
-                                      % (self.fileName, clientSensorId, self.clientAddress, self.clientPort))
-
-                    # send error message back
-                    try:
-                        message = {"message": incomingMessage["message"],
-                                   "error": "received sensor data type wrong"}
-                        self._send(json.dumps(message))
-
-                    except Exception as e:
-                        pass
-
-                    return False
-
-                # Extract received data.
-                sensor_data_class = SensorDataType.get_sensor_data_class(sensorDataType)
-                sensor.data = sensor_data_class.copy_from_dict(sensors[i]["data"])
-
-                dataList.append((clientSensorId, sensor.data))
-
-        except Exception as e:
-            self.logger.exception("[%s]: Received sensor data invalid (%s:%d)."
-                                  % (self.fileName, self.clientAddress, self.clientPort))
-
-            # send error message back
-            try:
-                message = {"message": incomingMessage["message"],
-                           "error": "received sensor data invalid"}
-                self._send(json.dumps(message))
-
-            except Exception as e:
-                pass
-
-            return False
+                return False
+        # Wakes up error state executer thread only if we have changed error states to fix wrong error states
+        # in the system.
+        if error_state_list:
+            self._error_state_executer.start_processing()
 
         # Update the sensor data in the database.
         if dataList:
@@ -2854,8 +2863,13 @@ class ClientCommunication:
             client_sensor_id = incomingMessage["payload"]["clientSensorId"]
             error_state = SensorErrorState.copy_from_dict(incomingMessage["payload"]["error_state"])
 
-            # Check if client sensor is known.
-            if not any([curr_sensor.clientSensorId == client_sensor_id for curr_sensor in self.sensors]):
+            # Get sensor object.
+            sensor = None
+            for sensor_obj in self.sensors:
+                if sensor_obj.clientSensorId == client_sensor_id:
+                    sensor = sensor_obj
+                    break
+            if sensor is None:
                 self.logger.error("[%s]: Unknown client sensor id %d (%s:%d)."
                                   % (self.fileName, client_sensor_id, self.clientAddress, self.clientPort))
 
@@ -2870,6 +2884,8 @@ class ClientCommunication:
 
                 return False
 
+            # Update error state.
+            sensor.error_state = error_state
             self._error_state_executer.add_error_state(self.nodeId,
                                                        client_sensor_id,
                                                        error_state)
