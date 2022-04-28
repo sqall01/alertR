@@ -2384,7 +2384,7 @@ class ClientCommunication:
         # Wakes up error state executer thread only if we have changed error states to fix wrong error states
         # in the system.
         if error_state_list:
-            self._error_state_executer.start_processing()
+            self._error_state_executer.start_processing_round()
 
         # Update the sensor data in the database.
         if dataList:
