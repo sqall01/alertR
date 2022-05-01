@@ -28,7 +28,6 @@ class ManagerUpdateExecuter(threading.Thread):
         self.globalData = globalData
         self.logger = self.globalData.logger
         self.managerUpdateInterval = self.globalData.managerUpdateInterval
-        self.storage = self.globalData.storage
         self.serverSessions = self.globalData.serverSessions
 
         # file nme of this file (used for logging)

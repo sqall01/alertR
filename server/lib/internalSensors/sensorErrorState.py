@@ -57,7 +57,15 @@ class SensorErrorStateSensor(_InternalSensor):
         if self._sensor_ids_in_error:
             self.state = 1
             self.data = SensorDataInt(len(self._sensor_ids_in_error), "Sensor(s)")
-            self._global_data.managerUpdateExecuter.queue_state_change(self.sensorId, self.state, self.data)
+
+        # Update sensor state/data in database.
+        self._storage.updateSensorState(self.nodeId,
+                                        [(self.clientSensorId, self.state)],
+                                        self._logger)
+
+        self._storage.updateSensorData(self.nodeId,
+                                       [(self.clientSensorId, self.data)],
+                                       self._logger)
 
     def process_error_state(self, username: str, client_sensor_id: int, sensor_id: int, error_state: SensorErrorState):
         """
