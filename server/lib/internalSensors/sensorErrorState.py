@@ -8,9 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-from typing import List
 from .core import _InternalSensor
-from ..localObjects import Option, Profile
 from ..globalData.globalData import GlobalData
 from ..globalData.sensorObjects import SensorDataInt, SensorDataType, SensorErrorState
 
@@ -61,18 +59,16 @@ class SensorErrorStateSensor(_InternalSensor):
             self.data = SensorDataInt(len(self._sensor_ids_in_error), "Sensor(s)")
             self._global_data.managerUpdateExecuter.queue_state_change(self.sensorId, self.state, self.data)
 
-    def process_error_state(self, sensor_id: int, error_state: SensorErrorState):
+    def process_error_state(self, username: str, client_sensor_id: int, sensor_id: int, error_state: SensorErrorState):
         """
-        Triggers sensor alert for the given error state.
+        Triggers sensor alert for the given error state and updates sensor's state/data accordingly.
 
+        :param username:
+        :param client_sensor_id:
         :param sensor_id:
         :param error_state:
         :return:
         """
-
-
-        # TODO what do we send for optional data (username and clientsensorid?)
-        raise NotImplementedError("TODO not finished yet")
 
         if error_state.state == error_state.OK:
             self._sensor_ids_in_error.discard(sensor_id)
@@ -88,18 +84,30 @@ class SensorErrorStateSensor(_InternalSensor):
             self.state = 0
             self.data = SensorDataInt(0, "Sensor(s)")
 
+        # Update sensor state in database.
+        if not self._storage.updateSensorState(self.nodeId,  # nodeId
+                                               [(self.clientSensorId, self.state)],  # stateList
+                                               self._logger):  # logger
+            self._logger.error("[%s]: Not able to change sensor state for internal sensor error state sensor."
+                               % self._log_tag)
 
-        # TODO is this necessary or does the add_sensor_alert also do this?
-        if not self.storage.updateSensorData(self.nodeId,
-                                             [(self.clientSensorId, self.data)],
-                                             self._logger):
+        # Update sensor data in database.
+        if not self._storage.updateSensorData(self.nodeId,
+                                              [(self.clientSensorId, self.data)],
+                                              self._logger):
             self._logger.error("[%s]: Not able to change sensor data for internal sensor error state sensor."
                                % self._log_tag)
-            return
+
+        message = "Sensor error state changed for sensor id %d: %s" % (sensor_id, str(error_state))
+
+        optional_data = {"message": message,
+                         "error_state": error_state.copy_to_dict(),
+                         "username": username,
+                         "clientSensorId": client_sensor_id}
 
         if not self._sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                             self.sensorId,
-                                                            1,
+                                                            self.state,
                                                             optional_data,
                                                             True,
                                                             True,

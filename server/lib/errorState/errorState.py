@@ -169,13 +169,20 @@ class ErrorStateExecuter(threading.Thread):
         :param client_sensor_id:
         :param error_state:
         """
-        sensor_id = self._storage.getSensorId(node_id, client_sensor_id, self._logger)
-        if sensor_id is None:
-            self._logger.error("[%s]: Sensor for node id %d with client sensor id %d does not exist."
-                               % (self._log_tag, node_id, client_sensor_id))
-            return
+        if self._internal_sensor is not None:
+            sensor_id = self._storage.getSensorId(node_id, client_sensor_id, self._logger)
+            if sensor_id is None:
+                self._logger.error("[%s]: Sensor for node id %d with client sensor id %d does not exist."
+                                   % (self._log_tag, node_id, client_sensor_id))
+                return
 
-        self._update_sensor_error_state_sensor_by_sensor_id(sensor_id, error_state)
+            node = self._storage.getNodeById(node_id, self._logger)
+            if node is None:
+                self._logger.error("[%s]: Node id %d does not exist."
+                                   % (self._log_tag, node_id))
+                return
+
+            self._internal_sensor.process_error_state(node.username, client_sensor_id, sensor_id, error_state)
 
     def _update_sensor_error_state_sensor_by_sensor_id(self,
                                                        sensor_id: int,
@@ -186,7 +193,19 @@ class ErrorStateExecuter(threading.Thread):
         :param error_state:
         """
         if self._internal_sensor is not None:
-            self._internal_sensor.process_error_state(sensor_id, error_state)
+            sensor = self._storage.getSensorById(sensor_id, self._logger)
+            if sensor is None:
+                self._logger.error("[%s]: Sensor id %d does not exist."
+                                   % (self._log_tag, sensor_id))
+                return
+
+            node = self._storage.getNodeById(sensor.nodeId, self._logger)
+            if node is None:
+                self._logger.error("[%s]: Node id %d does not exist."
+                                   % (self._log_tag, sensor.nodeId))
+                return
+
+            self._internal_sensor.process_error_state(node.username, sensor.clientSensorId, sensor_id, error_state)
 
     def add_error_state(self,
                         node_id: int,
@@ -256,6 +275,7 @@ class ErrorStateExecuter(threading.Thread):
 
 # TODO
 """
-- sensor error state sensor
+- sensor error state sensor test cases
+- sending error state data to managers (status update and sensorerrorstatechange)
 - test cases
 """

@@ -609,6 +609,31 @@
 
         </alertLevelInstrumentationError>
 
+        <!--
+            The sensorErrorState Sensor is an internal Sensor
+            that triggers if a sensor changes its error state.
+            The error state of a sensor is changed if the sensor encounters an error
+            during processing (e.g., a connection timeout while
+            fetching data from the Internet, illegal data received from a FIFO file, ...).
+            It allows you to get notified if a sensor in your system does not work as intended.
+            activated - This flags indicates if the internal Sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <sensorErrorState
+            activated="True"
+            description="Internal: Sensor Error State">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>1</alertLevel>
+
+        </sensorErrorState>
+
     </internalSensors>
 
 </config>
