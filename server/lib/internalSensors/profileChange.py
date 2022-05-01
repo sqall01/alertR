@@ -71,14 +71,14 @@ class ProfileChangeSensor(_InternalSensor):
                                % (self._log_tag, option.value))
             return
 
+        self.data = SensorDataInt(curr_profile.profileId, "")
+
         if not self.storage.updateSensorData(self.nodeId,
-                                             [(self.clientSensorId, SensorDataInt(curr_profile.profileId, ""))],
+                                             [(self.clientSensorId, self.data)],
                                              self._logger):
             self._logger.error("[%s]: Not able to change sensor data for internal profile change sensor."
                                % self._log_tag)
             return
-
-        self.data = SensorDataInt(curr_profile.profileId, "")
 
         message = "Changing system profile to '%s'." % curr_profile.name
 

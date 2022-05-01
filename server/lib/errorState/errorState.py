@@ -9,10 +9,11 @@
 
 import threading
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from ..server import AsynchronousSender
 from ..globalData.globalData import GlobalData
 from ..globalData.sensorObjects import SensorErrorState
+from ..internalSensors.sensorErrorState import SensorErrorStateSensor
 
 
 class ErrorStateExecuter(threading.Thread):
@@ -45,14 +46,11 @@ class ErrorStateExecuter(threading.Thread):
         # Set of sensor ids that are currently in an error state.
         self._sensor_ids_in_error = set()
 
-        # TODO
-        """
         # Get instance of the internal sensor error state sensor (if exists).
-        self._internal_sensor = None  # type: Optional[ProfileChangeSensor]
+        self._internal_sensor = None  # type: Optional[SensorErrorStateSensor]
         for internal_sensor in self._global_data.internalSensors:
-            if isinstance(internal_sensor, ProfileChangeSensor):
+            if isinstance(internal_sensor, SensorErrorStateSensor):
                 self._internal_sensor = internal_sensor
-        """
 
     def _process_error_state_changes(self):
         """
@@ -187,12 +185,8 @@ class ErrorStateExecuter(threading.Thread):
         :param sensor_id:
         :param error_state:
         """
-        # TODO
-        """
         if self._internal_sensor is not None:
             self._internal_sensor.process_error_state(sensor_id, error_state)
-        """
-        raise NotImplementedError("TODO")
 
     def add_error_state(self,
                         node_id: int,
