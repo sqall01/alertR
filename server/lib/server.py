@@ -1931,6 +1931,10 @@ class ClientCommunication:
 
                     return False
 
+            # Start processing round of error state executer thread since a newly registered sensor could have
+            # Sensors in a different error state than currently stored in the database.
+            self._error_state_executer.start_processing_round()
+
         # check if the type of the node is alert
         # => register alerts
         elif self.nodeType == "alert":

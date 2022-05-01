@@ -9,7 +9,6 @@
 
 import threading
 import os
-import time
 from typing import List, Tuple
 from ..server import AsynchronousSender
 from ..globalData.globalData import GlobalData
@@ -236,15 +235,11 @@ class ErrorStateExecuter(threading.Thread):
         self._sensor_ids_in_error = set(self._storage.get_sensor_ids_in_error_state(self._logger))
 
         while True:
-
-            # If we still have objects in the queue, wait a short time before starting a new processing round.
-            if self._error_state_queue:
-                time.sleep(0.5)
-
             # Wait until a new object has to be processed if we do not have anything in the queue.
-            else:
+            # We do not need a timeout in the wait event since every event that could change the sensor error state
+            # sets the event to start the processing.
+            if not self._error_state_queue:
                 self._error_state_event.wait()
-                self._error_state_event.clear()
 
             if self._exit_flag:
                 return
@@ -253,8 +248,10 @@ class ErrorStateExecuter(threading.Thread):
             self._process_error_state_changes()
 
             # Process sensor error states to make sure that the system has the correct state and we did not
-            # miss any sensor error state event.
+            # miss any sensor error state events.
             self._process_sensor_error_states()
+
+            self._error_state_event.clear()
 
     def start_processing_round(self):
         """
