@@ -275,7 +275,6 @@ class ErrorStateExecuter(threading.Thread):
 
 # TODO
 """
-- sensor error state sensor test cases
 - sending error state data to managers (status update and sensorerrorstatechange)
 - test cases
 """
