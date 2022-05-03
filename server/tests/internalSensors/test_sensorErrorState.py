@@ -299,8 +299,6 @@ class TestSensorErrorState(TestCase):
         Tests processing of error state change message (no prior error state, remove error state).
         """
 
-        sensor_id_error = 2
-
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
         sensor.initialize()
@@ -335,7 +333,66 @@ class TestSensorErrorState(TestCase):
         self.assertTrue(sensor_alerts[-1].changeState)
 
     def test_process_error_state_database_error(self):
-        raise NotImplementedError("TODO")
+        """
+        Tests processing of error state change message with a faulty database (send out sensor alert).
+        """
+
+        # Create clean sensor and global data.
+        sensor, global_data = self._create_internal_sensor()
+        sensor.initialize()
+
+        self.assertEqual(0, sensor.state)
+        self.assertEqual(0, sensor.data.value)
+
+        global_data.storage.is_working = False
+
+        sensor.process_error_state("username",
+                                   1,
+                                   2,
+                                   SensorErrorState(SensorErrorState.GenericError, "error"))
+
+        self.assertEqual(1, sensor.state)
+        self.assertEqual(1, sensor.data.value)
+
+        sensor_alerts = global_data.sensorAlertExecuter.sensor_alerts
+        self.assertEqual(len(sensor_alerts), 1)
+        self.assertEqual(sensor_alerts[-1].nodeId, sensor.nodeId)
+        self.assertEqual(sensor_alerts[-1].sensorId, sensor.sensorId)
+        self.assertEqual(sensor_alerts[-1].state, sensor.state)
+        self.assertEqual(sensor_alerts[-1].dataType, sensor.dataType)
+        self.assertEqual(sensor_alerts[-1].data, sensor.data)
+        self.assertTrue(sensor_alerts[-1].hasLatestData)
+        self.assertTrue(sensor_alerts[-1].changeState)
 
     def test_process_error_state_sensor_alert_executer_error(self):
-        raise NotImplementedError("TODO")
+        """
+        Tests processing of error state change message with a faulty sensor alert executer (change data in database).
+        """
+
+        # Create clean sensor and global data.
+        sensor, global_data = self._create_internal_sensor()
+        sensor.initialize()
+
+        self.assertEqual(0, sensor.state)
+        self.assertEqual(0, sensor.data.value)
+
+        global_data.sensorAlertExecuter.is_working = False
+
+        sensor.process_error_state("username",
+                                   1,
+                                   2,
+                                   SensorErrorState(SensorErrorState.GenericError, "error"))
+
+        self.assertEqual(1, sensor.state)
+        self.assertEqual(1, sensor.data.value)
+
+        states = global_data.storage.sensor_state
+        self.assertEqual(len(states[sensor.nodeId]), 2)
+        self.assertEqual(states[sensor.nodeId][-1], (sensor.clientSensorId, sensor.state))
+
+        data = global_data.storage.sensor_data
+        self.assertEqual(len(data[sensor.nodeId]), 2)
+        self.assertEqual(data[sensor.nodeId][-1], (sensor.clientSensorId, sensor.data))
+
+        sensor_alerts = global_data.sensorAlertExecuter.sensor_alerts
+        self.assertEqual(len(sensor_alerts), 0)
