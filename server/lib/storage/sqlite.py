@@ -270,7 +270,17 @@ class Sqlite(_Storage):
 
         sensor = None
         try:
-            self.cursor.execute("SELECT * FROM sensors WHERE id = ?", (sensorId, ))
+            self.cursor.execute("SELECT id, "
+                                + "nodeId, "
+                                + "clientSensorId, "
+                                + "description, "
+                                + "state, "
+                                + "lastStateUpdated, "
+                                + "alertDelay, "
+                                + "dataType,"
+                                + "error_state, "
+                                + "error_msg "
+                                + "FROM sensors WHERE id = ?", (sensorId, ))
 
             result = self.cursor.fetchall()
 
@@ -284,6 +294,7 @@ class Sqlite(_Storage):
                 sensor.lastStateUpdated = result[0][5]
                 sensor.alertDelay = result[0][6]
                 sensor.dataType = result[0][7]
+                sensor.error_state = SensorErrorState(result[0][8], result[0][9])
 
                 # Set alert levels for sensor.
                 alertLevels = self._getSensorAlertLevels(sensor.sensorId, logger)
@@ -294,52 +305,9 @@ class Sqlite(_Storage):
 
                 sensor.alertLevels = alertLevels
 
-                # Extract sensor data.
-                if sensor.dataType == SensorDataType.NONE:
-                    sensor.data = SensorDataNone()
-
-                elif sensor.dataType == SensorDataType.INT:
-                    self.cursor.execute("SELECT value, unit FROM sensorsDataInt WHERE sensorId = ?", (sensor.sensorId, ))
-                    subResult = self.cursor.fetchall()
-
-                    if len(subResult) != 1:
-                        logger.error("[%s]: Sensor data for sensor with id %d was not found."
-                                     % (self.log_tag, sensor.sensorId))
-                        return None
-
-                    sensor.data = SensorDataInt(subResult[0][0],
-                                                subResult[0][1])
-
-                elif sensor.dataType == SensorDataType.FLOAT:
-                    self.cursor.execute("SELECT value, unit FROM sensorsDataFloat WHERE sensorId = ?", (sensor.sensorId, ))
-                    subResult = self.cursor.fetchall()
-
-                    if len(subResult) != 1:
-                        logger.error("[%s]: Sensor data for sensor with id %d was not found."
-                                     % (self.log_tag, sensor.sensorId))
-                        return None
-
-                    sensor.data = SensorDataFloat(subResult[0][0],
-                                                subResult[0][1])
-
-                elif sensor.dataType == SensorDataType.GPS:
-                    self.cursor.execute("SELECT lat, lon, utctime FROM sensorsDataGPS WHERE sensorId = ?",
-                                        (sensor.sensorId, ))
-                    subResult = self.cursor.fetchall()
-
-                    if len(subResult) != 1:
-                        logger.error("[%s]: Sensor data for sensor with id %d was not found."
-                                     % (self.log_tag, sensor.sensorId))
-                        return None
-
-                    sensor.data = SensorDataGPS(subResult[0][0],
-                                                subResult[0][1],
-                                                subResult[0][2])
-
-                else:
-                    logger.error("[%s]: Unable to get sensor with id %d. Data type in database unknown."
-                                 % (self.log_tag, sensor.sensorId))
-                    return None
+                sensor.data = self._get_sensor_data(sensor.sensorId, logger)
+                if sensor.data is None:
+                    raise ValueError("Unable to get data for sensor id %d." % sensor.sensorId)
 
         except Exception as e:
             logger.exception("[%s]: Unable to get sensor with id %d." % (self.log_tag, sensorId))

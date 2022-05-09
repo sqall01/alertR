@@ -1264,6 +1264,7 @@ class ClientCommunication:
                         "nodeId": sensorObj.nodeId,
                         "clientSensorId": sensorObj.clientSensorId,
                         "description": sensorObj.description,
+                        "error_state": sensorObj.error_state,
                         "state": sensorObj.state,
                         "lastStateUpdated": sensorObj.lastStateUpdated,
                         "alertDelay": sensorObj.alertDelay,
