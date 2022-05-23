@@ -272,8 +272,3 @@ class ErrorStateExecuter(threading.Thread):
         due to missed error state changed messages).
         """
         self._error_state_event.set()
-
-# TODO
-"""
-- test cases
-"""
