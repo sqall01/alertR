@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Tuple, Optional, Dict
 from unittest import TestCase
 from lib.localObjects import Node, Sensor
@@ -50,18 +51,13 @@ class MockStorage(_Storage):
     def sensors(self) -> List[Sensor]:
         return list(self._sensors.values())
 
-    @property
-    def sensors_in_error(self):
-        return self._sensors_in_error
-
-    @sensors_in_error.setter
-    def sensors_in_error(self, value: List[int]):
-        self._sensors_in_error = value
-
     def get_sensor_error_state(self,
                                sensor_id: int,
                                logger: logging.Logger = None) -> Optional[SensorErrorState]:
-        raise NotImplementedError("TODO")
+        if not self.is_working:
+            return None
+
+        return self._sensors[sensor_id].error_state
 
     def get_sensor_ids_in_error_state(self,
                                       logger: logging.Logger = None) -> List[int]:
@@ -69,7 +65,8 @@ class MockStorage(_Storage):
         if not self.is_working:
             return []
 
-        return [x.sensorId for x in filter(lambda x: x.error_state.state != SensorErrorState.OK, self.sensors)]
+        return [x.sensorId for x in filter(lambda x: x.error_state.state != SensorErrorState.OK,
+                                           self._sensors.values())]
 
     def getNodeById(self,
                     nodeId: int,
@@ -141,7 +138,6 @@ class TestErrorState(TestCase):
 
         self.node = None  # type: Optional[Node]
         self.sensors = []  # type: List[Sensor]
-
 
         global_data = GlobalData()
         global_data.logger = logging.getLogger("Error State Test Case")
@@ -330,7 +326,8 @@ class TestErrorState(TestCase):
         executer._internal_sensor = None
 
         executer._update_sensor_error_state_sensor_by_sensor_id(self.sensors[0].sensorId,
-                                                                SensorErrorState(SensorErrorState.GenericError, "Test Error"))
+                                                                SensorErrorState(SensorErrorState.GenericError,
+                                                                                 "Test Error"))
 
         self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
 
@@ -342,7 +339,8 @@ class TestErrorState(TestCase):
         executer, global_data = self._create_error_state_executer()
 
         executer._update_sensor_error_state_sensor_by_sensor_id(self.sensors[0].sensorId,
-                                                                SensorErrorState(SensorErrorState.GenericError, "Test Error"))
+                                                                SensorErrorState(SensorErrorState.GenericError,
+                                                                                 "Test Error"))
 
         self.assertEqual(len(self.internal_sensor.sensor_error_states), 1)
         self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
@@ -385,9 +383,223 @@ class TestErrorState(TestCase):
         self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.GenericError)
         self.assertEqual(self.internal_sensor.sensor_error_states[0][3].msg, "Test Error")
 
+    def test_process_sensor_error_states_one_error(self):
+        """
+        Tests sensor error state processing to recover from missed error state events (one missed error state).
+        """
 
-"""
-TODO
-- run()
-- _process_sensor_error_states()
-"""
+        executer, global_data = self._create_error_state_executer()
+
+        global_data.storage.update_sensor_error_state(self.node.id,
+                                                      self.sensors[0].clientSensorId,
+                                                      SensorErrorState(SensorErrorState.GenericError, "Test Error"))
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        executer._process_sensor_error_states()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 1)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.GenericError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].msg, "Test Error")
+
+    def test_process_sensor_error_states_two_error(self):
+        """
+        Tests sensor error state processing to recover from missed error state events (two missed error state).
+        """
+
+        executer, global_data = self._create_error_state_executer()
+
+        global_data.storage.update_sensor_error_state(self.node.id,
+                                                      self.sensors[0].clientSensorId,
+                                                      SensorErrorState(SensorErrorState.GenericError, "Test Error"))
+
+        global_data.storage.update_sensor_error_state(self.node.id,
+                                                      self.sensors[-1].clientSensorId,
+                                                      SensorErrorState(SensorErrorState.TimeoutError, "Test Error 2"))
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        executer._process_sensor_error_states()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 2)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.GenericError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].msg, "Test Error")
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][1], self.sensors[-1].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][2], self.sensors[-1].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].state, SensorErrorState.TimeoutError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].msg, "Test Error 2")
+
+    def test_process_sensor_error_states_one_ok(self):
+        """
+        Tests sensor error state processing to recover from missed error state events (one missed ok state).
+        """
+
+        executer, global_data = self._create_error_state_executer()
+
+        # Add sensors that executer things are in an error state.
+        executer._sensor_ids_in_error.add(self.sensors[0].sensorId)
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        executer._process_sensor_error_states()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 1)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.OK)
+
+    def test_process_sensor_error_states_two_ok(self):
+        """
+        Tests sensor error state processing to recover from missed error state events (two missed ok state).
+        """
+
+        executer, global_data = self._create_error_state_executer()
+
+        # Add sensors that executer things are in an error state.
+        executer._sensor_ids_in_error.add(self.sensors[0].sensorId)
+        executer._sensor_ids_in_error.add(self.sensors[-1].sensorId)
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        executer._process_sensor_error_states()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 2)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.OK)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][1], self.sensors[-1].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][2], self.sensors[-1].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].state, SensorErrorState.OK)
+
+    def test_process_sensor_error_states_one_error_one_ok(self):
+        """
+        Tests sensor error state processing to recover from missed error state events
+        (one missed error state and ok state).
+        """
+
+        executer, global_data = self._create_error_state_executer()
+
+        # Add sensors that executer things are in an error state.
+        executer._sensor_ids_in_error.add(self.sensors[0].sensorId)
+
+        global_data.storage.update_sensor_error_state(self.node.id,
+                                                      self.sensors[-1].clientSensorId,
+                                                      SensorErrorState(SensorErrorState.TimeoutError, "Test Error 2"))
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        executer._process_sensor_error_states()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 2)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.OK)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][1], self.sensors[-1].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][2], self.sensors[-1].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].state, SensorErrorState.TimeoutError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].msg, "Test Error 2")
+
+    def test_process_sensor_error_states_no_misses(self):
+        """
+        Tests sensor error state processing to recover from missed error state events (no misses).
+        """
+
+        executer, global_data = self._create_error_state_executer()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        executer._process_sensor_error_states()
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+    def test_integration_sensor_error_state_changes(self):
+        """
+        Tests handling of sensor error state changes.
+        """
+
+        executer, global_data = self._create_error_state_executer()
+        executer.daemon = True
+        executer.start()
+
+        time.sleep(1)
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        self.assertEqual(self.sensors[0].error_state.state, SensorErrorState.OK)
+        self.assertEqual(self.sensors[-1].error_state.state, SensorErrorState.OK)
+
+        executer.add_error_state(self.node.id,
+                                 self.sensors[0].clientSensorId,
+                                 SensorErrorState(SensorErrorState.GenericError, "Test Error"))
+
+        executer.add_error_state(self.node.id,
+                                 self.sensors[-1].clientSensorId,
+                                 SensorErrorState(SensorErrorState.TimeoutError, "Test Error 2"))
+
+        time.sleep(1)
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 2)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.GenericError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].msg, "Test Error")
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][1], self.sensors[-1].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][2], self.sensors[-1].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].state, SensorErrorState.TimeoutError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].msg, "Test Error 2")
+
+        self.assertEqual(self.sensors[0].error_state.state, SensorErrorState.GenericError)
+        self.assertEqual(self.sensors[0].error_state.msg, "Test Error")
+        self.assertEqual(self.sensors[-1].error_state.state, SensorErrorState.TimeoutError)
+        self.assertEqual(self.sensors[-1].error_state.msg, "Test Error 2")
+
+    def test_integration_event_misses(self):
+        """
+        Tests handling of missed sensor error events.
+        """
+
+        executer, global_data = self._create_error_state_executer()
+        executer.daemon = True
+        executer.start()
+
+        time.sleep(1)
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 0)
+
+        self.assertEqual(self.sensors[0].error_state.state, SensorErrorState.OK)
+        self.assertEqual(self.sensors[-1].error_state.state, SensorErrorState.OK)
+
+        # Change two error states in the database.
+        self.sensors[0].error_state = SensorErrorState(SensorErrorState.GenericError, "Test Error")
+        self.sensors[-1].error_state = SensorErrorState(SensorErrorState.TimeoutError, "Test Error 2")
+
+        # Force processing round of error state executer.
+        executer.start_processing_round()
+
+        time.sleep(1)
+
+        self.assertEqual(len(self.internal_sensor.sensor_error_states), 2)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][1], self.sensors[0].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][2], self.sensors[0].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].state, SensorErrorState.GenericError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[0][3].msg, "Test Error")
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][0], self.node.username)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][1], self.sensors[-1].clientSensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][2], self.sensors[-1].sensorId)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].state, SensorErrorState.TimeoutError)
+        self.assertEqual(self.internal_sensor.sensor_error_states[-1][3].msg, "Test Error 2")
