@@ -1453,8 +1453,8 @@ class Console:
             ('sensoralert_focus', 'black', 'light cyan'),
             ('connectionfail', 'black', 'dark gray'),
             ('connectionfail_focus', 'black', 'light gray'),
-            ('timedout', 'black', 'dark magenta'),
-            ('timedout_focus', 'black', 'light magenta'),
+            ('errorstate', 'black', 'dark magenta'),
+            ('errorstate_focus', 'black', 'light magenta'),
             ('neutral', '', ''),
             ('profile_0', 'black', 'dark green'),
             ('profile_1', 'black', 'dark red'),
@@ -1871,8 +1871,6 @@ class Console:
                 # was set in the received message.
                 if sensorAlert.changeState:
                     sensor.internal_data["urwid"].updateState(sensorAlert.state)
-
-                sensor.internal_data["urwid"].updateLastUpdated(sensorAlert.timeReceived)
 
                 # get description for the sensor alert to add
                 description = sensor.description

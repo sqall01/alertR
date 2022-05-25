@@ -322,9 +322,8 @@ class AlertLevelDetailedUrwid:
         temp.append(urwid.Text(str(sensor.data)))
         temp.append(urwid.Divider())
 
-        temp.append(urwid.Text("Last Updated (Server Time):"))
-        lastUpdatedWidget = urwid.Text(time.strftime("%D %H:%M:%S", time.localtime(sensor.lastStateUpdated)))
-        temp.append(lastUpdatedWidget)
+        temp.append(urwid.Text("Error State:"))
+        temp.append(urwid.Text(str(sensor.error_state)))
 
         return temp
 
