@@ -306,6 +306,7 @@ def compare_sensors_content(context: TestCase, gt_sensors: List[ManagerObjSensor
                         or stored_sensor.state != gt_sensor.state
                         or stored_sensor.dataType != gt_sensor.dataType
                         or stored_sensor.data != gt_sensor.data
+                        or stored_sensor.error_state != gt_sensor.error_state
                         or any(map(lambda x: x not in gt_sensor.alertLevels, stored_sensor.alertLevels))
                         or any(map(lambda x: x not in stored_sensor.alertLevels, gt_sensor.alertLevels))):
 

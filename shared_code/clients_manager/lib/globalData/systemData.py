@@ -9,10 +9,10 @@
 
 import threading
 from typing import Dict, List, Optional
+from .baseObjects import InternalState
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
     ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption, ManagerObjProfile
-from .baseObjects import InternalState
-from .sensorObjects import _SensorData
+from .sensorObjects import _SensorData, SensorErrorState
 
 
 class SystemData:
@@ -616,6 +616,20 @@ class SystemData:
             if order_by_desc:
                 temp.sort(key=lambda x: x.description.lower())
             return temp
+
+    def sensor_error_state_change(self,
+                                  sensor_id: int,
+                                  error_state: SensorErrorState):
+        """
+        Updates sensor state given by id.
+
+        :param sensor_id:
+        :param error_state:
+        """
+        sensor = self.get_sensor_by_id(sensor_id)
+
+        with self._data_lock:
+            sensor.error_state.deepcopy_obj(error_state)
 
     def sensor_state_change(self,
                             sensor_id: int,

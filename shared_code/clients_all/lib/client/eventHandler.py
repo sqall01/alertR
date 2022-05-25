@@ -8,8 +8,9 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from typing import List, Any
-from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile, SensorDataType
+from ..globalData.managerObjects import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, \
+    ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
+from ..globalData.sensorObjects import SensorDataType, SensorErrorState
 
 
 class EventHandler:
@@ -29,6 +30,18 @@ class EventHandler:
         """
         raise NotImplementedError("Abstract class.")
 
+    def profile_change(self,
+                       msg_time: int,
+                       profile: ManagerObjProfile) -> bool:
+        """
+        Is called when a profile change message was received.
+
+        :param msg_time:
+        :param profile:
+        :return Success or Failure
+        """
+        raise NotImplementedError("Abstract class.")
+
     def sensor_alert(self,
                      msg_time: int,
                      sensor_alert: ManagerObjSensorAlert) -> bool:
@@ -41,14 +54,16 @@ class EventHandler:
         """
         raise NotImplementedError("Abstract class.")
 
-    def profile_change(self,
-                       msg_time: int,
-                       profile: ManagerObjProfile) -> bool:
+    def sensor_error_state_change(self,
+                                  msg_time: int,
+                                  sensor_id: int,
+                                  error_state: SensorErrorState) -> bool:
         """
-        Is called when a profile change message was received.
+        Is called when a sensor error state change message was received.
 
         :param msg_time:
-        :param profile:
+        :param sensor_id:
+        :param error_state:
         :return Success or Failure
         """
         raise NotImplementedError("Abstract class.")
