@@ -1,3 +1,7 @@
+## 1.000-0
+
+* Added sensor error states
+
 ## 0.901-2
 
 * Added sanity checks during sensor initialization

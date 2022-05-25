@@ -1,3 +1,8 @@
+## 1.000-0
+
+* Added sensor error states
+* Updated interface
+
 ## 0.901-0
 
 * Added configuration option to disable TLS for testing purposes
