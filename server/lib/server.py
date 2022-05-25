@@ -1264,7 +1264,7 @@ class ClientCommunication:
                         "nodeId": sensorObj.nodeId,
                         "clientSensorId": sensorObj.clientSensorId,
                         "description": sensorObj.description,
-                        "error_state": sensorObj.error_state,
+                        "error_state": sensorObj.error_state.copy_to_dict(),
                         "state": sensorObj.state,
                         "lastStateUpdated": sensorObj.lastStateUpdated,
                         "alertDelay": sensorObj.alertDelay,
@@ -2908,6 +2908,19 @@ class ClientCommunication:
             except Exception as e:
                 pass
 
+            return False
+
+        # send state change response
+        try:
+            payload = {"type": "response",
+                       "result": "ok"}
+            message = {"message": "sensorerrorstatechange",
+                       "payload": payload}
+            self._send(json.dumps(message))
+
+        except Exception as e:
+            self.logger.exception("[%s]: Sending sensor error state change response failed (%s:%d)."
+                                  % (self.fileName, self.clientAddress, self.clientPort))
             return False
 
         return True
