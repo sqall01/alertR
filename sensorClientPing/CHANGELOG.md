@@ -2,6 +2,7 @@
 
 * Added sensor error states
 * Streamlined sensor alert processing
+* Added persistent/non-persistent client configuration
 
 ## 0.901-1
 

@@ -1,3 +1,7 @@
+## 1.000-0
+
+* Added sensor error states
+
 ## 0.901-1
 
 * Updated logging of alert messages

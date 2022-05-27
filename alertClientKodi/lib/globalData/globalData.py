@@ -18,10 +18,10 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 0.901  # type: float
+        self.version = 1.000  # type: float
 
         # revision of the used client
-        self.rev = 1  # type: int
+        self.rev = 0  # type: int
 
         # name of this client
         self.name = "AlertR Alert Client Kodi"  # type: str

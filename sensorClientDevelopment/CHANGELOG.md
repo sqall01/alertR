@@ -2,6 +2,7 @@
 
 * Added sensor error states
 * Updated interface
+* Added persistent/non-persistent client configuration
 
 ## 0.901-0
 
