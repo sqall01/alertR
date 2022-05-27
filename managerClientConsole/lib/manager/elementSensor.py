@@ -44,11 +44,20 @@ class SensorUrwid:
         # check if node is connected and set the color accordingly
         # and consider the state of the sensor (1 = triggered)
         if node.connected == 0:
-            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "disconnected")
-            self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
+            if node.persistent == 1:
+                self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "disconnected_error")
+                self.sensorUrwidMap.set_focus_map({None: "disconnected_error_focus"})
+            else:
+                self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "disconnected_ok")
+                self.sensorUrwidMap.set_focus_map({None: "disconnected_ok_focus"})
+
+        # check if sensor has an error and change color accordingly
+        elif sensor.error_state.state != SensorErrorState.OK:
+            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "errorstate")
+            self.sensorUrwidMap.set_focus_map({None: "errorstate_focus"})
 
         # check if the node is connected and no sensor alert is triggered
-        elif node.connected == 1 and sensor.state != 1:
+        elif sensor.state == 0:
             self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "connected")
             self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
@@ -57,10 +66,7 @@ class SensorUrwid:
             self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "sensoralert")
             self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
-        # check if sensor has an error and change color accordingly
-        if sensor.error_state.state != SensorErrorState.OK:
-            self.sensorUrwidMap = urwid.AttrMap(paddedSensorBox, "errorstate")
-            self.sensorUrwidMap.set_focus_map({None: "errorstate_focus"})
+
 
         # store reference to sensor object and node object
         self.sensor = sensor
@@ -88,17 +94,22 @@ class SensorUrwid:
 
         # change color according to connection state
         # and consider the state of the sensor (1 = triggered)
-        if connected == 0 and self.sensor.state != 1:
-            self.sensorUrwidMap.set_attr_map({None: "disconnected"})
-            self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
-        elif connected == 1 and self.sensor.state != 1:
-            self.sensorUrwidMap.set_attr_map({None: "connected"})
-            self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
+        if connected == 0:
+            if self.node.persistent == 1:
+                self.sensorUrwidMap.set_attr_map({None: "disconnected_error"})
+                self.sensorUrwidMap.set_focus_map({None: "disconnected_error_focus"})
+            else:
+                self.sensorUrwidMap.set_attr_map({None: "disconnected_ok"})
+                self.sensorUrwidMap.set_focus_map({None: "disconnected_ok_focus"})
 
         # check if sensor has an error and change color accordingly
-        if self.sensor.error_state.state != SensorErrorState.OK:
+        elif self.sensor.error_state.state != SensorErrorState.OK:
             self.sensorUrwidMap.set_attr_map({None: "errorstate"})
             self.sensorUrwidMap.set_focus_map({None: "errorstate_focus"})
+
+        else:
+            self.sensorUrwidMap.set_attr_map({None: "connected"})
+            self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
     def update_error_state(self, error_state: SensorErrorState):
         """
@@ -106,11 +117,14 @@ class SensorUrwid:
         :param error_state:
         :return:
         """
+        # Only update error state if node is connected.
+        if self.node.connected == 1:
+            if error_state.state != SensorErrorState.OK:
+                self.sensorUrwidMap.set_attr_map({None: "errorstate"})
+                self.sensorUrwidMap.set_focus_map({None: "errorstate_focus"})
 
-        # check if sensor has timed out and change color accordingly
-        if error_state.state != SensorErrorState.OK:
-            self.sensorUrwidMap.set_attr_map({None: "errorstate"})
-            self.sensorUrwidMap.set_focus_map({None: "errorstate_focus"})
+            else:
+                self.updateState(self.sensor.state)
 
     # this function updates the state of the object
     # (and changes color accordingly)
@@ -118,8 +132,12 @@ class SensorUrwid:
 
         # check if the node is connected and change the color accordingly
         if self.node.connected == 0:
-            self.sensorUrwidMap.set_attr_map({None: "disconnected"})
-            self.sensorUrwidMap.set_focus_map({None: "disconnected_focus"})
+            if self.node.persistent == 1:
+                self.sensorUrwidMap.set_attr_map({None: "disconnected_error"})
+                self.sensorUrwidMap.set_focus_map({None: "disconnected_error_focus"})
+            else:
+                self.sensorUrwidMap.set_attr_map({None: "disconnected_ok"})
+                self.sensorUrwidMap.set_focus_map({None: "disconnected_ok_focus"})
 
         else:
             # check to which state the color should be changed
@@ -127,7 +145,7 @@ class SensorUrwid:
                 self.sensorUrwidMap.set_attr_map({None: "connected"})
                 self.sensorUrwidMap.set_focus_map({None: "connected_focus"})
 
-            elif state == 1:
+            else:
                 self.sensorUrwidMap.set_attr_map({None: "sensoralert"})
                 self.sensorUrwidMap.set_focus_map({None: "sensoralert_focus"})
 
@@ -308,7 +326,10 @@ class SensorDetailedUrwid:
 
         temp.append(urwid.Text("Connected:"))
         if node.connected == 0:
-            temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected"))
+            if node.persistent == 1:
+                temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected_error"))
+            else:
+                temp.append(urwid.AttrMap(urwid.Text("False"), "neutral"))
         elif node.connected == 1:
             temp.append(urwid.AttrMap(urwid.Text("True"), "neutral"))
         else:
@@ -320,7 +341,7 @@ class SensorDetailedUrwid:
             temp.append(urwid.Text("False"))
         elif node.persistent == 1:
             if node.connected == 0:
-                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected"))
+                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected_error"))
             else:
                 temp.append(urwid.Text("True"))
         else:

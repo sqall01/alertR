@@ -34,8 +34,12 @@ class ManagerUrwid:
 
         # check if node is connected and set the color accordingly
         if self.node.connected == 0:
-            self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "disconnected")
-            self.managerUrwidMap.set_focus_map({None: "disconnected_focus"})
+            if node.persistent == 1:
+                self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "disconnected_error")
+                self.managerUrwidMap.set_focus_map({None: "disconnected_error_focus"})
+            else:
+                self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "disconnected_ok")
+                self.managerUrwidMap.set_focus_map({None: "disconnected_ok_focus"})
 
         else:
             self.managerUrwidMap = urwid.AttrMap(paddedManagerBox, "connected")
@@ -56,8 +60,12 @@ class ManagerUrwid:
 
         # change color according to connection state
         if connected == 0:
-            self.managerUrwidMap.set_attr_map({None: "disconnected"})
-            self.managerUrwidMap.set_focus_map({None: "disconnected_focus"})
+            if self.node.persistent == 1:
+                self.managerUrwidMap.set_attr_map({None: "disconnected_error"})
+                self.managerUrwidMap.set_focus_map({None: "disconnected_error_focus"})
+            else:
+                self.managerUrwidMap.set_attr_map({None: "disconnected_ok"})
+                self.managerUrwidMap.set_focus_map({None: "disconnected_ok_focus"})
 
         else:
             self.managerUrwidMap.set_attr_map({None: "connected"})
@@ -164,7 +172,10 @@ class ManagerDetailedUrwid:
 
         temp.append(urwid.Text("Connected:"))
         if node.connected == 0:
-            temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected"))
+            if node.persistent == 1:
+                temp.append(urwid.AttrMap(urwid.Text("False"), "disconnected_error"))
+            else:
+                temp.append(urwid.AttrMap(urwid.Text("False"), "neutral"))
         elif node.connected == 1:
             temp.append(urwid.AttrMap(urwid.Text("True"), "neutral"))
         else:
@@ -177,7 +188,7 @@ class ManagerDetailedUrwid:
 
         elif node.persistent == 1:
             if node.connected == 0:
-                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected"))
+                temp.append(urwid.AttrMap(urwid.Text("True"), "disconnected_error"))
 
             else:
                 temp.append(urwid.Text("True"))
