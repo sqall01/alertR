@@ -175,7 +175,9 @@ if(isset($_GET["data"])
                         "state" => $row["state"],
                         "alertLevels" => $alertLevelArray,
                         "dataType" => $row["dataType"],
-                        "data" => $data);
+                        "data" => $data,
+                        "error_state" => $row["error_state"],
+                        "error_msg" => $row["error_msg"]);
                     array_push($sensorsArray, $sensorEntry);
                 }
                 $alertSystemInformation["sensors"] = $sensorsArray;

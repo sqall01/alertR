@@ -44,6 +44,10 @@ a:active {
 	background-color: #ff0000;
 }
 
+.errorTd {
+	background-color: #cc55cc;
+}
+
 
 .triggeredTd {
 	background-color: #fff000;
