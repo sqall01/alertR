@@ -96,22 +96,29 @@ class SensorErrorStateSensor(_InternalSensor):
         if not self._storage.updateSensorState(self.nodeId,  # nodeId
                                                [(self.clientSensorId, self.state)],  # stateList
                                                self._logger):  # logger
-            self._logger.error("[%s]: Not able to change sensor state for internal sensor error state sensor."
+            self._logger.error("[%s]: Unable to change sensor state for internal sensor error state sensor."
                                % self._log_tag)
 
         # Update sensor data in database.
         if not self._storage.updateSensorData(self.nodeId,
                                               [(self.clientSensorId, self.data)],
                                               self._logger):
-            self._logger.error("[%s]: Not able to change sensor data for internal sensor error state sensor."
+            self._logger.error("[%s]: Unable to change sensor data for internal sensor error state sensor."
                                % self._log_tag)
 
-        message = "Sensor error state changed for sensor id %d: %s" % (sensor_id, str(error_state))
+        sensor = self._storage.getSensorById(sensor_id, self._logger)
+        if sensor is None:
+            self._logger.error("[%s]: Unable to get sensor with id %d."
+                               % (self._log_tag, sensor_id))
+            return
+
+        message = "Sensor error state changed for sensor '%d': %s" % (sensor.description, str(error_state))
 
         optional_data = {"message": message,
                          "error_state": error_state.copy_to_dict(),
                          "username": username,
-                         "clientSensorId": client_sensor_id}
+                         "clientSensorId": client_sensor_id,
+                         "sensorId": sensor_id}
 
         if not self._sensor_alert_executer.add_sensor_alert(self.nodeId,
                                                             self.sensorId,
