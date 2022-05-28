@@ -126,7 +126,7 @@ class ICalendarSensor(_PollingSensor):
             # new calendar data again, clear error state.
             elif self.error_state.state != SensorErrorState.OK and self._failed_counter <= self._max_failed_attempts:
                 self._clear_error_state()
-                self._log_warning(self._log_tag, "Fetching calendar succeeded after multiple failed attempts.")
+                self._log_info(self._log_tag, "Fetching calendar succeeded after multiple failed attempts.")
 
     # Collect calendar data from the server.
     def _get_calendar(self):
