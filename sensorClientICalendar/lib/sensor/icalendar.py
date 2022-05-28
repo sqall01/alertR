@@ -69,6 +69,9 @@ class ICalendarSensor(_PollingSensor):
         # iCalendar data object.
         self._icalendar = None
 
+        # Timeout for HTTP connections.
+        self._connection_timeout = 60.0
+
         # Set of tuples that describe reminders that were already triggered.
         self._already_triggered = set()
 
@@ -137,7 +140,7 @@ class ICalendarSensor(_PollingSensor):
         # Request data from server.
         request = None
         try:
-            request = requests.get(self.location, verify=True, auth=self.htaccessData, timeout=20.0)
+            request = requests.get(self.location, verify=True, auth=self.htaccessData, timeout=self._connection_timeout)
 
         except Exception:
             self._log_exception(self._log_tag, "Could not get calendar data from server.")
