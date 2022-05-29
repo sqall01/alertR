@@ -7,6 +7,10 @@ from lib.globalData.baseObjects import InternalState
 
 class TestSystemDataSensorAlert(TestSystemDataCore):
 
+    @staticmethod
+    def _callback_delete_sensor_alert(sensor_alert: ManagerObjSensorAlert) -> bool:
+        return sensor_alert.internal_data["test_delete"]
+
     def _invalid_alert_level_missing(self, system_data: SystemData):
         # Test non-existing alert level.
         sensor_alert = ManagerObjSensorAlert()
@@ -143,9 +147,9 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
                 if latest_received > stored_sensor_alerts.timeReceived:
                     self.fail("Sensor Alerts not stored in correct order.")
 
-    def test_delete_sensor_alerts(self):
+    def test_delete_sensor_alerts_received_before(self):
         """
-        Test Sensor Alert object deleting.
+        Test Sensor Alert object deleting for sensor alerts with a received time before a given timestamp.
         """
         number_sensor_alerts = 10
         system_data = self._create_sensors()
@@ -182,6 +186,51 @@ class TestSystemDataSensorAlert(TestSystemDataCore):
             for sensor_alert in system_data.get_sensor_alerts_list():
                 if sensor_alert.timeReceived < i:
                     self.fail("Sensor Alert object still stored that is younger than deleted timestamp.")
+
+    def test_delete_sensor_alerts_with_callback(self):
+        """
+        Test Sensor Alert object deleting with callback function.
+        """
+        number_sensor_alerts = 10
+        system_data = self._create_sensors()
+
+        # Create objects.
+        all_sensor_alerts = []
+        to_delete_sensor_alerts = []
+        to_remain_sensor_alerts = []
+        for i in range(number_sensor_alerts):
+            temp_sensor_alert = ManagerObjSensorAlert()
+            temp_sensor_alert.sensorId = self.sensors[i % len(self.sensors)].sensorId
+            temp_sensor_alert.state = i % 2
+            temp_sensor_alert.alertLevels = list(self.sensors[i % len(self.sensors)].alertLevels)
+            temp_sensor_alert.hasOptionalData = False
+            temp_sensor_alert.optionalData = None
+            temp_sensor_alert.changeState = (i % 2) == 0
+            temp_sensor_alert.hasLatestData = False
+            temp_sensor_alert.dataType = self.sensors[i % len(self.sensors)].dataType
+            temp_sensor_alert.data = self.sensors[i % len(self.sensors)].data
+            temp_sensor_alert.timeReceived = i
+            all_sensor_alerts.append(temp_sensor_alert)
+            if i % 2 == 0:
+                to_delete_sensor_alerts.append(temp_sensor_alert)
+                temp_sensor_alert.internal_data["test_delete"] = True
+            else:
+                to_remain_sensor_alerts.append(temp_sensor_alert)
+                temp_sensor_alert.internal_data["test_delete"] = False
+            system_data.add_sensor_alert(temp_sensor_alert)
+
+        system_data.delete_sensor_alerts_with_callback(TestSystemDataSensorAlert._callback_delete_sensor_alert)
+
+        self.assertEqual(len(system_data.get_sensor_alerts_list()), len(to_remain_sensor_alerts))
+
+        for sensor_alert in to_delete_sensor_alerts:
+            self.assertTrue(sensor_alert.is_deleted())
+
+        for sensor_alert in to_remain_sensor_alerts:
+            self.assertFalse(sensor_alert.is_deleted())
+
+        for sensor_alert in system_data.get_sensor_alerts_list():
+            self.assertTrue(sensor_alert in to_remain_sensor_alerts)
 
     def test_invalid_sensor_alert_adding(self):
         """

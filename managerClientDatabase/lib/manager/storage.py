@@ -1938,6 +1938,7 @@ class Mysql(_Storage):
                         self._close_connection()
                         return False
 
+                    # Key/value checked in sensor alert delete callback.
                     sensor_alert.internal_data["stored_db"] = True
 
             # commit all changes

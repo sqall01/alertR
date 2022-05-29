@@ -48,6 +48,12 @@ class ManagerEventHandler(BaseManagerEventHandler):
         self._thread_update_connected_db = threading.Thread(target=self._update_db_connected, daemon=True)
         self._thread_update_connected_db.start()
 
+    @staticmethod
+    def _callback_delete_sensor_alert(sensor_alert: ManagerObjSensorAlert) -> bool:
+        with sensor_alert.internal_data_lock:
+            # Key/value set in storage class after sensor alert was stored in database.
+            return "stored_db" in sensor_alert.internal_data.keys() and sensor_alert.internal_data["stored_db"]
+
     def _update_db_connected(self):
         """
         Internal function that updates connected flag in the database by waiting for an event to be set.
@@ -99,9 +105,10 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
                     logging.error("[%s]: Unable to update server information." % self._log_tag)
 
-                else:
-                    # Clear all sensor alerts that were added to database to prevent it from getting too big.
-                    self._system_data.delete_sensor_alerts_received_before(sensor_alerts_copy[-1].timeReceived)
+                # Clear sensor alerts that were added to the database to prevent the list from getting too big.
+                elif sensor_alerts_copy:
+                    self._system_data.delete_sensor_alerts_with_callback(
+                        ManagerEventHandler._callback_delete_sensor_alert)
 
             self._thread_update_db_event.clear()
 

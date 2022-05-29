@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 from .baseObjects import InternalState
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
     ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption, ManagerObjProfile
@@ -183,6 +183,12 @@ class SystemData:
             else:
                 break
 
+    def _delete_sensor_alerts_with_callback(self, callback: Callable[[ManagerObjSensorAlert], bool]):
+        for sensor_alert in list(self._sensor_alerts):
+            if callback(sensor_alert):
+                sensor_alert.internal_state = InternalState.DELETED
+                self._sensor_alerts.remove(sensor_alert)
+
     def _delete_sensor_by_id(self, sensor_id: int):
         if sensor_id in self._sensors.keys():
             # Remove Sensor Alerts for this sensor.
@@ -355,6 +361,14 @@ class SystemData:
         """
         with self._data_lock:
             self._delete_sensor_alerts_received_before(timestamp)
+
+    def delete_sensor_alerts_with_callback(self, callback: Callable[[ManagerObjSensorAlert], bool]):
+        """
+        Deletes all Sensor Alert objects that are marked to be deleted by the given callback function.
+        :param callback:
+        """
+        with self._data_lock:
+            self._delete_sensor_alerts_with_callback(callback)
 
     def delete_sensor_by_id(self, sensor_id: int):
         """

@@ -62,7 +62,7 @@ class _LocalObject(_Copyable):
         self.internal_state = InternalState.NOT_USED
         self.internal_data = dict()
 
-        # To lock internal data structure if necessary for multi threaded programs.
+        # To lock internal data structure if necessary for multi-threaded programs.
         self.internal_data_lock = threading.Lock()
 
     def is_deleted(self):
