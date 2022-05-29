@@ -1740,8 +1740,6 @@ function outputNodes() {
         var connected = nodes[i]["connected"];
         var version = nodes[i]["version"];
         var rev = nodes[i]["rev"];
-        var newestVersion = nodes[i]["newestVersion"];
-        var newestRev = nodes[i]["newestRev"];
         var persistent = nodes[i]["persistent"];
 
         var boxDiv = document.createElement("div");
@@ -1886,24 +1884,10 @@ function outputNodes() {
 
         newTr = document.createElement("tr");
         newTd = document.createElement("td");
-        if(newestVersion < 0
-            || newestRev < 0) {
-            newTd.textContent = version + "-" + rev;
-        }
-        else {
-            newTd.textContent = version + "-" + rev
-                + " (newest: " + newestVersion + "-" + newestRev + ")";
-        }
-        if(newestVersion > version
-            || (newestRev > rev && newestVersion == version)) {
-            newTd.className = "triggeredTd";
-        }
-        else {
-            newTd.className = "neutralTd";
-        }
+        newTd.textContent = version + "-" + rev;
+        newTd.className = "neutralTd";
         newTr.appendChild(newTd);
         nodeTable.appendChild(newTr);
-
 
         // add node to the content table
         contentTableObj =
