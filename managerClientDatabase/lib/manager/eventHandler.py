@@ -9,7 +9,6 @@
 
 import os
 import logging
-import time
 import threading
 from typing import List, Any
 from .core import BaseManagerEventHandler
@@ -88,7 +87,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
                 # Check if configured to not store sensor alerts
                 # => delete them directly to prevent them to be stored in the database.
                 if self.sensorAlertLifeSpan == 0:
-                    self._system_data.delete_sensor_alerts_received_before(int(time.time()) + 1)
+                    self._system_data.delete_sensor_alerts_received_before(2147483647)  # Max int32 value
 
                 sensor_alerts_copy = self._system_data.get_sensor_alerts_list()
 
