@@ -28,7 +28,6 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.alertDelay = 0
         sensor.alertLevels = []
         sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
@@ -53,7 +52,6 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.alertDelay = 0
         sensor.alertLevels = []
         sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
@@ -88,7 +86,6 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.alertDelay = 0
         sensor.alertLevels = [99]
         sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
@@ -141,7 +138,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.clientSensorId = i
             temp_sensor.alertDelay = i + 10
-            temp_sensor.lastStateUpdated = i + 10
             temp_sensor.state = i % 2
             temp_sensor.dataType = SensorDataType.INT
             temp_sensor.data = SensorDataInt(i, "test unit")
@@ -224,7 +220,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.state != curr_sensor.state
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
@@ -248,7 +243,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
                     or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
@@ -269,7 +263,6 @@ class TestSystemDataSensor(TestSystemDataCore):
                         if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                                 or stored_sensor.description != gt_sensor.description
                                 or stored_sensor.alertDelay != gt_sensor.alertDelay
-                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
                                 or stored_sensor.state != gt_sensor.state
                                 or stored_sensor.dataType != gt_sensor.dataType
                                 or stored_sensor.data != gt_sensor.data
@@ -298,7 +291,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.state != curr_sensor.state
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
@@ -315,7 +307,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
                     or stored_sensor.error_state != curr_sensor.error_state
@@ -337,7 +328,6 @@ class TestSystemDataSensor(TestSystemDataCore):
                         if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                                 or stored_sensor.description != gt_sensor.description
                                 or stored_sensor.alertDelay != gt_sensor.alertDelay
-                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
                                 or stored_sensor.state != gt_sensor.state
                                 or stored_sensor.dataType != gt_sensor.dataType
                                 or stored_sensor.data != gt_sensor.data
@@ -373,7 +363,6 @@ class TestSystemDataSensor(TestSystemDataCore):
                     or stored_sensor.state != curr_sensor.state
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
                     or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))

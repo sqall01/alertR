@@ -176,7 +176,6 @@ class ManagerObjSensor(_LocalObject):
         self.alertDelay = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
-        self.lastStateUpdated = None  # type: Optional[int]
         self.state = None  # type: Optional[int]
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
@@ -208,7 +207,6 @@ class ManagerObjSensor(_LocalObject):
         obj.alertDelay = data["alertDelay"]
         obj.alertLevels = list(data["alertLevels"])
         obj.description = data["description"]
-        obj.lastStateUpdated = data["lastStateUpdated"]
         obj.state = data["state"]
         obj.dataType = data["dataType"]
 
@@ -231,7 +229,6 @@ class ManagerObjSensor(_LocalObject):
                        "alertDelay": self.alertDelay,
                        "alertLevels": self.alertLevels,
                        "description": self.description,
-                       "lastStateUpdated": self.lastStateUpdated,
                        "state": self.state,
                        "dataType": self.dataType,
                        "data": self.data.copy_to_dict(),
@@ -247,7 +244,6 @@ class ManagerObjSensor(_LocalObject):
         self.alertDelay = sensor.alertDelay
         self.alertLevels = list(sensor.alertLevels)
         self.description = sensor.description
-        self.lastStateUpdated = sensor.lastStateUpdated
         self.state = sensor.state
 
         if self.data is None or self.dataType != sensor.dataType:

@@ -522,19 +522,6 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the lastStateUpdated.
-    @staticmethod
-    def check_last_state_updated(last_state_updated: int) -> Optional[str]:
-
-        is_correct = True
-        if not isinstance(last_state_updated, int):
-            is_correct = False
-
-        if not is_correct:
-            return "lastStateUpdated not valid"
-
-        return None
-
     # Internal function to check sanity of the managerId.
     @staticmethod
     def check_manager_id(manager_id: int) -> Optional[str]:
@@ -1259,14 +1246,6 @@ class MsgChecker:
                 break
 
             elif MsgChecker.check_description(sensor["description"]) is not None:
-                is_correct = False
-                break
-
-            if "lastStateUpdated" not in sensor.keys():
-                is_correct = False
-                break
-
-            elif MsgChecker.check_last_state_updated(sensor["lastStateUpdated"]) is not None:
                 is_correct = False
                 break
 

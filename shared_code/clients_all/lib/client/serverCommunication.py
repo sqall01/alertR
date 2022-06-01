@@ -359,15 +359,14 @@ class ServerCommunication(Communication):
 
                 sensor_alert_levels = sensors_raw[i]["alertLevels"]
                 description = sensors_raw[i]["description"]
-                last_state_updated = sensors_raw[i]["lastStateUpdated"]
                 state = sensors_raw[i]["state"]
 
             except Exception:
                 logging.exception("[%s]: Received sensor invalid." % self._log_tag)
                 return False
 
-            logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d:%d."
-                          % (self._log_tag, node_id, sensor_id, alert_delay, description, last_state_updated, state))
+            logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d."
+                          % (self._log_tag, node_id, sensor_id, alert_delay, description, state))
 
             sensor = ManagerObjSensor()
             sensor.nodeId = node_id
@@ -376,7 +375,6 @@ class ServerCommunication(Communication):
             sensor.alertDelay = alert_delay
             sensor.alertLevels = sensor_alert_levels
             sensor.description = description
-            sensor.lastStateUpdated = last_state_updated
             sensor.state = state
             sensor.dataType = data_type
             sensor.data = sensor_data

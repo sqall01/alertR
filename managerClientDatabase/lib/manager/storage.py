@@ -1132,7 +1132,6 @@ class Mysql(_Storage):
                                      + "clientSensorId = %s, "
                                      + "description = %s, "
                                      + "state = %s ,"
-                                     + "lastStateUpdated = %s, "
                                      + "alertDelay = %s, "
                                      + "dataType = %s, "
                                      + "error_state = %s, "
@@ -1142,7 +1141,6 @@ class Mysql(_Storage):
                                       sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
-                                      sensor.lastStateUpdated,
                                       sensor.alertDelay,
                                       sensor.dataType,
                                       sensor.error_state.state,
@@ -1177,18 +1175,16 @@ class Mysql(_Storage):
                                      + "clientSensorId, "
                                      + "description, "
                                      + "state, "
-                                     + "lastStateUpdated, "
                                      + "alertDelay, "
                                      + "dataType, "
                                      + "error_state, "
                                      + "error_msg) "
-                                     + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                                     + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                                      (sensor.sensorId,
                                       sensor.nodeId,
                                       sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
-                                      sensor.lastStateUpdated,
                                       sensor.alertDelay,
                                       sensor.dataType,
                                       sensor.error_state.state,
@@ -1333,7 +1329,6 @@ class Mysql(_Storage):
                              + "clientSensorId, "
                              + "description, "
                              + "state, "
-                             + "lastStateUpdated, "
                              + "alertDelay, "
                              + "dataType, "
                              + "error_state, "
@@ -1348,10 +1343,9 @@ class Mysql(_Storage):
             sensor.clientSensorId = sensor_tuple[2]
             sensor.description = sensor_tuple[3]
             sensor.state = sensor_tuple[4]
-            sensor.lastStateUpdated = sensor_tuple[5]
-            sensor.alertDelay = sensor_tuple[6]
-            sensor.dataType = sensor_tuple[7]
-            sensor.error_state = SensorErrorState(sensor_tuple[8], sensor_tuple[9])
+            sensor.alertDelay = sensor_tuple[5]
+            sensor.dataType = sensor_tuple[6]
+            sensor.error_state = SensorErrorState(sensor_tuple[7], sensor_tuple[8])
 
             self._cursor.execute("SELECT "
                                  + "alertLevel "
@@ -1529,7 +1523,6 @@ class Mysql(_Storage):
                                      + "clientSensorId INTEGER NOT NULL, "
                                      + "description VARCHAR(255) NOT NULL, "
                                      + "state INTEGER NOT NULL, "
-                                     + "lastStateUpdated INTEGER NOT NULL, "
                                      + "alertDelay INTEGER NOT NULL, "
                                      + "dataType INTEGER NOT NULL, "
                                      + "error_state INTEGER NOT NULL, "

@@ -60,7 +60,6 @@ class TestManagerStorageSensor(TestManagerStorageCore):
             temp_sensor.description = "new_sensor_" + str(ctr + 1)
             temp_sensor.clientSensorId = ctr
             temp_sensor.alertDelay = ctr + 10
-            temp_sensor.lastStateUpdated = ctr + 10
             temp_sensor.state = ctr % 2
             temp_sensor.dataType = SensorDataType.INT
             temp_sensor.data = SensorDataInt(ctr, "test unit")
