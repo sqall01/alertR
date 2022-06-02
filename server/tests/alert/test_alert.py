@@ -1178,7 +1178,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1248,7 +1247,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1322,7 +1320,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1382,7 +1379,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1453,7 +1449,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1559,7 +1554,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1679,7 +1673,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1786,7 +1779,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1877,7 +1869,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1962,7 +1953,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -2057,7 +2047,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -2155,7 +2144,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -2173,9 +2161,6 @@ class TestAlert(TestCase):
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
                                                    sensor_alert.data)
-
-        gt_last_state_updated = int(time.time()) - 10
-        internal_sensor.lastStateUpdated = gt_last_state_updated
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -2197,8 +2182,6 @@ class TestAlert(TestCase):
 
         # Make sure a full processing run was executed.
         self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        self.assertEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
 
     def test_run_internal_sensor_update_last_state_time_necessary(self):
         """
@@ -2243,7 +2226,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -2261,9 +2243,6 @@ class TestAlert(TestCase):
                                                    sensor_alert.hasLatestData,
                                                    sensor_alert.dataType,
                                                    sensor_alert.data)
-
-        gt_last_state_updated = int(time.time()) - 31
-        internal_sensor.lastStateUpdated = gt_last_state_updated
 
         # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
         # if a sensor alert is triggered.
@@ -2285,8 +2264,6 @@ class TestAlert(TestCase):
 
         # Make sure a full processing run was executed.
         self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        self.assertNotEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
 
         self.assertEqual(1, len(storage.sensor_state_updates.keys()))
         self.assertEqual(internal_sensor.clientSensorId, storage.sensor_state_updates[internal_sensor.nodeId][0][0])

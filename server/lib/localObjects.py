@@ -59,7 +59,6 @@ class Sensor:
         self.state = None  # type: Optional[int]
         self.error_state = None  # type: Optional[SensorErrorState]
         self.alertLevels = list()  # type: List[int]
-        self.lastStateUpdated = None  # type: Optional[int]
         self.alertDelay = None  # type: Optional[int]
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
@@ -76,7 +75,6 @@ class Sensor:
         self.description = sensor.description
         self.state = sensor.state
         self.alertLevels = list(sensor.alertLevels)
-        self.lastStateUpdated = sensor.lastStateUpdated
         self.alertDelay = sensor.alertDelay
         self.dataType = sensor.dataType
 

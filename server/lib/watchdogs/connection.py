@@ -145,7 +145,7 @@ class ConnectionWatchdog(threading.Thread):
             self.removeNodeTimeout(nodeId)
 
     def _processNewSensorTimeouts(self,
-                                  sensorsTimeoutList: Optional[List[Sensor]]):
+                                  sensorsTimeoutList: Optional[List[Sensor]]):  # TODO remove
         """
         Internal function that processes new occurred sensor timeouts and raises alarm.
 
@@ -177,10 +177,8 @@ class ConnectionWatchdog(threading.Thread):
                 self._timeoutSensorIds.add(sensorId)
                 continue
 
-            self.logger.critical("[%s]: Sensor with description '%s' from host '%s' timed out. "
-                                 % (self.fileName, sensorObj.description, nodeObj.hostname)
-                                 + "Last state received at %s."
-                                 % time.strftime("%D %H:%M:%S", time.localtime(sensorObj.lastStateUpdated)))
+            self.logger.critical("[%s]: Sensor with description '%s' from host '%s' timed out."
+                                 % (self.fileName, sensorObj.description, nodeObj.hostname))
 
             # Check if sensor time out occurred for the first time
             # and internal sensor is activated.
@@ -197,7 +195,7 @@ class ConnectionWatchdog(threading.Thread):
             self.lastSensorTimeoutReminder = utcTimestamp
 
     def _processOldSensorTimeouts(self,
-                                  sensorsTimeoutList: Optional[List[Sensor]]):
+                                  sensorsTimeoutList: Optional[List[Sensor]]):  # TODO remove
         """
         Internal function that processes old occurred sensor timeouts
         and raises alarm when they are no longer timed out.
@@ -625,7 +623,7 @@ class ConnectionWatchdog(threading.Thread):
 
             # Get list of sensor objects that have timed out.
             utcTimestamp = int(time.time())
-            sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(utcTimestamp
+            sensorsTimeoutList = self.storage.getSensorsUpdatedOlderThan(utcTimestamp  # TODO remove
                                                                          - int(1.5 * self.gracePeriodTimeout))
 
             # Process occurred sensor time outs (and if they newly occurred).
@@ -640,7 +638,7 @@ class ConnectionWatchdog(threading.Thread):
             # Update time of all internal sensors in order to avoid
             # timeouts of these sensors.
             for internalSensor in self.internalSensors:
-                if not self.storage.updateSensorTime(internalSensor.sensorId):
+                if not self.storage.updateSensorTime(internalSensor.sensorId):  # TODO remove
                     self.logger.error("[%s]: Not able to update sensor time for internal sensor with sensor id %d "
                                       % (self.fileName, internalSensor.sensorId)
                                       + "sensors.")

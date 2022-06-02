@@ -275,7 +275,6 @@ class Sqlite(_Storage):
                                 + "clientSensorId, "
                                 + "description, "
                                 + "state, "
-                                + "lastStateUpdated, "
                                 + "alertDelay, "
                                 + "dataType,"
                                 + "error_state, "
@@ -291,10 +290,9 @@ class Sqlite(_Storage):
                 sensor.clientSensorId = result[0][2]
                 sensor.description = result[0][3]
                 sensor.state = result[0][4]
-                sensor.lastStateUpdated = result[0][5]
-                sensor.alertDelay = result[0][6]
-                sensor.dataType = result[0][7]
-                sensor.error_state = SensorErrorState(result[0][8], result[0][9])
+                sensor.alertDelay = result[0][5]
+                sensor.dataType = result[0][6]
+                sensor.error_state = SensorErrorState(result[0][7], result[0][8])
 
                 # Set alert levels for sensor.
                 alertLevels = self._getSensorAlertLevels(sensor.sensorId, logger)
@@ -484,7 +482,6 @@ class Sqlite(_Storage):
                             + "clientSensorId INTEGER NOT NULL, "
                             + "description TEXT NOT NULL, "
                             + "state INTEGER NOT NULL, "
-                            + "lastStateUpdated INTEGER NOT NULL, "
                             + "alertDelay INTEGER NOT NULL, "
                             + "dataType INTEGER NOT NULL, "
                             + "error_state INTEGER NOT NULL, "
@@ -1429,10 +1426,9 @@ class Sqlite(_Storage):
                 utcTimestamp = int(time.time())
                 self.cursor.execute("UPDATE sensors SET "
                                     + "state = ?, "
-                                    + "lastStateUpdated = ? "
                                     + "WHERE nodeId = ? "
                                     + "AND clientSensorId = ?",
-                                    (stateTuple[1], utcTimestamp, nodeId, stateTuple[0]))
+                                    (stateTuple[1], nodeId, stateTuple[0]))
 
             except Exception as e:
                 logger.exception("[%s]: Unable to update sensor state." % self.log_tag)
@@ -1513,34 +1509,6 @@ class Sqlite(_Storage):
                 logger.exception("[%s]: Unable to update sensor data." % self.log_tag)
                 self._releaseLock(logger)
                 return False
-
-        # commit all changes
-        self.conn.commit()
-        self._releaseLock(logger)
-        return True
-
-    def updateSensorTime(self,
-                         sensorId: int,
-                         logger: logging.Logger = None) -> bool:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        # Update time of sensor in the database.
-        try:
-            utcTimestamp = int(time.time())
-            self.cursor.execute("UPDATE sensors SET "
-                                + "lastStateUpdated = ? "
-                                + "WHERE id = ?",
-                                (utcTimestamp, sensorId))
-
-        except Exception as e:
-            logger.exception("[%s]: Unable to update sensor time." % self.log_tag)
-            self._releaseLock(logger)
-            return False
 
         # commit all changes
         self.conn.commit()
@@ -1841,42 +1809,6 @@ class Sqlite(_Storage):
         self.conn.commit()
         self._releaseLock(logger)
         return True
-
-    def getSensorsUpdatedOlderThan(self,
-                                   oldestTimeUpdated: int,
-                                   logger: logging.Logger = None) -> Optional[List[Sensor]]:
-
-        # Set logger instance to use.
-        if not logger:
-            logger = self.logger
-
-        self._acquireLock(logger)
-
-        sensorList = list()
-        try:
-            self.cursor.execute("SELECT id "
-                                + "FROM sensors "
-                                + "WHERE lastStateUpdated < ?",
-                                (oldestTimeUpdated, ))
-
-            results = self.cursor.fetchall()
-
-            for resultTuple in results:
-                sensorId = resultTuple[0]
-                sensor = self._getSensorById(sensorId, logger)
-                if sensor is not None:
-                    sensorList.append(sensor)
-
-        except Exception as e:
-            logger.exception("[%s]: Unable to get sensors from database which update was older than %d."
-                             % (self.log_tag, oldestTimeUpdated))
-            self._releaseLock(logger)
-            return None
-
-        self._releaseLock(logger)
-
-        # return list of sensor objects
-        return sensorList
 
     def getAlertById(self,
                      alertId: int,
@@ -2610,7 +2542,6 @@ class Sqlite(_Storage):
                                 + "clientSensorId, "
                                 + "description, "
                                 + "state, "
-                                + "lastStateUpdated, "
                                 + "alertDelay, "
                                 + "dataType, "
                                 + "error_state, "
@@ -2628,10 +2559,9 @@ class Sqlite(_Storage):
                 sensor.clientSensorId = sensor_tuple[1]
                 sensor.description = sensor_tuple[2]
                 sensor.state = sensor_tuple[3]
-                sensor.lastStateUpdated = sensor_tuple[4]
-                sensor.alertDelay = sensor_tuple[5]
-                sensor.dataType = sensor_tuple[6]
-                sensor.error_state = SensorErrorState(sensor_tuple[7], sensor_tuple[8])
+                sensor.alertDelay = sensor_tuple[4]
+                sensor.dataType = sensor_tuple[5]
+                sensor.error_state = SensorErrorState(sensor_tuple[6], sensor_tuple[7])
 
                 # Get alert levels.
                 self.cursor.execute("SELECT alertLevel "
@@ -2752,16 +2682,14 @@ class Sqlite(_Storage):
                                     + "clientSensorId, "
                                     + "description, "
                                     + "state, "
-                                    + "lastStateUpdated, "
                                     + "alertDelay, "
                                     + "dataType,"
                                     + "error_state,"
-                                    + "error_msg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                    + "error_msg) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                                     (sensor.nodeId,
                                      sensor.clientSensorId,
                                      sensor.description,
                                      sensor.state,
-                                     sensor.lastStateUpdated,
                                      sensor.alertDelay,
                                      sensor.dataType,
                                      sensor.error_state.state,
@@ -2802,7 +2730,6 @@ class Sqlite(_Storage):
             self.cursor.execute("UPDATE sensors SET "
                                 + "description = ?, "
                                 + "state = ?, "
-                                + "lastStateUpdated = ?, "
                                 + "alertDelay = ?, "
                                 + "dataType = ?, "
                                 + "error_state = ?, "
@@ -2810,7 +2737,6 @@ class Sqlite(_Storage):
                                 + "WHERE id = ?",
                                 (sensor.description,
                                  sensor.state,
-                                 sensor.lastStateUpdated,
                                  sensor.alertDelay,
                                  sensor.dataType,
                                  sensor.error_state.state,

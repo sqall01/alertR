@@ -226,18 +226,6 @@ class _Storage:
         """
         raise NotImplementedError("Abstract class")
 
-    def getSensorsUpdatedOlderThan(self,
-                                   oldestTimeUpdated: int,
-                                   logger: logging.Logger = None) -> Optional[List[Sensor]]:
-        """
-        Gets the information of all sensors which last state updates are older than the given time.
-
-        :param oldestTimeUpdated:
-        :param logger:
-        :return list of sensor objects or None
-        """
-        raise NotImplementedError("Abstract class")
-
     def getAlertById(self,
                      alertId: int,
                      logger: logging.Logger = None) -> Optional[Alert]:
@@ -399,18 +387,6 @@ class _Storage:
 
         :param nodeId:
         :param dataList:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Abstract class")
-
-    def updateSensorTime(self,
-                         sensorId: int,
-                         logger: logging.Logger = None) -> bool:
-        """
-        Updates the time the sensor send an update given by sensorId.
-
-        :param sensorId:
         :param logger:
         :return Success or Failure
         """

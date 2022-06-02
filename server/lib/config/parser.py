@@ -17,7 +17,7 @@ import logging
 from ..users import CSVBackend
 from ..storage import Sqlite
 from ..localObjects import AlertLevel, Profile
-from ..internalSensors import NodeTimeoutSensor, SensorTimeoutSensor, ProfileChangeSensor, VersionInformerSensor, \
+from ..internalSensors import NodeTimeoutSensor, ProfileChangeSensor, VersionInformerSensor, \
     AlertLevelInstrumentationErrorSensor
 from ..internalSensors.sensorErrorState import SensorErrorStateSensor
 from ..globalData.globalData import GlobalData
@@ -476,39 +476,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
         internalSensorsCfg = configRoot.find("internalSensors")
         dbInitialStateList = list()
 
-        # Parse sensor timeout sensor (if activated).
-        item = internalSensorsCfg.find("sensorTimeout")
-        if str(item.attrib["activated"]).upper() == "TRUE":
-
-            sensor = SensorTimeoutSensor(global_data)
-
-            sensor.nodeId = serverNodeId
-            sensor.lastStateUpdated = int(time.time())
-            sensor.description = str(item.attrib["description"])
-
-            sensor.alertLevels = list()
-            for alertLevelXml in item.iterfind("alertLevel"):
-                sensor.alertLevels.append(int(alertLevelXml.text))
-
-            # Check alert level setting.
-            if len(set(sensor.alertLevels)) != len(sensor.alertLevels):
-                global_data.logger.error("[%s]: The same Alert Level is set multiple times for the same "
-                                         % log_tag
-                                         + "internal Sensor.")
-                return False
-
-            for alert_level in sensor.alertLevels:
-                if not any(map(lambda x: x.level == alert_level, global_data.alertLevels)):
-                    global_data.logger.error("[%s]: At least one Alert Level for an internal Sensor does not exist."
-                                             % log_tag)
-                    return False
-
-            global_data.internalSensors.append(sensor)
-
-            # Add tuple to db state list to set initial states of the
-            # internal sensors.
-            dbInitialStateList.append((sensor.clientSensorId, 0))
-
         # Parse node timeout sensor (if activated).
         item = internalSensorsCfg.find("nodeTimeout")
         if str(item.attrib["activated"]).upper() == "TRUE":
@@ -516,7 +483,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor = NodeTimeoutSensor(global_data)
 
             sensor.nodeId = serverNodeId
-            sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
             sensor.alertLevels = list()
@@ -549,7 +515,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor = ProfileChangeSensor(global_data)
 
             sensor.nodeId = serverNodeId
-            sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
             sensor.alertLevels = list()
@@ -590,7 +555,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor = VersionInformerSensor(global_data)
 
             sensor.nodeId = serverNodeId
-            sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
             sensor.repo_url = global_data.update_url
             sensor.check_interval = int(item.attrib["interval"])
@@ -625,7 +589,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor = AlertLevelInstrumentationErrorSensor(global_data)
 
             sensor.nodeId = serverNodeId
-            sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
             sensor.alertLevels = list()
@@ -658,7 +621,6 @@ def configure_internal_sensors(configRoot: xml.etree.ElementTree.Element, global
             sensor = SensorErrorStateSensor(global_data)
 
             sensor.nodeId = serverNodeId
-            sensor.lastStateUpdated = int(time.time())
             sensor.description = str(item.attrib["description"])
 
             sensor.alertLevels = list()

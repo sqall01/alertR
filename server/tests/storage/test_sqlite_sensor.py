@@ -61,7 +61,6 @@ class TestStorageSensor(TestStorageCore):
             sensor.error_state = SensorErrorState(SensorErrorState.GenericError,
                                                   "test error")
             sensor.alertLevels.append(2)
-            sensor.lastStateUpdated += 1
             sensor.alertDelay += 2
             if sensor.dataType == SensorDataType.INT:
                 sensor.data = SensorDataInt(1337, "some unit")
@@ -96,7 +95,6 @@ class TestStorageSensor(TestStorageCore):
         new_sensor.state = 0
         new_sensor.error_state = SensorErrorState()
         new_sensor.alertLevels.append(1337)
-        new_sensor.lastStateUpdated = 1337
         new_sensor.alertDelay = 1337
         new_sensor.dataType = SensorDataType.NONE
         new_sensor.data = SensorDataNone()
@@ -131,7 +129,6 @@ class TestStorageSensor(TestStorageCore):
             sensor.error_state = SensorErrorState(SensorErrorState.GenericError,
                                                   "test error")
             sensor.alertLevels.append(2)
-            sensor.lastStateUpdated += 1
             sensor.alertDelay += 2
             if sensor.dataType == SensorDataType.INT:
                 sensor.data = SensorDataInt(1337, "some unit")
@@ -166,7 +163,6 @@ class TestStorageSensor(TestStorageCore):
         new_sensor.state = 0
         new_sensor.error_state = SensorErrorState()
         new_sensor.alertLevels.append(1337)
-        new_sensor.lastStateUpdated = 1337
         new_sensor.alertDelay = 1337
         new_sensor.dataType = SensorDataType.NONE
         new_sensor.data = SensorDataNone()
@@ -207,7 +203,6 @@ class TestStorageSensor(TestStorageCore):
         new_sensor.state = 0
         new_sensor.error_state = SensorErrorState()
         new_sensor.alertLevels.append(1337)
-        new_sensor.lastStateUpdated = 1337
         new_sensor.alertDelay = 1337
         new_sensor.dataType = SensorDataType.NONE
         new_sensor.data = SensorDataNone()

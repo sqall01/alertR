@@ -168,7 +168,6 @@ class TestErrorState(TestCase):
         sensor.state = 0
         sensor.error_state = SensorErrorState()
         sensor.alertLevels.append(1)
-        sensor.lastStateUpdated = 1
         sensor.alertDelay = 1
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
@@ -183,7 +182,6 @@ class TestErrorState(TestCase):
         sensor.state = 0
         sensor.error_state = SensorErrorState()
         sensor.alertLevels.append(1)
-        sensor.lastStateUpdated = 2
         sensor.alertDelay = 2
         sensor.dataType = SensorDataType.INT
         sensor.data = SensorDataInt(2, "test unit")
@@ -198,7 +196,6 @@ class TestErrorState(TestCase):
         sensor.state = 0
         sensor.error_state = SensorErrorState()
         sensor.alertLevels.append(1)
-        sensor.lastStateUpdated = 3
         sensor.alertDelay = 3
         sensor.dataType = SensorDataType.FLOAT
         sensor.data = SensorDataFloat(3.0, "test unit")
@@ -213,7 +210,6 @@ class TestErrorState(TestCase):
         sensor.state = 0
         sensor.error_state = SensorErrorState()
         sensor.alertLevels.append(1)
-        sensor.lastStateUpdated = 4
         sensor.alertDelay = 4
         sensor.dataType = SensorDataType.FLOAT
         sensor.data = SensorDataGPS(0, 1, 2)

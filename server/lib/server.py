@@ -1266,7 +1266,6 @@ class ClientCommunication:
                         "description": sensorObj.description,
                         "error_state": sensorObj.error_state.copy_to_dict(),
                         "state": sensorObj.state,
-                        "lastStateUpdated": sensorObj.lastStateUpdated,
                         "alertDelay": sensorObj.alertDelay,
                         "alertLevels": sensorObj.alertLevels,
                         "dataType": sensorObj.dataType,
@@ -1881,7 +1880,6 @@ class ClientCommunication:
                 tempSensor.description = description
                 tempSensor.state = state
                 tempSensor.alertLevels = alertLevels
-                tempSensor.lastStateUpdated = utc_timestamp
                 tempSensor.alertDelay = alertDelay
                 tempSensor.dataType = sensorDataType
                 tempSensor.data = sensor_data
@@ -2314,7 +2312,6 @@ class ClientCommunication:
 
                 # Update sensor object.
                 sensor.state = sensors[i]["state"]
-                sensor.lastStateUpdated = int(time.time())
 
                 # Only update error state if it has changed.
                 error_state = SensorErrorState.copy_from_dict(sensors[i]["error_state"])
@@ -2603,7 +2600,7 @@ class ClientCommunication:
 
                 return False
 
-        if not self.storage.updateSensorTime(sensor.sensorId,
+        if not self.storage.updateSensorTime(sensor.sensorId,  # TODO remove
                                              logger=self.logger):
             self.logger.error("[%s]: Not able to update sensor time (%s:%d)."
                               % (self.fileName, self.clientAddress, self.clientPort))
@@ -2737,7 +2734,6 @@ class ClientCommunication:
 
             # Update sensor object.
             sensor.state = state
-            sensor.lastStateUpdated = int(time.time())
             sensor.data = sensor_data
 
         except Exception as e:
