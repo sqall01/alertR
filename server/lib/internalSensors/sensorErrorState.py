@@ -112,7 +112,7 @@ class SensorErrorStateSensor(_InternalSensor):
                                % (self._log_tag, sensor_id))
             return
 
-        message = "Sensor error state changed for sensor '%d': %s" % (sensor.description, str(error_state))
+        message = "Sensor error state changed for sensor '%s': %s" % (sensor.description, str(error_state))
 
         optional_data = {"message": message,
                          "error_state": error_state.copy_to_dict(),

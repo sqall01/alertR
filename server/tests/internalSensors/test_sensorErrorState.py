@@ -2,10 +2,10 @@ import logging
 from typing import Any, List, Tuple, Optional, Dict
 from collections import defaultdict
 from unittest import TestCase
-from lib.localObjects import SensorAlert
+from lib.localObjects import SensorAlert, Sensor
 from lib.internalSensors.sensorErrorState import SensorErrorStateSensor
 from lib.globalData.globalData import GlobalData
-from lib.globalData.sensorObjects import SensorErrorState
+from lib.globalData.sensorObjects import SensorErrorState, SensorDataType
 # noinspection PyProtectedMember
 from lib.storage.core import _Storage
 
@@ -63,6 +63,8 @@ class MockStorage(_Storage):
 
         self._sensors_in_error = []  # type: List[int]
 
+        self._sensors = dict()  # type: Dict[int, Sensor]
+
     @property
     def sensor_data(self):
         return self._sensor_data
@@ -86,6 +88,27 @@ class MockStorage(_Storage):
             return []
 
         return self._sensors_in_error
+
+    def getSensorById(self,
+                      sensorId: int,
+                      logger: logging.Logger = None) -> Optional[Sensor]:
+        return self._sensors[sensorId] if sensorId in self._sensors else None
+
+    def register_sensor(self,
+                        node_id: int,
+                        sensor_id: int,
+                        client_sensor_id: int,
+                        description: str):
+        sensor = Sensor()
+        sensor.nodeId = node_id
+        sensor.sensorId = sensor_id
+        sensor.clientSensorId = client_sensor_id
+        sensor.description = description
+        sensor.state = 0
+        sensor.error_state = SensorErrorState()
+        sensor.dataType = SensorDataType.NONE
+        sensor.alertDelay = 0
+        self._sensors[sensor_id] = sensor
 
     def updateSensorData(self,
                          node_id: int,
@@ -184,12 +207,18 @@ class TestSensorErrorState(TestCase):
 
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
+        client_sensor_id = 1
+        sensor_id = 2
+        global_data.storage.register_sensor(1, sensor_id, client_sensor_id, "Some description")
         sensor.initialize()
 
         self.assertEqual(0, sensor.state)
         self.assertEqual(0, sensor.data.value)
 
-        sensor.process_error_state("username", 1, 2, SensorErrorState(SensorErrorState.GenericError, "error"))
+        sensor.process_error_state("username",
+                                   client_sensor_id,
+                                   sensor_id,
+                                   SensorErrorState(SensorErrorState.GenericError, "error"))
 
         self.assertEqual(1, sensor.state)
         self.assertEqual(1, sensor.data.value)
@@ -217,10 +246,13 @@ class TestSensorErrorState(TestCase):
         Tests processing of error state change message (with prior error state, add error state).
         """
 
-        sensor_id_error = 2
+
 
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
+        sensor_id_error = 2
+        client_sensor_id = 1
+        global_data.storage.register_sensor(1, sensor_id_error, client_sensor_id, "Some description")
         global_data.storage.sensors_in_error = [sensor_id_error]
         sensor.initialize()
 
@@ -228,7 +260,7 @@ class TestSensorErrorState(TestCase):
         self.assertEqual(1, sensor.data.value)
 
         sensor.process_error_state("username",
-                                   1,
+                                   client_sensor_id,
                                    sensor_id_error,
                                    SensorErrorState(SensorErrorState.GenericError, "error"))
 
@@ -258,10 +290,11 @@ class TestSensorErrorState(TestCase):
         Tests processing of error state change message (with prior error state, remove error state).
         """
 
-        sensor_id_error = 2
-
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
+        sensor_id_error = 2
+        client_sensor_id = 1
+        global_data.storage.register_sensor(1, sensor_id_error, client_sensor_id, "Some description")
         global_data.storage.sensors_in_error = [sensor_id_error]
         sensor.initialize()
 
@@ -269,7 +302,7 @@ class TestSensorErrorState(TestCase):
         self.assertEqual(1, sensor.data.value)
 
         sensor.process_error_state("username",
-                                   1,
+                                   client_sensor_id,
                                    sensor_id_error,
                                    SensorErrorState(SensorErrorState.OK, ""))
 
@@ -301,14 +334,17 @@ class TestSensorErrorState(TestCase):
 
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
+        sensor_id = 2
+        client_sensor_id = 1
+        global_data.storage.register_sensor(1, sensor_id, client_sensor_id, "Some description")
         sensor.initialize()
 
         self.assertEqual(0, sensor.state)
         self.assertEqual(0, sensor.data.value)
 
         sensor.process_error_state("username",
-                                   1,
-                                   2,
+                                   client_sensor_id,
+                                   sensor_id,
                                    SensorErrorState(SensorErrorState.OK, ""))
 
         self.assertEqual(0, sensor.state)
@@ -339,6 +375,9 @@ class TestSensorErrorState(TestCase):
 
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
+        sensor_id = 2
+        client_sensor_id = 1
+        global_data.storage.register_sensor(1, sensor_id, client_sensor_id, "Some description")
         sensor.initialize()
 
         self.assertEqual(0, sensor.state)
@@ -347,8 +386,8 @@ class TestSensorErrorState(TestCase):
         global_data.storage.is_working = False
 
         sensor.process_error_state("username",
-                                   1,
-                                   2,
+                                   client_sensor_id,
+                                   sensor_id,
                                    SensorErrorState(SensorErrorState.GenericError, "error"))
 
         self.assertEqual(1, sensor.state)
@@ -371,6 +410,9 @@ class TestSensorErrorState(TestCase):
 
         # Create clean sensor and global data.
         sensor, global_data = self._create_internal_sensor()
+        sensor_id = 2
+        client_sensor_id = 1
+        global_data.storage.register_sensor(1, sensor_id, client_sensor_id, "Some description")
         sensor.initialize()
 
         self.assertEqual(0, sensor.state)
@@ -379,8 +421,8 @@ class TestSensorErrorState(TestCase):
         global_data.sensorAlertExecuter.is_working = False
 
         sensor.process_error_state("username",
-                                   1,
-                                   2,
+                                   client_sensor_id,
+                                   sensor_id,
                                    SensorErrorState(SensorErrorState.GenericError, "error"))
 
         self.assertEqual(1, sensor.state)

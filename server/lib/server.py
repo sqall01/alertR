@@ -2600,22 +2600,6 @@ class ClientCommunication:
 
                 return False
 
-        if not self.storage.updateSensorTime(sensor.sensorId,  # TODO remove
-                                             logger=self.logger):
-            self.logger.error("[%s]: Not able to update sensor time (%s:%d)."
-                              % (self.fileName, self.clientAddress, self.clientPort))
-
-            # send error message back
-            try:
-                message = {"message": incomingMessage["message"],
-                           "error": "not able to update sensor time in database"}
-                self._send(json.dumps(message))
-
-            except Exception as e:
-                pass
-
-            return False
-
         if not self.sensorAlertExecuter.add_sensor_alert(self.nodeId,
                                                          sensor.sensorId,
                                                          state,
