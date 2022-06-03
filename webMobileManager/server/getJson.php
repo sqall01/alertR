@@ -171,7 +171,6 @@ if(isset($_GET["data"])
                         "clientSensorId" => $row["clientSensorId"],
                         "nodeId" => $row["nodeId"],
                         "description" => $row["description"],
-                        "lastStateUpdated" => $row["lastStateUpdated"],
                         "state" => $row["state"],
                         "alertLevels" => $alertLevelArray,
                         "dataType" => $row["dataType"],
