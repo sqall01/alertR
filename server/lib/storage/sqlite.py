@@ -39,7 +39,7 @@ class Sqlite(_Storage):
         self.rev = self.globalData.rev
 
         # Used database layout version.
-        self.dbVersion = 6
+        self.dbVersion = 7
 
         # file nme of this file (used for logging)
         self.log_tag = os.path.basename(__file__)
@@ -1425,7 +1425,7 @@ class Sqlite(_Storage):
 
                 utcTimestamp = int(time.time())
                 self.cursor.execute("UPDATE sensors SET "
-                                    + "state = ?, "
+                                    + "state = ? "
                                     + "WHERE nodeId = ? "
                                     + "AND clientSensorId = ?",
                                     (stateTuple[1], nodeId, stateTuple[0]))
