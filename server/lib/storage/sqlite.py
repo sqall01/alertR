@@ -1423,7 +1423,6 @@ class Sqlite(_Storage):
                     self._releaseLock(logger)
                     return False
 
-                utcTimestamp = int(time.time())
                 self.cursor.execute("UPDATE sensors SET "
                                     + "state = ? "
                                     + "WHERE nodeId = ? "
@@ -2849,7 +2848,7 @@ class Sqlite(_Storage):
         return None
 
     def get_sensor_ids_in_error_state(self,
-                                        logger: logging.Logger = None) -> List[int]:
+                                      logger: logging.Logger = None) -> List[int]:
 
         # Set logger instance to use.
         if not logger:
