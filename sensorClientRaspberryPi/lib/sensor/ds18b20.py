@@ -71,17 +71,16 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
                     # File content looks like this:
                     # 2d 00 4b 46 ff ff 04 10 b3 : crc=b3 YES
                     # 2d 00 4b 46 ff ff 04 10 b3 t=22500
-                    fp.readline()
-                    line = fp.readline()
+                    data = fp.read(1024)
 
-                    reMatch = re.match("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", line)
+                    reMatch = re.search("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", data)
                     if reMatch:
                         return SensorDataFloat(float(reMatch.group(2)) / 1000, self._unit)
 
                     else:
-                        self._log_error(self._log_tag, "Could not parse DS18B20 sensor line: %s" % line)
+                        self._log_error(self._log_tag, "Could not parse DS18B20 sensor data: %s" % data)
                         self._set_error_state(SensorErrorState.ProcessingError,
-                                              "Could not parse DS18B20 sensor line: %s" % line)
+                                              "Could not parse DS18B20 sensor data: %s" % data)
 
             except Exception as e:
                 self._log_exception(self._log_tag, "Could not read DS18B20 sensor file.")
