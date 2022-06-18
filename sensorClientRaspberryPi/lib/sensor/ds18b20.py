@@ -54,6 +54,9 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
         # This sensor type string is used for log messages.
         self._log_desc = "Temperature"
 
+        self._error_empty_ctr = 0
+        self._error_empty_threshold = 10
+
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         """
         Internal function that reads the data of the DS18b20 sensor.
@@ -73,7 +76,24 @@ class RaspberryPiDS18b20Sensor(_NumberSensor):
                     # 2d 00 4b 46 ff ff 04 10 b3 t=22500
                     data = fp.read(1024)
 
-                    reMatch = re.search("([0-9a-f]{2} ){9}t=([+-]?[0-9]+)", data)
+                    # In rare cases, the sensor does not provide us with data
+                    # (one in every 100000 read attempts in my tests and only if the system has high load).
+                    # Do not trigger an error immediately if this happens but increase a counter.
+                    if not data:
+                        self._error_empty_ctr += 1
+                        if self._error_empty_ctr >= self._error_empty_threshold:
+                            self._log_error(self._log_tag, "Received no data from DS18B20 sensor for %d times."
+                                            % self._error_empty_ctr)
+                            self._set_error_state(SensorErrorState.ProcessingError,
+                                                  "Received no data from DS18B20 sensor for %d times."
+                                                  % self._error_empty_ctr)
+                        else:
+                            self._log_warning(self._log_tag, "Received no data from DS18B20 sensor for %d times."
+                                              % self._error_empty_ctr)
+                        return None
+                    self._error_empty_ctr = 0
+
+                    reMatch = re.search(r"([\da-fA-F]{2} ){9}t=([+-]?\d+)", data)
                     if reMatch:
                         return SensorDataFloat(float(reMatch.group(2)) / 1000, self._unit)
 
