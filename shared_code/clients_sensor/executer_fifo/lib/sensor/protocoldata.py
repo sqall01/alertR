@@ -104,6 +104,11 @@ class _ProtocolDataSensor(_PollingSensor):
                     self._add_state_change(temp_input_state,
                                            temp_input_data)
 
+                # Even if the state/data has not changed, an error could occur in between which causes the
+                # sensor to have an error state. Clear it if we received a new data.
+                else:
+                    self._clear_error_state()
+
             # Type: sensoralert
             elif str(message["message"]).upper() == "SENSORALERT":
 
