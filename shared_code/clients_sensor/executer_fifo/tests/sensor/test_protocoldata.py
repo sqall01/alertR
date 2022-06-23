@@ -988,3 +988,45 @@ class TestProtocolDataSensor(TestCase):
         # Make sure error state has changed.
         self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
         self.assertEqual("Some error", sensor.error_state.msg)
+
+    def test_error_state_change_through_state_change_event(self):
+        """
+        Tests if error state is changed back to normal if a state change event occurs with no new data during while
+        an not-OK error state exists.
+        """
+        payload = {
+            "message": "statechange",
+            "payload": {
+                "state": 0,
+                "dataType": SensorDataType.NONE,
+                "data": SensorDataNone().copy_to_dict(),
+            }
+        }
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
+        sensor.state = 0
+        sensor.error_state = SensorErrorState(SensorErrorState.GenericError, "test error")
+        sensor.initialize()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("test error", sensor.error_state.msg)
+
+        self.assertTrue(sensor._process_protocol_data(json.dumps(payload)))
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.OK, events[0].error_state.state)
+        self.assertEqual("", events[0].error_state.msg)
+
+        # Make sure sensor state has changed.
+        self.assertEqual(0, sensor.state)
+
+        # Make sure error state has changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
