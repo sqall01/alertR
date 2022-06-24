@@ -473,3 +473,45 @@ class TestExecuterSensor(TestCase):
         # Make sure sensor error state has changed
         self.assertEqual(SensorErrorState.ProcessingError, sensor.error_state.state)
         self.assertEqual("Illegal script output.", sensor.error_state.msg)
+
+    def test_error_state_change_through_state_change_event(self):
+        """
+        Tests if error state is changed back to normal if a state change event occurs with no new data during while
+        a not-OK error state exists.
+        """
+        target_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "executer_scripts",
+                                  "exit_code_0.py")
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data= SensorDataNone()
+        sensor.timeout = 2
+        sensor.intervalToCheck = 60
+        sensor.parseOutput = False
+        sensor.execute.append(target_cmd)
+        sensor.error_state = SensorErrorState(SensorErrorState.GenericError, "test error")
+
+        sensor.initialize()
+        sensor.start()
+
+        # Make sure sensor is in correct initial state.
+        self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("test error", sensor.error_state.msg)
+
+        time.sleep(1.5)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.OK, events[0].error_state.state)
+        self.assertEqual("", events[0].error_state.msg)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)
+
+        # Make sure sensor error state has changed
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)

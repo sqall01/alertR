@@ -175,6 +175,11 @@ class ExecuterSensor(_ProtocolDataSensor):
                                                        False,
                                                        self.data)
 
+                        # Even if the state/data has not changed, an error could occur in between which causes the
+                        # sensor to have an error state. Clear it if we received a new data.
+                        else:
+                            self._clear_error_state()
+
                     # Set process to none so it can be newly started in the next iteration.
                     self._process.stdout.close()
                     self._process.stderr.close()
