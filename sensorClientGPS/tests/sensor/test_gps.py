@@ -574,6 +574,9 @@ class TestGpsSensor(TestCase):
         sensor.interval = 1
         sensor.initialize()
 
+        # Set old gps data threshold for error state creation.
+        sensor._old_gps_data_threshold = 5
+
         position1 = SensorDataGPS(52.512669003368266,
                                   13.390574455261232,
                                   1337)
@@ -598,11 +601,15 @@ class TestGpsSensor(TestCase):
         self.assertEqual(events[0].data.lon, position1.lon)
         self.assertEqual(events[0].data.utctime, position1.utctime)
 
-        time.sleep(4.0)
+        # Wait until the old gps data threshold was reached
+        time.sleep(20.0)
 
         events = sensor.get_events()
 
-        self.assertEqual(len(events), 0)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(type(events[0]), SensorObjErrorStateChange)
+        self.assertEqual(events[0].error_state.state, SensorErrorState.ValueError)
+        self.assertTrue(events[0].error_state.msg.startswith("Received old GPS data"))
 
     def test_integration_provider_exception(self):
         """

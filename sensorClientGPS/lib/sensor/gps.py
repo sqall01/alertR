@@ -47,6 +47,9 @@ class _GPSSensor(_PollingSensor):
 
         self._last_utctime = 0
 
+        self._old_gps_data_ctr = 0
+        self._old_gps_data_threshold = 10
+
         self._polygons = []  # type: List[prepared.PreparedGeometry]
 
     def _process_position(self, gps_data: SensorDataGPS):
@@ -177,11 +180,19 @@ class _GPSSensor(_PollingSensor):
                 # Check if received GPS data is newer than the last one.
                 if gps_data.utctime == self._last_utctime:
                     self._log_debug(self._log_tag, "No GPS data update.")
+                    self._clear_error_state()
                     continue
                 if gps_data.utctime < self._last_utctime:
                     self._log_error(self._log_tag, "Received old GPS data.")
+
+                    # Set an error state if we receive old GPS data too often in a row.
+                    self._old_gps_data_ctr += 1
+                    if self._old_gps_data_ctr > self._old_gps_data_threshold:
+                        self._set_error_state(SensorErrorState.ValueError,
+                                              "Received old GPS data for %d times." % self._old_gps_data_ctr)
                     continue
                 self._last_utctime = gps_data.utctime
+                self._old_gps_data_ctr = 0
 
                 self._process_position(gps_data)
 
