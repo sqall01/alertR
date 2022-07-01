@@ -140,6 +140,9 @@ class PingSensor(_PollingSensor):
                                                True,
                                                optional_data)
 
+                    else:
+                        self._clear_error_state()
+
                     # Set process to none so it can be newly started in the next iteration.
                     self._process = None
 

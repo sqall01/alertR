@@ -224,3 +224,37 @@ class TestPingSensor(TestCase):
 
         # Make sure sensor has not changed.
         self.assertEqual(0, sensor.state)
+
+    def test_error_state_change_without_new_data(self):
+        """
+        Tests if error state is changed back to normal if sensor processing works correctly again and no
+        new data occurred while a not-OK error state existed.
+        """
+        target_cmd = os.path.join("/",
+                                  "bin",
+                                  "ping")
+
+        sensor = self._create_base_sensor()
+
+        sensor.timeout = 5
+        sensor.intervalToCheck = 60
+        sensor.host = "localhost"
+        sensor.execute = target_cmd
+
+        sensor.initialize()
+        sensor.state = 0
+
+        # Set error state.
+        sensor.error_state = SensorErrorState(SensorErrorState.GenericError, "test error")
+
+        sensor.start()
+
+        time.sleep(4)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.OK, events[0].error_state.state)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)

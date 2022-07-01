@@ -991,8 +991,8 @@ class TestProtocolDataSensor(TestCase):
 
     def test_error_state_change_through_state_change_event(self):
         """
-        Tests if error state is changed back to normal if a state change event occurs with no new data during while
-        a not-OK error state exists.
+        Tests if error state is changed back to normal if a state change event occurs with no new data while
+        a not-OK error state existed.
         """
         payload = {
             "message": "statechange",
