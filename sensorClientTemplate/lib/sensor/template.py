@@ -65,3 +65,9 @@ class TemplateSensor(_PollingSensor):
 
             # Use self._add_sensor_alert() to initiate a sensor alert message to the server.
             # See function definition for detailed information.
+
+            # Use self._set_error_state() to initiate a sensor error state message to the server.
+            # See function definition for detailed information.
+
+            # Use self._clear_error_state() to clear a sensor error state.
+            # See function definition for detailed information.
