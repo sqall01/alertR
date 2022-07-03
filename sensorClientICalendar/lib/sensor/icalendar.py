@@ -122,7 +122,7 @@ class ICalendarSensor(_PollingSensor):
                                       % self._max_failed_attempts)
                 self._log_warning(self._log_tag, "Fetching calendar failed for %d attempts." % self._failed_counter)
 
-            # If we have an error state that is not-OK and we could retrieve
+            # If we have an non-OK error state and we could retrieve
             # new calendar data again, clear error state.
             elif self.error_state.state != SensorErrorState.OK and self._failed_counter <= self._max_failed_attempts:
                 self._clear_error_state()
