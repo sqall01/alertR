@@ -2598,8 +2598,8 @@ function outputSensors() {
             var relatedAlertLevels = relatedSensors[j]["alertLevels"];
             var dataType = relatedSensors[j]["dataType"];
             var data = relatedSensors[j]["data"];
-            var errorState = sensors[i]["error_state"];
-            var errorMsg = sensors[i]["error_msg"];
+            var errorState = relatedSensors[i]["error_state"];
+            var errorMsg = relatedSensors[i]["error_msg"];
 
 
             // create row for sensor output
