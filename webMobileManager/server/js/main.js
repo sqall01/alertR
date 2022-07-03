@@ -2047,11 +2047,13 @@ function outputOverview() {
         var errorState = sensors[i]["error_state"];
         var errorMsg = sensors[i]["error_msg"];
         var connected = 0;
+        var persistent = 0;
 
         // get connected information from corresponding node
         for(j = 0; j < nodes.length; j++) {
             if(nodes[j]["id"] == nodeId) {
                 var connected = nodes[j]["connected"];
+                var persistent = nodes[j]["persistent"];
                 break;
             }
         }
