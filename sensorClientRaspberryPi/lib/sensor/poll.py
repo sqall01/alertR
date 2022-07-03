@@ -55,6 +55,10 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
                 else:
                     self._curr_state_ctr = 0
 
+                # Even if the state has not changed, an error could occur in between which causes the
+                # sensor to have an error state. Clear it if we received new data.
+                self._clear_error_state()
+
             except Exception as e:
                 self._log_exception(self._log_tag, "Unable to get GPIO state.")
                 self._set_error_state(SensorErrorState.ProcessingError, "Unable to get GPIO state: " + str(e))
