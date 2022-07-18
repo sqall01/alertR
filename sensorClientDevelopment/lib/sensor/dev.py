@@ -10,8 +10,7 @@
 import os
 from .core import _PollingSensor
 from ..globalData import SensorDataType
-from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS
-from typing import Optional, cast
+from ..globalData.sensorObjects import SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataGPS, SensorErrorState
 
 
 class DevSensor(_PollingSensor):
@@ -25,83 +24,151 @@ class DevSensor(_PollingSensor):
         # used for logging
         self._log_tag = os.path.basename(__file__)
 
-        self.consoleInputState = 0
-
-        # Field in which the next send data is added.
-        self.nextData = None  # type: Optional[_SensorData]
+    def __str__(self) -> str:
+        return "ID: %d\n" % self.id \
+               + "State: %d\n" % self.state \
+               + "Error State: %s\n" % self.error_state \
+               + "Data: %s" % str(self.data)
 
     def _execute(self):
         pass
 
+    def _ui_change_state(self):
+        # Show sensor values before giving options.
+        print("#"*80)
+        print(str(self))
+        print()
+
+        print("-" * 40)
+        print("1. Set sensor state to 'Normal' via Sensor Alert event.")
+        print("2. Set sensor state to 'Triggered' via Sensor Alert event.")
+        print("3. Set sensor state to 'Normal' via Change State event.")
+        print("4. Set sensor state to 'Triggered' via Change State event.")
+        print("")
+
+        option_id = int(input("Please enter option: "))
+
+        # Quick way to clear the screen.
+        os.system('clear' if os.name == 'posix' else 'cls')
+
+        if option_id == 1:
+            self._add_sensor_alert(1 - self.triggerState,
+                                   True,
+                                   sensor_data=self.data)
+
+        elif option_id == 2:
+            self._add_sensor_alert(self.triggerState,
+                                   True,
+                                   sensor_data=self.data)
+
+        elif option_id == 3:
+            self._add_state_change(1 - self.triggerState,
+                                   self.data)
+
+        elif option_id == 4:
+            self._add_state_change(self.triggerState,
+                                   self.data)
+
+        else:
+            print("Invalid option.")
+
+    def _ui_change_error_state(self):
+        # Show sensor values before giving options.
+        print("#"*80)
+        print(str(self))
+        print()
+
+        print("-" * 40)
+        if self.error_state.state == SensorErrorState.OK:
+            error_state = int(input("Set new sensor error state: "))
+            msg = input("Set new sensor error message: ")
+            self._set_error_state(error_state, msg)
+
+        else:
+            self._clear_error_state()
+
+        # Quick way to clear the screen.
+        os.system('clear' if os.name == 'posix' else 'cls')
+
+        print("Set sensor error state to: %s" % str(self.error_state))
+
+    def _ui_change_data(self):
+        # Show sensor values before giving options.
+        print("#"*80)
+        print(str(self))
+        print()
+
+        print("-" * 40)
+        if self.sensorDataType == SensorDataType.INT:
+            value = int(input("Set new integer value: "))
+            unit = input("Set new unit: ")
+            self.data = SensorDataInt(value, unit)
+
+        elif self.sensorDataType == SensorDataType.FLOAT:
+            value = float(input("Set new float value: "))
+            unit = input("Set new unit: ")
+            self.data = SensorDataFloat(value, unit)
+
+        elif self.sensorDataType == SensorDataType.GPS:
+            lat = float(input("Set new latitude value: "))
+            lon = float(input("Set new longitude value: "))
+            utctime = int(input("Set new utc timestamp value: "))
+            self.data = SensorDataGPS(lat, lon, utctime)
+
+        else:
+            return
+
+        # Quick way to clear the screen.
+        os.system('clear' if os.name == 'posix' else 'cls')
+
+        self._add_state_change(self.state,
+                               self.data)
+        print("Set sensor data to: %s" % str(self.data))
+
     def initialize(self) -> bool:
-        self.state = self.consoleInputState
+        self.state = 1 - self.triggerState
 
         # Initialize the data the sensor holds.
         if self.sensorDataType == SensorDataType.NONE:
             self.data = SensorDataNone()
-            self.nextData = SensorDataNone()
 
         if self.sensorDataType == SensorDataType.INT:
             self.data = SensorDataInt(0, "Dev")
-            self.nextData = SensorDataInt(self.data.value + 1, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.FLOAT:
             self.data = SensorDataFloat(0.0, "Dev")
-            self.nextData = SensorDataFloat(self.data.value + 0.5, self.data.unit)
 
         elif self.sensorDataType == SensorDataType.GPS:
             self.data = SensorDataGPS(0.0, 0.0, 0)
-            self.nextData = SensorDataGPS(self.data.lat + 0.1,
-                                          self.data.lon + 0.1,
-                                          self.data.utctime + 1)
 
         return True
 
-    def toggle_console_state(self):
+    def ui_change_values(self):
+        # Show sensor values before giving options.
+        print("#"*80)
+        print(str(self))
+        print()
 
-        # Update the data that the sensor holds.
-        if self.sensorDataType == SensorDataType.NONE:
-            pass
+        print("-" * 40)
+        print("1. Change sensor state.")
+        print("2. Change sensor error state.")
+        if self.sensorDataType != SensorDataType.NONE:
+            print("3. Change sensor data.")
+        print()
 
-        elif self.sensorDataType == SensorDataType.INT:
-            self.data = cast(SensorDataInt, self.nextData)
-            self.nextData = SensorDataInt(self.data.value + 1, self.data.unit)
+        option_id = int(input("Please enter option: "))
 
-        elif self.sensorDataType == SensorDataType.FLOAT:
-            self.data = cast(SensorDataFloat, self.nextData)
-            self.nextData = SensorDataFloat(self.data.value + 0.5, self.data.unit)
+        # Quick way to clear the screen.
+        os.system('clear' if os.name == 'posix' else 'cls')
 
-        elif self.sensorDataType == SensorDataType.GPS:
-            self.data = cast(SensorDataGPS, self.nextData)
-            self.nextData = SensorDataGPS(self.data.lat + 0.1,
-                                          self.data.lon + 0.1,
-                                          self.data.utctime + 1)
+        if option_id == 1:
+            self._ui_change_state()
 
-        if self.consoleInputState == 0:
-            self.consoleInputState = 1
-        else:
-            self.consoleInputState = 0
+        elif option_id == 2:
+            self._ui_change_error_state()
 
-        new_state = self.consoleInputState
-
-        if new_state == self.triggerState:
-            if self.triggerAlert:
-                self._add_sensor_alert(self.triggerState,
-                                       True,
-                                       has_latest_data=True,
-                                       sensor_data=self.data)
-
-            else:
-                self._add_state_change(self.triggerState,
-                                       self.data)
+        elif option_id == 3 and self.sensorDataType != SensorDataType.NONE:
+            self._ui_change_data()
 
         else:
-            if self.triggerAlertNormal:
-                self._add_sensor_alert(1 - self.triggerState,
-                                       True,
-                                       has_latest_data=True,
-                                       sensor_data=self.data)
-
-            else:
-                self._add_state_change(1 - self.triggerState,
-                                       self.data)
+            print("Invalid option.")

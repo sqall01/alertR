@@ -19,7 +19,8 @@ from .communication import Communication, Promise, MsgState
 from .eventHandler import EventHandler
 from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
     ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
+from ..globalData.sensorObjects import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, \
+    SensorObjErrorStateChange, SensorErrorState
 from ..globalData import GlobalData
 
 
@@ -159,6 +160,38 @@ class ServerCommunication(Communication):
 
         # handle received state change
         if self._event_handler.profile_change(msg_time, profile):
+            return True
+
+        return False
+
+    def _handler_sensor_error_state_change(self,
+                                           incomingMessage: Dict[str, Any]) -> bool:
+        """
+        Internal function that handles received sensor error state changes of sensors (for nodes of type manager).
+
+        :param incomingMessage:
+        :return: success or failure
+        """
+        logging.debug("[%s]: Received sensor error state change for sensor %d with state %s."
+                      % (self._log_tag,
+                         incomingMessage["payload"]["sensorId"],
+                         incomingMessage["payload"]["error_state"]))
+
+        # extract state change values
+        try:
+            msg_time = incomingMessage["msgTime"]
+
+            sensor_id = incomingMessage["payload"]["sensorId"]
+            error_state = SensorErrorState.copy_from_dict(incomingMessage["payload"]["error_state"])
+
+        except Exception:
+            logging.exception("[%s]: Received sensor error state change invalid." % self._log_tag)
+            return False
+
+        # handle received state change
+        if self._event_handler.sensor_error_state_change(msg_time,
+                                                         sensor_id,
+                                                         error_state):
             return True
 
         return False
@@ -319,33 +352,33 @@ class ServerCommunication(Communication):
                 client_sensor_id = sensors_raw[i]["clientSensorId"]
                 alert_delay = sensors_raw[i]["alertDelay"]
                 data_type = sensors_raw[i]["dataType"]
+                error_state = SensorErrorState.copy_from_dict(sensors_raw[i]["error_state"])
 
                 sensor_data_cls = SensorDataType.get_sensor_data_class(data_type)
                 sensor_data = sensor_data_cls.copy_from_dict(sensors_raw[i]["data"])
 
-                sensorAlertLevels = sensors_raw[i]["alertLevels"]
+                sensor_alert_levels = sensors_raw[i]["alertLevels"]
                 description = sensors_raw[i]["description"]
-                lastStateUpdated = sensors_raw[i]["lastStateUpdated"]
                 state = sensors_raw[i]["state"]
 
             except Exception:
                 logging.exception("[%s]: Received sensor invalid." % self._log_tag)
                 return False
 
-            logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d:%d."
-                          % (self._log_tag, node_id, sensor_id, alert_delay, description, lastStateUpdated, state))
+            logging.debug("[%s]: Received sensor information: %d:%d:%d:'%s':%d."
+                          % (self._log_tag, node_id, sensor_id, alert_delay, description, state))
 
             sensor = ManagerObjSensor()
             sensor.nodeId = node_id
             sensor.sensorId = sensor_id
             sensor.clientSensorId = client_sensor_id
             sensor.alertDelay = alert_delay
-            sensor.alertLevels = sensorAlertLevels
+            sensor.alertLevels = sensor_alert_levels
             sensor.description = description
-            sensor.lastStateUpdated = lastStateUpdated
             sensor.state = state
             sensor.dataType = data_type
             sensor.data = sensor_data
+            sensor.error_state = error_state
 
             sensors.append(sensor)
 
@@ -727,6 +760,16 @@ class ServerCommunication(Communication):
                     self.close()
                     return
 
+            # Handle SENSORERRORSTATECHANGE request.
+            elif request.lower() == "sensorerrorstatechange":
+                if not self._handler_sensor_error_state_change(msg_request.msg_dict):
+                    logging.error("[%s]: Receiving sensor error state change failed."
+                                  % self._log_tag)
+
+                    # clean up session before exiting
+                    self.close()
+                    return
+
             # Unkown request.
             else:
                 logging.error("[%s]: Received unknown request. Server sent: %s"
@@ -873,6 +916,19 @@ class ServerCommunication(Communication):
         ping_message = MsgBuilder.build_ping_msg()
 
         return self.send_request("ping", ping_message)
+
+    def send_error_state_change(self,
+                                error_state_change: SensorObjErrorStateChange) -> Promise:
+        """
+        This function sends an error state change to the server for example to signal that the sensor has an error.
+
+        :param error_state_change:
+        :return: Promise that the request will be sent and that contains the state of the send request
+        """
+
+        error_state_change_message = MsgBuilder.build_error_state_change_msg_sensor(error_state_change)
+
+        return self.send_request("sensorerrorstatechange", error_state_change_message)
 
     def send_sensor_alert(self,
                           sensor_alert: SensorObjSensorAlert) -> Promise:

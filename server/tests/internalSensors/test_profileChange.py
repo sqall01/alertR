@@ -2,9 +2,10 @@ import logging
 from typing import Any, List, Tuple, Optional, Dict
 from collections import defaultdict
 from unittest import TestCase
-from lib.localObjects import SensorAlert, Option, Profile, SensorDataInt
+from lib.localObjects import SensorAlert, Option, Profile
 from lib.internalSensors import ProfileChangeSensor
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
+from lib.globalData.sensorObjects import SensorDataInt
 # noinspection PyProtectedMember
 from lib.storage.core import _Storage
 

@@ -13,8 +13,8 @@ import time
 import collections
 from typing import Optional
 from .server import AsynchronousSender
-from .globalData import GlobalData
 from .localObjects import SensorData
+from .globalData.globalData import GlobalData
 
 
 # this class is woken up if a sensor alert or state change is received
@@ -28,7 +28,6 @@ class ManagerUpdateExecuter(threading.Thread):
         self.globalData = globalData
         self.logger = self.globalData.logger
         self.managerUpdateInterval = self.globalData.managerUpdateInterval
-        self.storage = self.globalData.storage
         self.serverSessions = self.globalData.serverSessions
 
         # file nme of this file (used for logging)

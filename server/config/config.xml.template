@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the server
 -->
-<config version="0.901">
+<config version="1.000">
 
     <!--
         in this section general options are configured
@@ -492,29 +492,6 @@
     <internalSensors>
 
         <!--
-            The sensorTimeout sensor is an internal sensor that triggers when
-            a sensor timed out. The server checks regularly if a sensor
-            has timed out and will trigger a sensorAlert if one does
-            (sensorAlert with state "triggered" when a sensor times out
-            and a sensorAlert with state "normal" if the sensor reconnects).
-            activated - This flags indicates if the internal sensor is
-                activated or not.
-                ("True" or "False")
-            description - Description of this sensor.
-        -->
-        <sensorTimeout
-            activated="True"
-            description="Internal: Sensor Timeout">
-
-            <!--
-                The alertLevel that is triggered by the sensor
-                (a sensor must have one but can have multiple alert levels).
-            -->
-            <alertLevel>0</alertLevel>
-
-        </sensorTimeout>
-
-        <!--
             The nodeTimeout sensor is an internal sensor that triggers when
             a node/client timed out. The server checks regularly if a node
             has timed out and will trigger a sensorAlert if one does
@@ -608,6 +585,31 @@
             <alertLevel>1</alertLevel>
 
         </alertLevelInstrumentationError>
+
+        <!--
+            The sensorErrorState Sensor is an internal Sensor
+            that triggers if a sensor changes its error state.
+            The error state of a sensor is changed if the sensor encounters an error
+            during processing (e.g., a connection timeout while
+            fetching data from the Internet, illegal data received from a FIFO file, ...).
+            It allows you to get notified if a sensor in your system does not work as intended.
+            activated - This flags indicates if the internal Sensor is
+                activated or not.
+                ("True" or "False")
+            description - Description of this sensor.
+        -->
+        <sensorErrorState
+            activated="True"
+            description="Internal: Sensor Error State">
+
+            <!--
+                The alertLevel that is triggered by the sensor
+                (a sensor must have one but can have multiple alert levels).
+            -->
+            <alertLevel>0</alertLevel>
+            <alertLevel>1</alertLevel>
+
+        </sensorErrorState>
 
     </internalSensors>
 

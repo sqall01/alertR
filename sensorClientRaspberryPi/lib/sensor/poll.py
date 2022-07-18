@@ -10,8 +10,7 @@
 import time
 import RPi.GPIO as GPIO
 from .core import _PollingSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataNone
+from ..globalData.sensorObjects import SensorDataNone, SensorErrorState, SensorDataType
 
 
 class RaspberryPiGPIOPollingSensor(_PollingSensor):
@@ -45,15 +44,24 @@ class RaspberryPiGPIOPollingSensor(_PollingSensor):
             time.sleep(0.5)
 
             # Set state only if threshold of reads with the same state is reached.
-            curr_state = GPIO.input(self.gpioPin)
-            if curr_state != self.state:
-                self._curr_state_ctr += 1
-                if self._curr_state_ctr >= self.thresStateCtr:
-                    self._add_sensor_alert(curr_state,
-                                           True)
+            try:
+                curr_state = GPIO.input(self.gpioPin)
+                if curr_state != self.state:
+                    self._curr_state_ctr += 1
+                    if self._curr_state_ctr >= self.thresStateCtr:
+                        self._add_sensor_alert(curr_state,
+                                               True)
 
-            else:
-                self._curr_state_ctr = 0
+                else:
+                    self._curr_state_ctr = 0
+
+                # Even if the state has not changed, an error could occur in between which causes the
+                # sensor to have an error state. Clear it if we received new data.
+                self._clear_error_state()
+
+            except Exception as e:
+                self._log_exception(self._log_tag, "Unable to get GPIO state.")
+                self._set_error_state(SensorErrorState.ProcessingError, "Unable to get GPIO state: " + str(e))
 
     def initialize(self) -> bool:
 

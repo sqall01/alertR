@@ -1,15 +1,16 @@
 import time
 from unittest import TestCase
 from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorOrdering, \
-    SensorDataInt
+    SensorDataInt, SensorErrorState, SensorObjErrorStateChange
 from lib.sensor.number import _NumberSensor
 
 
 class MockNumberSensor(_NumberSensor):
 
     def __init__(self):
-        self._next_data = SensorDataInt(0, "test unit")
         super().__init__()
+        self._next_data = SensorDataInt(0, "test unit")
+        self._log_desc = "Mock Sensor"
 
     def _get_data(self) -> SensorDataInt:
         return self._next_data
@@ -320,3 +321,32 @@ class TestNumberSensor(TestCase):
 
         events = sensor.get_events()
         self.assertEqual(0, len(events))
+
+    def test_error_state_change_without_new_data(self):
+        """
+        Tests if error state is changed back to normal if sensor processing works correctly again and no
+        new data occurred while a not-OK error state existed.
+        """
+
+        sensor = self._create_base_sensor()
+
+        sensor.hasThreshold = False
+        sensor.state = 0
+        sensor.data = sensor.next_data
+
+        sensor.initialize()
+
+        # Set error state.
+        sensor.error_state = SensorErrorState(SensorErrorState.GenericError, "test error")
+
+        sensor.start()
+
+        time.sleep(1)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.OK, events[0].error_state.state)
+
+        # Make sure sensor state has not changed.
+        self.assertEqual(0, sensor.state)

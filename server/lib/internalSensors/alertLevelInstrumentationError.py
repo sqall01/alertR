@@ -10,10 +10,11 @@
 import os
 from typing import Optional, Dict, Any
 from .core import _InternalSensor
-from ..localObjects import SensorDataType, AlertLevel, SensorDataNone
-from ..globalData import GlobalData
+from ..localObjects import AlertLevel
 # noinspection PyProtectedMember
 from ..storage.core import _Storage
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataNone, SensorDataType, SensorErrorState
 
 
 # Class that represents the internal sensor that
@@ -28,6 +29,10 @@ class AlertLevelInstrumentationErrorSensor(_InternalSensor):
         self.data = SensorDataNone()
         self.alertDelay = 0
         self.state = 0
+        self.error_state = SensorErrorState()
+
+        # Alert level instrumentation error sensor has always this fix internal id.
+        self.clientSensorId = 4
 
         # file name of this file (used for logging)
         self._log_tag = os.path.basename(__file__)

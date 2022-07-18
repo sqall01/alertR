@@ -7,30 +7,33 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .core import DataCollector
-from ...globalData import GlobalData
 import threading
 import logging
 import requests
-import time
+import json
+import os
 from typing import Optional
 
+from .core import _DataCollector, WeatherData
+from ...globalData.sensorObjects import SensorErrorState
 
-# Class that collects data from Wunderground.
-class WundergroundDataCollector(DataCollector):
 
-    def __init__(self, globalData: GlobalData):
-        super(WundergroundDataCollector, self).__init__(globalData)
+class WundergroundDataCollector(_DataCollector):
 
-        self.updateLock = threading.Semaphore(1)
+    def __init__(self, interval: int, api_key: str):
+        super(WundergroundDataCollector, self).__init__()
+
+        self._log_tag = os.path.basename(__file__)
+
+        self.updateLock = threading.Lock()
 
         self.host = "http://api.wunderground.com"
 
         # Api key of wunderground.
-        self.apiKey = None  # type: Optional[str]
+        self.apiKey = api_key
 
         # Interval in seconds in which the data is fetched.
-        self.interval = None  # type: Optional[int]
+        self.interval = interval
 
         # List of tuples in the form [(country, city), ...]
         self.locations = list()
@@ -39,253 +42,281 @@ class WundergroundDataCollector(DataCollector):
         # collectedData[<country>][<city>]["temp"/"humidity"]
         self.collectedData = dict()
 
-        # Number of failed updates we tolerate before we change
-        # the data to signal the problem.
-        self.maxToleratedFails = None  # type: Optional[int]
+        self._exit_event = threading.Event()
+        self._exit_event.clear()
+
+        self._fail_ctr = 0
+
+    def _get_data(self,
+                  country: Optional[str] = None,
+                  city: Optional[str] = None,
+                  lon: Optional[str] = None,
+                  lat: Optional[str] = None) -> Optional[str]:
+        try:
+            url = self.host \
+                  + "/api/" \
+                  + self.apiKey \
+                  + "/geolookup/conditions/forecast/q/" \
+                  + country \
+                  + "/" \
+                  + city \
+                  + "json"
+            r = requests.get(url, verify=True, timeout=20.0)
+
+            # Extract data.
+            if r.status_code == 200:
+                return r.text
+            else:
+                logging.error("[%s]: Received response code %d from Wunderground."
+                              % (self._log_tag, r.status_code))
+
+        except Exception as e:
+            logging.exception("[%s]: Could not get weather data for %s in %s."
+                              % (self._log_tag, city, country))
+
+        return None
 
     def addLocation(self, country: str, city: str, lon: str, lat: str):
-        tempCountry = country.lower()
-        tempCity = city.lower()
+        temp_country = country.lower()
+        temp_city = city.lower()
 
         # Check if location is already registered.
         for location in self.locations:
-            if location[0] == tempCountry and location[1] == tempCity:
+            if location[0] == temp_country and location[1] == temp_city:
                 return
 
         # check if location is already in locations list
-        self.locations.append((tempCountry, tempCity))
+        self.locations.append((temp_country, temp_city))
 
+        error_data = WeatherData(None,
+                                 SensorErrorState(SensorErrorState.ValueError,
+                                                  "No data available yet."))
         # Add locations to data collection.
-        if tempCountry not in self.collectedData.keys():
-            self.collectedData[tempCountry] = dict()
-        if tempCity not in self.collectedData[tempCountry].keys():
-            self.collectedData[tempCountry][tempCity] = dict()
-            self.collectedData[tempCountry][tempCity]["temp"] = float(-1000)
-            self.collectedData[tempCountry][tempCity]["humidity"] = -1000
-            self.collectedData[tempCountry][tempCity]["forecast"] = list()
+        if temp_country not in self.collectedData.keys():
+            self.collectedData[temp_country] = dict()
+        if temp_city not in self.collectedData[temp_country].keys():
+            self.collectedData[temp_country][temp_city] = dict()
+            self.collectedData[temp_country][temp_city]["temp"] = error_data
+            self.collectedData[temp_country][temp_city]["humidity"] = error_data
+            self.collectedData[temp_country][temp_city]["forecast"] = list()
             for i in range(3):
-                self.collectedData[tempCountry][tempCity]["forecast"].append(dict())
-                self.collectedData[tempCountry][tempCity]["forecast"][i]["tempHigh"] = float(-1000)
-                self.collectedData[tempCountry][tempCity]["forecast"][i]["tempLow"] = float(-1000)
-                self.collectedData[tempCountry][tempCity]["forecast"][i]["rain"] = -1000
+                self.collectedData[temp_country][temp_city]["forecast"].append(dict())
+                self.collectedData[temp_country][temp_city]["forecast"][i]["tempHigh"] = error_data
+                self.collectedData[temp_country][temp_city]["forecast"][i]["tempLow"] = error_data
+                self.collectedData[temp_country][temp_city]["forecast"][i]["rain"] = error_data
 
-    def getForecastTemperatureLow(self, country: str, city: str, lon: str, lat: str, day: int) -> float:
-        tempCountry = country.lower()
-        tempCity = city.lower()
-
-        # Sanity check day.
-        if day < 0 and day > 2:
-            return float(-1001)
-
-        with self.updateLock:
-            return self.collectedData[tempCountry][tempCity]["forecast"][day]["tempLow"]
-
-    def getForecastTemperatureHigh(self, country: str, city: str, lon: str, lat: str, day: int) -> float:
-        tempCountry = country.lower()
-        tempCity = city.lower()
+    def getForecastTemperatureLow(self, country: str, city: str, lon: str, lat: str, day: int) -> WeatherData:
+        temp_country = country.lower()
+        temp_city = city.lower()
 
         # Sanity check day.
-        if day < 0 and day > 2:
-            return float(-1001)
+        if 0 > day > 2:
+            return WeatherData(None, SensorErrorState(SensorErrorState.ValueError, "Day can only be set to 0, 1 or 2."))
 
         with self.updateLock:
-            return self.collectedData[tempCountry][tempCity]["forecast"][day]["tempHigh"]
+            return self.collectedData[temp_country][temp_city]["forecast"][day]["tempLow"]
 
-    def getForecastRain(self, country: str, city: str, lon: str, lat: str, day: int) -> int:
-        tempCountry = country.lower()
-        tempCity = city.lower()
+    def getForecastTemperatureHigh(self, country: str, city: str, lon: str, lat: str, day: int) -> WeatherData:
+        temp_country = country.lower()
+        temp_city = city.lower()
 
         # Sanity check day.
-        if day < 0 and day > 2:
-            return -1001
+        if 0 > day > 2:
+            return WeatherData(None, SensorErrorState(SensorErrorState.ValueError, "Day can only be set to 0, 1 or 2."))
 
         with self.updateLock:
-            return self.collectedData[tempCountry][tempCity]["forecast"][day]["rain"]
+            return self.collectedData[temp_country][temp_city]["forecast"][day]["tempHigh"]
 
-    def getTemperature(self, country: str, city: str, lon: str, lat: str) -> float:
-        tempCountry = country.lower()
-        tempCity = city.lower()
+    def getForecastRain(self, country: str, city: str, lon: str, lat: str, day: int) -> WeatherData:
+        temp_country = country.lower()
+        temp_city = city.lower()
 
-        with self.updateLock:
-            return self.collectedData[tempCountry][tempCity]["temp"]
-
-    def getHumidity(self, country: str, city: str, lon: str, lat: str) -> int:
-        tempCountry = country.lower()
-        tempCity = city.lower()
+        # Sanity check day.
+        if 0 > day > 2:
+            return WeatherData(None, SensorErrorState(SensorErrorState.ValueError, "Day can only be set to 0, 1 or 2."))
 
         with self.updateLock:
-            return self.collectedData[tempCountry][tempCity]["humidity"]
+            return self.collectedData[temp_country][temp_city]["forecast"][day]["rain"]
+
+    def getTemperature(self, country: str, city: str, lon: str, lat: str) -> WeatherData:
+        temp_country = country.lower()
+        temp_city = city.lower()
+
+        with self.updateLock:
+            return self.collectedData[temp_country][temp_city]["temp"]
+
+    def getHumidity(self, country: str, city: str, lon: str, lat: str) -> WeatherData:
+        temp_country = country.lower()
+        temp_city = city.lower()
+
+        with self.updateLock:
+            return self.collectedData[temp_country][temp_city]["humidity"]
 
     def run(self):
 
-        logging.info("[%s]: Starting Wunderground data collector thread." % self.fileName)
+        logging.info("[%s]: Starting Wunderground data collector thread." % self._log_tag)
 
         # Tolerate failed updates for at least 12 hours.
-        self.maxToleratedFails = int(43200 / self.interval) + 1
+        max_tolerated_fails = int(43200 / self.interval) + 1
 
-        failCtr = 0
+        self._fail_ctr = 0
         while True:
 
-            for locationTuple in self.locations:
+            for location_tuple in self.locations:
 
-                country = locationTuple[0]
-                city = locationTuple[1]
+                country = location_tuple[0]
+                city = location_tuple[1]
 
-                logging.debug("[%s]: Getting weather data from "
-                              % self.fileName
-                              + "Wunderground for %s in %s."
-                              % (city, country))
+                logging.debug("[%s]: Getting weather data from Wunderground for %s in %s."
+                              % (self._log_tag, city, country))
 
-                r = None
+                data = self._get_data(country=country, city=city)
+
                 try:
-                    # Get weather data from Wunderground
-                    url = self.host \
-                          + "/api/" \
-                          + self.apiKey \
-                          + "/geolookup/conditions/forecast/q/" \
-                          + country \
-                          + "/" \
-                          + city \
-                          + "json"
-                    r = requests.get(url, verify=True, timeout=20.0)
-
                     # Extract data.
-                    if r.status_code == 200:
-                        jsonData = r.json()
+                    if data:
+                        json_data = json.loads(data)
 
-                        humidity = int(jsonData["current_observation"]["relative_humidity"].replace("%", ""))
-                        temp = float(jsonData["current_observation"]["temp_c"])
-                        forecastDay0TempHigh = float(jsonData["forecast"]["simpleforecast"][
-                                                     "forecastday"][0]["high"]["celsius"])
-                        forecastDay0TempLow = float(jsonData["forecast"]["simpleforecast"][
-                                                    "forecastday"][0]["low"]["celsius"])
-                        forecastDay0Rain = int(jsonData["forecast"][
-                                               "simpleforecast"]["forecastday"][0]["pop"])
-                        forecastDay1TempHigh = float(jsonData["forecast"]["simpleforecast"][
-                                                     "forecastday"][1]["high"]["celsius"])
-                        forecastDay1TempLow = float(jsonData["forecast"]["simpleforecast"][
-                                                    "forecastday"][1]["low"]["celsius"])
-                        forecastDay1Rain = int(jsonData["forecast"]["simpleforecast"][
-                                               "forecastday"][1]["pop"])
-                        forecastDay2TempHigh = float(jsonData["forecast"]["simpleforecast"][
-                                                     "forecastday"][2]["high"]["celsius"])
-                        forecastDay2TempLow = float(jsonData["forecast"]["simpleforecast"][
-                                                    "forecastday"][2]["low"]["celsius"])
-                        forecastDay2Rain = int(jsonData["forecast"]["simpleforecast"][
-                                               "forecastday"][2]["pop"])
+                        humidity = WeatherData(int(json_data["current_observation"][
+                                                       "relative_humidity"].replace("%", "")))
+                        temp = WeatherData(float(json_data["current_observation"]["temp_c"]))
+                        forecast_day0_temp_high = WeatherData(float(json_data["forecast"]["simpleforecast"][
+                                                     "forecastday"][0]["high"]["celsius"]))
+                        forecast_day0_temp_low = WeatherData(float(json_data["forecast"]["simpleforecast"][
+                                                    "forecastday"][0]["low"]["celsius"]))
+                        forecast_day0_rain = WeatherData(int(json_data["forecast"][
+                                               "simpleforecast"]["forecastday"][0]["pop"]))
+                        forecast_day1_temp_high = WeatherData(float(json_data["forecast"]["simpleforecast"][
+                                                     "forecastday"][1]["high"]["celsius"]))
+                        forecast_day1_temp_low = WeatherData(float(json_data["forecast"]["simpleforecast"][
+                                                    "forecastday"][1]["low"]["celsius"]))
+                        forecast_day1_rain = WeatherData(int(json_data["forecast"]["simpleforecast"][
+                                               "forecastday"][1]["pop"]))
+                        forecast_day2_temp_high = WeatherData(float(json_data["forecast"]["simpleforecast"][
+                                                     "forecastday"][2]["high"]["celsius"]))
+                        forecast_day2_temp_low = WeatherData(float(json_data["forecast"]["simpleforecast"][
+                                                    "forecastday"][2]["low"]["celsius"]))
+                        forecast_day2_rain = WeatherData(int(json_data["forecast"]["simpleforecast"][
+                                               "forecastday"][2]["pop"]))
 
                         with self.updateLock:
                             self.collectedData[country][city]["humidity"] = humidity
                             self.collectedData[country][city]["temp"] = temp
-                            self.collectedData[country][city]["forecast"][0]["tempHigh"] = forecastDay0TempHigh
-                            self.collectedData[country][city]["forecast"][0]["tempLow"] = forecastDay0TempLow
-                            self.collectedData[country][city]["forecast"][0]["rain"] = forecastDay0Rain
-                            self.collectedData[country][city]["forecast"][1]["tempHigh"] = forecastDay1TempHigh
-                            self.collectedData[country][city]["forecast"][1]["tempLow"] = forecastDay1TempLow
-                            self.collectedData[country][city]["forecast"][1]["rain"] = forecastDay1Rain
-                            self.collectedData[country][city]["forecast"][2]["tempHigh"] = forecastDay2TempHigh
-                            self.collectedData[country][city]["forecast"][2]["tempLow"] = forecastDay2TempLow
-                            self.collectedData[country][city]["forecast"][2]["rain"] = forecastDay2Rain
+                            self.collectedData[country][city]["forecast"][0]["tempHigh"] = forecast_day0_temp_high
+                            self.collectedData[country][city]["forecast"][0]["tempLow"] = forecast_day0_temp_low
+                            self.collectedData[country][city]["forecast"][0]["rain"] = forecast_day0_rain
+                            self.collectedData[country][city]["forecast"][1]["tempHigh"] = forecast_day1_temp_high
+                            self.collectedData[country][city]["forecast"][1]["tempLow"] = forecast_day1_temp_low
+                            self.collectedData[country][city]["forecast"][1]["rain"] = forecast_day1_rain
+                            self.collectedData[country][city]["forecast"][2]["tempHigh"] = forecast_day2_temp_high
+                            self.collectedData[country][city]["forecast"][2]["tempLow"] = forecast_day2_temp_low
+                            self.collectedData[country][city]["forecast"][2]["rain"] = forecast_day2_rain
 
                         # Reset fail count.
-                        failCtr = 0
+                        self._fail_ctr = 0
 
                         logging.info("[%s]: Received new humidity data "
-                                     % self.fileName
-                                     + "from Wunderground: %d%% for %s in %s."
-                                     % (humidity, city, country))
+                                     % self._log_tag
+                                     + "%d%% for %s in %s."
+                                     % (humidity.data, city, country))
 
                         logging.info("[%s]: Received new temperature data "
-                                     % self.fileName
-                                     + "from Wunderground: %.1f degrees Celsius "
-                                     % temp
+                                     % self._log_tag
+                                     + "%.1f degrees Celsius "
+                                     % temp.data
                                      + "for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
-                                     % self.fileName
-                                     + "from Wunderground for day 0: min %.1f max %.1f "
-                                     % (forecastDay0TempLow, forecastDay0TempHigh)
+                                     % self._log_tag
+                                     + "for day 0: min %.1f max %.1f "
+                                     % (forecast_day0_temp_low.data, forecast_day0_temp_high.data)
                                      + "degrees Celsius for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
-                                     % self.fileName
-                                     + "from Wunderground for day 0: %d%% "
-                                     % forecastDay0Rain
+                                     % self._log_tag
+                                     + "for day 0: %d%% "
+                                     % forecast_day0_rain.data
                                      + "chance of rain for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
-                                     % self.fileName
-                                     + "from Wunderground for day 1: min %.1f max %.1f "
-                                     % (forecastDay1TempLow, forecastDay1TempHigh)
+                                     % self._log_tag
+                                     + "for day 1: min %.1f max %.1f "
+                                     % (forecast_day1_temp_low.data, forecast_day1_temp_high.data)
                                      + "degrees Celsius for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
-                                     % self.fileName
-                                     + "from Wunderground for day 1: %d%% "
-                                     % forecastDay1Rain
+                                     % self._log_tag
+                                     + "for day 1: %d%% "
+                                     % forecast_day1_rain.data
                                      + "chance of rain for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new temperature forecast "
-                                     % self.fileName
-                                     + "from Wunderground for day 2: min %.1f max %.1f "
-                                     % (forecastDay2TempLow, forecastDay2TempHigh)
+                                     % self._log_tag
+                                     + "for day 2: min %.1f max %.1f "
+                                     % (forecast_day2_temp_low.data, forecast_day2_temp_high.data)
                                      + "degrees Celsius for %s in %s."
                                      % (city, country))
 
                         logging.info("[%s]: Received new rain forecast "
-                                     % self.fileName
-                                     + "from Wunderground for day 2: %d%% "
-                                     % forecastDay2Rain
+                                     % self._log_tag
+                                     + "for day 2: %d%% "
+                                     % forecast_day2_rain.data
                                      + "chance of rain for %s in %s."
                                      % (city, country))
 
                     else:
-                        failCtr += 1
-                        logging.error("[%s]: Received response code %d "
-                                      % (self.fileName, r.status_code)
-                                      + "from Wunderground.")
+                        self._fail_ctr += 1
 
-                        if failCtr >= self.maxToleratedFails:
+                        if self._fail_ctr >= max_tolerated_fails:
                             with self.updateLock:
-                                self.collectedData[country][city]["humidity"] = -998
-                                self.collectedData[country][city]["temp"] = -998
-                                self.collectedData[country][city]["forecast"][0]["tempHigh"] = float(-998)
-                                self.collectedData[country][city]["forecast"][0]["tempLow"] = float(-998)
-                                self.collectedData[country][city]["forecast"][0]["rain"] = -998
-                                self.collectedData[country][city]["forecast"][1]["tempHigh"] = float(-998)
-                                self.collectedData[country][city]["forecast"][1]["tempLow"] = float(-998)
-                                self.collectedData[country][city]["forecast"][1]["rain"] = -998
-                                self.collectedData[country][city]["forecast"][2]["tempHigh"] = float(-998)
-                                self.collectedData[country][city]["forecast"][2]["tempLow"] = float(-998)
-                                self.collectedData[country][city]["forecast"][2]["rain"] = -998
+                                error_data = WeatherData(None,
+                                                         SensorErrorState(SensorErrorState.ConnectionError,
+                                                                          "Not able to collect data."))
+                                self.collectedData[country][city]["humidity"] = error_data
+                                self.collectedData[country][city]["temp"] = error_data
+                                self.collectedData[country][city]["forecast"][0]["tempHigh"] = error_data
+                                self.collectedData[country][city]["forecast"][0]["tempLow"] = error_data
+                                self.collectedData[country][city]["forecast"][0]["rain"] = error_data
+                                self.collectedData[country][city]["forecast"][1]["tempHigh"] = error_data
+                                self.collectedData[country][city]["forecast"][1]["tempLow"] = error_data
+                                self.collectedData[country][city]["forecast"][1]["rain"] = error_data
+                                self.collectedData[country][city]["forecast"][2]["tempHigh"] = error_data
+                                self.collectedData[country][city]["forecast"][2]["tempLow"] = error_data
+                                self.collectedData[country][city]["forecast"][2]["rain"] = error_data
 
                 except Exception as e:
-                    failCtr += 1
-                    logging.exception("[%s]: Could not get weather data "
-                                      % self.fileName
-                                      + "for %s in %s."
-                                      % (city, country))
-                    if r is not None:
-                        logging.error("[%s]: Received data from server: '%s'." % (self.fileName, r.text))
+                    self._fail_ctr += 1
+                    logging.exception("[%s]: Could not get weather data for %s in %s."
+                                      % (self._log_tag, city, country))
+                    if data is not None:
+                        logging.error("[%s]: Received data from server: %s"
+                                      % (self._log_tag, data))
 
-                    if failCtr >= self.maxToleratedFails:
+                    if self._fail_ctr >= max_tolerated_fails:
                         with self.updateLock:
-                            self.collectedData[country][city]["humidity"] = -999
-                            self.collectedData[country][city]["temp"] = float(-999)
-                            self.collectedData[country][city]["forecast"][0]["tempHigh"] = float(-999)
-                            self.collectedData[country][city]["forecast"][0]["tempLow"] = float(-999)
-                            self.collectedData[country][city]["forecast"][0]["rain"] = -999
-                            self.collectedData[country][city]["forecast"][1]["tempHigh"] = float(-999)
-                            self.collectedData[country][city]["forecast"][1]["tempLow"] = float(-999)
-                            self.collectedData[country][city]["forecast"][1]["rain"] = -999
-                            self.collectedData[country][city]["forecast"][2]["tempHigh"] = float(-999)
-                            self.collectedData[country][city]["forecast"][2]["tempLow"] = float(-999)
-                            self.collectedData[country][city]["forecast"][2]["rain"] = -999
+                            error_data = WeatherData(None,
+                                                     SensorErrorState(SensorErrorState.ProcessingError,
+                                                                      "Not able to parse data: %s" % str(e)))
+                            self.collectedData[country][city]["humidity"] = error_data
+                            self.collectedData[country][city]["temp"] = error_data
+                            self.collectedData[country][city]["forecast"][0]["tempHigh"] = error_data
+                            self.collectedData[country][city]["forecast"][0]["tempLow"] = error_data
+                            self.collectedData[country][city]["forecast"][0]["rain"] = error_data
+                            self.collectedData[country][city]["forecast"][1]["tempHigh"] = error_data
+                            self.collectedData[country][city]["forecast"][1]["tempLow"] = error_data
+                            self.collectedData[country][city]["forecast"][1]["rain"] = error_data
+                            self.collectedData[country][city]["forecast"][2]["tempHigh"] = error_data
+                            self.collectedData[country][city]["forecast"][2]["tempLow"] = error_data
+                            self.collectedData[country][city]["forecast"][2]["rain"] = error_data
 
             # Sleep until next update cycle.
-            time.sleep(self.interval)
+            if self._exit_event.wait(self.interval):
+                return
+
+    def exit(self):
+        self._exit_event.set()

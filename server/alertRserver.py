@@ -15,9 +15,10 @@ from lib import VersionInformerSensor
 from lib import SensorAlertExecuter
 from lib import ManagerUpdateExecuter
 from lib import OptionExecuter
-from lib import GlobalData
+from lib.errorState.errorState import ErrorStateExecuter
 from lib import SurveyExecuter
 from lib import parse_config
+from lib.globalData.globalData import GlobalData
 import time
 import threading
 import random
@@ -61,6 +62,14 @@ if __name__ == '__main__':
     # => threads terminates when main thread terminates
     globalData.option_executer.daemon = True
     globalData.option_executer.start()
+
+    globalData.logger.info("[%s] Starting error state manage thread." % fileName)
+    # start the thread that handles the error state updates
+    globalData.error_state_executer = ErrorStateExecuter(globalData)
+    # set thread to daemon
+    # => threads terminates when main thread terminates
+    globalData.error_state_executer.daemon = True
+    globalData.error_state_executer.start()
 
     # start server process
     while True:

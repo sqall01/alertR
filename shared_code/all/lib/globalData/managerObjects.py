@@ -9,12 +9,12 @@
 
 import copy
 from typing import Optional, List, Any, Dict
-from .baseObjects import LocalObject
-from .sensorObjects import _SensorData
+from .baseObjects import _LocalObject
+from .sensorObjects import _SensorData, SensorDataType, SensorErrorState
 
 
 # this class represents an option of the server
-class ManagerObjOption(LocalObject):
+class ManagerObjOption(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -27,6 +27,13 @@ class ManagerObjOption(LocalObject):
               + "Value: %s)" \
               % (str(self.value) if self.value is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjOption()
+        obj.type = data["type"]
+        obj.value = data["value"]
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -46,7 +53,7 @@ class ManagerObjOption(LocalObject):
 
 
 # this class represents a profile of the server
-class ManagerObjProfile(LocalObject):
+class ManagerObjProfile(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -59,6 +66,13 @@ class ManagerObjProfile(LocalObject):
               + "Name: '%s')" \
               % (str(self.name) if self.name is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjProfile()
+        obj.profileId = data["profileId"]
+        obj.name = data["name"]
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -79,7 +93,7 @@ class ManagerObjProfile(LocalObject):
 
 # this class represents an node/client of the alert system
 # which can be either a sensor, alert or manager
-class ManagerObjNode(LocalObject):
+class ManagerObjNode(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -105,6 +119,20 @@ class ManagerObjNode(LocalObject):
               + "Username: '%s')" \
               % (str(self.username) if self.username is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjNode()
+        obj.nodeId = data["nodeId"]
+        obj.hostname = data["hostname"]
+        obj.nodeType = data["nodeType"]
+        obj.instance = data["instance"]
+        obj.connected = data["connected"]
+        obj.version = data["version"]
+        obj.rev = data["rev"]
+        obj.username = data["username"]
+        obj.persistent = data["persistent"]
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -138,7 +166,7 @@ class ManagerObjNode(LocalObject):
 
 
 # this class represents a sensor client of the alert system
-class ManagerObjSensor(LocalObject):
+class ManagerObjSensor(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -148,10 +176,10 @@ class ManagerObjSensor(LocalObject):
         self.alertDelay = None  # type: Optional[int]
         self.alertLevels = list()  # type: List[int]
         self.description = None  # type: Optional[str]
-        self.lastStateUpdated = None  # type: Optional[int]
         self.state = None  # type: Optional[int]
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
+        self.error_state = None  # type: Optional[SensorErrorState]
 
     def __str__(self) -> str:
         tmp = "Sensor (Node Id: %s; " \
@@ -164,9 +192,31 @@ class ManagerObjSensor(LocalObject):
               % (str(self.description) if self.description is not None else "None") \
               + "State: %s; " \
               % (str(self.state) if self.state is not None else "None") \
-              + "Data: '%s')" \
-              % (str(self.data) if self.data is not None else "None")
+              + "Data: '%s'; " \
+              % (str(self.data) if self.data is not None else "None") \
+              + "Error State: '%s')" \
+              % (str(self.error_state) if self.error_state is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjSensor()
+        obj.nodeId = data["nodeId"]
+        obj.sensorId = data["sensorId"]
+        obj.clientSensorId = data["clientSensorId"]
+        obj.alertDelay = data["alertDelay"]
+        obj.alertLevels = list(data["alertLevels"])
+        obj.description = data["description"]
+        obj.state = data["state"]
+        obj.dataType = data["dataType"]
+
+        # Copy data of sensor according to data type.
+        sensor_data_class = SensorDataType.get_sensor_data_class(obj.dataType)
+        obj.data = sensor_data_class.copy_from_dict(data["data"])
+
+        obj.error_state = SensorErrorState.copy_from_dict(data["error_state"])
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -179,10 +229,10 @@ class ManagerObjSensor(LocalObject):
                        "alertDelay": self.alertDelay,
                        "alertLevels": self.alertLevels,
                        "description": self.description,
-                       "lastStateUpdated": self.lastStateUpdated,
                        "state": self.state,
                        "dataType": self.dataType,
-                       "data": self.data.copy_to_dict()
+                       "data": self.data.copy_to_dict(),
+                       "error_state": self.error_state.copy_to_dict(),
                        }
 
         return sensor_dict
@@ -194,7 +244,6 @@ class ManagerObjSensor(LocalObject):
         self.alertDelay = sensor.alertDelay
         self.alertLevels = list(sensor.alertLevels)
         self.description = sensor.description
-        self.lastStateUpdated = sensor.lastStateUpdated
         self.state = sensor.state
 
         if self.data is None or self.dataType != sensor.dataType:
@@ -204,11 +253,16 @@ class ManagerObjSensor(LocalObject):
 
         self.dataType = sensor.dataType
 
+        if self.error_state is None:
+            self.error_state = SensorErrorState.deepcopy(sensor.error_state)
+        else:
+            self.error_state.deepcopy_obj(sensor.error_state)
+
         return self
 
 
 # this class represents a manager client of the alert system
-class ManagerObjManager(LocalObject):
+class ManagerObjManager(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -224,6 +278,15 @@ class ManagerObjManager(LocalObject):
               + "description: '%s'; " \
               % (str(self.description) if self.description is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjManager()
+        obj.nodeId = data["nodeId"]
+        obj.managerId = data["managerId"]
+        obj.description = data["description"]
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -246,7 +309,7 @@ class ManagerObjManager(LocalObject):
 
 
 # this class represents an alert client of the alert system
-class ManagerObjAlert(LocalObject):
+class ManagerObjAlert(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -266,6 +329,17 @@ class ManagerObjAlert(LocalObject):
               + "description: '%s'; " \
               % (str(self.description) if self.description is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjAlert()
+        obj.nodeId = data["nodeId"]
+        obj.alertId = data["alertId"]
+        obj.clientAlertId = data["clientAlertId"]
+        obj.alertLevels = list(data["alertLevels"])
+        obj.description = data["description"]
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -291,7 +365,7 @@ class ManagerObjAlert(LocalObject):
 
 
 # this class represents a triggered sensor alert of the alert system
-class ManagerObjSensorAlert(LocalObject):
+class ManagerObjSensorAlert(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -339,6 +413,26 @@ class ManagerObjSensorAlert(LocalObject):
         return tmp
 
     @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjSensorAlert()
+        obj.sensorId = data["sensorId"]
+        obj.state = data["state"]
+        obj.description = data["description"]
+        obj.timeReceived = data["timeReceived"]
+        obj.alertLevels = list(data["alertLevels"])
+        obj.hasOptionalData = data["hasOptionalData"]
+        obj.optionalData = copy.deepcopy(data["optionalData"]) if obj.hasOptionalData else None
+        obj.changeState = data["changeState"]
+        obj.hasLatestData = data["hasLatestData"]
+        obj.dataType = data["dataType"]
+
+        # Copy data of sensor according to data type.
+        sensor_data_class = SensorDataType.get_sensor_data_class(obj.dataType)
+        obj.data = sensor_data_class.copy_from_dict(data["data"])
+
+        return obj
+
+    @staticmethod
     def deepcopy(obj):
         return ManagerObjSensorAlert().deepcopy_obj(obj)
 
@@ -384,7 +478,7 @@ class ManagerObjSensorAlert(LocalObject):
 
 
 # this class represents an alert level that is configured on the server
-class ManagerObjAlertLevel(LocalObject):
+class ManagerObjAlertLevel(_LocalObject):
 
     def __init__(self):
         super().__init__()
@@ -405,6 +499,18 @@ class ManagerObjAlertLevel(LocalObject):
               + "Instrumentation: %s)" \
               % (str(self.instrumentation_active) if self.instrumentation_active is not None else "None")
         return tmp
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = ManagerObjAlertLevel()
+        obj.level = data["level"]
+        obj.name = data["name"]
+        obj.profiles = list(data["profiles"])
+        obj.instrumentation_active = data["instrumentation_active"]
+        obj.instrumentation_cmd = data["instrumentation_cmd"]
+        obj.instrumentation_timeout = data["instrumentation_timeout"]
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):

@@ -12,9 +12,11 @@ import os
 import logging
 import threading
 from typing import Optional, List, Union, Dict, Any
+from ..client.serverCommunication import ServerCommunication
 from ..globalData import GlobalData
-from ..globalData import SensorObjSensorAlert, SensorObjStateChange, SensorDataType
-from ..globalData.sensorObjects import _SensorData, SensorDataNone
+# noinspection PyProtectedMember
+from ..globalData.sensorObjects import _SensorData, SensorDataNone, SensorErrorState, SensorObjErrorStateChange,\
+    SensorObjSensorAlert, SensorObjStateChange, SensorDataType
 
 
 class _PollingSensor:
@@ -64,17 +66,20 @@ class _PollingSensor:
         # The actual data the sensor holds.
         self.data = None  # type: Optional[_SensorData]
 
+        # The error state of the sensor.
+        self.error_state = SensorErrorState()  # type: SensorErrorState
+
         # List of events (Sensor Alerts, state change) currently triggered by the Sensor that are not yet processed.
         # This list gives also the timely order in which the events are triggered
         # (first element triggered before the second element and so on).
-        self._events = []  # type: List[Union[SensorObjSensorAlert, SensorObjStateChange]]
+        self._events = []  # type: List[Union[SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange]]
         self._events_lock = threading.Lock()
 
         self._thread = None  # type: Optional[threading.Thread]
 
         self._exit_flag = False
 
-    def _add_event(self, event: Union[SensorObjSensorAlert, SensorObjStateChange]):
+    def _add_event(self, event: Union[SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange]):
         """
         Internal function to add an event (e.g., Sensor Alert or state change) for processing.
         :param event:
@@ -98,12 +103,14 @@ class _PollingSensor:
         If the Sensor configuration disables Sensor Alert events for triggered or normal states the Sensor Alert
         event with this state will be transformed into a state change event (which will lose optional data).
         State change events will be sent if state_change flag is True or has_latest_data flag is True.
-        If state_change flag is set to True, the send state change event contains the state given to the function,
+        If state_change flag is set to True, the send-state change event contains the state given to the function,
         otherwise the current state of the Sensor is used.
-        If has_latest_data flag is set to True, the send state change event contains the data given to the function,
+        If has_latest_data flag is set to True, the send-state change event contains the data given to the function,
         otherwise the current data of the Sensor is used.
         If state_change and has_latest_data are False and the corresponding triggered or normal state is disabled
         in the Sensor configuration, the event will be dropped.
+
+        If sensor not in OK state it clears error state and adds an error state change for processing.
 
         :param state:
         :param change_state:
@@ -150,6 +157,10 @@ class _PollingSensor:
         # Update sensor data if it has latest data.
         if has_latest_data:
             self.data = sensor_alert.data
+
+        # Set error state to OK (Sensor Alerts can only happen if the Sensor is in no error state).
+        # Function only clears error state if it is in not OK state.
+        self._clear_error_state()
 
         # Only submit Sensor Alert event for processing if Sensor configuration allows it.
         # Else, transform Sensor Alert event to state change event if it changed the state or data of the Sensor.
@@ -208,6 +219,8 @@ class _PollingSensor:
 
         Updates Sensor data.
 
+        If sensor not in OK state it clears error state and adds an error state change for processing.
+
         :param state:
         :param sensor_data:
         """
@@ -232,10 +245,25 @@ class _PollingSensor:
         else:
             state_change.data = sensor_data
 
+        # Set error state to OK (state changes can only happen if the Sensor is in no error state).
+        # Function only clears error state if it is in not OK state.
+        self._clear_error_state()
+
         self.state = state
         self.data = state_change.data
 
         self._add_event(state_change)
+
+    def _clear_error_state(self):
+        """
+        Internal function to clear the Sensor error state.
+
+        Only clears it if error state is not OK, otherwise does nothing.
+        """
+        if self.error_state.state == SensorErrorState.OK:
+            return
+
+        self._set_error_state(SensorErrorState.OK, "")
 
     def _execute(self):
         """
@@ -279,13 +307,42 @@ class _PollingSensor:
         """
         logging.exception("[%s] [Sensor %d] %s" % (log_tag, self.id, msg))
 
+    def _set_error_state(self, error_state: int, msg: str):
+        """
+        Internal function to set the Sensor error state and
+        adding an error state change event to the queue for processing.
+
+        Only sets error state if:
+        1) Sensor error state is not OK and sensor error state should be set to OK
+        2) Sensor error state is OK and sensor error state should be set to not OK
+        Otherwise it does nothing.
+
+        :param error_state:
+        :param msg:
+        """
+
+        if error_state == SensorErrorState.OK and self.error_state.state != SensorErrorState.OK:
+            self.error_state.set_ok()
+
+        elif error_state != SensorErrorState.OK and self.error_state.state == SensorErrorState.OK:
+            self.error_state.set_error(error_state, msg)
+
+        else:
+            return
+
+        obj = SensorObjErrorStateChange()
+        obj.clientSensorId = self.id
+        obj.error_state = SensorErrorState.deepcopy(self.error_state)
+
+        self._add_event(obj)
+
     def exit(self):
         """
         Exits sensor thread.
         """
         self._exit_flag = True
 
-    def get_events(self) -> List[Union[SensorObjSensorAlert, SensorObjStateChange]]:
+    def get_events(self) -> List[Union[SensorObjSensorAlert, SensorObjStateChange, SensorObjErrorStateChange]]:
         """
         Gets a list of triggered events (e.g., Sensor Alert or state change) not yet processed.
         :return: List of events
@@ -300,7 +357,7 @@ class _PollingSensor:
         Initializes the sensor.
         :return: success or failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class.")
 
     def start(self) -> bool:
         """
@@ -322,7 +379,7 @@ class SensorExecuter(threading.Thread):
         threading.Thread.__init__(self)
         self._log_tag = os.path.basename(__file__)
         self._global_data = global_data
-        self._connection = self._global_data.serverComm
+        self._connection = self._global_data.serverComm  # type: Optional[ServerCommunication]
         self._sensors = self._global_data.sensors
 
         # Interval in which a full state of the Sensors are send to the server.
@@ -363,14 +420,19 @@ class SensorExecuter(threading.Thread):
             for sensor in self._sensors:
                 for event in sensor.get_events():
                     if type(event) == SensorObjSensorAlert:
-                        logging.info("[%s]: Sensor alert triggered by '%s' with state %d."
-                                     % (self._log_tag, sensor.description, event.state))
+                        logging.info("[%s]: Sensor alert triggered for Sensor %d with state %d."
+                                     % (self._log_tag, sensor.id, event.state))
                         self._connection.send_sensor_alert(event)
 
                     elif type(event) == SensorObjStateChange:
-                        logging.debug("[%s]: State changed by '%s' to state %d."
-                                      % (self._log_tag, sensor.description, event.state))
+                        logging.debug("[%s]: State changed for Sensor %d to state %d."
+                                      % (self._log_tag, sensor.id, event.state))
                         self._connection.send_state_change(event)
+
+                    elif type(event) == SensorObjErrorStateChange:
+                        logging.debug("[%s]: Error state changed for Sensor %d to error state %d"
+                                      % (self._log_tag, sensor.id, event.error_state.state))
+                        self._connection.send_error_state_change(event)
 
             # Check if the last state that was sent to the server is older than 60 seconds => send state update
             utc_timestamp = int(time.time())

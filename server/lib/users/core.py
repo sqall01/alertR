@@ -39,7 +39,7 @@ class _userBackend:
         :param password: password of the user
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def checkNodeTypeAndInstance(self, username: str, nodeType: str, instance: str) -> bool:
         """
@@ -50,7 +50,7 @@ class _userBackend:
         :param instance: exact instance of the node
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def userExists(self, username: str) -> bool:
         """
@@ -59,19 +59,19 @@ class _userBackend:
         :param username: name of the user
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def writeUserdata(self):
         """
         This function writes the currently cached user data back to the backend.
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def readUserdata(self):
         """
         This function reads the user data from the backend and updates the current cached one.
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def addUser(self, username: str, password: str, nodeType: str, instance: str) -> bool:
         """
@@ -83,7 +83,7 @@ class _userBackend:
         :param instance: exact instance of the node
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def deleteUser(self, username: str) -> bool:
         """
@@ -92,7 +92,7 @@ class _userBackend:
         :param username: name of the user
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def changePassword(self, username: str, password: str) -> bool:
         """
@@ -102,7 +102,7 @@ class _userBackend:
         :param password: password of the user
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def changeNodeTypeAndInstance(self, username: str, nodeType: str, instance: str) -> bool:
         """
@@ -113,4 +113,4 @@ class _userBackend:
         :param instance: exact instance of the node
         :return True or False
         """
-        raise NotImplemented("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")

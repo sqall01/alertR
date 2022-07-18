@@ -16,8 +16,7 @@ import requests
 import threading
 import calendar
 from .core import _PollingSensor
-from ..globalData import SensorDataType
-from ..globalData.sensorObjects import SensorDataNone
+from ..globalData.sensorObjects import SensorDataType, SensorDataNone, SensorErrorState
 
 
 # Class that controls one icalendar.
@@ -70,6 +69,9 @@ class ICalendarSensor(_PollingSensor):
         # iCalendar data object.
         self._icalendar = None
 
+        # Timeout for HTTP connections.
+        self._connection_timeout = 60.0
+
         # Set of tuples that describe reminders that were already triggered.
         self._already_triggered = set()
 
@@ -80,7 +82,6 @@ class ICalendarSensor(_PollingSensor):
 
     def _execute(self):
 
-        calendar_retrieve_failed_state = False
         while True:
 
             time.sleep(0.5)
@@ -114,36 +115,18 @@ class ICalendarSensor(_PollingSensor):
                 if (current_datetime - self._time_delta_2day) >= trigger_datetime:
                     self._already_triggered.remove(triggeredTuple)
 
-            # If we have too many failed attempts to retrieve new calendar data, enter failed state and trigger
-            # Sensor Alert for "triggered".
-            if not calendar_retrieve_failed_state and self._failed_counter > self._max_failed_attempts:
-                calendar_retrieve_failed_state = True
-
-                msg = "Failed more than %d times for '%s' to retrieve calendar data." \
-                      % (self._max_failed_attempts, self.name)
-                optional_data = {"message": msg,
-                                 "calendar": self.name,
-                                 "type": "timeout"}
-                self._add_sensor_alert(self.triggerState,
-                                       True,
-                                       optional_data)
-
+            # If we have too many failed attempts to retrieve new calendar data, set error state.
+            if self.error_state.state == SensorErrorState.OK and self._failed_counter > self._max_failed_attempts:
+                self._set_error_state(SensorErrorState.ConnectionError,
+                                      "Failed more than %d times to retrieve calendar data."
+                                      % self._max_failed_attempts)
                 self._log_warning(self._log_tag, "Fetching calendar failed for %d attempts." % self._failed_counter)
 
-            # If we are in a failed retrieval state and we could retrieve
-            # new calendar data trigger a Sensor Alert for "normal".
-            elif calendar_retrieve_failed_state and self._failed_counter <= self._max_failed_attempts:
-                calendar_retrieve_failed_state = False
-
-                msg = "Calendar data for '%s' retrievable again." % self.name
-                optional_data = {"message": msg,
-                                 "calendar": self.name,
-                                 "type": "timeout"}
-                self._add_sensor_alert(1 - self.triggerState,
-                                       True,
-                                       optional_data)
-
-                self._log_warning(self._log_tag, "Fetching calendar succeeded after multiple failed attempts.")
+            # If we have an non-OK error state and we could retrieve
+            # new calendar data again, clear error state.
+            elif self.error_state.state != SensorErrorState.OK and self._failed_counter <= self._max_failed_attempts:
+                self._clear_error_state()
+                self._log_info(self._log_tag, "Fetching calendar succeeded after multiple failed attempts.")
 
     # Collect calendar data from the server.
     def _get_calendar(self):
@@ -157,7 +140,7 @@ class ICalendarSensor(_PollingSensor):
         # Request data from server.
         request = None
         try:
-            request = requests.get(self.location, verify=True, auth=self.htaccessData)
+            request = requests.get(self.location, verify=True, auth=self.htaccessData, timeout=self._connection_timeout)
 
         except Exception:
             self._log_exception(self._log_tag, "Could not get calendar data from server.")

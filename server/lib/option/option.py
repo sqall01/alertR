@@ -11,10 +11,10 @@ import threading
 import os
 import time
 from typing import Optional
-from ..globalData import GlobalData
 from ..internalSensors import ProfileChangeSensor
 from ..localObjects import Option
 from ..server import AsynchronousSender
+from ..globalData.globalData import GlobalData
 
 
 class OptionExecuter(threading.Thread):
@@ -77,7 +77,7 @@ class OptionExecuter(threading.Thread):
             if not server_session.clientComm.clientInitialized:
                 continue
 
-            # sending sensor alerts off to alert client
+            # Sending profile change to alert client
             # via a thread to not block this one
             sender = AsynchronousSender(self._global_data, server_session.clientComm)
             # set thread to daemon
@@ -170,8 +170,8 @@ class OptionExecuter(threading.Thread):
 
                 # Special handling of "profile" options.
                 if option.type == "profile":
-                    self._sensor_profile_change(option)
                     self._send_profile_change(option)
+                    self._sensor_profile_change(option)
 
             # Only wake up manager update executer if we have any option changes.
             if has_option_changes:

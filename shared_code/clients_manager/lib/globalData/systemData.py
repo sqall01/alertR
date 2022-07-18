@@ -8,11 +8,11 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import threading
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
+from .baseObjects import InternalState
 from .managerObjects import ManagerObjAlert, ManagerObjAlertLevel, ManagerObjManager, ManagerObjNode, \
     ManagerObjSensor, ManagerObjSensorAlert, ManagerObjOption, ManagerObjProfile
-from .baseObjects import InternalState
-from .sensorObjects import _SensorData
+from .sensorObjects import _SensorData, SensorErrorState
 
 
 class SystemData:
@@ -182,6 +182,12 @@ class SystemData:
             # therefore the next sensor alert will be received later in time and we can stop searching.
             else:
                 break
+
+    def _delete_sensor_alerts_with_callback(self, callback: Callable[[ManagerObjSensorAlert], bool]):
+        for sensor_alert in list(self._sensor_alerts):
+            if callback(sensor_alert):
+                sensor_alert.internal_state = InternalState.DELETED
+                self._sensor_alerts.remove(sensor_alert)
 
     def _delete_sensor_by_id(self, sensor_id: int):
         if sensor_id in self._sensors.keys():
@@ -355,6 +361,14 @@ class SystemData:
         """
         with self._data_lock:
             self._delete_sensor_alerts_received_before(timestamp)
+
+    def delete_sensor_alerts_with_callback(self, callback: Callable[[ManagerObjSensorAlert], bool]):
+        """
+        Deletes all Sensor Alert objects that are marked to be deleted by the given callback function.
+        :param callback:
+        """
+        with self._data_lock:
+            self._delete_sensor_alerts_with_callback(callback)
 
     def delete_sensor_by_id(self, sensor_id: int):
         """
@@ -616,6 +630,20 @@ class SystemData:
             if order_by_desc:
                 temp.sort(key=lambda x: x.description.lower())
             return temp
+
+    def sensor_error_state_change(self,
+                                  sensor_id: int,
+                                  error_state: SensorErrorState):
+        """
+        Updates sensor state given by id.
+
+        :param sensor_id:
+        :param error_state:
+        """
+        sensor = self.get_sensor_by_id(sensor_id)
+
+        with self._data_lock:
+            sensor.error_state.deepcopy_obj(error_state)
 
     def sensor_state_change(self,
                             sensor_id: int,

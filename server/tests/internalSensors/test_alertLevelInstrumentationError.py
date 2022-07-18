@@ -1,9 +1,10 @@
 import logging
 from typing import Any, List, Dict, Optional
 from unittest import TestCase
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType
+from lib.localObjects import AlertLevel, SensorAlert
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
+from lib.globalData.sensorObjects import SensorDataType
 
 
 class MockSensorAlertExecuter:

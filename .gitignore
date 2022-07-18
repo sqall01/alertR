@@ -4,3 +4,6 @@ lib/**/__pycache__/
 *.log
 updateVersionFile.py
 repositoryTester.py
+**/config.xml
+server/config/database.db
+server/config/users.csv

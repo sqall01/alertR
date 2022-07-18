@@ -9,9 +9,10 @@
 
 import os
 from typing import List
-from ..globalData import GlobalData
-from ..localObjects import SensorDataType, Option, Profile, SensorDataInt
 from .core import _InternalSensor
+from ..localObjects import Option, Profile
+from ..globalData.globalData import GlobalData
+from ..globalData.sensorObjects import SensorDataInt, SensorDataType, SensorErrorState
 
 
 class ProfileChangeSensor(_InternalSensor):
@@ -26,6 +27,11 @@ class ProfileChangeSensor(_InternalSensor):
 
         self.dataType = SensorDataType.INT
         self.state = 0
+        self.alertDelay = 0
+        self.error_state = SensorErrorState()
+
+        # Profile change sensor has always this fix internal id.
+        self.clientSensorId = 2
 
         # used for logging
         self._log_tag = os.path.basename(__file__)
@@ -65,14 +71,17 @@ class ProfileChangeSensor(_InternalSensor):
                                % (self._log_tag, option.value))
             return
 
+        data = SensorDataInt(curr_profile.profileId, "")
+
         if not self.storage.updateSensorData(self.nodeId,
-                                             [(self.clientSensorId, SensorDataInt(curr_profile.profileId, ""))],
+                                             [(self.clientSensorId, data)],
                                              self._logger):
             self._logger.error("[%s]: Not able to change sensor data for internal profile change sensor."
                                % self._log_tag)
             return
 
-        self.data = SensorDataInt(curr_profile.profileId, "")
+        # Assign data after database update was successful.
+        self.data = data
 
         message = "Changing system profile to '%s'." % curr_profile.name
 

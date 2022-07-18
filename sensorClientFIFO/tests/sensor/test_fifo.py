@@ -7,7 +7,7 @@ import threading
 import time
 from unittest import TestCase
 from lib.globalData.sensorObjects import SensorObjSensorAlert, SensorObjStateChange, SensorDataType, SensorDataNone, \
-    SensorDataInt
+    SensorErrorState, SensorObjErrorStateChange
 from lib.sensor.fifo import FIFOSensor
 
 
@@ -34,9 +34,9 @@ class TestFifoSensor(TestCase):
             sensor.exit()
         self._temp_dir.cleanup()
 
-    def test_sensor_alert_triggered_state_change(self):
+    def test_sensor_alert(self):
         """
-        Tests if a Sensor Alert is triggered (with state change).
+        Tests if a Sensor Alert is triggered.
         """
         fifo_file = os.path.join(self._temp_dir.name,
                                  "sensor1.fifo")
@@ -69,6 +69,8 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
             fp.write(json.dumps(payload))
@@ -87,282 +89,13 @@ class TestFifoSensor(TestCase):
         # Make sure sensor state has changed.
         self.assertEqual(1, sensor.state)
 
-    def test_sensor_alert_triggered_no_state_change(self):
+        # Make sure sensor error state has not changed.
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
+
+    def test_state_change(self):
         """
-        Tests if a Sensor Alert is triggered (with no state change).
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
-        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-    def test_sensor_alert_normal_state_change(self):
-        """
-        Tests if a Sensor Alert is triggered (with state change).
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 0,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": True
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-        sensor.state = 1
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(1, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
-        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
-
-        # Make sure sensor state has changed.
-        self.assertEqual(0, sensor.state)
-
-    def test_sensor_alert_normal_no_state_change(self):
-        """
-        Tests if a Sensor Alert is triggered (with no state change).
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 0,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-        sensor.state = 1
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(1, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
-        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(1, sensor.state)
-
-    def test_sensor_alert_data_change(self):
-        """
-        Tests if a Sensor Alert is triggered (with data change).
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.INT,
-                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
-                "hasLatestData": True,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.INT
-        sensor.data = SensorDataInt(1, "test unit")
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
-        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has changed.
-        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
-
-    def test_sensor_alert_no_data_change(self):
-        """
-        Tests if a Sensor Alert is triggered (with no data change).
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.INT,
-                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.INT
-        sensor.data = SensorDataInt(1, "test unit")
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjSensorAlert, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["hasOptionalData"], events[0].hasOptionalData)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(payload["payload"]["hasLatestData"], events[0].hasLatestData)
-        self.assertEqual(payload["payload"]["changeState"], events[0].changeState)
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data hasnot  changed.
-        self.assertNotEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
-
-    def test_state_change_triggered(self):
-        """
-        Tests if state change is processed correctly (state is changed to triggered).
+        Tests if state change is processed correctly.
         """
         fifo_file = os.path.join(self._temp_dir.name,
                                  "sensor1.fifo")
@@ -391,6 +124,8 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
             fp.write(json.dumps(payload))
@@ -404,22 +139,25 @@ class TestFifoSensor(TestCase):
         self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
         self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].data)
 
-        # Make sure sensor state has changed.
+        # Make sure sensor state has not changed.
         self.assertEqual(1, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
-    def test_state_change_normal(self):
+    def test_error_state_change(self):
         """
-        Tests if state change is processed correctly (state is changed to normal).
+        Tests if error state change is processed correctly.
         """
         fifo_file = os.path.join(self._temp_dir.name,
                                  "sensor1.fifo")
 
         payload = {
-            "message": "statechange",
+            "message": "sensorerrorstatechange",
             "payload": {
-                "state": 0,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
+                "error_state": {
+                    "state": SensorErrorState.GenericError,
+                    "msg": "some msg"
+                }
             }
         }
 
@@ -431,14 +169,15 @@ class TestFifoSensor(TestCase):
         sensor.fifoFile = fifo_file
 
         sensor.initialize()
-        sensor.state = 1
 
         sensor.start()
 
         time.sleep(0.5)
 
         # Make sure sensor is in correct initial state.
-        self.assertEqual(1, sensor.state)
+        self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
             fp.write(json.dumps(payload))
@@ -447,34 +186,27 @@ class TestFifoSensor(TestCase):
 
         events = sensor.get_events()
         self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjStateChange, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(SensorDataNone.copy_from_dict(payload["payload"]["data"]), events[0].data)
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(payload["payload"]["error_state"]["state"], SensorErrorState.GenericError)
+        self.assertEqual(payload["payload"]["error_state"]["msg"], "some msg")
 
-        # Make sure sensor state has changed.
+        # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
 
-    def test_state_change_data_change(self):
+        # Make sure sensor error state has changed
+        self.assertEqual(SensorErrorState.GenericError, sensor.error_state.state)
+        self.assertEqual("some msg", sensor.error_state.msg)
+
+    def test_data_processing_illegal_data(self):
         """
-        Tests if state change is processed correctly (data is changed).
+        Tests if data processing triggers an ProcessingError error state.
         """
         fifo_file = os.path.join(self._temp_dir.name,
                                  "sensor1.fifo")
-
-        payload = {
-            "message": "statechange",
-            "payload": {
-                "state": 1,
-                "dataType": SensorDataType.INT,
-                "data": SensorDataInt(1337, "test unit").copy_to_dict(),
-            }
-        }
-
         sensor = self._create_base_sensor()
 
-        sensor.sensorDataType = SensorDataType.INT
-        sensor.data = SensorDataInt(1, "test unit")
+        sensor.sensorDataType = SensorDataType.NONE
+        sensor.data = SensorDataNone()
         sensor.umask = int("0000", 8)
         sensor.fifoFile = fifo_file
 
@@ -486,489 +218,26 @@ class TestFifoSensor(TestCase):
 
         # Make sure sensor is in correct initial state.
         self.assertEqual(0, sensor.state)
+        self.assertEqual(SensorErrorState.OK, sensor.error_state.state)
+        self.assertEqual("", sensor.error_state.msg)
 
         with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
+            fp.write("illegal data")
 
         time.sleep(1.0)
 
         events = sensor.get_events()
         self.assertEqual(1, len(events))
-        self.assertEqual(SensorObjStateChange, type(events[0]))
-        self.assertEqual(payload["payload"]["state"], events[0].state)
-        self.assertEqual(payload["payload"]["dataType"], events[0].dataType)
-        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), events[0].data)
-
-        # Make sure sensor state has changed.
-        self.assertEqual(1, sensor.state)
-
-        # Make sure sensor data has changed.
-        self.assertEqual(SensorDataInt.copy_from_dict(payload["payload"]["data"]), sensor.data)
-
-    def test_illegal_data(self):
-        """
-        Tests if illegal data is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = "no json at all"
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(payload)
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
+        self.assertEqual(SensorObjErrorStateChange, type(events[0]))
+        self.assertEqual(SensorErrorState.ProcessingError, events[0].error_state.state)
+        self.assertEqual("Received illegal data.", events[0].error_state.msg)
 
         # Make sure sensor state has not changed.
         self.assertEqual(0, sensor.state)
 
-    def test_wrong_type(self):
-        """
-        Tests if wrong message type is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "doesnotexist",
-            "payload": {
-                "state": 1,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-    def test_state_change_illegal_state(self):
-        """
-        Tests if an illegal state for a state change is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "statechange",
-            "payload": {
-                "state": 1337,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-    def test_state_change_illegal_data_type(self):
-        """
-        Tests if an illegal data type for a state change is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "statechange",
-            "payload": {
-                "state": 1,
-                "dataType": SensorDataType.INT,
-                "data": SensorDataInt(1338, "test unit").copy_to_dict(),
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has not changed.
-        self.assertEqual(sensor.data, SensorDataNone())
-
-    def test_sensor_alert_illegal_state(self):
-        """
-        Tests if an illegal state for a Sensor Alert is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1337,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-    def test_sensor_alert_illegal_data_type(self):
-        """
-        Tests if an illegal data type for a Sensor Alert is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.INT,
-                "data": SensorDataInt(1338, "test unit").copy_to_dict(),
-                "hasLatestData": True,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has not changed.
-        self.assertEqual(sensor.data, SensorDataNone())
-
-    def test_sensor_alert_illegal_has_optional_data(self):
-        """
-        Tests if an illegal has optional data flag for a Sensor Alert is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": 1,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has not changed.
-        self.assertEqual(sensor.data, SensorDataNone())
-
-    def test_sensor_alert_illegal_has_latest_data(self):
-        """
-        Tests if an illegal has latest data flag for a Sensor Alert is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": 1,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has not changed.
-        self.assertEqual(sensor.data, SensorDataNone())
-
-    def test_sensor_alert_illegal_change_state(self):
-        """
-        Tests if an illegal change state flag for a Sensor Alert is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": False,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": 1
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has not changed.
-        self.assertEqual(sensor.data, SensorDataNone())
-
-    def test_sensor_alert_illegal_optional_data(self):
-        """
-        Tests if an illegal optional data for a Sensor Alert is handled correctly.
-        """
-        fifo_file = os.path.join(self._temp_dir.name,
-                                 "sensor1.fifo")
-
-        payload = {
-            "message": "sensoralert",
-            "payload": {
-                "state": 1,
-                "hasOptionalData": True,
-                "optionalData": None,
-                "dataType": SensorDataType.NONE,
-                "data": SensorDataNone().copy_to_dict(),
-                "hasLatestData": False,
-                "changeState": False
-            }
-        }
-
-        sensor = self._create_base_sensor()
-
-        sensor.sensorDataType = SensorDataType.NONE
-        sensor.data = SensorDataNone()
-        sensor.umask = int("0000", 8)
-        sensor.fifoFile = fifo_file
-
-        sensor.initialize()
-
-        sensor.start()
-
-        time.sleep(0.5)
-
-        # Make sure sensor is in correct initial state.
-        self.assertEqual(0, sensor.state)
-
-        with open(fifo_file, 'w') as fp:
-            fp.write(json.dumps(payload))
-
-        time.sleep(1.0)
-
-        events = sensor.get_events()
-        self.assertEqual(0, len(events))
-
-        # Make sure sensor state has not changed.
-        self.assertEqual(0, sensor.state)
-
-        # Make sure data has not changed.
-        self.assertEqual(sensor.data, SensorDataNone())
+        # Make sure sensor error state has changed
+        self.assertEqual(SensorErrorState.ProcessingError, sensor.error_state.state)
+        self.assertEqual("Received illegal data.", sensor.error_state.msg)
 
     def test_create_fifo(self):
         """

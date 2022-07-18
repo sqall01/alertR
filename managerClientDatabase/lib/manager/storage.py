@@ -14,17 +14,17 @@ import time
 import json
 import MySQLdb
 from typing import List, Optional, cast
-from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjAlert, ManagerObjManager, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
-from ..globalData import SensorDataType, SensorDataGPS
-from ..globalData import GlobalData
-
-
-# internal abstract class for new storage backends
-from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat, SensorDataNone
+from ..globalData.managerObjects import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjAlert, \
+    ManagerObjManager, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
+from ..globalData.sensorObjects import SensorDataType, SensorDataGPS, SensorDataInt, SensorDataFloat, SensorDataNone, \
+    SensorErrorState
+from ..globalData.globalData import GlobalData
 
 
 class _Storage:
+    """
+    Internal abstract class for storage backends
+    """
 
     def synchronize_database_to_system_data(self):
         """
@@ -1122,7 +1122,7 @@ class Mysql(_Storage):
         result = self._cursor.fetchall()
 
         # Update existing object.
-        if len(result) != 0:
+        if result:
             try:
                 # Delete all sensor data from database.
                 self._delete_sensor_data(sensor.sensorId)
@@ -1132,17 +1132,19 @@ class Mysql(_Storage):
                                      + "clientSensorId = %s, "
                                      + "description = %s, "
                                      + "state = %s ,"
-                                     + "lastStateUpdated = %s, "
                                      + "alertDelay = %s, "
-                                     + "dataType = %s "
+                                     + "dataType = %s, "
+                                     + "error_state = %s, "
+                                     + "error_msg = %s "
                                      + "WHERE id = %s",
                                      (sensor.nodeId,
                                       sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
-                                      sensor.lastStateUpdated,
                                       sensor.alertDelay,
                                       sensor.dataType,
+                                      sensor.error_state.state,
+                                      sensor.error_state.msg,
                                       sensor.sensorId))
 
                 self._cursor.execute("DELETE FROM sensorsAlertLevels "
@@ -1173,18 +1175,20 @@ class Mysql(_Storage):
                                      + "clientSensorId, "
                                      + "description, "
                                      + "state, "
-                                     + "lastStateUpdated, "
                                      + "alertDelay, "
-                                     + "dataType) "
-                                     + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                                     + "dataType, "
+                                     + "error_state, "
+                                     + "error_msg) "
+                                     + "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                                      (sensor.sensorId,
                                       sensor.nodeId,
                                       sensor.clientSensorId,
                                       sensor.description,
                                       sensor.state,
-                                      sensor.lastStateUpdated,
                                       sensor.alertDelay,
-                                      sensor.dataType))
+                                      sensor.dataType,
+                                      sensor.error_state.state,
+                                      sensor.error_state.msg))
 
                 for sensorAlertLevel in sensor.alertLevels:
                     self._cursor.execute("INSERT INTO sensorsAlertLevels ("
@@ -1325,9 +1329,10 @@ class Mysql(_Storage):
                              + "clientSensorId, "
                              + "description, "
                              + "state, "
-                             + "lastStateUpdated, "
                              + "alertDelay, "
-                             + "dataType "
+                             + "dataType, "
+                             + "error_state, "
+                             + "error_msg "
                              + "FROM sensors")
         result = self._cursor.fetchall()
 
@@ -1338,9 +1343,9 @@ class Mysql(_Storage):
             sensor.clientSensorId = sensor_tuple[2]
             sensor.description = sensor_tuple[3]
             sensor.state = sensor_tuple[4]
-            sensor.lastStateUpdated = sensor_tuple[5]
-            sensor.alertDelay = sensor_tuple[6]
-            sensor.dataType = sensor_tuple[7]
+            sensor.alertDelay = sensor_tuple[5]
+            sensor.dataType = sensor_tuple[6]
+            sensor.error_state = SensorErrorState(sensor_tuple[7], sensor_tuple[8])
 
             self._cursor.execute("SELECT "
                                  + "alertLevel "
@@ -1518,9 +1523,10 @@ class Mysql(_Storage):
                                      + "clientSensorId INTEGER NOT NULL, "
                                      + "description VARCHAR(255) NOT NULL, "
                                      + "state INTEGER NOT NULL, "
-                                     + "lastStateUpdated INTEGER NOT NULL, "
                                      + "alertDelay INTEGER NOT NULL, "
                                      + "dataType INTEGER NOT NULL, "
+                                     + "error_state INTEGER NOT NULL, "
+                                     + "error_msg TEXT NOT NULL, "
                                      + "FOREIGN KEY(nodeId) REFERENCES nodes(id))")
 
             # Create sensorsDataInt table if it does not exist.
@@ -1925,6 +1931,7 @@ class Mysql(_Storage):
                         self._close_connection()
                         return False
 
+                    # Key/value checked in sensor alert delete callback.
                     sensor_alert.internal_data["stored_db"] = True
 
             # commit all changes

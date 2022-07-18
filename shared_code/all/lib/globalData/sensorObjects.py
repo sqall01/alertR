@@ -10,10 +10,11 @@
 import copy
 import time
 from typing import Optional, Dict, Any
-from .baseObjects import LocalObject
+from .baseObjects import _Copyable, _LocalObject
 
 
-class _SensorData:
+# noinspection PyAbstractClass
+class _Data(_Copyable):
     def __init__(self):
         pass
 
@@ -21,25 +22,6 @@ class _SensorData:
         raise NotImplementedError("Abstract class.")
 
     def __str__(self) -> str:
-        raise NotImplementedError("Abstract class.")
-
-    @staticmethod
-    def copy_from_dict(data: Dict[str, Any]):
-        """
-        This function creates from the given dictionary an object of this class.
-        This function has to succeed if verify_dict() says dictionary is correct.
-        :param data:
-        :return: object of this class
-        """
-        raise NotImplementedError("Abstract class.")
-
-    @staticmethod
-    def deepcopy(obj):
-        """
-        This function copies all attributes of the given object to a new data object.
-        :param obj:
-        :return: object of this class
-        """
         raise NotImplementedError("Abstract class.")
 
     @staticmethod
@@ -51,26 +33,20 @@ class _SensorData:
         """
         raise NotImplementedError("Abstract class.")
 
+
+# noinspection PyAbstractClass
+class _SensorData(_Data):
+    """
+    Base class for Sensor Data.
+    """
+    def __init__(self):
+        super().__init__()
+
     @staticmethod
     def verify_type(data_type: int):
         """
         This function verifies if the given data type matches to this object.
         :return: correct or not
-        """
-        raise NotImplementedError("Abstract class.")
-
-    def copy_to_dict(self) -> Dict[str, Any]:
-        """
-        Copies the object's data into a dictionary.
-        :return: dictionary representation of a copy of this object
-        """
-        raise NotImplementedError("Abstract class.")
-
-    def deepcopy_obj(self, obj):
-        """
-        This function copies all attributes of the given object to this object.
-        :param obj:
-        :return: this object
         """
         raise NotImplementedError("Abstract class.")
 
@@ -341,8 +317,116 @@ class SensorOrdering:
         return value in cls._sensor_ordering_values
 
 
-# This class represents a triggered sensor alert of the sensor.
-class SensorObjSensorAlert(LocalObject):
+class SensorErrorState(_Data):
+    """
+    Represents the error state of a sensor.
+    """
+
+    OK = 0
+    GenericError = 1
+    ProcessingError = 2
+    TimeoutError = 3
+    ConnectionError = 4
+    ExecutionError = 5
+    ValueError = 6
+
+    _str = {0: "OK",
+            1: "Generic Error",
+            2: "Processing Error",
+            3: "Timeout Error",
+            4: "Connection Error",
+            5: "Execution Error",
+            6: "Value Error"}
+
+    def __init__(self, state: int = 0, msg: str = ""):
+        super(SensorErrorState, self).__init__()
+        if state not in SensorErrorState._str.keys():
+            raise ValueError("State %d does not exist." % state)
+
+        if state == SensorErrorState.OK and msg.strip() != "":
+            raise ValueError("Message has to be empty.")
+
+        if state != SensorErrorState.OK and msg.strip() == "":
+            raise ValueError("Message is not allowed to be empty.")
+
+        self._state = state  # type: int
+        self._msg = msg  # type: str
+
+    def __eq__(self, other):
+        return (type(other) == SensorErrorState
+                and self._state == other.state
+                and self._msg == other.msg)
+
+    def __str__(self) -> str:
+        if self._state in SensorErrorState._str.keys():
+            if self._state == SensorErrorState.OK:
+                return "%s" % SensorErrorState._str[self._state]
+            else:
+                return "%s (%s)" % (SensorErrorState._str[self._state], self._msg)
+        return "Unknown (%s)" % self._msg
+
+    @property
+    def state(self) -> int:
+        return self._state
+
+    @property
+    def msg(self) -> str:
+        return self._msg
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        return SensorErrorState(data["state"], data["msg"])
+
+    @staticmethod
+    def deepcopy(obj):
+        return SensorErrorState(obj.state, obj.msg)
+
+    @staticmethod
+    def verify_dict(data: Dict[str, Any]) -> bool:
+        if (isinstance(data, dict)
+                and all([x in data.keys() for x in ["state", "msg"]])
+                and len(data.keys()) == 2
+                and isinstance(data["state"], int)
+                and data["state"] in SensorErrorState._str.keys()
+                and isinstance(data["msg"], str)
+                and ((data["state"] == SensorErrorState.OK and data["msg"].strip() == "")
+                     or (data["state"] != SensorErrorState.OK and data["msg"].strip() != ""))):
+            return True
+        return False
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        dict_obj = {"state": self._state,
+                    "msg": self._msg,
+                    }
+        return dict_obj
+
+    def deepcopy_obj(self, obj):
+        self._state = obj.state
+        self._msg = obj.msg
+        return self
+
+    def set_error(self, state: int, msg: str):
+        if state not in SensorErrorState._str.keys():
+            raise ValueError("State %d does not exist." % state)
+
+        if state == SensorErrorState.OK:
+            raise ValueError("State %d is not an error state." % state)
+
+        if msg.strip() == "":
+            raise ValueError("Message is not allowed to be empty.")
+
+        self._state = state
+        self._msg = msg
+
+    def set_ok(self):
+        self._state = SensorErrorState.OK
+        self._msg = ""
+
+
+class SensorObjSensorAlert(_LocalObject):
+    """
+    This class represents a triggered sensor alert of the sensor.
+    """
 
     def __init__(self):
         super().__init__()
@@ -366,6 +450,23 @@ class SensorObjSensorAlert(LocalObject):
         # The sensor data type and data that is connected to this sensor alert.
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = SensorObjSensorAlert()
+        obj.clientSensorId = data["clientSensorId"]
+        obj.state = data["state"]
+        obj.hasOptionalData = data["hasOptionalData"]
+        obj.optionalData = copy.deepcopy(data["optionalData"]) if obj.hasOptionalData else None
+        obj.changeState = data["changeState"]
+        obj.hasLatestData = data["hasLatestData"]
+        obj.dataType = data["dataType"]
+
+        # Copy data of sensor according to data type.
+        sensor_data_class = SensorDataType.get_sensor_data_class(obj.dataType)
+        obj.data = sensor_data_class.copy_from_dict(data["data"])
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -408,8 +509,10 @@ class SensorObjSensorAlert(LocalObject):
         return self
 
 
-# This class represents a state change of the sensor.
-class SensorObjStateChange(LocalObject):
+class SensorObjStateChange(_LocalObject):
+    """
+    This class represents a state change of the sensor.
+    """
 
     def __init__(self):
         super().__init__()
@@ -417,12 +520,25 @@ class SensorObjStateChange(LocalObject):
         # Sensor id of the local sensor.
         self.clientSensorId = None  # type: Optional[int]
 
-        # State of the sensor alert ("triggered" = 1; "normal" = 0).
+        # State of the sensor ("triggered" = 1; "normal" = 0).
         self.state = None  # type: Optional[int]
 
-        # The sensor data type and data that is connected to this sensor alert.
+        # The sensor data type and data that is connected to this sensor.
         self.dataType = None  # type: Optional[int]
         self.data = None  # type: Optional[_SensorData]
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = SensorObjStateChange()
+        obj.clientSensorId = data["clientSensorId"]
+        obj.state = data["state"]
+        obj.dataType = data["dataType"]
+
+        # Copy data of sensor according to data type.
+        sensor_data_class = SensorDataType.get_sensor_data_class(obj.dataType)
+        obj.data = sensor_data_class.copy_from_dict(data["data"])
+
+        return obj
 
     @staticmethod
     def deepcopy(obj):
@@ -448,5 +564,50 @@ class SensorObjStateChange(LocalObject):
             self.data.deepcopy_obj(state_change.data)
 
         self.dataType = state_change.dataType
+
+        return self
+
+
+class SensorObjErrorStateChange(_LocalObject):
+    """
+    This class represents a error state change of the sensor.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        # Sensor id of the local sensor.
+        self.clientSensorId = None  # type: Optional[int]
+
+        # Error state of the sensor.
+        self.error_state = None  # type: Optional[SensorErrorState]
+
+    @staticmethod
+    def copy_from_dict(data: Dict[str, Any]):
+        obj = SensorObjErrorStateChange()
+        obj.clientSensorId = data["clientSensorId"]
+        obj.error_state = SensorErrorState.copy_from_dict(data["error_state"])
+
+        return obj
+
+    @staticmethod
+    def deepcopy(obj):
+        return SensorObjErrorStateChange().deepcopy_obj(obj)
+
+    def copy_to_dict(self) -> Dict[str, Any]:
+        obj_dict = {"clientSensorId": self.clientSensorId,
+                    "error_state": self.error_state.copy_to_dict(),
+                    }
+
+        return obj_dict
+
+    def deepcopy_obj(self, obj):
+        self.clientSensorId = obj.clientSensorId
+
+        # Deep copy error state.
+        if self.error_state is None:
+            self.error_state = SensorErrorState.deepcopy(obj.error_state)
+        else:
+            self.error_state.deepcopy_obj(obj.error_state)
 
         return self

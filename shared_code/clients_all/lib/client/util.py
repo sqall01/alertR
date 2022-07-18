@@ -14,8 +14,8 @@ import socket
 import os
 import logging
 from typing import List, Dict, Any, Optional
-from ..globalData import SensorDataType, SensorObjSensorAlert, SensorObjStateChange
-from ..globalData.sensorObjects import _SensorData
+from ..globalData.sensorObjects import SensorDataType, SensorObjSensorAlert, SensorObjStateChange, \
+    SensorObjErrorStateChange, SensorErrorState
 
 
 class MsgChecker:
@@ -50,6 +50,35 @@ class MsgChecker:
                     return error_msg
             else:
                 return "msgTime expected"
+
+        # Check "SENSORERRORSTATECHANGE" message.
+        elif request == "sensorerrorstatechange":
+            if "msgTime" not in message.keys():
+                logging.error("[%s]: msgTime missing." % MsgChecker._log_tag)
+                return "msgTime expected"
+
+            error_msg = MsgChecker.check_msg_time(message["msgTime"])
+            if error_msg is not None:
+                logging.error("[%s]: Received msgTime invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "sensorId" not in message["payload"].keys():
+                logging.error("[%s]: sensorId missing." % MsgChecker._log_tag)
+                return "sensorId expected"
+
+            error_msg = MsgChecker.check_sensor_id(message["payload"]["sensorId"])
+            if error_msg is not None:
+                logging.error("[%s]: Received sensorId invalid." % MsgChecker._log_tag)
+                return error_msg
+
+            if "error_state" not in message["payload"].keys():
+                logging.error("[%s]: error_state missing." % MsgChecker._log_tag)
+                return "state expected"
+
+            error_msg = MsgChecker.check_error_state(message["payload"]["error_state"])
+            if error_msg is not None:
+                logging.error("[%s]: Received error_state invalid." % MsgChecker._log_tag)
+                return error_msg
 
         # Check "SENSORALERT" message.
         elif request == "sensoralert":
@@ -309,10 +338,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the alertDelay.
     @staticmethod
-    def check_alert_delay(alertDelay: int) -> Optional[str]:
+    def check_alert_delay(alert_delay: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(alertDelay, int):
+        if not isinstance(alert_delay, int):
             is_correct = False
 
         if not is_correct:
@@ -322,10 +351,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the alertId.
     @staticmethod
-    def check_alert_id(alertId: int) -> Optional[str]:
+    def check_alert_id(alert_id: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(alertId, int):
+        if not isinstance(alert_id, int):
             is_correct = False
 
         if not is_correct:
@@ -335,10 +364,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the alertLevel.
     @staticmethod
-    def check_alert_level(alertLevel: int):
+    def check_alert_level(alert_level: int):
 
         is_correct = True
-        if not isinstance(alertLevel, int):
+        if not isinstance(alert_level, int):
             is_correct = False
 
         if not is_correct:
@@ -348,12 +377,12 @@ class MsgChecker:
 
     # Internal function to check sanity of the alertLevels.
     @staticmethod
-    def check_alert_levels(alertLevels: List[int]) -> Optional[str]:
+    def check_alert_levels(alert_levels: List[int]) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(alertLevels, list):
+        if not isinstance(alert_levels, list):
             is_correct = False
-        elif not all(isinstance(item, int) for item in alertLevels):
+        elif not all(isinstance(item, int) for item in alert_levels):
             is_correct = False
 
         if not is_correct:
@@ -363,10 +392,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the changeState.
     @staticmethod
-    def check_change_state(changeState: bool) -> Optional[str]:
+    def check_change_state(change_state: bool) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(changeState, bool):
+        if not isinstance(change_state, bool):
             is_correct = False
 
         if not is_correct:
@@ -404,10 +433,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the hasLatestData.
     @staticmethod
-    def check_has_latest_data(hasLatestData: bool) -> Optional[str]:
+    def check_has_latest_data(has_latest_data: bool) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(hasLatestData, bool):
+        if not isinstance(has_latest_data, bool):
             is_correct = False
 
         if not is_correct:
@@ -417,10 +446,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the hasOptionalData.
     @staticmethod
-    def check_has_optional_data(hasOptionalData: bool) -> Optional[str]:
+    def check_has_optional_data(has_optional_data: bool) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(hasOptionalData, bool):
+        if not isinstance(has_optional_data, bool):
             is_correct = False
 
         if not is_correct:
@@ -493,25 +522,12 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the lastStateUpdated.
-    @staticmethod
-    def check_last_state_updated(lastStateUpdated: int) -> Optional[str]:
-
-        is_correct = True
-        if not isinstance(lastStateUpdated, int):
-            is_correct = False
-
-        if not is_correct:
-            return "lastStateUpdated not valid"
-
-        return None
-
     # Internal function to check sanity of the managerId.
     @staticmethod
-    def check_manager_id(managerId: int) -> Optional[str]:
+    def check_manager_id(manager_id: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(managerId, int):
+        if not isinstance(manager_id, int):
             is_correct = False
 
         if not is_correct:
@@ -534,10 +550,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the nodeId.
     @staticmethod
-    def check_node_id(nodeId: int) -> Optional[str]:
+    def check_node_id(node_id: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(nodeId, int):
+        if not isinstance(node_id, int):
             is_correct = False
 
         if not is_correct:
@@ -547,14 +563,14 @@ class MsgChecker:
 
     # Internal function to check sanity of the nodeType.
     @staticmethod
-    def check_node_type(nodeType: str) -> Optional[str]:
+    def check_node_type(node_type: str) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(nodeType, str):
+        if not isinstance(node_type, str):
             is_correct = False
 
-        nodeTypes = {"alert", "manager", "sensor", "server"}
-        if nodeType not in nodeTypes:
+        node_types = {"alert", "manager", "sensor", "server"}
+        if node_type not in node_types:
             is_correct = False
 
         if not is_correct:
@@ -564,13 +580,13 @@ class MsgChecker:
 
     # Internal function to check sanity of the optionalData.
     @staticmethod
-    def check_optional_data(optionalData: Dict[str, Any]) -> Optional[str]:
+    def check_optional_data(optional_data: Dict[str, Any]) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(optionalData, dict):
+        if not isinstance(optional_data, dict):
             is_correct = False
-        if "message" in optionalData.keys():
-            if MsgChecker.check_optional_data_message(optionalData["message"]) is not None:
+        if "message" in optional_data.keys():
+            if MsgChecker.check_optional_data_message(optional_data["message"]) is not None:
                 is_correct = False
 
         if not is_correct:
@@ -593,10 +609,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the optionType.
     @staticmethod
-    def check_option_type(optionType: str) -> Optional[str]:
+    def check_option_type(option_type: str) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(optionType, str):
+        if not isinstance(option_type, str):
             is_correct = False
 
         if not is_correct:
@@ -684,10 +700,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the clientAlertId.
     @staticmethod
-    def check_client_alert_id(clientAlertId: int) -> Optional[str]:
+    def check_client_alert_id(client_alert_id: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(clientAlertId, int):
+        if not isinstance(client_alert_id, int):
             is_correct = False
 
         if not is_correct:
@@ -697,10 +713,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the clientSensorId.
     @staticmethod
-    def check_client_sensor_id(clientSensorId: int) -> Optional[str]:
+    def check_client_sensor_id(client_sensor_id: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(clientSensorId, int):
+        if not isinstance(client_sensor_id, int):
             is_correct = False
 
         if not is_correct:
@@ -752,10 +768,10 @@ class MsgChecker:
 
     # Internal function to check sanity of the sensorId.
     @staticmethod
-    def check_sensor_id(sensorId: int) -> Optional[str]:
+    def check_sensor_id(sensor_id: int) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(sensorId, int):
+        if not isinstance(sensor_id, int):
             is_correct = False
 
         if not is_correct:
@@ -776,9 +792,26 @@ class MsgChecker:
 
         return None
 
-    # Internal function to check sanity of the state.
+    @staticmethod
+    def check_error_state(data: Dict[str, Any]) -> Optional[str]:
+        """
+        Internal function to check sanity of the error state.
+        """
+
+        is_correct = True
+        if not SensorErrorState.verify_dict(data):
+            is_correct = False
+
+        if not is_correct:
+            return "error_state not valid"
+
+        return None
+
     @staticmethod
     def check_state(state: int) -> Optional[str]:
+        """
+        Internal function to check sanity of the state.
+        """
 
         is_correct = True
         if not isinstance(state, int):
@@ -793,16 +826,16 @@ class MsgChecker:
 
     # Internal function to check sanity of the status alertLevels list.
     @staticmethod
-    def check_status_alert_levels_list(alertLevels: List[Dict[str, Any]]) -> Optional[str]:
+    def check_status_alert_levels_list(alert_levels: List[Dict[str, Any]]) -> Optional[str]:
 
         is_correct = True
-        if not isinstance(alertLevels, list):
+        if not isinstance(alert_levels, list):
             is_correct = False
 
         alert_level_ids = set()
 
         # Check each alertLevel if correct.
-        for alertLevel in alertLevels:
+        for alertLevel in alert_levels:
 
             if not isinstance(alertLevel, dict):
                 is_correct = False
@@ -1216,14 +1249,6 @@ class MsgChecker:
                 is_correct = False
                 break
 
-            if "lastStateUpdated" not in sensor.keys():
-                is_correct = False
-                break
-
-            elif MsgChecker.check_last_state_updated(sensor["lastStateUpdated"]) is not None:
-                is_correct = False
-                break
-
             if "state" not in sensor.keys():
                 is_correct = False
                 break
@@ -1300,7 +1325,7 @@ class MsgBuilder:
                        password: str,
                        version: float,
                        rev: int,
-                       regMessageSize: int) -> str:
+                       reg_message_size: int) -> str:
         """
         Internal function that builds the client authentication message.
 
@@ -1308,7 +1333,7 @@ class MsgBuilder:
         :param password:
         :param version:
         :param rev:
-        :param regMessageSize:
+        :param reg_message_size:
         :return:
         """
         payload = {"type": "request",
@@ -1318,27 +1343,27 @@ class MsgBuilder:
                    "password": password}
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
-                   "size": regMessageSize,
+                   "size": reg_message_size,
                    "message": "initialization",
                    "payload": payload}
         return json.dumps(message)
 
     @staticmethod
-    def build_option_msg_manager(optionType: str,
-                                 optionValue: int,
-                                 optionDelay: int) -> str:
+    def build_option_msg_manager(option_type: str,
+                                 option_value: int,
+                                 option_delay: int) -> str:
         """
         Internal function that builds the option message for manager nodes.
 
-        :param optionType:
-        :param optionValue:
-        :param optionDelay:
+        :param option_type:
+        :param option_value:
+        :param option_delay:
         :return:
         """
         payload = {"type": "request",
-                   "optionType": optionType,
-                   "value": optionValue,
-                   "timeDelay": optionDelay}
+                   "optionType": option_type,
+                   "value": option_value,
+                   "timeDelay": option_delay}
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
                    "message": "option",
@@ -1443,16 +1468,17 @@ class MsgBuilder:
         # build sensors list for the message
         msg_sensors = list()
         for sensor in polling_sensors:
-            tempSensor = dict()
-            tempSensor["clientSensorId"] = sensor.id
-            tempSensor["alertDelay"] = sensor.alertDelay
-            tempSensor["alertLevels"] = sensor.alertLevels
-            tempSensor["description"] = sensor.description
-            tempSensor["state"] = sensor.state
-            tempSensor["dataType"] = sensor.sensorDataType
-            tempSensor["data"] = sensor.data.copy_to_dict()
+            temp_sensor = dict()
+            temp_sensor["clientSensorId"] = sensor.id
+            temp_sensor["error_state"] = sensor.error_state.copy_to_dict()
+            temp_sensor["alertDelay"] = sensor.alertDelay
+            temp_sensor["alertLevels"] = sensor.alertLevels
+            temp_sensor["description"] = sensor.description
+            temp_sensor["state"] = sensor.state
+            temp_sensor["dataType"] = sensor.sensorDataType
+            temp_sensor["data"] = sensor.data.copy_to_dict()
 
-            msg_sensors.append(tempSensor)
+            msg_sensors.append(temp_sensor)
 
         payload = {"type": "request",
                    "hostname": socket.gethostname(),
@@ -1464,6 +1490,23 @@ class MsgBuilder:
         utc_timestamp = int(time.time())
         message = {"msgTime": utc_timestamp,
                    "message": "initialization",
+                   "payload": payload}
+        return json.dumps(message)
+
+    @staticmethod
+    def build_error_state_change_msg_sensor(error_state_change: SensorObjErrorStateChange) -> str:
+        """
+        Internal function that builds an error state change message for sensor nodes.
+
+        :param error_state_change:
+        """
+        payload = {"type": "request",
+                   "clientSensorId": error_state_change.clientSensorId,
+                   "error_state": error_state_change.error_state.copy_to_dict()}
+
+        utc_timestamp = int(time.time())
+        message = {"msgTime": utc_timestamp,
+                   "message": "sensorerrorstatechange",
                    "payload": payload}
         return json.dumps(message)
 
@@ -1525,6 +1568,7 @@ class MsgBuilder:
         for sensor in polling_sensors:
             temp_sensor = dict()
             temp_sensor["clientSensorId"] = sensor.id
+            temp_sensor["error_state"] = sensor.error_state.copy_to_dict()
             temp_sensor["dataType"] = sensor.sensorDataType
             temp_sensor["data"] = sensor.data.copy_to_dict()
 

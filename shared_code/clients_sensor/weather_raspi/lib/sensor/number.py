@@ -11,10 +11,10 @@ import os
 import time
 from typing import Optional, Union
 from .core import _PollingSensor
-from ..globalData import SensorOrdering
-from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat
+from ..globalData.sensorObjects import SensorDataInt, SensorDataFloat, SensorOrdering, SensorErrorState
 
 
+# noinspection PyAbstractClass
 class _NumberSensor(_PollingSensor):
     """
     Represents the base for a numeric (int, float) sensor that is able to check thresholds.
@@ -36,10 +36,6 @@ class _NumberSensor(_PollingSensor):
         # Says how the threshold should be checked
         # (lower than, equal, greater than).
         self.ordering = None  # type: Optional[SensorOrdering]
-
-        # As long as errors occurring during the fetching of data are encoded as negative values,
-        # we need the lowest value that we use for our threshold check.
-        self._sane_lowest_value = None  # type: Optional[Union[float, int]]
 
         # Optional data send with every Sensor Alert.
         self._optional_data = None
@@ -67,7 +63,7 @@ class _NumberSensor(_PollingSensor):
                 # Sensor is currently triggered => Check if it is "normal" again.
                 if self.state == self.triggerState:
                     if self.ordering == SensorOrdering.LT:
-                        if data.value >= self.threshold and data.value >= self._sane_lowest_value:
+                        if data.value >= self.threshold:
                             self._log_info(self._log_tag, "%s %s is above threshold (back to normal)."
                                            % (self._log_desc, data))
 
@@ -78,7 +74,7 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.EQ:
-                        if data.value != self.threshold and data.value >= self._sane_lowest_value:
+                        if data.value != self.threshold:
                             self._log_info(self._log_tag, "%s %s is unequal to threshold (back to normal)."
                                            % (self._log_desc, data))
 
@@ -101,6 +97,7 @@ class _NumberSensor(_PollingSensor):
 
                     else:
                         self._log_error(self._log_tag, "Do not know how to check threshold. Skipping check.")
+                        self._set_error_state(SensorErrorState.ProcessingError, "Unknown threshold setting.")
 
                 # Sensor is currently not triggered => Check if it has to be triggered.
                 else:
@@ -116,7 +113,7 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.EQ:
-                        if data.value == self.threshold and data.value >= self._sane_lowest_value:
+                        if data.value == self.threshold:
                             self._log_info(self._log_tag, "%s %s is equal to threshold (triggered)."
                                            % (self._log_desc, data))
 
@@ -127,7 +124,7 @@ class _NumberSensor(_PollingSensor):
                                                    data)
 
                     elif self.ordering == SensorOrdering.GT:
-                        if data.value > self.threshold and data.value >= self._sane_lowest_value:
+                        if data.value > self.threshold:
                             self._log_info(self._log_tag, "%s %s is above threshold (triggered)."
                                            % (self._log_desc, data))
 
@@ -139,34 +136,36 @@ class _NumberSensor(_PollingSensor):
 
                     else:
                         self._log_error(self._log_tag, "Do not know how to check threshold. Skipping check.")
+                        self._set_error_state(SensorErrorState.ProcessingError, "Unknown threshold setting.")
 
             if data != self.data:
                 self._add_state_change(self.state, data)
 
-    def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
-        raise NotImplementedError("Function not implemented yet.")
+            # Even if the data has not changed, an error could occur in between which causes the
+            # sensor to have an error state. Clear it if we received new data.
+            else:
+                self._clear_error_state()
 
-    def initialize(self) -> bool:
+    def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
+        raise NotImplementedError("Abstract class.")
+
+    def start(self) -> bool:
         """
-        Initializes the number sensor and checks if the object has necessary values set.
+        Starts the number sensor and checks if the object has necessary values set.
 
         :return: success or failure
         """
         if self._log_desc is None:
-            self._log_critical(self._log_tag, "Variable _log_desc not set in object.")
-            return False
-
-        if self._sane_lowest_value is None:
-            self._log_critical(self._log_tag, "Variable _sane_lowest_value not set in object.")
+            self._log_critical(self._log_tag, "Variable '_log_desc' not set in object.")
             return False
 
         if self.hasThreshold:
             if self.ordering is None:
-                self._log_critical(self._log_tag, "Variable ordering not set in object.")
+                self._log_critical(self._log_tag, "Variable 'ordering' not set in object.")
                 return False
 
             if self.threshold is None:
-                self._log_critical(self._log_tag, "Variable threshold not set in object.")
+                self._log_critical(self._log_tag, "Variable 'threshold' not set in object.")
                 return False
 
-        return True
+        return super().start()

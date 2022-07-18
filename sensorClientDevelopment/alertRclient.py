@@ -140,8 +140,12 @@ if __name__ == '__main__':
         username = str(configRoot.find("general").find("credentials").attrib["username"])
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
-        # Set connection settings.
-        globalData.persistent = 1  # Consider sensor client always persistent
+        # Get connection settings.
+        temp = (str(configRoot.find("general").find("connection").attrib["persistent"]).upper() == "TRUE")
+        if temp:
+            globalData.persistent = 1
+        else:
+            globalData.persistent = 0
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -290,33 +294,36 @@ if __name__ == '__main__':
 
     logging.info("[%s] Client started." % log_tag)
 
+    # Quick way to clear the screen.
+    os.system('clear' if os.name == 'posix' else 'cls')
+
     # read keyboard input and toggle the sensors accordingly
     while True:
-
-        print("--------")
-        for sensor in globalData.sensors:
-            dataString = "Current Data: %s" % sensor.data
-            dataString += " -> Next Data: %s" % sensor.nextData
-
-            if sensor.consoleInputState == sensor.triggerState:
-                print("Sensor Id: %d - Triggered (%s)" % (sensor.id, dataString))
-
-            else:
-                print("Sensor Id: %d - Not Triggered (%s)" % (sensor.id, dataString))
-
         try:
-            localSensorId = int(input("Please enter sensor ID to toggle: "))
+            print("#"*80)
+            for sensor in globalData.sensors:
+                print("-" * 40)
+                print(str(sensor))
+                print()
+            print()
+
+            local_sensor_id = int(input("Please enter ID to change its values: "))
+
+            # Quick way to clear the screen.
+            os.system('clear' if os.name == 'posix' else 'cls')
+
+            found = False
+            for sensor in globalData.sensors:
+                if sensor.id == local_sensor_id:
+                    found = True
+
+                    sensor.ui_change_values()
+                    break
+            if not found:
+                print("Sensor with ID '%d' does not exist." % local_sensor_id)
         except KeyboardInterrupt:
             break
-        except:
-            continue
-
-        found = False
-        for sensor in globalData.sensors:
-            if sensor.id == localSensorId:
-                found = True
-
-                sensor.toggle_console_state()
-                break
-        if not found:
-            print("Sensor with local ID '%d' does not exist." % localSensorId)
+        except Exception as e:
+            # Quick way to clear the screen.
+            os.system('clear' if os.name == 'posix' else 'cls')
+            print(str(e))

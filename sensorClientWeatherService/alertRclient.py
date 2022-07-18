@@ -143,8 +143,12 @@ if __name__ == '__main__':
         username = str(configRoot.find("general").find("credentials").attrib["username"])
         password = str(configRoot.find("general").find("credentials").attrib["password"])
 
-        # Set connection settings.
-        globalData.persistent = 1  # Consider sensor client always persistent
+        # Get connection settings.
+        temp = (str(configRoot.find("general").find("connection").attrib["persistent"]).upper() == "TRUE")
+        if temp:
+            globalData.persistent = 1
+        else:
+            globalData.persistent = 0
 
         # parse smtp options if activated
         smtpActivated = (str(configRoot.find("smtp").find("general").attrib["activated"]).upper() == "TRUE")
@@ -163,13 +167,11 @@ if __name__ == '__main__':
         provider = str(tempConf.attrib["provider"]).upper()
         # Create sensor data collector thread.
         if provider == "WUNDERGROUND":
-            sensorDataCollector = WundergroundDataCollector(globalData)
-            sensorDataCollector.apiKey = str(tempConf.attrib["apiKey"])
-            sensorDataCollector.interval = int(tempConf.attrib["interval"])
+            sensorDataCollector = WundergroundDataCollector(int(tempConf.attrib["interval"]),
+                                                            str(tempConf.attrib["apiKey"]))
         elif provider == "DARKSKY":
-            sensorDataCollector = DarkskyDataCollector(globalData)
-            sensorDataCollector.apiKey = str(tempConf.attrib["apiKey"])
-            sensorDataCollector.interval = int(tempConf.attrib["interval"])
+            sensorDataCollector = DarkskyDataCollector(int(tempConf.attrib["interval"]),
+                                                       str(tempConf.attrib["apiKey"]))
         else:
             raise ValueError("Provider '%s' unknown." % provider)
 

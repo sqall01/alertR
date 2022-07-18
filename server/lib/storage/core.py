@@ -10,6 +10,7 @@
 import logging
 from typing import Any, Optional, List, Union, Tuple, Dict
 from ..localObjects import Node, Alert, Manager, Sensor, Option, SensorData
+from ..globalData.sensorObjects import SensorErrorState
 
 
 # Internal abstract class for new storage backends.
@@ -23,7 +24,7 @@ class _Storage:
 
         :param logger:
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def addNode(self,
                 username: str,
@@ -47,21 +48,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def addSensors(self,
-                   username: str,
-                   sensors: List[Dict[str, Any]],
-                   logger: logging.Logger = None) -> bool:
-        """
-        Adds/updates the data that is given by the node for the sensors to the database.
-
-        :param username:
-        :param sensors:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def addAlerts(self,
                   username: str,
@@ -75,7 +62,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def addManager(self,
                    username: str,
@@ -89,7 +76,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getNodeId(self,
                   username: str,
@@ -101,7 +88,7 @@ class _Storage:
         :param logger:
         :return nodeId or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getNodeIds(self,
                    logger: logging.Logger = None) -> List[int]:
@@ -111,7 +98,7 @@ class _Storage:
         :param logger:
         :return list of nodeIds
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSensorCount(self,
                        nodeId: str,
@@ -123,7 +110,7 @@ class _Storage:
         :param logger:
         :return count of sensors or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSensorId(self,
                     nodeId: int,
@@ -138,7 +125,7 @@ class _Storage:
         :param logger:
         :return sensorId or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSurveyData(self,
                       logger: logging.Logger = None) -> Optional[List[Tuple[str, float, int]]]:
@@ -148,7 +135,7 @@ class _Storage:
         :param logger:
         :return list of tuples of (instance, version, rev) or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getUniqueID(self,
                     logger: logging.Logger = None) -> Optional[str]:
@@ -158,7 +145,7 @@ class _Storage:
         :param logger:
         :return unique id or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAlertId(self,
                    nodeId: int,
@@ -173,7 +160,7 @@ class _Storage:
         :param logger:
         :return alertId or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSensorAlertLevels(self,
                              sensorId: int,
@@ -185,7 +172,7 @@ class _Storage:
         :param logger:
         :return list of alertLevels or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAlertAlertLevels(self,
                             alertId: int,
@@ -197,7 +184,7 @@ class _Storage:
         :param logger:
         :return list of alertLevels or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAllAlertsAlertLevels(self,
                                 logger: logging.Logger = None) -> Optional[List[int]]:
@@ -207,7 +194,7 @@ class _Storage:
         :param logger:
         :return list alertLevels as integer or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAllSensorsAlertLevels(self,
                                  logger: logging.Logger = None) -> Optional[List[int]]:
@@ -217,7 +204,7 @@ class _Storage:
         :param logger:
         :return list alertLevels as integer or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAllConnectedNodeIds(self,
                                logger: logging.Logger = None) -> Optional[List[int]]:
@@ -227,7 +214,7 @@ class _Storage:
         :param logger:
         :return list of nodeIds or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAllPersistentNodeIds(self,
                                 logger: logging.Logger = None) -> Optional[List[int]]:
@@ -237,19 +224,7 @@ class _Storage:
         :param logger:
         :return list of nodeIds or None
         """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def getSensorsUpdatedOlderThan(self,
-                                   oldestTimeUpdated: int,
-                                   logger: logging.Logger = None) -> Optional[List[Sensor]]:
-        """
-        Gets the information of all sensors which last state updates are older than the given time.
-
-        :param oldestTimeUpdated:
-        :param logger:
-        :return list of sensor objects or None
-        """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAlertById(self,
                      alertId: int,
@@ -261,7 +236,7 @@ class _Storage:
         :param logger:
         :return an alert object or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getManagerById(self,
                        managerId: int,
@@ -273,7 +248,7 @@ class _Storage:
         :param logger:
         :return a manager object or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getNodeById(self,
                     nodeId: int,
@@ -285,7 +260,7 @@ class _Storage:
         :param logger:
         :return a node object or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSensorById(self,
                       sensorId: int,
@@ -297,26 +272,7 @@ class _Storage:
         :param logger:
         :return a sensor object or None
         """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def get_option_by_type(self,
-                           option_type: str,
-                           logger: logging.Logger = None) -> Optional[Option]:
-        """
-        Gets the option from the database given by type.
-
-        :param option_type:
-        :param logger:
-        :return: an option object or None
-        """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
-        """
-        Gets list of all option objects.
-        :return: List of objects or None
-        """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getNodes(self,
                  logger: logging.Logger = None) -> Optional[List[Node]]:
@@ -326,7 +282,7 @@ class _Storage:
         :param logger:
         :return a list of node objects or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getAlertSystemInformation(self,
                                   logger: logging.Logger = None) -> Optional[List[List[Union[Option,
@@ -346,7 +302,7 @@ class _Storage:
         :return list[4] = list(alert objects)
         :return or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSensorState(self,
                        sensorId: int,
@@ -358,7 +314,7 @@ class _Storage:
         :param logger:
         :return sensor state or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def getSensorData(self,
                       sensorId: int,
@@ -370,7 +326,7 @@ class _Storage:
         :param logger:
         :return a sensor data object or None
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def markNodeAsNotConnected(self,
                                nodeId: int,
@@ -382,7 +338,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def markNodeAsConnected(self,
                             nodeId: int,
@@ -394,7 +350,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def deleteNode(self,
                    nodeId: int,
@@ -406,19 +362,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def delete_option_by_type(self,
-                              option_type: str,
-                              logger: logging.Logger = None) -> bool:
-        """
-        Deletes a option given by its type.
-
-        :param option_type:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def updateSensorState(self,
                           nodeId: int,
@@ -432,7 +376,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def updateSensorData(self,
                          nodeId: int,
@@ -446,19 +390,7 @@ class _Storage:
         :param logger:
         :return Success or Failure
         """
-        raise NotImplementedError("Function not implemented yet.")
-
-    def updateSensorTime(self,
-                         sensorId: int,
-                         logger: logging.Logger = None) -> bool:
-        """
-        Updates the time the sensor send an update given by sensorId.
-
-        :param sensorId:
-        :param logger:
-        :return Success or Failure
-        """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def close(self,
               logger: logging.Logger = None):
@@ -467,7 +399,40 @@ class _Storage:
 
         :param logger:
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
+
+    # region Option API
+
+    def delete_option_by_type(self,
+                              option_type: str,
+                              logger: logging.Logger = None) -> bool:
+        """
+        Deletes a option given by its type.
+
+        :param option_type:
+        :param logger:
+        :return Success or Failure
+        """
+        raise NotImplementedError("Abstract class")
+
+    def get_option_by_type(self,
+                           option_type: str,
+                           logger: logging.Logger = None) -> Optional[Option]:
+        """
+        Gets the option from the database given by type.
+
+        :param option_type:
+        :param logger:
+        :return: an option object or None
+        """
+        raise NotImplementedError("Abstract class")
+
+    def get_options_list(self, logger: logging.Logger = None) -> Optional[List[Option]]:
+        """
+        Gets list of all option objects.
+        :return: List of objects or None
+        """
+        raise NotImplementedError("Abstract class")
 
     def update_option(self,
                       option_type: str,
@@ -480,15 +445,109 @@ class _Storage:
         :param logger:
         :return: success of failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
 
     def update_option_by_obj(self,
                              option: Option,
                              logger: logging.Logger = None) -> bool:
         """
         Updates the given option data.
+
         :param option:
         :param logger:
         :return: success of failure
         """
-        raise NotImplementedError("Function not implemented yet.")
+        raise NotImplementedError("Abstract class")
+
+    # endregion
+
+    # region Sensor API
+
+    def delete_sensor(self,
+                      sensor_id: int,
+                      logger: logging.Logger = None) -> bool:
+        """
+        Deletes sensor from the database given by sensor id.
+
+        :param sensor_id:
+        :param logger:
+        :return: success or failure
+        """
+        raise NotImplementedError("Abstract class")
+
+    def get_sensor_error_state(self,
+                               sensor_id: int,
+                               logger: logging.Logger = None) -> Optional[SensorErrorState]:
+        """
+        Gets error state of the Sensor given by sensor id.
+
+        :param sensor_id:
+        :param logger:
+        :return: sensor error state or none
+        """
+        raise NotImplementedError("Abstract class")
+
+    def get_sensor_ids_in_error_state(self,
+                                      logger: logging.Logger = None) -> List[int]:
+        """
+        Gets all sensor ids for sensors that are currently in an error state.
+
+        :param logger:
+        :return: list of sensor ids
+        """
+        raise NotImplementedError("Abstract class")
+
+    def get_sensors(self,
+                    node_id: int,
+                    logger: logging.Logger = None) -> List[Sensor]:
+        """
+        Gets all sensors for the given node id.
+
+        :param node_id:
+        :param logger:
+        :return: list of sensors
+        """
+        raise NotImplementedError("Abstract class")
+
+    def update_sensor_error_state(self,
+                                  node_id: int,
+                                  client_sensor_id: int,
+                                  error_state: SensorErrorState,
+                                  logger: logging.Logger = None) -> bool:
+        """
+        Updates the error state for the sensor given by node id and client sensor id.
+
+        :param node_id:
+        :param client_sensor_id:
+        :param error_state:
+        :param logger:
+        :return: success or failure
+        """
+        raise NotImplementedError("Abstract class")
+
+    def upsert_sensor(self,
+                      sensor: Sensor,
+                      logger: logging.Logger = None) -> bool:
+        """
+        Upserts the single sensor.
+
+        :param sensor:
+        :param logger:
+        :return: success or failure
+        """
+        raise NotImplementedError("Abstract class")
+
+    def upsert_sensors(self,
+                       sensors: List[Sensor],
+                       logger: logging.Logger = None) -> bool:
+        """
+        Upserts all sensors. All sensors must have the same node id.
+        Function also deletes all remaining sensors that were not part of the sensors argument.
+
+        :param sensors:
+        :param logger:
+        :return: success or failure
+        """
+        raise NotImplementedError("Abstract class")
+
+    # endregion

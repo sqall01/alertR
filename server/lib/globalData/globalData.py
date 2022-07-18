@@ -58,13 +58,10 @@ class GlobalData:
     def __init__(self):
 
         # version of the used server (and protocol)
-        self.version = 0.901  # type: float
+        self.version = 1.000  # type: float
 
         # revision of the used server
         self.rev = 0  # type: int
-
-        # Used database layout version.
-        self.dbVersion = 5  # type: int
 
         # name of this server
         self.name = "AlertR Server"  # type: str
@@ -90,6 +87,9 @@ class GlobalData:
         # Object that handles option message processing.
         self.option_executer = None
 
+        # Object that handles error state updates.
+        self.error_state_executer = None
+
         # this is the time in seconds when the client times out
         self.connectionTimeout = 90
 
@@ -112,17 +112,20 @@ class GlobalData:
         # path to the configuration file of the client
         self.configFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                        "..",
+                                       "..",
                                        "config",
                                        "config.xml")
 
         # path to the csv user credentials file (if csv is used as backend)
         self.userBackendCsvFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                "..",
+                                               "..",
                                                "config",
                                                "users.csv")
 
         # path to the sqlite database file (if sqlite is used as backend)
         self.storageBackendSqliteFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                     "..",
                                                      "..",
                                                      "config",
                                                      "database.db")

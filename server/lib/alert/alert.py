@@ -15,8 +15,8 @@ from typing import List, Tuple, Optional, Any, Dict
 from .instrumentation import Instrumentation, InstrumentationPromise
 from ..server import AsynchronousSender
 from ..localObjects import SensorAlert, AlertLevel
-from ..globalData import GlobalData
 from ..internalSensors import AlertLevelInstrumentationErrorSensor
+from ..globalData.globalData import GlobalData
 
 
 class InstrumentationNotFinished(Exception):
@@ -546,20 +546,6 @@ class SensorAlertExecuter(threading.Thread):
 
                 sensor_alert_state = SensorAlertState(sensor_alert, self._alert_levels)
                 curr_sensor_alert_states.append(sensor_alert_state)
-
-            # Update timestamp of last state updated of alert level instrumentation error sensor
-            # to not let it timeout (state never changes of this sensor hence we have to do it artificially).
-            utc_timestamp = int(time.time())
-            if self._internal_sensor is not None and (utc_timestamp - self._internal_sensor.lastStateUpdated) > 30:
-
-                self._internal_sensor.lastStateUpdated = utc_timestamp
-                if not self._storage.updateSensorState(self._internal_sensor.nodeId,  # nodeId
-                                                       [(self._internal_sensor.clientSensorId,
-                                                         self._internal_sensor.state)],  # stateList
-                                                       self._logger):  # logger
-                    self._logger.error("[%s]: Not able to change sensor state for internal alert level "
-                                       % self._log_tag
-                                       + "instrumentation error sensor.")
 
             # Wait if we do not have any sensor alerts to process.
             if not curr_sensor_alert_states:

@@ -10,11 +10,11 @@
 import os
 import logging
 from typing import List
-from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
+from ..globalData.globalData import GlobalData
+from ..globalData.managerObjects import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
     ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
+from ..globalData.sensorObjects import _SensorData, SensorErrorState
 from ..client import EventHandler
-from ..globalData import GlobalData
-from ..globalData.sensorObjects import _SensorData
 
 
 class BaseManagerEventHandler(EventHandler):
@@ -32,6 +32,69 @@ class BaseManagerEventHandler(EventHandler):
 
         # Keep track of the last time a message was sent by the other side.
         self.msg_time = 0.0
+
+    def close_connection(self):
+        pass
+
+    def new_connection(self):
+        pass
+
+    # noinspection PyTypeChecker
+    def profile_change(self,
+                       msg_time: int,
+                       profile: ManagerObjProfile) -> bool:
+        logging.critical("[%s]: profile_change() not supported by node of type 'manager'." % self._log_tag)
+        raise NotImplementedError("Not supported by node of type 'manager'.")
+
+    def sensor_alert(self,
+                     msg_time: int,
+                     sensor_alert: ManagerObjSensorAlert) -> bool:
+
+        self.msg_time = msg_time
+
+        try:
+            self._system_data.add_sensor_alert(sensor_alert)
+
+        except ValueError:
+            logging.exception("[%s]: Adding Sensor Alert failed." % self._log_tag)
+            return False
+
+        return True
+
+    def sensor_error_state_change(self,
+                                  msg_time: int,
+                                  sensor_id: int,
+                                  error_state: SensorErrorState) -> bool:
+
+        self.msg_time = msg_time
+
+        try:
+            self._system_data.sensor_error_state_change(sensor_id, error_state)
+
+        except ValueError:
+            logging.exception("[%s]: Updating Sensor %d with sensor error state change data failed."
+                              % (self._log_tag, sensor_id))
+            return False
+
+        return True
+
+    def state_change(self,
+                     msg_time: int,
+                     sensor_id: int,
+                     state: int,
+                     data_type: int,
+                     sensor_data: _SensorData) -> bool:
+
+        self.msg_time = msg_time
+
+        try:
+            self._system_data.sensor_state_change(sensor_id, state, data_type, sensor_data)
+
+        except ValueError:
+            logging.exception("[%s]: Updating Sensor %d with state change data failed." % (self._log_tag, sensor_id))
+            return False
+
+        return True
 
     def status_update(self,
                       msg_time: int,
@@ -146,49 +209,3 @@ class BaseManagerEventHandler(EventHandler):
                 self._system_data.delete_sensor_by_id(sensor.sensorId)
 
         return True
-
-    def sensor_alert(self,
-                     msg_time: int,
-                     sensor_alert: ManagerObjSensorAlert) -> bool:
-
-        self.msg_time = msg_time
-
-        try:
-            self._system_data.add_sensor_alert(sensor_alert)
-
-        except ValueError:
-            logging.exception("[%s]: Adding Sensor Alert failed." % self._log_tag)
-            return False
-
-        return True
-
-    # noinspection PyTypeChecker
-    def profile_change(self,
-                       msg_time: int,
-                       profile: ManagerObjProfile) -> bool:
-        logging.critical("[%s]: profile_change() not supported by node of type 'manager'." % self._log_tag)
-        raise NotImplementedError("Not supported by node of type 'manager'.")
-
-    def state_change(self,
-                     msg_time: int,
-                     sensor_id: int,
-                     state: int,
-                     data_type: int,
-                     sensor_data: _SensorData) -> bool:
-
-        self.msg_time = msg_time
-
-        try:
-            self._system_data.sensor_state_change(sensor_id, state, data_type, sensor_data)
-
-        except ValueError:
-            logging.exception("[%s]: Updating Sensor %d with state change data failed." % (self._log_tag, sensor_id))
-            return False
-
-        return True
-
-    def close_connection(self):
-        pass
-
-    def new_connection(self):
-        pass

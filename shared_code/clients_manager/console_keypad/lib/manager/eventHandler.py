@@ -10,10 +10,11 @@
 from typing import List
 from .screenUpdater import ScreenUpdater
 from .core import BaseManagerEventHandler
-from ..globalData import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, ManagerObjAlert, \
-    ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
-from ..globalData import GlobalData
-from ..globalData.sensorObjects import _SensorData
+from ..globalData.globalData import GlobalData
+from ..globalData.managerObjects import ManagerObjOption, ManagerObjNode, ManagerObjSensor, ManagerObjManager, \
+    ManagerObjAlert, ManagerObjAlertLevel, ManagerObjSensorAlert, ManagerObjProfile
+# noinspection PyProtectedMember
+from ..globalData.sensorObjects import _SensorData, SensorErrorState
 
 
 class ManagerEventHandler(BaseManagerEventHandler):
@@ -29,9 +30,8 @@ class ManagerEventHandler(BaseManagerEventHandler):
         self.global_data = global_data
         self.screen_updater = self.global_data.screenUpdater  # type: ScreenUpdater
 
-    # is called when a status update event was received from the server
     def status_update(self,
-                      server_time: int,
+                      msg_time: int,
                       options: List[ManagerObjOption],
                       profiles: List[ManagerObjProfile],
                       nodes: List[ManagerObjNode],
@@ -40,7 +40,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
                       alerts: List[ManagerObjAlert],
                       alert_levels: List[ManagerObjAlertLevel]) -> bool:
 
-        result = super().status_update(server_time,
+        result = super().status_update(msg_time,
                                        options,
                                        profiles,
                                        nodes,
@@ -53,25 +53,36 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         return result
 
-    # is called when a sensor alert event was received from the server
-    def sensor_alert(self, server_time: int, sensor_alert: ManagerObjSensorAlert) -> bool:
+    def sensor_alert(self, msg_time: int, sensor_alert: ManagerObjSensorAlert) -> bool:
 
-        result = super().sensor_alert(server_time,
+        result = super().sensor_alert(msg_time,
                                       sensor_alert)
 
         self.screen_updater.update_sensor_alerts()
 
         return result
 
-    # is called when a state change event was received from the server
+    def sensor_error_state_change(self,
+                                  msg_time: int,
+                                  sensor_id: int,
+                                  error_state: SensorErrorState) -> bool:
+
+        result = super().sensor_error_state_change(msg_time,
+                                                   sensor_id,
+                                                   error_state)
+
+        self.screen_updater.update_status()
+
+        return result
+
     def state_change(self,
-                     server_time: int,
+                     msg_time: int,
                      sensor_id: int,
                      state: int,
                      data_type: int,
                      sensor_data: _SensorData) -> bool:
 
-        result = super().state_change(server_time,
+        result = super().state_change(msg_time,
                                       sensor_id,
                                       state,
                                       data_type,

@@ -18,8 +18,8 @@ import tempfile
 import shutil
 import stat
 import math
-from .globalData import GlobalData
 from typing import Dict, Any, Optional, List, IO
+from .globalData.globalData import GlobalData
 
 
 # internal class that is used as an enum to represent the type of file update

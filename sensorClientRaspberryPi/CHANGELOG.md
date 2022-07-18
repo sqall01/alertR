@@ -1,3 +1,9 @@
+## 1.000-0
+
+* Added sensor error states
+* Added persistent/non-persistent client configuration
+* Improved DS18B20 data parsing
+
 ## 0.901-2
 
 * Fixed threshold processing bug

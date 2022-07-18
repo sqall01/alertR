@@ -5,11 +5,11 @@ import collections
 import threading
 from unittest import TestCase
 from typing import Tuple, List, Dict, Optional
-from lib.localObjects import AlertLevel, SensorAlert, SensorDataType, SensorData, Option, Sensor, SensorDataGPS, \
-    SensorDataNone, SensorDataInt, SensorDataFloat
+from lib.localObjects import AlertLevel, SensorAlert, SensorData, Option, Sensor
 from lib.alert.alert import SensorAlertExecuter, SensorAlertState
 from lib.alert.instrumentation import InstrumentationPromise, Instrumentation
-from lib.globalData import GlobalData
+from lib.globalData.globalData import GlobalData
+from lib.globalData.sensorObjects import SensorDataGPS, SensorDataNone, SensorDataInt, SensorDataFloat, SensorDataType
 # noinspection PyProtectedMember
 from lib.storage.core import _Storage
 from lib.internalSensors import AlertLevelInstrumentationErrorSensor
@@ -1178,7 +1178,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1248,7 +1247,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1322,7 +1320,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1382,7 +1379,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1453,7 +1449,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -1559,7 +1554,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1679,7 +1673,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1786,7 +1779,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1877,7 +1869,6 @@ class TestAlert(TestCase):
         sensor.sensorId = base_sensor_alert.sensorId
         sensor.nodeId = base_sensor_alert.nodeId
         sensor.clientSensorId = 0
-        sensor.lastStateUpdated = 1337
         sensor.description = base_sensor_alert.description
         sensor.alertDelay = base_sensor_alert.alertDelay
         sensor.alertLevels = list(base_sensor_alert.alertLevels)
@@ -1962,7 +1953,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -2057,7 +2047,6 @@ class TestAlert(TestCase):
             sensor.sensorId = sensor_alert.sensorId
             sensor.nodeId = sensor_alert.nodeId
             sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
             sensor.description = sensor_alert.description
             sensor.alertDelay = sensor_alert.alertDelay
             sensor.alertLevels = list(sensor_alert.alertLevels)
@@ -2111,183 +2100,3 @@ class TestAlert(TestCase):
         # All sensor alerts should have been dropped.
         self.assertTrue(manager_update_executer._manager_update_event.is_set())
         self.assertEqual(num, len(manager_update_executer._queue_state_change))
-
-    def test_run_internal_sensor_update_last_state_time_unnecessary(self):
-        """
-        Integration test that checks if the state of the internal sensor is not unnecessarily updated.
-        """
-        TestAlert._callback_trigger_sensor_alert_arg.clear()
-
-        # Use odd number to have different group sizes.
-        num = 1
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        global_data.managerUpdateExecuter = None
-
-        storage = MockStorage()
-        storage.profile = 0
-        global_data.storage = storage
-
-        internal_sensor = MockInternalSensor(global_data)
-        internal_sensor.nodeId = 1
-        internal_sensor.clientSensorId = 2
-        internal_sensor.state = 0
-        global_data.internalSensors.append(internal_sensor)
-
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for i in range(len(alert_levels)):
-            alert_level = alert_levels[i]
-            alert_level.triggerAlertTriggered = True
-
-        global_data.alertLevels = alert_levels
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-        for sensor_alert in sensor_alerts:
-            sensor_alert.state = 1
-            sensor_alert.changeState = True
-
-            # Add corresponding sensor for sensor alert.
-            sensor = Sensor()
-            sensor.sensorId = sensor_alert.sensorId
-            sensor.nodeId = sensor_alert.nodeId
-            sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
-            sensor.description = sensor_alert.description
-            sensor.alertDelay = sensor_alert.alertDelay
-            sensor.alertLevels = list(sensor_alert.alertLevels)
-            sensor.state = sensor_alert.state
-            sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.data
-            global_data.storage.add_sensor(sensor)
-
-            # Add sensor alert for processing.
-            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
-                                                   sensor_alert.sensorId,
-                                                   sensor_alert.state,
-                                                   sensor_alert.optionalData,
-                                                   sensor_alert.changeState,
-                                                   sensor_alert.hasLatestData,
-                                                   sensor_alert.dataType,
-                                                   sensor_alert.data)
-
-        gt_last_state_updated = int(time.time()) - 10
-        internal_sensor.lastStateUpdated = gt_last_state_updated
-
-        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
-        # if a sensor alert is triggered.
-        func_type = type(sensor_alert_executer._trigger_sensor_alert)
-        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
-                                                                sensor_alert_executer)
-
-        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        # Start executer thread.
-        sensor_alert_executer.daemon = True
-        sensor_alert_executer.start()
-
-        time.sleep(1)
-
-        sensor_alert_executer.exit()
-
-        time.sleep(1)
-
-        # Make sure a full processing run was executed.
-        self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        self.assertEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
-
-    def test_run_internal_sensor_update_last_state_time_necessary(self):
-        """
-        Integration test that checks if the state of the internal sensor is updated.
-        """
-        TestAlert._callback_trigger_sensor_alert_arg.clear()
-
-        # Use odd number to have different group sizes.
-        num = 1
-
-        global_data = GlobalData()
-        global_data.logger = logging.getLogger("Alert Test Case")
-        global_data.managerUpdateExecuter = None
-
-        storage = MockStorage()
-        storage.profile = 0
-        global_data.storage = storage
-
-        internal_sensor = MockInternalSensor(global_data)
-        internal_sensor.nodeId = 1
-        internal_sensor.clientSensorId = 2
-        internal_sensor.state = 0
-        global_data.internalSensors.append(internal_sensor)
-
-        manager_update_executer = MockManagerUpdateExecuter()
-        global_data.managerUpdateExecuter = manager_update_executer
-
-        alert_levels, sensor_alerts = self._create_sensor_alerts(num)
-
-        for i in range(len(alert_levels)):
-            alert_level = alert_levels[i]
-            alert_level.triggerAlertTriggered = True
-
-        global_data.alertLevels = alert_levels
-        sensor_alert_executer = SensorAlertExecuter(global_data)
-        for sensor_alert in sensor_alerts:
-            sensor_alert.state = 1
-            sensor_alert.changeState = True
-
-            # Add corresponding sensor for sensor alert.
-            sensor = Sensor()
-            sensor.sensorId = sensor_alert.sensorId
-            sensor.nodeId = sensor_alert.nodeId
-            sensor.clientSensorId = 0
-            sensor.lastStateUpdated = 1337
-            sensor.description = sensor_alert.description
-            sensor.alertDelay = sensor_alert.alertDelay
-            sensor.alertLevels = list(sensor_alert.alertLevels)
-            sensor.state = sensor_alert.state
-            sensor.dataType = sensor_alert.dataType
-            sensor.data = sensor_alert.data
-            global_data.storage.add_sensor(sensor)
-
-            # Add sensor alert for processing.
-            sensor_alert_executer.add_sensor_alert(sensor_alert.nodeId,
-                                                   sensor_alert.sensorId,
-                                                   sensor_alert.state,
-                                                   sensor_alert.optionalData,
-                                                   sensor_alert.changeState,
-                                                   sensor_alert.hasLatestData,
-                                                   sensor_alert.dataType,
-                                                   sensor_alert.data)
-
-        gt_last_state_updated = int(time.time()) - 31
-        internal_sensor.lastStateUpdated = gt_last_state_updated
-
-        # Overwrite _trigger_sensor_alert() function of SensorAlertExecuter object since it will be called
-        # if a sensor alert is triggered.
-        func_type = type(sensor_alert_executer._trigger_sensor_alert)
-        sensor_alert_executer._trigger_sensor_alert = func_type(_callback_trigger_sensor_alert,
-                                                                sensor_alert_executer)
-
-        self.assertEqual(0, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        # Start executer thread.
-        sensor_alert_executer.daemon = True
-        sensor_alert_executer.start()
-
-        time.sleep(1)
-
-        sensor_alert_executer.exit()
-
-        time.sleep(1)
-
-        # Make sure a full processing run was executed.
-        self.assertEqual(1, len(TestAlert._callback_trigger_sensor_alert_arg))
-
-        self.assertNotEqual(gt_last_state_updated, internal_sensor.lastStateUpdated)
-
-        self.assertEqual(1, len(storage.sensor_state_updates.keys()))
-        self.assertEqual(internal_sensor.clientSensorId, storage.sensor_state_updates[internal_sensor.nodeId][0][0])
-        self.assertEqual(internal_sensor.state, storage.sensor_state_updates[internal_sensor.nodeId][0][1])

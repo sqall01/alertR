@@ -1,3 +1,8 @@
+## 1.000-0
+
+* Added sensor error states
+* Added persistent/non-persistent client configuration
+
 ## 0.901-2
 
 * Added sanity checks during sensor initialization

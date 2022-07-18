@@ -2,7 +2,7 @@ from tests.globalData.core import TestSystemDataCore
 from tests.globalData.util import compare_sensors_content
 from lib.globalData.systemData import SystemData
 from lib.globalData.managerObjects import ManagerObjNode, ManagerObjSensor, ManagerObjSensorAlert
-from lib.globalData.sensorObjects import SensorDataType, SensorDataNone, SensorDataInt
+from lib.globalData.sensorObjects import SensorDataType, SensorDataNone, SensorDataInt, SensorErrorState
 
 
 class TestSystemDataSensor(TestSystemDataCore):
@@ -28,10 +28,10 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.alertDelay = 0
         sensor.alertLevels = []
         sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
+        sensor.error_state = SensorErrorState()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
@@ -52,10 +52,10 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.alertDelay = 0
         sensor.alertLevels = []
         sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
+        sensor.error_state = SensorErrorState()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
@@ -86,10 +86,10 @@ class TestSystemDataSensor(TestSystemDataCore):
         sensor.alertDelay = 0
         sensor.alertLevels = [99]
         sensor.description = "sensor_1"
-        sensor.lastStateUpdated = 0
         sensor.state = 0
         sensor.dataType = SensorDataType.NONE
         sensor.data = SensorDataNone()
+        sensor.error_state = SensorErrorState()
         is_exception = False
         try:
             system_data.update_sensor(sensor)
@@ -138,10 +138,10 @@ class TestSystemDataSensor(TestSystemDataCore):
             temp_sensor.description = "new_sensor_" + str(i + 1)
             temp_sensor.clientSensorId = i
             temp_sensor.alertDelay = i + 10
-            temp_sensor.lastStateUpdated = i + 10
             temp_sensor.state = i % 2
             temp_sensor.dataType = SensorDataType.INT
             temp_sensor.data = SensorDataInt(i, "test unit")
+            temp_sensor.error_state = SensorErrorState(SensorErrorState.GenericError, "Test Error")
             # We started the alert levels in our test data with level 1.
             temp_sensor.alertLevels = [(i % len(self.alert_levels)) + 1]
             new_sensors.append(temp_sensor)
@@ -163,7 +163,7 @@ class TestSystemDataSensor(TestSystemDataCore):
 
     def test_delete_sensor(self):
         """
-        Test dataSensor object deleting.
+        Test Sensor object deleting.
         """
         system_data = self._create_sensors()
         number_sensor_alerts = 3
@@ -220,7 +220,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.state != curr_sensor.state
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
@@ -244,7 +243,6 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
                     or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
@@ -265,7 +263,6 @@ class TestSystemDataSensor(TestSystemDataCore):
                         if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                                 or stored_sensor.description != gt_sensor.description
                                 or stored_sensor.alertDelay != gt_sensor.alertDelay
-                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
                                 or stored_sensor.state != gt_sensor.state
                                 or stored_sensor.dataType != gt_sensor.dataType
                                 or stored_sensor.data != gt_sensor.data
@@ -294,10 +291,10 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.state != curr_sensor.state
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
+                    or stored_sensor.error_state != curr_sensor.error_state
                     or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
                     or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
                 self.fail("Stored object does not have initially correct content.")
@@ -310,9 +307,9 @@ class TestSystemDataSensor(TestSystemDataCore):
             if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
                     or stored_sensor.description != curr_sensor.description
                     or stored_sensor.alertDelay != curr_sensor.alertDelay
-                    or stored_sensor.lastStateUpdated != curr_sensor.lastStateUpdated
                     or stored_sensor.dataType != curr_sensor.dataType
                     or stored_sensor.data != curr_sensor.data
+                    or stored_sensor.error_state != curr_sensor.error_state
                     or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
                     or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
                 self.fail("Stored object does not have correct content after state change.")
@@ -331,14 +328,59 @@ class TestSystemDataSensor(TestSystemDataCore):
                         if (stored_sensor.clientSensorId != gt_sensor.clientSensorId
                                 or stored_sensor.description != gt_sensor.description
                                 or stored_sensor.alertDelay != gt_sensor.alertDelay
-                                or stored_sensor.lastStateUpdated != gt_sensor.lastStateUpdated
                                 or stored_sensor.state != gt_sensor.state
                                 or stored_sensor.dataType != gt_sensor.dataType
                                 or stored_sensor.data != gt_sensor.data
+                                or stored_sensor.error_state != curr_sensor.error_state
                                 or any(map(lambda x: x not in gt_sensor.alertLevels, stored_sensor.alertLevels))
                                 or any(map(lambda x: x not in stored_sensor.alertLevels, gt_sensor.alertLevels))):
                             self.fail("Sensor content has changed.")
 
+                        break
+
+                if not found:
+                    self.fail("Not able to find Sensor object corresponding to created sensors.")
+
+            if len(self.sensors) != len(system_data.get_sensors_list()):
+                self.fail("Number of stored Sensor objects differ from created ones.")
+
+    def test_sensor_error_state_change(self):
+        """
+        Test sensor error state change.
+        """
+        system_data = self._create_sensors()
+
+        for i in range(len(self.sensors)):
+            curr_sensor = self.sensors[i]
+            stored_sensor = system_data.get_sensor_by_id(curr_sensor.sensorId)
+
+            compare_sensors_content(self, [stored_sensor], [curr_sensor])
+
+            system_data.sensor_error_state_change(stored_sensor.sensorId,
+                                                  SensorErrorState(SensorErrorState.TimeoutError, "Error %d" % i))
+
+            if (stored_sensor.clientSensorId != curr_sensor.clientSensorId
+                    or stored_sensor.state != curr_sensor.state
+                    or stored_sensor.description != curr_sensor.description
+                    or stored_sensor.alertDelay != curr_sensor.alertDelay
+                    or stored_sensor.dataType != curr_sensor.dataType
+                    or stored_sensor.data != curr_sensor.data
+                    or any(map(lambda x: x not in curr_sensor.alertLevels, stored_sensor.alertLevels))
+                    or any(map(lambda x: x not in stored_sensor.alertLevels, curr_sensor.alertLevels))):
+                self.fail("Stored object does not have correct content after sensor error state change.")
+
+            if stored_sensor.error_state == curr_sensor.error_state:
+                self.fail("Error state of Sensor object was not updated.")
+
+            # Check nothing has changed in other Sensor objects
+            # (update error state of current sensor manually for this check).
+            curr_sensor.error_state = stored_sensor.error_state
+            for gt_sensor in self.sensors:
+                found = False
+                for stored_sensor in system_data.get_sensors_list():
+                    if stored_sensor.sensorId == gt_sensor.sensorId:
+                        found = True
+                        compare_sensors_content(self, [gt_sensor], [stored_sensor])
                         break
 
                 if not found:

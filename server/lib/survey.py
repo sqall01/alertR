@@ -7,13 +7,13 @@
 #
 # Licensed under the GNU Affero General Public License, version 3.
 
-from .localObjects import ErrorCodes
-from .globalData import GlobalData
 import time
 import threading
 import os
 import json
 import requests
+from .localObjects import ErrorCodes
+from .globalData.globalData import GlobalData
 
 
 # this class participates in the AlertR survey (if it is activated)
