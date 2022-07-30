@@ -1,0 +1,13 @@
+# example unit file when systemd is used
+
+[Unit]
+Description=AlertR Manager Client Prometheus
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/alertRmanagerPrometheus.sh start
+ExecStop=/etc/init.d/alertRmanagerPrometheus.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
