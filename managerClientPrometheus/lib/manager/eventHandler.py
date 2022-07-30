@@ -39,7 +39,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         sensor = self._system_data.get_sensor_by_id(sensor_alert.sensorId)
         if sensor.dataType == SensorDataType.INT or sensor.dataType == SensorDataType.FLOAT:
-            self._prometheus.update_data(sensor)
+            self._prometheus.update_sensor_data(sensor)
 
         return result
 
@@ -69,7 +69,7 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         sensor = self._system_data.get_sensor_by_id(sensor_id)
         if sensor.dataType == SensorDataType.INT or sensor.dataType == SensorDataType.FLOAT:
-            self._prometheus.update_data(sensor)
+            self._prometheus.update_sensor_data(sensor)
 
         return result
 
@@ -92,8 +92,10 @@ class ManagerEventHandler(BaseManagerEventHandler):
                                        alerts,
                                        alert_levels)
 
+        sensors_list = list()
         for sensor in self._system_data.get_sensors_list():
             if sensor.dataType == SensorDataType.INT or sensor.dataType == SensorDataType.FLOAT:
-                self._prometheus.update_data(sensor)
+                sensors_list.append(sensor)
+        self._prometheus.update_sensors_data(sensors_list)
 
         return result
