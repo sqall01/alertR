@@ -6,7 +6,7 @@
 # github: https://github.com/sqall01
 #
 # Licensed under the GNU Affero General Public License, version 3.
-
+import logging
 from typing import List, Any
 from .core import BaseManagerEventHandler
 from .prometheus import Prometheus
@@ -39,7 +39,12 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         sensor = self._system_data.get_sensor_by_id(sensor_alert.sensorId)
         if sensor.dataType == SensorDataType.INT or sensor.dataType == SensorDataType.FLOAT:
-            self._prometheus.update_sensor_data(sensor)
+            try:
+                self._prometheus.update_sensor_data(sensor)
+            except Exception as e:
+                logging.exception("[%s]: Updating Prometheus data for Sensor %d failed."
+                                  % (self._log_tag, sensor.sensorId))
+                result = False
 
         return result
 
@@ -69,7 +74,12 @@ class ManagerEventHandler(BaseManagerEventHandler):
 
         sensor = self._system_data.get_sensor_by_id(sensor_id)
         if sensor.dataType == SensorDataType.INT or sensor.dataType == SensorDataType.FLOAT:
-            self._prometheus.update_sensor_data(sensor)
+            try:
+                self._prometheus.update_sensor_data(sensor)
+            except Exception as e:
+                logging.exception("[%s]: Updating Prometheus data for Sensor %d failed."
+                                  % (self._log_tag, sensor.sensorId))
+                result = False
 
         return result
 
@@ -96,6 +106,12 @@ class ManagerEventHandler(BaseManagerEventHandler):
         for sensor in self._system_data.get_sensors_list():
             if sensor.dataType == SensorDataType.INT or sensor.dataType == SensorDataType.FLOAT:
                 sensors_list.append(sensor)
-        self._prometheus.update_sensors_data(sensors_list)
+
+        try:
+            self._prometheus.update_sensors_data(sensors_list)
+        except Exception as e:
+            logging.exception("[%s]: Updating Prometheus data for Sensors failed."
+                              % self._log_tag)
+            result = False
 
         return result

@@ -179,7 +179,7 @@ if __name__ == '__main__':
     try:
         prometheus = Prometheus(prometheus_port, globalData)
     except Exception as e:
-        logging.exception("[%s] Could not start Prometheus server." % log_tag)
+        logging.exception("[%s] Could not start Prometheus exporter." % log_tag)
         sys.exit(1)
 
     # Generate object for the communication to the server and connect to it.

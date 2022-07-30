@@ -38,7 +38,7 @@ class Prometheus:
         if sensor.sensorId not in self._metrics.keys():
             node = self._system_data.get_node_by_id(sensor.nodeId)
             name = "alertr_sensor_" + node.username + "_" + str(sensor.clientSensorId)
-            gauge = Gauge(name, sensor.description, unit=data.unit)
+            gauge = Gauge(name, sensor.description)
             self._metrics[sensor.sensorId] = gauge
 
         else:
@@ -54,7 +54,7 @@ class Prometheus:
             sensor_ids.add(sensor.sensorId)
 
         # Remove sensors that do no longer exist from being exposed.
-        for sensor_id in self._metrics.keys():
+        for sensor_id in list(self._metrics.keys()):
             if sensor_id not in sensor_ids:
                 REGISTRY.unregister(self._metrics[sensor_id])
                 del self._metrics[sensor_id]
