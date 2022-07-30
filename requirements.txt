@@ -1,4 +1,5 @@
 requests==2.20.0
+prometheus-client==0.14.1
 pycryptodome==3.10.1
 Shapely==1.7.1
 lightweightpush==0.0.5
