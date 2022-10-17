@@ -15,7 +15,7 @@ from ..globalData.sensorObjects import SensorDataNone, SensorErrorState, SensorD
 
 class RaspberryPiGPIOPollingSensor(_PollingSensor):
     """
-    Controls one sensor at a gpio pin of the raspberry pi.
+    Controls one switch at a gpio pin of the raspberry pi.
     """
 
     def __init__(self):

@@ -39,7 +39,6 @@ class TestNumberSensor(TestCase):
         sensor.triggerState = 1
         sensor.alertLevels = [1]
         sensor.sensorDataType = SensorDataType.INT
-        sensor._sane_lowest_value = -1337
         self._sensors.append(sensor)
         return sensor
 
