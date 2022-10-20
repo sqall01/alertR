@@ -230,7 +230,7 @@ if __name__ == '__main__':
                 if sensor.edge != 0 and sensor.edge != 1:
                     raise ValueError("Value of edge detection not valid.")
 
-            elif "ds18b20".upper():
+            elif sensorType == "ds18b20".upper():
 
                 sensor = RaspberryPiDS18b20Sensor()
 
@@ -262,7 +262,7 @@ if __name__ == '__main__':
                 else:
                     raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
-            elif "windspeed".upper():
+            elif sensorType == "windspeed".upper():
 
                 sensor = RaspberryPiGPIOWindSpeedSensor()
 
