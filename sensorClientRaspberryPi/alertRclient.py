@@ -280,6 +280,7 @@ if __name__ == '__main__':
                     sensor.alertLevels.append(int(alertLevelXml.text))
 
                 # wind speed specific settings
+                sensor.gpioPin = int(item.find("gpio").attrib["gpioPin"])
                 sensor.interval = int(item.find("gpio").attrib["interval"])
                 sensor.radius_cm = float(item.find("gpio").attrib["radius"])
                 sensor.signals_per_rotation = int(item.find("gpio").attrib["signalsPerRotation"])

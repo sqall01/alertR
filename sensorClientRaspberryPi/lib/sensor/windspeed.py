@@ -45,7 +45,7 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
 
         # the gpio pin number (NOTE: python uses the actual
         # pin number and not the gpio number)
-        self._gpio = None
+        self.gpioPin = None
 
         self._bouncetime = 2
         self._last_data_update = 0.0
@@ -117,8 +117,8 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
     def initialize(self) -> bool:
         # Configure gpio pin and get initial state
         GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(self._gpio, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.add_event_detect(self._gpio,
+        GPIO.setup(self.gpioPin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.add_event_detect(self.gpioPin,
                               GPIO.FALLING,
                               callback=self._interrupt_callback,
                               bouncetime=self._bouncetime)
