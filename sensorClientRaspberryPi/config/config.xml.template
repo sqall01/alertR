@@ -474,6 +474,9 @@
                     that calculates the wind speed per interrupts on a GPIO.
                     Only valid options: interrupt, polling, ds18b20, windspeed.
                     This example: windspeed
+                gpioPin - Raspberry Pi gpio pin that is used by this sensor
+                    NOTE: python uses the actual
+                    pin number and not the gpio number
                 interval - Gives the interval in seconds in which the data
                     of the sensor should be sent to the server.
                     NOTE: Sending the data to often (i.e., every second)
@@ -504,6 +507,7 @@
             -->
             <gpio
                 type="windspeed"
+                gpioPin="18"
                 interval="30"
                 radius="6.5"
                 signalsPerRotation="2"
