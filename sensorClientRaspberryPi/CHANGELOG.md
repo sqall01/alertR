@@ -1,3 +1,7 @@
+## 1.001-0
+
+* Added wind sensor
+
 ## 1.000-0
 
 * Added sensor error states
