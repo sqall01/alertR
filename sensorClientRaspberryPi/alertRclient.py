@@ -13,7 +13,7 @@ import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
-    RaspberryPiDS18b20Sensor, SensorExecuter, SensorEventHandler
+    RaspberryPiDS18b20Sensor, RaspberryPiGPIOWindSpeedSensor, SensorExecuter, SensorEventHandler
 from lib import GlobalData
 from lib import SensorOrdering
 import logging
@@ -250,6 +250,39 @@ if __name__ == '__main__':
                 # ds18b20 specific settings
                 sensor.sensorName = str(item.find("gpio").attrib["sensorName"])
                 sensor.interval = int(item.find("gpio").attrib["interval"])
+                sensor.hasThreshold = (str(item.find("gpio").attrib["hasThreshold"]).upper() == "TRUE")
+                sensor.threshold = float(item.find("gpio").attrib["threshold"])
+                orderingStr = str(item.find("gpio").attrib["ordering"]).upper()
+                if orderingStr == "LT":
+                    sensor.ordering = SensorOrdering.LT
+                elif orderingStr == "EQ":
+                    sensor.ordering = SensorOrdering.EQ
+                elif orderingStr == "GT":
+                    sensor.ordering = SensorOrdering.GT
+                else:
+                    raise ValueError("Type of ordering '%s' not valid." % orderingStr)
+
+            elif "windspeed".upper():
+
+                sensor = RaspberryPiGPIOWindSpeedSensor()
+
+                # these options are needed by the server to
+                # differentiate between the registered sensors
+                sensor.id = int(item.find("general").attrib["id"])
+                sensor.description = str(item.find("general").attrib["description"])
+                sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
+                sensor.triggerAlert = (str(item.find("general").attrib["triggerAlert"]).upper() == "TRUE")
+                sensor.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
+                sensor.triggerState = 1
+
+                sensor.alertLevels = list()
+                for alertLevelXml in item.iterfind("alertLevel"):
+                    sensor.alertLevels.append(int(alertLevelXml.text))
+
+                # wind speed specific settings
+                sensor.interval = int(item.find("gpio").attrib["interval"])
+                sensor.radius_cm = float(item.find("gpio").attrib["radius"])
+                sensor.signals_per_rotation = int(item.find("gpio").attrib["signalsPerRotation"])
                 sensor.hasThreshold = (str(item.find("gpio").attrib["hasThreshold"]).upper() == "TRUE")
                 sensor.threshold = float(item.find("gpio").attrib["threshold"])
                 orderingStr = str(item.find("gpio").attrib["ordering"]).upper()

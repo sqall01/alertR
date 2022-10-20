@@ -19,7 +19,7 @@ from ..globalData.sensorObjects import SensorDataFloat, SensorDataInt, SensorDat
 
 class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
     """
-    Controls one wind sensor at a gpio pin of the raspberry pi.
+    Controls one wind speed sensor at a gpio pin of the raspberry pi.
     """
 
     def __init__(self):
@@ -51,9 +51,10 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
         self._last_data_update = 0.0
 
         # Attributes important to wind speed calculation
-        self._wind_lock = threading.Lock()
+        self._wind_ctr_lock = threading.Lock()
         self._wind_ctr = 0.0
         self._wind_interval = 2.0  # in seconds
+        self._wind_speed_lock = threading.Lock()
         self._wind_speed = 0.0
         self._circumference_cm = None  # type: Optional[float]
 
@@ -71,7 +72,7 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
             Reference: https://projects.raspberrypi.org/en/projects/build-your-own-weather-station/5
             - Formula: speed = ( (signals / 2) * (2 * pi * radius) ) / time
             """
-            with self._wind_lock:
+            with self._wind_ctr_lock:
                 wind_ctr = self._wind_ctr
                 self._wind_ctr = 0.0
             rotations = wind_ctr / self.signals_per_rotation
@@ -79,11 +80,13 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
             km_per_sec = dist_km / self._wind_interval
             km_per_h = round(km_per_sec * 3600.0, 2)
 
+            # TODO remove after testing
             self._log_debug(self._log_tag, "Wind speed for '%s': %.2f km/h" % (self.description, km_per_h))
 
             # Set the highest wind speed as the one that will be reported to AlertR.
             if km_per_h > self._wind_speed:
-                self._wind_speed = km_per_h
+                with self._wind_speed_lock:
+                    self._wind_speed = km_per_h
 
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         """
@@ -96,17 +99,22 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
         if (utc_timestamp - self._last_data_update) > self.interval:
             self._last_data_update = utc_timestamp
 
-            raise NotImplementedError("TODO")
+            self._log_debug(self._log_tag, "Wind speed for '%s': %.2f km/h" % (self.description, self._wind_speed))
 
-        else:
-            return self.data
+            self.data = SensorDataFloat(self._wind_speed, self._unit)
+            with self._wind_speed_lock:
+                self._wind_speed = 0.0
+
+        return self.data
 
     def _interrupt_callback(self, channel: int):
-        with self._wind_lock:
+        """
+        This function is called on falling edges on the GPIO and counts the number of interrupts.
+        """
+        with self._wind_ctr_lock:
             self._wind_ctr += 1.0
 
     def initialize(self) -> bool:
-
         # Configure gpio pin and get initial state
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self._gpio, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
