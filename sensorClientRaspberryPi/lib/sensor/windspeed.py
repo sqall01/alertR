@@ -98,9 +98,10 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
 
             self._log_debug(self._log_tag, "Wind speed for '%s': %.2f km/h" % (self.description, self._wind_speed))
 
-            self.data = SensorDataFloat(self._wind_speed, self._unit)
+            data = SensorDataFloat(self._wind_speed, self._unit)
             with self._wind_speed_lock:
                 self._wind_speed = 0.0
+            return data
 
         return self.data
 
