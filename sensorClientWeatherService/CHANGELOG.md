@@ -1,3 +1,7 @@
+## 1.001-0
+
+* Added option to send sensor alert events for data changes
+
 ## 1.000-0
 
 * Added sensor error states
