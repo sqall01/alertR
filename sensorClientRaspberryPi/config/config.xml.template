@@ -384,6 +384,14 @@
                     that calculates the windspeed per interrupts on a GPIO.
                     Only valid options: interrupt, polling, ds18b20, windspeed.
                     This example: ds18b20
+                sensorAlertForDataChange - Send Sensor Alert events instead of State Change events
+                    when sensor data changes? Since AlertR is an event driven system, this can be useful
+                    if you want to instrument the data the sensor is holding in instrumentation scripts.
+                    For example if this sensor measures a temperature, if a window is open and
+                    you want to react to a temperature value in a certain range, an instrumentation script
+                    can do this on each Sensor Alert event that is sent to the server.
+                    The state of the sensor is still determined by the threshold rules.
+                    NOTE: triggerAlert and triggerAlertNormal have to be set to True if this option is used.
                 sensorName - The name of the ds18b20 sensor that should be
                     parsed. Normally, the name looks like this
                     "10-0008020b7c5d". On a Raspberry Pi, the sensor names
@@ -415,6 +423,7 @@
             -->
             <gpio
                 type="ds18b20"
+                sensorAlertForDataChange="False"
                 sensorName="10-0008020b7c5d"
                 interval="30"
                 hasThreshold="True"
@@ -474,6 +483,14 @@
                     that calculates the wind speed per interrupts on a GPIO.
                     Only valid options: interrupt, polling, ds18b20, windspeed.
                     This example: windspeed
+                sensorAlertForDataChange - Send Sensor Alert events instead of State Change events
+                    when sensor data changes? Since AlertR is an event driven system, this can be useful
+                    if you want to instrument the data the sensor is holding in instrumentation scripts.
+                    For example if this sensor measures a temperature, if a window is open and
+                    you want to react to a temperature value in a certain range, an instrumentation script
+                    can do this on each Sensor Alert event that is sent to the server.
+                    The state of the sensor is still determined by the threshold rules.
+                    NOTE: triggerAlert and triggerAlertNormal have to be set to True if this option is used.
                 gpioPin - Raspberry Pi gpio pin that is used by this sensor
                     NOTE: python uses the actual
                     pin number and not the gpio number
@@ -507,6 +524,7 @@
             -->
             <gpio
                 type="windspeed"
+                sensorAlertForDataChange="False"
                 gpioPin="18"
                 interval="30"
                 radius="6.5"

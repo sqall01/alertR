@@ -26,6 +26,11 @@ class _NumberSensor(_PollingSensor):
         # Used for logging.
         self._log_tag = os.path.basename(__file__)
 
+        # This flag indicates if this sensor sends Sensor Alert events to the server
+        # whenever new sensor data is available instead of Sensor Change events.
+        # Since AlertR is an event driven system, this can be useful for reacting to data changes.
+        self.sensorAlertForDataChange = False
+
         # This flag indicates if this sensor has a threshold that should be
         # checked and raise a sensor alert if it is reached.
         self.hasThreshold = False
@@ -139,7 +144,11 @@ class _NumberSensor(_PollingSensor):
                         self._set_error_state(SensorErrorState.ProcessingError, "Unknown threshold setting.")
 
             if data != self.data:
-                self._add_state_change(self.state, data)
+                if self.sensorAlertForDataChange:
+                    self._add_sensor_alert(self.state, False, has_latest_data=True, sensor_data=data)
+
+                else:
+                    self._add_state_change(self.state, data)
 
             # Even if the data has not changed, an error could occur in between which causes the
             # sensor to have an error state. Clear it if we received new data.

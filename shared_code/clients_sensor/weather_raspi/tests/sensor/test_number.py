@@ -268,6 +268,37 @@ class TestNumberSensor(TestCase):
         self.assertEqual(0, events[0].state)
         self.assertEqual(SensorDataInt(2, "test unit"), events[0].data)
 
+    def test_no_threshold_sensor_alert(self):
+        """
+        Tests sensor alert for new data if no threshold is set.
+        """
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorAlertForDataChange = True
+        sensor.hasThreshold = False
+        sensor.state = 0
+        sensor.data = SensorDataInt(0, "test unit")
+
+        sensor.initialize()
+        sensor.start()
+
+        self.assertEqual(SensorDataInt(0, "test unit"), sensor.data)
+
+        sensor.next_data = SensorDataInt(2, "test unit")
+        time.sleep(1.0)
+
+        self.assertEqual(SensorDataInt(2, "test unit"), sensor.data)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(0, events[0].state)
+        self.assertFalse(events[0].changeState)
+        self.assertFalse(events[0].hasOptionalData)
+        self.assertTrue(events[0].hasLatestData)
+        self.assertEqual(SensorDataInt(2, "test unit"), events[0].data)
+
     def test_threshold_not_satisfied(self):
         """
         Tests state change if threshold is not satisfied.
@@ -295,6 +326,39 @@ class TestNumberSensor(TestCase):
         self.assertEqual(1, len(events))
         self.assertEqual(SensorObjStateChange, type(events[0]))
         self.assertEqual(0, events[0].state)
+        self.assertEqual(SensorDataInt(2, "test unit"), events[0].data)
+
+    def test_threshold_not_satisfied_sensor_alert(self):
+        """
+        Tests sensor alert for new data if threshold is not satisfied.
+        """
+
+        sensor = self._create_base_sensor()
+
+        sensor.sensorAlertForDataChange = True
+        sensor.hasThreshold = True
+        sensor.threshold = 1
+        sensor.ordering = SensorOrdering.EQ
+        sensor.state = 0
+        sensor.data = SensorDataInt(0, "test unit")
+
+        sensor.initialize()
+        sensor.start()
+
+        self.assertEqual(SensorDataInt(0, "test unit"), sensor.data)
+
+        sensor.next_data = SensorDataInt(2, "test unit")
+        time.sleep(1.0)
+
+        self.assertEqual(SensorDataInt(2, "test unit"), sensor.data)
+
+        events = sensor.get_events()
+        self.assertEqual(1, len(events))
+        self.assertEqual(SensorObjSensorAlert, type(events[0]))
+        self.assertEqual(0, events[0].state)
+        self.assertFalse(events[0].changeState)
+        self.assertFalse(events[0].hasOptionalData)
+        self.assertTrue(events[0].hasLatestData)
         self.assertEqual(SensorDataInt(2, "test unit"), events[0].data)
 
     def test_same_data(self):

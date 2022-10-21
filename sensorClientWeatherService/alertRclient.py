@@ -214,6 +214,13 @@ if __name__ == '__main__':
                 else:
                     raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
+                sensor.sensorAlertForDataChange = (str(item.find("weather").attrib[
+                                                           "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                # Check sanity of sensor alert options combination.
+                if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):
+                    raise ValueError("When 'sensorAlertForDataChange' is set 'triggerAlert' and 'triggerAlertNormal' have to be set.")  # noqa: E501
+
                 # Register location in data collector.
                 sensorDataCollector.addLocation(sensor.country, sensor.city, sensor.lon, sensor.lat)
                 sensor.dataCollector = sensorDataCollector
@@ -252,6 +259,13 @@ if __name__ == '__main__':
                 else:
                     raise ValueError("Type of ordering '%s' not valid." % orderingStr)
 
+                sensor.sensorAlertForDataChange = (str(item.find("weather").attrib[
+                                                           "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                # Check sanity of sensor alert options combination.
+                if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):
+                    raise ValueError("When 'sensorAlertForDataChange' is set 'triggerAlert' and 'triggerAlertNormal' have to be set.")  # noqa: E501
+
                 # Register location in data collector.
                 sensorDataCollector.addLocation(sensor.country, sensor.city, sensor.lon, sensor.lat)
                 sensor.dataCollector = sensorDataCollector
@@ -289,6 +303,13 @@ if __name__ == '__main__':
                     sensor.ordering = SensorOrdering.GT
                 else:
                     raise ValueError("Type of ordering '%s' not valid." % orderingStr)
+
+                sensor.sensorAlertForDataChange = (str(item.find("weather").attrib[
+                                                           "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                # Check sanity of sensor alert options combination.
+                if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):
+                    raise ValueError("When 'sensorAlertForDataChange' is set 'triggerAlert' and 'triggerAlertNormal' have to be set.")  # noqa: E501
 
                 sensor.kind = str(item.find("weather").attrib["kind"]).upper()
                 sensor.day = int(item.find("weather").attrib["day"])
@@ -339,6 +360,13 @@ if __name__ == '__main__':
                     sensor.ordering = SensorOrdering.GT
                 else:
                     raise ValueError("Type of ordering '%s' not valid." % orderingStr)
+
+                sensor.sensorAlertForDataChange = (str(item.find("weather").attrib[
+                                                           "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                # Check sanity of sensor alert options combination.
+                if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):
+                    raise ValueError("When 'sensorAlertForDataChange' is set 'triggerAlert' and 'triggerAlertNormal' have to be set.")  # noqa: E501
 
                 sensor.day = int(item.find("weather").attrib["day"])
 
