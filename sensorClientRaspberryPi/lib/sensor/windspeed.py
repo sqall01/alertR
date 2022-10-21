@@ -80,9 +80,6 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
             km_per_sec = dist_km / self._wind_interval
             km_per_h = round(km_per_sec * 3600.0, 2)
 
-            # TODO remove after testing
-            self._log_debug(self._log_tag, "Wind speed for '%s': %.2f km/h" % (self.description, km_per_h))
-
             # Set the highest wind speed as the one that will be reported to AlertR.
             if km_per_h > self._wind_speed:
                 with self._wind_speed_lock:
@@ -107,7 +104,7 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
 
         return self.data
 
-    def _interrupt_callback(self, channel: int):
+    def _interrupt_callback(self, _: int):
         """
         This function is called on falling edges on the GPIO and counts the number of interrupts.
         """
