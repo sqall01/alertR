@@ -47,7 +47,6 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
         # pin number and not the gpio number)
         self.gpioPin = None
 
-        self._bouncetime = 2
         self._last_data_update = 0.0
 
         # Attributes important to wind speed calculation
@@ -118,8 +117,7 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
         GPIO.setup(self.gpioPin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.add_event_detect(self.gpioPin,
                               GPIO.FALLING,
-                              callback=self._interrupt_callback,
-                              bouncetime=self._bouncetime)
+                              callback=self._interrupt_callback)
 
         self._circumference_cm = (2.0 * math.pi) * self.radius_cm
 
