@@ -1,6 +1,6 @@
 # AlertR Manager Client Prometheus
 
-This client exposes all sensors holding float or integer data for a Prometheus collector to collect it. This allows to create a time series of the sensor data which can be used, for example, by Grafana to create graph views.
+This client exposes all sensors holding float or integer data for a Prometheus collector to collect it. This allows to create a time series of the sensor data which can be used, for example, by Grafana to create graph views. Note that this client is only for internal usage and does not provide any authentication mechanisms or transport encryption such as TLS for the exposed data.
 
 ## How to use it?
 
