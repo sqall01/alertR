@@ -1,3 +1,7 @@
+## 1.002-0
+
+* Added option to send only highest wind speed in given interval
+
 ## 1.001-0
 
 * Added wind sensor
