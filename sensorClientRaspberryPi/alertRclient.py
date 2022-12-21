@@ -293,6 +293,7 @@ if __name__ == '__main__':
                 sensor.signals_per_rotation = int(item.find("gpio").attrib["signalsPerRotation"])
                 sensor.hasThreshold = (str(item.find("gpio").attrib["hasThreshold"]).upper() == "TRUE")
                 sensor.threshold = float(item.find("gpio").attrib["threshold"])
+                sensor.onlyMaxInterval = int(item.find("gpio").attrib["onlyMaxInterval"])
                 sensor.wind_speed_calculator_map = globalData.wind_speed_calculator_map
                 orderingStr = str(item.find("gpio").attrib["ordering"]).upper()
                 if orderingStr == "LT":
@@ -306,6 +307,9 @@ if __name__ == '__main__':
 
                 sensor.sensorAlertForDataChange = (str(item.find("gpio").attrib[
                                                            "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                if sensor.onlyMaxInterval < 0:
+                    raise ValueError("'onlyMaxInterval' has to be >= 0.")
 
                 # Check sanity of sensor alert options combination.
                 if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):

@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="1.001">
+<config version="1.002">
 
     <!--
         in this section general options are configured
@@ -297,7 +297,7 @@
                     pin number and not the gpio number
                 triggerState - on which internal state the alert should
                     trigger (either 0 or 1). Some sensors trigger with an
-                    internal state of 1 (i.e., a pull-up when a switch is
+                    internal state of 1 (e.g., a pull-up when a switch is
                     opened), and some with an
                     internal state of 0. In order to decide if the sensor has
                     triggered this has to be set to the correct value.
@@ -398,7 +398,7 @@
                     can be found in the directory "/sys/bus/w1/devices/".
                 interval - Gives the interval in seconds in which the data
                     of the sensor should be sent to the server.
-                    NOTE: Sending the data to often (i.e., every second)
+                    NOTE: Sending the data to often (e.g., every second)
                     will increase the latency of your alarm system because
                     of collisions in the network communication.
                 hasThreshold - This flag indicates if the temperature sensor
@@ -496,12 +496,15 @@
                     pin number and not the gpio number
                 interval - Gives the interval in seconds in which the data
                     of the sensor should be sent to the server.
-                    NOTE: Sending the data to often (i.e., every second)
+                    NOTE: Sending the data to often (e.g., every second)
                     will increase the latency of your alarm system because
                     of collisions in the network communication.
                 radius - The radius of your wind speed sensor/wind gauge in cm.
                 signalsPerRotation - The signals your wind speed sensor/wind gauge
                     creates in one rotation.
+                onlyMaxInterval - Should the sensor only report the highest wind speed
+                    measured in the last given seconds?
+                    (0 means it reports the current wind speed and does not take previous measured values into account)
                 hasThreshold - This flag indicates if the wind speed sensor
                     has a threshold which should not be reached. If it is
                     deactivated, then the sensor is only used to send
@@ -529,6 +532,7 @@
                 interval="30"
                 radius="6.5"
                 signalsPerRotation="2"
+                onlyMaxInterval="0"
                 hasThreshold="True"
                 threshold="15.0"
                 ordering="LT" />

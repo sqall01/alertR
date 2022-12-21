@@ -12,7 +12,7 @@ import os
 import threading
 import time
 import RPi.GPIO as GPIO
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from .number import _NumberSensor
 from ..globalData.sensorObjects import SensorDataFloat, SensorDataInt, SensorDataType
 
@@ -90,6 +90,7 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
 
         self.radius_cm = None  # type: Optional[float]
         self.signals_per_rotation = None  # type: Optional[int]
+        self.onlyMaxInterval = None  # type: Optional[int]
 
         # The interval in seconds in which an update of the current held data
         # should be sent to the server.
@@ -110,6 +111,7 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
         self.wind_speed_calculator_map = None  # type: Optional[int, WindSpeedCalculator]
 
         self._wind_speed = 0.0
+        self._wind_speed_history = dict()  # type: Dict[int, float]
 
     def _get_data(self) -> Optional[Union[SensorDataInt, SensorDataFloat]]:
         """
@@ -118,18 +120,30 @@ class RaspberryPiGPIOWindSpeedSensor(_NumberSensor):
         :return: wind speed value or None
         """
 
-        # Only report the highest value to the AlertR system.
+        # Only report the highest value to the AlertR system in the given send interval.
+        utc_timestamp = int(time.time())
         temp_wind_speed = self._wind_speed_calculator.get_wind_speed()
         if temp_wind_speed > self._wind_speed:
             self._wind_speed = temp_wind_speed
 
-        utc_timestamp = int(time.time())
         if (utc_timestamp - self._last_data_update) > self.interval:
             self._last_data_update = utc_timestamp
 
-            self._log_debug(self._log_tag, "Wind speed for '%s': %.2f km/h" % (self.description, self._wind_speed))
+            # Search for highest wind speed in the set interval if it was configured.
+            if self.onlyMaxInterval != 0:
+                self._wind_speed_history[utc_timestamp] = self._wind_speed
+
+                # Delete old wind speed data
+                for wind_speed_time in list(self._wind_speed_history.keys()):
+                    if wind_speed_time + self.onlyMaxInterval < utc_timestamp:
+                        del self._wind_speed_history[wind_speed_time]
+
+                self._wind_speed = max(self._wind_speed_history.values())
 
             data = SensorDataFloat(self._wind_speed, self._unit)
+
+            self._log_debug(self._log_tag, "Wind speed for '%s': %.2f km/h" % (self.description, self._wind_speed))
+
             self._wind_speed = 0.0
 
             return data
