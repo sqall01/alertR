@@ -293,6 +293,7 @@ if __name__ == '__main__':
                 sensor.signals_per_rotation = int(item.find("gpio").attrib["signalsPerRotation"])
                 sensor.hasThreshold = (str(item.find("gpio").attrib["hasThreshold"]).upper() == "TRUE")
                 sensor.threshold = float(item.find("gpio").attrib["threshold"])
+                sensor.wind_speed_calculator_map = globalData.wind_speed_calculator_map
                 orderingStr = str(item.find("gpio").attrib["ordering"]).upper()
                 if orderingStr == "LT":
                     sensor.ordering = SensorOrdering.LT
