@@ -8,8 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-from typing import Optional, Dict
-from ..sensor.windspeed import WindSpeedCalculator
+from typing import Optional, Dict, Any
 
 
 # this class is a global configuration class that holds 
@@ -57,4 +56,5 @@ class GlobalData:
         # (0 or 1).
         self.persistent = None  # type: Optional[int]
 
-        self.wind_speed_calculator_map = dict()  # type: Dict[int, WindSpeedCalculator]
+        # Global map of wind speed calculator objects.
+        self.wind_speed_calculator_map = dict()  # type: Dict[int, Any]
