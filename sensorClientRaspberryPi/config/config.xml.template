@@ -503,7 +503,7 @@
                 signalsPerRotation - The signals your wind speed sensor/wind gauge
                     creates in one rotation.
                 onlyMaxInterval - Should the sensor only report the highest wind speed
-                    measured in the last given seconds?
+                    measured in the last given seconds? This can be used to measure wind gusts.
                     (0 means it reports the current wind speed and does not take previous measured values into account)
                 hasThreshold - This flag indicates if the wind speed sensor
                     has a threshold which should not be reached. If it is
