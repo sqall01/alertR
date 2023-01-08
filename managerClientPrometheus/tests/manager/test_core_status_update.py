@@ -1,0 +1,1 @@
+../../../shared_code/clients_manager/tests/manager/test_core_status_update.py

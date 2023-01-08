@@ -8,7 +8,7 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 import os
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 # this class is a global configuration class that holds 
@@ -18,7 +18,7 @@ class GlobalData:
     def __init__(self):
 
         # version of the used client (and protocol)
-        self.version = 1.000  # type: float
+        self.version = 1.002  # type: float
 
         # revision of the used client
         self.rev = 0  # type: int
@@ -55,3 +55,6 @@ class GlobalData:
         # Flag that indicates if this node is registered as persistent
         # (0 or 1).
         self.persistent = None  # type: Optional[int]
+
+        # Global map of wind speed calculator objects.
+        self.wind_speed_calculator_map = dict()  # type: Dict[int, Any]

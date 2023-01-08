@@ -87,7 +87,7 @@ class RaspberryPiGPIOInterruptSensor(_PollingSensor):
                 self._add_sensor_alert(self._internal_state,
                                        True)
 
-    def _interrupt_callback(self, gpioPin: int):
+    def _interrupt_callback(self, channel: int):
 
         # Check if the last time we detected an interrupt is longer ago than the configured delay between two triggers
         # => set time and reset edge counter

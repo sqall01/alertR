@@ -12,4 +12,5 @@ from .eventHandler import SensorEventHandler
 from .poll import RaspberryPiGPIOPollingSensor
 from .interrupt import RaspberryPiGPIOInterruptSensor
 from .ds18b20 import RaspberryPiDS18b20Sensor
+from .windspeed import RaspberryPiGPIOWindSpeedSensor
 

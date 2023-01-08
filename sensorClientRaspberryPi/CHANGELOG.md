@@ -1,3 +1,12 @@
+## 1.002-0
+
+* Added option to send only highest wind speed in given interval
+
+## 1.001-0
+
+* Added wind sensor
+* Added option to send sensor alert events for data changes
+
 ## 1.000-0
 
 * Added sensor error states

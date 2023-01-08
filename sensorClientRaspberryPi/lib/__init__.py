@@ -9,7 +9,8 @@
 
 from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
-from .sensor import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, RaspberryPiDS18b20Sensor
+from .sensor import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, RaspberryPiDS18b20Sensor, \
+    RaspberryPiGPIOWindSpeedSensor
 from .sensor import SensorExecuter, SensorEventHandler
 from .update import Updater
 from .globalData import GlobalData

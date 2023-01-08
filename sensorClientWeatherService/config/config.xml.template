@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="1.000">
+<config version="1.001">
 
     <!--
         in this section general options are configured
@@ -204,6 +204,14 @@
                     humidity (shows the current humidity),
                     forecasttemp (shows the temperature forecast),
                     forecastrain (shows the chance of rain forecast).
+                sensorAlertForDataChange - Send Sensor Alert events instead of State Change events
+                    when sensor data changes? Since AlertR is an event driven system, this can be useful
+                    if you want to instrument the data the sensor is holding in instrumentation scripts.
+                    For example if this sensor measures a temperature, if a window is open and
+                    you want to react to a temperature value in a certain range, an instrumentation script
+                    can do this on each Sensor Alert event that is sent to the server.
+                    The state of the sensor is still determined by the threshold rules.
+                    NOTE: triggerAlert and triggerAlertNormal have to be set to True if this option is used.
                 country - The country the city resides in for
                     which you want to get weather data.
                 city - The city for which you want to get weather
@@ -238,6 +246,7 @@
             -->
             <weather
                 type="temperature"
+                sensorAlertForDataChange="False"
                 country="germany"
                 city="berlin"
                 lat="52.520008"
@@ -297,6 +306,14 @@
                     humidity (shows the current humidity),
                     forecasttemp (shows the temperature forecast),
                     forecastrain (shows the chance of rain forecast).
+                sensorAlertForDataChange - Send Sensor Alert events instead of State Change events
+                    when sensor data changes? Since AlertR is an event driven system, this can be useful
+                    if you want to instrument the data the sensor is holding in instrumentation scripts.
+                    For example if this sensor measures a temperature, if a window is open and
+                    you want to react to a temperature value in a certain range, an instrumentation script
+                    can do this on each Sensor Alert event that is sent to the server.
+                    The state of the sensor is still determined by the threshold rules.
+                    NOTE: triggerAlert and triggerAlertNormal have to be set to True if this option is used.
                 country - The country the city resides in for
                     which you want to get weather data.
                 city - The city for which you want to get weather
@@ -331,6 +348,7 @@
             -->
             <weather
                 type="humidity"
+                sensorAlertForDataChange="False"
                 country="germany"
                 city="berlin"
                 lat="52.520008"
@@ -390,6 +408,14 @@
                     humidity (shows the current humidity),
                     forecasttemp (shows the temperature forecast),
                     forecastrain (shows the chance of rain forecast).
+                sensorAlertForDataChange - Send Sensor Alert events instead of State Change events
+                    when sensor data changes? Since AlertR is an event driven system, this can be useful
+                    if you want to instrument the data the sensor is holding in instrumentation scripts.
+                    For example if this sensor measures a temperature, if a window is open and
+                    you want to react to a temperature value in a certain range, an instrumentation script
+                    can do this on each Sensor Alert event that is sent to the server.
+                    The state of the sensor is still determined by the threshold rules.
+                    NOTE: triggerAlert and triggerAlertNormal have to be set to True if this option is used.
                 country - The country the city resides in for
                     which you want to get weather data.
                 city - The city for which you want to get weather
@@ -426,6 +452,7 @@
             -->
             <weather
                 type="forecastrain"
+                sensorAlertForDataChange="False"
                 country="germany"
                 city="berlin"
                 lat="52.520008"
@@ -486,6 +513,14 @@
                     humidity (shows the current humidity),
                     forecasttemp (shows the temperature forecast),
                     forecastrain (shows the chance of rain forecast).
+                sensorAlertForDataChange - Send Sensor Alert events instead of State Change events
+                    when sensor data changes? Since AlertR is an event driven system, this can be useful
+                    if you want to instrument the data the sensor is holding in instrumentation scripts.
+                    For example if this sensor measures a temperature, if a window is open and
+                    you want to react to a temperature value in a certain range, an instrumentation script
+                    can do this on each Sensor Alert event that is sent to the server.
+                    The state of the sensor is still determined by the threshold rules.
+                    NOTE: triggerAlert and triggerAlertNormal have to be set to True if this option is used.
                 country - The country the city resides in for
                     which you want to get weather data.
                 city - The city for which you want to get weather
@@ -526,6 +561,7 @@
             -->
             <weather
                 type="forecasttemp"
+                sensorAlertForDataChange="False"
                 country="germany"
                 city="berlin"
                 lat="52.520008"

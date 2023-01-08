@@ -13,7 +13,7 @@ import stat
 from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import RaspberryPiGPIOPollingSensor, RaspberryPiGPIOInterruptSensor, \
-    RaspberryPiDS18b20Sensor, SensorExecuter, SensorEventHandler
+    RaspberryPiDS18b20Sensor, RaspberryPiGPIOWindSpeedSensor, SensorExecuter, SensorEventHandler
 from lib import GlobalData
 from lib import SensorOrdering
 import logging
@@ -230,7 +230,7 @@ if __name__ == '__main__':
                 if sensor.edge != 0 and sensor.edge != 1:
                     raise ValueError("Value of edge detection not valid.")
 
-            elif "ds18b20".upper():
+            elif sensorType == "ds18b20".upper():
 
                 sensor = RaspberryPiDS18b20Sensor()
 
@@ -261,6 +261,59 @@ if __name__ == '__main__':
                     sensor.ordering = SensorOrdering.GT
                 else:
                     raise ValueError("Type of ordering '%s' not valid." % orderingStr)
+
+                sensor.sensorAlertForDataChange = (str(item.find("gpio").attrib[
+                                                           "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                # Check sanity of sensor alert options combination.
+                if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):
+                    raise ValueError("When 'sensorAlertForDataChange' is set 'triggerAlert' and 'triggerAlertNormal' have to be set.")  # noqa: E501
+
+            elif sensorType == "windspeed".upper():
+
+                sensor = RaspberryPiGPIOWindSpeedSensor()
+
+                # these options are needed by the server to
+                # differentiate between the registered sensors
+                sensor.id = int(item.find("general").attrib["id"])
+                sensor.description = str(item.find("general").attrib["description"])
+                sensor.alertDelay = int(item.find("general").attrib["alertDelay"])
+                sensor.triggerAlert = (str(item.find("general").attrib["triggerAlert"]).upper() == "TRUE")
+                sensor.triggerAlertNormal = (str(item.find("general").attrib["triggerAlertNormal"]).upper() == "TRUE")
+                sensor.triggerState = 1
+
+                sensor.alertLevels = list()
+                for alertLevelXml in item.iterfind("alertLevel"):
+                    sensor.alertLevels.append(int(alertLevelXml.text))
+
+                # wind speed specific settings
+                sensor.gpioPin = int(item.find("gpio").attrib["gpioPin"])
+                sensor.interval = int(item.find("gpio").attrib["interval"])
+                sensor.radius_cm = float(item.find("gpio").attrib["radius"])
+                sensor.signals_per_rotation = int(item.find("gpio").attrib["signalsPerRotation"])
+                sensor.hasThreshold = (str(item.find("gpio").attrib["hasThreshold"]).upper() == "TRUE")
+                sensor.threshold = float(item.find("gpio").attrib["threshold"])
+                sensor.onlyMaxInterval = int(item.find("gpio").attrib["onlyMaxInterval"])
+                sensor.wind_speed_calculator_map = globalData.wind_speed_calculator_map
+                orderingStr = str(item.find("gpio").attrib["ordering"]).upper()
+                if orderingStr == "LT":
+                    sensor.ordering = SensorOrdering.LT
+                elif orderingStr == "EQ":
+                    sensor.ordering = SensorOrdering.EQ
+                elif orderingStr == "GT":
+                    sensor.ordering = SensorOrdering.GT
+                else:
+                    raise ValueError("Type of ordering '%s' not valid." % orderingStr)
+
+                sensor.sensorAlertForDataChange = (str(item.find("gpio").attrib[
+                                                           "sensorAlertForDataChange"]).upper() == "TRUE")
+
+                if sensor.onlyMaxInterval < 0:
+                    raise ValueError("'onlyMaxInterval' has to be >= 0.")
+
+                # Check sanity of sensor alert options combination.
+                if sensor.sensorAlertForDataChange and (not sensor.triggerAlert or not sensor.triggerAlertNormal):
+                    raise ValueError("When 'sensorAlertForDataChange' is set 'triggerAlert' and 'triggerAlertNormal' have to be set.")  # noqa: E501
 
             else:
                 raise ValueError("Type of sensor '%s' not valid." % sensorType)
