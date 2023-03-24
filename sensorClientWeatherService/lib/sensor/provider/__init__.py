@@ -9,3 +9,4 @@
 
 from .wunderground import WundergroundDataCollector
 from .darksky import DarkskyDataCollector
+from .openmeteo import OpenMeteoDataCollector

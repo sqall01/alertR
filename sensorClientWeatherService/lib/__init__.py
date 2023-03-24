@@ -11,7 +11,7 @@ from .client import ServerCommunication, ConnectionWatchdog, Receiver
 from .smtp import SMTPAlert
 from .sensor import TempPollingSensor, HumidityPollingSensor, ForecastTempPollingSensor, ForecastRainPollingSensor
 from .sensor import SensorExecuter, SensorEventHandler
-from .sensor import WundergroundDataCollector, DarkskyDataCollector
+from .sensor import WundergroundDataCollector, DarkskyDataCollector, OpenMeteoDataCollector
 from .update import Updater
 from .globalData import GlobalData
 from .globalData import SensorOrdering

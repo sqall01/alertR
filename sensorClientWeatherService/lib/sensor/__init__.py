@@ -13,4 +13,4 @@ from .temp import TempPollingSensor
 from .humidity import HumidityPollingSensor
 from .tempForecast import ForecastTempPollingSensor
 from .rainForecast import ForecastRainPollingSensor
-from .provider import DarkskyDataCollector, WundergroundDataCollector
+from .provider import DarkskyDataCollector, WundergroundDataCollector, OpenMeteoDataCollector

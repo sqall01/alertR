@@ -5,7 +5,7 @@
     please rename this template to "config.xml" if you want to use it
     for the client
 -->
-<config version="1.001">
+<config version="1.002">
 
     <!--
         in this section general options are configured
@@ -141,10 +141,12 @@
         section of all sensors that are monitored
 
         provider - Provider used to gather weather information
-            (Only valid provider: "wunderground", "darksky")
+            (Only valid provider: "wunderground", "darksky", "openmeteo")
         apiKey - API key for the provider. This key is needed
             in order to fetch weather data from the provider.
-            Please visit the provider's website and request am API key.
+            Please visit the provider's website and request an API key.
+            Note that "openmeteo" does not need an API key and this value
+            can be left empty.
         interval - Interval in seconds in which the data is fetched
             from the provider. Note that often provider only allow
             you a specific number of data updates during the day.
@@ -197,7 +199,6 @@
             <alertLevel>0</alertLevel>
 
             <!--
-                The settings specific for Wunderground.com.
                 type - The type of data the sensor should hold.
                     Currently only valid options are:
                     temperature (shows the current temperature),
@@ -299,7 +300,6 @@
             <alertLevel>0</alertLevel>
 
             <!--
-                The settings specific for Wunderground.com.
                 type - The type of data the sensor should hold.
                     Currently only valid options are:
                     temperature (shows the current temperature),
@@ -401,7 +401,6 @@
             <alertLevel>0</alertLevel>
 
             <!--
-                The settings specific for Wunderground.com.
                 type - The type of data the sensor should hold.
                     Currently only valid options are:
                     temperature (shows the current temperature),
@@ -506,7 +505,6 @@
             <alertLevel>0</alertLevel>
 
             <!--
-                The settings specific for Wunderground.com.
                 type - The type of data the sensor should hold.
                     Currently only valid options are:
                     temperature (shows the current temperature),
