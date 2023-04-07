@@ -1,3 +1,7 @@
+## 1.002-0
+
+* Added OpenMeteo (https://open-meteo.com) weather provider
+
 ## 1.001-0
 
 * Added option to send sensor alert events for data changes
