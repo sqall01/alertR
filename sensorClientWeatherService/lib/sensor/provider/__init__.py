@@ -8,5 +8,4 @@
 # Licensed under the GNU Affero General Public License, version 3.
 
 from .wunderground import WundergroundDataCollector
-from .darksky import DarkskyDataCollector
 from .openmeteo import OpenMeteoDataCollector

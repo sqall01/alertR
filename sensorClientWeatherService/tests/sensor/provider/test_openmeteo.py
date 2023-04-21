@@ -31,7 +31,7 @@ class MockOpenMeteoCollector(OpenMeteoDataCollector):
         return None
 
 
-class TestDarksky(TestCase):
+class TestOpenMeteo(TestCase):
 
     def setUp(self):
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',

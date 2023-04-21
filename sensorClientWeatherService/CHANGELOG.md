@@ -1,3 +1,7 @@
+## 1.002-1
+
+* Removed DarkSky weather provider because it shut down its services
+
 ## 1.002-0
 
 * Added OpenMeteo (https://open-meteo.com) weather provider

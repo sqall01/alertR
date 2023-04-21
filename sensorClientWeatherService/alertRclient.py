@@ -14,7 +14,7 @@ from lib import ServerCommunication, ConnectionWatchdog, Receiver
 from lib import SMTPAlert
 from lib import TempPollingSensor, HumidityPollingSensor, ForecastTempPollingSensor, ForecastRainPollingSensor
 from lib import SensorExecuter, SensorEventHandler
-from lib import WundergroundDataCollector, DarkskyDataCollector, OpenMeteoDataCollector
+from lib import WundergroundDataCollector, OpenMeteoDataCollector
 from lib import GlobalData
 from lib import SensorOrdering
 import logging
@@ -169,9 +169,6 @@ if __name__ == '__main__':
         if provider == "WUNDERGROUND":
             sensorDataCollector = WundergroundDataCollector(int(tempConf.attrib["interval"]),
                                                             str(tempConf.attrib["apiKey"]))
-        elif provider == "DARKSKY":
-            sensorDataCollector = DarkskyDataCollector(int(tempConf.attrib["interval"]),
-                                                       str(tempConf.attrib["apiKey"]))
         elif provider == "OPENMETEO":
             sensorDataCollector = OpenMeteoDataCollector(int(tempConf.attrib["interval"]))
         else:

@@ -141,7 +141,7 @@
         section of all sensors that are monitored
 
         provider - Provider used to gather weather information
-            (Only valid provider: "wunderground", "darksky", "openmeteo")
+            (Only valid provider: "wunderground", "openmeteo")
         apiKey - API key for the provider. This key is needed
             in order to fetch weather data from the provider.
             Please visit the provider's website and request an API key.
@@ -153,7 +153,7 @@
             Therefore, do not set up a too short interval.
     -->
     <sensors
-        provider="darksky"
+        provider="wunderground"
         apiKey="1111111111111111"
         interval="300" >
 
