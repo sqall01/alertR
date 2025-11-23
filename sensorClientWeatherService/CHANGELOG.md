@@ -1,3 +1,7 @@
+## 1.002-2
+
+* Changed deprecated/removed SSL API to new one
+
 ## 1.002-1
 
 * Removed DarkSky weather provider because it shut down its services

@@ -1,3 +1,7 @@
+## 1.002-1
+
+* Changed deprecated/removed SSL API to new one
+
 ## 1.002-0
 
 * Added option to send only highest wind speed in given interval

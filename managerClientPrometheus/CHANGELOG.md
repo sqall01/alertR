@@ -1,3 +1,7 @@
+## 1.000-2
+
+* Changed deprecated/removed SSL API to new one
+
 ## 1.000-1
 
 * Set sensor data to NaN if sensor is disconnected or has an error

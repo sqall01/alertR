@@ -1,3 +1,7 @@
+## 1.000-1
+
+* Changed deprecated/removed SSL API to new one
+
 ## 1.000-0
 
 * Added sensor error states

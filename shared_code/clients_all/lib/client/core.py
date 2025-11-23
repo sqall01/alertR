@@ -71,17 +71,15 @@ class Client(Connection):
 
         # Check if TLS is enabled.
         if self._server_ca_file is not None:
+            context = ssl.create_default_context()
+            context.load_verify_locations(cafile=self._server_ca_file)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.check_hostname = False
             # Check if a client certificate is required.
-            if self._client_cert_file is None or self._client_key_file is None:
-                self._socket = ssl.wrap_socket(self._socket,
-                                               ca_certs=self._server_ca_file,
-                                               cert_reqs=ssl.CERT_REQUIRED)
-            else:
-                self._socket = ssl.wrap_socket(self._socket,
-                                               ca_certs=self._server_ca_file,
-                                               cert_reqs=ssl.CERT_REQUIRED,
-                                               certfile=self._client_cert_file,
-                                               keyfile=self._client_key_file)
+            if self._client_cert_file is not None and self._client_key_file is not None:
+                context.load_cert_chain(certfile=self._client_cert_file,
+                                        keyfile=self._client_key_file)
+            self._socket = context.wrap_socket(self._socket)
 
         self._socket.connect((self._host, self._port))
 
