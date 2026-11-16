@@ -1,3 +1,7 @@
+## 1.000-2
+
+* Snake easteregg
+
 ## 1.000-1
 
 * Changed deprecated/removed SSL API to new one
