@@ -18,6 +18,7 @@ from .elementPin import PinUrwid
 from .elementProfile import ProfileChoiceUrwid
 from .elementStatus import StatusUrwid
 from .elementWarning import WarningUrwid
+from .snake import SnakeUrwid
 from ..globalData import GlobalData
 from .localObjects import SensorWarningState
 from ..client import ServerCommunication
@@ -79,6 +80,9 @@ class Console:
         # this is the urwid object of the profile choice field
         self._profile_choice_view = None  # type: Optional[ProfileChoiceUrwid]
 
+        # the urwid object of the snake game (easter egg started by entering "-" as pin)
+        self._snake_view = None  # type: Optional[SnakeUrwid]
+
         # flag that signalizes if the pin view is shown or not
         self.inPinView = True
 
@@ -90,6 +94,9 @@ class Console:
 
         # Flag that indicates if the profile choice view is shown or not.
         self._in_profile_choice_view = False
+
+        # Flag that indicates if the snake game view is shown or not.
+        self._in_snake_view = False
 
         # callback function of the action that is chosen during the menu view
         # (is used to show warnings if some sensors are not in
@@ -187,7 +194,12 @@ class Console:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
-            elif self._profile_choice_view.get() == pileTuple[0]:
+            # Profile choice view is only created when it is shown the first time.
+            elif self._profile_choice_view is not None and self._profile_choice_view.get() == pileTuple[0]:
+                self.editPartScreen.contents.remove(pileTuple)
+                continue
+
+            elif self._snake_view is not None and self._snake_view.get() == pileTuple[0]:
                 self.editPartScreen.contents.remove(pileTuple)
                 continue
 
@@ -238,7 +250,10 @@ class Console:
     def _thread_screen_unlock_checker(self):
         while True:
             utcTimestamp = int(time.time())
+            # The snake game view counts as locked screen (it is started from the pin view
+            # without unlocking and returns to it when a round is over).
             if (not self.inPinView
+                    and not self._in_snake_view
                     and (utcTimestamp - self.screenUnlockedTime) > self.unlockedScreenTimeout):
 
                 logging.info("[%s]: Timeout for unlocked screen." % self.fileName)
@@ -269,6 +284,7 @@ class Console:
                        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
                        "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X",
                        "Y", "Z",
+                       "-",
                        "enter"]:
 
                 logging.debug("[%s]: Sending keypress '%s' manually to pin field." % (key, self.fileName))
@@ -292,6 +308,10 @@ class Console:
             # option 2 aborts the chosen action
             elif key == "2":
                 self.showPinView()
+
+        # check if we are in the snake game view
+        elif self._in_snake_view:
+            self._snake_view.keypress(key)
 
         # => disable key/mouse input
         return True
@@ -363,6 +383,7 @@ class Console:
         self.inPinView = False
         self._in_warning_view = False
         self._in_profile_choice_view = False
+        self._in_snake_view = False
 
         # remove views from the screen
         self._clearEditPartScreen()
@@ -379,6 +400,11 @@ class Console:
         self.inPinView = True
         self._in_warning_view = False
         self._in_profile_choice_view = False
+        self._in_snake_view = False
+
+        # stop a running snake game (e.g., screen is locked while playing)
+        if self._snake_view is not None:
+            self._snake_view.stop()
 
         # reset unlock time
         self.screenUnlockedTime = 0
@@ -402,6 +428,7 @@ class Console:
         self.inPinView = False
         self._in_warning_view = False
         self._in_profile_choice_view = True
+        self._in_snake_view = False
 
         # remove views from the screen
         self._clearEditPartScreen()
@@ -420,6 +447,7 @@ class Console:
         self.inPinView = False
         self._in_warning_view = True
         self._in_profile_choice_view = False
+        self._in_snake_view = False
 
         # check if output is activated
         if self._audio_output is not None:
@@ -430,6 +458,26 @@ class Console:
 
         # show pin view
         self.editPartScreen.contents.append((self._warning_view.get(), self.editPartScreen.options()))
+
+    def showSnakeView(self):
+        """
+        Shows the snake game view and starts a new round (easter egg). When the round is over,
+        the pin view is shown again.
+        """
+        logging.info("[%s] Starting snake game." % self.fileName)
+
+        self.inMenuView = False
+        self.inPinView = False
+        self._in_warning_view = False
+        self._in_profile_choice_view = False
+        self._in_snake_view = True
+
+        # remove views from the screen
+        self._clearEditPartScreen()
+
+        # show snake view and start a new round
+        self.editPartScreen.contents.append((self._snake_view.get(), self.editPartScreen.options()))
+        self._snake_view.start(self.mainLoop)
 
     # this function initializes the urwid objects and displays
     # them (it starts also the urwid main loop and will not
@@ -474,6 +522,9 @@ class Console:
         # initialize warning view urwid
         self._warning_view = WarningUrwid()
 
+        # initialize snake game view urwid (returns to the pin view when a round is over)
+        self._snake_view = SnakeUrwid(game_over_callback=self.showPinView)
+
         # generate final body object
         self.finalBody = urwid.Pile([self._profile_urwid.get(), self._connection_status.get(), boxedEditPartScreen])
         fillerBody = urwid.Filler(self.finalBody, "top")
@@ -514,6 +565,7 @@ class Console:
         self.inMenuView = False
         self._in_warning_view = False
         self._in_profile_choice_view = False
+        self._in_snake_view = False
 
         # Start unlock checker thread.
         thread = threading.Thread(target=self._thread_screen_unlock_checker)

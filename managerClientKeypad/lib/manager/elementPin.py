@@ -35,6 +35,11 @@ class PinUrwid(urwid.Edit):
 
         # check given pin
         if not self.console.checkPin(inputPin):
+
+            # easter egg: "-" instead of a pin starts the snake game
+            if inputPin == "-":
+                self.console.showSnakeView()
+
             return
 
         # set time the screen was unlocked
